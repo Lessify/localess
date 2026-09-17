@@ -499,6 +499,18 @@ describe('EditDocumentComponent', () => {
       return setup(documentOf({ _id: 'd1', schema: 'root1', title: 'Hello' }), { schemas: [translatableSchema] });
     }
 
+    // The dialog preselects the locale the document is open in as the translation target and marks
+    // it in both lists, so it has to be told which one that is.
+    it('tells the dialog which locale the document is open in', () => {
+      const { component, open } = translatableSetup();
+      open.mockReturnValue({ afterClosed: () => of(undefined) });
+      component.selectedLocale.set(de);
+
+      component.openTranslateLocaleDialog();
+
+      expect(open.mock.calls[0][1].data).toMatchObject({ selectedLocale: 'de', localeFallback: en });
+    });
+
     it('sends the collected fields as one batch and applies the results to the document', () => {
       const { component, open, translateBatch, success } = translatableSetup();
       open.mockReturnValue({ afterClosed: () => of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });

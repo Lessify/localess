@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
@@ -23,15 +23,17 @@ export class TranslateLocaleDialogComponent {
   data = inject<TranslateLocaleDialogModel>(MAT_DIALOG_DATA);
 
   form: FormGroup = this.fb.group({
-    // Pre-selecting a locale the provider rejects would offer a translation that can only fail, so
-    // each end starts on the first locale supported in its own direction - the whole list, and so
-    // the first entry, may be unsupported.
+    // The source defaults to the default locale: that is the one an author fills in first, so it is
+    // the one with something to translate from. Only the content side has it - on the Translations
+    // screen every locale is a real language and this falls through to the first supported one.
     sourceLocale: this.fb.control(
-      this.firstSupported(it => this.canTranslateFrom(it)),
+      this.preselect(CONTENT_DEFAULT_LOCALE.id, it => this.canTranslateFrom(it)),
       [Validators.required],
     ),
+    // The target defaults to the locale the caller is showing - translating into the locale you are
+    // looking at is why the dialog is opened.
     targetLocale: this.fb.control(
-      this.firstSupported(it => this.canTranslateTo(it)),
+      this.preselect(this.data.selectedLocale, it => this.canTranslateTo(it)),
       [Validators.required],
     ),
     // Off by default: filling only empty translations is safe to run twice, overwriting is not.
@@ -63,11 +65,31 @@ export class TranslateLocaleDialogComponent {
     return source !== undefined && target !== undefined && this.canTranslateFrom(source) && this.canTranslateTo(target);
   }
 
-  private firstSupported(predicate: (locale: Locale) => boolean): string | null {
-    return this.data.locales.find(predicate)?.id ?? null;
+  /**
+   * Marks the caller's current locale in the list, so an author reading two identical locale names
+   * can tell which end was filled in for them.
+   */
+  localeLabel(locale: Locale): string {
+    return locale.id === this.data.selectedLocale ? `${locale.name} (Currently Selected)` : locale.name;
+  }
+
+  /**
+   * The preselected locale for one end of the translation: `preferred` when the space has it and
+   * the provider supports it in that direction, otherwise the first locale that is supported.
+   *
+   * Preselecting a locale the provider rejects would offer a translation that can only fail, and
+   * the whole list - and so the first entry - may be unsupported, hence the `null`.
+   */
+  private preselect(preferred: string | undefined, isSupported: (locale: Locale) => boolean): string | null {
+    const wanted = this.data.locales.find(it => it.id === preferred);
+    if (wanted && isSupported(wanted)) {
+      return wanted.id;
+    }
+    return this.data.locales.find(isSupported)?.id ?? null;
   }
 
   protected readonly localeItemToString = (value: string): string => {
-    return this.data.locales.find(l => l.id === value)?.name ?? value;
+    const locale = this.data.locales.find(l => l.id === value);
+    return locale ? this.localeLabel(locale) : value;
   };
 }

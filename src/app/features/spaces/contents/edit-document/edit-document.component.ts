@@ -635,7 +635,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.dialog
       .open<TranslateLocaleDialogComponent, TranslateLocaleDialogModel, TranslateLocaleDialogReturn>(TranslateLocaleDialogComponent, {
         panelClass: 'sm',
-        data: { locales: this.availableLocales(), localeFallback: this.selectedSpace()?.localeFallback },
+        data: {
+          locales: this.availableLocales(),
+          localeFallback: this.selectedSpace()?.localeFallback,
+          selectedLocale: this.selectedLocale().id,
+        },
       })
       .afterClosed()
       .pipe(

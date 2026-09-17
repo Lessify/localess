@@ -165,9 +165,15 @@ and it answers the two directions separately — Google's `SupportedLanguage` ca
 
 All three ask `LocaleService.isLocaleTranslatableFrom()` / `isLocaleTranslatableTo()`, which resolve the `default` sentinel through the
 fallback locale first — hence the `fallbackLocale` input on the menu and `localeFallback` on the dialog model. Without a fallback the
-sentinel is reported unsupported, which is the honest answer: `default` is exactly what would be sent. The dialog also opens on the first
-_supported_ locale of each direction rather than the first locale, so it never starts on a pair that can only fail. The Locales settings
-table reports the same two directions per locale — see [Space Settings → Translation support](settings.md#translation-support).
+sentinel is reported unsupported, which is the honest answer: `default` is exactly what would be sent. The Locales settings table reports
+the same two directions per locale — see [Space Settings → Translation support](settings.md#translation-support).
+
+**The dialog opens on the pair you almost always want:** source = the **default** locale, the one an author fills in first and so the one
+with something to translate from; target = the locale the document is currently open in, which is why the dialog was opened at all. That
+locale is labelled `{name} (Currently Selected)` in both selects, so it is obvious which end was filled in for you. `EditDocumentComponent`
+passes it as `selectedLocale` on the dialog model; the Translations screen passes neither, has no `default` sentinel, and so keeps falling
+back to the first _supported_ locale of each direction. Each preselection is only taken if the provider supports that locale in that
+direction — otherwise the same first-supported fallback applies, so the dialog never starts on a pair that can only fail.
 
 The trigger also carries `align="end"`, which is **load-bearing**. That attribute is read by `hlmDropdownMenuTrigger`, not by
 `hlmInputGroupButton` — the two directives share the element. Because the button always sits at the right-hand edge of its field, the

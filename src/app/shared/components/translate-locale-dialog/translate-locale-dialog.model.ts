@@ -8,6 +8,13 @@ export interface TranslateLocaleDialogModel {
    * tell whether the provider supports it.
    */
   localeFallback?: Locale;
+  /**
+   * The locale the caller is currently showing, if it has one - the content side passes the locale
+   * the document is open in. It is preselected as the target, because translating into the locale
+   * you are looking at is the reason the dialog is opened, and marked in both lists so it is clear
+   * which one that is.
+   */
+  selectedLocale?: string;
   description?: string;
 }
 

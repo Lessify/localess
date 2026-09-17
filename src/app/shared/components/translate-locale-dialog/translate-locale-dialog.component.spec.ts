@@ -25,6 +25,43 @@ describe('TranslateLocaleDialogComponent', () => {
     expect(component.form.valid).toBe(true);
   });
 
+  /**
+   * The content side opens the dialog on a fixed pair: out of the default locale, which is the one
+   * an author fills in first and so the one with something to translate, and into the locale the
+   * document is currently open in, which is the reason the dialog was opened at all.
+   */
+  describe('preselection', () => {
+    const fr: Locale = { id: 'fr', name: 'French' };
+
+    it('preselects the default locale as the source, wherever it sits in the list', () => {
+      const { component } = setup({ locales: [de, CONTENT_DEFAULT_LOCALE, fr], localeFallback: en });
+
+      expect(component.form.value.sourceLocale).toBe(CONTENT_DEFAULT_LOCALE.id);
+    });
+
+    it('preselects the caller’s current locale as the target', () => {
+      const { component } = setup({ locales: [CONTENT_DEFAULT_LOCALE, de, fr], localeFallback: en, selectedLocale: 'fr' });
+
+      expect(component.form.value).toMatchObject({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'fr' });
+    });
+
+    // The Translations screen has no `default` sentinel and passes no current locale, so both ends
+    // keep falling back to the first supported locale.
+    it('falls back to the first supported locale when neither is on offer', () => {
+      const { component } = setup({ locales: [de, fr] });
+
+      expect(component.form.value).toMatchObject({ sourceLocale: 'de', targetLocale: 'de' });
+    });
+
+    it('marks the caller’s current locale in the list and in the trigger', () => {
+      const { component } = setup({ locales: [de, fr], selectedLocale: 'fr' });
+
+      expect(component.localeLabel(fr)).toBe('French (Currently Selected)');
+      expect(component.localeLabel(de)).toBe('German');
+      expect(component['localeItemToString']('fr')).toBe('French (Currently Selected)');
+    });
+  });
+
   // Off by default: filling only empty translations is safe to run twice, overwriting is not.
   it('defaults overwrite to off and carries the author’s choice out of the dialog', () => {
     const { component } = setup({ locales: [en, de] });
@@ -89,6 +126,13 @@ describe('TranslateLocaleDialogComponent', () => {
 
       expect(component.canTranslateFrom(CONTENT_DEFAULT_LOCALE)).toBe(false);
       expect(component.form.value.sourceLocale).toBe('de');
+    });
+
+    // A locale the author is editing by hand is not necessarily one the provider can translate into.
+    it('ignores the caller’s current locale as a target when it is unsupported', () => {
+      const { component } = setup({ locales: [en, unsupported], selectedLocale: unsupported.id });
+
+      expect(component.form.value.targetLocale).toBe('en');
     });
 
     it('blocks the submit while either end is unsupported', () => {
