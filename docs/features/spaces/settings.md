@@ -136,6 +136,12 @@ country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en
 
 Form: locale `id` (BCP 47 code, e.g. `en`, `de`, `fr-CH`) and display `name`. Each option carries its locale icon.
 
+**This is the app's first Spartan-framed dialog** — `HlmDialogService` instead of `MatDialog`, `injectBrnDialogContext()` instead of
+`MAT_DIALOG_DATA`, `BrnDialogRef.close()` instead of `[mat-dialog-close]`. It is the reference implementation for migrating the rest; the
+recipe, the test setup and the width/scrolling traps are in
+[Spartan UI Migration → `MatDialog` → `HlmDialogService`](../../spartan-ui-migration.md#matdialog--hlmdialogservice). The same component's
+delete confirmation still uses `MatDialog`, which is why `LocalesComponent` injects both.
+
 ---
 
 ## TokensComponent

@@ -14,14 +14,14 @@ import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
-import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
+import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-dialog.model';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -36,7 +36,6 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
     HlmProgressImports,
     HlmButtonImports,
     HlmIconImports,
-    HlmTooltipImports,
     HlmDropdownMenuImports,
   ],
   providers: [
@@ -52,6 +51,7 @@ import { LocaleDialogModel } from './locale-dialog/locale-dialog.model';
 export class LocalesComponent implements AfterViewInit {
   readonly localeService = inject(LocaleService);
   private readonly dialog = inject(MatDialog);
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -93,15 +93,20 @@ export class LocalesComponent implements AfterViewInit {
     this.dataSource.filter = JSON.stringify(value);
   }
 
+  /**
+   * The one dialog on Spartan rather than Material, on trial. Two differences that matter:
+   * `closed$` does not complete the way `afterClosed()` does, hence `take(1)`, and the context is
+   * an object - `HlmDialogService` spreads it, so an array would arrive as index keys.
+   */
   openAddDialog(): void {
     const { id, locales } = this.spaceStore.selectedSpace()!;
-    this.dialog
-      .open<LocaleDialogComponent, Locale[], LocaleDialogModel>(LocaleDialogComponent, {
-        panelClass: 'sm',
-        data: locales,
+    this.hlmDialog
+      .open<LocaleDialogResult, LocaleDialogContext>(LocaleDialogComponent, {
+        context: { locales },
+        contentClass: 'w-lg! max-w-lg!',
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.localeService.create(id, it!.locale)),
       )

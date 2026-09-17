@@ -2,38 +2,43 @@
 
 > Related: [`MatTable` → `ll-table` Migration Guide](table-migration.md)
 
-> This document captures hard-won knowledge from migrating Angular Material components to the Spartan/Helm UI library (`libs/ui/`). Read this before touching any dialog, form, or notification code.
+> This document captures hard-won knowledge from migrating Angular Material components to the Spartan/Helm UI library (`libs/ui/`). Read
+> this before touching any dialog, form, or notification code.
 
 ---
 
 ## Migration Philosophy
 
-- **Dialog frame stays Material** — `MatDialogModule` (`mat-dialog-title`, `mat-dialog-content`, `mat-dialog-actions`, `[mat-dialog-close]`) is kept for the dialog container. Only form and interactive elements inside are replaced with Spartan.
-- **Spartan components are headless primitives** — they render with `display: contents` or inject host classes. Layout is your responsibility.
+- **Dialog frames are moving to Spartan, one dialog at a time** — most still use `MatDialogModule` (`mat-dialog-title`,
+  `mat-dialog-content`, `mat-dialog-actions`, `[mat-dialog-close]`) with Spartan form controls inside. New and touched dialogs should use
+  `HlmDialogService`; follow [`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice), which has the recipe, the tests and the
+  traps. Add Locale is the reference implementation.
+- **Spartan components are headless primitives** — they render with `display: contents` or inject host classes. Layout is your
+  responsibility.
 - **All components are standalone** — import via `*Imports` barrel constants (e.g. `HlmButtonImports`, `HlmCheckboxImports`).
 
 ---
 
 ## Component Replacement Table
 
-| Angular Material | Spartan Equivalent | Import |
-|---|---|---|
-| `MatButtonModule` | `hlmBtn` directive | `HlmButtonImports` |
-| `MatFormFieldModule` | `hlmField` + `hlmFieldLabel` | `HlmFieldImports` |
-| `MatInputModule` | `hlmInput` directive | `HlmInputImports` |
-| `MatInputModule` (textarea) | `hlmTextarea` directive | `HlmTextareaImports` |
-| `MatSelectModule` | `hlm-select` + related | `HlmSelectImports` |
-| `MatAutocompleteModule` | `hlm-combobox` + related | `HlmComboboxImports` (see Combobox section) |
-| `MatSlideToggleModule` | `hlm-switch` | `HlmSwitchImports` |
-| `MatCheckboxModule` (boolean toggle) | `hlm-switch` with `formControlName` | `HlmSwitchImports` |
-| `MatCheckboxModule` / `mat-selection-list` | `hlm-checkbox` | `HlmCheckboxImports` |
-| `MatButtonToggleModule` | `hlm-toggle-group` + `hlmToggleGroupItem` | `HlmToggleGroupImports` |
-| `MatChipsModule` (`mat-chip-grid`) | `hlmInput` + `hlmBtn` badges | see Chips section |
-| `MatDividerModule` | `hlm-separator` | `HlmSeparatorImports` |
-| `MatTooltipModule` | `hlmTooltip` directive | `HlmTooltipImports` |
-| `MatExpansionModule` | `hlm-accordion` + related | `HlmAccordionImports` |
-| `MatCardModule` | `hlm-card` + related | `HlmCardImports` |
-| `MatSnackBar` | `toast` from `ngx-sonner` | see Notifications section |
+| Angular Material                           | Spartan Equivalent                        | Import                                      |
+| ------------------------------------------ | ----------------------------------------- | ------------------------------------------- |
+| `MatButtonModule`                          | `hlmBtn` directive                        | `HlmButtonImports`                          |
+| `MatFormFieldModule`                       | `hlmField` + `hlmFieldLabel`              | `HlmFieldImports`                           |
+| `MatInputModule`                           | `hlmInput` directive                      | `HlmInputImports`                           |
+| `MatInputModule` (textarea)                | `hlmTextarea` directive                   | `HlmTextareaImports`                        |
+| `MatSelectModule`                          | `hlm-select` + related                    | `HlmSelectImports`                          |
+| `MatAutocompleteModule`                    | `hlm-combobox` + related                  | `HlmComboboxImports` (see Combobox section) |
+| `MatSlideToggleModule`                     | `hlm-switch`                              | `HlmSwitchImports`                          |
+| `MatCheckboxModule` (boolean toggle)       | `hlm-switch` with `formControlName`       | `HlmSwitchImports`                          |
+| `MatCheckboxModule` / `mat-selection-list` | `hlm-checkbox`                            | `HlmCheckboxImports`                        |
+| `MatButtonToggleModule`                    | `hlm-toggle-group` + `hlmToggleGroupItem` | `HlmToggleGroupImports`                     |
+| `MatChipsModule` (`mat-chip-grid`)         | `hlmInput` + `hlmBtn` badges              | see Chips section                           |
+| `MatDividerModule`                         | `hlm-separator`                           | `HlmSeparatorImports`                       |
+| `MatTooltipModule`                         | `hlmTooltip` directive                    | `HlmTooltipImports`                         |
+| `MatExpansionModule`                       | `hlm-accordion` + related                 | `HlmAccordionImports`                       |
+| `MatCardModule`                            | `hlm-card` + related                      | `HlmCardImports`                            |
+| `MatSnackBar`                              | `toast` from `ngx-sonner`                 | see Notifications section                   |
 
 ---
 
@@ -46,19 +51,26 @@ Every `<mat-form-field>` maps to a `<div hlmField>` wrapper. The full anatomy:
   <label hlmFieldLabel for="name">Name</label>
   <div hlmInputGroup>
     <input hlmInputGroupInput id="name" type="text" formControlName="name" />
-    <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon>
+    <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+      >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
+    >
   </div>
   <hlm-field-description>Helper text here.</hlm-field-description>
   @if (form.controls['name'].errors; as errors) {
-    <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+  <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
   }
 </div>
 ```
 
 Key rules:
+
 - Always add `id` to the input and matching `for` on the label (ESLint requires it)
-- **Character counter on a text input** → always use `hlmInputGroup` + `hlm-input-group-addon align="inline-end"` (places the counter inside the input at the trailing edge). Never use `<hlm-field-description class="text-right">` for counters on text inputs.
-- **Character counter on a textarea** → use `hlmInputGroup` + `hlmInputGroupTextarea` + `hlm-input-group-addon align="block-end"` wrapping a `hlm-input-group-text`. This is the same group pattern as for text inputs, but with `align="block-end"` (below) instead of `align="inline-end"` (inside trailing edge). Do **not** use `hlmTextarea` + `hlm-field-description class="text-right"` for counters on textareas.
+- **Character counter on a text input** → always use `hlmInputGroup` + `hlm-input-group-addon align="inline-end"` (places the counter inside
+  the input at the trailing edge). Never use `<hlm-field-description class="text-right">` for counters on text inputs.
+- **Character counter on a textarea** → use `hlmInputGroup` + `hlmInputGroupTextarea` + `hlm-input-group-addon align="block-end"` wrapping a
+  `hlm-input-group-text`. This is the same group pattern as for text inputs, but with `align="block-end"` (below) instead of
+  `align="inline-end"` (inside trailing edge). Do **not** use `hlmTextarea` + `hlm-field-description class="text-right"` for counters on
+  textareas.
 - When there is no counter, a plain `<input hlmInput class="w-full" />` (no group wrapper) is fine
 - `mat-hint` (descriptive) → `<hlm-field-description>`
 - Multiple `hlm-field-description` elements are allowed in the same field
@@ -66,7 +78,8 @@ Key rules:
 
 ### Textarea
 
-Replace `<textarea matInput cdkTextareaAutosize>` with `<textarea hlmInputGroupTextarea>` inside `<hlm-input-group>`. This automatically applies textarea styling. When a character counter is needed, add `<hlm-input-group-addon align="block-end">`:
+Replace `<textarea matInput cdkTextareaAutosize>` with `<textarea hlmInputGroupTextarea>` inside `<hlm-input-group>`. This automatically
+applies textarea styling. When a character counter is needed, add `<hlm-input-group-addon align="block-end">`:
 
 ```html
 <!-- ❌ Before -->
@@ -85,15 +98,18 @@ Replace `<textarea matInput cdkTextareaAutosize>` with `<textarea hlmInputGroupT
 <textarea hlmTextarea id="description" formControlName="description" class="resize-none"></textarea>
 ```
 
-Remove `TextFieldModule` and `HlmTextareaImports` from imports when all textareas in the component use `hlmInputGroupTextarea` — it is already included in `HlmInputGroupImports`.
+Remove `TextFieldModule` and `HlmTextareaImports` from imports when all textareas in the component use `hlmInputGroupTextarea` — it is
+already included in `HlmInputGroupImports`.
 
 ---
 
 ## `mat-chip-grid` → Spartan Tags Pattern
 
-There is no Spartan chip component. Replace `mat-chip-grid` / `mat-chip-row` with a plain `hlmInput` (for adding) and `hlmBtn` outline buttons (for display + removal):
+There is no Spartan chip component. Replace `mat-chip-grid` / `mat-chip-row` with a plain `hlmInput` (for adding) and `hlmBtn` outline
+buttons (for display + removal):
 
 **Template:**
+
 ```html
 <div hlmField>
   <label hlmFieldLabel for="labels">Labels</label>
@@ -108,16 +124,17 @@ There is no Spartan chip component. Replace `mat-chip-grid` / `mat-chip-row` wit
     (keydown.enter)="$event.preventDefault(); addLabel(labelInput.value); labelInput.value = ''" />
   <div class="flex flex-wrap gap-2">
     @for (label of form.controls['labels'].value; track label) {
-      <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
-        <ng-icon hlm size="xs" name="lucideCircleX" />
-        {{ label }}
-      </button>
+    <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">
+      <ng-icon hlm size="xs" name="lucideCircleX" />
+      {{ label }}
+    </button>
     }
   </div>
 </div>
 ```
 
 **Component class:**
+
 ```typescript
 addLabel(value: string): void {
   if (value.trim()) {
@@ -133,18 +150,21 @@ removeLabel(label: string): void {
 ```
 
 **Imports / providers required:**
+
 ```typescript
 imports: [..., HlmInputImports, HlmButtonImports, HlmIconImports],
 providers: [provideIcons({ lucideCircleX })],
 ```
 
-> **Always use immutable updates** — call `setValue([...spread])` instead of mutating the array with `push` or `splice`. Mutating the array directly does not trigger Angular's change detection.
+> **Always use immutable updates** — call `setValue([...spread])` instead of mutating the array with `push` or `splice`. Mutating the array
+> directly does not trigger Angular's change detection.
 
 ---
 
 ## `mat-checkbox` (boolean toggle) → `hlm-switch`
 
-For a simple boolean form control (e.g. `autoTranslate`, `lock`), use `hlm-switch` with `formControlName` directly. Reserve `hlm-checkbox` for multi-select lists managed manually via `[checked]` + `(checkedChange)`.
+For a simple boolean form control (e.g. `autoTranslate`, `lock`), use `hlm-switch` with `formControlName` directly. Reserve `hlm-checkbox`
+for multi-select lists managed manually via `[checked]` + `(checkedChange)`.
 
 ```html
 <!-- ❌ Before -->
@@ -163,14 +183,15 @@ Import: `HlmSwitchImports`, `HlmLabelImports`.
 
 ## Dialog Actions Layout
 
+> This is the **Material-framed** pattern, for the dialogs still on `MatDialog`. On a Spartan-framed dialog the footer is
+> `<hlm-dialog-footer>` and closing works differently — see [`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice).
+
 Always add `class="flex gap-2"` to `<mat-dialog-actions>` and wrap the form in `class="flex flex-col gap-4 py-2"`:
 
 ```html
 <!-- Form -->
 <mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    ...
-  </form>
+  <form [formGroup]="form" class="flex flex-col gap-4 py-2"> ... </form>
 </mat-dialog-content>
 
 <!-- Actions -->
@@ -189,7 +210,179 @@ For **confirmation dialogs** (destructive actions), use `variant="destructive"` 
 </mat-dialog-actions>
 ```
 
-Remove the `<br />` spacers that were commonly added before/after `<form>` in Material dialogs — the `py-2` on the form and `gap-4` between fields handle spacing.
+Remove the `<br />` spacers that were commonly added before/after `<form>` in Material dialogs — the `py-2` on the form and `gap-4` between
+fields handle spacing.
+
+---
+
+## `MatDialog` → `HlmDialogService`
+
+**Reference implementation: the Add Locale dialog** (`features/spaces/settings/locales/locale-dialog/`). It is the only migrated one so far;
+**29** dialog components and **19** callers are still on Material. Migrate one dialog at a time with the recipe below — the Material and
+Spartan dialogs coexist fine, and a component may inject both services during the transition (`LocalesComponent` does: Spartan for Add
+Locale, Material for the delete confirmation).
+
+### 1. Split the model into a context and a result
+
+The dialog's own model file owns both halves of its contract. `Context` is what the caller passes in, `Result` what `close()` hands back:
+
+```ts
+// locale-dialog.model.ts
+export interface LocaleDialogContext {
+  locales?: Locale[];
+}
+
+export interface LocaleDialogResult {
+  locale: Locale;
+}
+```
+
+Keep them here rather than in the component: the caller imports the types without importing the component's chunk.
+
+### 2. The dialog component
+
+```ts
+@Component({
+  selector: 'll-locale-dialog',
+  templateUrl: './locale-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  // `hlm-dialog-content` is a grid whose single item is this host, so its `gap-4` never reaches the
+  // parts inside - set the spacing here or header/form/footer end up flush against each other.
+  host: { class: 'grid gap-4' },
+  imports: [ReactiveFormsModule, HlmDialogImports /* … */],
+})
+export class LocaleDialogComponent {
+  private readonly dialogRef = inject<BrnDialogRef<LocaleDialogResult>>(BrnDialogRef);
+  private readonly context = injectBrnDialogContext<LocaleDialogContext>({ optional: true });
+
+  save(): void {
+    this.dialogRef.close(this.form.value as LocaleDialogResult);
+  }
+}
+```
+
+- `injectBrnDialogContext()` replaces `inject(MAT_DIALOG_DATA)` — it is `inject(DIALOG_DATA)` from `@angular/cdk/dialog` under the hood.
+- With `{ optional: true }`, **read it with `?.`**. The option makes the token optional, not the object: `this.context.locales` throws for a
+  dialog opened without a context, which is exactly the case the option exists for.
+- Typing the ref (`BrnDialogRef<LocaleDialogResult>`) is what stops `close()` returning something the caller does not expect.
+- **No `cancel()` method.** See below.
+
+### 3. The template
+
+There is no `mat-dialog-content` wrapper — the parts are plain children of the component host:
+
+```html
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Add Locale</h2>
+  <p hlmDialogDescription>Choose the locale you wish to work with…</p>
+</hlm-dialog-header>
+<form [formGroup]="form">…</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>
+```
+
+| Material                           | Spartan                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------- |
+| `<h2 mat-dialog-title>`            | `<hlm-dialog-header>` + `<h2 hlmDialogTitle>` (+ optional `<p hlmDialogDescription>`) |
+| `<mat-dialog-content>`             | nothing — content sits directly in the host                                           |
+| `<mat-dialog-actions align="end">` | `<hlm-dialog-footer>` (already right-aligns and reverses on mobile)                   |
+| `[mat-dialog-close]="undefined"`   | `hlmDialogClose` — a directive, no binding                                            |
+| `[mat-dialog-close]="form.value"`  | `(click)="save()"` calling `dialogRef.close(value)`                                   |
+
+**Dismiss needs no component code:** `hlmDialogClose` closes with no result, so the caller's `filter(it => it !== undefined)` skips the
+work. Only the confirming button needs a method, and that is the only part with anything to unit test.
+
+### 4. The caller
+
+```ts
+// before
+this.dialog
+  .open<Comp, Locale[], Result>(Comp, { panelClass: 'sm', data: locales })
+  .afterClosed()
+  .pipe(filter(it => it !== undefined));
+
+// after
+this.hlmDialog
+  .open<LocaleDialogResult, LocaleDialogContext>(LocaleDialogComponent, {
+    context: { locales },
+    contentClass: 'w-xl! max-w-xl!',
+  })
+  .closed$.pipe(
+    take(1),
+    filter(it => it !== undefined),
+  );
+```
+
+Note the type parameters **swap order**: Material is `<Component, Data, Result>`, Spartan is `<Result, Context>`.
+
+### 5. Width — the one trap that costs real time
+
+`.spartan-dialog-content` is `w-full` inside an auto-sized CDK overlay, so with no width of its own it **shrinks to its content** (the Add
+Locale form came out at 155px). There is no `panelClass: 'sm'` equivalent; width goes in `contentClass`. Two rules:
+
+- **Set width _and_ max-width.** `.spartan-dialog-content` carries `sm:max-w-sm` (384px), and `max-width` beats `width`, so a width utility
+  on its own is silently clamped: `contentClass: 'w-xl'` renders **384px, not 576px** (measured).
+- **Use Tailwind's `!`.** The whole nova sheet lives inside `@scope (.style-nova)`, and **scope proximity outranks source order** in the
+  cascade — an unscoped utility loses to the component's own scoped rule for the same property however the CSS is ordered. `!` wins;
+  reordering does not.
+
+| `contentClass`                      | Renders at                                          |
+| ----------------------------------- | --------------------------------------------------- |
+| _(none)_                            | ~155px — shrinks to the form                        |
+| `'w-xl'`                            | 384px — clamped by `sm:max-w-sm`                    |
+| `'w-xl! max-w-xl!'`                 | 576px                                               |
+| `'sm:w-[640px]! sm:max-w-[640px]!'` | 640px — matches the old Material `panelClass: 'sm'` |
+
+### 6. Tests
+
+The dialog spec swaps the two Material tokens for the CDK one plus a ref mock:
+
+```ts
+TestBed.configureTestingModule({
+  providers: [
+    { provide: DIALOG_DATA, useValue: context }, // was MAT_DIALOG_DATA
+    { provide: BrnDialogRef, useValue: { close } }, // new: save() calls it
+  ],
+});
+```
+
+The caller spec mocks the service and returns a plain object with `closed$` — there is no `afterClosed()` to stub:
+
+```ts
+const openAdd = vi.fn();
+// providers: { provide: HlmDialogService, useValue: { open: openAdd } }
+openAdd.mockReturnValue({ closed$: of({ locale: de }) }); // confirmed
+openAdd.mockReturnValue({ closed$: of(undefined) }); // dismissed
+```
+
+### 7. The rest of the gotchas
+
+| Gotcha                         | Detail                                                                                                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Context must be an object**  | `HlmDialogService` spreads it into the CDK context, so an array (the old `data: locales`) arrives as index keys. Pass `{ locales }`.                       |
+| **`closed$` doesn't complete** | Unlike `afterClosed()`. Add `take(1)`, or the subscription outlives the dialog.                                                                            |
+| **A close (X) button appears** | `HlmDialogContent` renders one by default; `showCloseButton: false` restores Material's behaviour.                                                         |
+| **No scroll container**        | `.spartan-dialog-content` sets no `overflow`/`max-height`, where `mat-mdc-dialog-content` is `overflow: auto` with `max-height: 65vh`. See the note below. |
+
+**On that last one — it cuts both ways.** It removed a 2px phantom scrollbar in Add Locale (Spartan's input-group addon is 36px inside a
+32px input group, and Material's auto-overflow turned that bleed into a scrollbar). But a **tall** dialog now runs past the viewport instead
+of scrolling inside itself, so any dialog with more content than a couple of fields needs its own `max-h-… overflow-auto` in `contentClass`
+— which brings the 2px scrollbar back with it. Import, Export, Token and Add Document are the ones to watch.
+
+Unchanged by the migration: the dialog still grows when a validation message appears (~28px per line), because that is content-driven.
+Reserve space for the message if the resize matters.
+
+### 8. Checklist per dialog
+
+1. `Context` / `Result` interfaces in the dialog's `*.model.ts`
+2. Component: `host: { class: 'grid gap-4' }`, `HlmDialogImports`, `injectBrnDialogContext` (+ `?.`), typed `BrnDialogRef`, `save()`
+3. Template: header/title(/description), content, footer; `hlmDialogClose` on the dismissing button
+4. Caller: `HlmDialogService.open<Result, Context>()`, `context: {…}`, width in `contentClass` with `!`, `closed$` + `take(1)`
+5. Specs: `DIALOG_DATA` + `BrnDialogRef` in the dialog spec, `HlmDialogService` + `closed$` in the caller spec
+6. Delete the dialog's `*.scss` if it only held `mat-form-field` overrides
+7. Check it in the browser at the real width, and whether it needs a scroll cap
 
 ---
 
@@ -198,6 +391,7 @@ Remove the `<br />` spacers that were commonly added before/after `<form>` in Ma
 Replace `<mat-form-field>` + `(keyup)` event-based filtering with a reactive form + `hlmInputGroup`:
 
 **Template:**
+
 ```html
 <form [formGroup]="filterForm">
   <fieldset hlmFieldSet>
@@ -214,6 +408,7 @@ Replace `<mat-form-field>` + `(keyup)` event-based filtering with a reactive for
 ```
 
 **Component class:**
+
 ```typescript
 filterForm = this.fb.group({
   search: this.fb.control<string>('', []),
@@ -229,6 +424,7 @@ ngOnInit(): void {
 ```
 
 **Imports required:**
+
 ```typescript
 imports: [..., ReactiveFormsModule, HlmFieldImports, HlmInputGroupImports, HlmIconImports],
 providers: [provideIcons({ lucideSearch })],
@@ -255,11 +451,13 @@ protected readonly localeItemToString = (value: string): string => {
 };
 ```
 
-The rule is the same in both cases: **always provide `[itemToString]` when the select has a pre-selected value and uses `*hlmSelectPortal`**.
+The rule is the same in both cases: **always provide `[itemToString]` when the select has a pre-selected value and uses
+`*hlmSelectPortal`**.
 
 ### Prefix icon in the trigger
 
-To show an icon alongside the selected value text in the trigger, wrap both in `<span class="flex items-center gap-2">`. Without the wrapper the icon and value are block-level siblings and the icon stacks above the text.
+To show an icon alongside the selected value text in the trigger, wrap both in `<span class="flex items-center gap-2">`. Without the wrapper
+the icon and value are block-level siblings and the icon stacks above the text.
 
 ```html
 <!-- ❌ Wrong — icon stacks above the value text -->
@@ -295,11 +493,10 @@ get type(): SchemaType {
 
 ---
 
-
-
 ### Host renders as `display: contents`
 
-`HlmCheckbox` has `host: { class: 'contents peer' }`. The host element disappears from the layout tree; its inner `brn-checkbox` becomes the actual flex item. This is correct and intentional — do not add margin/padding to `hlm-checkbox` itself.
+`HlmCheckbox` has `host: { class: 'contents peer' }`. The host element disappears from the layout tree; its inner `brn-checkbox` becomes the
+actual flex item. This is correct and intentional — do not add margin/padding to `hlm-checkbox` itself.
 
 ### ❌ Wrong — description nested inside `<label>`
 
@@ -313,7 +510,9 @@ get type(): SchemaType {
 </div>
 ```
 
-**Why it breaks:** `hlmLabel` injects `flex items-center gap-2` onto every `<label>` element via the `HlmLabel` directive constructor. Adding `flex-col` to the class attribute creates a conflict (`items-center` + `flex-col` = horizontal centering of spans), breaking alignment.
+**Why it breaks:** `hlmLabel` injects `flex items-center gap-2` onto every `<label>` element via the `HlmLabel` directive constructor.
+Adding `flex-col` to the class attribute creates a conflict (`items-center` + `flex-col` = horizontal centering of spans), breaking
+alignment.
 
 ### ✅ Correct — Spartan docs pattern (description as sibling `<p>`)
 
@@ -335,6 +534,7 @@ get type(): SchemaType {
 There is no direct Spartan equivalent. Replace with individual `hlm-checkbox` components managed manually:
 
 **Component class:**
+
 ```typescript
 isPermissionSelected(permission: string): boolean {
   return this.form.controls['permissions'].value?.includes(permission) ?? false;
@@ -348,40 +548,39 @@ togglePermission(permission: string, checked: boolean): void {
 ```
 
 **Template:**
+
 ```html
-<hlm-checkbox
-  [inputId]="perm.id"
-  [checked]="isPermissionSelected(perm.id)"
-  (checkedChange)="togglePermission(perm.id, $event)" />
+<hlm-checkbox [inputId]="perm.id" [checked]="isPermissionSelected(perm.id)" (checkedChange)="togglePermission(perm.id, $event)" />
 ```
 
 ### Permissions list grouping pattern
 
-When rendering a grouped list of checkboxes (e.g. by category), avoid flat `flex flex-col gap-1`. Wrap each section and use `@if (!last)` for separators:
+When rendering a grouped list of checkboxes (e.g. by category), avoid flat `flex flex-col gap-1`. Wrap each section and use `@if (!last)`
+for separators:
 
 ```html
 @for (group of permissionGroups; track group.label; let last = $last) {
+<div class="flex flex-col gap-2">
+  <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
   <div class="flex flex-col gap-2">
-    <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
-    <div class="flex flex-col gap-2">
-      @for (perm of group.permissions; track perm.id) {
-        <div class="flex items-start gap-3">
-          <hlm-checkbox [inputId]="perm.id" ... />
-          <div class="grid gap-1.5 leading-none">
-            <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
-            <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
-          </div>
-        </div>
-      }
+    @for (perm of group.permissions; track perm.id) {
+    <div class="flex items-start gap-3">
+      <hlm-checkbox [inputId]="perm.id" ... />
+      <div class="grid gap-1.5 leading-none">
+        <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
+        <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
+      </div>
     </div>
+    }
   </div>
-  @if (!last) {
-    <hlm-separator />
-  }
-}
+</div>
+@if (!last) {
+<hlm-separator />
+} }
 ```
 
-Move the data into a separate shared file to avoid duplication across dialogs. See `src/app/features/admin/users/user-permissions.ts` as a reference:
+Move the data into a separate shared file to avoid duplication across dialogs. See `src/app/features/admin/users/user-permissions.ts` as a
+reference:
 
 ```typescript
 export interface UserPermission { id: string; label: string; desc: string; }
@@ -395,9 +594,11 @@ export const USER_PERMISSION_GROUPS: UserPermissionGroup[] = [ ... ];
 
 ### The portal lazy-rendering problem
 
-`*hlmSelectPortal` is powered by `BrnPopoverContent`. Items inside are **rendered lazily** — only when the dropdown is opened. This means `BrnSelectItem`s haven't registered with `BrnSelect` before the first user interaction.
+`*hlmSelectPortal` is powered by `BrnPopoverContent`. Items inside are **rendered lazily** — only when the dropdown is opened. This means
+`BrnSelectItem`s haven't registered with `BrnSelect` before the first user interaction.
 
-**Consequence:** When a value is set programmatically (via `formControlName`, `patchValue`, or `[value]` binding), `BrnSelectValue` cannot find the matching item's label text and falls back to the raw value string — so `"custom"` is displayed instead of `"Custom"`.
+**Consequence:** When a value is set programmatically (via `formControlName`, `patchValue`, or `[value]` binding), `BrnSelectValue` cannot
+find the matching item's label text and falls back to the raw value string — so `"custom"` is displayed instead of `"Custom"`.
 
 **Fix: always provide `[itemToString]`** for any `hlm-select` that uses `*hlmSelectPortal`:
 
@@ -410,21 +611,20 @@ protected readonly roleItemToString = (value: string): string => {
 ```
 
 ```html
-<hlm-select formControlName="role" [itemToString]="roleItemToString">
-  ...
-</hlm-select>
+<hlm-select formControlName="role" [itemToString]="roleItemToString"> ... </hlm-select>
 ```
 
 ### The `undefined` vs `null` problem for "empty" selection
 
 **Never use `[value]="undefined"` for a "None/empty" option.** The Spartan Brain library has an internal inconsistency:
 
-| Check | `null` | `undefined` |
-|---|---|---|
-| `hasValue()` uses `!== null` | `false` → no value ✓ | `true` → has value ✗ |
+| Check                                       | `null`               | `undefined`          |
+| ------------------------------------------- | -------------------- | -------------------- |
+| `hasValue()` uses `!== null`                | `false` → no value ✓ | `true` → has value ✗ |
 | `stringifyAsLabel()` uses `!= null` (loose) | skips `itemToString` | skips `itemToString` |
 
 When `undefined` is the value:
+
 - `hasValue()` = `true` (unexpected) → tries to display a label
 - `stringifyAsLabel(undefined, fn)` skips `itemToString` → falls through to `serializeValue(undefined)` → returns `''`
 - Result: element is visible but empty
@@ -445,7 +645,8 @@ When `undefined` is the value:
 
 When `null` is selected → `hasValue()` = `false` → `_value` = `placeholder()` = `'None'`.
 
-**Also:** when patching a form with existing data that may have `undefined` for an optional field, convert it to `null` before calling `patchValue`:
+**Also:** when patching a form with existing data that may have `undefined` for an optional field, convert it to `null` before calling
+`patchValue`:
 
 ```typescript
 ngOnInit(): void {
@@ -457,13 +658,12 @@ ngOnInit(): void {
 
 ### `for` / `id` accessibility on `hlm-select`
 
-ESLint rule `@angular-eslint/template/label-has-associated-control` requires matching `for` on the label and `id` on the control. For `hlm-select`, put the `id` on the `<hlm-select>` element itself:
+ESLint rule `@angular-eslint/template/label-has-associated-control` requires matching `for` on the label and `id` on the control. For
+`hlm-select`, put the `id` on the `<hlm-select>` element itself:
 
 ```html
 <label hlmFieldLabel for="role">Role</label>
-<hlm-select id="role" formControlName="role" [itemToString]="roleItemToString">
-  ...
-</hlm-select>
+<hlm-select id="role" formControlName="role" [itemToString]="roleItemToString"> ... </hlm-select>
 ```
 
 ---
@@ -500,7 +700,8 @@ imports: [..., HlmToasterImports]
 
 ### `NotificationService` API
 
-All toast calls go through `NotificationService` (`src/app/shared/services/notification.service.ts`). Never call `toast()` directly from feature components.
+All toast calls go through `NotificationService` (`src/app/shared/services/notification.service.ts`). Never call `toast()` directly from
+feature components.
 
 ```typescript
 // Public methods
@@ -513,12 +714,13 @@ notificationService.default('Message', options?);
 
 ### `NotificationOptions` and `ToastAction`
 
-The second argument is `NotificationOptions` — a subset of Sonner's `ExternalToast` with the `action` field replaced by a discriminated union:
+The second argument is `NotificationOptions` — a subset of Sonner's `ExternalToast` with the `action` field replaced by a discriminated
+union:
 
 ```typescript
 type ToastAction =
-  | { type: 'route'; label: string; link: string }   // in-app RouterLink
-  | { type: 'link';  label: string; link: string }   // external URL, new tab
+  | { type: 'route'; label: string; link: string } // in-app RouterLink
+  | { type: 'link'; label: string; link: string } // external URL, new tab
   | { type: 'action'; label: string; onClick: () => void }; // custom callback
 
 type NotificationOptions = Omit<ExternalToast, 'action'> & { action?: ToastAction };
@@ -529,12 +731,12 @@ type NotificationOptions = Omit<ExternalToast, 'action'> & { action?: ToastActio
 ```typescript
 // In-app navigation
 this.notificationService.success('Content saved', {
-  action: { type: 'route', label: 'View', link: '/features/spaces/...' }
+  action: { type: 'route', label: 'View', link: '/features/spaces/...' },
 });
 
 // External link
 this.notificationService.error('Deploy failed', {
-  action: { type: 'link', label: 'Logs', link: 'https://console.cloud.google.com/...' }
+  action: { type: 'link', label: 'Logs', link: 'https://console.cloud.google.com/...' },
 });
 
 // Custom action (e.g. page reload)
@@ -547,15 +749,18 @@ this.notificationService.info('New version available', {
 });
 ```
 
-The internal `toAction()` / `toExternalToast()` conversion is private — callers never interact with Sonner's `ExternalToastAction` shape directly.
+The internal `toAction()` / `toExternalToast()` conversion is private — callers never interact with Sonner's `ExternalToastAction` shape
+directly.
 
 ---
 
 ## `MatAutocompleteModule` → `HlmComboboxImports`
 
-> ⚠️ **`HlmAutocompleteImports` is broken** in the current install. `HlmAutocompleteInput` references `BrnAutocompleteInputWrapper` which does not exist in the installed `@spartan-ng/brain` v0.0.1-alpha.692. **Do not use `HlmAutocompleteImports`.**
+> ⚠️ **`HlmAutocompleteImports` is broken** in the current install. `HlmAutocompleteInput` references `BrnAutocompleteInputWrapper` which
+> does not exist in the installed `@spartan-ng/brain` v0.0.1-alpha.692. **Do not use `HlmAutocompleteImports`.**
 
-Use `HlmComboboxImports` instead. The combobox supports an inline search input (no trigger button) with server-side or client-side filtering.
+Use `HlmComboboxImports` instead. The combobox supports an inline search input (no trigger button) with server-side or client-side
+filtering.
 
 ### Template structure
 
@@ -571,7 +776,7 @@ Use `HlmComboboxImports` instead. The combobox supports an inline search input (
     <hlm-combobox-empty>No results found.</hlm-combobox-empty>
     <div hlmComboboxList>
       @for (item of filteredItems(); track item.id) {
-        <hlm-combobox-item [value]="item">{{ item.name }}</hlm-combobox-item>
+      <hlm-combobox-item [value]="item">{{ item.name }}</hlm-combobox-item>
       }
     </div>
   </hlm-combobox-content>
@@ -579,14 +784,17 @@ Use `HlmComboboxImports` instead. The combobox supports an inline search input (
 ```
 
 > ❌ **Wrong portal structure** — will render an empty dropdown:
+>
 > ```html
 > <div *hlmComboboxPortal hlmComboboxContent>...</div>
 > ```
+>
 > ✅ **Correct** — use `<hlm-combobox-content *hlmComboboxPortal>` (element with structural directive).
 
 ### Server-side search (async)
 
-Use `[(search)]="search"` two-way binding, `toSignal` + `toObservable` + `debounceTime` + `switchMap`, and `[filter]="noOpFilter"` to disable the built-in client-side filter (results are already filtered server-side):
+Use `[(search)]="search"` two-way binding, `toSignal` + `toObservable` + `debounceTime` + `switchMap`, and `[filter]="noOpFilter"` to
+disable the built-in client-side filter (results are already filtered server-side):
 
 ```typescript
 search = signal('');
@@ -613,19 +821,22 @@ onValueChange(item: MyType | null): void {
 }
 ```
 
-> ⚠️ **Common bug — empty dropdown on open:** Do **not** guard the `switchMap` with `it ? service.find(...) : of([])`. When the combobox opens the search string is `''` (falsy), which returns an empty array and the dropdown appears blank. Always call the service unconditionally — pass the empty string and let the service return the first N results.
+> ⚠️ **Common bug — empty dropdown on open:** Do **not** guard the `switchMap` with `it ? service.find(...) : of([])`. When the combobox
+> opens the search string is `''` (falsy), which returns an empty array and the dropdown appears blank. Always call the service
+> unconditionally — pass the empty string and let the service return the first N results.
 >
 > ```typescript
 > // ❌ Wrong — dropdown is empty on open
-> switchMap(it => (it ? this.myService.findAllByName(spaceId, it, 5) : of([])))
+> switchMap(it => (it ? this.myService.findAllByName(spaceId, it, 5) : of([])));
 >
 > // ✅ Correct — service always called, returns first 5 items on open
-> switchMap(it => this.myService.findAllByName(spaceId, it, 5))
+> switchMap(it => this.myService.findAllByName(spaceId, it, 5));
 > ```
 
 ### Icons inside combobox items
 
-Use `<ng-icon hlm size="sm" [name]="..." />` inside `<hlm-combobox-item>` to show a leading icon. Bind the icon name dynamically using the item's `kind` discriminant:
+Use `<ng-icon hlm size="sm" [name]="..." />` inside `<hlm-combobox-item>` to show a leading icon. Bind the icon name dynamically using the
+item's `kind` discriminant:
 
 ```html
 <hlm-combobox-item [value]="item">
@@ -648,7 +859,8 @@ providers: [provideIcons({ lucideFolder, lucideFileText, lucidePaperclip })],
 
 ### Secondary text (slug / path) in combobox items
 
-Show supplementary info (e.g. `fullSlug`) as a muted inline span **inside** the item, and include it in `displayItem` so the trigger shows it after selection:
+Show supplementary info (e.g. `fullSlug`) as a muted inline span **inside** the item, and include it in `displayItem` so the trigger shows
+it after selection:
 
 ```html
 <hlm-combobox-item [value]="content">
@@ -685,7 +897,8 @@ imports: [..., HlmComboboxImports, HlmFieldImports, HlmIconImports],
 
 ## `matTextSuffix` → Inline-end Addon
 
-`matTextSuffix` (static text rendered at the trailing edge of a Material input) maps to `hlm-input-group-addon align="inline-end"`. It can be combined with a character counter in the same addon:
+`matTextSuffix` (static text rendered at the trailing edge of a Material input) maps to `hlm-input-group-addon align="inline-end"`. It can
+be combined with a character counter in the same addon:
 
 ```html
 <!-- ❌ Before -->
@@ -715,11 +928,11 @@ Replace `mat-stroked-button (click)="fileInput.click()"` + `<mat-icon>upload_fil
     Upload File
   </button>
   @if (fileName) {
-    <p class="text-muted-foreground text-sm">{{ fileName }}</p>
+  <p class="text-muted-foreground text-sm">{{ fileName }}</p>
   }
 </div>
 @if (fileWrong) {
-  <p class="text-destructive text-sm">The selected file does not comply with import extension (<b>*.ext.zip</b>).</p>
+<p class="text-destructive text-sm">The selected file does not comply with import extension (<b>*.ext.zip</b>).</p>
 }
 <input hidden type="file" accept=".ext.zip" #fileInput (change)="onFileChange($event)" />
 ```
@@ -740,7 +953,7 @@ When an export dialog offers no filtering (export everything), strip all form/au
 ```html
 <h2 mat-dialog-title>Export</h2>
 <mat-dialog-content>
-  <p class="text-muted-foreground text-sm py-2">All items will be exported.</p>
+  <p class="text-muted-foreground py-2 text-sm">All items will be exported.</p>
 </mat-dialog-content>
 <mat-dialog-actions align="end" class="flex gap-2">
   <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
@@ -751,7 +964,8 @@ When an export dialog offers no filtering (export everything), strip all form/au
 </mat-dialog-actions>
 ```
 
-The Export button returns `{}`. Callers that read `it?.path` receive `undefined`, which triggers a full export — no changes needed at the call site.
+The Export button returns `{}`. Callers that read `it?.path` receive `undefined`, which triggers a full export — no changes needed at the
+call site.
 
 ```typescript
 // Minimal component — no form, no service injection
@@ -768,6 +982,7 @@ export class ExportDialogComponent {
 The toggle group uses two distinct selectors — the group wrapper and a directive on native `<button>` elements.
 
 **❌ Wrong — `<hlm-toggle>` does not exist:**
+
 ```html
 <hlm-toggle-group ...>
   <hlm-toggle value="squarish">...</hlm-toggle>
@@ -775,6 +990,7 @@ The toggle group uses two distinct selectors — the group wrapper and a directi
 ```
 
 **✅ Correct — `hlmToggleGroupItem` attribute on `<button>`:**
+
 ```html
 <hlm-toggle-group type="single" variant="outline" [value]="orientation()" (valueChange)="orientation.set($event)">
   <button hlmToggleGroupItem value="squarish" hlmTooltip="Squarish">
@@ -790,6 +1006,7 @@ The toggle group uses two distinct selectors — the group wrapper and a directi
 ```
 
 Key rules:
+
 - `hlm-toggle-group` is the container (`[hlmToggleGroup]` or `<hlm-toggle-group>`)
 - Items are native `<button hlmToggleGroupItem value="...">` — no `<hlm-toggle>` component exists
 - `type="single"` for single selection, `type="multiple"` for multi
@@ -798,6 +1015,7 @@ Key rules:
 - Initial `undefined` value → nothing selected (matches Material's initial state)
 
 **Imports required:**
+
 ```typescript
 imports: [..., HlmToggleGroupImports, HlmTooltipImports, HlmIconImports],
 providers: [provideIcons({ lucideSquare, lucideMonitor, lucideSmartphone })],
@@ -807,7 +1025,8 @@ providers: [provideIcons({ lucideSquare, lucideMonitor, lucideSmartphone })],
 
 ## `MatExpansionModule` → `hlm-accordion`
 
-Replace `mat-accordion` / `mat-expansion-panel` with the `hlm-accordion` element selectors. The directive form (`div[hlmAccordion]`) also works but element selectors are preferred for consistency.
+Replace `mat-accordion` / `mat-expansion-panel` with the `hlm-accordion` element selectors. The directive form (`div[hlmAccordion]`) also
+works but element selectors are preferred for consistency.
 
 ```html
 <!-- ❌ Before -->
@@ -872,6 +1091,7 @@ Replace `mat-card` with `<hlm-card>` and its sub-elements. The Spartan card is a
 ```
 
 Key rules:
+
 - `pt-0` on `<hlm-card>` removes the default top padding so an image flush-fits to the card top
 - `overflow-hidden` clips the image to the card's rounded corners
 - Sub-elements: `<hlm-card-header>`, `<hlm-card-content>`, `<hlm-card-footer>`
@@ -883,7 +1103,8 @@ Key rules:
 
 ## Sticky Paginator in Dialogs
 
-By default, `<mat-paginator>` placed inside `<mat-dialog-actions>` scrolls with the page. To make it stick to the bottom of a scrollable dialog content area, move the paginator **into** `<mat-dialog-content>` and apply the global `mat-paginator-sticky` class:
+By default, `<mat-paginator>` placed inside `<mat-dialog-actions>` scrolls with the page. To make it stick to the bottom of a scrollable
+dialog content area, move the paginator **into** `<mat-dialog-content>` and apply the global `mat-paginator-sticky` class:
 
 ```html
 <!-- ❌ Before — paginator in actions, scrolls away -->
@@ -906,6 +1127,7 @@ By default, `<mat-paginator>` placed inside `<mat-dialog-actions>` scrolls with 
 ```
 
 The `mat-paginator-sticky` global class is defined in `src/styles/_mat-paginator.scss`:
+
 ```scss
 .mat-paginator-sticky {
   position: sticky;
@@ -914,12 +1136,15 @@ The `mat-paginator-sticky` global class is defined in `src/styles/_mat-paginator
 }
 ```
 
-For tables already migrated to `<ll-paginator>` (`src/app/shared/components/paginator/`), the same behavior is available via the `sticky` input (default `false`) — the component applies the `ll-paginator-sticky` class (defined in `src/styles/_ll-paginator.scss`) to itself:
+For tables already migrated to `<ll-paginator>` (`src/app/shared/components/paginator/`), the same behavior is available via the `sticky`
+input (default `false`) — the component applies the `ll-paginator-sticky` class (defined in `src/styles/_ll-paginator.scss`) to itself:
+
 ```html
 <ll-paginator [sticky]="true" [length]="..." />
 ```
 
-For migrating a whole `mat-table` (not just its paginator) off Material, see the dedicated [`MatTable` → `ll-table` Migration Guide](table-migration.md).
+For migrating a whole `mat-table` (not just its paginator) off Material, see the dedicated
+[`MatTable` → `ll-table` Migration Guide](table-migration.md).
 
 ---
 
@@ -929,10 +1154,15 @@ For migrating a whole `mat-table` (not just its paginator) off Material, see the
 2. **Replace** all Material form elements with Spartan equivalents (see table above)
 3. **Add** `HlmButtonImports`, `HlmFieldImports`, etc. to component `imports`; remove all `Mat*Module` form imports
 4. **Form layout** → add `class="flex flex-col gap-4 py-2"` to `<form>`, remove `<br />` spacers
-5. **Actions layout** → add `class="flex gap-2"` to `<mat-dialog-actions>`; use `variant="destructive"` on confirm buttons for destructive actions
-6. **`mat-hint`** → `<hlm-field-description>`; **char counter on text input** → `hlmInputGroup` + `hlm-input-group-addon align="inline-end"`; **char counter on textarea** → `hlmInputGroup` + `hlmInputGroupTextarea` + `hlm-input-group-addon align="block-end"` with `hlm-input-group-text`
-7. **Textarea** → use `hlmInputGroupTextarea` inside `<hlm-input-group>` (counter via `block-end` addon); use bare `hlmTextarea` only when there is no counter. Remove `HlmTextareaImports` when all textareas in the component use `hlmInputGroupTextarea`.
-8. **Chips** → replace `mat-chip-grid` with `hlmInput` + `(keydown.enter)` + `hlmBtn` outline badges; use immutable `setValue` (never `push`/`splice`)
+5. **Actions layout** → add `class="flex gap-2"` to `<mat-dialog-actions>`; use `variant="destructive"` on confirm buttons for destructive
+   actions
+6. **`mat-hint`** → `<hlm-field-description>`; **char counter on text input** → `hlmInputGroup` +
+   `hlm-input-group-addon align="inline-end"`; **char counter on textarea** → `hlmInputGroup` + `hlmInputGroupTextarea` +
+   `hlm-input-group-addon align="block-end"` with `hlm-input-group-text`
+7. **Textarea** → use `hlmInputGroupTextarea` inside `<hlm-input-group>` (counter via `block-end` addon); use bare `hlmTextarea` only when
+   there is no counter. Remove `HlmTextareaImports` when all textareas in the component use `hlmInputGroupTextarea`.
+8. **Chips** → replace `mat-chip-grid` with `hlmInput` + `(keydown.enter)` + `hlmBtn` outline badges; use immutable `setValue` (never
+   `push`/`splice`)
 9. **Boolean checkbox** → use `hlm-switch` with `formControlName`; use `hlm-checkbox` only for multi-select lists
 10. **Select with pre-selected value?** → Add `[itemToString]` mapping function (static `Record` or dynamic lookup from data)
 11. **"None" option in select?** → Use `[value]="null"`, add `placeholder` to `<hlm-select-value>`
@@ -940,12 +1170,18 @@ For migrating a whole `mat-table` (not just its paginator) off Material, see the
 13. **Checkbox with description?** → Use `div.grid.gap-1.5` + sibling `<p>`, not nested spans in `<label>`
 14. **Field error?** → Use `<hlm-field-error>`, not `[hlmFieldError]` directive
 15. **`matTextSuffix`?** → Combine with counter in one `hlm-input-group-addon align="inline-end"` (e.g. `.jpg • 12/250`)
-16. **Autocomplete?** → Use `HlmComboboxImports` — **never** `HlmAutocompleteImports` (broken). Portal must be `<hlm-combobox-content *hlmComboboxPortal>`, not `<div *hlmComboboxPortal hlmComboboxContent>`.
+16. **Autocomplete?** → Use `HlmComboboxImports` — **never** `HlmAutocompleteImports` (broken). Portal must be
+    `<hlm-combobox-content *hlmComboboxPortal>`, not `<div *hlmComboboxPortal hlmComboboxContent>`.
 17. **File upload?** → `hlmBtn variant="outline"` + `lucideUpload` + hidden `<input type="file">` + `@if (fileWrong)` error paragraph
-18. **Export with no filter?** → Strip all form logic, return `{}` from confirm button; caller's `it?.path` resolves to `undefined` (full export)
-19. **Button toggle group?** → `<hlm-toggle-group type="single" variant="outline">` with `<button hlmToggleGroupItem value="...">` children. **Never `<hlm-toggle>`** — that element does not exist.
-20. **Accordion?** → `<hlm-accordion type="multiple">` with `<hlm-accordion-item>`, `<hlm-accordion-trigger>`, `<hlm-accordion-content>`. Use element selectors, not `div[hlmAccordion]`.
-21. **Card grid?** → `<hlm-card class="overflow-hidden pt-0">` with `<hlm-card-header>` / `<hlm-card-footer>`. Apply Tailwind classes directly to `<p>` tags — no `hlmCardTitle`/`hlmCardSubtitle` directives needed.
-22. **Paginator sticky at bottom of dialog?** → Move `<mat-paginator>` into `<mat-dialog-content>` with `class="mat-paginator-sticky"` (global class in `src/styles/_mat-paginator.scss`).
+18. **Export with no filter?** → Strip all form logic, return `{}` from confirm button; caller's `it?.path` resolves to `undefined` (full
+    export)
+19. **Button toggle group?** → `<hlm-toggle-group type="single" variant="outline">` with `<button hlmToggleGroupItem value="...">` children.
+    **Never `<hlm-toggle>`** — that element does not exist.
+20. **Accordion?** → `<hlm-accordion type="multiple">` with `<hlm-accordion-item>`, `<hlm-accordion-trigger>`, `<hlm-accordion-content>`.
+    Use element selectors, not `div[hlmAccordion]`.
+21. **Card grid?** → `<hlm-card class="overflow-hidden pt-0">` with `<hlm-card-header>` / `<hlm-card-footer>`. Apply Tailwind classes
+    directly to `<p>` tags — no `hlmCardTitle`/`hlmCardSubtitle` directives needed.
+22. **Paginator sticky at bottom of dialog?** → Move `<mat-paginator>` into `<mat-dialog-content>` with `class="mat-paginator-sticky"`
+    (global class in `src/styles/_mat-paginator.scss`).
 23. **Dead code blocks (`@if (false)`)** → remove them during migration
 24. Run `npm run build && npm run lint:fix`

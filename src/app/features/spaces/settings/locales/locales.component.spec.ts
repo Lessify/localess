@@ -5,6 +5,7 @@ import { Space } from '@shared/models/space.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceStore } from '@shared/stores/space.store';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -25,6 +26,9 @@ describe('LocalesComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    // The add dialog is the one on Spartan, so it opens through a different service and hands its
+    // result back on `closed$` rather than `afterClosed()`.
+    const openAdd = vi.fn();
 
     TestBed.overrideComponent(LocalesComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -34,12 +38,13 @@ describe('LocalesComponent', () => {
         { provide: LocaleService, useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open: openAdd } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
       ],
     });
     const fixture = TestBed.createComponent(LocalesComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo, success, error, open };
+    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo, success, error, open, openAdd };
   }
 
   const en: Locale = { id: 'en', name: 'English' };
@@ -67,8 +72,8 @@ describe('LocalesComponent', () => {
   });
 
   it('openAddDialog() creates the locale and notifies success when confirmed', () => {
-    const { component, open, create, success } = setup(space([en]));
-    open.mockReturnValue({ afterClosed: () => of({ locale: de }) });
+    const { component, openAdd, create, success } = setup(space([en]));
+    openAdd.mockReturnValue({ closed$: of({ locale: de }) });
 
     component.openAddDialog();
 
@@ -77,8 +82,8 @@ describe('LocalesComponent', () => {
   });
 
   it('openAddDialog() does nothing when dismissed', () => {
-    const { component, open, create } = setup(space([en]));
-    open.mockReturnValue({ afterClosed: () => of(undefined) });
+    const { component, openAdd, create } = setup(space([en]));
+    openAdd.mockReturnValue({ closed$: of(undefined) });
 
     component.openAddDialog();
 
@@ -86,9 +91,9 @@ describe('LocalesComponent', () => {
   });
 
   it('openAddDialog() notifies an error on failure', () => {
-    const { component, open, create, error } = setup(space([en]));
+    const { component, openAdd, create, error } = setup(space([en]));
     create.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ afterClosed: () => of({ locale: de }) });
+    openAdd.mockReturnValue({ closed$: of({ locale: de }) });
 
     component.openAddDialog();
 

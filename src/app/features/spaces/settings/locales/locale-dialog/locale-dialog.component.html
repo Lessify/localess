@@ -1,31 +1,32 @@
-<h2 mat-dialog-title>Add Locale</h2>
-<mat-dialog-content>
-  <form [formGroup]="form">
-    <div hlmFieldGroup>
-      <div hlmField>
-        <label hlmFieldLabel for="locale">Locale</label>
-        <hlm-combobox id="locale" formControlName="locale" [(search)]="search" [itemToString]="displayLocale">
-          <hlm-combobox-input placeholder="English" showClear />
-          <hlm-combobox-content *hlmComboboxPortal>
-            <hlm-combobox-empty>No locale found.</hlm-combobox-empty>
-            <div hlmComboboxList>
-              @for (locale of filteredOptions(); track locale.id) {
-                <hlm-combobox-item [value]="locale">
-                  <ll-locale-icon class="mr-2" [locale]="locale.id" />
-                  {{ locale.name }}
-                </hlm-combobox-item>
-              }
-            </div>
-          </hlm-combobox-content>
-        </hlm-combobox>
-        @if (form.controls['locale'].errors; as errors) {
-          <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-        }
-      </div>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Add Locale</h2>
+  <p hlmDialogDescription>Choose the locale you with to work in your translations and content</p>
+</hlm-dialog-header>
+<form [formGroup]="form">
+  <div hlmFieldGroup>
+    <div hlmField>
+      <label hlmFieldLabel for="locale">Locale</label>
+      <hlm-combobox id="locale" formControlName="locale" [(search)]="search" [itemToString]="displayLocale">
+        <hlm-combobox-input placeholder="English" showClear />
+        <hlm-combobox-content *hlmComboboxPortal>
+          <hlm-combobox-empty>No locale found.</hlm-combobox-empty>
+          <div hlmComboboxList>
+            @for (locale of filteredOptions(); track locale.id) {
+              <hlm-combobox-item [value]="locale">
+                <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                {{ locale.name }}
+              </hlm-combobox-item>
+            }
+          </div>
+        </hlm-combobox-content>
+      </hlm-combobox>
+      @if (form.controls['locale'].errors; as errors) {
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+      }
     </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>
