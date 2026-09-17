@@ -1,3 +1,3 @@
-export interface MeEmailDialogModel {
+export interface MeEmailDialogResult {
   newEmail: string;
 }

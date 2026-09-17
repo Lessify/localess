@@ -1,13 +1,17 @@
 import { TestBed } from '@angular/core/testing';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { MePasswordDialogComponent } from './me-password-dialog.component';
 
 describe('MePasswordDialogComponent', () => {
   function setup() {
+    const close = vi.fn();
     TestBed.overrideComponent(MePasswordDialogComponent, { set: { template: '<div></div>' } });
+    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
     const fixture = TestBed.createComponent(MePasswordDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('starts with an empty, invalid newPassword control', () => {
@@ -31,5 +35,14 @@ describe('MePasswordDialogComponent', () => {
     component.form.controls['newPassword'].setValue('123456');
 
     expect(component.form.valid).toBe(true);
+  });
+
+  it('closes with the form value when saved', () => {
+    const { component, close } = setup();
+
+    component.form.controls['newPassword'].setValue('123456');
+    component.save();
+
+    expect(close).toHaveBeenCalledWith({ newPassword: '123456' });
   });
 });

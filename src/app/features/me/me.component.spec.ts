@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { MeService } from '@shared/services/me.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserStore } from '@shared/stores/user.store';
@@ -21,7 +21,7 @@ describe('MeComponent', () => {
     TestBed.overrideComponent(MeComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: MatDialog, useValue: { open } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MeService, useValue: { updateProfile, updateEmail, updatePassword } },
         { provide: UserStore, useValue: { displayName: signal('Alex'), photoURL: signal('https://example.com/a.png') } },
@@ -35,13 +35,13 @@ describe('MeComponent', () => {
   describe('openEditDialog', () => {
     it('opens the dialog with the current profile and updates it on confirm', () => {
       const { component, open, updateProfile, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ displayName: 'New Name' }) });
+      open.mockReturnValue({ closed$: of({ displayName: 'New Name' }) });
 
       component.openEditDialog();
 
       expect(open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ data: { displayName: 'Alex', photoURL: 'https://example.com/a.png' } }),
+        expect.objectContaining({ context: { displayName: 'Alex', photoURL: 'https://example.com/a.png' } }),
       );
       expect(updateProfile).toHaveBeenCalledWith({ displayName: 'New Name' });
       expect(success).toHaveBeenCalledWith('User has been updated.');
@@ -49,7 +49,7 @@ describe('MeComponent', () => {
 
     it('does nothing when the dialog is dismissed without a result', () => {
       const { component, open, updateProfile } = setup();
-      open.mockReturnValue({ afterClosed: () => of(undefined) });
+      open.mockReturnValue({ closed$: of(undefined) });
 
       component.openEditDialog();
 
@@ -59,7 +59,7 @@ describe('MeComponent', () => {
     it('notifies an error when the update fails', () => {
       const { component, open, updateProfile, error } = setup();
       updateProfile.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ displayName: 'New Name' }) });
+      open.mockReturnValue({ closed$: of({ displayName: 'New Name' }) });
 
       component.openEditDialog();
 
@@ -70,7 +70,7 @@ describe('MeComponent', () => {
   describe('openUpdateEmailDialog', () => {
     it('updates the email on confirm', () => {
       const { component, open, updateEmail, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ newEmail: 'new@example.com' }) });
+      open.mockReturnValue({ closed$: of({ newEmail: 'new@example.com' }) });
 
       component.openUpdateEmailDialog();
 
@@ -80,7 +80,7 @@ describe('MeComponent', () => {
 
     it('does nothing when dismissed without a result', () => {
       const { component, open, updateEmail } = setup();
-      open.mockReturnValue({ afterClosed: () => of(undefined) });
+      open.mockReturnValue({ closed$: of(undefined) });
 
       component.openUpdateEmailDialog();
 
@@ -90,7 +90,7 @@ describe('MeComponent', () => {
     it('notifies an error when the update fails', () => {
       const { component, open, updateEmail, error } = setup();
       updateEmail.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ newEmail: 'new@example.com' }) });
+      open.mockReturnValue({ closed$: of({ newEmail: 'new@example.com' }) });
 
       component.openUpdateEmailDialog();
 
@@ -101,7 +101,7 @@ describe('MeComponent', () => {
   describe('openUpdatePasswordDialog', () => {
     it('updates the password on confirm', () => {
       const { component, open, updatePassword, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ newPassword: 'new-password' }) });
+      open.mockReturnValue({ closed$: of({ newPassword: 'new-password' }) });
 
       component.openUpdatePasswordDialog();
 
@@ -111,7 +111,7 @@ describe('MeComponent', () => {
 
     it('does nothing when dismissed without a result', () => {
       const { component, open, updatePassword } = setup();
-      open.mockReturnValue({ afterClosed: () => of(undefined) });
+      open.mockReturnValue({ closed$: of(undefined) });
 
       component.openUpdatePasswordDialog();
 
@@ -121,7 +121,7 @@ describe('MeComponent', () => {
     it('notifies an error when the update fails', () => {
       const { component, open, updatePassword, error } = setup();
       updatePassword.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ newPassword: 'new-password' }) });
+      open.mockReturnValue({ closed$: of({ newPassword: 'new-password' }) });
 
       component.openUpdatePasswordDialog();
 

@@ -1,3 +1,5 @@
+import { DIALOG_WIDTH_LG } from '@shared/components/dialog/dialog-width';
+
 export interface ConfirmationDialogContext {
   title: string;
   content: string;
@@ -16,11 +18,5 @@ export type ConfirmationDialogVariant = 'primary' | 'destructive';
 /** `true` when confirmed. Dismissing resolves to `undefined`, which callers filter out the same way. */
 export type ConfirmationDialogResult = boolean;
 
-/**
- * Width for every confirmation dialog, shared so the 17 call sites cannot drift apart.
- *
- * `.spartan-dialog-content` is `w-full` inside an auto-sized overlay and carries `sm:max-w-sm`, so
- * width *and* max-width are both needed - a lone width utility is silently clamped to 384px. The
- * `!` is needed because the nova sheet is inside `@scope`, where proximity outranks source order.
- */
-export const CONFIRMATION_DIALOG_CONTENT_CLASS = 'w-lg! max-w-lg!';
+/** Width for every confirmation dialog, shared so the 17 call sites cannot drift apart. */
+export const CONFIRMATION_DIALOG_CONTENT_CLASS = DIALOG_WIDTH_LG;

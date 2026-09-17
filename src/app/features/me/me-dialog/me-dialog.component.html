@@ -1,17 +1,17 @@
-<h2 mat-dialog-title>User</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="displayName">Display Name</label>
-      <input hlmInput id="displayName" type="text" formControlName="displayName" class="w-full" />
-    </div>
-    <div hlmField>
-      <label hlmFieldLabel for="photoURL">Avatar URL</label>
-      <input hlmInput id="photoURL" type="text" formControlName="photoURL" class="w-full" />
-    </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>User</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex flex-col gap-4">
+  <div hlmField>
+    <label hlmFieldLabel for="displayName">Display Name</label>
+    <input hlmInput id="displayName" type="text" formControlName="displayName" class="w-full" />
+  </div>
+  <div hlmField>
+    <label hlmFieldLabel for="photoURL">Avatar URL</label>
+    <input hlmInput id="photoURL" type="text" formControlName="photoURL" class="w-full" />
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

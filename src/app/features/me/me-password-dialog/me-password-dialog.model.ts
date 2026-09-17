@@ -1,3 +1,3 @@
-export interface MePasswordDialogModel {
+export interface MePasswordDialogResult {
   newPassword: string;
 }

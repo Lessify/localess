@@ -1,20 +1,21 @@
 import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { MeService } from '@shared/services/me.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
-import { filter, switchMap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
-import { MeDialogModel } from './me-dialog/me-dialog.model';
+import { MeDialogContext, MeDialogResult } from './me-dialog/me-dialog.model';
 import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.component';
-import { MeEmailDialogModel } from './me-email-dialog/me-email-dialog.model';
+import { MeEmailDialogResult } from './me-email-dialog/me-email-dialog.model';
 import { MePasswordDialogComponent } from './me-password-dialog/me-password-dialog.component';
-import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.model';
+import { MePasswordDialogResult } from './me-password-dialog/me-password-dialog.model';
 
 @Component({
   selector: 'll-me',
@@ -24,7 +25,7 @@ import { MePasswordDialogModel } from './me-password-dialog/me-password-dialog.m
   imports: [HlmCardImports, HlmSeparatorImports, HlmButtonImports, NgOptimizedImage, UpperCasePipe],
 })
 export class MeComponent {
-  private readonly dialog = inject(MatDialog);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly meService = inject(MeService);
 
@@ -32,15 +33,16 @@ export class MeComponent {
 
   openEditDialog(): void {
     this.dialog
-      .open<MeDialogComponent, MeDialogModel, MeDialogModel>(MeDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<MeDialogResult, MeDialogContext>(MeDialogComponent, {
+        context: {
           displayName: this.userStore.displayName() || undefined,
           photoURL: this.userStore.photoURL() || undefined,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      // `closed$` does not complete the way `afterClosed()` did, hence `take(1)`.
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it =>
           //TODO handle firestore update
@@ -60,11 +62,11 @@ export class MeComponent {
 
   openUpdateEmailDialog(): void {
     this.dialog
-      .open<MeEmailDialogComponent, void, MeEmailDialogModel>(MeEmailDialogComponent, {
-        panelClass: 'sm',
+      .open<MeEmailDialogResult>(MeEmailDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.meService.updateEmail(it!.newEmail)),
       )
@@ -81,11 +83,11 @@ export class MeComponent {
 
   openUpdatePasswordDialog(): void {
     this.dialog
-      .open<MePasswordDialogComponent, void, MePasswordDialogModel>(MePasswordDialogComponent, {
-        panelClass: 'sm',
+      .open<MePasswordDialogResult>(MePasswordDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.meService.updatePassword(it!.newPassword)),
       )
