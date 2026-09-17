@@ -1,15 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideX } from '@ng-icons/lucide';
 import { getTokenUsageInfo, TokenForm, TokenPermission } from '@shared/models/token.model';
 import { TokenValidator } from '@shared/validators/token.validator';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
@@ -30,10 +31,10 @@ interface PermissionGroup {
 @Component({
   selector: 'll-token-dialog',
   templateUrl: './token-dialog.component.html',
-  styleUrls: ['./token-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'grid gap-4' },
   imports: [
-    MatDialogModule,
+    HlmDialogImports,
     ReactiveFormsModule,
     HlmBadgeImports,
     HlmButtonImports,
@@ -53,7 +54,10 @@ interface PermissionGroup {
 export class TokenDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  data = inject<TokenForm | undefined>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<TokenForm>>(BrnDialogRef);
+
+  /** Optional: creating a token opens the dialog with no context, editing one passes the token. */
+  private readonly context = injectBrnDialogContext<TokenForm>({ optional: true });
 
   form: FormGroup = this.fb.group({
     name: this.fb.control<string>('', TokenValidator.NAME),
@@ -91,8 +95,9 @@ export class TokenDialogComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    if (this.data != null) {
-      this.form.patchValue(this.data);
+    // `?.` because the injection above is optional - without it this throws on the create path.
+    if (this.context != null) {
+      this.form.patchValue(this.context);
     }
   }
 
@@ -108,5 +113,9 @@ export class TokenDialogComponent implements OnInit {
 
   resetCacheTtl(): void {
     this.form.controls['cacheTtl'].setValue(null);
+  }
+
+  save(): void {
+    this.dialogRef.close(this.form.value as TokenForm);
   }
 }

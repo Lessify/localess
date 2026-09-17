@@ -1,85 +1,85 @@
-<h2 mat-dialog-title>Token Form</h2>
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2">
-    <div hlmField>
-      <label hlmFieldLabel for="name">Name</label>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
-        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-          >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
-        >
-      </div>
-      @if (form.controls['name'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-      }
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Token Form</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-x-hidden overflow-y-auto">
+  <div hlmField>
+    <label hlmFieldLabel for="name">Name</label>
+    <div hlmInputGroup>
+      <input hlmInputGroupInput id="name" type="text" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+      <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
+        >{{ form.controls['name'].value?.length || 0 }}/30</hlm-input-group-addon
+      >
     </div>
+    @if (form.controls['name'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
 
-    <div class="flex flex-col gap-4">
-      <p class="text-sm font-semibold">Permissions</p>
-      @for (group of permissionGroups; track group.label; let last = $last) {
+  <div class="flex flex-col gap-4">
+    <p class="text-sm font-semibold">Permissions</p>
+    @for (group of permissionGroups; track group.label; let last = $last) {
+      <div class="flex flex-col gap-2">
+        <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
         <div class="flex flex-col gap-2">
-          <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
-          <div class="flex flex-col gap-2">
-            @for (perm of group.permissions; track perm.id) {
-              <div class="flex items-start gap-3">
-                <hlm-checkbox
-                  [inputId]="perm.id"
-                  [checked]="isPermissionSelected(perm.id)"
-                  (checkedChange)="togglePermission(perm.id, $event)" />
-                <div class="grid gap-1.5 leading-none">
-                  <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
-                  <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
-                </div>
+          @for (perm of group.permissions; track perm.id) {
+            <div class="flex items-start gap-3">
+              <hlm-checkbox
+                [inputId]="perm.id"
+                [checked]="isPermissionSelected(perm.id)"
+                (checkedChange)="togglePermission(perm.id, $event)" />
+              <div class="grid gap-1.5 leading-none">
+                <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
+                <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
               </div>
-            }
-          </div>
-        </div>
-        @if (!last) {
-          <hlm-separator />
-        }
-      }
-      @if (form.controls['permissions'].errors; as errors) {
-        <p class="text-destructive text-sm">{{ fe.errors(errors) }}</p>
-      }
-      <div class="flex items-center gap-2">
-        <span hlmBadge [variant]="usageInfo().variant === 'warning' ? 'destructive' : 'outline'">{{ usageInfo().label }}</span>
-        <p class="text-muted-foreground text-xs">{{ usageInfo().rationale }}</p>
-      </div>
-    </div>
-
-    <hlm-separator />
-
-    <div hlmField>
-      <label hlmFieldLabel for="cacheTtl">Cache TTL</label>
-      <div class="flex items-center gap-2">
-        <div hlmInputGroup class="flex-1">
-          <input
-            hlmInputGroupInput
-            id="cacheTtl"
-            type="number"
-            formControlName="cacheTtl"
-            min="0"
-            max="31536000"
-            autocomplete="off"
-            placeholder="60" />
-          <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
-            seconds
-            <button hlmInputGroupButton size="icon-xs" (click)="resetCacheTtl()">
-              <ng-icon name="lucideX" />
-            </button>
-          </hlm-input-group-addon>
+            </div>
+          }
         </div>
       </div>
-      <hlm-field-description>
-        Override redirect cache duration in seconds. Use 0 to disable caching. Leave empty to use the default of 60 seconds.
-      </hlm-field-description>
-      @if (form.controls['cacheTtl'].errors; as errors) {
-        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+      @if (!last) {
+        <hlm-separator />
       }
+    }
+    @if (form.controls['permissions'].errors; as errors) {
+      <p class="text-destructive text-sm">{{ fe.errors(errors) }}</p>
+    }
+    <div class="flex items-center gap-2">
+      <span hlmBadge [variant]="usageInfo().variant === 'warning' ? 'destructive' : 'outline'">{{ usageInfo().label }}</span>
+      <p class="text-muted-foreground text-xs">{{ usageInfo().rationale }}</p>
     </div>
-  </form>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
+  </div>
+
+  <hlm-separator />
+
+  <div hlmField>
+    <label hlmFieldLabel for="cacheTtl">Cache TTL</label>
+    <div class="flex items-center gap-2">
+      <div hlmInputGroup class="flex-1">
+        <input
+          hlmInputGroupInput
+          id="cacheTtl"
+          type="number"
+          formControlName="cacheTtl"
+          min="0"
+          max="31536000"
+          autocomplete="off"
+          placeholder="60" />
+        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
+          seconds
+          <button hlmInputGroupButton size="icon-xs" (click)="resetCacheTtl()">
+            <ng-icon name="lucideX" />
+          </button>
+        </hlm-input-group-addon>
+      </div>
+    </div>
+    <hlm-field-description>
+      Override redirect cache duration in seconds. Use 0 to disable caching. Leave empty to use the default of 60 seconds.
+    </hlm-field-description>
+    @if (form.controls['cacheTtl'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

@@ -1,16 +1,24 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { TokenForm, TokenPermission } from '@shared/models/token.model';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { vi } from 'vitest';
 
 import { TokenDialogComponent } from './token-dialog.component';
 
 describe('TokenDialogComponent', () => {
-  function setup(data: TokenForm | undefined) {
+  function setup(context: TokenForm | undefined) {
+    const close = vi.fn();
     TestBed.overrideComponent(TokenDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(TokenDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('starts with empty defaults when there is no data', () => {
@@ -76,5 +84,12 @@ describe('TokenDialogComponent', () => {
     component.resetCacheTtl();
 
     expect(component.form.value.cacheTtl).toBeNull();
+  });
+  it('closes with the form value when saved', () => {
+    const { component, close } = setup({ name: 'CI', permissions: [TokenPermission.CONTENT_PUBLIC] });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith({ name: 'CI', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: null });
   });
 });

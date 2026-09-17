@@ -368,8 +368,31 @@ openAdd.mockReturnValue({ closed$: of(undefined) }); // dismissed
 
 **On that last one — it cuts both ways.** It removed a 2px phantom scrollbar in Add Locale (Spartan's input-group addon is 36px inside a
 32px input group, and Material's auto-overflow turned that bleed into a scrollbar). But a **tall** dialog now runs past the viewport instead
-of scrolling inside itself, so any dialog with more content than a couple of fields needs its own `max-h-… overflow-auto` in `contentClass`
-— which brings the 2px scrollbar back with it. Import, Export, Token and Add Document are the ones to watch.
+of scrolling inside itself, so any dialog with more content than a couple of fields needs its own scroll cap. Import, Export, Token and Add
+Document are the ones to watch.
+
+### Capping a tall dialog — the two rules
+
+**Put the cap on the `<form>`, not in `contentClass`.** Everything in a Spartan dialog is a child of one box, so capping
+`.spartan-dialog-content` scrolls the header and footer out of view too. Material only ever scrolled `mat-dialog-content`, leaving the title
+and actions pinned — putting `max-h-[60vh]` on the form reproduces that.
+
+**Always name both overflow axes.** Per CSS Overflow 3, if one axis is `visible` and the other is not, `visible` computes to `auto` — so
+Tailwind's `overflow-y-auto` on its own silently gives you `overflow-x: auto` as well. Spartan's input-group addon overhangs its group by a
+fraction of a pixel (measured at **+0.34px** against the compiled sheet), which is invisible under `overflow-x: visible` and becomes a
+**horizontal scrollbar** the moment it computes to `auto`. This is what bites the dialogs listed above, because they are exactly the ones
+that are both tall and full of input groups.
+
+<!-- prettier-ignore -->
+```html
+<!-- ❌ horizontal scrollbar on any dialog containing an hlmInputGroup -->
+<form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-y-auto">
+
+<!-- ✅ -->
+<form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-x-hidden overflow-y-auto">
+```
+
+Hiding the x axis clips nothing real — the only thing out there is the sub-pixel addon bleed, inside the group's own rounded border.
 
 Unchanged by the migration: the dialog still grows when a validation message appears (~28px per line), because that is content-driven.
 Reserve space for the message if the resize matters.

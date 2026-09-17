@@ -2,7 +2,6 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideTrash } from '@ng-icons/lucide';
@@ -12,6 +11,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
@@ -67,9 +67,7 @@ import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 })
 export class TokensComponent implements AfterViewInit {
   private readonly tokenService = inject(TokenService);
-  private readonly dialog = inject(MatDialog);
-
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
@@ -115,11 +113,11 @@ export class TokensComponent implements AfterViewInit {
   openAddDialog(): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<TokenDialogComponent, never, TokenForm>(TokenDialogComponent, {
-        panelClass: 'sm',
+      .open<TokenForm>(TokenDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.tokenService.create(spaceId!, it)),
       )
@@ -137,16 +135,16 @@ export class TokensComponent implements AfterViewInit {
   openEditDialog(element: Token): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<TokenDialogComponent, TokenForm, TokenForm>(TokenDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<TokenForm, TokenForm>(TokenDialogComponent, {
+        context: {
           name: element.name,
           permissions: isTokenV2(element) ? element.permissions : [],
           cacheTtl: isTokenV2(element) ? element.cacheTtl : undefined,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.tokenService.update(spaceId!, element.id, it)),
       )
@@ -163,7 +161,7 @@ export class TokensComponent implements AfterViewInit {
 
   openRegenerateDialog(element: Token): void {
     const spaceId = this.spaceStore.selectedSpaceId();
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Regenerate Token',
@@ -189,7 +187,7 @@ export class TokensComponent implements AfterViewInit {
 
   openDeleteDialog(element: Token): void {
     const spaceId = this.spaceStore.selectedSpaceId();
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Token',
