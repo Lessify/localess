@@ -1,17 +1,25 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { vi } from 'vitest';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { AssetFile } from '@shared/models/asset.model';
 
-import { EditFileDialogModel } from './edit-file-dialog.model';
+import { EditFileDialogContext } from './edit-file-dialog.model';
 import { EditFileDialogComponent } from './edit-file-dialog.component';
 
 describe('EditFileDialogComponent', () => {
-  function setup(data: EditFileDialogModel) {
+  function setup(context: EditFileDialogContext) {
+    const close = vi.fn();
     TestBed.overrideComponent(EditFileDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: MAT_DIALOG_DATA, useValue: data }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
+      ],
+    });
     const fixture = TestBed.createComponent(EditFileDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance };
+    return { component: fixture.componentInstance, close };
   }
 
   it('detects image files from their mime type', () => {

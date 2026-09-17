@@ -13,7 +13,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { MatDialog } from '@angular/material/dialog';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -49,11 +48,12 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW, DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
-import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
+import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel } from '@shared/components/unsplash-assets-select-dialog';
+import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
   Asset,
@@ -91,16 +91,16 @@ import { Subject } from 'rxjs';
 import { concatMap, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
-import { AddFolderDialogModel } from './add-folder-dialog/add-folder-dialog.model';
+import { AddFolderDialogContext } from './add-folder-dialog/add-folder-dialog.model';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
-import { EditFileDialogModel } from './edit-file-dialog/edit-file-dialog.model';
+import { EditFileDialogContext } from './edit-file-dialog/edit-file-dialog.model';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
-import { EditFolderDialogModel } from './edit-folder-dialog/edit-folder-dialog.model';
+import { EditFolderDialogContext } from './edit-folder-dialog/edit-folder-dialog.model';
 import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogModel, ExportDialogReturn } from './export-dialog/export-dialog.model';
+import { ExportDialogContext, ExportDialogResult } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogReturn } from './import-dialog/import-dialog.model';
-import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-dialog';
+import { ImportDialogResult } from './import-dialog/import-dialog.model';
+import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
 
 @Component({
   selector: 'll-assets',
@@ -162,9 +162,7 @@ import { MoveDialogComponent, MoveDialogModel, MoveDialogReturn } from './move-d
 export class AssetsComponent implements OnInit, AfterViewInit {
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
-  private readonly dialog = inject(MatDialog);
-
-  private readonly hlmDialog = inject(HlmDialogService);
+  private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   readonly unsplashPluginService = inject(UnsplashPluginService);
@@ -301,15 +299,15 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openUnsplashDialog() {
     this.dialog
-      .open<UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogModel, UnsplashPhoto[]>(UnsplashAssetsSelectDialogComponent, {
-        panelClass: 'full-screen',
-        data: {
+      .open<UnsplashPhoto[], UnsplashAssetsSelectDialogContext>(UnsplashAssetsSelectDialogComponent, {
+        context: {
           spaceId: this.spaceId(),
           multiple: true,
         },
+        contentClass: DIALOG_WIDTH_FULL_SCREEN,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         map(it => it!),
         takeUntilDestroyed(this.destroyRef),
@@ -339,14 +337,14 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openAddFolderDialog(): void {
     this.dialog
-      .open<AddFolderDialogComponent, AddFolderDialogModel, AssetFolderCreate>(AddFolderDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<AssetFolderCreate, AddFolderDialogContext>(AddFolderDialogComponent, {
+        context: {
           reservedNames: this.assets().map(it => it.name),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.assetService.createFolder(this.spaceId(), this.parentPath, it!)),
       )
@@ -370,15 +368,15 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openEditFolderDialog(element: Asset): void {
     this.dialog
-      .open<EditFolderDialogComponent, EditFolderDialogModel, AssetFolderUpdateForm>(EditFolderDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<AssetFolderUpdateForm, EditFolderDialogContext>(EditFolderDialogComponent, {
+        context: {
           reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFolder,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it)),
       )
@@ -394,15 +392,15 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openEditFileDialog(element: Asset): void {
     this.dialog
-      .open<EditFileDialogComponent, EditFileDialogModel, AssetFileUpdateForm>(EditFileDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<AssetFileUpdateForm, EditFileDialogContext>(EditFileDialogComponent, {
+        context: {
           reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFile,
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it)),
       )
@@ -426,7 +424,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       title = 'Delete Asset';
       content = `Are you sure about deleting Asset with name: ${element.name}.`;
     }
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: title,
@@ -453,14 +451,14 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openMoveDialog(element: Asset) {
     this.dialog
-      .open<MoveDialogComponent, MoveDialogModel, MoveDialogReturn>(MoveDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<MoveDialogResult, MoveDialogContext>(MoveDialogComponent, {
+        context: {
           spaceId: this.spaceId(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.assetService.move(this.spaceId(), element.id, it!.path)),
       )
@@ -477,19 +475,15 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   onAssetSelect(element: Asset): void {
     if (element.kind === AssetKind.FILE && this.filePreview(element.type)) {
       this.dialog
-        .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
-          panelClass: 'image-preview',
-          data: {
+        .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
+          context: {
             spaceId: this.spaceId(),
             asset: element,
           },
+          contentClass: DIALOG_WIDTH_IMAGE_PREVIEW,
         })
-        .afterClosed()
-        .subscribe({
-          next: () => {
-            console.log('close');
-          },
-        });
+        .closed$.pipe(take(1))
+        .subscribe();
     } else if (element.kind === AssetKind.FOLDER) {
       this.isLoading.set(true);
       const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
@@ -519,11 +513,11 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogComponent, void, ImportDialogReturn>(ImportDialogComponent, {
-        panelClass: 'sm',
+      .open<ImportDialogResult>(ImportDialogComponent, {
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         tap(console.log),
         switchMap(it => this.taskService.createAssetImportTask(this.spaceId(), it!.file)),
@@ -546,14 +540,14 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogComponent, ExportDialogModel, ExportDialogReturn>(ExportDialogComponent, {
-        panelClass: 'sm',
-        data: {
+      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
+        context: {
           spaceId: this.spaceId(),
         },
+        contentClass: DIALOG_WIDTH_SM,
       })
-      .afterClosed()
-      .pipe(
+      .closed$.pipe(
+        take(1),
         filter(it => it !== undefined),
         switchMap(it => this.taskService.createAssetExportTask(this.spaceId(), it?.path)),
       )
@@ -575,7 +569,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   }
 
   openRegenerateMetadataDialog(): void {
-    this.hlmDialog
+    this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Regenerate Metadata',

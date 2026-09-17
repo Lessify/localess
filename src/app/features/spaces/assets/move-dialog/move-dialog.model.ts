@@ -1,10 +1,8 @@
-export interface MoveDialogModel {
+export interface MoveDialogContext {
   spaceId: string;
 }
 
-export interface MoveDialogReturn {
-  /**
-   * Asset parent path
-   */
+export interface MoveDialogResult {
+  /** Asset parent path */
   path: string;
 }

@@ -1,19 +1,21 @@
 import { NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 
-import { ImagePreviewDialogModel } from './image-preview-dialog.model';
+import { ImagePreviewDialogContext } from './image-preview-dialog.model';
 
 @Component({
   selector: 'll-asset-image-preview-dialog',
   templateUrl: './image-preview-dialog.component.html',
-  styleUrls: ['./image-preview-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, NgOptimizedImage, FormatFileSizePipe, TimeDurationPipe, HlmButtonImports],
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, NgOptimizedImage, FormatFileSizePipe, TimeDurationPipe, HlmButtonImports],
 })
 export class ImagePreviewDialogComponent {
-  data = inject<ImagePreviewDialogModel>(MAT_DIALOG_DATA);
+  /** Read-only preview: there is no result, so the dialog needs no `BrnDialogRef`. */
+  readonly context = injectBrnDialogContext<ImagePreviewDialogContext>();
 }

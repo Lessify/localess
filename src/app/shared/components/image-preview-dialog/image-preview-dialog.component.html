@@ -1,21 +1,24 @@
-<mat-dialog-content>
-  <img
-    class="image-bg object-contain"
-    width="1000"
-    height="1000"
-    loading="lazy"
-    alt="thumbnail"
-    [loaderParams]="{ thumbnail: true }"
-    ngSrc="/api/v1/spaces/{{ data.spaceId }}/assets/{{ data.asset.id }}" />
-</mat-dialog-content>
-<mat-dialog-actions class="flex !justify-between">
+<!--
+  No header: this is a picture with a caption, and Material had no title here either.
+  The sizing below used to live in `_mat-dialog.scss` under `.image-preview`, keyed off the
+  panelClass. It belongs to the image, so it moved here with it.
+-->
+<img
+  class="image-bg max-h-[calc(100vh-180px)] min-h-[800px] max-w-[calc(100vw-180px)] min-w-[800px] object-contain"
+  width="1000"
+  height="1000"
+  loading="lazy"
+  alt="thumbnail"
+  [loaderParams]="{ thumbnail: true }"
+  ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ context.asset.id }}" />
+<hlm-dialog-footer class="justify-between!">
   <div class="text-sm">
-    {{ data.asset.name }}{{ data.asset.extension }}
-    @if (data.asset.size; as size) {
+    {{ context.asset.name }}{{ context.asset.extension }}
+    @if (context.asset.size; as size) {
       <span class="border-border mx-1 inline-block h-4 border-r align-middle"></span>
       {{ size | formatFileSize }}
     }
-    @if (data.asset.metadata; as metadata) {
+    @if (context.asset.metadata; as metadata) {
       @if (metadata.width && metadata.height) {
         <span class="border-border mx-1 inline-block h-4 border-r align-middle"></span>
         W{{ metadata.width }} x H{{ metadata.height }}
@@ -26,5 +29,5 @@
       }
     }
   </div>
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Close</button>
-</mat-dialog-actions>
+  <button hlmBtn variant="outline" hlmDialogClose>Close</button>
+</hlm-dialog-footer>

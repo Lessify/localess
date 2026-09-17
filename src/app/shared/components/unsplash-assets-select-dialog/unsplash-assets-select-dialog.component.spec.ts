@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { DIALOG_DATA } from '@angular/cdk/dialog';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
+import { UnsplashAssetsSelectDialogContext } from './unsplash-assets-select-dialog.model';
 import { UnsplashAssetsSelectDialogComponent } from './unsplash-assets-select-dialog.component';
 
 function photo(id: string): UnsplashPhoto {
@@ -13,20 +14,22 @@ function photo(id: string): UnsplashPhoto {
 }
 
 describe('UnsplashAssetsSelectDialogComponent', () => {
-  function setup(data: UnsplashAssetsSelectDialogModel) {
+  function setup(context: UnsplashAssetsSelectDialogContext) {
+    const close = vi.fn();
     const random = vi.fn().mockReturnValue(of({ results: [photo('p1')], limit: 50, remaining: 49 }));
     const search = vi.fn().mockReturnValue(of({ results: [photo('p2')], limit: 50, remaining: 48, total: 1, total_pages: 1 }));
 
     TestBed.overrideComponent(UnsplashAssetsSelectDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: MAT_DIALOG_DATA, useValue: data },
+        { provide: DIALOG_DATA, useValue: context },
+        { provide: BrnDialogRef, useValue: { close } },
         { provide: UnsplashPluginService, useValue: { random, search } },
       ],
     });
     const fixture = TestBed.createComponent(UnsplashAssetsSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, random, search };
+    return { component: fixture.componentInstance, close, random, search };
   }
 
   it('loads a random set of photos on init', () => {

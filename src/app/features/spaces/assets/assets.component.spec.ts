@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
 import { AssetService } from '@shared/services/asset.service';
@@ -42,7 +41,6 @@ describe('AssetsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
-    const openConfirm = vi.fn();
     const changeAssetPath = vi.fn();
 
     TestBed.overrideComponent(AssetsComponent, { set: { template: '<ll-paginator [length]="0" />' } });
@@ -54,8 +52,7 @@ describe('AssetsComponent', () => {
         },
         { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: MatDialog, useValue: { open } },
-        { provide: HlmDialogService, useValue: { open: openConfirm } },
+        { provide: HlmDialogService, useValue: { open } },
         { provide: UnsplashPluginService, useValue: { enabled: () => false } },
         { provide: SpaceStore, useValue: { assetPath: signal(assetPath), changeAssetPath } },
       ],
@@ -79,7 +76,6 @@ describe('AssetsComponent', () => {
       success,
       error,
       open,
-      openConfirm,
       changeAssetPath,
     };
   }
@@ -159,7 +155,7 @@ describe('AssetsComponent', () => {
   describe('openAddFolderDialog', () => {
     it('creates the folder and notifies success when confirmed', () => {
       const { component, open, createFolder, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ name: 'Images' }) });
+      open.mockReturnValue({ closed$: of({ name: 'Images' }) });
 
       component.openAddFolderDialog();
 
@@ -170,7 +166,7 @@ describe('AssetsComponent', () => {
     it('notifies an error on failure', () => {
       const { component, open, createFolder, error } = setup();
       createFolder.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ afterClosed: () => of({ name: 'Images' }) });
+      open.mockReturnValue({ closed$: of({ name: 'Images' }) });
 
       component.openAddFolderDialog();
 
@@ -181,7 +177,7 @@ describe('AssetsComponent', () => {
   describe('openEditDialog', () => {
     it('routes files to openEditFileDialog', () => {
       const { component, open, updateFile, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ name: 'renamed' }) });
+      open.mockReturnValue({ closed$: of({ name: 'renamed' }) });
 
       component.openEditDialog(file({ id: 'a1' }));
 
@@ -191,7 +187,7 @@ describe('AssetsComponent', () => {
 
     it('routes folders to openEditFolderDialog', () => {
       const { component, open, updateFolder, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ name: 'renamed' }) });
+      open.mockReturnValue({ closed$: of({ name: 'renamed' }) });
 
       component.openEditDialog(folder({ id: 'f1' }));
 
@@ -202,8 +198,8 @@ describe('AssetsComponent', () => {
 
   describe('openDeleteDialog', () => {
     it('deletes and notifies success when confirmed', () => {
-      const { component, openConfirm, deleteAsset, success } = setup();
-      openConfirm.mockReturnValue({ closed$: of(true) });
+      const { component, open, deleteAsset, success } = setup();
+      open.mockReturnValue({ closed$: of(true) });
 
       component.openDeleteDialog(file({ id: 'a1', name: 'photo' }));
 
@@ -212,8 +208,8 @@ describe('AssetsComponent', () => {
     });
 
     it('does not delete when cancelled', () => {
-      const { component, openConfirm, deleteAsset } = setup();
-      openConfirm.mockReturnValue({ closed$: of(undefined) });
+      const { component, open, deleteAsset } = setup();
+      open.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(file({ id: 'a1' }));
 
@@ -224,7 +220,7 @@ describe('AssetsComponent', () => {
   describe('openMoveDialog', () => {
     it('moves and notifies success when confirmed', () => {
       const { component, open, move, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ path: 'images' }) });
+      open.mockReturnValue({ closed$: of({ path: 'images' }) });
 
       component.openMoveDialog(file({ id: 'a1' }));
 
@@ -245,7 +241,7 @@ describe('AssetsComponent', () => {
 
     it('opens the preview dialog for a previewable file', () => {
       const { component, open } = setup();
-      open.mockReturnValue({ afterClosed: () => of(undefined) });
+      open.mockReturnValue({ closed$: of(undefined) });
 
       component.onAssetSelect(file({ id: 'a1', type: 'image/png' }));
 
@@ -321,7 +317,7 @@ describe('AssetsComponent', () => {
     it('openImportDialog() creates an import task and notifies success', () => {
       const { component, open, createAssetImportTask, success } = setup();
       const uploadedFile = new File(['data'], 'assets.zip');
-      open.mockReturnValue({ afterClosed: () => of({ file: uploadedFile }) });
+      open.mockReturnValue({ closed$: of({ file: uploadedFile }) });
 
       component.openImportDialog();
 
@@ -331,7 +327,7 @@ describe('AssetsComponent', () => {
 
     it('openExportDialog() creates an export task and notifies success', () => {
       const { component, open, createAssetExportTask, success } = setup();
-      open.mockReturnValue({ afterClosed: () => of({ path: 'images' }) });
+      open.mockReturnValue({ closed$: of({ path: 'images' }) });
 
       component.openExportDialog();
 
@@ -340,8 +336,8 @@ describe('AssetsComponent', () => {
     });
 
     it('openRegenerateMetadataDialog() creates the task when confirmed', () => {
-      const { component, openConfirm, createAssetRegenerateMetadataTask, success } = setup();
-      openConfirm.mockReturnValue({ closed$: of(true) });
+      const { component, open, createAssetRegenerateMetadataTask, success } = setup();
+      open.mockReturnValue({ closed$: of(true) });
 
       component.openRegenerateMetadataDialog();
 

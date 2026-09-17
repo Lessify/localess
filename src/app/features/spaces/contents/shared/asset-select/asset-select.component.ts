@@ -5,8 +5,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
+import { DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/components/dialog/dialog-width';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
-import { ImagePreviewDialogModel } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
+import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
 import { AssetFile } from '@shared/models/asset.model';
 import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
@@ -16,11 +17,13 @@ import { AssetService } from '@shared/services/asset.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { take } from 'rxjs/operators';
 
 import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-select-dialog';
 
@@ -56,6 +59,7 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogModel } from '../assets-
 export class AssetSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(MatDialog);
+  private readonly hlmDialog = inject(HlmDialogService);
   private readonly assetService = inject(AssetService);
 
   // Input
@@ -87,15 +91,15 @@ export class AssetSelectComponent implements OnInit {
   }
 
   openImagePreview(element: AssetFile): void {
-    this.dialog
-      .open<ImagePreviewDialogComponent, ImagePreviewDialogModel, void>(ImagePreviewDialogComponent, {
-        panelClass: 'image-preview',
-        data: {
+    this.hlmDialog
+      .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
+        context: {
           spaceId: this.space().id,
           asset: element,
         },
+        contentClass: DIALOG_WIDTH_IMAGE_PREVIEW,
       })
-      .afterClosed()
+      .closed$.pipe(take(1))
       .subscribe({
         next: () => {
           console.log('close');

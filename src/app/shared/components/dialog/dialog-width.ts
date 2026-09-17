@@ -17,3 +17,15 @@ export const DIALOG_WIDTH_SM = 'sm:w-[640px]! sm:max-w-[640px]!';
 
 /** Narrower than `sm`, for dialogs that are a sentence and two buttons. */
 export const DIALOG_WIDTH_LG = 'w-lg! max-w-lg!';
+
+/** Was `panelClass: 'xl'` - min 900px, max 1280px. */
+export const DIALOG_WIDTH_XL = 'sm:w-[1280px]! sm:max-w-[1280px]!';
+
+/**
+ * Was `panelClass: 'full-screen'`. Bounds the height too, as the Material panel did - the dialog's
+ * own scrolling row is what actually scrolls, so the header and footer stay put.
+ */
+export const DIALOG_WIDTH_FULL_SCREEN = 'w-[calc(100vw-24px)]! max-w-[calc(100vw-24px)]! max-h-[calc(100vh-24px)]';
+
+/** Was `panelClass: 'image-preview'`. The image's own min/max sizing lives on the `img` element. */
+export const DIALOG_WIDTH_IMAGE_PREVIEW = 'max-w-[calc(100vw-80px)]!';

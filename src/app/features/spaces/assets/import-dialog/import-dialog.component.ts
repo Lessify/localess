@@ -1,22 +1,26 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogModule } from '@angular/material/dialog';
 import { provideIcons } from '@ng-icons/core';
 import { lucideUpload, lucideUploadCloud } from '@ng-icons/lucide';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+
+import { ImportDialogResult } from './import-dialog.model';
 
 @Component({
   selector: 'll-asset-import-dialog',
   templateUrl: './import-dialog.component.html',
-  styleUrls: ['./import-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatDialogModule, ReactiveFormsModule, HlmButtonImports, HlmIconImports],
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmIconImports],
   providers: [provideIcons({ lucideUpload, lucideUploadCloud })],
 })
 export class ImportDialogComponent {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
+  private readonly dialogRef = inject<BrnDialogRef<ImportDialogResult>>(BrnDialogRef);
 
   fileWrong = false;
   fileName = '';
@@ -37,5 +41,9 @@ export class ImportDialogComponent {
       }
     }
     this.cd.markForCheck();
+  }
+
+  save(): void {
+    this.dialogRef.close(this.form.value as ImportDialogResult);
   }
 }

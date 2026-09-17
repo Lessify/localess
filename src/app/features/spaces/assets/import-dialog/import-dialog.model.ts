@@ -1,3 +1,3 @@
-export interface ImportDialogReturn {
+export interface ImportDialogResult {
   file: File;
 }

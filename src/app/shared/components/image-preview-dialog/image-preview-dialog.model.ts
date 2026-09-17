@@ -1,6 +1,6 @@
 import { AssetFile } from '@shared/models/asset.model';
 
-export interface ImagePreviewDialogModel {
+export interface ImagePreviewDialogContext {
   spaceId: string;
   asset: AssetFile;
 }

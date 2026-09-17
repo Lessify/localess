@@ -2,16 +2,17 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideMonitor, lucideSearch, lucideSmartphone, lucideSquare } from '@ng-icons/lucide';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
@@ -19,15 +20,17 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
-import { UnsplashAssetsSelectDialogModel } from './unsplash-assets-select-dialog.model';
+import { UnsplashAssetsSelectDialogContext, UnsplashAssetsSelectDialogResult } from './unsplash-assets-select-dialog.model';
 
 @Component({
   selector: 'll-unsplash-assets-select-dialog',
   templateUrl: './unsplash-assets-select-dialog.component.html',
-  styleUrls: ['./unsplash-assets-select-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Three rows: header, a scrolling middle, pinned footer. `minmax(0,1fr)` is what lets the middle
+  // row shrink below its content so it scrolls rather than pushing the footer off-screen.
+  host: { class: 'grid grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden' },
   imports: [
-    MatDialogModule,
+    HlmDialogImports,
     NgOptimizedImage,
     DatePipe,
     HlmButtonImports,
@@ -46,7 +49,10 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
   private readonly unsplashPluginService = inject(UnsplashPluginService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly cd = inject(ChangeDetectorRef);
-  data = inject<UnsplashAssetsSelectDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<UnsplashAssetsSelectDialogResult>>(BrnDialogRef);
+
+  /** Required: `multiple` decides whether the selection model allows more than one photo. */
+  private readonly context = injectBrnDialogContext<UnsplashAssetsSelectDialogContext>();
 
   assets = signal<UnsplashPhoto[]>([]);
   limit = signal<number | undefined>(undefined);
@@ -58,7 +64,7 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
 
   orientation = signal<'landscape' | 'portrait' | 'squarish' | undefined>(undefined);
 
-  selection = new SelectionModel<UnsplashPhoto>(this.data.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
+  selection = new SelectionModel<UnsplashPhoto>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   // Subscriptions
   private destroyRef = inject(DestroyRef);
   // Loading
@@ -105,5 +111,9 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
           this.isLoading.set(false);
         },
       });
+  }
+
+  save(): void {
+    this.dialogRef.close(this.selection.selected);
   }
 }

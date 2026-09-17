@@ -1,10 +1,13 @@
-<h2 mat-dialog-title>Select Image from Unsplash</h2>
-@if (isLoading()) {
-  <hlm-progress class="h-0.5">
-    <hlm-progress-indicator />
-  </hlm-progress>
-}
-<mat-dialog-content>
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Select Image from Unsplash</h2>
+  @if (isLoading()) {
+    <hlm-progress class="h-0.5">
+      <hlm-progress-indicator />
+    </hlm-progress>
+  }
+</hlm-dialog-header>
+<!-- The middle grid row: this is what scrolls, so the footer stays reachable at any result count. -->
+<div class="min-h-0 overflow-x-hidden overflow-y-auto">
   <div hlmField class="py-2">
     <div class="flex items-center gap-2">
       <div hlmInputGroup class="flex-1">
@@ -63,17 +66,17 @@
       <button hlmBtn variant="outline" (click)="search(si.value, currentPage() + 1)">Load More</button>
     </div>
   }
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
+</div>
+<hlm-dialog-footer>
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">
     Deselect All ({{ selection.selected.length }})
   </button>
-  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Close</button>
-  <button hlmBtn [mat-dialog-close]="selection.selected" [disabled]="selection.isEmpty()">
+  <button hlmBtn variant="ghost" hlmDialogClose>Close</button>
+  <button hlmBtn [disabled]="selection.isEmpty()" (click)="save()">
     @if (selection.selected.length > 1) {
       Add Selected Assets ({{ selection.selected.length }})
     } @else {
       Add Selected Asset
     }
   </button>
-</mat-dialog-actions>
+</hlm-dialog-footer>

@@ -1,6 +1,10 @@
 import { AssetFolder } from '@shared/models/asset.model';
 
-export interface EditFolderDialogModel {
+export interface EditFolderDialogContext {
   asset: AssetFolder;
   reservedNames: string[];
+}
+
+export interface EditFolderDialogResult {
+  name: string;
 }
