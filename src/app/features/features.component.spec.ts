@@ -12,10 +12,12 @@ import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { of, Observable, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { FeaturesComponent } from './features.component';
+import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component';
 
 function configureModule(overrides: {
   findAllDocuments: ReturnType<typeof vi.fn>;
@@ -131,4 +133,19 @@ describe('FeaturesComponent', () => {
     expect(findAllDocuments).toHaveBeenCalledTimes(1);
   });
 
+  it('opens the What\'s New dialog', () => {
+    const fixture = configureModule({
+      findAllDocuments: vi.fn().mockReturnValue(of([])),
+      findAllSchemas: vi.fn().mockReturnValue(of([])),
+      updateDocuments: vi.fn(),
+      updateSchemas: vi.fn(),
+      notifyError: vi.fn(),
+    });
+    fixture.detectChanges();
+    const open = vi.spyOn(TestBed.inject(HlmDialogService), 'open').mockReturnValue({ closed$: of(undefined) } as never);
+
+    fixture.componentInstance.openWhatsNew();
+
+    expect(open).toHaveBeenCalledWith(WhatsNewDialogComponent, expect.objectContaining({ contentClass: expect.any(String) }));
+  });
 });

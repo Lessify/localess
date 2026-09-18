@@ -1,0 +1,20 @@
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>What's New</h2>
+  <p hlmDialogDescription>The changes that landed in the version you are running.</p>
+</hlm-dialog-header>
+<!-- Caps the list rather than the dialog, so the header and footer stay put while the notes scroll. -->
+<div class="grid max-h-[60vh] gap-4 overflow-y-auto">
+  @for (entry of entries; track entry.title) {
+    <article data-testid="whats-new-entry" class="grid gap-2 rounded-lg border p-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <h3 class="text-base font-medium">{{ entry.title }}</h3>
+        <span hlmBadge variant="secondary">{{ entry.version }}</span>
+        <span class="text-muted-foreground ml-auto text-xs">{{ entry.date | date: 'mediumDate' }}</span>
+      </div>
+      <p class="text-muted-foreground text-sm">{{ entry.description }}</p>
+    </article>
+  }
+</div>
+<hlm-dialog-footer>
+  <button hlmBtn hlmDialogClose>Close</button>
+</hlm-dialog-footer>

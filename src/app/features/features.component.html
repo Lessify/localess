@@ -118,6 +118,12 @@
     </div>
     <div hlmSidebarFooter>
       <ul hlmSidebarMenu>
+        <li hlmSidebarMenuItem hlmTooltip="What's New">
+          <button hlmSidebarMenuButton data-testid="whats-new" (click)="openWhatsNew()">
+            <ng-icon hlm name="lucideSparkles" />
+            What's New
+          </button>
+        </li>
         <li hlmSidebarMenuItem hlmTooltip="Welcome">
           <button hlmSidebarMenuButton routerLink="/features/welcome" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
             <ng-icon hlm name="lucideCircleQuestionMark" />

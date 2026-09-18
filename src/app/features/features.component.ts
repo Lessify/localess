@@ -43,6 +43,7 @@ import {
   lucideSettings,
   lucideShieldAlert,
   lucideShieldCheck,
+  lucideSparkles,
   lucideSun,
   lucideToyBrick,
   lucideUserCircle,
@@ -70,6 +71,7 @@ import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCollapsibleImports } from '@spartan-ng/helm/collapsible';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -82,6 +84,8 @@ import { cva } from 'class-variance-authority';
 import { filter, interval, mergeMap } from 'rxjs';
 
 import { environment } from '../../environments/environment';
+import { WHATS_NEW_DIALOG_CONTENT_CLASS } from './whats-new/whats-new.model';
+import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component';
 
 const appTextVariants = cva(
   'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',
@@ -170,6 +174,7 @@ interface SideMenuItem {
       lucideBadgeInfo,
       lucideBell,
       lucideBellDot,
+      lucideSparkles,
     }),
   ],
 })
@@ -182,6 +187,7 @@ export class FeaturesComponent implements OnInit {
   private readonly schemaService = inject(SchemaService);
   private readonly versionService = inject(VersionService);
   private readonly notificationService = inject(NotificationService);
+  private readonly hlmDialog = inject(HlmDialogService);
   public readonly sidebarService = inject(HlmSidebarService);
   public readonly spaceStore = inject(SpaceStore);
   public readonly userStore = inject(UserStore);
@@ -382,6 +388,11 @@ export class FeaturesComponent implements OnInit {
 
   async onLogoutClick(): Promise<void> {
     return await signOut(this.auth);
+  }
+
+  /** Release notes ship with the build, so the dialog needs no context of its own. */
+  openWhatsNew(): void {
+    this.hlmDialog.open(WhatsNewDialogComponent, { contentClass: WHATS_NEW_DIALOG_CONTENT_CLASS });
   }
 
   openNewTab(link: string): void {
