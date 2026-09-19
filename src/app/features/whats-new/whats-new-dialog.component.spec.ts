@@ -4,6 +4,9 @@ import { vi } from 'vitest';
 
 import { WhatsNewDialogComponent } from './whats-new-dialog.component';
 import { WHATS_NEW } from './whats-new.data';
+import { WHATS_NEW_LABEL_CLASS, WhatsNewLabel } from './whats-new.model';
+
+const LABELS: WhatsNewLabel[] = ['new', 'improved', 'fixed'];
 
 describe('WhatsNewDialogComponent', () => {
   function setup() {
@@ -14,23 +17,39 @@ describe('WhatsNewDialogComponent', () => {
     return fixture;
   }
 
-  it('renders one card per release note', () => {
+  /** The point of the grouping: a version is one block, however many stories it shipped. */
+  it('renders one card per release rather than per item', () => {
     const fixture = setup();
 
-    const cards = fixture.nativeElement.querySelectorAll('[data-testid="whats-new-entry"]');
+    const cards = fixture.nativeElement.querySelectorAll('[data-testid="whats-new-release"]');
 
     expect(cards.length).toBe(WHATS_NEW.length);
+    expect(cards.length).toBeLessThan(WHATS_NEW.flatMap(release => release.items).length);
   });
 
-  it('renders the title, description and version of every entry', () => {
+  it('renders the version and description of every release', () => {
     const fixture = setup();
 
     const text = fixture.nativeElement.textContent;
-    for (const entry of WHATS_NEW) {
-      expect(text).toContain(entry.title);
-      expect(text).toContain(entry.description);
-      expect(text).toContain(entry.version);
+    for (const release of WHATS_NEW) {
+      expect(text).toContain(release.version);
+      expect(text).toContain(release.description);
     }
+  });
+
+  it('renders every item inside its release card', () => {
+    const fixture = setup();
+
+    const cards = fixture.nativeElement.querySelectorAll('[data-testid="whats-new-release"]');
+    WHATS_NEW.forEach((release, index) => {
+      const card = cards[index];
+      expect(card.querySelectorAll('[data-testid="whats-new-item"]').length).toBe(release.items.length);
+      for (const item of release.items) {
+        expect(card.textContent).toContain(item.title);
+        expect(card.textContent).toContain(item.description);
+        expect(card.textContent).toContain(item.label);
+      }
+    });
   });
 
   /** The raw `YYYY-MM-DD` would read as a database field; users get the formatted date. */
@@ -45,19 +64,50 @@ describe('WhatsNewDialogComponent', () => {
 });
 
 describe('WHATS_NEW data', () => {
-  it('has every field filled in', () => {
-    for (const entry of WHATS_NEW) {
-      expect(entry.version).toMatch(/^\d+\.\d+\.\d+$/);
-      expect(entry.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(entry.title.length).toBeGreaterThan(0);
-      expect(entry.description.length).toBeGreaterThan(0);
+  it('has every release field filled in', () => {
+    for (const release of WHATS_NEW) {
+      expect(release.version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(release.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(release.description.length).toBeGreaterThan(0);
+      expect(release.items.length).toBeGreaterThan(0);
     }
+  });
+
+  it('has every item field filled in and labelled', () => {
+    for (const item of WHATS_NEW.flatMap(release => release.items)) {
+      expect(item.title.length).toBeGreaterThan(0);
+      expect(item.description.length).toBeGreaterThan(0);
+      expect(LABELS).toContain(item.label);
+    }
+  });
+
+  /** One block per version is the whole point - a repeated version would split it back up. */
+  it('lists each version once', () => {
+    const versions = WHATS_NEW.map(release => release.version);
+
+    expect(new Set(versions).size).toBe(versions.length);
   });
 
   /** The dialog renders the array as-is, so ordering is the data's responsibility. */
   it('is ordered newest first', () => {
-    const dates = WHATS_NEW.map(entry => entry.date);
+    const dates = WHATS_NEW.map(release => release.date);
 
     expect(dates).toEqual([...dates].sort().reverse());
+  });
+});
+
+describe('WHATS_NEW_LABEL_CLASS', () => {
+  /** A label with no colour would render as a bare outline badge, silently losing its meaning. */
+  it('gives every label a colour', () => {
+    for (const label of LABELS) {
+      expect(WHATS_NEW_LABEL_CLASS[label]).toBeTruthy();
+    }
+  });
+
+  /** The dialog is themed, so a colour with no dark counterpart would wash out in dark mode. */
+  it('pairs every colour with a dark-mode value', () => {
+    for (const label of LABELS) {
+      expect(WHATS_NEW_LABEL_CLASS[label]).toContain('dark:');
+    }
   });
 });

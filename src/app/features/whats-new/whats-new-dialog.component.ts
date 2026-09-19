@@ -5,6 +5,7 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 
 import { WHATS_NEW } from './whats-new.data';
+import { WHATS_NEW_LABEL_CLASS } from './whats-new.model';
 
 @Component({
   selector: 'll-whats-new-dialog',
@@ -20,5 +21,8 @@ export class WhatsNewDialogComponent {
    * Read straight from the shipped data instead of a dialog context: the notes describe the build
    * the user is running, so no caller is in a position to pass a different list.
    */
-  readonly entries = WHATS_NEW;
+  readonly releases = WHATS_NEW;
+
+  /** Exposed for the template; the colours themselves belong to the label, not to this dialog. */
+  readonly labelClass = WHATS_NEW_LABEL_CLASS;
 }

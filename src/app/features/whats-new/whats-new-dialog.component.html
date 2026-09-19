@@ -4,14 +4,26 @@
 </hlm-dialog-header>
 <!-- Caps the list rather than the dialog, so the header and footer stay put while the notes scroll. -->
 <div class="grid max-h-[60vh] gap-4 overflow-y-auto">
-  @for (entry of entries; track entry.title) {
-    <article data-testid="whats-new-entry" class="grid gap-2 rounded-lg border p-4">
-      <div class="flex flex-wrap items-center gap-2">
-        <h3 class="text-base font-medium">{{ entry.title }}</h3>
-        <span hlmBadge variant="secondary">{{ entry.version }}</span>
-        <span class="text-muted-foreground ml-auto text-xs">{{ entry.date | date: 'mediumDate' }}</span>
-      </div>
-      <p class="text-muted-foreground text-sm">{{ entry.description }}</p>
+  @for (release of releases; track release.version) {
+    <article data-testid="whats-new-release" class="rounded-lg border">
+      <header class="grid gap-2 p-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="text-base font-medium">Version {{ release.version }}</h3>
+          <span class="text-muted-foreground ml-auto text-xs">{{ release.date | date: 'mediumDate' }}</span>
+        </div>
+        <p class="text-muted-foreground text-sm">{{ release.description }}</p>
+      </header>
+      <ul class="divide-y border-t">
+        @for (item of release.items; track item.title) {
+          <li data-testid="whats-new-item" class="grid gap-1.5 p-4">
+            <div class="flex flex-wrap items-center gap-2">
+              <span hlmBadge variant="outline" [class]="labelClass[item.label]">{{ item.label }}</span>
+              <span class="text-sm font-medium">{{ item.title }}</span>
+            </div>
+            <p class="text-muted-foreground text-sm">{{ item.description }}</p>
+          </li>
+        }
+      </ul>
     </article>
   }
 </div>
