@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 import { WhatsNewDialogComponent } from './whats-new-dialog.component';
 import { WHATS_NEW } from './whats-new.data';
-import { WHATS_NEW_LABEL_CLASS, WhatsNewLabel } from './whats-new.model';
+import { WHATS_NEW_LABEL_CLASS, WhatsNewLabel, isVersionNewer } from './whats-new.model';
 
 const LABELS: WhatsNewLabel[] = ['new', 'improved', 'fixed'];
 
@@ -109,5 +109,35 @@ describe('WHATS_NEW_LABEL_CLASS', () => {
     for (const label of LABELS) {
       expect(WHATS_NEW_LABEL_CLASS[label]).toContain('dark:');
     }
+  });
+});
+
+describe('isVersionNewer', () => {
+  it('treats nothing seen yet as older than any release', () => {
+    expect(isVersionNewer('4.0.0', '')).toBe(true);
+  });
+
+  it('is false for the version already seen', () => {
+    expect(isVersionNewer('4.0.0', '4.0.0')).toBe(false);
+  });
+
+  it('is false when the seen version is ahead', () => {
+    expect(isVersionNewer('3.0.0', '4.0.0')).toBe(false);
+  });
+
+  /** The trap a string comparison falls into: '3.10.0' < '3.9.0' as text, but not as versions. */
+  it('compares parts as numbers, not as text', () => {
+    expect(isVersionNewer('3.10.0', '3.9.0')).toBe(true);
+    expect(isVersionNewer('3.9.0', '3.10.0')).toBe(false);
+  });
+
+  it('compares patch and minor parts', () => {
+    expect(isVersionNewer('3.0.1', '3.0.0')).toBe(true);
+    expect(isVersionNewer('3.1.0', '3.0.1')).toBe(true);
+  });
+
+  it('treats a missing part as zero', () => {
+    expect(isVersionNewer('4.0', '4.0.0')).toBe(false);
+    expect(isVersionNewer('4.0.1', '4.0')).toBe(true);
   });
 });

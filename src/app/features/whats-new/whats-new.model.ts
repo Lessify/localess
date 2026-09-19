@@ -43,5 +43,24 @@ export interface WhatsNewRelease {
   items: WhatsNewItem[];
 }
 
+/**
+ * Whether `version` sits after `than` in release order. Compares the dot-separated parts as
+ * numbers rather than as text - `'3.10.0' > '3.9.0'` is false when compared as strings, which is
+ * how an upgrade notice ends up pointing backwards.
+ *
+ * An empty `than` is treated as "nothing seen yet", so a first-time user is told about the notes.
+ */
+export function isVersionNewer(version: string, than: string): boolean {
+  if (than === '') return true;
+  const left = version.split('.').map(Number);
+  const right = than.split('.').map(Number);
+  for (let i = 0; i < Math.max(left.length, right.length); i++) {
+    const a = left[i] ?? 0;
+    const b = right[i] ?? 0;
+    if (a !== b) return a > b;
+  }
+  return false;
+}
+
 /** Wide enough for prose, matching the other content-heavy dialogs. */
 export const WHATS_NEW_DIALOG_CONTENT_CLASS = DIALOG_WIDTH_SM;

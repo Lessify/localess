@@ -20,7 +20,8 @@ export interface LocalSettingsState {
   assetDialogLayout: DataLayout;
   translationLayout: TranslationLayout;
   markdownMode: MarkdownMode;
-  lastSeenVersion: string;
+  /** Latest release-notes version the user has opened the What's New dialog on, e.g. `4.0.0`. */
+  lastSeenWhatsNewVersion: string;
 }
 
 export const initialState: LocalSettingsState = {
@@ -35,7 +36,7 @@ export const initialState: LocalSettingsState = {
   // Authors who write markdown by hand are the ones a MARKDOWN field is for, and this keeps the
   // field behaving as it always has until someone opts into the visual editor.
   markdownMode: 'source',
-  lastSeenVersion: '',
+  lastSeenWhatsNewVersion: '',
 };
 
 function setDocumentTheme(theme: Theme) {
@@ -117,9 +118,9 @@ export const LocalSettingsStore = signalStore(
         patchState(store, { markdownMode });
         localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), markdownMode }));
       },
-      setLastSeenVersion: (lastSeenVersion: string): void => {
-        patchState(store, { lastSeenVersion });
-        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), lastSeenVersion }));
+      setLastSeenWhatsNewVersion: (lastSeenWhatsNewVersion: string): void => {
+        patchState(store, { lastSeenWhatsNewVersion });
+        localStorage.setItem(LS_KEY, JSON.stringify({ ...getState(store), lastSeenWhatsNewVersion }));
       },
     };
   }),
@@ -134,7 +135,7 @@ export const LocalSettingsStore = signalStore(
       assetDialogLayout: computed(() => store.assetDialogLayout()),
       translationLayout: computed(() => store.translationLayout()),
       markdownMode: computed(() => store.markdownMode()),
-      lastSeenVersion: computed(() => store.lastSeenVersion()),
+      lastSeenWhatsNewVersion: computed(() => store.lastSeenWhatsNewVersion()),
     };
   }),
   withHooks({

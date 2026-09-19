@@ -18,8 +18,6 @@ import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/ro
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
-  lucideBell,
-  lucideBellDot,
   lucideBookOpen,
   lucideChevronDown,
   lucideChevronRight,
@@ -27,6 +25,7 @@ import {
   lucideCircleQuestionMark,
   lucideCode,
   lucideCode2,
+  lucideDot,
   lucideEarth,
   lucideExternalLink,
   lucideFileCheck,
@@ -74,6 +73,7 @@ import { HlmCollapsibleImports } from '@spartan-ng/helm/collapsible';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmHoverCardImports } from '@spartan-ng/helm/hover-card';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
@@ -81,10 +81,11 @@ import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
-import { filter, interval, mergeMap } from 'rxjs';
+import { filter, mergeMap, timer } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { WHATS_NEW_DIALOG_CONTENT_CLASS } from './whats-new/whats-new.model';
+import { WHATS_NEW } from './whats-new/whats-new.data';
+import { isVersionNewer, WHATS_NEW_DIALOG_CONTENT_CLASS } from './whats-new/whats-new.model';
 import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component';
 
 const appTextVariants = cva(
@@ -127,6 +128,7 @@ interface SideMenuItem {
     LogoComponent,
     HlmSidebarImports,
     HlmIconImports,
+    HlmHoverCardImports,
     HlmTooltipImports,
     HlmDropdownMenuImports,
     HlmAvatarImports,
@@ -172,8 +174,7 @@ interface SideMenuItem {
       lucideSun,
       lucideCode,
       lucideBadgeInfo,
-      lucideBell,
-      lucideBellDot,
+      lucideDot,
       lucideSparkles,
     }),
   ],
@@ -199,10 +200,51 @@ export class FeaturesComponent implements OnInit {
   showDebugSettings = signal(false);
 
   version = environment.version;
-  latestRelease?: Release;
+  /** Undefined until GitHub answers, and stays that way if it never does - the row still renders. */
+  latestRelease = signal<Release | undefined>(undefined);
   currentVersion = signal<Version | undefined>(undefined);
 
+  /**
+   * Whether GitHub has published a release newer than this build. Tags carry a leading `v` that
+   * `environment.version` does not, so it is stripped before comparing part by part.
+   */
+  hasNewVersion = computed(() => {
+    const tag = this.latestRelease()?.tag_name;
+    return tag ? isVersionNewer(tag.replace(/^v/, ''), this.version) : false;
+  });
+
   appTextClass = computed(() => appTextVariants({ variant: this.appSettingsStore.ui()?.color }));
+
+  /**
+   * How far this install has drifted, in whole days between its build and the newest release.
+   * Deployments are automated, so the build date tracks the release the install is running.
+   *
+   * Zero means "nothing to report": no update, no build date yet, or an unparsable date. The
+   * template keys off `> 0`, so an unknown gap prints nothing rather than a misleading number.
+   */
+  daysBehind = computed(() => {
+    const publishedAt = this.latestRelease()?.published_at;
+    const buildDate = this.currentVersion()?.buildDate;
+    if (!publishedAt || !buildDate || !this.hasNewVersion()) return 0;
+    const days = Math.floor((Date.parse(publishedAt) - Date.parse(buildDate)) / 86_400_000);
+    return days > 0 ? days : 0;
+  });
+
+  versionTooltip = computed(() => {
+    const release = this.latestRelease();
+    if (!release || !this.hasNewVersion()) return `You are on the latest version.`;
+    const buildDate = this.currentVersion()?.buildDate;
+    const built = buildDate ? ` This build is from ${new Date(buildDate).toLocaleDateString()}.` : '';
+    const behind = this.daysBehind();
+    const gap = behind > 0 ? ` It was released ${behind} ${behind === 1 ? 'day' : 'days'} after your build.` : '';
+    return `Version ${release.tag_name} is available. Open the release notes on GitHub.${gap}${built}`;
+  });
+
+  /**
+   * Whether this build ships release notes the user has not opened yet. Keyed on the notes that
+   * shipped rather than on the deployed build, so a patch release with nothing to say stays quiet.
+   */
+  hasUnseenWhatsNew = computed(() => isVersionNewer(WHATS_NEW[0].version, this.localeSettingsStore.lastSeenWhatsNewVersion()));
 
   userSideMenu: Signal<SideMenuItem[]> = computed(() => {
     const selectedSpaceId = this.spaceStore.selectedSpaceId();
@@ -287,7 +329,7 @@ export class FeaturesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: value => {
-          this.latestRelease = value;
+          this.latestRelease.set(value);
         },
       });
     effect(async () => {
@@ -355,7 +397,9 @@ export class FeaturesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    interval(300000)
+    // Emits immediately, then every 5 minutes: without the leading 0 the build date is unknown for
+    // the first five minutes of every session, and anything keyed on it renders blank.
+    timer(0, 300000)
       .pipe(
         mergeMap(() => this.versionService.checkRemoteVersion()),
         takeUntilDestroyed(this.destroyRef),
@@ -393,16 +437,13 @@ export class FeaturesComponent implements OnInit {
   /** Release notes ship with the build, so the dialog needs no context of its own. */
   openWhatsNew(): void {
     this.hlmDialog.open(WhatsNewDialogComponent, { contentClass: WHATS_NEW_DIALOG_CONTENT_CLASS });
+    // Recorded on open rather than on close: the notes are on screen either way, and a user who
+    // dismisses with Escape has still seen them.
+    this.localeSettingsStore.setLastSeenWhatsNewVersion(WHATS_NEW[0].version);
   }
 
   openNewTab(link: string): void {
     window.open(link);
-  }
-
-  openNewTabChangelog(tagName: string): void {
-    const [major] = tagName.split('.');
-    window.open('https://localess.org/changelog/' + major + '#' + tagName);
-    this.localeSettingsStore.setLastSeenVersion(tagName);
   }
 
   switchTheme() {

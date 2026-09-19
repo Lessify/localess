@@ -129,10 +129,21 @@ describe('LocalSettingsStore', () => {
     expect(reloaded.markdownMode()).toBe('wysiwyg');
   });
 
-  it('setLastSeenVersion updates the lastSeenVersion signal and persists it', () => {
+  it('setLastSeenWhatsNewVersion updates the lastSeenWhatsNewVersion signal and persists it', () => {
     const store = createStore();
-    store.setLastSeenVersion('3.2.0');
-    expect(store.lastSeenVersion()).toBe('3.2.0');
-    expect(JSON.parse(localStorage.getItem(LS_KEY)!).lastSeenVersion).toBe('3.2.0');
+    store.setLastSeenWhatsNewVersion('4.0.0');
+    expect(store.lastSeenWhatsNewVersion()).toBe('4.0.0');
+    expect(JSON.parse(localStorage.getItem(LS_KEY)!).lastSeenWhatsNewVersion).toBe('4.0.0');
+  });
+
+  /** Installs upgrading from a build that stored the removed `lastSeenVersion` must still load. */
+  it('ignores settings keys it no longer knows about', () => {
+    localStorage.setItem(LS_KEY, JSON.stringify({ theme: 'dark', lastSeenVersion: 'v3.2.0' }));
+    TestBed.resetTestingModule();
+
+    const store = createStore();
+
+    expect(store.theme()).toBe('dark');
+    expect(store.lastSeenWhatsNewVersion()).toBe('');
   });
 });

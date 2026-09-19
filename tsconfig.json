@@ -67,7 +67,8 @@
       "@spartan-ng/helm/toggle-group": ["./libs/ui/toggle-group/src/index.ts"],
       "@spartan-ng/helm/tooltip": ["./libs/ui/tooltip/src/index.ts"],
       "@spartan-ng/helm/typography": ["./libs/ui/typography/src/index.ts"],
-      "@spartan-ng/helm/utils": ["./libs/ui/utils/src/index.ts"]
+      "@spartan-ng/helm/utils": ["./libs/ui/utils/src/index.ts"],
+      "@spartan-ng/helm/hover-card": ["./libs/ui/hover-card/src/index.ts"]
     },
     "useDefineForClassFields": false
   },

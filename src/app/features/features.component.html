@@ -122,6 +122,16 @@
           <button hlmSidebarMenuButton data-testid="whats-new" (click)="openWhatsNew()">
             <ng-icon hlm name="lucideSparkles" />
             What's New
+            @if (hasUnseenWhatsNew()) {
+              <!-- A dot, not the shield used by the row below: that one means "upgrade available", this one means "unread". -->
+              <ng-icon
+                hlm
+                name="lucideDot"
+                size="lg"
+                data-testid="whats-new-dot"
+                class="text-destructive ml-auto"
+                aria-label="New release notes" />
+            }
           </button>
         </li>
         <li hlmSidebarMenuItem hlmTooltip="Welcome">
@@ -155,21 +165,62 @@
             Sponsor Us
           </button>
         </li>
-        @if (latestRelease) {
-          @let hasNewVersion = latestRelease.tag_name > 'v' + version;
-          <li hlmSidebarMenuItem [hlmTooltip]="hasNewVersion ? 'A new version is available.' : 'You are on the latest version.'">
-            <button hlmSidebarMenuButton (click)="openNewTabChangelog(latestRelease.tag_name)">
-              @if (hasNewVersion) {
-                <ng-icon hlm name="lucideShieldAlert" class="flash motion-safe:animate-pulse" />
-              } @else {
-                <ng-icon hlm name="lucideShieldCheck" />
-              }
+        <!-- Always rendered: the running version is worth showing even when GitHub cannot be reached. -->
+        @let release = latestRelease();
+        @if (hasNewVersion() && release) {
+          <!-- The hover card replaces the tooltip here: both open on hover, and the card says more. -->
+          <li hlmSidebarMenuItem hlmHoverCard>
+            <button
+              hlmSidebarMenuButton
+              size="lg"
+              data-testid="app-version"
+              hlmHoverCardTrigger
+              [hlmHoverCardTriggerFor]="releaseNotes"
+              align="top"
+              (click)="openNewTab(release.html_url)">
+              <ng-icon hlm name="lucideShieldAlert" class="text-destructive flash motion-safe:animate-pulse" />
+              <div class="grid flex-1 text-left leading-tight">
+                <span class="truncate text-sm">Version: {{ version }}</span>
+                <span class="text-destructive truncate text-xs" data-testid="app-version-available">
+                  {{ release.tag_name }} available
+                  @if (daysBehind() > 0) {
+                    <span data-testid="app-version-behind">· {{ daysBehind() }} {{ daysBehind() === 1 ? 'day' : 'days' }} behind</span>
+                  }
+                </span>
+              </div>
+              <ng-icon hlm name="lucideExternalLink" class="ml-auto" />
+            </button>
+            <ng-template hlmHoverCardPortal #releaseNotes>
+              <!-- `w-96` beats the directive's own `w-64`: static host classes are merged last, through twMerge. -->
+              <div hlmHoverCardContent class="w-96" data-testid="release-hover-card">
+                <div class="grid gap-2">
+                  <div class="flex items-baseline gap-2">
+                    <span class="truncate font-medium">{{ release.name || release.tag_name }}</span>
+                    @if (release.published_at) {
+                      <span class="text-muted-foreground ml-auto shrink-0 text-xs">{{ release.published_at | date: 'mediumDate' }}</span>
+                    }
+                  </div>
+                  <!-- Notes are GitHub markdown shown as written; capped so a long release cannot fill the screen. -->
+                  @if (release.body) {
+                    <div
+                      class="max-h-80 overflow-y-auto text-xs leading-relaxed whitespace-pre-wrap"
+                      data-testid="release-hover-card-body"
+                      >{{ release.body }}</div
+                    >
+                  } @else {
+                    <p class="text-muted-foreground text-xs" data-testid="release-hover-card-empty">This release has no notes.</p>
+                  }
+                  <span class="text-muted-foreground border-t pt-2 text-xs">Click to open the full notes on GitHub.</span>
+                </div>
+              </div>
+            </ng-template>
+          </li>
+        } @else {
+          <li hlmSidebarMenuItem [hlmTooltip]="versionTooltip()">
+            <!-- Nothing to open, so the row only states the version; the button keeps it visually in line with its neighbours. -->
+            <button hlmSidebarMenuButton data-testid="app-version" class="cursor-default">
+              <ng-icon hlm name="lucideShieldCheck" />
               Version: {{ version }}
-              @if (localeSettingsStore.lastSeenVersion() === latestRelease.tag_name) {
-                <ng-icon hlm name="lucideBell" class="ml-auto" />
-              } @else {
-                <ng-icon hlm name="lucideBellDot" class="text-destructive ml-auto" />
-              }
             </button>
           </li>
         }
