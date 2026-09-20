@@ -143,4 +143,53 @@ describe('TranslationListComponent', () => {
       expect(component.identifyLocaleStatus(translation({ locales: { en: 'Hi' } }), 'en')).toBe(LocaleStatus.TRANSLATED);
     });
   });
+
+  describe('tree expansion', () => {
+    const items = [translation({ id: 'home.title' }), translation({ id: 'home.nav.back' }), translation({ id: 'footer' })];
+
+    it('starts with nothing expanded', () => {
+      const { component } = setup(items);
+
+      expect(component.expandedKeys()).toEqual(new Set());
+    });
+
+    it('remembers manual expansion while no filter is active', () => {
+      const { component } = setup(items);
+
+      component.onExpandedKeysChange(new Set(['home']));
+
+      expect(component.expandedKeys()).toEqual(new Set(['home']));
+    });
+
+    it('expands every group when a filter becomes active', () => {
+      const { component, fixture } = setup(items);
+
+      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
+      fixture.detectChanges();
+
+      expect(component.expandedKeys()).toEqual(new Set(['home', 'home.nav']));
+    });
+
+    it('restores the manual expansion state when the filter clears', () => {
+      const { component, fixture } = setup(items);
+      component.onExpandedKeysChange(new Set(['home']));
+
+      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
+      fixture.detectChanges();
+      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: '', labels: [], states: [] });
+      fixture.detectChanges();
+
+      expect(component.expandedKeys()).toEqual(new Set(['home']));
+    });
+
+    it('allows collapsing a group while a filter is active', () => {
+      const { component, fixture } = setup(items);
+      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
+      fixture.detectChanges();
+
+      component.onExpandedKeysChange(new Set(['home']));
+
+      expect(component.expandedKeys()).toEqual(new Set(['home']));
+    });
+  });
 });

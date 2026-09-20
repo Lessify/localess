@@ -23,7 +23,7 @@ src/app/features/spaces/tasks/
 
 ## TasksComponent
 
-A paginated `ll-table` (see the [`MatTable` → `ll-table` Migration Guide](../../table-migration.md)) of all Tasks for the current space — the first component migrated off `MatTable`/`MatPaginator`. Each row shows the task type, status, file info, description, and creation date; the `id` column hides below the `@5xl` container-query breakpoint. Rows are clickable and navigate to `TaskDetailComponent` via `navigateToDetail(task)`.
+A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks for the current space — the first component migrated off `MatTable`/`MatPaginator`. Each row shows the task type, status, file info, description, and creation date; the `id` column hides below the `@5xl` container-query breakpoint. Rows are clickable and navigate to `TaskDetailComponent` via `navigateToDetail(task)`.
 
 **Injected services:** `TaskService`, `MatDialog` (still used for the delete confirmation dialog frame), `NotificationService`
 

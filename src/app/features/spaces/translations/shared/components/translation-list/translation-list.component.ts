@@ -1,14 +1,10 @@
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import { MatTreeModule } from '@angular/material/tree';
-import { provideIcons } from '@ng-icons/core';
-import { lucideChevronDown, lucideChevronRight } from '@ng-icons/lucide';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { collectGroupKeys, LlTreeImports } from '@shared/components/tree/tree.imports';
 import { Locale } from '@shared/models/locale.model';
 import { isLocaleStatus, isTranslationStatus, LocaleStatus, Translation, TranslationStatus } from '@shared/models/translation.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 
@@ -25,19 +21,11 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
   imports: [
     CommonModule,
     ScrollingModule,
-    MatTreeModule,
+    LlTreeImports,
     TranslationStatusComponent,
     TranslationStringViewComponent,
-    HlmButtonImports,
-    HlmIconImports,
     HlmItemImports,
     HlmSpinnerImports,
-  ],
-  providers: [
-    provideIcons({
-      lucideChevronRight,
-      lucideChevronDown,
-    }),
   ],
 })
 export class TranslationListComponent {
@@ -69,11 +57,49 @@ export class TranslationListComponent {
   readonly translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   readonly translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
 
-  // Tree features
-  readonly childrenAccessor = (node: TranslationNode) => node.children ?? [];
-  readonly hasChild = (_: number, node: TranslationNode) => !!node.children && node.children.length > 0;
-  readonly trackBy = (_: number, node: TranslationNode) => this.expansionKey(node);
-  readonly expansionKey = (node: TranslationNode) => node.key;
+  /** True when any filter narrows the list — search text, labels or states. */
+  readonly isFiltering = computed(() => {
+    const criteria = this.filterCriteria();
+    return !!(criteria?.search || criteria?.labels?.length || criteria?.states?.length);
+  });
+
+  /** Expansion the user chose by hand while browsing unfiltered. */
+  private readonly manualExpandedKeys = signal<ReadonlySet<string>>(new Set<string>());
+
+  /**
+   * Expansion the user chose by hand *during* the current filter. Reset to `null`
+   * whenever the criteria change, so each new filter starts fully expanded again.
+   */
+  private readonly filterExpandedKeys = linkedSignal<TranslationFilterCriteria | undefined, ReadonlySet<string> | null>({
+    source: this.filterCriteria,
+    computation: () => null,
+  });
+
+  /**
+   * While a filter is active the tree opens fully, so no match can hide behind a
+   * collapsed parent; the manual state is restored once the filter clears.
+   */
+  readonly expandedKeys = computed<ReadonlySet<string>>(() => {
+    if (!this.isFiltering()) {
+      return this.manualExpandedKeys();
+    }
+    return this.filterExpandedKeys() ?? collectGroupKeys(this.translationTreeFiltered());
+  });
+
+  onExpandedKeysChange(keys: ReadonlySet<string>): void {
+    if (this.isFiltering()) {
+      this.filterExpandedKeys.set(keys);
+    } else {
+      this.manualExpandedKeys.set(keys);
+    }
+  }
+
+  onNodeSelect(node: TranslationNode): void {
+    const translation = this.translationMap().get(node.key);
+    if (translation) {
+      this.translationSelect.emit(translation);
+    }
+  }
 
   identifyTranslationStatus(translate: Translation): TranslationStatus {
     return identifyTranslationStatus(translate, this.availableLocales());

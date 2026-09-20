@@ -143,9 +143,8 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
-| `MatTable` → `ll-table` migration | [docs/table-migration.md](docs/table-migration.md) | `src/app/shared/components/table/`, `src/app/shared/components/paginator/`, any `mat-table` migration |
+| **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `src/app/shared/components/`; read before adding or changing one |
 | Frontend testing — Vitest setup, Firebase mocking patterns, `test.isolate: false` pitfalls | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
-| Reusable filter toolbar (search + single/multi-select popovers) | [docs/filter-toolbar.md](docs/filter-toolbar.md) | `src/app/shared/components/filter-toolbar/`, `src/app/core/utils/filter-predicate-utils.service.ts`, any table/list filtering UI |
 | **Deployment & self-hosting** | | |
 | Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Phase 1 — Firebase provisioning (`npm run localess:setup`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/localess.mjs`, `scripts/localess/`, `firebase.json` `auth` block |

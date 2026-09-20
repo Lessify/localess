@@ -1,6 +1,6 @@
 # Spaces — Schemas Module
 
-> Parent: [Spaces Overview](overview.md) · Related: [Contents](contents.md) · [Concepts — Schema](../../concepts.md) · [Filter Toolbar](../../filter-toolbar.md) · [Table Migration](../../table-migration.md)
+> Parent: [Spaces Overview](overview.md) · Related: [Contents](contents.md) · [Concepts — Schema](../../concepts.md) · [Filter Toolbar](../../components/filter-toolbar.md) · [Table](../../components/table.md)
 
 ## Purpose
 
@@ -32,7 +32,7 @@ src/app/features/spaces/schemas/
 
 ## SchemasComponent
 
-Displays all schemas in an `ll-table` (see [Table Migration](../../table-migration.md)), filterable by **labels** (multi-select) and free-text search via an `<ll-filter-toolbar>` (see [Filter Toolbar](../../filter-toolbar.md)) — no page-owned `FormGroup` or hand-written predicate anymore.
+Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), filterable by **labels** (multi-select) and free-text search via an `<ll-filter-toolbar>` (see [Filter Toolbar](../../components/filter-toolbar.md)) — no page-owned `FormGroup` or hand-written predicate anymore.
 
 **Injected services:** `SchemaService`, `TaskService`, `MatDialog`, `NotificationService`
 

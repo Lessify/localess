@@ -1,9 +1,8 @@
+import { LlTreeNode } from '@shared/components/tree/tree.imports';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleStatus, Translation, TranslationStatus } from '@shared/models/translation.model';
 
-export interface TranslationNode {
-  name: string;
-  key: string;
+export interface TranslationNode extends LlTreeNode {
   children?: TranslationNode[];
 }
 
