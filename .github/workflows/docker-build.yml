@@ -13,7 +13,9 @@ on:
   push:
     branches: [main]
     tags:
-      - 'v*.*.*'
+      # Releases are tagged as a plain `4.0.0` from 4.0.0 on; the pattern stays loose so a tag that slips
+      # back into the old `v4.1.0` form still produces an image rather than silently producing none.
+      - '*.*.*'
     # Only build when files in these directories have been changed
     paths:
       - src/**

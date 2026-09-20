@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 import { WhatsNewDialogComponent } from './whats-new-dialog.component';
 import { WHATS_NEW } from './whats-new.data';
-import { WHATS_NEW_LABEL_CLASS, WhatsNewLabel, isVersionNewer } from './whats-new.model';
+import { WHATS_NEW_LABEL_CLASS, WhatsNewLabel, isVersionAtLeast, isVersionNewer } from './whats-new.model';
 
 const LABELS: WhatsNewLabel[] = ['new', 'improved', 'fixed'];
 
@@ -139,5 +139,36 @@ describe('isVersionNewer', () => {
   it('treats a missing part as zero', () => {
     expect(isVersionNewer('4.0', '4.0.0')).toBe(false);
     expect(isVersionNewer('4.0.1', '4.0')).toBe(true);
+  });
+});
+
+describe('isVersionAtLeast', () => {
+  /** The floor is inclusive - 4.0.0 is supported, it is simply not newer than itself. */
+  it('accepts the minimum itself', () => {
+    expect(isVersionAtLeast('4.0.0', '4.0.0')).toBe(true);
+  });
+
+  it('accepts anything after the minimum', () => {
+    expect(isVersionAtLeast('4.0.1', '4.0.0')).toBe(true);
+    expect(isVersionAtLeast('10.0.0', '4.0.0')).toBe(true);
+  });
+
+  it('rejects anything before the minimum', () => {
+    expect(isVersionAtLeast('3.2.0', '4.0.0')).toBe(false);
+  });
+
+  /**
+   * The tags support was dropped for still arrive from GitHub. Worth pinning: `Number('v3')` is
+   * `NaN`, and a comparison against `NaN` is false either way, so an unguarded floor lets these in.
+   */
+  it('rejects a tag it cannot read as a version', () => {
+    expect(isVersionAtLeast('v3.2.0', '4.0.0')).toBe(false);
+    expect(isVersionAtLeast('v9.9.9', '4.0.0')).toBe(false);
+    expect(isVersionAtLeast('', '4.0.0')).toBe(false);
+    expect(isVersionAtLeast('4.0.0-rc1', '4.0.0')).toBe(false);
+  });
+
+  it('ignores how deeply a version is written', () => {
+    expect(isVersionAtLeast('4.0', '4.0.0')).toBe(true);
   });
 });

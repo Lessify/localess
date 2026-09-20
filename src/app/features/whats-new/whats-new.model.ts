@@ -62,5 +62,22 @@ export function isVersionNewer(version: string, than: string): boolean {
   return false;
 }
 
+/**
+ * Whether `version` is `minimum` or anything after it.
+ *
+ * The shape is checked first because `isVersionNewer` parses with `Number`, and anything it cannot
+ * read becomes `NaN` - every comparison against which is false, so a tag like `v3.2.0` would come
+ * back as "not older" and pass a floor it is nowhere near. Only plain dotted digits count, which
+ * also keeps a `4.0.0-rc1` out of a check that exists to decide what users are offered.
+ *
+ * Past the shape it is expressed as "minimum is not newer" rather than an equality plus a
+ * comparison, so versions written to different depths still line up - `4.0` is not textually
+ * `4.0.0`, but neither is newer than the other.
+ */
+export function isVersionAtLeast(version: string, minimum: string): boolean {
+  if (!/^\d+(\.\d+)*$/.test(version)) return false;
+  return !isVersionNewer(minimum, version);
+}
+
 /** Wide enough for prose, matching the other content-heavy dialogs. */
 export const WHATS_NEW_DIALOG_CONTENT_CLASS = DIALOG_WIDTH_SM;

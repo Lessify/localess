@@ -240,26 +240,46 @@ describe('FeaturesComponent', () => {
   it('reports a new version when the GitHub tag is ahead of this build', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
-      latestRelease: { tag_name: 'v4.1.0', html_url: 'https://github.com/Lessify/localess/releases/tag/v4.1.0' },
+      latestRelease: { tag_name: '4.1.0', html_url: 'https://github.com/Lessify/localess/releases/tag/4.1.0' },
     });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.hasNewVersion()).toBe(true);
   });
 
-  /** The tag carries a leading `v`, `environment.version` does not - the two must still match. */
+  /** Tags are versions verbatim from 4.0.0 on, so the two compare without any rewriting. */
   it('reports no new version when the GitHub tag matches this build', () => {
-    const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: 'v' + environment.version } });
+    const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: environment.version } });
     fixture.detectChanges();
 
     expect(fixture.componentInstance.hasNewVersion()).toBe(false);
   });
 
-  it('reports no new version when the GitHub tag is behind this build', () => {
+  /** The state the repository is actually in: the newest published release is still a 3.x one. */
+  it('ignores a release from before the supported floor', () => {
     const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: 'v3.2.0' } });
     fixture.detectChanges();
 
+    expect(fixture.componentInstance.latestRelease()).toBeUndefined();
     expect(fixture.componentInstance.hasNewVersion()).toBe(false);
+    expect(fixture.componentInstance.versionTooltip()).toBe('You are on the latest version.');
+  });
+
+  /** The floor is inclusive: 4.0.0 itself is supported, it is simply not newer than this build. */
+  it('keeps the release at the supported floor', () => {
+    const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: '4.0.0' } });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.latestRelease()).toBeDefined();
+    expect(fixture.componentInstance.hasNewVersion()).toBe(false);
+  });
+
+  /** `Version: 4.0.0` above `v4.1.0 available` would read as two schemes; there is only one now. */
+  it('announces the available version exactly as tagged', () => {
+    const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: '4.1.0' } });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.versionTooltip()).toContain('Version 4.1.0 is available.');
   });
 
   /** `timer(0, …)` emits on a macrotask, so the build date lands just after the first render. */
@@ -273,7 +293,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: 'v4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -285,7 +305,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: 'v4.1.0', published_at: '2026-06-02T00:00:00.000Z' },
+      latestRelease: { tag_name: '4.1.0', published_at: '2026-06-02T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -298,7 +318,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-08-01T00:00:00.000Z',
-      latestRelease: { tag_name: 'v4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -309,18 +329,19 @@ describe('FeaturesComponent', () => {
   it('reports no gap before the build date has loaded', async () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
-      latestRelease: { tag_name: 'v4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
     expect(fixture.componentInstance.daysBehind()).toBe(0);
   });
 
+  /** The floor leaves 4.0.0 as the only release that survives without being newer than the build. */
   it('reports no gap when already on the latest version', async () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: 'v3.2.0', published_at: '2026-01-01T00:00:00.000Z' },
+      latestRelease: { tag_name: environment.version, published_at: '2026-01-01T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -333,7 +354,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: 'v4.1.0', published_at: 'not-a-date' },
+      latestRelease: { tag_name: '4.1.0', published_at: 'not-a-date' },
     });
     await settleVersionCheck(fixture);
 
@@ -345,7 +366,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: 'v4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 

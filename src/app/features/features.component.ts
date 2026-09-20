@@ -85,8 +85,15 @@ import { filter, mergeMap, timer } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { WHATS_NEW } from './whats-new/whats-new.data';
-import { isVersionNewer, WHATS_NEW_DIALOG_CONTENT_CLASS } from './whats-new/whats-new.model';
+import { isVersionAtLeast, isVersionNewer, WHATS_NEW_DIALOG_CONTENT_CLASS } from './whats-new/whats-new.model';
 import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component';
+
+/**
+ * The oldest release this build recognises. 4.0.0 is where support starts and where the tags dropped
+ * their `v`, so a tag is taken as a version verbatim and anything below the floor is ignored outright
+ * rather than parsed - GitHub's newest release can sit in the 3.x range for as long as it likes.
+ */
+const MIN_SUPPORTED_VERSION = '4.0.0';
 
 const appTextVariants = cva(
   'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',
@@ -204,13 +211,10 @@ export class FeaturesComponent implements OnInit {
   latestRelease = signal<Release | undefined>(undefined);
   currentVersion = signal<Version | undefined>(undefined);
 
-  /**
-   * Whether GitHub has published a release newer than this build. Tags carry a leading `v` that
-   * `environment.version` does not, so it is stripped before comparing part by part.
-   */
+  /** Whether GitHub has published a release newer than this build. */
   hasNewVersion = computed(() => {
     const tag = this.latestRelease()?.tag_name;
-    return tag ? isVersionNewer(tag.replace(/^v/, ''), this.version) : false;
+    return tag ? isVersionNewer(tag, this.version) : false;
   });
 
   appTextClass = computed(() => appTextVariants({ variant: this.appSettingsStore.ui()?.color }));
@@ -329,7 +333,11 @@ export class FeaturesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: value => {
-          this.latestRelease.set(value);
+          // A 3.x release is history, not an upgrade this build offers, so it is dropped here rather
+          // than guarded against in every computed downstream.
+          if (isVersionAtLeast(value.tag_name, MIN_SUPPORTED_VERSION)) {
+            this.latestRelease.set(value);
+          }
         },
       });
     effect(async () => {
