@@ -131,19 +131,42 @@ the row are in `ll-tree`'s own template and so carry its `_ngcontent` attribute.
 The chevron rotation uses `transform: rotate(90deg)` rather than the `rotate` property,
 because the chevron's `transition-transform` animates `transform`.
 
+### The focus ring must stay inside the row
+
+Rows are packed tight: 2px between siblings, and **exactly 0** between a parent's row and
+its child group, because the group is a block sibling of the row inside the same `<li>`.
+An outward ring (`box-shadow: 0 0 0 3px`) therefore always spills onto the neighbouring
+row — and since that neighbour's background paints *later*, it clips the spilled band.
+The visible symptom was a focused parent whose ring collided with, and was eaten by, its
+selected child's highlight.
+
+So the ring is `inset`, and must stay that way:
+
+```css
+box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--ring) 60%, transparent);
+```
+
+This deviates from the Helm convention (`focus-visible:ring-[3px]`, which is outset) on
+purpose: Helm applies it to buttons and inputs, which have room around them. A tree row
+does not. `tree.spec.ts` asserts the declared rule is inset, because happy-dom neither
+resolves `:focus-visible` nor paints, so nothing else in the suite would catch a revert.
+
 ### Indentation has exactly one mechanism
 
-Row content is inset by `8 + (level - 1) × indent` pixels of `padding-left`, and
-**nothing else may offset a node**. In particular a child `<ul role="group">` must never
-carry a `margin-left` or `border-left`: because each group is nested inside its parent's
-`<li>`, such an offset accumulates down the tree *and* stacks on top of the row padding,
-so levels drift outward instead of stepping evenly. This was a real bug — with guides
-enabled, levels landed at 0 / 32 / 80px instead of 8 / 24 / 40px.
+A row is offset by `(level - 1) × indent` pixels of **`margin-left`**, and **nothing else
+may offset a node**. Margin rather than padding so the indent sits *outside* the row's
+box: the selected/hover highlight then wraps only the node itself instead of the whole
+line — which matters because a prefix row is a synthesised namespace segment, not a
+translation record, so a full-width bar would misrepresent it.
+
+In particular a child `<ul role="group">` must never carry a `margin-left` or
+`border-left`: because each group is nested inside its parent's `<li>`, such an offset
+accumulates down the tree *and* stacks on top of the row's own offset, so levels drift
+outward instead of stepping evenly. This was a real bug — with guides enabled, levels
+landed at 0 / 32 / 80px instead of 0 / 16 / 32px.
 
 That is why indent guides are drawn as an absolutely-positioned `::before` pseudo-element
 on the group, offset by the `--ll-tree-guide-left` custom property: it costs no layout.
-The `8` base exists because the inline `padding-left` overrides the row's `px-2` class,
-so the class's left padding has to be re-applied by hand.
 
 `tree.spec.ts` guards both halves — indentation is asserted across three levels with
 guides on *and* off, and child groups are asserted to have no margin.

@@ -252,6 +252,30 @@ describe('LlTree', () => {
     });
   });
 
+  describe('focus ring', () => {
+    /*
+     * The ring must be drawn INSIDE the row's box. Rows are packed with 2px between
+     * siblings and exactly 0 between a parent's row and its child group, so an outward
+     * ring always spills onto the neighbouring row — and a selected neighbour's opaque
+     * background paints later and clips the spilled band. That shipped as a visible
+     * collision between a focused parent's ring and its selected child's highlight.
+     *
+     * happy-dom cannot settle this by measurement: it applies no Tailwind stylesheet,
+     * does not resolve `:focus-visible`, and never paints. So this asserts the rule as
+     * declared — which is exactly what "simplifying" back to an outset ring would change.
+     */
+    it('declares the focus ring inset, so it cannot spill onto the next row', async () => {
+      await setup();
+
+      const rule = Array.from(document.querySelectorAll('style'))
+        .map(it => it.textContent ?? '')
+        .find(css => css.includes('tree-item-row') && css.includes('focus-visible'));
+
+      expect(rule).toBeDefined();
+      expect(rule).toMatch(/box-shadow:\s*inset/);
+    });
+  });
+
   describe('selection', () => {
     it('emits nodeSelect and updates selectedKey when a leaf is clicked', async () => {
       const { fixture, host } = await setup();

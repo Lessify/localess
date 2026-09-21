@@ -97,8 +97,18 @@ import { LlTreeNodeDef } from './tree-node-def';
      * children, and expanding one rotated every descendant chevron, collapsed or not.
      * \`>\` confines each rule to the item's own row.
      */
+
+    /*
+     * The ring is drawn INSIDE the row's box, never outside it. Rows are packed
+     * tight — 2px between siblings, and exactly 0 between a parent's row and its child
+     * group, because the group is a block sibling of the row inside the same <li>. An
+     * outward 3px ring therefore always spilled onto the neighbouring row, and since that
+     * neighbour's background paints later it clipped the spilled band: focusing a parent
+     * whose child was selected drew a ring that collided with the child's highlight.
+     * Inset keeps the ring inside the row it belongs to, whatever the neighbours do.
+     */
     [data-slot='tree-item']:focus-visible > [data-slot='tree-item-row'] {
-      box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+      box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--ring) 60%, transparent);
     }
 
     [data-slot='tree-item'][aria-selected='true'] > [data-slot='tree-item-row'] {
