@@ -11,6 +11,7 @@ import {
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
 import { Translation, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -60,6 +61,7 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
     HlmBadgeImports,
     HlmSeparatorImports,
     HlmKbdImports,
+    LocaleIconComponent,
   ],
   providers: [
     provideIcons({

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideCirclePlus, lucideSearch, lucideX } from '@ng-icons/lucide';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { Locale } from '@shared/models/locale.model';
 import { LocaleStatus, TranslationStatus } from '@shared/models/translation.model';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -41,6 +42,7 @@ export interface TranslationFilterCriteria {
     HlmInputGroupImports,
     HlmFieldImports,
     HlmSelectImports,
+    LocaleIconComponent,
   ],
   providers: [
     provideIcons({

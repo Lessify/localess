@@ -7,11 +7,20 @@
             <div hlmField>
               <hlm-select [(value)]="selectedSourceLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value placeholder="Source Locale" />
+                  <hlm-select-placeholder>Source Locale</hlm-select-placeholder>
+                  <ng-template hlmSelectValueTemplate let-value>
+                    <div class="flex items-center">
+                      <ll-locale-icon class="mr-2" [locale]="value.id" />
+                      {{ value.name }}
+                    </div>
+                  </ng-template>
                 </hlm-select-trigger>
                 <hlm-select-content *hlmSelectPortal>
                   @for (locale of availableLocales(); track locale.id) {
-                    <hlm-select-item [value]="locale">{{ locale.name }}</hlm-select-item>
+                    <hlm-select-item [value]="locale">
+                      <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                      {{ locale.name }}
+                    </hlm-select-item>
                   }
                 </hlm-select-content>
               </hlm-select>
@@ -22,11 +31,20 @@
             <div hlmField>
               <hlm-select [(value)]="selectedTargetLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
                 <hlm-select-trigger class="w-full">
-                  <hlm-select-value placeholder="Target Locale" />
+                  <hlm-select-placeholder>Target Locale</hlm-select-placeholder>
+                  <ng-template hlmSelectValueTemplate let-value>
+                    <div class="flex items-center">
+                      <ll-locale-icon class="mr-2" [locale]="value.id" />
+                      {{ value.name }}
+                    </div>
+                  </ng-template>
                 </hlm-select-trigger>
                 <hlm-select-content *hlmSelectPortal>
                   @for (locale of availableLocales(); track locale.id) {
-                    <hlm-select-item [value]="locale">{{ locale.name }}</hlm-select-item>
+                    <hlm-select-item [value]="locale">
+                      <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                      {{ locale.name }}
+                    </hlm-select-item>
                   }
                 </hlm-select-content>
               </hlm-select>

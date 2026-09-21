@@ -4,11 +4,20 @@
       <div hlmField>
         <hlm-select formControlName="locale" [itemToString]="localeIdToString">
           <hlm-select-trigger class="w-full">
-            <hlm-select-value placeholder="Search Locale" />
+            <hlm-select-placeholder>Search Locale</hlm-select-placeholder>
+            <ng-template hlmSelectValueTemplate let-value>
+              <div class="flex items-center">
+                <ll-locale-icon class="mr-2" [locale]="value" />
+                {{ localeIdToString(value) }}
+              </div>
+            </ng-template>
           </hlm-select-trigger>
           <hlm-select-content *hlmSelectPortal>
             @for (locale of availableLocales(); track locale.id) {
-              <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
+              <hlm-select-item [value]="locale.id">
+                <ll-locale-icon class="mr-2" [locale]="locale.id" />
+                {{ locale.name }}
+              </hlm-select-item>
             }
           </hlm-select-content>
         </hlm-select>

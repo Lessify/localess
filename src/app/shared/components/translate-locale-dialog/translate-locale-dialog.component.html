@@ -7,11 +7,19 @@
       <label hlmFieldLabel for="sourceLocale">Source Locale</label>
       <hlm-select id="sourceLocale" formControlName="sourceLocale" [itemToString]="localeItemToString">
         <hlm-select-trigger class="w-full">
-          <hlm-select-value />
+          <ng-template hlmSelectValueTemplate let-value>
+            <div class="flex items-center">
+              <ll-locale-icon class="mr-2" [locale]="value" [localeFallback]="context.localeFallback?.id" />
+              {{ localeItemToString(value) }}
+            </div>
+          </ng-template>
         </hlm-select-trigger>
         <hlm-select-content *hlmSelectPortal>
           @for (locale of context.locales; track locale.id) {
-            <hlm-select-item [value]="locale.id" [disabled]="!canTranslateFrom(locale)">{{ localeLabel(locale) }}</hlm-select-item>
+            <hlm-select-item [value]="locale.id" [disabled]="!canTranslateFrom(locale)">
+              <ll-locale-icon class="mr-2" [locale]="locale.id" [localeFallback]="context.localeFallback?.id" />
+              {{ localeLabel(locale) }}
+            </hlm-select-item>
           }
         </hlm-select-content>
       </hlm-select>
@@ -20,11 +28,19 @@
       <label hlmFieldLabel for="targetLocale">Target Locale</label>
       <hlm-select id="targetLocale" formControlName="targetLocale" [itemToString]="localeItemToString">
         <hlm-select-trigger class="w-full">
-          <hlm-select-value />
+          <ng-template hlmSelectValueTemplate let-value>
+            <div class="flex items-center">
+              <ll-locale-icon class="mr-2" [locale]="value" [localeFallback]="context.localeFallback?.id" />
+              {{ localeItemToString(value) }}
+            </div>
+          </ng-template>
         </hlm-select-trigger>
         <hlm-select-content *hlmSelectPortal>
           @for (locale of context.locales; track locale.id) {
-            <hlm-select-item [value]="locale.id" [disabled]="!canTranslateTo(locale)">{{ localeLabel(locale) }}</hlm-select-item>
+            <hlm-select-item [value]="locale.id" [disabled]="!canTranslateTo(locale)">
+              <ll-locale-icon class="mr-2" [locale]="locale.id" [localeFallback]="context.localeFallback?.id" />
+              {{ localeLabel(locale) }}
+            </hlm-select-item>
           }
         </hlm-select-content>
       </hlm-select>

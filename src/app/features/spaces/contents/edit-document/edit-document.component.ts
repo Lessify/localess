@@ -37,6 +37,7 @@ import {
   lucideWebhookOff,
 } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import {
   TranslateLocaleDialogComponent,
   TranslateLocaleDialogContext,
@@ -110,6 +111,7 @@ import { SchemaPathItem } from './edit-document.model';
     HlmAccordionImports,
     HlmKbdImports,
     DocumentStatusComponent,
+    LocaleIconComponent,
   ],
   providers: [
     provideIcons({

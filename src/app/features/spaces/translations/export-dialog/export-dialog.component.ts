@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCloudDownload } from '@ng-icons/lucide';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -17,7 +18,15 @@ import { ExportDialogContext, ExportDialogResult } from './export-dialog.model';
   templateUrl: './export-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmIconImports, HlmSelectImports],
+  imports: [
+    HlmDialogImports,
+    ReactiveFormsModule,
+    HlmButtonImports,
+    HlmFieldImports,
+    HlmIconImports,
+    HlmSelectImports,
+    LocaleIconComponent,
+  ],
   providers: [provideIcons({ lucideCloudDownload })],
 })
 export class ExportDialogComponent {

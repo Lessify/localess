@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
@@ -16,7 +17,15 @@ import { TranslateLocaleDialogContext, TranslateLocaleDialogResult } from './tra
   templateUrl: './translate-locale-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmCheckboxImports, HlmFieldImports, HlmSelectImports],
+  imports: [
+    HlmDialogImports,
+    ReactiveFormsModule,
+    HlmButtonImports,
+    HlmCheckboxImports,
+    HlmFieldImports,
+    HlmSelectImports,
+    LocaleIconComponent,
+  ],
 })
 export class TranslateLocaleDialogComponent {
   private readonly fb = inject(FormBuilder);

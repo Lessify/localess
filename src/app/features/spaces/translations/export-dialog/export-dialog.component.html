@@ -21,11 +21,20 @@
       <label hlmFieldLabel for="locale">Locale</label>
       <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
         <hlm-select-trigger class="w-full">
-          <hlm-select-value placeholder="Select locale..." />
+          <hlm-select-placeholder>Select locale...</hlm-select-placeholder>
+          <ng-template hlmSelectValueTemplate let-value>
+            <div class="flex items-center">
+              <ll-locale-icon class="mr-2" [locale]="value" />
+              {{ localeItemToString(value) }}
+            </div>
+          </ng-template>
         </hlm-select-trigger>
         <hlm-select-content *hlmSelectPortal>
           @for (locale of context.locales; track locale.id) {
-            <hlm-select-item [value]="locale.id">{{ locale.name }}</hlm-select-item>
+            <hlm-select-item [value]="locale.id">
+              <ll-locale-icon class="mr-2" [locale]="locale.id" />
+              {{ locale.name }}
+            </hlm-select-item>
           }
         </hlm-select-content>
       </hlm-select>
