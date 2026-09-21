@@ -58,7 +58,7 @@
           </div>
         </div>
       </div>
-      <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorSize()">
+      <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.editorSize()">
         <button hlmToggleGroupItem value="" aria-label="Fullscreen" hlmTooltip="Fullscreen" (click)="settingsStore.setEditorSize('')">
           <ng-icon hlm size="sm" name="lucideFullscreen" />
         </button>

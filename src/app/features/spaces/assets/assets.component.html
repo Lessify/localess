@@ -5,7 +5,7 @@
       Uploading ... ({{ fileUploadQueue().length }})
     </span>
   }
-  <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.assetLayout()">
+  <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.assetLayout()">
     <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetLayout('list')">
       <ng-icon hlm size="sm" name="lucideLayoutList" />
     </button>

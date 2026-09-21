@@ -1,6 +1,6 @@
 @if (selectedSpace(); as space) {
   <div class="flex items-center justify-end gap-2 p-2">
-    <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.translationLayout()">
+    <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.translationLayout()">
       <button
         hlmToggleGroupItem
         value="list"

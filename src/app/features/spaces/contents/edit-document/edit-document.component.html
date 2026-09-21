@@ -9,7 +9,7 @@
     </div>
   </div>
   <div class="flex items-center gap-2">
-    <hlm-toggle-group type="single" variant="outline" [value]="settingsStore.editorEnabled()">
+    <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.editorEnabled()">
       <button
         hlmToggleGroupItem
         [value]="true"
