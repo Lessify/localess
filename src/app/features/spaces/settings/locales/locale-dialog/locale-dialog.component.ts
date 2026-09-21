@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
@@ -10,6 +11,7 @@ import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog.model';
 
@@ -18,7 +20,15 @@ import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog.model';
   templateUrl: './locale-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [ReactiveFormsModule, HlmComboboxImports, HlmFieldImports, HlmButtonImports, HlmDialogImports, LocaleIconComponent],
+  imports: [
+    ReactiveFormsModule,
+    HlmComboboxImports,
+    HlmFieldImports,
+    HlmInputGroupImports,
+    HlmButtonImports,
+    HlmDialogImports,
+    LocaleIconComponent,
+  ],
 })
 export class LocaleDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -37,6 +47,12 @@ export class LocaleDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
     locale: this.fb.control<Locale | undefined>(undefined, LocaleValidator.LOCALE),
   });
+  /**
+   * The combobox renders its value as plain text inside an `<input>`, which cannot carry the flag the
+   * option list shows. Mirroring the selection back lets the template re-add that badge as an
+   * inline-start addon, so a picked locale keeps the icon it had while being picked.
+   */
+  selectedLocale = toSignal<Locale | undefined>(this.form.controls['locale'].valueChanges);
   search = signal('');
   filteredOptions = computed(() => {
     const search = this.search().trim().toLowerCase();
