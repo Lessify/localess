@@ -57,6 +57,9 @@ export class FormErrorHandlerService {
       if (errors['noSpaceAround']) {
         return `No spaces at start and end.`;
       }
+      if (errors['webhookUrl']) {
+        return `Should be an https:// URL (http:// is allowed only for localhost).`;
+      }
       if (errors['previewUrl']) {
         return `Should be an absolute http:// or https:// URL of your site.`;
       }

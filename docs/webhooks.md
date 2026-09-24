@@ -71,14 +71,27 @@ User-Agent: Localess-WebHook/1.0
 X-Webhook-Event: <event>
 X-Webhook-Delivery: <uuid>          ← unique per dispatch; same value as the log's deliveryId
 X-Webhook-Signature: sha256=<hex>   ← only if secret is set
-<any custom headers from webhook.headers>
+<custom headers from webhook.headers, minus reserved ones — see below>
 
-Body: JSON-serialised WebHookPayload
+Body: JSON-serialised WebHookPayload (without `signature`)
 ```
 
 - Timeout: **30 seconds**
 - Retries: **none**
-- All enabled webhooks for an event fire concurrently via `Promise.allSettled()` (one failure does not block others)
+- Redirects: **not followed.** A 3xx is logged as an `http` failure with its status code.
+- Response body: at most 4 KB is read, which is all that gets logged.
+- All enabled webhooks for an event fire concurrently via `Promise.allSettled()` (one failure does not block others). Each webhook signs its own copy of the payload, so no webhook ever sees another's signature.
+
+### Destination restrictions (SSRF protection)
+
+Delivery runs inside the project with the Functions service account, and the URL and headers are chosen by a space manager. So `functions/src/utils/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach the GCP metadata server (`169.254.169.254`, which issues the service account's OAuth token) and the reply would show up in the webhook log.
+
+- **URL** (`checkWebhookUrl`): `https:` only, on the default port, with no credentials in the URL. `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal` and private IP literals are refused. The WHATWG URL parser normalises shorthand forms such as `0x7f.1` and `2130706433` before the check.
+- **Resolved address** (`isBlockedAddress`, applied in the socket's DNS `lookup`): the connection is refused if the host resolves to any loopback, private, link-local, CGNAT, multicast, reserved or documentation range, IPv4 or IPv6, including IPv4-mapped IPv6. The check runs on the exact address being connected to, so DNS rebinding can't get around it.
+- **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` header. Those are dropped.
+- **Emulator** (`FUNCTIONS_EMULATOR=true`): `http:` and local or private targets are allowed, so a local receiver can be used.
+
+A refused delivery sends nothing. It is logged as a `network` failure with `errorMessage` "Webhook URL is not allowed: …".
 
 ---
 
@@ -178,7 +191,7 @@ A Firestore `onDocumentDeleted` trigger in `functions/src/webhooks.ts` recursive
 
 **Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
-- `url`: required, must match `^https?:\/\/.+` — **client-side only**; the backend does not validate the URL
+- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. `firestore.rules` enforces the same shape on create and update. Delivery re-checks it and blocks private addresses, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 
@@ -195,6 +208,7 @@ Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list 
 | `functions/src/models/webhook.model.ts`          | Backend types — `WebHook`, `WebHookEvent`, `WebHookPayload`, `WebHookLog` |
 | `functions/src/services/webhook.service.ts`      | Backend Firestore queries                                                 |
 | `functions/src/utils/webhook-utils.ts`           | HTTP dispatch, HMAC signing, execution logging                            |
+| `functions/src/utils/webhook-request.ts`         | Destination checks (URL, resolved address, headers), guarded POST         |
 | `functions/src/webhooks.ts`                      | `onDocumentDeleted` cleanup trigger                                       |
 | `src/app/shared/models/webhook.model.ts`         | Frontend types                                                            |
 | `src/app/shared/services/webhook.service.ts`     | Frontend Firestore CRUD + log queries                                     |

@@ -22,8 +22,12 @@ describe('WebhookValidator', () => {
       expect(new FormControl('', WebhookValidator.URL).hasError('required')).toBe(true);
     });
 
-    it('is invalid when it is not an http(s) url', () => {
-      expect(new FormControl('ftp://example.com', WebhookValidator.URL).hasError('pattern')).toBe(true);
+    it.each([['ftp://example.com'], ['http://example.com/webhook'], ['not a url']])('is invalid for %s', url => {
+      expect(new FormControl(url, WebhookValidator.URL).hasError('webhookUrl')).toBe(true);
+    });
+
+    it('is valid for a local http receiver', () => {
+      expect(new FormControl('http://localhost:3000/hook', WebhookValidator.URL).valid).toBe(true);
     });
 
     it('is valid for a well-formed https url', () => {

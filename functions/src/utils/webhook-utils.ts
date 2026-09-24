@@ -3,7 +3,8 @@ import { logger } from 'firebase-functions/v2';
 import { WebHook, WebHookPayload, WebHookLog, WebHookLogSuccess, WebHookLogFailure, WebHookStatus, WebHookErrorType } from '../models';
 import { FieldValue, WithFieldValue } from 'firebase-admin/firestore';
 import { findEnabledWebHooksByEvent } from '../services';
-import { firestoreService } from '../config';
+import { firestoreService, isEmulatorEnabled } from '../config';
+import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from './webhook-request';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 
@@ -27,53 +28,51 @@ export function generateSignature(secret: string, payload: string): string {
 export async function triggerWebHook(spaceId: string, webhookId: string, webhook: WebHook, payload: WebHookPayload): Promise<void> {
   const startTime = Date.now();
   const deliveryId = randomUUID();
-  const payloadJson = JSON.stringify(payload);
+  // `payload` is shared by every webhook of the event, so it is never mutated here: the body is
+  // serialised without a signature, and each webhook's signature goes only into its own header.
+  const unsigned: WebHookPayload = { ...payload };
+  delete unsigned.signature;
+  const payloadJson = JSON.stringify(unsigned);
   const requestSize = Buffer.byteLength(payloadJson, 'utf8');
 
-  // Add signature if secret is configured
-  if (webhook.secret) {
-    payload.signature = generateSignature(webhook.secret, payloadJson);
-  }
-
   const headers: Record<string, string> = {
+    ...sanitizeWebhookHeaders(webhook.headers),
     'Content-Type': 'application/json',
     'User-Agent': 'Localess-WebHook/1.0',
     'X-Webhook-Event': payload.event,
     'X-Webhook-Delivery': deliveryId,
-    ...(webhook.headers || {}),
   };
-
-  if (payload.signature) {
-    headers['X-Webhook-Signature'] = payload.signature;
+  if (webhook.secret) {
+    headers['X-Webhook-Signature'] = generateSignature(webhook.secret, payloadJson);
   }
 
   try {
     logger.info(`[triggerWebHook] Sending webhook to ${webhook.url}`);
 
-    const response = await fetch(webhook.url, {
-      method: 'POST',
+    const checked = checkWebhookUrl(webhook.url, isEmulatorEnabled);
+    if (!checked.ok) {
+      const error: Error & { code?: string } = new Error(`Webhook URL is not allowed: ${checked.reason}`);
+      error.code = 'EBLOCKEDURL';
+      throw error;
+    }
+    const response = await postWebhook(checked.url, {
       headers,
       body: payloadJson,
-      signal: AbortSignal.timeout(30000), // 30 second timeout
+      timeoutMs: 30000, // 30 second timeout
+      maxBodyBytes: MAX_RESPONSE_BODY_LENGTH,
+      allowInternal: isEmulatorEnabled,
     });
+    const responseOk = response.status >= 200 && response.status < 300;
 
     const duration = Date.now() - startTime; // in milliseconds
     const responseTime = duration / 1000; // in seconds
 
-    // Read response body (truncated) for debugging
-    let responseBody: string | undefined;
-    let responseBodyTruncated = false;
-    try {
-      const text = await response.text();
-      if (text) {
-        responseBody = text.slice(0, MAX_RESPONSE_BODY_LENGTH);
-        responseBodyTruncated = text.length > MAX_RESPONSE_BODY_LENGTH;
-      }
-    } catch (bodyError: any) {
-      logger.warn(`[triggerWebHook] Failed to read response body: ${bodyError.message}`);
-    }
+    // Response body (truncated) for debugging
+    const responseBody = response.body || undefined;
+    const responseBodyTruncated = response.bodyTruncated;
 
-    if (response.ok) {
+    // A 3xx lands here as a failure: redirects are not followed, so the log shows where it pointed.
+    if (responseOk) {
       // Log the successful execution
       const log: WithFieldValue<WebHookLogSuccess> = {
         event: payload.event,

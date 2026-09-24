@@ -103,10 +103,17 @@ service cloud.firestore {
       }
 
       // WebHooks
+      // First line of defence only: delivery (functions/src/utils/webhook-request.ts) re-checks the
+      // URL and refuses private addresses at connect time. http is allowed for local targets so the
+      // emulator can be used against a local receiver; production delivery refuses it.
+      function isValidWebhookUrl(url) {
+        return url is string && url.size() <= 2048
+          && (url.matches('https://[^/?#]+([/?#].*)?') || url.matches('http://(localhost|127[.]0[.]0[.]1)(:[0-9]+)?([/?#].*)?'));
+      }
       match /webhooks/{webhookId} {
         allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
-        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
-        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
+        allow create: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT')) && isValidWebhookUrl(request.resource.data.url);
+        allow update: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT')) && isValidWebhookUrl(request.resource.data.url);
         allow delete: if isSignedIn() && (hasRole('admin') || hasPermission('SPACE_MANAGEMENT'));
 
         // WebHook Logs
