@@ -37,7 +37,7 @@ The Elements bundle (~2MB) is lazy-loaded on this route only via `import('@stopl
 **Injected services:** `OpenApiService`, `SpaceStore`
 
 **Key behaviour:**
-- `ngOnInit()` — reads `spaceId` from `spaceStore.selectedSpaceId()` and calls `OpenApiService.generate(spaceId)`, which invokes the `openapi-generate` callable and returns the spec as a string; then starts loading the Elements bundle
+- `ngOnInit()` — reads `spaceId` from `spaceStore.selectedSpaceId()` and calls `OpenApiService.generate(spaceId)`, which invokes the `openapi-generate` callable and returns the spec as a string; then starts loading the Elements bundle. The callable requires sign-in and `DEV_OPEN_API` (admins always pass), so it enforces the same permission the sidebar item checks
 - Passes the generated spec (as `apiDescriptionDocument`) to the web component for rendering
 - The spec covers all CDN endpoints: translations, links, content by slug, content by ID, assets
 

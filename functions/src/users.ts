@@ -7,10 +7,11 @@ import { User, UserInvite, UserPermission } from './models';
 import { beforeUserCreated, beforeUserSignedIn } from 'firebase-functions/v2/identity';
 import { findUserById, findUsers } from './services';
 import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { authUid } from './utils/log-auth';
 
 const beforecreated = beforeUserCreated({ timeoutSeconds: 7 }, async request => {
   const { data, eventId } = request;
-  logger.info(`[Identity::beforeCreated] eventId='${eventId}' user='${JSON.stringify(data)}'`);
+  logger.info(`[Identity::beforeCreated] eventId='${eventId}' uid='${data?.uid}'`);
   if (!data || !data.email) {
     return;
   }
@@ -36,19 +37,23 @@ const beforecreated = beforeUserCreated({ timeoutSeconds: 7 }, async request => 
 
 const beforesignedin = beforeUserSignedIn({ timeoutSeconds: 7 }, async request => {
   const { data, eventId } = request;
-  logger.info(`[Identity::beforeCreated] eventId='${eventId}' user='${JSON.stringify(data)}'`);
+  logger.info(`[Identity::beforeSignedIn] eventId='${eventId}' uid='${data?.uid}'`);
   if (!data) {
     return;
   }
   const userRef = findUserById(data.uid);
   const userDoc = await userRef.get();
-  logger.info(`[Identity::beforeSignedIn] user='${JSON.stringify(userDoc.data())}'`);
+  logger.info(`[Identity::beforeSignedIn] uid='${data.uid}' profile exists=${userDoc.exists}`);
 });
 
 const invite = onCall<UserInvite>(async request => {
   const { auth, data } = request;
-  logger.info('[User::invite] data: ' + JSON.stringify(data));
-  logger.info('[User::invite] auth: ' + JSON.stringify(auth));
+  // Never log `data` whole: it carries the new user's password in plain text.
+  logger.info(
+    '[User::invite] data: ' +
+      JSON.stringify({ email: data.email, displayName: data.displayName, role: data.role, permissions: data.permissions, lock: data.lock })
+  );
+  logger.info('[User::invite] auth uid: ' + authUid(auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const user = await authService.createUser({
@@ -64,7 +69,7 @@ const invite = onCall<UserInvite>(async request => {
 const sync = onCall<never>(async request => {
   const { data, auth } = request;
   logger.info('[User::sync] data: ' + JSON.stringify(data));
-  logger.info('[User::sync] auth: ' + JSON.stringify(auth));
+  logger.info('[User::sync] auth uid: ' + authUid(auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const listUsers = await authService.listUsers();
@@ -77,12 +82,13 @@ const sync = onCall<never>(async request => {
   let count = 0;
   let batch = firestoreService.batch();
   for (const userRecord of listUsers.users) {
-    logger.debug('[User::sync] userRecord: ' + JSON.stringify(userRecord));
+    // Not the whole record: it can include `passwordHash` / `passwordSalt`.
+    logger.debug(`[User::sync] userRecord uid='${userRecord.uid}'`);
     const userRef = findUserById(userRecord.uid);
     const user = origUserMap.get(userRecord.uid);
 
     if (user) {
-      logger.debug('[User::sync] user: ' + JSON.stringify(user));
+      logger.debug(`[User::sync] existing user uid='${userRecord.uid}'`);
       if (
         userRecord.email !== user.email ||
         userRecord.emailVerified !== user.emailVerified ||

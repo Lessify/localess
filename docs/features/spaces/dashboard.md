@@ -30,7 +30,7 @@ The UI is built with Spartan/Helm components: `HlmCard` for each stat tile, `Hlm
 **Key behaviour:**
 - Reads `SpaceStore.selectedSpace()` to display current overview stats
 - Uses `effect()` in the constructor to watch the selected space; when `overview` is `undefined` or stale (> 24h since `overview.updatedAt`) it calls `calculateOverview()` automatically
-- `calculateOverview()` — also bound to the manual refresh button; calls `SpaceService` to trigger a server-side recalculation of all counts and sizes, updates the `SpaceOverview` sub-document in Firestore
+- `calculateOverview()` — also bound to the manual refresh button; calls `SpaceService` to trigger a server-side recalculation of all counts and sizes, updates the `SpaceOverview` sub-document in Firestore. The `space-calculateoverview` callable accepts any signed-in user with role `admin` or `custom`, the same audience that can read the space document, because the automatic refresh runs for everyone who opens the dashboard. Unauthenticated calls are rejected
 
 ## Data Displayed
 

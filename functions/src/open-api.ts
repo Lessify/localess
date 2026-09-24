@@ -1,13 +1,17 @@
 import { logger } from 'firebase-functions/v2';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { GenerateOpenApiData, Schema } from './models';
+import { GenerateOpenApiData, Schema, UserPermission } from './models';
 import { findSchemas, findSpaceById, generateOpenApi } from './services';
+import { canPerform } from './utils/user-auth-utils';
+import { authUid } from './utils/log-auth';
 
 // Generate
 const generate = onCall<GenerateOpenApiData>(async request => {
   logger.info('[OpenApi::generate] data: ' + JSON.stringify(request.data));
-  logger.info('[OpenApi::generate] context.auth: ' + JSON.stringify(request.auth));
-  const { data } = request;
+  logger.info('[OpenApi::generate] auth uid: ' + authUid(request.auth));
+  const { auth, data } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'unauthenticated');
+  if (!canPerform(UserPermission.DEV_OPEN_API, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
   const spaceSnapshot = await findSpaceById(spaceId).get();
   if (spaceSnapshot.exists) {

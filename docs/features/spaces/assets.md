@@ -48,7 +48,7 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (i.e. the build-time `environment.plugins.unsplash` flag, not Remote Config) — opens `UnsplashAssetsSelectDialogComponent`
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (i.e. the build-time `environment.plugins.unsplash` flag, not Remote Config) — opens `UnsplashAssetsSelectDialogComponent`. The `unsplash-search` / `unsplash-random` callables it uses require sign-in and `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`functions/src/plugins/unsplash/paging.ts`)
 
 ## CDN Asset Endpoint
 

@@ -7,11 +7,12 @@ import { deleteTranslations, findSpaceById, findTranslations, generateTranslatio
 import { translateWithGoogle } from './services/translate.service';
 import { canPerform } from './utils/user-auth-utils';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
+import { authUid } from './utils/log-auth';
 
 // Publish
 const publish = onCall<PublishTranslationsData>(async request => {
   logger.info('[translationsPublish] data: ' + JSON.stringify(request.data));
-  logger.info('[translationsPublish] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[translationsPublish] auth uid: ' + authUid(request.auth));
   const { auth, data } = request;
   if (!canPerform(UserPermission.TRANSLATION_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
@@ -37,7 +38,7 @@ const publish = onCall<PublishTranslationsData>(async request => {
 
 const deleteAll = onCall<{ spaceId: string }>(async request => {
   logger.info('[translationsDeleteAll] data: ' + JSON.stringify(request.data));
-  logger.info('[translationsDeleteAll] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[translationsDeleteAll] auth uid: ' + authUid(request.auth));
   const { auth, data } = request;
   if (!canPerform(UserPermission.SPACE_MANAGEMENT, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
@@ -46,7 +47,7 @@ const deleteAll = onCall<{ spaceId: string }>(async request => {
 
 const publishDraft = onCall<{ spaceId: string }>(async request => {
   logger.info('[Translation:PublishDraft] data: ' + JSON.stringify(request.data));
-  logger.info('[Translation:PublishDraft] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[Translation:PublishDraft] auth uid: ' + authUid(request.auth));
   const { auth, data } = request;
   if (!canPerform(UserPermission.TRANSLATION_UPDATE, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = data;
@@ -60,7 +61,7 @@ const publishDraft = onCall<{ spaceId: string }>(async request => {
 
 const translateLocale = onCall<TranslateLocaleData>(async request => {
   logger.info('[translationsTranslateLocale] data: ' + JSON.stringify(request.data));
-  logger.info('[translationsTranslateLocale] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[translationsTranslateLocale] auth uid: ' + authUid(request.auth));
   const { auth, data } = request;
   if (!canPerform(UserPermission.TRANSLATION_UPDATE, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId, sourceLocaleId, targetLocaleId } = data;

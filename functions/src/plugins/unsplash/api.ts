@@ -1,13 +1,28 @@
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
 import { API_DOMAIN, UnsplashSearchParams } from './models';
 import { logger } from 'firebase-functions';
 import { isEmulatorEnabled, remoteConfigTemplate } from '../../config';
+import { authUid } from '../../utils/log-auth';
+import { canPerform } from '../../utils/user-auth-utils';
+import { UserPermission } from '../../models';
+import { normalizePaging } from './paging';
+
+/**
+ * Only users who can add assets may use the Unsplash picker - it spends the operator's API quota.
+ * @param {CallableRequest} request the callable request
+ */
+function requireAssetCreate(request: CallableRequest<unknown>): void {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'unauthenticated');
+  if (!canPerform(UserPermission.ASSET_CREATE, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+}
 
 const search = onCall<UnsplashSearchParams>(async request => {
   logger.info('[unsplash::search] data: ' + JSON.stringify(request.data));
-  logger.info('[unsplash::search] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[unsplash::search] auth uid: ' + authUid(request.auth));
+  requireAssetCreate(request);
 
-  const { page, perPage, query, orientation } = request.data;
+  const { query, orientation } = request.data;
+  const { page, perPage } = normalizePaging(request.data.page, request.data.perPage);
   let unsplashApiKey: string | undefined = undefined;
   if (isEmulatorEnabled) {
     // Read from local env
@@ -25,11 +40,7 @@ const search = onCall<UnsplashSearchParams>(async request => {
   }
   const url = new URL(`${API_DOMAIN}/search/photos`);
   url.searchParams.append('query', query);
-  if (perPage) {
-    url.searchParams.append('per_page', perPage.toString());
-  } else {
-    url.searchParams.append('per_page', '20');
-  }
+  url.searchParams.append('per_page', perPage.toString());
   if (page) {
     url.searchParams.append('page', page.toString());
   }
@@ -58,7 +69,8 @@ const search = onCall<UnsplashSearchParams>(async request => {
 
 const random = onCall(async request => {
   logger.info('[unsplash::random] data: ' + JSON.stringify(request.data));
-  logger.info('[unsplash::random] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[unsplash::random] auth uid: ' + authUid(request.auth));
+  requireAssetCreate(request);
 
   let unsplashApiKey: string | undefined = undefined;
   if (isEmulatorEnabled) {

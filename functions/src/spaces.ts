@@ -1,10 +1,12 @@
 import { logger } from 'firebase-functions/v2';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
-import { onCall } from 'firebase-functions/v2/https';
-import { bucket, firestoreService } from './config';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { bucket, firestoreService, ROLE_ADMIN, ROLE_CUSTOM } from './config';
 import { AssetKind, ContentKind, Space, SpaceOverviewData } from './models';
 import { findAssets, findContents, findSchemas, findSpaceById, findTasks, findTranslations } from './services';
 import { FieldValue, UpdateData } from 'firebase-admin/firestore';
+import { hasAnyRole } from './utils/user-auth-utils';
+import { authUid } from './utils/log-auth';
 
 // Firestore events
 const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', async event => {
@@ -27,7 +29,11 @@ const onSpaceDelete = onDocumentDeleted('spaces/{spaceId}', async event => {
 
 const calculateOverview = onCall<SpaceOverviewData>(async request => {
   logger.info('[Space::calculateOverview] data: ' + JSON.stringify(request.data));
-  logger.info('[Space::calculateOverview] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[Space::calculateOverview] auth uid: ' + authUid(request.auth));
+  const { auth } = request;
+  if (!auth) throw new HttpsError('unauthenticated', 'unauthenticated');
+  // Same audience as reading the space document: the dashboard recalculates for anyone who opens it.
+  if (!hasAnyRole([ROLE_ADMIN, ROLE_CUSTOM], auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId } = request.data;
   // Firestore
   const spaceRef = findSpaceById(spaceId);

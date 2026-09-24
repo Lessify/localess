@@ -26,11 +26,12 @@ import {
   spaceContentCachePath,
 } from './services';
 import { triggerWebHooksForEvent } from './utils/webhook-utils';
+import { authUid } from './utils/log-auth';
 
 // Publish
 const publish = onCall<PublishContentData>(async request => {
   logger.info('[Content::contentPublish] data: ' + JSON.stringify(request.data));
-  logger.info('[Content::contentPublish] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[Content::contentPublish] auth uid: ' + authUid(request.auth));
   const { auth, data } = request;
   if (!canPerform(UserPermission.CONTENT_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId, contentId } = data;
@@ -181,7 +182,7 @@ async function publishDocument(
 // Unpublish
 const unpublish = onCall<PublishContentData>(async request => {
   logger.info('[Content::contentUnpublish] data: ' + JSON.stringify(request.data));
-  logger.info('[Content::contentUnpublish] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[Content::contentUnpublish] auth uid: ' + authUid(request.auth));
   const { auth, data } = request;
   if (!canPerform(UserPermission.CONTENT_PUBLISH, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId, contentId } = data;

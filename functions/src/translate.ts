@@ -5,10 +5,11 @@ import { TranslateBatchResult, TranslateData, UserPermission } from './models';
 import { translateCloud } from './services/translate.service';
 import { translateItems } from './utils/translate-batch';
 import { isEmulatorEnabled } from './config';
+import { authUid } from './utils/log-auth';
 
 export const translate = onCall<TranslateData>(async request => {
   logger.info('[translate] data: ' + JSON.stringify(request.data));
-  logger.info('[translate] context.auth: ' + JSON.stringify(request.auth));
+  logger.info('[translate] auth uid: ' + authUid(request.auth));
   const data = request.data;
   const { sourceLocale, targetLocale } = data;
   if (!canPerform(UserPermission.TRANSLATION_UPDATE, request.auth) || !canPerform(UserPermission.CONTENT_UPDATE, request.auth)) {
