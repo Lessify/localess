@@ -138,6 +138,28 @@ shared/
 
 ---
 
+## Security Headers (Hosting)
+
+`firebase.json` sets browser security headers on every app path. The header block uses an RE2 `regex` that matches everything except `/api/**`. That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`functions/src/utils/asset-headers.ts`). A glob like `!(api)/**` doesn't work here, because the Hosting glob matcher (minimatch) reads a leading `!` as negating the whole pattern.
+
+| Header | Value |
+|---|---|
+| `Content-Security-Policy-Report-Only` | The app's CSP. **Report-only for now:** browsers log violations to the console but block nothing. |
+| `X-Frame-Options` | `SAMEORIGIN`. Enforced now, because `frame-ancestors` has no effect in report-only mode. |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` |
+
+How the CSP is built:
+
+- **Scripts** allow only `'self'`, Google sign-in (`apis.google.com`) and Tag Manager, with no `'unsafe-inline'`. That is why the theme bootstrap lives in `src/scripts/theme-init.js` rather than an inline `<script>` in `index.html`.
+- **The one inline handler** in the production `index.html` is `onload="this.media='all'"`, which Angular's critical-CSS inlining adds. It is allowed by its hash through `'unsafe-hashes'`. If Angular changes that handler, the hash must be updated. A production build plus `grep onload dist/localess/browser/index.html` shows the current one.
+- **Styles** need `'unsafe-inline'`: Angular component styles, Spartan and the inlined critical CSS all depend on it.
+- **Frames** allow `https:` plus `http://localhost` / `http://127.0.0.1`. Visual-editor preview environments can be any site, and Firebase sign-in uses an iframe on the auth domain.
+- **Adding a new external origin** (a script CDN, an API the browser calls directly, a font host) means adding it to the matching directive, or the browser reports it, and after the switch blocks it.
+
+**Switching to enforcing.** Watch the browser console in production for `[Report Only]` CSP messages, especially on login with Google or Microsoft, the Open API page (Stoplight Elements), the contents editor with preview, assets with Unsplash, and Analytics. Once it stays clean, rename the header key `Content-Security-Policy-Report-Only` to `Content-Security-Policy` and redeploy hosting.
+
 ## Implementation Files
 
 - `src/app/app.config.ts` — root provider configuration

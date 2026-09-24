@@ -10,6 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
     <link rel="manifest" href="./site.webmanifest" />
+    <script src="scripts/theme-init.js"></script>
     <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -18,15 +19,4 @@
   <body class="mat-typography bg-background style-nova">
     <ll-root></ll-root>
   </body>
-  <script>
-    if (localStorage) {
-      let state = JSON.parse(localStorage.getItem('LL-SETTINGS-STATE') || '{}');
-      if (state && state.theme === 'dark') {
-        document.documentElement.classList.remove('light');
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.colorScheme = 'dark';
-        document.documentElement.setAttribute('data-theme', 'dark');
-      }
-    }
-  </script>
 </html>
