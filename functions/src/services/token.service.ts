@@ -26,5 +26,6 @@ export function findTokenById(spaceId: string, id: string): DocumentReference {
  * @return {boolean} true - token is valid, false - otherwise
  */
 export function validateToken(token?: unknown): boolean {
-  return token !== undefined && typeof token === 'string' && token.length === 20;
+  // Alphanumeric only: the token is used as a Firestore document ID, so `/` must never reach the lookup.
+  return typeof token === 'string' && /^[A-Za-z0-9]{20}$/.test(token);
 }

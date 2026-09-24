@@ -6,9 +6,11 @@ import { Schema, Space, TokenPermission } from '../models';
 import { docSchemaToExport, findSchemas, findSpaceById, generateOpenApi } from '../services';
 import { redactQuery } from '../utils/log-redact';
 import { RequestWithToken, requireTokenPermissions } from './middleware/query-auth.middleware';
+import { validateIdParams } from './middleware/id-param.middleware';
 
 // eslint-disable-next-line new-cap
 export const DEV_TOOLS = Router();
+validateIdParams(DEV_TOOLS);
 
 DEV_TOOLS.get('/api/v1/spaces/:spaceId', requireTokenPermissions([TokenPermission.DEV_TOOLS]), async (req: RequestWithToken, res) => {
   logger.info('[V1:SpaceById] params : ' + JSON.stringify(req.params));

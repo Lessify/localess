@@ -61,9 +61,11 @@ import {
   requireTokenPermissions,
   requireTranslationPermissions,
 } from './middleware/query-auth.middleware';
+import { validateIdParams } from './middleware/id-param.middleware';
 
 // eslint-disable-next-line new-cap
 export const CDN = Router();
+validateIdParams(CDN);
 
 CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermissions(), async (req: RequestWithToken, res) => {
   logger.info('[V1:Translations] params : ' + JSON.stringify(req.params));

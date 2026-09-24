@@ -22,6 +22,7 @@ import {
 import { mapWithConcurrency } from '../utils/map-with-concurrency';
 import { stripStorageIds } from '../utils/strip-storage-ids';
 import { findAssetById } from './asset.service';
+import { assertPathSegment, isValidId } from '../utils/id-param';
 
 /**
  * Maximum concurrent Storage/Firestore reads while resolving one document's assets, links or
@@ -149,6 +150,9 @@ export function findContents(spaceId: string, kind?: ContentKind, fromDate?: num
  * @return {string} path
  */
 export function contentLocaleCachePath(spaceId: string, contentId: string, locale: string, version: string | 'draft' | undefined): string {
+  // A `/` in either ID would redirect this path — `X/draft` points at the unpublished draft.
+  assertPathSegment(spaceId, 'space id');
+  assertPathSegment(contentId, 'content id');
   if (version === 'draft') {
     return `spaces/${spaceId}/contents/${contentId}/draft/${locale}.json`;
   } else {
@@ -257,7 +261,8 @@ export async function resolveReferences(
   }
   const resolvedReferences: Record<string, ContentDocumentApi> = {};
   await mapWithConcurrency(content.references, RESOLVE_CONCURRENCY, async refId => {
-    if (!refId) {
+    // A malformed stored ID is skipped like a missing one rather than failing the whole response.
+    if (!refId || !isValidId(refId)) {
       logger.warn(`[ReferenceResolver::resolveReferences] Reference ${refId} not found.`);
       return;
     }

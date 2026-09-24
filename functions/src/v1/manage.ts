@@ -26,9 +26,11 @@ import {
 } from '../services';
 import { getAllInChunks } from '../utils/get-all-in-chunks';
 import { RequestWithToken, requireTokenPermissions } from './middleware/api-key-auth.middleware';
+import { validateIdParams } from './middleware/id-param.middleware';
 
 // eslint-disable-next-line new-cap
 export const MANAGE = Router();
+validateIdParams(MANAGE);
 
 /**
  * Apply an operation to a list of document refs in batches of BATCH_MAX, committing as it goes.

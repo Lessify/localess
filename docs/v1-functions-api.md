@@ -167,6 +167,19 @@ Space introspection and OpenAPI generation. Uses `token` query param auth.
 
 ## Middleware
 
+### `id-param.middleware.ts` — ID validation (all routers)
+
+`validateIdParams(router)` registers `router.param` checks for `spaceId`, `contentId` and `assetId` on CDN, DEV_TOOLS and MANAGE. A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`utils/id-param.ts`) gets `400 invalid-argument`, with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`). `router.param` callbacks run before the route's own middleware, so a bad ID never reaches the permission checks or a path builder.
+
+This matters because Express decodes `%2F` in route params, and these IDs are spliced into Firestore and Storage paths. Without the check, `GET /contents/X%2Fdraft?cv=…` builds `spaces/{spaceId}/contents/X/draft/{locale}.json` and serves the **unpublished draft** under a `CONTENT_PUBLIC` token: `requireContentPermissions()` only treats a request as a draft request when `version` is present. Hosting passes `%2F` through, so this worked through the app domain as well as the function URL.
+
+Two more guards back it up:
+
+- `contentLocaleCachePath()` calls `assertPathSegment()` on both IDs.
+- Reference resolution skips a stored reference ID that isn't well-formed instead of failing the response.
+
+Tokens are checked too: `validateToken()` accepts only 20 alphanumerics, and anything else gets the usual `401`.
+
 ### `query-auth.middleware.ts` — Query Param Auth (CDN + DEV_TOOLS)
 
 Token passed as `?token=<tokenId>`. Results are cached in-memory per Function instance with a 5-minute TTL (key: `${spaceId}:${tokenId}`) to reduce Firestore reads.
