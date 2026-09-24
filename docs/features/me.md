@@ -9,7 +9,7 @@ Allows the currently logged-in user to view and manage their own profile — dis
 ## Route
 
 ```
-/features/me    [authenticated]
+/features/me    [authenticated — no own guard; covered by the parent `features` route's `authGuard` (app-routing.ts)]
 ```
 
 ## Key Files
@@ -17,39 +17,43 @@ Allows the currently logged-in user to view and manage their own profile — dis
 ```
 src/app/features/me/
   me.component.ts/html/scss      ← profile page
-  me-dialog/                     ← edit display name + photo
+  me-dialog/                     ← edit display name + photo URL
   me-email-dialog/               ← update email address
   me-password-dialog/            ← change password
 ```
 
 ## MeComponent
 
-Displays the current user's profile card — name, email, avatar, auth providers (Email / Google / Microsoft), and verification status. Reads all data from `UserStore`.
+Displays the current user's profile card — avatar, name, email, email-verified status, role, and (for `custom` role) the permission list. Reads all data from `UserStore`.
 
-**Injected services:** `MatDialog`, `NotificationService`, `MeService`, `UserStore`
+**Injected services:** `HlmDialogService`, `NotificationService`, `MeService`, `UserStore`
 
 **Key behaviour:**
-- `openEditDialog()` — opens `MeDialogComponent` to update display name and profile photo
+- `openEditDialog()` — opens `MeDialogComponent` to update display name and profile photo URL
 - `openUpdateEmailDialog()` — opens `MeEmailDialogComponent` (only available for email/password provider)
 - `openUpdatePasswordDialog()` — opens `MePasswordDialogComponent` (only available for email/password provider)
+
+**Visibility rules (`me.component.html`):**
+- Locked account (`isLocked()`) — all action buttons are hidden and a "your account is locked" message is shown instead
+- Google / Microsoft provider — only "Update Profile" is shown; a message explains email and password are managed by the external provider
 
 ## Dialogs
 
 ### MeDialogComponent
-Form: `displayName`, profile photo URL or upload.
+Form: `displayName`, `photoURL` (plain URL text field — no upload).
 
 ### MeEmailDialogComponent
-Form: new `email` + current `password` for re-authentication. Sends verification email to new address.
+Form: `newEmail` only. Calls `MeService.updateEmail()` (Firebase Auth `updateEmail`), then reloads the current user.
 
 ### MePasswordDialogComponent
-Form: current `password` + new `password` + confirm. Re-authenticates before updating.
+Form: `newPassword` only (min length 6). Calls `MeService.updatePassword()` (Firebase Auth `updatePassword`).
 
-> Email and password changes require re-authentication because they are sensitive operations.
+> There is no current-password field, confirm field, or explicit re-authentication step, and no verification email is sent. Firebase Auth may reject these calls with `auth/requires-recent-login` if the session is old.
 
 ## Services Used
 
 | Service | Purpose |
 |---------|---------|
 | `MeService` | Update display name, email, password via Firebase Auth |
-| `NotificationService` | Snackbar feedback |
+| `NotificationService` | Toast feedback |
 | `UserStore` | Read current user state (email, providers, displayName) |

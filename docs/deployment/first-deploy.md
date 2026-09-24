@@ -35,11 +35,16 @@ them.
 ### 1. Install Functions dependencies
 
 ```bash
-npm --prefix functions install
+cd functions && npm install && cd ..
 ```
 
 `functions/` is a separate npm package with its own `package.json`. The root `npm install` does not
 cover it.
+
+Run it from inside `functions/`, not as `npm --prefix functions install`: npm treats the current
+directory's project as a dependency of the prefix target, so `--prefix` silently adds
+`"localess": "file:.."` to the tracked `functions/package.json`. `npm run localess:deploy` does
+the same for this reason.
 
 You do **not** need to compile functions yourself — `firebase.json` declares:
 
@@ -60,7 +65,8 @@ npm run version:generate
 
 Writes `src/assets/version.json` with the version from `package.json`, the build date, and
 `COMMIT_SHA` / `GITHUB_SHA` if present (otherwise `local-build`). Optional — the file is committed,
-so a stale one only means stale version metadata in the UI.
+so a stale one only means stale version metadata in the UI. `npm run localess:deploy` does **not**
+run this step (`cloudbuild.yaml` does); run it yourself first if you want fresh metadata.
 
 ### 3. Build for production
 
@@ -148,7 +154,7 @@ Omit `--project` and you get the same annotated picker setup uses, minus the cre
 | `--only <targets>` | Override the default targets (see below) |
 | `--skip-install` | Reuse the installed `node_modules` |
 | `--skip-build` | Reuse `dist/localess/browser` |
-| `--dry-run` | Regenerate the local files, print the build and deploy commands, stop |
+| `--dry-run` | Regenerate the local files (and correct the `localess-region` label), print the build and deploy commands, stop |
 | `--yes` | Skip the confirmation. Requires `--project`. |
 
 By default it pushes `hosting,functions,storage,firestore,auth` — the same set as
@@ -163,6 +169,9 @@ One target is excluded on purpose:
 | `remoteconfig` | Would overwrite console-side edits on every deploy |
 
 Push it explicitly when you need to: `npm run localess:deploy -- --only remoteconfig`.
+
+`--only` also accepts `extensions` and `database`, which `firebase deploy` understands but
+Localess does not configure in `firebase.json`.
 
 An unknown target is rejected before anything is touched, so a typo costs nothing.
 
@@ -191,9 +200,13 @@ So deploy re-checks them, and enables whatever is off, before it installs or bui
 
 The check is a single Service Usage call listing every enabled API, so the normal case — a project
 that is already correct — costs one round trip rather than fifteen. It runs after the confirmation,
-so a cancelled or `--dry-run` deploy changes nothing, and before the build, so a drifted project
+so a cancelled or `--dry-run` deploy enables nothing, and before the build, so a drifted project
 costs seconds instead of a full production build followed by a failure worded in terms of the
 resource that could not be created.
+
+A cancelled or `--dry-run` deploy is not entirely side-effect free, though: the local project
+files have already been regenerated, and the remote `localess-region` label corrected if it
+disagreed with the live Firestore location, before the dry-run exit or the confirmation prompt.
 
 `translate.googleapis.com` is the one that most needs this: nothing in a deploy touches it — it is
 used at runtime by `functions/src/services/translate.service.ts` — so if it were off, the first sign

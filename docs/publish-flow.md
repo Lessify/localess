@@ -17,18 +17,33 @@ Publishing is the process of converting Firestore content/translations into stat
 4. Function extracts locale-specific data for each Space locale
 5. Function writes JSON to Storage:
      spaces/{spaceId}/contents/{contentId}/{locale}.json   (one per locale)
-6. Function updates the cache marker:
+6. Function stamps publishedAt on the Firestore document
+7. That Firestore write fires the content.onwrite trigger, which rewrites the cache marker:
      spaces/{spaceId}/contents/cache.json                  (new generation = new cv)
-7. All subsequent API requests get a new cv → CDN cache invalidated
+8. All subsequent API requests get a new cv → CDN cache invalidated
 ```
 
-### Draft Publish
+> **Note:** The publish function itself does not write `cache.json`. The `content.onwrite` trigger (`functions/src/contents.ts`) rewrites it on **every** content write — create, edit, delete, publish, unpublish — so any content edit bumps the content `cv`, not only a publish.
 
-When publishing a draft (with a `version` parameter):
+### Content Drafts
+
+Content draft files are written by the `content.onupdate` Firestore trigger on every save of a document (skipped when the update only changes `publishedAt`, i.e. a publish):
 ```
 Storage: spaces/{spaceId}/contents/{contentId}/draft/{locale}.json
 ```
 Draft files are separate from published files. Consumers must pass `?version=draft` to access them.
+
+### Content Unpublish Flow
+
+```
+1. Angular calls the content unpublish onCall
+2. For a DOCUMENT: deletes spaces/{spaceId}/contents/{contentId}/{locale}.json for every Space locale
+   and clears publishedAt on the Firestore document
+3. For a FOLDER: does the same for every published document under the folder (batched, BATCH_MAX = 500)
+4. The publishedAt write fires content.onwrite → cache.json rewritten → new cv
+5. CONTENT_UNPUBLISHED webhook fires
+```
+Draft files are left in place.
 
 ---
 
@@ -42,6 +57,7 @@ Draft files are separate from published files. Consumers must pass `?version=dra
      spaces/{spaceId}/translations/{locale}.json   (one per locale)
 5. Function updates the cache marker:
      spaces/{spaceId}/translations/cache.json      (new generation = new cv)
+6. Function writes per-locale translated counts to progress.translations on the Space document
 ```
 
 ---
@@ -58,14 +74,19 @@ Draft JSON files are kept in sync so consumers can preview unpublished changes v
 3. On success, TranslationService calls translation-publishdraft onCall
 4. Function reads all translations and writes draft JSON to Storage:
      spaces/{spaceId}/translations/draft/{locale}.json
+5. Function rewrites spaces/{spaceId}/translations/cache.json (new cv)
 ```
 
-### Import Task (TRANSLATION_IMPORT / TRANSLATION_IMPORT_FLAT)
+> Draft generation (`generateTranslationsDraft()` → `saveTranslationFiles()`) always rewrites the translation `cache.json`, so a draft save also bumps the `cv` for published translation requests.
+
+### Import Task (TRANSLATION_IMPORT)
+
+A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set (handled by `translationsImportJsonFlat()`); without `task.locale` it is a full import (`translationsImport()`).
 
 ```
 1. Task Function writes all rows via a Firestore WriteBatch (chunked in batches of BATCH_MAX = 500)
-2. After the batches commit, Function calls generateTranslationsDraft() once
-3. Draft files written for all locales in a single pass
+2. After the batches commit, if totalChanges > 0, Function calls generateTranslationsDraft() once
+3. Draft files written for all locales in a single pass (skipped entirely when nothing changed)
 ```
 
 ### CLI Manage API (POST /api/v1/spaces/:spaceId/translations/:locale)
@@ -76,7 +97,7 @@ Draft JSON files are kept in sync so consumers can preview unpublished changes v
 3. Draft files written for all locales in a single pass
 ```
 
-> **Note:** There is no Firestore trigger watching translation writes. Draft generation is always triggered explicitly — either by the frontend calling `translation-publishdraft` or by the import/manage flow calling `generateTranslationsDraft()` directly at the end.
+> **Note:** There is no Firestore trigger watching translation writes (unlike content, whose drafts are written by `content.onupdate`). Draft generation is always triggered explicitly — either by the frontend calling `translation-publishdraft` or by the import/manage flow calling `generateTranslationsDraft()` directly at the end.
 
 ---
 
@@ -125,7 +146,7 @@ Content documents can include `links`, `references`, and `assets` arrays (IDs of
 - `?resolveReference=true` — resolves references to content documents, with their own id arrays stripped
 - `?resolveAsset=true` — resolves asset IDs to full asset metadata via `resolveAssets()`
 
-Resolution is done at request time by reading additional Storage files. This adds latency but avoids denormalization in Storage.
+Resolution is done at request time. Links and assets are read from Firestore (`spaces/{spaceId}/contents/{id}`, `spaces/{spaceId}/assets/{id}`); only references read additional Storage files (the referenced document's locale JSON). This adds latency but avoids denormalization in Storage.
 
 ### The id arrays are storage-only
 
@@ -142,7 +163,7 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 
 ## Implementation Files
 
-- `functions/src/contents.ts` — publish content Firebase Function
+- `functions/src/contents.ts` — content `publish`/`unpublish` onCalls, `onupdate` (drafts) and `onwrite` (`cache.json`) triggers
 - `functions/src/translations.ts` — `publish` onCall, `publishDraft` onCall
 - `functions/src/services/content.service.ts` — `contentLocaleCachePath`, `spaceContentCachePath`
 - `functions/src/services/translation.service.ts` — `saveTranslationFiles`, `generateTranslationsDraft`, `translationLocaleCachePath`, `spaceTranslationCachePath`

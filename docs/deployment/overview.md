@@ -1,6 +1,6 @@
 # Deployment Overview
 
-> Related: [Firebase Setup](firebase-setup.md) · [First Deploy](first-deploy.md) · [Updates](updates.md) · [Billing & Cost](../billing.md)
+> Related: [Firebase Setup](firebase-setup.md) · [First Deploy](first-deploy.md) · [Updates](updates.md) · [Health Check](check.md) · [Billing & Cost](../billing.md)
 
 ## Overview
 
@@ -17,9 +17,9 @@ Phase 1 creates cloud *resources*. Phases 2 and 3 push *code and configuration* 
 resources. Phase 1 never has to be repeated, but it is safe to re-run — every step detects
 existing state and skips.
 
-### The three commands
+### The four commands
 
-All three are subcommands of one CLI (`scripts/localess.mjs`); the npm scripts are aliases.
+All four are subcommands of one CLI (`scripts/localess.mjs`); the npm scripts are aliases.
 
 | Command | Owns |
 |---------|------|

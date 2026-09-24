@@ -92,7 +92,10 @@ setting either.
 | `remoteconfig.template.json` | `remoteconfig` |
 | `firebase.json` `auth` block | `auth` |
 | `LOCALESS_*` values | rebuild, then `hosting` |
-| `LOCALESS_REGION` in `.env.<project-id>` | `functions` **and** the `/api/v1/**` rewrite |
+
+`LOCALESS_REGION` is not in the table because it cannot be changed by editing
+`.env.<project-id>`: sync and deploy rewrite it from the live Firestore location on every run,
+and that location is permanent. A different region means a new project.
 
 ---
 
@@ -150,5 +153,9 @@ of truth is this repository — prefer redeploying from a known-good commit.
 
 Every functions deploy runs Cloud Build and stores images in Artifact Registry, both of which are
 billable. Frequent full deploys are the most common source of surprise cost in a self-hosted
-Localess. Prefer targeted deploys, and see [Billing & Cost](../billing.md) for cleanup of old
-Artifact Registry images.
+Localess. Prefer targeted deploys, and see [Billing & Cost](../billing.md) for the wider picture.
+
+Old function images are cleaned up automatically: every deploy that includes `functions` first
+sets an Artifact Registry cleanup policy for the region (`functions:artifacts:setpolicy`, with
+firebase-tools' default of deleting images after one day). This is best-effort — if it cannot be
+set, the deploy continues and says so.

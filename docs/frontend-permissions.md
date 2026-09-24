@@ -24,7 +24,7 @@ Two roles exist, set via Firebase custom claim `role`:
 | `admin` | Full access to everything — bypasses all permission checks |
 | `custom` | Granular access — only what's listed in the `permissions` claim |
 
-A `lock: true` claim disables a user from logging in (checked by `UserStore.isLocked`).
+A `lock: true` claim does **not** block login. Its only consumer is `UserStore.isLocked`, which `me.component.html` uses to hide the Update Profile / Email / Password actions on the user's own profile page. It is UI-only — nothing server-side enforces it. (Blocking sign-in is the separate Firebase Auth `disabled` flag.)
 
 ---
 
@@ -77,7 +77,7 @@ enum UserPermission {
 }
 ```
 
-> **Note:** Unlike every other permission above, `DEV_OPEN_API` and `DEV_WEBHOOK` are **not** enforced by a route guard — the `spaces/:spaceId/developers` route (which hosts both Open API and Webhooks) has no `canActivate` in `features-routing.module.ts`. They only control sidebar link visibility, checked client-side in `src/app/features/features.component.ts` (~line 228-241). A user who guesses the URL can still reach `/features/spaces/:spaceId/developers/...` without holding either permission.
+> **Note:** Unlike every other permission above, `DEV_OPEN_API` and `DEV_WEBHOOK` are **not** enforced by a route guard — the `spaces/:spaceId/developers` route (which hosts both Open API and Webhooks) has no `canActivate` in `features-routing.module.ts`. They only control sidebar link visibility, checked client-side via the `DEV_OPEN_API` / `DEV_WEBHOOK` `permission` entries on the Developers sidebar items in `src/app/features/features.component.ts`. A user who guesses the URL can still reach `/features/spaces/:spaceId/developers/...` without holding either permission.
 
 ---
 
@@ -106,7 +106,20 @@ claims['role'] === 'admin' || claims['permissions']?.includes(UserPermission.TRA
 
 ## How UI Conditionally Renders
 
-In components, use `UserStore` signals to show/hide UI elements:
+### `canUserPerform` pipe (templates)
+
+The main template gating mechanism is `CanUserPerformPipe` (`src/app/shared/pipes/can-user-perform.pipe.ts`). It takes a single permission or an array (any-of match) and returns an `Observable<boolean>`, so pair it with `async`:
+
+```html
+@if ('SPACE_MANAGEMENT' | canUserPerform | async) { ... }
+@if (item.permission | canUserPerform | async) { ... }   <!-- string | string[] | undefined -->
+```
+
+`admin` → always `true`; `custom` → `permissions` includes the value (or any of the array); `undefined` permission → `true`; no role → `false`.
+
+### `UserStore` signals (component code)
+
+In component classes, use `UserStore` signals:
 
 ```typescript
 readonly userStore = inject(UserStore);
@@ -134,6 +147,7 @@ this.userStore.permissions()?.includes(UserPermission.CONTENT_PUBLISH)
 
 - `src/app/shared/models/user.model.ts` — `User`, `UserRole`, `UserPermission` types
 - `src/app/shared/stores/user.store.ts` — reads claims, exposes `isRoleAdmin`, `isLocked`
+- `src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
 - `src/app/features/features-routing.module.ts` — all route guards with permission pipes
 - `src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)
 - `src/app/shared/services/user.service.ts` — Firestore user CRUD (admin operations)

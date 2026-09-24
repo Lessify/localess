@@ -92,8 +92,9 @@ These are the `MatPaginator` behaviours it reproduces on purpose. Each is covere
 
 `[sticky]="true"` only adds the `ll-paginator-sticky` class (`src/styles/_ll-paginator.scss`), which
 is plain CSS `position: sticky`. It therefore requires the nearest scrolling ancestor to have a
-**definite height** *and* `overflow-auto`. For feature pages that ancestor is
-`<main hlmSidebarInset>` (`h-svh overflow-auto`); in a dialog it is `mat-dialog-content`. This is the
+**definite height** *and* `overflow-y-auto`. For feature pages that ancestor is
+`<main hlmSidebarInset>` (`h-svh overflow-y-auto`); in a Spartan dialog it is the scrolling middle
+`<div class="min-h-0 overflow-x-hidden overflow-y-auto">`, bounded by the dialog's height cap. This is the
 same trap described at length in [Table → sticky gotcha](table.md#sticky-headerpaginator-depends-on-a-height-bounded-scroll-ancestor)
 — check the ancestor before debugging the paginator.
 

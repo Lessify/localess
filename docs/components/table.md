@@ -120,14 +120,16 @@ as a CSS scroll container and silently swallow the sticky calculation without ev
 
 The real scrolling ancestor for every feature page is `<main hlmSidebarInset>` in
 `src/app/features/features.component.html`, which must carry both a **definite height** (`h-svh`)
-*and* `overflow-auto`. `min-h-svh` on the sidebar wrapper is only a floor, not a fixed height, so
-`main` needs its own explicit height for `overflow-auto` to bound and scroll its content. **If sticky
+*and* `overflow-y-auto`. `min-h-svh` on the sidebar wrapper is only a floor, not a fixed height, so
+`main` needs its own explicit height for `overflow-y-auto` to bound and scroll its content. **If sticky
 rows or paginators stop sticking anywhere in the app, check that pair of classes on `main` first**,
 before touching individual table pages.
 
 For a `<ll-paginator>` inside a dialog, see
-[Spartan UI Migration → Sticky Paginator in Dialogs](../spartan-ui-migration.md#sticky-paginator-in-dialogs)
-— same `sticky` input, different scrollable ancestor (`mat-dialog-content`).
+[Spartan UI Migration → Sticky Paginator](../spartan-ui-migration.md#sticky-paginator)
+— same `sticky` input, different scrollable ancestor: the dialog's scrolling middle
+`<div class="min-h-0 overflow-x-hidden overflow-y-auto">` between `<hlm-dialog-header>` and
+`<hlm-dialog-footer>` (e.g. `references-select-dialog`, `assets-select-dialog`).
 
 ## Reference consumer
 

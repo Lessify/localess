@@ -4,7 +4,7 @@
 
 ## Overview
 
-API tokens grant programmatic, scoped access to the public CDN API. On the CDN read endpoints (`CDN`, `DEV_TOOLS` routers) they are passed as a `?token=<tokenId>` query parameter; there is no cookie-based auth. The `MANAGE` router (bulk translation writes) is the one exception — it authenticates via an `X-API-KEY` header instead of the query param (see [V1 Functions API](v1-functions-api.md#middleware) for that flow). This doc covers the query-param auth path used by the CDN/DEV_TOOLS routers.
+API tokens grant programmatic, scoped access to the public CDN API. On the CDN read endpoints (`CDN`, `DEV_TOOLS` routers) they are passed as a `?token=<tokenId>` query parameter; there is no cookie-based auth. The `MANAGE` router (bulk translation writes and schema push) is the one exception — it authenticates via an `X-API-KEY` header instead of the query param (see [V1 Functions API](v1-functions-api.md#middleware) for that flow). Both `MANAGE` endpoints — `POST /translations/:locale` and `POST /schemas` (schema push) — require the `DEV_TOOLS` permission, which only a TokenV2 with `DEV_TOOLS` in its `permissions` array can satisfy; a legacy TokenV1 is always rejected with `403`. This doc covers the query-param auth path used by the CDN/DEV_TOOLS routers.
 
 Tokens are stored in Firestore:
 ```
@@ -35,7 +35,7 @@ Also supports an optional `cacheTtl?: number` field, which overrides the default
 | `TRANSLATION_DRAFT` | Draft translations (requires `version` param) |
 | `CONTENT_PUBLIC` | Published content |
 | `CONTENT_DRAFT` | Draft content (requires `version` param) |
-| `DEV_TOOLS` | Dev-tools endpoints (all content/translation access) |
+| `DEV_TOOLS` | Dev-tools endpoints, `MANAGE` endpoints (translation bulk-write, schema push), and all content/translation access. TokenV2 only |
 
 ---
 
@@ -67,7 +67,7 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 - On token not found: entry removed from cache
 - Revocations take effect within the TTL window (max 5 min)
 
-> `publicv1` runs with `maxInstances: 10` (`functions/src/v1.ts`) and `concurrency: 600`, so the cache is per-instance: a token may be read from Firestore once per active instance. Revocation still takes effect within the TTL window on each instance.
+> `publicv1` runs with `maxInstances: 10` (`functions/src/v1.ts`) and `concurrency: 20`, so the cache is per-instance: a token may be read from Firestore once per active instance. Revocation still takes effect within the TTL window on each instance.
 
 > **Never log a raw query object.** The token arrives as the `?token=` query param, so `JSON.stringify(req.query)` would persist a usable credential into Cloud Logging for its full retention period. Every V1 log statement goes through `redactQuery()` (`functions/src/utils/log-redact.ts`).
 

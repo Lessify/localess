@@ -27,9 +27,12 @@ src/app/features/spaces/translations/
   shared/components/
     translation-string-view/ translation-string-edit/  ← STRING type components (only type with an editor UI)
     translation-detail/                  ← per-key detail panel, locale editing, keyboard navigation
-    translation-list/                    ← flat/tree list rendering
+    translation-list/                    ← flat/tree list rendering (renders `<ll-tree>`)
     translation-filter/                  ← search/filter bar
     translation-status/                  ← visual status badge
+
+src/app/shared/models/
+  translation.model.ts                   ← Translation, TranslationType, etc.
 
 src/app/shared/components/
   translate-locale-dialog/               ← shared/global dialog, also used by Contents (bulk AI-translate to a target locale)
@@ -40,20 +43,23 @@ src/app/shared/components/
 The main component is one of the most complex in the app. It renders a hierarchical tree (or flat list) of translation keys across all
 locales of the selected space.
 
-**Injected services:** `TranslationService`, `TaskService`, `TokenService`, `TranslateService`, `NotificationService`
+**Injected services:** `TranslationService`, `TaskService`, `TokenService`, `TranslateService`, `NotificationService`, `HlmDialogService`, `LocalSettingsStore`, `SpaceStore`
 
 **Key behaviour:**
 
-- `loadTranslations()` — fetches all translation documents for the space
+- `ngOnInit()` — loads all translation documents for the space via `translationService.findAll(spaceId)`
 - Inline editing — clicking a row opens `TranslationDetailComponent` (see below) for the key
-- `publishTranslation()` — publishes all translations to Firebase Storage (see [Publish Flow](../../publish-flow.md))
+- `publish()` — publishes all translations to Firebase Storage (see [Publish Flow](../../publish-flow.md))
 - `openImportDialog()` — opens import dialog → creates a **Task** for background processing
 - `openExportDialog()` — opens export dialog → creates a **Task** for background processing
+- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` to bulk-translate one locale into another
 - Layout toggle: **list** (flat) ↔ **tree** (hierarchical), persisted in `LocalSettingsStore.translationLayout`
 
 `TranslationDetailComponent` (`shared/components/translation-detail/`) owns per-key editing: it injects `PlatformService`, `LocaleService`,
-`TranslateService`, `TranslationService`, `NotificationService`, handles keyboard shortcuts via a `(window:keydown)` host listener
-(`captureKeyboard()`), and calls `translateAi()`-style AI-assisted translation (Google Translate or DeepL via Remote Config).
+`TranslateService`, `TranslationService`, `NotificationService`, `HlmDialogService`, handles keyboard shortcuts via a `(window:keydown)` host listener
+(`captureKeyboard()`), and runs AI-assisted translation in `translate()`, which goes through `TranslateService.translate()` → the `translate`
+Firebase callable (the provider is chosen server-side). It also opens the per-key dialogs: `openEditDialog()`, `openEditIdDialog()` and
+`openDeleteDialog()` (`EditDialogComponent`, `EditIdDialogComponent`, `ConfirmationDialogComponent`).
 
 **Only the translate button is gated by provider support here**, not the two selects. Those selects also choose which locale is displayed
 and hand-edited, so every locale of the space stays selectable — a locale Google cannot translate is still one an author writes by hand.
@@ -96,7 +102,7 @@ locale, see [Space Settings → Translation support](settings.md#translation-sup
 | `TranslationService`  | CRUD + publish + publishDraft (called automatically after every write)                                   |
 | `TaskService`         | Create import/export tasks                                                                               |
 | `TokenService`        | Retrieve API token for CDN preview links                                                                 |
-| `TranslateService`    | AI translation (Google Translate / DeepL)                                                                |
+| `TranslateService`    | AI translation via the `translate` callable (`translate()` single, `translateBatch()` batch)             |
 | `NotificationService` | Snackbar feedback                                                                                        |
 | `LocaleService`       | Load space locales (used by `TranslationDetailComponent`, not the main component)                        |
 | `PlatformService`     | Platform detection for keyboard shortcuts (used by `TranslationDetailComponent`, not the main component) |

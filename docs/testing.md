@@ -13,9 +13,9 @@ npx ng test --watch=false --include="path/to/*.spec.ts"  # a subset
 
 A root `vitest-base.config.ts` sets **`test.isolate: true`**. The Angular builder auto-discovers this file (`angular.json`'s unit-test `runnerConfig: true` triggers `@angular/build`'s `findVitestBaseConfig` lookup) and merges it on top of its own internal default of `isolate: false`, so the external file wins — each spec file gets its own fresh module registry today. This wasn't always the case, and it's the reason the Firebase mocking pattern below looks the way it does — see "Why this must stay centralized" for the history and why the pattern remains correct even under `isolate: true`.
 
-## Coverage scope
+## Test scope
 
-**`libs/ui/**` is excluded from unit test coverage.** It's the Spartan/Helm component library (Brain headless primitives + Helm styling layer, 44+ components) — third-party-style, largely unmodified UI building blocks, not app logic. Unit-testing them has a poor cost/benefit ratio; if a `libs/ui` component needs verification, prefer exercising it indirectly through the feature component that uses it. Everything under `src/app/**` is in scope.
+**No coverage configuration exists** — not in `angular.json`, `vitest-base.config.ts` or `package.json` (`@vitest/coverage-v8` is installed as a devDependency but nothing wires it up). There are no specs under `libs/ui/**`: it's the Spartan/Helm component library (Brain headless primitives + Helm styling layer, 44+ components) — largely unmodified UI building blocks, not app logic. If a `libs/ui` component needs verification, exercise it indirectly through the feature component that uses it. Specs live under `src/app/**`.
 
 ---
 
@@ -42,7 +42,7 @@ Both symptoms were non-deterministic with respect to *which* files failed — it
 
 ### What's mocked vs. real
 
-Each global mock spreads `await vi.importActual(...)` first, then overrides only the functions that perform I/O or need call-assertion support (`doc`, `collection`, `addDoc`, `updateDoc`, `deleteDoc`, `setDoc`, `docData`, `collectionData`, `collectionCount`, `query`, `orderBy`, `where`, `limit`, `documentId`, storage's `ref`/`uploadBytes*`/`getDownloadURL`, remote-config's `getAllChanges`). Pure value/sentinel helpers — `serverTimestamp`, `arrayUnion`, `arrayRemove`, `deleteField`, `Firestore`, `WithFieldValue`, etc. — are left real, since tests compare against their actual output (e.g. `expect(updatedFields).toMatchObject({ locales: arrayRemove(entity) })`).
+Each global mock spreads `await vi.importActual(...)` first, then overrides only the functions that perform I/O or need call-assertion support (`doc`, `collection`, `addDoc`, `updateDoc`, `deleteDoc`, `setDoc`, `writeBatch` (returns a batch with `set`/`update`/`delete` mocks and a `commit` resolving to `undefined`), `docData`, `collectionData`, `collectionCount`, `query`, `orderBy`, `where`, `limit`, `documentId`, storage's `ref`/`uploadBytes*`/`getDownloadURL`, remote-config's `getAllChanges`). Pure value/sentinel helpers — `serverTimestamp`, `arrayUnion`, `arrayRemove`, `deleteField`, `Firestore`, `WithFieldValue`, etc. — are left real, since tests compare against their actual output (e.g. `expect(updatedFields).toMatchObject({ locales: arrayRemove(entity) })`).
 
 ### Per-test customization
 

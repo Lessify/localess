@@ -23,14 +23,14 @@ src/app/features/spaces/tasks/
 
 ## TasksComponent
 
-A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks for the current space — the first component migrated off `MatTable`/`MatPaginator`. Each row shows the task type, status, file info, description, and creation date; the `id` column hides below the `@5xl` container-query breakpoint. Rows are clickable and navigate to `TaskDetailComponent` via `navigateToDetail(task)`.
+A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks for the current space. Each row shows the task type, status, file info, description, and creation date; the `id` column hides below the `@5xl` container-query breakpoint. Rows are clickable and navigate to `TaskDetailComponent` via `navigateToDetail(task)`.
 
-**Injected services:** `TaskService`, `MatDialog` (still used for the delete confirmation dialog frame), `NotificationService`
+**Injected services:** `TaskService`, `HlmDialogService`, `NotificationService`, `Router`
 
 **Key behaviour:**
 - `loadData()` — fetches all tasks for the space, sorted client-side via `TableDataSource`/`TableSort` (newest first by default)
 - `dataSource` (`TableDataSource<Task>`) is wired to the `TableSort` and `Paginator` view children in `ngAfterViewInit()`
-- `<ll-filter-toolbar>` with multi-select **Kind** and **Status** filters, wired via `onFilterChange()` and `FilterPredicateUtils.create()` (search across id/file name/message)
+- `<ll-filter-toolbar>` with multi-select **Kind** and **Status** filters, wired via `onFilterChange()`; `dataSource.filterPredicate` is set once in the constructor via `FilterPredicateUtils.create()` (search across id/file name/message)
 - `navigateToDetail(task)` — navigates to `TaskDetailComponent` for the row
 - `onDownload(task)` — downloads the output file of a completed export task from Firebase Storage
 - `openDeleteDialog(task)` — confirms then deletes the task record
@@ -38,6 +38,11 @@ A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks
 ## TaskDetailComponent (routed)
 
 Shows a single task's status/file info plus its paginated log entries (`TaskLog`), filterable by log **Level** (INFO/WARN/ERROR) via `<ll-filter-toolbar>`. Supports downloading the task's output file and expanding individual log rows for detail.
+
+**Key behaviour:**
+- `dataSource.filterPredicate` — set in the constructor via `FilterPredicateUtils.create<TaskLog>()`; `onFilterChange()` applies the toolbar value
+- `onDownload()` — downloads the task's output file
+- `isLogExpanded(id)` / `toggleLogExpanded(id)` — track which log rows are expanded
 
 ## Task Types
 

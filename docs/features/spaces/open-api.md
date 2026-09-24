@@ -4,15 +4,18 @@
 
 ## Purpose
 
-Renders an interactive OpenAPI / Swagger UI for the space's public REST API. Allows developers to explore and test the CDN endpoints directly from the CMS.
+Renders an interactive OpenAPI UI (Stoplight Elements) for the space's public REST API. Allows developers to explore and test the CDN endpoints directly from the CMS.
 
 This module lives under the **Developers** section alongside [Webhooks](../../webhooks.md), rendered via `DevelopersComponent`'s `<router-outlet>`.
 
 ## Route
 
 ```
-/features/spaces/:spaceId/developers/open-api    [DEV_OPEN_API permission]
+/features/spaces/:spaceId/developers/open-api
 ```
+
+There is no route guard: neither the `developers` route in `features-routing.module.ts` nor `developers-routing.module.ts` has a
+`canActivate`. `DEV_OPEN_API` only controls whether the sidebar item is shown (see [Spaces Overview](overview.md#modules)).
 
 ## Key Files
 
@@ -22,17 +25,20 @@ src/app/features/spaces/developers/
   developers-routing.module.ts             ← redirects '' to 'webhooks'; children: webhooks, webhooks/:webhookId, open-api
   open-api/
     open-api.component.ts/html/scss
+    stoplight-elements.d.ts                ← type declaration for the '@stoplight/elements/web-components.min.js' import
 ```
 
 ## OpenApiComponent
 
-Uses a web component (`<elements-api>` or similar Swagger UI element) to render the OpenAPI spec. The component uses `CUSTOM_ELEMENTS_SCHEMA` to allow non-Angular web components in the template.
+Renders the spec with the Stoplight Elements web component `<elements-api>` (`router="memory"`, `layout="sidebar"`). The component uses `CUSTOM_ELEMENTS_SCHEMA` to allow non-Angular web components in the template.
 
-**Injected services:** `OpenApiService`
+The Elements bundle (~2MB) is lazy-loaded on this route only via `import('@stoplight/elements/web-components.min.js')` rather than a global `angular.json` script. Once it resolves, the `elementsReady` signal is set; until both the bundle and the spec are available, an `hlm-progress` bar is shown instead.
+
+**Injected services:** `OpenApiService`, `SpaceStore`
 
 **Key behaviour:**
-- `ngOnInit()` — calls `OpenApiService.generate(spaceId)` to produce the OpenAPI spec JSON for the current space
-- Passes the generated spec to the web component for rendering
+- `ngOnInit()` — reads `spaceId` from `spaceStore.selectedSpaceId()` and calls `OpenApiService.generate(spaceId)`, which invokes the `openapi-generate` callable and returns the spec as a string; then starts loading the Elements bundle
+- Passes the generated spec (as `apiDescriptionDocument`) to the web component for rendering
 - The spec covers all CDN endpoints: translations, links, content by slug, content by ID, assets
 
 ## Services Used

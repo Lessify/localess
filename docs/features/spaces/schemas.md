@@ -27,14 +27,16 @@ src/app/features/spaces/schemas/
   edit-id-dialog/                    ← rename schema ID
   export-dialog/
   import-dialog/
-  shared/                            ← shared field-editor sub-components
+  shared/
+    edit-field/                      ← EditFieldComponent (`ll-schema-field-edit`), one field of a ROOT/NODE schema, used by edit-comp
+    edit-value/                      ← EditValueComponent (`ll-schema-value-edit`), one enum value, used by edit-enum
 ```
 
 ## SchemasComponent
 
 Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), filterable by **labels** (multi-select) and free-text search via an `<ll-filter-toolbar>` (see [Filter Toolbar](../../components/filter-toolbar.md)) — no page-owned `FormGroup` or hand-written predicate anymore.
 
-**Injected services:** `SchemaService`, `TaskService`, `MatDialog`, `NotificationService`
+**Injected services:** `SchemaService`, `TaskService`, `HlmDialogService`, `NotificationService`, `Router`
 
 **Key behaviour:**
 - `loadData()` — fetches all schemas for the space
@@ -43,8 +45,8 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 - `dataSource.filterPredicate` — set once in `ngOnInit` via `FilterPredicateUtils.create()` (search across id/displayName/description + array-overlap on `labels`)
 - `onRowSelect(schema)` — navigates to `edit-comp` or `edit-enum` based on schema type
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)
-- `openEditIdDialog(schema)` — rename schema ID (propagates to content that uses it)
-- `openDeleteDialog(schema)` — delete schema (with content impact warning)
+- `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID (propagates to content that uses it)
+- `openDeleteDialog(event, schema)` — same `MouseEvent` handling; delete schema (with content impact warning)
 - `openExportDialog()` / `openImportDialog()` — creates Tasks
 
 ## EditCompComponent (routed)

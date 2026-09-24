@@ -2,17 +2,20 @@
 
 > Related: [`ll-table`](components/table.md)
 
-> This document captures hard-won knowledge from migrating Angular Material components to the Spartan/Helm UI library (`libs/ui/`). Read
-> this before touching any dialog, form, or notification code.
+> **Status: complete.** No `MatDialog` usage remains — every dialog opens through `HlmDialogService`. The only Angular Material residue is
+> in `src/app/app.config.ts` (`provideNativeDateAdapter()` and `MAT_PAGINATOR_DEFAULT_OPTIONS`, the latter with no consumer).
+
+> This document is now a reference for the Spartan/Helm patterns (`libs/ui/`) the migration settled on, and the traps found along the way.
+> Read it before touching any dialog, form, or notification code. The Material → Spartan mappings are kept to explain why the code looks
+> the way it does.
 
 ---
 
 ## Migration Philosophy
 
-- **Dialog frames are moving to Spartan, one dialog at a time** — most still use `MatDialogModule` (`mat-dialog-title`,
-  `mat-dialog-content`, `mat-dialog-actions`, `[mat-dialog-close]`) with Spartan form controls inside. New and touched dialogs should use
-  `HlmDialogService`; follow [`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice), which has the recipe, the tests and the
-  traps. Add Locale is the reference implementation.
+- **Dialogs use `HlmDialogService`** — follow [`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice) for the structure, the
+  tests and the traps. Add Locale is the reference implementation; widths come from the constants in
+  `src/app/shared/components/dialog/dialog-width.ts`.
 - **Spartan components are headless primitives** — they render with `display: contents` or inject host classes. Layout is your
   responsibility.
 - **All components are standalone** — import via `*Imports` barrel constants (e.g. `HlmButtonImports`, `HlmCheckboxImports`).
@@ -183,44 +186,28 @@ Import: `HlmSwitchImports`, `HlmLabelImports`.
 
 ## Dialog Actions Layout
 
-> This is the **Material-framed** pattern, for the dialogs still on `MatDialog`. On a Spartan-framed dialog the footer is
-> `<hlm-dialog-footer>` and closing works differently — see [`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice).
-
-Always add `class="flex gap-2"` to `<mat-dialog-actions>` and wrap the form in `class="flex flex-col gap-4 py-2"`:
-
-```html
-<!-- Form -->
-<mat-dialog-content>
-  <form [formGroup]="form" class="flex flex-col gap-4 py-2"> ... </form>
-</mat-dialog-content>
-
-<!-- Actions -->
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="form.value" [disabled]="!form.valid">Save</button>
-</mat-dialog-actions>
-```
+The footer is `<hlm-dialog-footer>` (it right-aligns and reverses on mobile); the dismissing button carries `hlmDialogClose`. Spacing
+between header, body and footer comes from `host: { class: 'grid gap-4' }` on the dialog component — see
+[`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice).
 
 For **confirmation dialogs** (destructive actions), use `variant="destructive"` on the confirm button:
 
 ```html
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="false">Cancel</button>
-  <button hlmBtn variant="destructive" [mat-dialog-close]="true">Delete</button>
-</mat-dialog-actions>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn variant="destructive" (click)="confirm()">Delete</button>
+</hlm-dialog-footer>
 ```
 
-Remove the `<br />` spacers that were commonly added before/after `<form>` in Material dialogs — the `py-2` on the form and `gap-4` between
-fields handle spacing.
+Don't add `<br />` spacers around the `<form>` — `gap-4` on the host and between fields handles spacing.
 
 ---
 
 ## `MatDialog` → `HlmDialogService`
 
-**Reference implementation: the Add Locale dialog** (`features/spaces/settings/locales/locale-dialog/`). It is the only migrated one so far;
-**29** dialog components and **19** callers are still on Material. Migrate one dialog at a time with the recipe below — the Material and
-Spartan dialogs coexist fine, and a component may inject both services during the transition (`LocalesComponent` does: Spartan for Add
-Locale, Material for the delete confirmation).
+**Reference implementation: the Add Locale dialog** (`features/spaces/settings/locales/locale-dialog/`). The migration is complete — every
+dialog follows the structure below. It is written as the Material → Spartan recipe it was used as; for a new dialog, read it as "how a
+dialog is built here".
 
 ### 1. Split the model into a context and a result
 
@@ -417,15 +404,14 @@ What fixes it is forcing the row: **`grid-rows-[minmax(0,1fr)]` on `contentClass
 Unchanged by the migration: the dialog still grows when a validation message appears (~28px per line), because that is content-driven.
 Reserve space for the message if the resize matters.
 
-### 8. Checklist per dialog
+### 8. Checklist for a new dialog
 
 1. `Context` / `Result` interfaces in the dialog's `*.model.ts`
 2. Component: `host: { class: 'grid gap-4' }`, `HlmDialogImports`, `injectBrnDialogContext` (+ `?.`), typed `BrnDialogRef`, `save()`
 3. Template: header/title(/description), content, footer; `hlmDialogClose` on the dismissing button
 4. Caller: `HlmDialogService.open<Result, Context>()`, `context: {…}`, width in `contentClass` with `!`, `closed$` + `take(1)`
 5. Specs: `DIALOG_DATA` + `BrnDialogRef` in the dialog spec, `HlmDialogService` + `closed$` in the caller spec
-6. Delete the dialog's `*.scss` if it only held `mat-form-field` overrides
-7. Check it in the browser at the real width, and whether it needs a scroll cap
+6. Check it in the browser at the real width, and whether it needs a scroll cap
 
 ---
 
@@ -733,7 +719,7 @@ The Spartan field error API changed. **Always use the component form** inside `h
 
 ```html
 <!-- app.component.html -->
-<hlm-toaster richColors />
+<hlm-toaster />
 ```
 
 ```typescript
@@ -991,30 +977,38 @@ Use `lucideUpload` on the Upload button and `lucideUploadCloud` on the dialog's 
 
 ## Simple Confirmation Export Dialogs
 
-When an export dialog offers no filtering (export everything), strip all form/autocomplete logic and render a plain confirmation:
+When an export dialog offers no filtering (export everything), it has no form — just a plain confirmation
+(e.g. `features/spaces/schemas/export-dialog/`):
 
 ```html
-<h2 mat-dialog-title>Export</h2>
-<mat-dialog-content>
-  <p class="text-muted-foreground py-2 text-sm">All items will be exported.</p>
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="outline" [mat-dialog-close]="undefined">Cancel</button>
-  <button hlmBtn [mat-dialog-close]="{}">
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Schema Export</h2>
+</hlm-dialog-header>
+<p class="py-2">Export all schemas.</p>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn (click)="save()">
     <ng-icon hlm size="sm" name="lucideCloudDownload" />
     Export
   </button>
-</mat-dialog-actions>
+</hlm-dialog-footer>
 ```
 
-The Export button returns `{}`. Callers that read `it?.path` receive `undefined`, which triggers a full export — no changes needed at the
-call site.
+`save()` closes with `{}`. Callers that read `it?.path` receive `undefined`, which triggers a full export.
 
 ```typescript
 // Minimal component — no form, no service injection
-@Component({ imports: [MatDialogModule, HlmButtonImports, HlmIconImports], providers: [provideIcons({ lucideCloudDownload })] })
+@Component({
+  host: { class: 'grid gap-4' },
+  imports: [HlmDialogImports, HlmButtonImports, HlmIconImports],
+  providers: [provideIcons({ lucideCloudDownload })],
+})
 export class ExportDialogComponent {
-  data = inject<ExportDialogModel>(MAT_DIALOG_DATA);
+  private readonly dialogRef = inject<BrnDialogRef<ExportDialogResult>>(BrnDialogRef);
+
+  save(): void {
+    this.dialogRef.close({});
+  }
 }
 ```
 
@@ -1144,61 +1138,28 @@ Key rules:
 
 ---
 
-## Sticky Paginator in Dialogs
+## Sticky Paginator
 
-By default, `<mat-paginator>` placed inside `<mat-dialog-actions>` scrolls with the page. To make it stick to the bottom of a scrollable
-dialog content area, move the paginator **into** `<mat-dialog-content>` and apply the global `mat-paginator-sticky` class:
-
-```html
-<!-- ❌ Before — paginator in actions, scrolls away -->
-<mat-dialog-content>
-  <!-- table / list -->
-</mat-dialog-content>
-<mat-dialog-actions>
-  <mat-paginator ... />
-  <button mat-button>Close</button>
-</mat-dialog-actions>
-
-<!-- ✅ After — paginator sticky at bottom of content -->
-<mat-dialog-content>
-  <!-- table / list -->
-  <mat-paginator class="mat-paginator-sticky" [length]="..." [pageSize]="..." (page)="..." />
-</mat-dialog-content>
-<mat-dialog-actions align="end" class="flex gap-2">
-  <button hlmBtn variant="ghost" [mat-dialog-close]="undefined">Close</button>
-</mat-dialog-actions>
-```
-
-The `mat-paginator-sticky` global class is defined in `src/styles/_mat-paginator.scss`:
-
-```scss
-.mat-paginator-sticky {
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-```
-
-For tables already migrated to `<ll-paginator>` (`src/app/shared/components/paginator/`), the same behavior is available via the `sticky`
-input (default `false`) — the component applies the `ll-paginator-sticky` class (defined in `src/styles/_ll-paginator.scss`) to itself:
+`<ll-paginator>` (`src/app/shared/components/paginator/`) sticks to the bottom of its scroll container via the `sticky` input (default
+`false`) — the component applies the `ll-paginator-sticky` class (defined in `src/styles/_ll-paginator.scss`) to itself:
 
 ```html
 <ll-paginator [sticky]="true" [length]="..." />
 ```
 
-For migrating a whole `mat-table` (not just its paginator) off Material, see the dedicated
-[`ll-table`](components/table.md).
+Place it inside the scrolling element (in a dialog, the scrolling middle `div` — see
+[Capping the dialog's own height](#capping-the-dialogs-own-height-full-screen-dialogs)), not in `<hlm-dialog-footer>`. See
+[`ll-paginator`](components/paginator.md) and [`ll-table`](components/table.md).
 
 ---
 
-## Checklist for Migrating a Dialog
+## Checklist for Building a Dialog
 
-1. **Keep** `MatDialogModule` for the dialog frame (`mat-dialog-title`, `mat-dialog-content`, `mat-dialog-actions`, `[mat-dialog-close]`)
-2. **Replace** all Material form elements with Spartan equivalents (see table above)
-3. **Add** `HlmButtonImports`, `HlmFieldImports`, etc. to component `imports`; remove all `Mat*Module` form imports
-4. **Form layout** → add `class="flex flex-col gap-4 py-2"` to `<form>`, remove `<br />` spacers
-5. **Actions layout** → add `class="flex gap-2"` to `<mat-dialog-actions>`; use `variant="destructive"` on confirm buttons for destructive
-   actions
+1. **Frame** → `HlmDialogService` + `HlmDialogImports`: follow [Checklist for a new dialog](#8-checklist-for-a-new-dialog)
+2. **Form controls** → Spartan only (see table above)
+3. **Add** `HlmButtonImports`, `HlmFieldImports`, etc. to component `imports`
+4. **Form layout** → `class="flex flex-col gap-4"` on `<form>`, no `<br />` spacers
+5. **Actions layout** → `<hlm-dialog-footer>`; use `variant="destructive"` on confirm buttons for destructive actions
 6. **`mat-hint`** → `<hlm-field-description>`; **char counter on text input** → `hlmInputGroup` +
    `hlm-input-group-addon align="inline-end"`; **char counter on textarea** → `hlmInputGroup` + `hlmInputGroupTextarea` +
    `hlm-input-group-addon align="block-end"` with `hlm-input-group-text`
@@ -1224,7 +1185,6 @@ For migrating a whole `mat-table` (not just its paginator) off Material, see the
     Use element selectors, not `div[hlmAccordion]`.
 21. **Card grid?** → `<hlm-card class="overflow-hidden pt-0">` with `<hlm-card-header>` / `<hlm-card-footer>`. Apply Tailwind classes
     directly to `<p>` tags — no `hlmCardTitle`/`hlmCardSubtitle` directives needed.
-22. **Paginator sticky at bottom of dialog?** → Move `<mat-paginator>` into `<mat-dialog-content>` with `class="mat-paginator-sticky"`
-    (global class in `src/styles/_mat-paginator.scss`).
-23. **Dead code blocks (`@if (false)`)** → remove them during migration
+22. **Paginator sticky at bottom of dialog?** → `<ll-paginator [sticky]="true">` inside the scrolling element
+23. **Dead code blocks (`@if (false)`)** → remove them
 24. Run `npm run build && npm run lint:fix`

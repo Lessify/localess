@@ -151,7 +151,7 @@ Storage:   spaces/{spaceId}/assets/{assetId}/original   ← raw file
 The CDN endpoint (`/api/v1/spaces/:spaceId/assets/:assetId`) supports:
 - `?w=<px>` — resize images on-the-fly via Sharp
 - `?thumbnail=true` — extract first frame of animated GIF/WebP or video thumbnail
-- `?download` — force `Content-Disposition: attachment`
+- `/api/v1/spaces/:spaceId/assets/:assetId/download` — the stored bytes as `Content-Disposition: attachment` (the old `?download` flag was removed and now returns `400`); `/original` serves them inline
 
 > Assets are referenced from Content documents via `ASSET` / `ASSETS` schema fields.
 
@@ -180,8 +180,6 @@ spaces/
   {spaceId}/
     contents/
       {contentId}
-        history/
-          {historyId}
     translations/
       {translationId}
     schemas/
@@ -190,11 +188,15 @@ spaces/
       {assetId}
     tasks/
       {taskId}
+        logs/
+          {logId}
     tokens/
       {tokenId}
-    translations-history/
-      {historyId}
+    webhooks/
+      {webhookId}
+        logs/
+          {logId}
 ```
 
 > When a Space is deleted, `firestoreService.recursiveDelete()` removes the space document and all nested subcollections in one call.
-> When a Content document is deleted, `firestoreService.recursiveDelete()` removes the content document and its `history` subcollection. Child folder contents (sibling documents referencing the folder via `parentSlug`) are cascade-deleted via the `onContentDelete` trigger.
+> When a Content document is deleted, `firestoreService.recursiveDelete()` removes the content document and any nested subcollections. Child folder contents (sibling documents referencing the folder via `parentSlug`) are cascade-deleted via the `onContentDelete` trigger.

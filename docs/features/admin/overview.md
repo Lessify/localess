@@ -22,7 +22,7 @@ All admin routes are guarded by Firebase `customClaims`. Only users with `role: 
 
 ## Common Patterns
 
-- All modules use `ll-table` (`LlTableImports` from `@shared/components/table/table.imports`) with sorting and pagination — the Material-free replacement for `MatTable` (see [ll-table](../../components/table.md))
-- CRUD operations are performed via `MatDialog` overlays
+- Users and Spaces use `ll-table` (`LlTableImports` from `@shared/components/table/table.imports`) with sorting and pagination — the Material-free replacement for `MatTable` (see [ll-table](../../components/table.md)); Settings is a Spartan `hlm-tabs` shell around a form
+- CRUD operations are performed via `HlmDialogService` overlays
 - Destructive actions always open a `ConfirmationDialogComponent`
-- `NotificationService` is used in every module for user feedback (snackbars)
+- `NotificationService` is used for user feedback (Sonner toasts) — in Users and Spaces, and in Settings' `UiComponent` (the `SettingsComponent` tab shell does not inject it)

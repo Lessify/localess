@@ -29,6 +29,7 @@ npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-t
 npm run test:scripts   # node:test suite for scripts/ (*.test.mjs)
 
 # Deployment (one CLI: scripts/localess.mjs; these are aliases)
+npm run localess -- <command>   # CLI entry point (setup | sync | deploy | check)
 npm run localess:setup # Provision Firebase infrastructure and record the project markers
 npm run localess:sync           # Regenerate local project files from remote state
 npm run localess:deploy         # Build and deploy to a Localess-managed project
@@ -47,7 +48,7 @@ cd functions && npm run serve   # Run functions locally
 - **Frontend**: Angular 21 (standalone components, signals, OnPush)
 - **State**: NgRx Signals (`@ngrx/signals`)
 - **Backend**: Firebase (Firestore, Auth, Storage, Functions, Hosting)
-- **UI**: Angular Material + custom Spartan/Helm component library (`libs/ui/`)
+- **UI**: Spartan/Helm component library (`libs/ui/`); Angular Material remains only as residual providers in `app.config.ts`
 - **Styling**: Tailwind CSS 4 + SCSS
 - **Rich Text**: TipTap editor
 - **Functions**: Express.js on Firebase Functions (region configurable, default `europe-west6`)
@@ -59,15 +60,14 @@ src/app/
 ├── core/          # Singleton services: error handler, HTTP interceptors, title service
 ├── shared/        # Cross-feature code
 │   ├── models/    # TypeScript interfaces for all domain types
-│   ├── services/  # 24+ Firebase-backed domain services
+│   ├── services/  # 20 Firebase-backed domain services
 │   ├── stores/    # 4 NgRx Signal stores (UserStore, SpaceStore, AppSettingsStore, LocalSettingsStore)
-│   ├── guards/    # Permission-based route guards using Firebase custom claims
-│   └── components/# Shared dialogs, snackbars, logo
+│   ├── guards/    # dirty-form.guard.ts (unsaved-changes guard); permission guards live in features-routing.module.ts
+│   └── components/# Shared dialogs, table, paginator, tree, filter-toolbar, locale-icon, logo, etc. (toasts via NotificationService/Sonner)
 ├── features/      # Lazy-loaded feature routes
 │   ├── admin/     # Space & user administration
 │   └── spaces/    # Main workspace: contents, translations, schemas, assets, tasks, dashboard
-├── login/         # Auth (Email, Google, Microsoft)
-├── setup/         # Initial setup wizard
+├── auth/          # Auth: login (Email, Google, Microsoft), reset
 └── app.config.ts  # Root provider configuration (Firebase, HTTP, etc.)
 
 functions/src/     # Firebase Cloud Functions backend
@@ -85,7 +85,7 @@ Four NgRx Signal stores initialized at app startup:
 ### Routing & Guards
 
 - Root redirects to `/features`, authenticated via `authGuard()`
-- Feature routes use granular permission guards (e.g., `canManageTranslations`, `canReadSchemas`)
+- Feature routes use granular permission checks passed as `authGuardPipe` functions in `features-routing.module.ts` (e.g., `hasPermissionTranslationRead`, `hasPermissionSchemaRead`)
 - All features are lazy-loaded
 
 ### Firebase Services Pattern
@@ -122,7 +122,7 @@ After every code change, always run the following in order:
 
 ## Environment & Emulator Setup
 
-Three environment configurations: `development`, `production`, `docker`. Firebase emulators support Firestore, Auth, Storage, and Functions locally. The proxy config (`proxy.conf.cjs`) forwards API calls during development.
+Four Angular build configurations: `development`, `production`, `docker`, `deploy`. Firebase emulators support Firestore, Auth, Storage, and Functions locally. The proxy config (`proxy.conf.cjs`) forwards API calls during development.
 
 There is no in-app setup wizard. To get an admin in the local emulator, create a user in the Auth emulator UI (http://localhost:4000) and set its custom claims to `{"role":"admin"}`. This is a one-time step per checkout — `npm run emulator` runs with `--import=./firebase-export --export-on-exit=./firebase-export`, so the account persists across restarts. Against a real project, use `npm run localess:check -- --project <id> --fix` instead.
 
@@ -144,7 +144,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `src/app/shared/components/`; read before adding or changing one |
-| Frontend testing — Vitest setup, Firebase mocking patterns, `test.isolate: false` pitfalls | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
+| Frontend testing — Vitest setup (`test.isolate: true`), centralized Firebase mocking pattern and why it stays centralized | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
 | **Deployment & self-hosting** | | |
 | Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Phase 1 — Firebase provisioning (`npm run localess:setup`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/localess.mjs`, `scripts/localess/`, `firebase.json` `auth` block |
@@ -165,6 +165,6 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Schemas | [docs/features/spaces/schemas.md](docs/features/spaces/schemas.md) | `features/spaces/schemas/` |
 | Tasks | [docs/features/spaces/tasks.md](docs/features/spaces/tasks.md) | `features/spaces/tasks/` |
 | Space Settings | [docs/features/spaces/settings.md](docs/features/spaces/settings.md) | `features/spaces/settings/` |
-| Open API | [docs/features/spaces/open-api.md](docs/features/spaces/open-api.md) | `features/spaces/open-api/` |
+| Open API | [docs/features/spaces/open-api.md](docs/features/spaces/open-api.md) | `features/spaces/developers/open-api/` |
 | **Feature modules — Me** | | |
 | Me / User profile | [docs/features/me.md](docs/features/me.md) | `features/me/` |

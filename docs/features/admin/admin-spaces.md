@@ -26,7 +26,7 @@ src/app/features/admin/spaces/
 
 Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar.
 
-**Injected services:** `SpaceService`, `SpaceTemplateService`, `MatDialog`, `NotificationService`, `Router`, `ActivatedRoute`
+**Injected services:** `SpaceService`, `SpaceTemplateService`, `HlmDialogService`, `NotificationService`, `Injector`
 
 **Key behaviour:**
 - `loadData()` — fetches all spaces via `SpaceService`

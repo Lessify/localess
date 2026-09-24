@@ -21,18 +21,20 @@ src/app/features/spaces/dashboard/
 
 ## DashboardComponent
 
-Shows `SpaceOverview` statistics from the selected space document. If the overview data is older than 24 hours, it shows a refresh prompt.
+Shows `SpaceOverview` statistics from the selected space document. If the overview is missing or older than 24 hours, it is recalculated automatically — there is no refresh prompt. A manual refresh button (`lucideRotateCw`) is shown in the toolbar for users with `SPACE_MANAGEMENT`.
+
+The UI is built with Spartan/Helm components: `HlmCard` for each stat tile, `HlmButton` for the refresh button, and `HlmProgress` for the per-locale translation progress bars.
 
 **Injected services:** `SpaceService`, `NotificationService`, `SpaceStore`
 
 **Key behaviour:**
 - Reads `SpaceStore.selectedSpace()` to display current overview stats
-- Uses `effect()` to watch the selected space and detect stale overview (> 24h since `overview.updatedAt`)
-- `calculateOverview()` — calls `SpaceService` to trigger a server-side recalculation of all counts and sizes, updates the `SpaceOverview` sub-document in Firestore
+- Uses `effect()` in the constructor to watch the selected space; when `overview` is `undefined` or stale (> 24h since `overview.updatedAt`) it calls `calculateOverview()` automatically
+- `calculateOverview()` — also bound to the manual refresh button; calls `SpaceService` to trigger a server-side recalculation of all counts and sizes, updates the `SpaceOverview` sub-document in Firestore
 
 ## Data Displayed
 
-From `SpaceOverview`:
+Locales count comes from `space.locales.length` (not part of `SpaceOverview`). The rest comes from `SpaceOverview`:
 ```typescript
 {
   translationsCount, translationsSize,
@@ -44,6 +46,8 @@ From `SpaceOverview`:
   updatedAt
 }
 ```
+
+When `space.progress.translations` is present, a Translations section shows one card per locale with the translated count vs. `translationsCount` and an `hlm-progress` bar.
 
 ## Services Used
 

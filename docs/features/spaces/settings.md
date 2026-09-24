@@ -37,7 +37,8 @@ src/app/features/spaces/settings/
 
 ## SettingsComponent
 
-Tab-based shell. Tracks active tab as a signal, navigates between child routes on tab change.
+Tab-based shell. Tracks the active tab in an `activeTab` signal (initialised from the current URL segment in the constructor) and updates it
+in `onTabActivated(tabLink)` when a tab is clicked; the tabs themselves are router links to the child routes.
 
 ---
 
@@ -51,10 +52,14 @@ Edit the space name and other top-level space metadata. Reads current data from 
 
 ## LocalesComponent
 
-Add, reorder, and remove locales from the space. Set the **fallback locale** — used by the CDN when a requested locale has no published
-data.
+Add and remove locales from the space (there is no reordering). Set the **fallback locale** — used by the CDN when a requested locale has no
+published data. The table is filtered through an `<ll-filter-toolbar>` (`onFilterChange()`).
 
-**Services:** `LocaleService` (or `SpaceService`), `NotificationService`
+- `openAddDialog()` — opens `LocaleDialogComponent`, passing the space's existing locales so they are excluded
+- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale
+- `markAsFallback(element)` — makes the locale the space's fallback
+
+**Services:** `LocaleService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ### Translation support
 
@@ -78,7 +83,8 @@ they drift, because a locale the UI offers and the backend rejects only surfaces
 ### Locale icons
 
 `ll-locale-icon` (`src/app/shared/components/locale-icon/`) renders the badge shown in the locales table and in the add-locale dropdown.
-**Currently wired up in Space Settings only** — the content and translation screens still show plain text.
+It is also used in Contents (`edit-document`), Translations (`translations.component`, export and import dialogs, `translation-filter`,
+`translation-detail`) and the shared `translate-locale-dialog`.
 
 A flag cannot identify a language: one language is spoken in many countries, and picking a country for a bare `de` or `ar` means guessing.
 So the icon shows what the locale id actually says and nothing more:
@@ -134,20 +140,21 @@ country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en
 
 ### LocaleDialogComponent
 
-Form: locale `id` (BCP 47 code, e.g. `en`, `de`, `fr-CH`) and display `name`. Each option carries its locale icon.
+Form: a single `locale` combobox. Options come from `LocaleService.findAllLocales()` minus the locales the space already has (passed in via
+the dialog context); the search filters by name. Each option carries its locale icon, and the selected locale's icon is mirrored as an
+inline-start addon on the input.
 
-**This is the app's first Spartan-framed dialog** — `HlmDialogService` instead of `MatDialog`, `injectBrnDialogContext()` instead of
-`MAT_DIALOG_DATA`, `BrnDialogRef.close()` instead of `[mat-dialog-close]`. It is the reference implementation for migrating the rest; the
-recipe, the test setup and the width/scrolling traps are in
-[Spartan UI Migration → `MatDialog` → `HlmDialogService`](../../spartan-ui-migration.md#matdialog--hlmdialogservice). The same component's
-delete confirmation still uses `MatDialog`, which is why `LocalesComponent` injects both.
+It is a Spartan-framed dialog — `HlmDialogService` to open, `injectBrnDialogContext()` for its input, `BrnDialogRef.close()` to return. All
+dialogs in `features/spaces` now follow this pattern (the delete confirmation included), so `LocalesComponent` injects only
+`HlmDialogService`. The recipe, the test setup and the width/scrolling traps are in
+[Spartan UI Migration → `MatDialog` → `HlmDialogService`](../../spartan-ui-migration.md#matdialog--hlmdialogservice).
 
 ---
 
 ## TokensComponent
 
 Create and manage API access tokens, displayed in an `ll-table` with columns `id`, `name`, `version`, `permissions`, `usage`, `cacheTtl`,
-`updatedAt`, `actions` (`tokens.component.ts:76`). Tokens come in two shapes:
+`updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). Tokens come in two shapes:
 
 - **v1** — legacy tokens with an implicit, fixed permission set (`TOKEN_V1_IMPLICIT_PERMISSIONS`)
 - **v2** — current tokens with explicit `permissions[]` and an optional `cacheTtl` override
@@ -155,28 +162,28 @@ Create and manage API access tokens, displayed in an `ll-table` with columns `id
 `isTokenV2()` distinguishes the two at runtime, so v1 tokens still render sensibly in the table and edit dialog.
 
 The permissions column is rendered via `permissionsToText()`, which joins the token's `TokenPermission` values into a comma-separated string
-(`tokens.component.ts:204-206`). The usage column shows a classification badge computed by `permissionsToUsage()` / `getTokenUsageInfo()`,
+(`tokens.component.ts:214-216`). The usage column shows a classification badge computed by `permissionsToUsage()` / `getTokenUsageInfo()`,
 which derives a human-readable usage category (e.g. read-only/public vs. draft/write access) from the permission set — for v1 tokens this is
-computed from `TOKEN_V1_IMPLICIT_PERMISSIONS` (`tokens.component.ts:208-209`).
+computed from `TOKEN_V1_IMPLICIT_PERMISSIONS` (`tokens.component.ts:218-220`).
 
 **Key behaviour:**
 
 - `openAddDialog()` / `openEditDialog(element)` — open `TokenDialogComponent` to create/edit a token
 - `openRegenerateDialog(element)` — opens a `ConfirmationDialogComponent` warning that all clients using the current token immediately lose
   access, then calls `TokenService.regenerate()` to issue a new token value while keeping the same name/permissions/cacheTtl
-  (`tokens.component.ts:156-178`)
+  (`tokens.component.ts:162-186`)
 - `openDeleteDialog(element)` — confirmation dialog then deletes the token
 - `copied()` — snackbar feedback when a token ID is copied to clipboard
 
-**Services:** `TokenService`, `NotificationService`
+**Services:** `TokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ### TokenDialogComponent
 
-Form fields (`token-dialog.component.ts:58-111`):
+Form fields (`token-dialog.component.ts:62-66`; helpers follow below it):
 
 - `name` — token name
 - `permissions[]` — rendered as checkboxes grouped by category (Translation, Content, Development), not a plain multiselect;
-  `isPermissionSelected()` / `togglePermission()` manage the underlying form array. A computed `usageInfo` (via `getTokenUsageInfo()`) shows
+  `isPermissionSelected()` / `togglePermission()` manage the underlying `string[]` form control. A computed `usageInfo` (via `getTokenUsageInfo()`) shows
   a live usage-classification badge as permissions are toggled.
 - `cacheTtl` — optional numeric override (in seconds) for how long the CDN caches this token's redirect responses; `resetCacheTtl()` clears
   it back to the space/system default. See [CDN & Caching](../../cdn-caching.md) for how `cacheTtl` affects redirect `Cache-Control`
@@ -188,10 +195,12 @@ Form fields (`token-dialog.component.ts:58-111`):
 
 ## VisualEditorComponent
 
-Configure the **visual editor** integration — allows in-context editing when Localess is embedded in a preview environment. Settings include
-the preview URL and editor behaviour options.
+Configure the **visual editor** integration — allows in-context editing when Localess is embedded in a preview environment. The form is an
+`environments` `FormArray` of `{ name, url }` groups: `addEnvironment()` / `removeEnvironment(i)` add and remove rows,
+`environmentDropDrop()` reorders them by drag-and-drop (CDK), and `save()` writes them via `SpaceService.updateEnvironments()`. The form is
+repopulated whenever `SpaceStore.selectedSpace` changes. `captureKeyboard()` (a `(window:keydown)` host listener) saves on Ctrl/Cmd + S.
 
-**Services:** `SpaceService`, `NotificationService`
+**Services:** `SpaceService`, `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
 
 ---
 
@@ -204,7 +213,7 @@ Destructive, irreversible operations. Currently only one action is implemented:
 Requires explicit confirmation via `ConfirmationDialogComponent`. There is no "delete space" action here — space deletion is not implemented
 in this component.
 
-**Services:** `TranslationService`, `NotificationService`, `MatDialog`
+**Services:** `TranslationService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ---
 

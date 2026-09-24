@@ -8,7 +8,7 @@
 |---------|-----------------|
 | **Firebase Hosting** | Requests to `/api/v1/**` (rewrites to Function) and static asset serving |
 | **Cloud Functions** | Invocations, CPU time, memory — `publicv1` handles all CDN traffic |
-| **Firestore** | Reads per request: token auth + space lookup (now cached) |
+| **Firestore** | Reads per request: token auth (cached in-memory) + space lookup (**not** cached — `findSpaceById().get()` on every CDN content/translation/links request) |
 | **Firebase Storage** | `getMetadata()` per request + `download()` for content |
 
 ---
@@ -22,12 +22,16 @@
 - 1 Function invocation
 - 1 Storage `getMetadata()` (cache marker)
 - 0 or 1 Firestore reads (token — served from in-memory cache if warm)
+- 1 Firestore read (space document — always)
+- `/contents/slugs/*slug` only: +1 Firestore query (content by `fullSlug`); `/links` queries the contents collection instead of downloading from Storage
 - 1 Storage `download()` (content JSON)
 
 ### Cache miss, cv stale or missing (redirect)
 - 1 Function invocation
 - 1 Storage `getMetadata()` (cache marker)
 - 0 or 1 Firestore reads (token — cache)
+- 1 Firestore read (space document — always)
+- `/contents/slugs/*slug` only: +1 Firestore query (content by `fullSlug`, runs before the redirect)
 - Redirect response (no Storage download)
 - Client follows redirect → second invocation (cv now matches → serves content)
 
@@ -78,12 +82,13 @@ would need ~20M requests to reach 20 GB, while a single multi-MB asset needs onl
 | 2026-05 | Merged `exists()` + `getMetadata()` into single Storage call | ~25% fewer Storage API calls |
 | 2026-05 | In-memory token cache (5 min TTL) | ~50% fewer Firestore reads under load |
 | 2026-05 | Redirect TTL unified to a flat 60s default (no separate draft TTL), overridable per-token via `cacheTtl` | Faster iteration with controlled CDN pressure, tunable per consumer |
-| 2026-09 | Strict transform params: canonical integers only, `w`/`h` 1–8192, `q` 1–100, all out-of-range rejected rather than clamped | One URL, one output. Clamping and truncation both mapped several URLs onto identical bytes, multiplying CDN entries and sharp runs for the same result. Upscaling is honoured rather than reduced, for the same reason |
-| 2026-09 | `DEFAULT_QUALITY` 85 → 80 | ~15–20% off every transformed JPEG/WebP without an explicit `?q=` |
-| 2026-09 | Default `image/jpeg` output to WebP | ~40% measured on a 400×300 test asset (116 KB → 70 KB), **including bare no-param requests** — the only change that reaches embeds carrying no query string |
+| 2026-09 | Strict transform params: canonical integers only, `w`/`h` 1–8192, `q` 1–100, all out-of-range rejected rather than clamped | One URL, one output. Clamping and truncation both mapped several URLs onto identical bytes, multiplying CDN entries and sharp runs for the same result. `w`/`h` above the source size `302`-redirect to the source-producible size (no upscaling), so every oversized spelling collapses onto one canonical URL, for the same reason |
+| 2026-09 | `DEFAULT_QUALITY` 85 → 80 | ~15–20% off every transformed JPEG/WebP without an explicit `?q=`. *Superseded:* `DEFAULT_QUALITY` was later removed — `q` is no longer defaulted by the endpoint and each encoder applies its own default (JPEG/WebP 80, AVIF 50, PNG lossless) |
+| 2026-09 | Default `image/jpeg` output to WebP | ~40% measured on a 400×300 test asset (116 KB → 70 KB), **including bare no-param requests** — the only change that reaches embeds carrying no query string. **Reverted** (see below) |
 | 2026-09 | ETag + `304` on the asset endpoint, before transform | Revalidation costs a metadata read instead of a re-encode |
 | 2026-09 | Merged `exists()` + `getMetadata()` on the asset path | One Storage round-trip instead of two; same fix applied to the content path in 2026-05 |
 | 2026-09 | `v1` raised to 1GiB with explicit `concurrency: 20` | Companion to the WebP default: every JPEG request now decodes through sharp, making the function memory-bound on pixel buffers rather than request count |
+| 2026-09 | Reverted the `image/jpeg` → WebP default: `?f=` is the only thing that changes format | A format change is the developer's call. Bare requests keep the stored format but still re-encode still rasters at the encoder's default quality, so the 1GiB / `concurrency: 20` sizing still applies. `?f=webp`/`?f=avif` is opt-in |
 
 ---
 
@@ -101,9 +106,11 @@ would need ~20M requests to reach 20 GB, while a single multi-MB asset needs onl
 All cache TTL constants are in `functions/src/config.ts`:
 
 ```typescript
-CACHE_MAX_AGE                  = DAY           // 86400s   — browser cache for content
+CACHE_MAX_AGE                  = DAY * 7       // 604800s  — browser cache for content
 CACHE_SHARE_MAX_AGE            = DAY * 7       // 604800s  — CDN cache for content
 CACHE_REDIRECT_MAX_AGE_DEFAULT = MINUTE        // 60s      — default redirect TTL (published & draft; overridable per-token via `cacheTtl`)
 CACHE_ASSET_MAX_AGE            = DAY * 365     // immutable assets
+CACHE_ASSET_NOT_FOUND_MAX_AGE  = DAY * 7       // 604800s  — 404 for an asset with no Firestore doc
+CACHE_BAD_REQUEST_MAX_AGE      = HOUR          // 3600s    — cached 400 for rejected asset params
 TOKEN_CACHE_TTL_MS             = 5 * 60 * 1000 // 5 min in-memory token cache
 ```

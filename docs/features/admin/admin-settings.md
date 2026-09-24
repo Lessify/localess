@@ -25,23 +25,23 @@ src/app/features/admin/settings/
 
 ## SettingsComponent
 
-Tab-based shell container. Tracks the active tab as a signal and updates the Router on tab change via `onTabActivated()`.
+Tab-based shell container built on Spartan `hlm-tabs`. Tracks the active tab as a signal and updates the Router on tab change via `onTabActivated()`.
 
 **Injected services:** `Router`
 
 ## UiComponent
 
-Form for editing global UI settings (branding colours, label overrides). Saves via `SettingsService`.
+Reactive form for editing global UI settings — two fields only: `text` and `color` (validated by `SettingsValidator`). Saves via `SettingsService`.
 
-**Injected services:** `FormBuilder`, `SettingsService`, `NotificationService`
+**Injected services:** `FormBuilder`, `FormErrorHandlerService` (field error messages), `SettingsService`, `ChangeDetectorRef`, `NotificationService`
 
 **Key behaviour:**
-- Loads current settings on init via `SettingsService.find()`
-- `save()` — patches settings document in Firestore
+- Loads current settings in the constructor via `SettingsService.find()` and patches `settings.ui` into the form
+- `save()` — calls `SettingsService.updateUi()`, which writes `ui` + `updatedAt` to `configs/settings` with `setDoc(..., { merge: true })`
 
 ## Services Used
 
 | Service | Purpose |
 |---------|---------|
 | `SettingsService` | Read and write global app settings from Firestore |
-| `NotificationService` | Snackbar feedback |
+| `NotificationService` | Toast feedback |

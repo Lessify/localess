@@ -39,6 +39,9 @@ Subscribes to `user(auth)` observable and then fetches the Firebase ID token to 
 // Key computed
 isRoleAdmin: computed(() => role() === 'admin')
 isLocked:    computed(() => lock() === true)
+
+// Key methods
+setAuthenticated(isAuthenticated) // patches isAuthenticated and persists it to localStorage
 ```
 
 Auth providers supported: **Email/Password**, **Google**, **Microsoft**.
@@ -57,6 +60,7 @@ Loads all spaces the user has access to. Tracks the currently selected space and
 // Key state
 {
   spaces: Space[],
+  loaded: boolean,           // true once load() has resolved (success, empty, or error)
   selectedSpaceId: string | undefined,
   selectedEnvironmentBySpaceId: Record<string, string>,
   environment: SpaceEnvironment | undefined,
@@ -68,9 +72,12 @@ Loads all spaces the user has access to. Tracks the currently selected space and
 
 // Key computed
 selectedSpace: computed(() => spaces().find(s => s.id === selectedSpaceId()))
+hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on loaded so it is not true before the first response
 ```
 
 Key methods:
+- `load()` — `rxMethod` that streams `SpaceService.findAll()`; called from `onInit`. Sets `loaded`, and clears the selection when the list is empty
+- `spaceById(id)` — returns a `computed` signal of the space with that id (or `undefined`)
 - `changeSpace(space)` — switch active workspace, reset paths, resolve environment
 - `changeContentPath(path)` / `changeAssetPath(path)` — update breadcrumb navigation
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
@@ -111,11 +118,11 @@ Fully client-side user preferences, persisted to `localStorage`. No Firestore in
   assetDialogLayout: 'list' | 'grid',
   translationLayout: 'list' | 'tree',
   markdownMode: 'source' | 'wysiwyg',  // how MARKDOWN fields are edited
-  lastSeenVersion: string
+  lastSeenWhatsNewVersion: string   // newest What's New entry the user has opened
 }
 ```
 
-Theme switching applies CSS classes + `data-theme` attribute to `<html>` immediately. `'auto'` follows the OS `prefers-color-scheme` media query.
+Theme switching applies CSS classes + `data-theme` attribute to `<html>` immediately. `'auto'` is resolved once: `load()` (run in `onInit`) checks the OS `prefers-color-scheme` media query at startup and patches `theme` to `'light'` or `'dark'`. It does not listen for later OS changes.
 
 `markdownMode` is the author's chosen way of editing MARKDOWN content fields — raw markdown or the visual editor — remembered across reloads and shared by every markdown field at once. See [Contents → Field Editors](features/spaces/contents.md#the-mode-is-a-remembered-user-preference).
 

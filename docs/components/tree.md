@@ -126,8 +126,9 @@ combinator:
 [data-slot='tree-item'][aria-selected='true'] > [data-slot='tree-item-row'] { … }
 ```
 
-Scoped styles work here — unlike the `<svg>` rule above — because both the `<li>` and
-the row are in `ll-tree`'s own template and so carry its `_ngcontent` attribute.
+Scoped styles work here — unlike the `<svg>` pointer-events rule further down (in the
+notes on writing tests) — because both the `<li>` and the row are in `ll-tree`'s own
+template and so carry its `_ngcontent` attribute.
 The chevron rotation uses `transform: rotate(90deg)` rather than the `rotate` property,
 because the chevron's `transition-transform` animates `transform`.
 

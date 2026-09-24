@@ -29,15 +29,18 @@ src/app/features/spaces/assets/
 
 File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`.
 
-**Injected services:** `AssetService`, `MatDialog`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`
+**Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
-- `loadData()` — loads assets at the current `assetPath` level
+- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetPath)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method)
+- `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is appended to `SpaceStore.assetPath`
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
-- Upload flow: file → `filesUpload()` queues it → `AssetService.createFile()` → Firebase Storage upload
+- `onFileUpload(event)` — handles the `<input type="file">` change event and queues each selected file
+- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → Firebase Storage upload
 - `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
 - `openAddFolderDialog()` — creates a new folder
+- `openEditDialog(asset)` — dispatches to `openEditFileDialog()` or `openEditFolderDialog()` by `kind`
 - `openEditFileDialog(asset)` — edit metadata: display name, alt text
 - `openEditFolderDialog(asset)` — rename folder
 - `openDeleteDialog(asset)` — delete file or folder (with cascade for folders)
@@ -45,7 +48,7 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- Unsplash integration (if `unsplash_ui_enable` Remote Config flag is `true`) — opens `UnsplashAssetsSelectDialogComponent`
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (i.e. the build-time `environment.plugins.unsplash` flag, not Remote Config) — opens `UnsplashAssetsSelectDialogComponent`
 
 ## CDN Asset Endpoint
 
@@ -231,7 +234,7 @@ Sharp is called as `resize(width ?? null, height ?? null)` with its default `cov
 | ✓ | — | Scale to width, height auto — aspect ratio preserved, no crop |
 | — | ✓ | Scale to height, width auto — aspect ratio preserved, no crop |
 | ✓ | ✓ | **`cover` crop** — resizes to fill the exact box, excess edges are cropped |
-| — | — | No resize — only format/quality re-encoding if `f`/`q` provided, or if the source is `image/jpeg` and the WebP default applies |
+| — | — | No resize — a still raster (JPEG/PNG/WebP/AVIF) is still re-encoded in its own format at the default quality (or `q`); `f` changes the format |
 
 ### Oversized requests redirect, they do not upscale
 
@@ -267,7 +270,7 @@ Separately, `MAX_OUTPUT_DIMENSION` (8192 px) bounds the request itself and is a 
 than bandwidth — Sharp holds the full decoded bitmap, so an 8192 px edge is roughly 200 MB of raw
 pixels. Raising it means revisiting `memory` and `concurrency` in `functions/src/v1.ts` too.
 
-Omit `w`/`h` entirely to receive the untouched original (subject to the WebP default above).
+Omitting `w`/`h` does **not** return the untouched original — a still raster is still re-encoded (see [Output Format](#output-format--nothing-is-converted-implicitly)). Use `/original` for the stored bytes.
 
 ### Special Cases
 

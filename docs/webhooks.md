@@ -10,10 +10,10 @@ Webhooks deliver HTTP POST notifications to external URLs when content or transl
 
 ```
 spaces/{spaceId}/webhooks/{webhookId}          — webhook config
-spaces/{spaceId}/webhooks/{webhookId}/logs/{logId}  — execution history (max 100 per webhook)
+spaces/{spaceId}/webhooks/{webhookId}/logs/{logId}  — execution history (not capped or pruned; one doc per dispatch)
 ```
 
-**Access control:** `SPACE_MANAGEMENT` permission required for all read/write operations on both collections.
+**Access control:** `SPACE_MANAGEMENT` (or `admin`) required to read/write webhook configs and to read logs. Logs are client read-only; they are written by Functions via the Admin SDK.
 
 ---
 
@@ -52,11 +52,11 @@ interface WebHookPayload {
   spaceId: string;
   timestamp: string;           // ISO 8601
   data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
-  signature?: string;          // present only if secret is configured
+  signature?: string;          // internal only — the signature is delivered in the X-Webhook-Signature header, not the body
 }
 ```
 
-Content events include `contentId` in `data`. Translation events send an empty `data` object.
+Content events send `data: { id, fullSlug }` (`ContentWebHookPayloadData`) — the content's ID and full slug. Translation events send an empty `data` object.
 
 ---
 
@@ -69,6 +69,7 @@ POST <webhook.url>
 Content-Type: application/json
 User-Agent: Localess-WebHook/1.0
 X-Webhook-Event: <event>
+X-Webhook-Delivery: <uuid>          ← unique per dispatch; same value as the log's deliveryId
 X-Webhook-Signature: sha256=<hex>   ← only if secret is set
 <any custom headers from webhook.headers>
 
@@ -86,12 +87,12 @@ Body: JSON-serialised WebHookPayload
 When a webhook has a `secret`, the payload is signed before dispatch:
 
 ```
-signature = HMAC-SHA256(secret, JSON.stringify(payload))
-header:  X-Webhook-Signature: sha256=<hex_digest>
-field:   payload.signature = "sha256=<hex_digest>"
+body      = JSON.stringify(payload)          // serialised once, before signing
+signature = HMAC-SHA256(secret, body)
+header:   X-Webhook-Signature: sha256=<hex_digest>
 ```
 
-The signature appears in both the header and the payload body.
+The signature is delivered **only** in the `X-Webhook-Signature` header. Receivers must read it from the header and verify it by computing the HMAC over the **raw request body** exactly as received (do not re-serialise parsed JSON, and do not rely on any `signature` field in the body).
 
 ---
 
@@ -142,7 +143,7 @@ interface WebHookLogFailure extends WebHookLogBase {
 type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Logs are ordered by `createdAt` descending, capped at **100 entries** per webhook. The [WebhookDetailComponent](#frontend) shows the full log history with pagination and filtering.
+Logs are **not capped on write** — every dispatch adds a document and nothing prunes them (they are only removed with the webhook, see [Cleanup](#cleanup)). Limits apply only on read: the backend `findWebHookLogs()` query returns the latest 100 by `createdAt` descending, and the frontend `WebHookService.findLogs()` takes an optional `max`. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
 
 ---
 
@@ -177,7 +178,7 @@ A Firestore `onDocumentDeleted` trigger in `functions/src/webhooks.ts` recursive
 
 **Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
-- `url`: required, must match `^https?:\/\/.+`
+- `url`: required, must match `^https?:\/\/.+` — **client-side only**; the backend does not validate the URL
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 

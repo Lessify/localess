@@ -27,18 +27,18 @@ detected and skipped.
 |------|---------|---------|
 | `--project <id>` | — | Adopt an existing project. Omit to pick from a list of your projects. |
 | `--display-name <name>` | `Localess` | Display name when creating a project. |
-| `--region <region>` | existing Firestore location, else **asked** | Region for **Firestore, Storage and Cloud Functions**. Partly immutable — see below. |
-| `--billing-account <id>` | — | Billing account to link. Required with `--yes`. |
-| `--yes` | `false` | Never prompt; fail instead. For automation - requires `--project` and `--billing-account`. |
+| `--region <region>` | existing Firestore location, else **asked** (`europe-west6` under `--yes`) | Region for **Firestore, Storage and Cloud Functions**. Partly immutable — see below. |
+| `--billing-account <id>` | — | Billing account to link. Required with `--yes` when billing is not yet enabled. |
+| `--yes` | `false` | Never prompt; fail instead. For automation - requires `--project`, and `--billing-account` if billing is not yet enabled. |
 
 One region drives all three services. Localess uses gen-2 Cloud Functions triggers, which must be
 co-located with the Firestore database and Storage bucket they listen to, so splitting them apart
 produces functions that deploy but never fire.
 
-> **`--region` is permanent for Firestore and Storage.** Neither the database nor the default
-> bucket can be moved after creation — changing your mind means a new project. The Functions
-> region *can* be changed later by editing `LOCALESS_REGION` in `.env.<project-id>` and
-> redeploying, but moving it away from the data is exactly the split described above.
+> **`--region` is permanent.** Neither the Firestore database nor the default bucket can be
+> moved after creation — changing your mind means a new project. The Functions region follows
+> the database: sync and deploy always rewrite `LOCALESS_REGION` in `.env.<project-id>` from the
+> live Firestore location, so editing it by hand does not survive the next deploy.
 
 Omit `--region` and setup asks for it — zone first (Europe, United States, Asia…), then the
 exact region within that zone. Only the 40 regions where **all three** services exist are
@@ -47,7 +47,12 @@ offered; the list lives in `scripts/localess/regions.mjs`. The Firestore multi-r
 them with.
 
 Passing an unsupported `--region` is not a hard failure: setup says why and asks instead. Under
-`--yes` it exits, since it cannot ask.
+`--yes` it exits, since it cannot ask. Under `--yes` with no `--region` and no existing Firestore
+database, setup uses the default, `europe-west6`.
+
+The removed flags `--location`, `--storage-location` and `--google-support-email` are not
+silently ignored: passing one prints a hint saying what replaced it (`--region` for the first
+two; the Firebase console for Google sign-in).
 
 Linking billing has cost implications, so an automated run (`--yes`) must name the account
 explicitly with `--billing-account` rather than have one chosen for it.
@@ -94,7 +99,8 @@ In order:
 8.  Web app          register a "Localess" web app
 9.  Hosting          create the site (normally already present)
 10. Mark project     label it localess-managed with the version
-11. Local config     write .env.<project-id>, firebase-config.<project-id>.json, functions/.env.<project-id>
+11. Local config     write .env.<project-id>, firebase.<project-id>.json, functions/.env.<project-id>,
+                     firebase-config.<project-id>.json, firebase-config.build.json
 12. Offer deploy     ask whether to run `npm run localess:deploy` (defaults to no)
 ```
 
@@ -160,8 +166,9 @@ region recorded on the live project:
   Unrelated (unrelated-app)
 ```
 
-The same picker appears in `npm run localess:sync` and `npm run localess:deploy`, minus the `Create a new
-project...` entry — neither may create a project.
+The same picker appears in `npm run localess:sync`, `npm run localess:deploy` and
+`npm run localess:check`, minus the `Create a new project...` entry — none of them may create a
+project.
 
 Two independent signals combine:
 
@@ -287,6 +294,10 @@ The modules under `scripts/`:
 | `scripts/localess/commands/setup.mjs` | Provisioning: the infrastructure steps and the markers |
 | `scripts/localess/commands/deploy.mjs` | Build and push, behind the marker gate |
 | `scripts/localess/commands/sync.mjs` | The single writer of the local project files |
+| `scripts/localess/commands/check.mjs` | Health check: fetches state, renders findings, applies `--fix` |
+| `scripts/localess/checks.mjs` | The pure checks behind `check` — facts in, verdicts out |
+| `scripts/localess/admin-user.mjs` | Creating the first admin user from the CLI (replaces the removed `setup` callable) |
+| `scripts/localess/firestore-rest.mjs` | Encoding plain values for the Firestore REST API |
 | `scripts/localess/projects.mjs` | Project identification, annotation and the deploy gate |
 | `scripts/localess/firebase-cli.mjs` | Documented `firebase <command>` calls, spawned as child processes |
 | `scripts/localess/firebase-gaps.mjs` | The steps that have **no** CLI command |
@@ -300,17 +311,25 @@ The modules under `scripts/`:
 | `scripts/localess/prompts.mjs` | Interactive pickers and input validation |
 | `scripts/localess/regions.mjs` | Regions where Firestore, Storage and Functions all exist |
 | `scripts/localess/markers.mjs` | How a project is recognised as Localess-managed |
-| `scripts/localess/log.mjs` | The step logger shared by all three commands |
+| `scripts/localess/log.mjs` | The step logger shared by all four commands |
+| `scripts/localess/usage.mjs` | `UsageError`, so a bad invocation prints usage rather than a failure banner |
+| `scripts/generate-firebase-json.mjs` | Cloud Build entry point for `writeFirebaseJson` (used by `cloudbuild.yaml`) |
 
 ### Why `firebase-gaps.mjs` exists
 
-Three provisioning steps have no `firebase` command, verified against firebase-tools 15.29.0:
+Several steps have no `firebase` command, verified against firebase-tools 15.29.0:
 
 | Gap | Evidence |
 |-----|----------|
 | Enabling APIs | No `firebase services:enable` command exists |
 | Linking billing | No `firebase billing:*` commands exist |
 | Creating the default bucket | `lib/gcp/storage.js` only *reads* the bucket (`getDefaultBucket`) |
+| Project labels | No `firebase projects:*` command reads or writes labels |
+| Bucket CORS | No command reads or sets a bucket's CORS rules |
+| Cloud Run invoker IAM | No command reads or grants `run.invoker` on a function's service |
+| Identity Platform config and users | No command reads the config or queries users |
+| First admin account | No command creates an account or sets custom claims |
+| Firestore writes | No command commits documents (used when bootstrapping the first admin) |
 
 They are reached through firebase-tools' internals — `apiv2.Client` (an authenticated HTTP client
 that carries the `cloud-platform` scope, see `lib/scopes.js`) and `ensureApiEnabled`. Those are not
@@ -318,9 +337,9 @@ public API, so they are confined to this one file: an upstream breaking change i
 and `firebase-tools.mjs` fails loudly if the installed version is older than the one this was
 verified against.
 
-Authentication is **not** in this file. Since 15.29.0 the `auth` block plus
+Provisioning authentication is **not** in this file. Since 15.29.0 the `auth` block plus
 `firebase deploy --only auth` covers Identity Platform and the providers, so it goes through the
-normal CLI path.
+normal CLI path. Only the reads and the admin-account writes that `check` needs live here.
 
 ### The auth bootstrap
 
@@ -364,8 +383,9 @@ is idempotent, `firebase-cli.mjs` retries this specific code up to three times.
 
 ### `firebase-config.<project-id>.json already exists`
 
-Handled: `apps:sdkconfig --out` refuses to overwrite, so the script writes a temp file and renames
-it over the target.
+Handled: `apps:sdkconfig --out` refuses to overwrite, so the script does not use it. It fetches
+the config as JSON and writes the file itself, which keeps the command idempotent and leaves no
+temp file behind when a run fails partway.
 
 ### A freshly created project is "not found"
 

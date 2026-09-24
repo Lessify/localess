@@ -137,9 +137,10 @@ It is read once in `ngOnInit`. Consumers compute `FilterOption[]` themselves (ty
 
 ### Testing split
 
-`FilterToolbar` itself has no unit tests — it is thin, markup-driven, and exercised end-to-end by
-the `schemas` page, matching this codebase's convention for `ll-table`-style UI wiring.
-`FilterPredicateUtils` **is** fully unit tested (`filter-predicate-utils.service.spec.ts`): empty
+`FilterToolbar` is unit tested in `filter-toolbar.component.spec.ts`: one control per filter
+definition with the right empty default, `hasActiveValues()`, single- and multiple-mode
+`select`/`isSelected`, `selectedOptionLabel()`, `reset()`, the debounced `filterChange` emit, and
+the no-filters case. `FilterPredicateUtils` **is** fully unit tested (`filter-predicate-utils.service.spec.ts`): empty
 filter, search-only, single-mode equality, multiple-mode overlap, combined search + filter, and
 undefined accessor values.
 
@@ -150,5 +151,7 @@ dependency on `shared/components/table`.
 ## Reference consumer
 
 `src/app/features/spaces/schemas/schemas.component.*` — the first migrated consumer and the clearest
-example. `webhook-detail.component` has since migrated too (`LlFilterToolbarImports` / `FilterDef` in
-the `.ts`, `<ll-filter-toolbar>` in the `.html`).
+example. Other consumers (`LlFilterToolbarImports` / `FilterDef` in the `.ts`, `<ll-filter-toolbar>`
+in the `.html`): `spaces/settings/locales`, `spaces/settings/tokens`, `spaces/tasks`,
+`spaces/tasks/task-detail`, `spaces/developers/webhooks`, `spaces/developers/webhooks/webhook-detail`,
+`admin/spaces` and `admin/users` (all under `src/app/features/`).

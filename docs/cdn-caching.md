@@ -17,14 +17,14 @@ Client request (no cv or stale cv)
   → Function reads Storage cache.json metadata
   → 302 redirect to same URL + ?cv=<generation>    ← cached 60s by default (per-token override)
   → Client follows redirect
-  → Function returns actual JSON                    ← cached 1 day (7 days shared CDN)
+  → Function returns actual JSON                    ← cached 7 days (browser and shared CDN)
 ```
 
 The `cv` value is the **Firebase Storage generation number** of the cache marker file:
 - Content:     `spaces/{spaceId}/contents/cache.json`
 - Translation: `spaces/{spaceId}/translations/cache.json`
 
-When content is published, a new `cache.json` is written, incrementing the generation. All existing `cv` values become stale — the next request from any client triggers a redirect to the new `cv`.
+Whenever the marker is rewritten, its generation increments. The content marker is rewritten by the `content.onwrite` trigger on **every** content write (not only publish); the translation marker is rewritten on translation publish and on translation draft generation. See [Publish Flow](publish-flow.md). All existing `cv` values become stale — the next request from any client triggers a redirect to the new `cv`.
 
 ---
 
@@ -33,12 +33,16 @@ When content is published, a new `cache.json` is written, incrementing the gener
 | Scenario | `max-age` | `s-maxage` | Who respects it |
 |----------|-----------|------------|-----------------|
 | Redirect (cv missing or stale) | 60s (default) | 60s (default) | CDN edge + browser |
-| Content/Translation response | 1 day | 7 days | browser / CDN |
-| Asset response | 365 days | 365 days | browser / CDN |
-| 404 — space not found | 1 day | 7 days | browser / CDN |
-| 404 — cache marker missing / content not found on disk | 10 min | 10 min | browser / CDN |
-| 404 — translation cache-miss / slug not found | *(no `Cache-Control` header sent)* | | |
-| 404 — asset not found | `no-cache` | `no-cache` | browser / CDN |
+| Content/Translation/Links response | 7 days | 7 days | browser / CDN |
+| Asset response (incl. `/original`, `/download`) | 365 days | 365 days | browser / CDN |
+| Asset `304 Not Modified` | 365 days | 365 days | browser / CDN |
+| Asset canonical-size redirect (`w`/`h` above source) | 365 days | 365 days | browser / CDN |
+| 400 — invalid asset transform param | 1 hour | 1 hour | browser / CDN |
+| 404 — space not found | 7 days | 7 days | browser / CDN |
+| 404 — content cache marker missing / content not found on disk (content routes only) | 10 min | 10 min | browser / CDN |
+| 404 — translation/links cache marker missing, translation file missing, slug not found | *(no `Cache-Control` header sent)* | | |
+| 404 — asset: Firestore doc missing (asset genuinely does not exist) | 7 days | 7 days | browser / CDN |
+| 404 — asset: Firestore doc exists but Storage object missing (upload in progress) | `no-cache` | `no-cache` | browser / CDN |
 
 > Redirect TTL is a flat default (`CACHE_REDIRECT_MAX_AGE_DEFAULT`), not split by published/draft. It can be overridden per-token via the `cacheTtl` field on `TokenV2` — see [Auth Tokens](auth-tokens.md) — where `cacheTtl: 0` disables caching entirely (`Cache-Control: no-cache`).
 >
@@ -46,10 +50,12 @@ When content is published, a new `cache.json` is written, incrementing the gener
 
 Constants are defined in `functions/src/config.ts`:
 ```typescript
-CACHE_MAX_AGE                   = DAY           // 86400s
+CACHE_MAX_AGE                   = DAY * 7       // 604800s
 CACHE_SHARE_MAX_AGE             = DAY * 7       // 604800s
-CACHE_REDIRECT_MAX_AGE_DEFAULT  = MINUTE        // 60s — default redirect TTL, overridable per-token via `cacheTtl`
+CACHE_ASSET_NOT_FOUND_MAX_AGE   = DAY * 7       // 604800s — 404 for an asset with no Firestore doc
 CACHE_ASSET_MAX_AGE             = DAY * 365     // 31536000s
+CACHE_REDIRECT_MAX_AGE_DEFAULT  = MINUTE        // 60s — default redirect TTL, overridable per-token via `cacheTtl`
+CACHE_BAD_REQUEST_MAX_AGE       = HOUR          // 3600s — cached 400 for rejected asset params
 ```
 
 ---
@@ -59,10 +65,12 @@ CACHE_ASSET_MAX_AGE             = DAY * 365     // 31536000s
 | Endpoint | Auth | cv source |
 |----------|------|-----------|
 | `GET /api/v1/spaces/:spaceId/translations/:locale` | Token (TRANSLATION_PUBLIC or DRAFT) | `translations/cache.json` |
-| `GET /api/v1/spaces/:spaceId/links` | Token (CONTENT_PUBLIC or DRAFT) | `contents/cache.json` |
+| `GET /api/v1/spaces/:spaceId/links` | Token (CONTENT_PUBLIC, CONTENT_DRAFT or DEV_TOOLS) | `contents/cache.json` |
 | `GET /api/v1/spaces/:spaceId/contents/slugs/*slug` | Token (CONTENT_PUBLIC or DRAFT) | `contents/cache.json` |
 | `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (CONTENT_PUBLIC or DRAFT) | `contents/cache.json` |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId` | None | N/A (no cv) |
+| `GET /api/v1/spaces/:spaceId/assets/:assetId/original` | None | N/A (no cv) |
+| `GET /api/v1/spaces/:spaceId/assets/:assetId/download` | None | N/A (no cv) |
 
 ### Asset transform bounds
 

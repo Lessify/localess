@@ -36,6 +36,13 @@ src/app/features/spaces/contents/
     translate-menu/                      ← AI translate button + locale menu, shared by both
     markdown-editor/                     ← MARKDOWN field editor (source + WYSIWYG modes)
     rich-text-editor/                    ← RICH_TEXT field editor (TipTap, stores JSON)
+    asset-select/                        ← ASSET field (single asset)
+    assets-select/                       ← ASSETS field (multiple assets)
+    assets-select-dialog/                ← AssetsSelectDialogComponent, opened by asset-select / assets-select
+    link-select/                         ← LINK field (internal content / external URL)
+    reference-select/                    ← REFERENCE field (single content reference)
+    references-select/                   ← REFERENCES field (multiple content references)
+    references-select-dialog/            ← ReferencesSelectDialogComponent, opened by reference-select / references-select
 ```
 
 ## ContentsComponent
@@ -43,7 +50,8 @@ src/app/features/spaces/contents/
 File-system-like browser that shows a breadcrumb path and lists folders/documents at the current path level. Driven by
 `SpaceStore.contentPath`.
 
-**Injected services:** `ContentService`, `SchemaService`, `TokenService`, `TaskService`, `MatDialog`, `SpaceStore`, `NotificationService`
+**Injected services:** `ContentService`, `SchemaService`, `TokenService`, `TaskService`, `HlmDialogService` (injected twice, as `dialog` and
+`hlmDialog`), `Router`, `Injector`, `SpaceStore`, `NotificationService`
 
 **Key behaviour:**
 
@@ -53,12 +61,15 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - `navigateToSlug(slug)` — path breadcrumb navigation
 - `openAddDocumentDialog()` — pick schema → creates `ContentDocument` with `kind: DOCUMENT`
 - `openAddFolderDialog()` — creates `ContentFolder` with `kind: FOLDER`
+- `openEditDialog(element)` — edit document/folder name and slug
+- `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
 - `openPublishDialog()` — publishes selected document to Storage (see [Publish Flow](../../publish-flow.md))
 - `openUnpublishDialog()` — removes published JSON from Storage
 - `openMoveDialog()` — moves document/folder to a new parent slug
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
 - `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export
+- `copiedSlug()` / `copiedFullSlug()` — success snackbar after copying the slug / full slug to the clipboard
 
 ## EditDocumentComponent (routed)
 
@@ -333,6 +344,8 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 | `ImportDialogComponent`       | Upload content file → creates a Task    |
 | `MoveDialogComponent`         | Pick destination folder                 |
 | `ConfirmationDialogComponent` | Delete / unpublish confirmation         |
+| `ReferencesSelectDialogComponent` | Pick content documents for `REFERENCE`/`REFERENCES` fields (`shared/references-select-dialog/`) |
+| `AssetsSelectDialogComponent` | Pick assets for `ASSET`/`ASSETS` fields (`shared/assets-select-dialog/`) |
 
 ## Services Used
 

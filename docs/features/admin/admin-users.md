@@ -17,6 +17,7 @@ Manage all platform users — invite new users, edit their roles and granular pe
 ```
 src/app/features/admin/users/
   users.component.ts/html/scss       ← main user list
+  user-permissions.ts                ← USER_PERMISSION_GROUPS (permission categories for the dialogs)
   user-dialog/                       ← edit role + permissions
   user-invite-dialog/                ← invite new user
 ```
@@ -25,11 +26,11 @@ src/app/features/admin/users/
 
 Displays a searchable, paginated `ll-table` (`LlTableImports`) of all users in the platform.
 
-**Injected services:** `UserService`, `MatDialog`, `NotificationService`
+**Injected services:** `HlmDialogService`, `ChangeDetectorRef`, `NotificationService`, `UserService`, `Injector`
 
 **Key behaviour:**
 - `loadData()` — fetches all users via `UserService`
-- `onFilterChange(value: FilterToolbarValue)` (`users.component.ts:128`) — updates the table filter from the `LlFilterToolbarImports` toolbar; the actual predicate is built once in `ngOnInit()` via `FilterPredicateUtils.create()` (`users.component.ts:116`), searching across email/display name and filtering by active/inactive
+- `onFilterChange(value: FilterToolbarValue)` — updates the table filter from the `LlFilterToolbarImports` toolbar; the actual predicate is built once in `ngOnInit()` via `FilterPredicateUtils.create()`, searching across email/display name and filtering by active/inactive
 - `inviteDialog()` — opens `UserInviteDialogComponent`
 - `openEditDialog(user)` — opens `UserDialogComponent` to edit role/permissions/lock
 - `openDeleteDialog(user)` — opens `ConfirmationDialogComponent`, then deletes
@@ -47,7 +48,7 @@ Edits an existing user's role, granular permissions, and lock status.
 
 Form fields: `role`, `permissions[]`, `lock`
 
-Both dialogs render `permissions[]` as grouped checkboxes rather than a plain multiselect: permissions are organized into categories via `USER_PERMISSION_GROUPS` (`user-permissions.ts`), with `isPermissionSelected()` / `togglePermission()` toggling individual entries into the underlying `permissions` form control (`user-dialog.component.ts:55-70`, `user-invite-dialog.component.ts:52-67`).
+Both dialogs render `permissions[]` as grouped checkboxes rather than a plain multiselect: permissions are organized into categories via `USER_PERMISSION_GROUPS` (`user-permissions.ts`), with `isPermissionSelected()` / `togglePermission()` toggling individual entries into the underlying `permissions` form control (in both `user-dialog.component.ts` and `user-invite-dialog.component.ts`).
 
 > See [User Roles & Permissions](../../frontend-permissions.md) for the full `UserPermission` enum and how claims work.
 
@@ -55,5 +56,5 @@ Both dialogs render `permissions[]` as grouped checkboxes rather than a plain mu
 
 | Service | Purpose |
 |---------|---------|
-| `UserService` | CRUD, sync — calls Firebase Functions |
-| `NotificationService` | Snackbar feedback |
+| `UserService` | List, update, delete via Firestore directly; `invite()` and `sync()` call the `user-invite` / `user-sync` Firebase Functions |
+| `NotificationService` | Toast feedback |

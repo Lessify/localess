@@ -2,7 +2,7 @@
 
 > Related: [CDN & Caching](cdn-caching.md) · [Auth Tokens](auth-tokens.md) · [Publish Flow](publish-flow.md)
 
-The public REST API is served by the `publicv1` Firebase Function (Express app, `europe-west6`, `maxInstances: 10`, `concurrency: 600`) via the Hosting rewrite `/api/v1/**`. `maxInstances` is set on the function itself in `functions/src/v1.ts`, overriding the codebase-wide `setGlobalOptions({ maxInstances: 1 })` — this is the only function serving public consumer traffic, so it must scale past a single instance. Three Express routers handle all routes: `CDN`, `MANAGE`, and `DEV_TOOLS`.
+The public REST API is served by the `publicv1` Firebase Function (Express app exported as `v1` from `functions/src/v1.ts`; `memory: '1GiB'`, `maxInstances: 10`, `concurrency: 20`) via the Hosting rewrite `/api/v1/**`. The region comes from the global options in `functions/src/index.ts` (`process.env.REGION ?? 'europe-west6'`). `maxInstances` and `concurrency` are set on the function itself, overriding the codebase-wide `setGlobalOptions({ maxInstances: 1, concurrency: 600 })` — this is the only function serving public consumer traffic, so it must scale past a single instance. Three Express routers handle all routes: `CDN`, `MANAGE`, and `DEV_TOOLS`. JSON request bodies are limited to `5mb` (`express.json({ limit: '5mb' })`) instead of the Express default 100kb, so a whole space's schemas fit in one push.
 
 ---
 
@@ -27,7 +27,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to `space.localeFallback`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
-- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `resolveAssets()` (`functions/src/services/content.service.ts:305`).
+- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `resolveAssets()` (`functions/src/services/content.service.ts:327`).
 - **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG is passed through unsized; animated GIF/WebP are resized with all frames preserved. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
 - **No implicit format conversion, but quality is normalised** — `f` is the only thing that changes an image format. A bare request keeps the stored format yet still re-encodes a still raster at that format default quality: a q95 upload measured 587KB and returned 219KB. GIF, SVG, video and animations are served as stored. Passing `f=webp` or `f=avif` is the recommended way to cut transfer size further.
 - **JPEG uses the mozjpeg encoder** — trellis quantisation, overshoot deringing and optimised scans, which produce a measurably smaller file at the *same* quality value (~20% on a test source) for roughly 5x the encode time. Worth it here because encoding happens once per URL per cache miss under a 365-day TTL, while the saved bytes are paid on every hit.
@@ -105,6 +105,21 @@ Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header
 | `update-existing` | Updates `locales.{locale}` field for IDs that already exist  |
 | `delete-missing`  | Deletes all translation docs whose ID is **not** in `values` |
 
+Returns `400 invalid-argument` (`Locale not supported by this space`) when `:locale` is not one of the space's locales.
+
+**Response:**
+
+```typescript
+{
+  message: string;
+  counts: { created: number; updated: number; deleted: number; unchanged: number };
+  ids: { created: string[]; updated: string[]; deleted: string[] };
+  dryRun?: true;
+}
+```
+
+`counts`/`ids` describe the full plan for the pushed `values`, regardless of `type`; only the IDs matching `type` are actually written.
+
 #### Schema push (`POST /api/v1/spaces/:spaceId/schemas`)
 
 Synchronous schema write used by `@localess/cli`'s `schema push`. Requires `DEV_TOOLS`, same as translation updates.
@@ -119,7 +134,7 @@ Synchronous schema write used by `@localess/cli`'s `schema push`. Requires `DEV_
 }
 ```
 
-Upserts reuse the import Task's change detection (`isSchemaChanged`, key-order-insensitive), preserve `createdAt`, and clear absent optionals. `sync` mode refuses (400 `failed-precondition`, listing offenders) to delete a schema still referenced by a surviving schema's `SCHEMA`/`SCHEMAS` refs or `OPTION`/`OPTIONS` source.
+Returns `404 not-found` when the space does not exist. Upserts reuse the import Task's change detection (`isSchemaChanged`, key-order-insensitive), preserve `createdAt`, and clear absent optionals. `sync` mode refuses (400 `failed-precondition`, listing offenders) to delete a schema still referenced by a surviving schema's `SCHEMA`/`SCHEMAS` refs or `OPTION`/`OPTIONS` source.
 
 **Response:**
 
@@ -132,7 +147,7 @@ Upserts reuse the import Task's change detection (`isSchemaChanged`, key-order-i
 }
 ```
 
-All three operations write via Firestore `WriteBatch` in chunks of `BATCH_MAX` (500), committed sequentially by the `commitInBatches()` helper (`functions/src/v1/manage.ts:18-36`), then call `generateTranslationsDraft()` to update Storage cache. With `dryRun: true` the operation is skipped and only the affected IDs are returned.
+The three translation operations write via Firestore `WriteBatch` in chunks of `BATCH_MAX` (500), committed sequentially by the `commitInBatches()` helper (`functions/src/v1/manage.ts:38-56`), then call `generateTranslationsDraft()` to update the Storage draft cache. Schema push instead writes through `applySchemaPushPlan()` and does no draft or cache work. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned.
 
 ---
 
@@ -158,8 +173,8 @@ Token passed as `?token=<tokenId>`. Results are cached in-memory per Function in
 
 **Conditional permission helpers:**
 
-- `requireContentPermissions()` — requires `CONTENT_DRAFT` when `version` query param is present; otherwise accepts `CONTENT_PUBLIC`, `CONTENT_DRAFT`, or `DEV_TOOLS`.
-- `requireTranslationPermissions()` — same logic with `TRANSLATION_DRAFT` / `TRANSLATION_PUBLIC`.
+- `requireContentPermissions()` — requires `CONTENT_DRAFT` or `DEV_TOOLS` when `version` query param is present; otherwise accepts `CONTENT_PUBLIC`, `CONTENT_DRAFT`, or `DEV_TOOLS`.
+- `requireTranslationPermissions()` — same logic with `TRANSLATION_DRAFT` / `TRANSLATION_PUBLIC` (plus `DEV_TOOLS`).
 
 ### `api-key-auth.middleware.ts` — Header Auth (MANAGE)
 
@@ -191,7 +206,7 @@ Token passed as `X-API-KEY` header. No caching — direct Firestore lookup on ev
 }
 ```
 
-`details.reason` is omitted for fixed-permission checks (e.g. `DEV_TOOLS`-only endpoints, `/links`) — only `requireContentPermissions()`/`requireTranslationPermissions()` populate it, explaining the draft-vs-published distinction.
+`details.reason` is omitted for fixed-permission checks (e.g. `DEV_TOOLS`-only endpoints, `/links`) — only `requireContentPermissions()`/`requireTranslationPermissions()` populate it, for both draft (`version` present) and published requests, explaining which permissions that kind of request needs.
 
 ---
 
@@ -214,8 +229,8 @@ Token passed as `X-API-KEY` header. No caching — direct Firestore lookup on ev
 
 | File                                                     | Purpose                                                                                   |
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `functions/src/v1/cdn.ts`                                | CDN router — all 5 delivery endpoints                                                     |
-| `functions/src/v1/manage.ts`                             | MANAGE router — translation bulk-write                                                    |
+| `functions/src/v1/cdn.ts`                                | CDN router — all 7 delivery endpoints                                                     |
+| `functions/src/v1/manage.ts`                             | MANAGE router — translation bulk-write and schema push                                    |
 | `functions/src/v1/dev-tools.ts`                          | DEV_TOOLS router — space metadata, OpenAPI, schemas                                       |
 | `functions/src/v1/middleware/query-auth.middleware.ts`   | Query-param auth with 5-min token cache                                                   |
 | `functions/src/v1/middleware/api-key-auth.middleware.ts` | Header-based auth (no cache)                                                              |

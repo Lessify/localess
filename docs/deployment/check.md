@@ -29,8 +29,8 @@ Infrastructure
   + Local files       5/5 present
 
 Deployment
-  + Functions         29 across 13 groups
-  x Invoker bindings  14 of 16 reject unauthenticated calls: content-publish, setup, ...
+  + Functions         27 across 12 groups
+  x Invoker bindings  13 of 14 reject unauthenticated calls: content-publish, translation-publish, ...
   + Email sign-in     email/password enabled
 
 Application
@@ -98,7 +98,7 @@ location wins, because it is the only copy that cannot be changed.
 | Invoker bindings | A callable rejects unauthenticated calls (see below) |
 | Email sign-in | The email/password provider is off; nobody can sign in |
 
-**Functions are checked at group level, not function level.** `index.ts` exports thirteen grouped
+**Functions are checked at group level, not function level.** `index.ts` exports twelve grouped
 objects (`export const asset = { ondelete }`), which Firebase flattens into `asset-ondelete` with
 the entry point `asset.ondelete`. A group's members are only knowable by compiling `functions/`,
 and a check that needed a build would not get run — so this catches a whole group vanishing, which
@@ -160,6 +160,7 @@ effect of a check:
 |----------------|-----|
 | Billing | Spends money. Setup refuses to pick an account for you for the same reason. |
 | Firestore database, Storage bucket | Fix a location that can never be changed |
+| Web app, Hosting site | Created by setup — the report names `npm run localess:setup` |
 | Missing functions, email sign-in | Need a deploy |
 
 After applying repairs, `--fix` re-reads everything and prints the report again. A repair can fail
@@ -171,13 +172,14 @@ a single sync — so the repairs are deduplicated before they run.
 
 ### Repairs run in dependency order
 
-`FIX_ORDER` in `checks.mjs` is a correctness constraint, not a preference. The invoker bindings
-must be repaired **before** the admin user: creating the admin calls the `setup` callable, and a
-callable without its `allUsers` binding is unreachable. On a freshly deployed project both are
-missing, so one `--fix` fixes the bindings and then immediately uses them.
+`FIX_ORDER` in `checks.mjs` fixes the order repairs run in. No repair depends on another any more —
+it once did, when creating the admin called the since-removed `setup` callable, which needed its
+`allUsers` invoker binding first; the admin is now created through the Identity Platform API
+directly. The order is kept so `--fix` output is reproducible.
 
 Relying on the order the checks happen to be declared in would make that an accident of layout, so
-it is written down and tested.
+it is written down and tested: a repair missing from `FIX_ORDER` would otherwise sort first
+silently.
 
 ---
 
