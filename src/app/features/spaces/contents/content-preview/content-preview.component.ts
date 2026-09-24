@@ -19,6 +19,7 @@ import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { SpaceEnvironment } from '@shared/models/space.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
+import { isSafePreviewUrl } from '@shared/validators/space.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -90,10 +91,16 @@ export class ContentPreviewComponent {
       return undefined;
     }
   });
+  // The URL is read from the space document, which can be written without going through the
+  // settings form, so it is checked again here before being trusted as an iframe source.
+  readonly invalidEnvironmentUrl = computed(() => {
+    const env = this.selectedEnvironment();
+    return env !== undefined && !isSafePreviewUrl(env.url);
+  });
   readonly iframeUrl = computed(() => {
     const env = this.selectedEnvironment();
     const locale = this.selectedLocale();
-    if (env) {
+    if (env && isSafePreviewUrl(env.url)) {
       const localePart = locale.id !== CONTENT_DEFAULT_LOCALE.id ? locale.id + '/' : '';
       return this.sanitizer.bypassSecurityTrustResourceUrl(`${env.url}${localePart}${this.document().fullSlug}`);
     } else {
@@ -123,13 +130,19 @@ export class ContentPreviewComponent {
   sendEvent(event: EventToApp): void {
     const contentWindow = this.preview()?.nativeElement.contentWindow;
     const selectedEnvironment = this.selectedEnvironment();
-    if (contentWindow && selectedEnvironment && this.iframeStatus() === 'connected') {
+    if (contentWindow && selectedEnvironment && isSafePreviewUrl(selectedEnvironment.url) && this.iframeStatus() === 'connected') {
       const url = new URL(selectedEnvironment.url);
       contentWindow.postMessage(event, url.origin);
     }
   }
 
   onWindowMessage(event: MessageEvent<EventToEditor>): void {
+    // Only the preview iframe, on the selected environment's origin, may drive the editor - not
+    // another tab, popup or frame that happens to post a LOCALESS-shaped message.
+    const env = this.selectedEnvironment();
+    const contentWindow = this.preview()?.nativeElement.contentWindow;
+    if (!env || !isSafePreviewUrl(env.url) || !contentWindow) return;
+    if (event.source !== contentWindow || event.origin !== new URL(env.url).origin) return;
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       if (event.data.type === 'ping') {
         this.iframeStatus.set('connected');

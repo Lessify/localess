@@ -102,12 +102,18 @@
           id="previewId"
           class="shadow"
           #preview
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
           [src]="url"
           [class]="settingsStore.editorSize()"
           [class.resizing]="resizing()"
           (load)="onIframeLoad()"
           (error)="onIframeError()">
         </iframe>
+      } @else if (invalidEnvironmentUrl()) {
+        <div class="m-auto max-w-md text-center">
+          Invalid preview URL.<br />
+          The environment URL must be an absolute http:// or https:// address of your site. You can fix it in Settings.
+        </div>
       }
     </div>
   } @else {

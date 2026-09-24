@@ -99,6 +99,20 @@ the message handling itself.
 `ContentPreviewComponent.sendEvent()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are
 dropped. `EditDocumentComponent` triggers it via `this.previewComponent()?.sendEvent(...)`.
 
+**Preview security.** The iframe `src` is trusted with `bypassSecurityTrustResourceUrl`, and the environment URL comes from the space document,
+which a space manager can write directly to Firestore. So `ContentPreviewComponent` checks it at render time with `isSafePreviewUrl()`
+(`shared/validators/space.validator.ts`). The URL must be an absolute `http:`/`https:` URL on a different origin from the app. A value that fails
+the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview URL" message instead. Together these rules keep a
+`javascript:` URL from running inside the app.
+
+- **Sandbox:** the iframe is sandboxed (`allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals
+  allow-downloads`). The preview site behaves normally but cannot navigate the editor's top-level tab.
+- **Incoming messages:** `onWindowMessage()` accepts a message only when `event.source` is the preview iframe's window and `event.origin` matches
+  the environment's origin.
+- **Outgoing messages:** `sendEvent()` posts only to that origin.
+- **Redirects:** a preview URL that redirects to a different origin, for example `example.com` → `www.example.com`, will not connect. Configure
+  the final origin.
+
 **Events editor → app** (`EventToAppType`): `save`, `publish`, `unpublish`, `pong`, `input`, `change`, `enterSchema`, `hoverSchema`,
 `leaveSchema`
 

@@ -57,6 +57,9 @@ export class FormErrorHandlerService {
       if (errors['noSpaceAround']) {
         return `No spaces at start and end.`;
       }
+      if (errors['previewUrl']) {
+        return `Should be an absolute http:// or https:// URL of your site.`;
+      }
       if (errors['requireObject']) {
         return `Choose value from the drop-down.`;
       }

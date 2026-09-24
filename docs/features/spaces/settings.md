@@ -200,6 +200,10 @@ Configure the **visual editor** integration — allows in-context editing when L
 `environmentDropDrop()` reorders them by drag-and-drop (CDK), and `save()` writes them via `SpaceService.updateEnvironments()`. The form is
 repopulated whenever `SpaceStore.selectedSpace` changes. `captureKeyboard()` (a `(window:keydown)` host listener) saves on Ctrl/Cmd + S.
 
+The URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an absolute `http:`/`https:` URL on a different origin from the app
+(error key `previewUrl`). This only gives feedback in the form; the security check that matters runs again when the preview renders. See
+"Preview security" in [contents.md](contents.md).
+
 **Services:** `SpaceService`, `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
 
 ---
