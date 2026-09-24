@@ -57,7 +57,7 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 | Route | Serves |
 |---|---|
 | `GET /api/v1/spaces/{spaceId}/assets/{assetId}` | A rendition. Accepts `w`, `h`, `q`, `f`, `fit`, `thumbnail`. **Re-encodes a still raster at its format default quality even with no parameters.** |
-| `GET /api/v1/spaces/{spaceId}/assets/{assetId}/original` | The stored bytes, exactly as uploaded, `inline`. No parameters. |
+| `GET /api/v1/spaces/{spaceId}/assets/{assetId}/original` | The stored bytes, exactly as uploaded, `inline` for safe types (see below). No parameters. |
 | `GET /api/v1/spaces/{spaceId}/assets/{assetId}/download` | The stored bytes, as an attachment. No parameters. |
 
 No auth required (public). Responses are cached for 365 days (`Cache-Control: public, max-age=31536000`).
@@ -69,6 +69,25 @@ a transform parameter on either is rejected with `400` rather than ignored. They
 **`/original` is the only way to get the uploaded file.** A bare `GET /assets/{id}` is a
 *rendition*, not the original — a still raster is re-encoded at its format's default quality. Use
 `/original` where the exact bytes matter: archival, print, downstream processing.
+
+**Which types are served inline.** Assets are served from the same origin as the admin app, and
+their MIME type comes from the uploader. So every asset route passes the type through
+`assetResponsePolicy` (`functions/src/utils/asset-headers.ts`), which decides how the response is
+delivered:
+
+| Type | Delivery |
+|---|---|
+| Raster images, `video/*`, `audio/*` | `inline` |
+| `image/svg+xml` | `inline`, but the sandbox CSP stops its scripts from running |
+| `application/pdf` | `inline`, without the CSP (Chrome won't open a PDF in its viewer under `sandbox`) |
+| Anything else: HTML, XML, JavaScript, text, archives, unknown or missing type | always `attachment` |
+
+Every asset response carries `X-Content-Type-Options: nosniff`. Every one except PDF also carries
+`Content-Security-Policy: default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; sandbox`.
+Browsers ignore both headers when an asset is embedded with `<img>`, `<video>` or `<audio>`, so
+embedding is unaffected. The headers only take effect when someone opens the URL directly. Without
+them, an uploaded HTML or SVG file could run script on the app origin and steal the session of
+whoever opened the link. `/download` is `attachment` for every type.
 
 **Removed in v4:** `?download` and `?f=original`, each returning `400` that names its replacement
 route. Responses already cached under the old spellings keep serving for the remainder of their

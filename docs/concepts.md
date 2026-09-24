@@ -151,7 +151,7 @@ Storage:   spaces/{spaceId}/assets/{assetId}/original   ← raw file
 The CDN endpoint (`/api/v1/spaces/:spaceId/assets/:assetId`) supports:
 - `?w=<px>` — resize images on-the-fly via Sharp
 - `?thumbnail=true` — extract first frame of animated GIF/WebP or video thumbnail
-- `/api/v1/spaces/:spaceId/assets/:assetId/download` — the stored bytes as `Content-Disposition: attachment` (the old `?download` flag was removed and now returns `400`); `/original` serves them inline
+- `/api/v1/spaces/:spaceId/assets/:assetId/download` — the stored bytes as `Content-Disposition: attachment` (the old `?download` flag was removed and now returns `400`); `/original` serves them inline when the type is safe to render; HTML, XML and unknown types are always served as attachments (see [assets.md](features/spaces/assets.md))
 
 > Assets are referenced from Content documents via `ASSET` / `ASSETS` schema fields.
 

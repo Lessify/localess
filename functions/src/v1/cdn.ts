@@ -51,6 +51,7 @@ import {
 import { getSharp } from '../utils/lazy-modules';
 import { buildAssetETag } from '../utils/asset-etag';
 import { buildAssetQuery, findTransformParam } from '../utils/asset-query';
+import { assetResponsePolicy } from '../utils/asset-headers';
 import { buildContentDisposition } from '../utils/content-disposition';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
@@ -712,10 +713,12 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     } else {
       await assetFile.download({ destination: tempFilePath });
     }
+    const policy = assetResponsePolicy(overwriteType || asset.type, false);
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', buildContentDisposition(filename, false))
-      .contentType(overwriteType || asset.type);
+      .header('Content-Disposition', buildContentDisposition(filename, policy.attachment))
+      .set(policy.headers)
+      .contentType(policy.contentType);
     if (output) {
       res.send(output);
     } else {
@@ -825,9 +828,11 @@ CDN.get(['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:sp
   const tempFilePath = `${os.tmpdir()}/assets-stored-${assetId}`;
   await assetFile.download({ destination: tempFilePath });
 
+  const policy = assetResponsePolicy(asset.type, attachment);
   res
     .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-    .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, attachment))
-    .contentType(asset.type)
+    .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, policy.attachment))
+    .set(policy.headers)
+    .contentType(policy.contentType)
     .sendFile(tempFilePath);
 });
