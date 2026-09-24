@@ -1,15 +1,30 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { UserStore } from '@shared/stores/user.store';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 
 import { USER_PERMISSION_GROUPS } from '../user-permissions';
 import { UserInviteDialogComponent } from './user-invite-dialog.component';
 
+interface CurrentUser {
+  id: string;
+  role: string | undefined;
+  permissions: string[] | undefined;
+}
+
+const ADMIN: CurrentUser = { id: 'adm', role: 'admin', permissions: undefined };
+const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+
+function userStoreOf(user: CurrentUser) {
+  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
+}
+
 describe('UserInviteDialogComponent', () => {
-  function setup() {
+  function setup(currentUser = ADMIN) {
     const close = vi.fn();
     TestBed.overrideComponent(UserInviteDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
+    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }, userStoreOf(currentUser)] });
     const fixture = TestBed.createComponent(UserInviteDialogComponent);
     fixture.detectChanges();
     return { component: fixture.componentInstance, close };
@@ -91,5 +106,13 @@ it('closes with the form value when saved', () => {
     component.save();
 
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ email: 'new@example.com', password: 'secret123' }));
+  });
+
+  it('does not let a user manager invite an admin or grant permissions they lack', () => {
+    const { component } = setup(USER_MANAGER);
+
+    expect(component['canGrantAdmin']()).toBe(false);
+    expect(component.canGrantPermission('CONTENT_READ')).toBe(true);
+    expect(component.canGrantPermission('SETTINGS_MANAGEMENT')).toBe(false);
   });
 });

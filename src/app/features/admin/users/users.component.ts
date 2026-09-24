@@ -40,6 +40,7 @@ import { LlTableImports, TableDataSource, TableSort } from '@shared/components/t
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
+import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -53,6 +54,7 @@ import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogContext, UserDialogResult } from './user-dialog/user-dialog.model';
 import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
 import { UserInviteDialogResult } from './user-invite-dialog/user-invite-dialog.model';
+import { canManageUser } from './user-management';
 
 @Component({
   selector: 'll-users',
@@ -93,6 +95,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
   private readonly notificationService = inject(NotificationService);
   private readonly userService = inject(UserService);
   private readonly injector = inject(Injector);
+  private readonly userStore = inject(UserStore);
 
   sort = viewChild.required(TableSort);
   paginator = viewChild.required(Paginator);
@@ -128,6 +131,11 @@ export class UsersComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort();
     this.dataSource.paginator = this.paginator();
+  }
+
+  /** Whether the signed-in user may edit or delete `element` - the same limits firestore.rules enforces. */
+  canManage(element: User): boolean {
+    return canManageUser({ id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() }, element);
   }
 
   onFilterChange(value: FilterToolbarValue): void {

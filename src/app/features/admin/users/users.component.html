@@ -93,9 +93,17 @@
       <ng-container llColumnDef="actions">
         <th llHeaderCell *llHeaderCellDef>Actions</th>
         <td llCell *llCellDef="let element">
-          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
-            <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
-          </button>
+          @if (canManage(element)) {
+            <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+              <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+            </button>
+          } @else {
+            <span hlmTooltip="Only an admin can manage this user.">
+              <button hlmBtn size="icon" variant="ghost" disabled aria-label="Actions unavailable">
+                <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+              </button>
+            </span>
+          }
           <ng-template #actionsMenu>
             <hlm-dropdown-menu>
               <hlm-dropdown-menu-group>

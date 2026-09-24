@@ -143,10 +143,29 @@ this.userStore.permissions()?.includes(UserPermission.CONTENT_PUBLISH)
 
 ---
 
+## Who Can Manage Users
+
+Writing a `users/{userId}` document grants access: the `user.onUpdate` trigger copies its `role`, `permissions` and `lock` into custom claims. So `USER_MANAGEMENT` alone is not enough to manage every user.
+
+| Caller | May manage |
+|---|---|
+| `admin` | Any user, including admins and themselves. May grant any role and permission. |
+| `custom` with `USER_MANAGEMENT` | Only users they fully outrank: not themselves, not an admin, and not anyone holding a permission they lack. They may set the role only to `custom` or none, grant only permissions they hold, and change only `role`, `permissions` and `lock`. |
+
+Two managers holding the same permissions can manage each other. A manager can never make anyone, including themselves, an admin. Only admins can.
+
+These limits are enforced in three places:
+
+- **`firestore.rules`** (`users/{userId}`): enforces update and delete. `create` is admin-only; profiles are created by the Auth trigger and `user.sync`.
+- **`user.invite` callable**: `canGrant()` in `functions/src/utils/user-grant.ts` enforces the same limits, because the callable writes custom claims directly.
+- **UI**: `features/admin/users/user-management.ts` mirrors the rule. The users list disables actions on users the caller can't manage. The edit and invite dialogs hide the Admin role and disable permissions the caller can't grant.
+
 ## Implementation Files
 
 - `src/app/shared/models/user.model.ts` — `User`, `UserRole`, `UserPermission` types
 - `src/app/shared/stores/user.store.ts` — reads claims, exposes `isRoleAdmin`, `isLocked`
+- `src/app/features/admin/users/user-management.ts` — who may manage which user (mirrors `firestore.rules`)
+- `functions/src/utils/user-grant.ts` — `canGrant()` for the `user.invite` callable
 - `src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
 - `src/app/features/features-routing.module.ts` — all route guards with permission pipes
 - `src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)

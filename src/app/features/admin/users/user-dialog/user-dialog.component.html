@@ -11,7 +11,9 @@
       <hlm-select-content *hlmSelectPortal>
         <hlm-select-item [value]="null">None</hlm-select-item>
         <hlm-select-item value="custom">Custom</hlm-select-item>
-        <hlm-select-item value="admin">Admin</hlm-select-item>
+        @if (canGrantAdmin()) {
+          <hlm-select-item value="admin">Admin</hlm-select-item>
+        }
       </hlm-select-content>
     </hlm-select>
     @if (form.controls['role'].errors; as errors) {
@@ -40,6 +42,7 @@
                 <hlm-checkbox
                   [inputId]="perm.id"
                   [checked]="isPermissionSelected(perm.id)"
+                  [disabled]="!canGrantPermission(perm.id)"
                   (checkedChange)="togglePermission(perm.id, $event)" />
                 <div class="grid gap-1.5 leading-none">
                   <label hlmLabel [for]="perm.id">{{ perm.label }}</label>

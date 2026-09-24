@@ -8,6 +8,7 @@ import { beforeUserCreated, beforeUserSignedIn } from 'firebase-functions/v2/ide
 import { findUserById, findUsers } from './services';
 import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { authUid } from './utils/log-auth';
+import { canGrant } from './utils/user-grant';
 
 const beforecreated = beforeUserCreated({ timeoutSeconds: 7 }, async request => {
   const { data, eventId } = request;
@@ -55,6 +56,8 @@ const invite = onCall<UserInvite>(async request => {
   );
   logger.info('[User::invite] auth uid: ' + authUid(auth));
   if (!canPerform(UserPermission.USER_MANAGEMENT, request.auth)) throw new HttpsError('permission-denied', 'permission-denied');
+  // Same limits as the users/{userId} rule: no admin role, no permissions the caller lacks.
+  if (!canGrant(auth, data.role, data.permissions)) throw new HttpsError('permission-denied', 'permission-denied');
 
   const user = await authService.createUser({
     displayName: data.displayName,

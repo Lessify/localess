@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { UserStore } from '@shared/stores/user.store';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
@@ -14,6 +15,7 @@ import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
+import { canGrantAdmin, canGrantPermission, UserManager } from '../user-management';
 import { USER_PERMISSION_GROUPS } from '../user-permissions';
 import { UserInviteDialogResult } from './user-invite-dialog.model';
 
@@ -53,6 +55,18 @@ export class UserInviteDialogComponent {
   settingsStore = inject(LocalSettingsStore);
 
   protected readonly permissionGroups = USER_PERMISSION_GROUPS;
+
+  // The admin role and each permission are offered only when the signed-in user may grant them;
+  // firestore.rules and the user.invite callable enforce the same limits.
+  private readonly userStore = inject(UserStore);
+  private manager(): UserManager {
+    return { id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() };
+  }
+  protected readonly canGrantAdmin = computed(() => canGrantAdmin(this.manager()));
+
+  canGrantPermission(permission: string): boolean {
+    return canGrantPermission(this.manager(), permission);
+  }
 
   protected readonly roleItemToString = (value: string): string => {
     const labels: Record<string, string> = { custom: 'Custom', admin: 'Admin' };

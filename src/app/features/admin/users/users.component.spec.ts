@@ -1,8 +1,10 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
+import { UserStore } from '@shared/stores/user.store';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -12,12 +14,25 @@ function user(overrides: Partial<User> = {}): User {
   return { id: 'u1', email: 'user@example.com', emailVerified: true, disabled: false, ...overrides } as User;
 }
 
+interface CurrentUser {
+  id: string;
+  role: string | undefined;
+  permissions: string[] | undefined;
+}
+
+const ADMIN: CurrentUser = { id: 'adm', role: 'admin', permissions: undefined };
+const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+
+function userStoreOf(user: CurrentUser) {
+  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
+}
+
 describe('UsersComponent', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  function setup(users: User[] = [], findAllImpl?: () => ReturnType<typeof of>) {
+  function setup(users: User[] = [], findAllImpl?: () => ReturnType<typeof of>, currentUser = ADMIN) {
     const findAll = findAllImpl ? vi.fn(findAllImpl) : vi.fn().mockReturnValue(of(users));
     const invite = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
@@ -35,6 +50,7 @@ describe('UsersComponent', () => {
         { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, sync } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
+        userStoreOf(currentUser),
       ],
     });
     const fixture = TestBed.createComponent(UsersComponent);
@@ -166,5 +182,23 @@ describe('UsersComponent', () => {
     component.sync();
 
     expect(error).toHaveBeenCalledWith('Users can not be synced.');
+  });
+
+  describe('canManage()', () => {
+    it('lets an admin manage every user', () => {
+      const { component } = setup();
+
+      expect(component.canManage(user({ role: 'admin' }))).toBe(true);
+      expect(component.canManage(user({ id: 'adm', role: 'admin' }))).toBe(true);
+    });
+
+    it('stops a user manager at themselves, admins and users with more permissions', () => {
+      const { component } = setup([], undefined, USER_MANAGER);
+
+      expect(component.canManage(user({ role: 'custom', permissions: ['CONTENT_READ'] as User['permissions'] }))).toBe(true);
+      expect(component.canManage(user({ id: 'mgr', role: 'custom' }))).toBe(false);
+      expect(component.canManage(user({ role: 'admin' }))).toBe(false);
+      expect(component.canManage(user({ role: 'custom', permissions: ['SETTINGS_MANAGEMENT'] as User['permissions'] }))).toBe(false);
+    });
   });
 });

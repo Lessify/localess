@@ -117,9 +117,32 @@ service cloud.firestore {
     }
 
     // Users
+    // `role`, `permissions` and `lock` are copied into the user's custom claims by the user.onUpdate
+    // trigger, so writing this document is granting access. Admins may write any user. A custom user
+    // with USER_MANAGEMENT may only manage users they fully outrank: never themselves, never an
+    // admin, never someone holding a permission they lack - and may only grant permissions they
+    // hold themselves, never the admin role.
+    function holdsAll(permissions) {
+      return permissions.toSet().difference(request.auth.token.permissions.toSet()).size() == 0;
+    }
+    function canManageExistingUser(userId) {
+      return hasPermission('USER_MANAGEMENT')
+        && !isSignedInWithUser(userId)
+        && resource.data.get('role', null) != 'admin'
+        && holdsAll(resource.data.get('permissions', []));
+    }
     match /users/{userId} {
       allow read: if isSignedIn() && ( isSignedInWithUser(userId) || (hasRole('admin') || hasPermission('USER_MANAGEMENT')));
-      allow write: if isSignedIn() && (hasRole('admin') || hasPermission('USER_MANAGEMENT'));
+      // Profiles are created by the Auth trigger and user.sync (Admin SDK), never by the browser.
+      allow create: if isSignedIn() && hasRole('admin');
+      allow update: if isSignedIn() && (
+        hasRole('admin')
+        || (canManageExistingUser(userId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role','permissions','lock','updatedAt'])
+          && request.resource.data.get('role', null) in [null, 'custom']
+          && holdsAll(request.resource.data.get('permissions', [])))
+      );
+      allow delete: if isSignedIn() && (hasRole('admin') || canManageExistingUser(userId));
     }
 
     // Configs
