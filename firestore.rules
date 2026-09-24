@@ -60,11 +60,35 @@ service cloud.firestore {
       }
 
       // Tasks
+      // The task `kind` doubles as the permission that may create it (e.g. CONTENT_IMPORT), so a
+      // holder of one import/export permission cannot make the task trigger - which runs with
+      // Admin SDK rights - import or export a different kind of data. ASSET_REGEN_METADATA is
+      // not a permission, so only admins can create it.
+      function canManageTaskKind(kind) {
+        return hasRole('admin') || (kind != 'ASSET_REGEN_METADATA' && hasPermission(kind));
+      }
+      // Import tasks name the staged upload the trigger moves into the task folder. Pin it to this
+      // space's staging folder so a task cannot point the trigger at any other bucket object.
+      function isValidTmpPath(spaceId, data) {
+        return data.tmpPath is string && data.tmpPath.matches('spaces/' + spaceId + '/tasks/tmp/[0-9]+');
+      }
+      function isValidNewTask(spaceId, data) {
+        return data.status == 'INITIATED'
+          && (
+            (data.kind in ['ASSET_EXPORT','CONTENT_EXPORT'] && data.keys().hasOnly(['kind','status','path','createdAt','updatedAt']))
+            || (data.kind == 'SCHEMA_EXPORT' && data.keys().hasOnly(['kind','status','createdAt','updatedAt']))
+            || (data.kind == 'TRANSLATION_EXPORT' && data.keys().hasOnly(['kind','status','locale','createdAt','updatedAt']))
+            || (data.kind == 'ASSET_REGEN_METADATA' && data.keys().hasOnly(['kind','status','createdAt','updatedAt']))
+            || (data.kind in ['ASSET_IMPORT','CONTENT_IMPORT','SCHEMA_IMPORT'] && data.keys().hasOnly(['kind','status','tmpPath','file','createdAt','updatedAt']) && isValidTmpPath(spaceId, data))
+            || (data.kind == 'TRANSLATION_IMPORT' && data.keys().hasOnly(['kind','status','type','locale','tmpPath','file','createdAt','updatedAt']) && isValidTmpPath(spaceId, data))
+          );
+      }
       match /tasks/{taskId} {
         allow read: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
-        allow create: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
-        allow update: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
-        allow delete: if isSignedIn() && (hasRole('admin') || hasAnyPermission(['ASSET_IMPORT','ASSET_EXPORT','CONTENT_IMPORT','CONTENT_EXPORT','SCHEMA_IMPORT','SCHEMA_EXPORT','TRANSLATION_IMPORT','TRANSLATION_EXPORT']));
+        allow create: if isSignedIn() && canManageTaskKind(request.resource.data.kind) && isValidNewTask(spaceId, request.resource.data);
+        // Status, results and errors are written only by the task trigger (Admin SDK).
+        allow update: if false;
+        allow delete: if isSignedIn() && canManageTaskKind(resource.data.kind);
 
         // Task Logs
         match /logs/{logId} {

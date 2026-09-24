@@ -72,6 +72,7 @@ import {
 } from './services';
 import { tmpdir } from 'os';
 import { getArchiver, getUnzipper } from './utils/lazy-modules';
+import { isStagedImportPath } from './utils/task-path';
 import { ZodError } from 'zod';
 
 const TMP_TASK_FOLDER = `${tmpdir()}/task-`;
@@ -268,6 +269,9 @@ const onTaskCreate = onDocumentCreated(
     ) {
       const newPath = `spaces/${spaceId}/tasks/${taskId}/original`;
       try {
+        if (!isStagedImportPath(spaceId, task.tmpPath)) {
+          throw new Error(`Invalid import file location '${task.tmpPath}'`);
+        }
         await bucket.file(task.tmpPath).move(newPath);
         (updateToInProgress as UpdateData<TaskImport>).tmpPath = FieldValue.delete();
       } catch (error: unknown) {

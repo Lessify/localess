@@ -60,6 +60,12 @@ Most tasks are created by other modules' import/export actions and processed by 
 | Assets → Import | `ASSET_IMPORT` |
 | Assets → Regenerate Metadata | `ASSET_REGEN_METADATA` |
 
+### Who can create a task
+
+`firestore.rules` treats the task type as the permission required to create or delete it: a `CONTENT_IMPORT` task needs `CONTENT_IMPORT`, and so on. `ASSET_REGEN_METADATA` is not a permission, so only admins can create it. The rules also enforce the document shape `TaskService` writes: `status` must be `INITIATED`, only the fields for that kind are allowed, and an import's `tmpPath` must be `spaces/{spaceId}/tasks/tmp/{timestamp}`. Clients can't update tasks at all; only the task trigger writes status, results and errors. The trigger checks `tmpPath` again (`functions/src/utils/task-path.ts`) before moving the upload, because it runs with Admin SDK rights.
+
+Reading tasks and their logs still requires any one of the eight import/export permissions. The task list is a single collection query, so it can't be filtered per kind.
+
 ## Task Status Flow
 
 ```
