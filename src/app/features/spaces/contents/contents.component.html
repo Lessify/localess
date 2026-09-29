@@ -136,27 +136,15 @@
             <hlm-dropdown-menu class="text-nowrap">
               @if ('CONTENT_PUBLISH' | canUserPerform | async) {
                 <hlm-dropdown-menu-group>
-                  @if (element.kind === 'FOLDER') {
-                    <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
-                      <ng-icon hlm size="sm" name="lucideUpload" />
-                      Publish
-                    </button>
+                  <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
+                    <ng-icon hlm size="sm" name="lucideUpload" />
+                    Publish
+                  </button>
+                  @if (element.kind === 'FOLDER' || element.publishedAt) {
                     <button hlmDropdownMenuItem (click)="openUnpublishDialog(element)">
                       <ng-icon hlm size="sm" name="lucideWebhookOff" />
                       Unpublish
                     </button>
-                  } @else if (element.kind === 'DOCUMENT') {
-                    @if (element.publishedAt) {
-                      <button hlmDropdownMenuItem (click)="openUnpublishDialog(element)">
-                        <ng-icon hlm size="sm" name="lucideWebhookOff" />
-                        Unpublish
-                      </button>
-                    } @else {
-                      <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
-                        <ng-icon hlm size="sm" name="lucideUpload" />
-                        Publish
-                      </button>
-                    }
                   }
                 </hlm-dropdown-menu-group>
                 <hlm-dropdown-menu-separator />
