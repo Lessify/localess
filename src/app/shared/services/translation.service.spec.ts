@@ -17,8 +17,10 @@ describe('TranslationService', () => {
 
   function setup(currentUser: unknown = null) {
     const publishDraftCallable = vi.fn().mockReturnValue(of(undefined));
+    const translateLocaleCallable = vi.fn().mockReturnValue(of(undefined));
     vi.mocked(httpsCallableData).mockImplementation((_functions, name: string) => {
       if (name === 'translation-publishdraft') return publishDraftCallable;
+      if (name === 'translation-translatelocale') return translateLocaleCallable;
       return vi.fn().mockReturnValue(of(undefined));
     });
     TestBed.configureTestingModule({
@@ -28,7 +30,7 @@ describe('TranslationService', () => {
         { provide: Auth, useValue: { currentUser } },
       ],
     });
-    return { service: TestBed.inject(TranslationService), publishDraftCallable };
+    return { service: TestBed.inject(TranslationService), publishDraftCallable, translateLocaleCallable };
   }
 
   it('findAll() reads the space translations collection', async () => {
@@ -185,11 +187,25 @@ describe('TranslationService', () => {
   });
 
   it('translateLocale() calls the translate callable then publishes the draft', async () => {
-    const { service, publishDraftCallable } = setup();
+    const { service, publishDraftCallable, translateLocaleCallable } = setup();
 
     await firstValueFrom(service.translateLocale('space-1', 'en', 'de'));
 
     expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'translation-translatelocale');
+    expect(translateLocaleCallable).toHaveBeenCalledWith({
+      spaceId: 'space-1',
+      sourceLocaleId: 'en',
+      targetLocaleId: 'de',
+      overwrite: false,
+    });
     expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
+  });
+
+  it('translateLocale() forwards overwrite to the callable', async () => {
+    const { service, translateLocaleCallable } = setup();
+
+    await firstValueFrom(service.translateLocale('space-1', 'en', 'de', true));
+
+    expect(translateLocaleCallable).toHaveBeenCalledWith(expect.objectContaining({ overwrite: true }));
   });
 });

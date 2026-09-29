@@ -65,6 +65,7 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
   const { auth, data } = request;
   if (!canPerform(UserPermission.TRANSLATION_UPDATE, auth)) throw new HttpsError('permission-denied', 'permission-denied');
   const { spaceId, sourceLocaleId, targetLocaleId } = data;
+  const overwrite = data.overwrite === true;
 
   const translationsSnapshot = await findTranslations(spaceId).get();
   if (translationsSnapshot.empty) {
@@ -76,7 +77,7 @@ const translateLocale = onCall<TranslateLocaleData>(async request => {
     const translation = doc.data() as Translation;
     const sourceValue = translation.locales[sourceLocaleId];
     const targetValue = translation.locales[targetLocaleId];
-    return sourceValue && !targetValue;
+    return sourceValue && (overwrite || !targetValue);
   });
 
   const results = await Promise.all(

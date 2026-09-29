@@ -69,4 +69,6 @@ export interface TranslateLocaleData {
   spaceId: string;
   sourceLocaleId: string;
   targetLocaleId: string;
+  /** Replace target values that already exist instead of filling only the empty ones. */
+  overwrite?: boolean;
 }

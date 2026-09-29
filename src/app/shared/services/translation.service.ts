@@ -189,9 +189,9 @@ export class TranslationService {
     return translationsDeleteAll({ spaceId }).pipe(traceUntilFirst('Functions:Translations:deleteAll'));
   }
 
-  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string): Observable<void> {
+  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string, overwrite = false): Observable<void> {
     const translateLocale = httpsCallableData<TranslateLocaleData, void>(this.functions, 'translation-translatelocale');
-    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId }).pipe(
+    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId, overwrite }).pipe(
       traceUntilFirst('Functions:Translations:translateLocale'),
       switchMap(() => this.publishDraft(spaceId)),
     );

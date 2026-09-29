@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import { REQUIRED_APIS, missingApis } from './apis.mjs';
 
@@ -39,4 +40,10 @@ test('missingApis returns a fresh array rather than the shared constant', () => 
   const missing = missingApis(null);
   missing.pop();
   assert.equal(REQUIRED_APIS.length, 15);
+});
+
+test('cloudbuild.yaml enables exactly the required APIs', () => {
+  const cloudbuild = readFileSync(new URL('../../cloudbuild.yaml', import.meta.url), 'utf8');
+  const enabled = [...cloudbuild.matchAll(/^\s+([a-z]+\.googleapis\.com) \\$/gm)].map(match => match[1]);
+  assert.deepEqual(enabled, [...REQUIRED_APIS]);
 });

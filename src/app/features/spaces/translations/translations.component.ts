@@ -349,7 +349,7 @@ export class TranslationsComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale)),
+        switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale, it.overwrite)),
       )
       .subscribe({
         next: () => {

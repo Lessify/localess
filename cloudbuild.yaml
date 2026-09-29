@@ -1,4 +1,5 @@
 steps:
+  # keep in sync with REQUIRED_APIS in scripts/localess/apis.mjs (enforced by apis.test.mjs)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'enable-apis'
     entrypoint: 'bash'
@@ -7,6 +8,11 @@ steps:
       - '-c'
       - |
         gcloud services enable \
+          firebase.googleapis.com \
+          firebasehosting.googleapis.com \
+          firebaserules.googleapis.com \
+          firestore.googleapis.com \
+          identitytoolkit.googleapis.com \
           firebasestorage.googleapis.com \
           firebaseextensions.googleapis.com \
           cloudfunctions.googleapis.com \
@@ -17,7 +23,6 @@ steps:
           pubsub.googleapis.com \
           storage.googleapis.com \
           translate.googleapis.com \
-          cloudbilling.googleapis.com \
           --project=$PROJECT_ID
   - name: 'node:24'
     id: 'install-deps'

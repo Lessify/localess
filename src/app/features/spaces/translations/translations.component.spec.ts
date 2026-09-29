@@ -275,11 +275,11 @@ describe('TranslationsComponent', () => {
   describe('openTranslateLocaleDialog', () => {
     it('translates the locale and notifies success when confirmed', () => {
       const { component, open, translateLocale, success } = setup();
-      open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de' }) });
+      open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de', overwrite: true }) });
 
       component.openTranslateLocaleDialog([en, de]);
 
-      expect(translateLocale).toHaveBeenCalledWith('space-1', 'en', 'de');
+      expect(translateLocale).toHaveBeenCalledWith('space-1', 'en', 'de', true);
       expect(success).toHaveBeenCalledWith('Locale Translate run with success.');
     });
 
