@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { AuthGuard, customClaims } from '@angular/fire/auth-guard';
 import { RouterModule, Routes } from '@angular/router';
+import { spaceSelectionGuard } from '@shared/guards/space-selection.guard';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { UserPermission } from '@shared/models/user.model';
 import { pipe } from 'rxjs';
@@ -166,95 +167,108 @@ const routes: Routes = [
         },
       },
       {
-        path: 'spaces/:spaceId/dashboard',
-        title: 'Dashboard',
-        loadChildren: () => import('./spaces/dashboard/dashboard.module').then(m => m.DashboardModule),
-      },
-      {
-        path: 'spaces/:spaceId/translations',
-        title: 'Translations',
-        loadChildren: () => import('./spaces/translations/translations.module').then(m => m.TranslationsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionTranslationRead,
-          breadcrumb: {
-            label: 'Translations',
-            helpUrl: 'https://localess.org/docs/translations',
-          } satisfies BreadcrumbItem,
-        },
-      },
-      {
-        path: 'spaces/:spaceId/contents',
-        title: 'Contents',
-        loadChildren: () => import('./spaces/contents/contents.module').then(m => m.ContentsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionContentRead,
-          breadcrumb: {
-            label: 'Contents',
-            helpUrl: 'https://localess.org/docs/content',
-          } satisfies BreadcrumbItem,
-        },
-      },
-      {
-        path: 'spaces/:spaceId/assets',
-        title: 'Assets',
-        loadChildren: () => import('./spaces/assets/assets.module').then(m => m.AssetsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionAssetRead,
-          breadcrumb: {
-            label: 'Assets',
-            helpUrl: 'https://localess.org/docs/assets',
-          } satisfies BreadcrumbItem,
-        },
-      },
-      {
-        path: 'spaces/:spaceId/schemas',
-        title: 'Schemas',
-        loadChildren: () => import('./spaces/schemas/schemas.module').then(m => m.SchemasModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionSchemaRead,
-          breadcrumb: {
-            label: 'Schemas',
-            helpUrl: 'https://localess.org/docs/schemas',
-          } satisfies BreadcrumbItem,
-        },
-      },
-      {
-        path: 'spaces/:spaceId/tasks',
-        title: 'Tasks',
-        loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionTranslationRead,
-          breadcrumb: {
-            label: 'Tasks',
-          } satisfies BreadcrumbItem,
-        },
-      },
-      {
-        path: 'spaces/:spaceId/developers',
-        title: 'Developers',
-        loadChildren: () => import('./spaces/developers/developers.module').then(m => m.DevelopersModule),
-        data: {
-          breadcrumb: {
-            label: 'Developers',
-          } satisfies BreadcrumbItem,
-        },
-      },
-      {
-        path: 'spaces/:spaceId/settings',
-        title: 'Settings',
-        loadChildren: () => import('./spaces/settings/settings.module').then(m => m.SettingsModule),
-        canActivate: [AuthGuard],
-        data: {
-          authGuardPipe: hasPermissionSpaceManagement,
-          breadcrumb: {
-            label: 'Settings',
-          } satisfies BreadcrumbItem,
-        },
+        // Componentless on purpose: the child routes inherit `spaceId` from it, which is how their
+        // components receive it as an input.
+        path: 'spaces/:spaceId',
+        canActivate: [spaceSelectionGuard],
+        children: [
+          {
+            path: '',
+            redirectTo: 'dashboard',
+            pathMatch: 'full',
+          },
+          {
+            path: 'dashboard',
+            title: 'Dashboard',
+            loadChildren: () => import('./spaces/dashboard/dashboard.module').then(m => m.DashboardModule),
+          },
+          {
+            path: 'translations',
+            title: 'Translations',
+            loadChildren: () => import('./spaces/translations/translations.module').then(m => m.TranslationsModule),
+            canActivate: [AuthGuard],
+            data: {
+              authGuardPipe: hasPermissionTranslationRead,
+              breadcrumb: {
+                label: 'Translations',
+                helpUrl: 'https://localess.org/docs/translations',
+              } satisfies BreadcrumbItem,
+            },
+          },
+          {
+            path: 'contents',
+            title: 'Contents',
+            loadChildren: () => import('./spaces/contents/contents.module').then(m => m.ContentsModule),
+            canActivate: [AuthGuard],
+            data: {
+              authGuardPipe: hasPermissionContentRead,
+              breadcrumb: {
+                label: 'Contents',
+                helpUrl: 'https://localess.org/docs/content',
+              } satisfies BreadcrumbItem,
+            },
+          },
+          {
+            path: 'assets',
+            title: 'Assets',
+            loadChildren: () => import('./spaces/assets/assets.module').then(m => m.AssetsModule),
+            canActivate: [AuthGuard],
+            data: {
+              authGuardPipe: hasPermissionAssetRead,
+              breadcrumb: {
+                label: 'Assets',
+                helpUrl: 'https://localess.org/docs/assets',
+              } satisfies BreadcrumbItem,
+            },
+          },
+          {
+            path: 'schemas',
+            title: 'Schemas',
+            loadChildren: () => import('./spaces/schemas/schemas.module').then(m => m.SchemasModule),
+            canActivate: [AuthGuard],
+            data: {
+              authGuardPipe: hasPermissionSchemaRead,
+              breadcrumb: {
+                label: 'Schemas',
+                helpUrl: 'https://localess.org/docs/schemas',
+              } satisfies BreadcrumbItem,
+            },
+          },
+          {
+            path: 'tasks',
+            title: 'Tasks',
+            loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
+            canActivate: [AuthGuard],
+            data: {
+              authGuardPipe: hasPermissionTranslationRead,
+              breadcrumb: {
+                label: 'Tasks',
+              } satisfies BreadcrumbItem,
+            },
+          },
+          {
+            path: 'developers',
+            title: 'Developers',
+            loadChildren: () => import('./spaces/developers/developers.module').then(m => m.DevelopersModule),
+            data: {
+              breadcrumb: {
+                label: 'Developers',
+              } satisfies BreadcrumbItem,
+            },
+          },
+          {
+            path: 'settings',
+            title: 'Settings',
+            loadChildren: () => import('./spaces/settings/settings.module').then(m => m.SettingsModule),
+            canActivate: [AuthGuard],
+            data: {
+              authGuardPipe: hasPermissionSpaceManagement,
+              breadcrumb: {
+                label: 'Settings',
+              } satisfies BreadcrumbItem,
+            },
+          },
+        ],
       },
       {
         path: 'admin/users',

@@ -86,8 +86,9 @@ enum UserPermission {
 Route-level guards use AngularFire's `AuthGuard` + custom `authGuardPipe` functions defined in `features-routing.module.ts`:
 
 ```typescript
+// a child of the `spaces/:spaceId` parent route (see frontend-state.md → SpaceStore)
 {
-  path: 'spaces/:spaceId/translations',
+  path: 'translations',
   canActivate: [AuthGuard],
   data: {
     authGuardPipe: hasPermissionTranslationRead  // reads Firebase customClaims

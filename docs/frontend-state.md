@@ -78,10 +78,16 @@ hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on lo
 Key methods:
 - `load()` — `rxMethod` that streams `SpaceService.findAll()`; called from `onInit`. Sets `loaded`, and clears the selection when the list is empty
 - `spaceById(id)` — returns a `computed` signal of the space with that id (or `undefined`)
-- `changeSpace(space)` — switch active workspace, reset paths, resolve environment
+- `changeSpace(space)` — switch active workspace, reset paths, resolve environment; on a real switch also clears `schemas`/`documents` so the new space never renders against the old one's data
 - `changeContentPath(path)` / `changeAssetPath(path)` — update breadcrumb navigation
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
 - `updateSchemas(schemas)` / `updateDocuments(documents)` — populate local cache
+
+**The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`src/app/shared/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
+- `:spaceId` is in `spaces` → `changeSpace()` if it differs from the stored selection, allow.
+- otherwise (deleted, mistyped, another install) → warning toast, redirect to the stored space's dashboard, or the first space if that one is gone too (never back to an id that would fail again), or `/features/welcome` when there are none.
+
+This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. `FeaturesComponent` follows `selectedSpaceId` with `switchMap` for the documents/schemas listeners, so switching closes the old space's listeners.
 
 **Space Environments** — a Space can have multiple environments (e.g. staging, production URLs). The selected environment is persisted per space in `selectedEnvironmentBySpaceId`.
 

@@ -11,7 +11,7 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Auth, signOut } from '@angular/fire/auth';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
@@ -81,7 +81,7 @@ import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
-import { filter, mergeMap, timer } from 'rxjs';
+import { defer, distinctUntilChanged, filter, mergeMap, MonoTypeOperatorFunction, retry, switchMap, timer } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { WHATS_NEW } from './whats-new/whats-new.data';
@@ -348,13 +348,32 @@ export class FeaturesComponent implements OnInit {
       }
     });
 
-    effect(() => {
-      const selectedSpaceId = this.spaceStore.selectedSpaceId();
-      if (selectedSpaceId) {
-        this.subscribeToDocuments(selectedSpaceId);
-        this.subscribeToSchemas(selectedSpaceId);
-      }
-    });
+    // switchMap, not a subscription per change: a new space has to close the old space's listeners,
+    // or they keep writing that space's documents and schemas into the store.
+    const selectedSpaceId$ = toObservable(this.spaceStore.selectedSpaceId).pipe(
+      filter((spaceId): spaceId is string => !!spaceId),
+      distinctUntilChanged(),
+    );
+    selectedSpaceId$
+      .pipe(
+        switchMap(spaceId =>
+          defer(() => this.contentService.findAllDocuments(spaceId)).pipe(
+            this.retryWithBackoff('findAllDocuments listener failed', 'Lost connection to content updates. Retrying…'),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(documents => this.spaceStore.updateDocuments(documents));
+    selectedSpaceId$
+      .pipe(
+        switchMap(spaceId =>
+          defer(() => this.schemaService.findAll(spaceId)).pipe(
+            this.retryWithBackoff('schemaService.findAll listener failed', 'Lost connection to schema updates. Retrying…'),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(schemas => this.spaceStore.updateSchemas(schemas));
 
     this.router.events
       .pipe(
@@ -362,7 +381,7 @@ export class FeaturesComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
-        const breadcrumbs = this.buildBreadcrumbs(this.route.root);
+        const breadcrumbs = this.buildBreadcrumbs(this.route);
         this.breadcrumbs.set(breadcrumbs);
         // Auto-open sub-menus when navigating to a sub-route
         for (const item of this.userSideMenu()) {
@@ -374,34 +393,15 @@ export class FeaturesComponent implements OnInit {
       });
   }
 
-  private subscribeToDocuments(spaceId: string, attempt = 0): void {
-    this.contentService
-      .findAllDocuments(spaceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: documents => this.spaceStore.updateDocuments(documents),
-        error: err => {
-          console.error('findAllDocuments listener failed', err);
-          this.notificationService.error('Lost connection to content updates. Retrying…');
-          const delay = Math.min(30000, 1000 * 2 ** attempt);
-          setTimeout(() => this.subscribeToDocuments(spaceId, attempt + 1), delay);
-        },
-      });
-  }
-
-  private subscribeToSchemas(spaceId: string, attempt = 0): void {
-    this.schemaService
-      .findAll(spaceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: schemas => this.spaceStore.updateSchemas(schemas),
-        error: err => {
-          console.error('schemaService.findAll listener failed', err);
-          this.notificationService.error('Lost connection to schema updates. Retrying…');
-          const delay = Math.min(30000, 1000 * 2 ** attempt);
-          setTimeout(() => this.subscribeToSchemas(spaceId, attempt + 1), delay);
-        },
-      });
+  /** Retries re-run the (deferred) query rather than resubscribing to one that already failed. */
+  private retryWithBackoff<T>(logMessage: string, notification: string): MonoTypeOperatorFunction<T> {
+    return retry({
+      delay: (err, retryCount) => {
+        console.error(logMessage, err);
+        this.notificationService.error(notification);
+        return timer(Math.min(30000, 1000 * 2 ** (retryCount - 1)));
+      },
+    });
   }
 
   ngOnInit(): void {
@@ -433,8 +433,8 @@ export class FeaturesComponent implements OnInit {
       });
   }
 
+  /** The URL selects the space (see `spaceSelectionGuard`), so an unsaved-changes prompt can still cancel it. */
   onSpaceSelection(space: Space): void {
-    this.spaceStore.changeSpace(space);
     this.router.navigate(['features', 'spaces', space.id, 'dashboard']);
   }
 
@@ -460,8 +460,12 @@ export class FeaturesComponent implements OnInit {
 
   private buildBreadcrumbs(route: ActivatedRoute): BreadcrumbItem[] {
     const breadcrumbs: BreadcrumbItem[] = [];
+    // Every route's segments count, not only the ones with a breadcrumb: `spaces/:spaceId` has none,
+    // yet its segments belong in the links of the routes below it.
+    const pathSegments: string[] = [];
     let currentRoute: ActivatedRoute | null = route;
     while (currentRoute) {
+      pathSegments.push(...currentRoute.snapshot.url.map(segment => segment.path));
       if (currentRoute.routeConfig && currentRoute.routeConfig.data && currentRoute.routeConfig.data['breadcrumb']) {
         const currentItem = currentRoute.routeConfig.data['breadcrumb'] as BreadcrumbItem | undefined;
         if (currentItem) {
@@ -469,11 +473,8 @@ export class FeaturesComponent implements OnInit {
             // If route is defined in breadcrumb data, use it
             breadcrumbs.push(currentItem);
           } else {
-            // Otherwise, build the route from the current route snapshot
-            const urlSegments = currentRoute.snapshot.url.map(segment => segment.path).join('/');
-            const parentUrl = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1].route || '' : '';
-            const fullPath = parentUrl.endsWith('/') || parentUrl === '' ? `${parentUrl}${urlSegments}` : `${parentUrl}/${urlSegments}`;
-            breadcrumbs.push({ ...currentItem, route: fullPath });
+            // Otherwise, build the route from the path so far
+            breadcrumbs.push({ ...currentItem, route: pathSegments.join('/') });
           }
         }
       }

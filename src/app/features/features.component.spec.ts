@@ -13,7 +13,7 @@ import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { of, EMPTY, Observable, throwError } from 'rxjs';
+import { of, EMPTY, Observable, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { environment } from '../../environments/environment';
@@ -33,6 +33,8 @@ function configureModule(overrides: {
   latestRelease?: Partial<Release> | null;
   /** ISO build date served by version.json; omit to simulate it not having loaded. */
   buildDate?: string;
+  /** The store's selected space; defaults to a fixed `space-1`. */
+  selectedSpaceId?: ReturnType<typeof signal<string | undefined>>;
 }) {
   TestBed.overrideComponent(FeaturesComponent, { set: { template: '<div></div>' } });
   TestBed.configureTestingModule({
@@ -64,7 +66,7 @@ function configureModule(overrides: {
       {
         provide: SpaceStore,
         useValue: {
-          selectedSpaceId: signal('space-1'),
+          selectedSpaceId: overrides.selectedSpaceId ?? signal('space-1'),
           updateDocuments: overrides.updateDocuments,
           updateSchemas: overrides.updateSchemas,
         },
@@ -143,6 +145,36 @@ describe('FeaturesComponent', () => {
 
     expect(updateSchemas).toHaveBeenCalledWith([{ id: 'schema1' }]);
     expect(findAllSchemas).toHaveBeenCalledTimes(2);
+  });
+
+  it("closes the previous space's listeners when the selected space changes", () => {
+    const selectedSpaceId = signal<string | undefined>('space-1');
+    const documents = new Map<string, Subject<unknown>>();
+    const schemas = new Map<string, Subject<unknown>>();
+    const listen = (subjects: Map<string, Subject<unknown>>) => (spaceId: string) => {
+      const subject = new Subject<unknown>();
+      subjects.set(spaceId, subject);
+      return subject;
+    };
+    const updateDocuments = vi.fn();
+    const updateSchemas = vi.fn();
+
+    const fixture = configureModule({
+      findAllDocuments: vi.fn().mockImplementation(listen(documents)),
+      findAllSchemas: vi.fn().mockImplementation(listen(schemas)),
+      updateDocuments,
+      updateSchemas,
+      notifyError: vi.fn(),
+      selectedSpaceId,
+    });
+    fixture.detectChanges();
+    selectedSpaceId.set('space-2');
+    fixture.detectChanges();
+
+    expect(documents.get('space-1')?.observed).toBe(false);
+    expect(schemas.get('space-1')?.observed).toBe(false);
+    expect(documents.get('space-2')?.observed).toBe(true);
+    expect(schemas.get('space-2')?.observed).toBe(true);
   });
 
   it('does not notify or retry when the listeners succeed on the first try', () => {

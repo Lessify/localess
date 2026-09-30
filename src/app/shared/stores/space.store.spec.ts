@@ -126,6 +126,28 @@ describe('SpaceStore', () => {
     expect(store.contentPath()).toEqual([{ fullSlug: '', name: 'Root' }]);
   });
 
+  it("changeSpace drops the previous space's schemas and documents", () => {
+    const store = createStore([space('a'), space('b')]);
+    store.updateSchemas([{ id: 'schema' }] as never);
+    store.updateDocuments([{ id: 'doc' }] as never);
+
+    store.changeSpace(space('b'));
+
+    expect(store.schemas()).toEqual([]);
+    expect(store.documents()).toEqual([]);
+  });
+
+  it('changeSpace keeps schemas and documents when re-selecting the current space', () => {
+    const store = createStore([space('a'), space('b')]);
+    store.updateSchemas([{ id: 'schema' }] as never);
+    store.updateDocuments([{ id: 'doc' }] as never);
+
+    store.changeSpace(space('a'));
+
+    expect(store.schemas()).toEqual([{ id: 'schema' }]);
+    expect(store.documents()).toEqual([{ id: 'doc' }]);
+  });
+
   it('changeContentPath and changeAssetPath update their respective signals', () => {
     const store = createStore([space('a')]);
     const path = [{ fullSlug: 'docs', name: 'Docs' }];

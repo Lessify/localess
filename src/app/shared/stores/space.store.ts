@@ -1,6 +1,7 @@
 import { computed, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { ContentDocument } from '@shared/models/content.model';
 import { Schema } from '@shared/models/schema.model';
@@ -94,6 +95,13 @@ const initialStateFactory = (): SpaceState => {
 export const SpaceStore = signalStore(
   { providedIn: 'root' },
   withState<SpaceState>(initialStateFactory),
+  withProps(store => ({
+    /**
+     * `loaded` as an observable, created once with the store. Route guards need to wait for the
+     * first load, and calling `toObservable` per navigation would leave an effect behind every time.
+     */
+    loaded$: toObservable(store.loaded),
+  })),
   withMethods(state => {
     const spaceService = inject(SpaceService);
     return {
@@ -174,11 +182,16 @@ export const SpaceStore = signalStore(
         const foundSpace = state.spaces().find(it => it.id === space.id);
         if (foundSpace) {
           const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
+          // Drop the previous space's schemas and documents on a real switch, so nothing renders the
+          // new space against the old one's data while its listeners catch up. Re-selecting the same
+          // space keeps them: its listeners are already running and would not emit again.
+          const spaceData = foundSpace.id === state.selectedSpaceId() ? {} : { schemas: [], documents: [] };
           patchState(state, {
             selectedSpaceId: space.id,
             assetPath: DEFAULT_PATH,
             contentPath: DEFAULT_PATH,
             environment,
+            ...spaceData,
           });
           persistSpaceState(space.id, selectedEnvironmentBySpaceId);
         } else {
