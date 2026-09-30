@@ -4,16 +4,14 @@ import { Auth } from '@angular/fire/auth';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
-import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
 import { VersionService } from '@shared/services/version.service';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { UserStore } from '@shared/stores/user.store';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { of, EMPTY, Observable, Subject, throwError } from 'rxjs';
+import { of, EMPTY } from 'rxjs';
 import { vi } from 'vitest';
 
 import { environment } from '../../environments/environment';
@@ -22,10 +20,6 @@ import { WHATS_NEW } from './whats-new/whats-new.data';
 import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component';
 
 function configureModule(overrides: {
-  findAllDocuments: ReturnType<typeof vi.fn>;
-  findAllSchemas: ReturnType<typeof vi.fn>;
-  updateDocuments: ReturnType<typeof vi.fn>;
-  updateSchemas: ReturnType<typeof vi.fn>;
   notifyError: ReturnType<typeof vi.fn>;
   /** What the user has already read in the What's New dialog; defaults to nothing seen yet. */
   lastSeenWhatsNewVersion?: string;
@@ -33,14 +27,10 @@ function configureModule(overrides: {
   latestRelease?: Partial<Release> | null;
   /** ISO build date served by version.json; omit to simulate it not having loaded. */
   buildDate?: string;
-  /** The store's selected space; defaults to a fixed `space-1`. */
-  selectedSpaceId?: ReturnType<typeof signal<string | undefined>>;
 }) {
   TestBed.overrideComponent(FeaturesComponent, { set: { template: '<div></div>' } });
   TestBed.configureTestingModule({
     providers: [
-      { provide: ContentService, useValue: { findAllDocuments: overrides.findAllDocuments } },
-      { provide: SchemaService, useValue: { findAll: overrides.findAllSchemas } },
       { provide: NotificationService, useValue: { error: overrides.notifyError } },
       {
         provide: ReposService,
@@ -66,9 +56,7 @@ function configureModule(overrides: {
       {
         provide: SpaceStore,
         useValue: {
-          selectedSpaceId: overrides.selectedSpaceId ?? signal('space-1'),
-          updateDocuments: overrides.updateDocuments,
-          updateSchemas: overrides.updateSchemas,
+          selectedSpaceId: signal('space-1'),
         },
       },
       { provide: UserStore, useValue: { isAuthenticated: signal(true) } },
@@ -91,117 +79,8 @@ describe('FeaturesComponent', () => {
     vi.useRealTimers();
   });
 
-  it('notifies the user and recovers documents after the listener errors once', async () => {
-    vi.useFakeTimers();
-    let call = 0;
-    const findAllDocuments = vi.fn().mockImplementation((): Observable<unknown> => {
-      call++;
-      return call === 1 ? throwError(() => new Error('boom')) : of([{ id: 'doc1' }]);
-    });
-    const updateDocuments = vi.fn();
-    const notifyError = vi.fn();
-
-    const fixture = configureModule({
-      findAllDocuments,
-      findAllSchemas: vi.fn().mockReturnValue(of([])),
-      updateDocuments,
-      updateSchemas: vi.fn(),
-      notifyError,
-    });
-    fixture.detectChanges();
-
-    expect(notifyError).toHaveBeenCalledWith('Lost connection to content updates. Retrying…');
-    expect(updateDocuments).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(updateDocuments).toHaveBeenCalledWith([{ id: 'doc1' }]);
-    expect(findAllDocuments).toHaveBeenCalledTimes(2);
-  });
-
-  it('notifies the user and recovers schemas after the listener errors once', async () => {
-    vi.useFakeTimers();
-    let call = 0;
-    const findAllSchemas = vi.fn().mockImplementation((): Observable<unknown> => {
-      call++;
-      return call === 1 ? throwError(() => new Error('boom')) : of([{ id: 'schema1' }]);
-    });
-    const updateSchemas = vi.fn();
-    const notifyError = vi.fn();
-
-    const fixture = configureModule({
-      findAllDocuments: vi.fn().mockReturnValue(of([])),
-      findAllSchemas,
-      updateDocuments: vi.fn(),
-      updateSchemas,
-      notifyError,
-    });
-    fixture.detectChanges();
-
-    expect(notifyError).toHaveBeenCalledWith('Lost connection to schema updates. Retrying…');
-    expect(updateSchemas).not.toHaveBeenCalled();
-
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(updateSchemas).toHaveBeenCalledWith([{ id: 'schema1' }]);
-    expect(findAllSchemas).toHaveBeenCalledTimes(2);
-  });
-
-  it("closes the previous space's listeners when the selected space changes", () => {
-    const selectedSpaceId = signal<string | undefined>('space-1');
-    const documents = new Map<string, Subject<unknown>>();
-    const schemas = new Map<string, Subject<unknown>>();
-    const listen = (subjects: Map<string, Subject<unknown>>) => (spaceId: string) => {
-      const subject = new Subject<unknown>();
-      subjects.set(spaceId, subject);
-      return subject;
-    };
-    const updateDocuments = vi.fn();
-    const updateSchemas = vi.fn();
-
-    const fixture = configureModule({
-      findAllDocuments: vi.fn().mockImplementation(listen(documents)),
-      findAllSchemas: vi.fn().mockImplementation(listen(schemas)),
-      updateDocuments,
-      updateSchemas,
-      notifyError: vi.fn(),
-      selectedSpaceId,
-    });
-    fixture.detectChanges();
-    selectedSpaceId.set('space-2');
-    fixture.detectChanges();
-
-    expect(documents.get('space-1')?.observed).toBe(false);
-    expect(schemas.get('space-1')?.observed).toBe(false);
-    expect(documents.get('space-2')?.observed).toBe(true);
-    expect(schemas.get('space-2')?.observed).toBe(true);
-  });
-
-  it('does not notify or retry when the listeners succeed on the first try', () => {
-    const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc1' }]));
-    const updateDocuments = vi.fn();
-    const notifyError = vi.fn();
-
-    const fixture = configureModule({
-      findAllDocuments,
-      findAllSchemas: vi.fn().mockReturnValue(of([])),
-      updateDocuments,
-      updateSchemas: vi.fn(),
-      notifyError,
-    });
-    fixture.detectChanges();
-
-    expect(notifyError).not.toHaveBeenCalled();
-    expect(updateDocuments).toHaveBeenCalledWith([{ id: 'doc1' }]);
-    expect(findAllDocuments).toHaveBeenCalledTimes(1);
-  });
-
   it('opens the What\'s New dialog', () => {
     const fixture = configureModule({
-      findAllDocuments: vi.fn().mockReturnValue(of([])),
-      findAllSchemas: vi.fn().mockReturnValue(of([])),
-      updateDocuments: vi.fn(),
-      updateSchemas: vi.fn(),
       notifyError: vi.fn(),
     });
     fixture.detectChanges();
@@ -213,10 +92,6 @@ describe('FeaturesComponent', () => {
   });
 
   const whatsNewDefaults = {
-    findAllDocuments: vi.fn().mockReturnValue(of([])),
-    findAllSchemas: vi.fn().mockReturnValue(of([])),
-    updateDocuments: vi.fn(),
-    updateSchemas: vi.fn(),
     notifyError: vi.fn(),
   };
 

@@ -11,7 +11,7 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Auth, signOut } from '@angular/fire/auth';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
@@ -58,9 +58,7 @@ import { Space } from '@shared/models/space.model';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { Version } from '@shared/models/version.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
 import { VersionService } from '@shared/services/version.service';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
@@ -81,7 +79,7 @@ import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { cva } from 'class-variance-authority';
-import { defer, distinctUntilChanged, filter, mergeMap, MonoTypeOperatorFunction, retry, switchMap, timer } from 'rxjs';
+import { filter, mergeMap, timer } from 'rxjs';
 
 import { environment } from '../../environments/environment';
 import { WHATS_NEW } from './whats-new/whats-new.data';
@@ -191,8 +189,6 @@ export class FeaturesComponent implements OnInit {
   private readonly reposService = inject(ReposService);
   private auth = inject(Auth);
   private route = inject(ActivatedRoute);
-  private readonly contentService = inject(ContentService);
-  private readonly schemaService = inject(SchemaService);
   private readonly versionService = inject(VersionService);
   private readonly notificationService = inject(NotificationService);
   private readonly hlmDialog = inject(HlmDialogService);
@@ -348,33 +344,6 @@ export class FeaturesComponent implements OnInit {
       }
     });
 
-    // switchMap, not a subscription per change: a new space has to close the old space's listeners,
-    // or they keep writing that space's documents and schemas into the store.
-    const selectedSpaceId$ = toObservable(this.spaceStore.selectedSpaceId).pipe(
-      filter((spaceId): spaceId is string => !!spaceId),
-      distinctUntilChanged(),
-    );
-    selectedSpaceId$
-      .pipe(
-        switchMap(spaceId =>
-          defer(() => this.contentService.findAllDocuments(spaceId)).pipe(
-            this.retryWithBackoff('findAllDocuments listener failed', 'Lost connection to content updates. Retrying…'),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(documents => this.spaceStore.updateDocuments(documents));
-    selectedSpaceId$
-      .pipe(
-        switchMap(spaceId =>
-          defer(() => this.schemaService.findAll(spaceId)).pipe(
-            this.retryWithBackoff('schemaService.findAll listener failed', 'Lost connection to schema updates. Retrying…'),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(schemas => this.spaceStore.updateSchemas(schemas));
-
     this.router.events
       .pipe(
         filter(event => event instanceof NavigationEnd),
@@ -391,17 +360,6 @@ export class FeaturesComponent implements OnInit {
           }
         }
       });
-  }
-
-  /** Retries re-run the (deferred) query rather than resubscribing to one that already failed. */
-  private retryWithBackoff<T>(logMessage: string, notification: string): MonoTypeOperatorFunction<T> {
-    return retry({
-      delay: (err, retryCount) => {
-        console.error(logMessage, err);
-        this.notificationService.error(notification);
-        return timer(Math.min(30000, 1000 * 2 ** (retryCount - 1)));
-      },
-    });
   }
 
   ngOnInit(): void {

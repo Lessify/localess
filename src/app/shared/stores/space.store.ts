@@ -6,8 +6,26 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { ContentDocument } from '@shared/models/content.model';
 import { Schema } from '@shared/models/schema.model';
 import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { ContentService } from '@shared/services/content.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
 import { SpaceService } from '@shared/services/space.service';
-import { pipe, switchMap } from 'rxjs';
+import {
+  defer,
+  distinctUntilChanged,
+  EMPTY,
+  map,
+  merge,
+  MonoTypeOperatorFunction,
+  Observable,
+  pipe,
+  retry,
+  switchMap,
+  tap,
+  timer,
+} from 'rxjs';
+
+import { UserStore } from './user.store';
 
 const LS_KEY = 'LL-SPACE-STATE';
 const ROOT_PATH: PathItem = { name: 'Root', fullSlug: '' };
@@ -79,6 +97,20 @@ const persistSpaceState = (selectedSpaceId: string | undefined, selectedEnvironm
   );
 };
 
+/** Retries re-run the (deferred) query rather than resubscribing to one that already failed. */
+const retryWithBackoff = <T>(
+  notificationService: NotificationService,
+  logMessage: string,
+  notification: string,
+): MonoTypeOperatorFunction<T> =>
+  retry({
+    delay: (err, retryCount) => {
+      console.error(logMessage, err);
+      notificationService.error(notification);
+      return timer(Math.min(30000, 1000 * 2 ** (retryCount - 1)));
+    },
+  });
+
 const initialStateFactory = (): SpaceState => {
   const stateString = localStorage.getItem(LS_KEY);
   if (stateString) {
@@ -104,7 +136,42 @@ export const SpaceStore = signalStore(
   })),
   withMethods(state => {
     const spaceService = inject(SpaceService);
+    const contentService = inject(ContentService);
+    const schemaService = inject(SchemaService);
+    const notificationService = inject(NotificationService);
+
+    const listen = <T>(query: () => Observable<T>, logMessage: string, notification: string): Observable<T> =>
+      defer(query).pipe(retryWithBackoff<T>(notificationService, logMessage, notification));
+
     return {
+      /**
+       * Keeps `schemas` and `documents` on the given space. switchMap closes the previous space's
+       * listeners, and the data is dropped first so nothing renders the new space against the old
+       * one's. `undefined` (no space, or signed out) stops listening altogether.
+       */
+      _syncSpaceData: rxMethod<string | undefined>(
+        pipe(
+          distinctUntilChanged(),
+          tap(() => patchState(state, { schemas: [], documents: [] })),
+          switchMap(spaceId =>
+            spaceId
+              ? merge(
+                  listen(
+                    () => contentService.findAllDocuments(spaceId),
+                    'findAllDocuments listener failed',
+                    'Lost connection to content updates. Retrying…',
+                  ).pipe(map(documents => ({ documents }))),
+                  listen(
+                    () => schemaService.findAll(spaceId),
+                    'schemaService.findAll listener failed',
+                    'Lost connection to schema updates. Retrying…',
+                  ).pipe(map(schemas => ({ schemas }))),
+                )
+              : EMPTY,
+          ),
+          tap(patch => patchState(state, patch)),
+        ),
+      ),
       load: rxMethod<void>(
         pipe(
           switchMap(() => spaceService.findAll()),
@@ -182,16 +249,11 @@ export const SpaceStore = signalStore(
         const foundSpace = state.spaces().find(it => it.id === space.id);
         if (foundSpace) {
           const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
-          // Drop the previous space's schemas and documents on a real switch, so nothing renders the
-          // new space against the old one's data while its listeners catch up. Re-selecting the same
-          // space keeps them: its listeners are already running and would not emit again.
-          const spaceData = foundSpace.id === state.selectedSpaceId() ? {} : { schemas: [], documents: [] };
           patchState(state, {
             selectedSpaceId: space.id,
             assetPath: DEFAULT_PATH,
             contentPath: DEFAULT_PATH,
             environment,
-            ...spaceData,
           });
           persistSpaceState(space.id, selectedEnvironmentBySpaceId);
         } else {
@@ -231,14 +293,6 @@ export const SpaceStore = signalStore(
         });
         persistSpaceState(selectedSpaceId, selectedEnvironmentBySpaceId);
       },
-      updateSchemas: (schemas: Schema[]) => {
-        console.log('updateSchemas', schemas);
-        patchState(state, { schemas });
-      },
-      updateDocuments: (documents: ContentDocument[]) => {
-        console.log('updateDocuments', documents);
-        patchState(state, { documents });
-      },
     };
   }),
   withComputed(state => {
@@ -260,7 +314,11 @@ export const SpaceStore = signalStore(
   }),
   withHooks({
     onInit: store => {
+      const userStore = inject(UserStore);
       store.load();
+      // Gated on auth: this store outlives the signed-in shell, and listeners left running after
+      // sign-out would fail on the rules and retry forever.
+      store._syncSpaceData(computed(() => (userStore.isAuthenticated() ? store.selectedSpaceId() : undefined)));
     },
     onDestroy: store => {
       console.log('onDestroy', store);

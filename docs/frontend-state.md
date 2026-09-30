@@ -78,16 +78,16 @@ hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on lo
 Key methods:
 - `load()` — `rxMethod` that streams `SpaceService.findAll()`; called from `onInit`. Sets `loaded`, and clears the selection when the list is empty
 - `spaceById(id)` — returns a `computed` signal of the space with that id (or `undefined`)
-- `changeSpace(space)` — switch active workspace, reset paths, resolve environment; on a real switch also clears `schemas`/`documents` so the new space never renders against the old one's data
+- `changeSpace(space)` — switch active workspace, reset paths, resolve environment
 - `changeContentPath(path)` / `changeAssetPath(path)` — update breadcrumb navigation
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
-- `updateSchemas(schemas)` / `updateDocuments(documents)` — populate local cache
+- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the `schemas`/`documents` Firestore listeners: on every id change it clears both, then `switchMap`s to the new space's listeners, closing the old ones. Each listener retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
 
 **The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`src/app/shared/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
 - `:spaceId` is in `spaces` → `changeSpace()` if it differs from the stored selection, allow.
 - otherwise (deleted, mistyped, another install) → warning toast, redirect to the stored space's dashboard, or the first space if that one is gone too (never back to an id that would fail again), or `/features/welcome` when there are none.
 
-This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. `FeaturesComponent` follows `selectedSpaceId` with `switchMap` for the documents/schemas listeners, so switching closes the old space's listeners.
+This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. Selecting the space is all it takes: the store then moves its own documents/schemas listeners to it (see `_syncSpaceData`).
 
 **Space Environments** — a Space can have multiple environments (e.g. staging, production URLs). The selected environment is persisted per space in `selectedEnvironmentBySpaceId`.
 

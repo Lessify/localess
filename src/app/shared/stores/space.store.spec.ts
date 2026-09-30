@@ -1,9 +1,15 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Space } from '@shared/models/space.model';
+import { ContentService } from '@shared/services/content.service';
+import { NotificationService } from '@shared/services/notification.service';
+import { SchemaService } from '@shared/services/schema.service';
 import { SpaceService } from '@shared/services/space.service';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { SpaceStore } from './space.store';
+import { UserStore } from './user.store';
 
 describe('SpaceStore', () => {
   const LS_KEY = 'LL-SPACE-STATE';
@@ -24,11 +30,29 @@ describe('SpaceStore', () => {
     };
   }
 
-  function createStore(spaces: Space[]) {
+  type Listeners = {
+    findAllDocuments?: (spaceId: string) => Observable<unknown>;
+    findAllSchemas?: (spaceId: string) => Observable<unknown>;
+    notifyError?: ReturnType<typeof vi.fn>;
+    isAuthenticated?: ReturnType<typeof signal<boolean>>;
+  };
+
+  /** The space data listeners stay silent unless a test hands them something to emit. */
+  function configure(findAll: () => Observable<Space[]>, listeners: Listeners = {}) {
     TestBed.configureTestingModule({
-      providers: [{ provide: SpaceService, useValue: { findAll: () => of(spaces) } }],
+      providers: [
+        { provide: SpaceService, useValue: { findAll } },
+        { provide: ContentService, useValue: { findAllDocuments: listeners.findAllDocuments ?? (() => NEVER) } },
+        { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
+        { provide: NotificationService, useValue: { error: listeners.notifyError ?? vi.fn() } },
+        { provide: UserStore, useValue: { isAuthenticated: listeners.isAuthenticated ?? signal(true) } },
+      ],
     });
     return TestBed.inject(SpaceStore);
+  }
+
+  function createStore(spaces: Space[], listeners?: Listeners) {
+    return configure(() => of(spaces), listeners);
   }
 
   it('selects no space and clears paths when the response is empty', () => {
@@ -51,20 +75,14 @@ describe('SpaceStore', () => {
   it('does not report hasNoSpaces before the first load resolves', () => {
     // `spaces` starts empty, so without the `loaded` gate this would be true on every login and
     // flash an onboarding prompt at users who have plenty of spaces.
-    TestBed.configureTestingModule({
-      providers: [{ provide: SpaceService, useValue: { findAll: () => NEVER } }],
-    });
-    const store = TestBed.inject(SpaceStore);
+    const store = configure(() => NEVER);
 
     expect(store.spaces()).toEqual([]);
     expect(store.hasNoSpaces()).toBe(false);
   });
 
   it('reports hasNoSpaces when the load fails, rather than waiting forever', () => {
-    TestBed.configureTestingModule({
-      providers: [{ provide: SpaceService, useValue: { findAll: () => throwError(() => new Error('boom')) } }],
-    });
-    const store = TestBed.inject(SpaceStore);
+    const store = configure(() => throwError(() => new Error('boom')));
 
     expect(store.hasNoSpaces()).toBe(true);
   });
@@ -126,26 +144,130 @@ describe('SpaceStore', () => {
     expect(store.contentPath()).toEqual([{ fullSlug: '', name: 'Root' }]);
   });
 
-  it("changeSpace drops the previous space's schemas and documents", () => {
-    const store = createStore([space('a'), space('b')]);
-    store.updateSchemas([{ id: 'schema' }] as never);
-    store.updateDocuments([{ id: 'doc' }] as never);
+  describe('space data listeners', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
 
-    store.changeSpace(space('b'));
+    /** One Subject per space, so a test can see which spaces are still being listened to. */
+    function subjectsBySpace() {
+      const subjects = new Map<string, Subject<unknown>>();
+      const listen = (spaceId: string) => {
+        const subject = new Subject<unknown>();
+        subjects.set(spaceId, subject);
+        return subject;
+      };
+      return { subjects, listen };
+    }
 
-    expect(store.schemas()).toEqual([]);
-    expect(store.documents()).toEqual([]);
-  });
+    it("loads the selected space's documents and schemas", () => {
+      const store = createStore([space('a')], {
+        findAllDocuments: () => of([{ id: 'doc' }]),
+        findAllSchemas: () => of([{ id: 'schema' }]),
+      });
+      TestBed.tick();
 
-  it('changeSpace keeps schemas and documents when re-selecting the current space', () => {
-    const store = createStore([space('a'), space('b')]);
-    store.updateSchemas([{ id: 'schema' }] as never);
-    store.updateDocuments([{ id: 'doc' }] as never);
+      expect(store.documents()).toEqual([{ id: 'doc' }]);
+      expect(store.schemas()).toEqual([{ id: 'schema' }]);
+    });
 
-    store.changeSpace(space('a'));
+    it("closes the previous space's listeners and drops its data when the space changes", () => {
+      const documents = subjectsBySpace();
+      const schemas = subjectsBySpace();
+      const store = createStore([space('a'), space('b')], {
+        findAllDocuments: documents.listen,
+        findAllSchemas: schemas.listen,
+      });
+      TestBed.tick();
+      documents.subjects.get('a')?.next([{ id: 'doc-a' }]);
+      schemas.subjects.get('a')?.next([{ id: 'schema-a' }]);
 
-    expect(store.schemas()).toEqual([{ id: 'schema' }]);
-    expect(store.documents()).toEqual([{ id: 'doc' }]);
+      store.changeSpace(space('b'));
+      TestBed.tick();
+
+      expect(documents.subjects.get('a')?.observed).toBe(false);
+      expect(schemas.subjects.get('a')?.observed).toBe(false);
+      expect(documents.subjects.get('b')?.observed).toBe(true);
+      expect(schemas.subjects.get('b')?.observed).toBe(true);
+      expect(store.documents()).toEqual([]);
+      expect(store.schemas()).toEqual([]);
+    });
+
+    it('keeps the listeners and data when re-selecting the current space', () => {
+      const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
+      const store = createStore([space('a'), space('b')], { findAllDocuments });
+      TestBed.tick();
+
+      store.changeSpace(space('a'));
+      TestBed.tick();
+
+      expect(findAllDocuments).toHaveBeenCalledTimes(1);
+      expect(store.documents()).toEqual([{ id: 'doc' }]);
+    });
+
+    it('stops listening and drops the data on sign-out', () => {
+      const documents = subjectsBySpace();
+      const isAuthenticated = signal(true);
+      const store = createStore([space('a')], { findAllDocuments: documents.listen, isAuthenticated });
+      TestBed.tick();
+      documents.subjects.get('a')?.next([{ id: 'doc' }]);
+
+      isAuthenticated.set(false);
+      TestBed.tick();
+
+      expect(documents.subjects.get('a')?.observed).toBe(false);
+      expect(store.documents()).toEqual([]);
+    });
+
+    it('notifies the user and recovers documents after the listener errors once', async () => {
+      vi.useFakeTimers();
+      let call = 0;
+      const findAllDocuments = vi.fn().mockImplementation((): Observable<unknown> => {
+        call++;
+        return call === 1 ? throwError(() => new Error('boom')) : of([{ id: 'doc' }]);
+      });
+      const notifyError = vi.fn();
+      const store = createStore([space('a')], { findAllDocuments, notifyError });
+      TestBed.tick();
+
+      expect(notifyError).toHaveBeenCalledWith('Lost connection to content updates. Retrying…');
+      expect(store.documents()).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(store.documents()).toEqual([{ id: 'doc' }]);
+      expect(findAllDocuments).toHaveBeenCalledTimes(2);
+    });
+
+    it('notifies the user and recovers schemas after the listener errors once', async () => {
+      vi.useFakeTimers();
+      let call = 0;
+      const findAllSchemas = vi.fn().mockImplementation((): Observable<unknown> => {
+        call++;
+        return call === 1 ? throwError(() => new Error('boom')) : of([{ id: 'schema' }]);
+      });
+      const notifyError = vi.fn();
+      const store = createStore([space('a')], { findAllSchemas, notifyError });
+      TestBed.tick();
+
+      expect(notifyError).toHaveBeenCalledWith('Lost connection to schema updates. Retrying…');
+      expect(store.schemas()).toEqual([]);
+
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(store.schemas()).toEqual([{ id: 'schema' }]);
+      expect(findAllSchemas).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not notify or retry when the listeners succeed on the first try', () => {
+      const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
+      const notifyError = vi.fn();
+      createStore([space('a')], { findAllDocuments, notifyError });
+      TestBed.tick();
+
+      expect(notifyError).not.toHaveBeenCalled();
+      expect(findAllDocuments).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('changeContentPath and changeAssetPath update their respective signals', () => {
@@ -171,16 +293,5 @@ describe('SpaceStore', () => {
     expect(store.environment()?.name).toBe('staging');
     const persisted = JSON.parse(localStorage.getItem(LS_KEY)!);
     expect(persisted.selectedEnvironmentBySpaceId.a).toBe('staging');
-  });
-
-  it('updateSchemas and updateDocuments replace their respective signals', () => {
-    const store = createStore([space('a')]);
-    const schemas = [{ id: 'schema-1' }] as any;
-    const documents = [{ id: 'doc-1' }] as any;
-
-    store.updateSchemas(schemas);
-    store.updateDocuments(documents);
-
-    expect(store.documents()).toEqual(documents);
   });
 });
