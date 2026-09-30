@@ -10,7 +10,7 @@ import {
   TokenPermission,
   Translation,
   TranslationType,
-  TranslationUpdateIds,
+  TranslationUpdateResponse,
   zSchemaPushSchema,
   zTranslationUpdateSchema,
 } from '../models';
@@ -108,30 +108,25 @@ MANAGE.post(
     }
 
     const plan = planTranslationUpdate(existing, locale, values);
-    const ids: TranslationUpdateIds = { created: plan.creates, updated: plan.updates, deleted: plan.deletes };
-    const counts = {
-      created: ids.created.length,
-      updated: ids.updated.length,
-      deleted: ids.deleted.length,
-      unchanged: plan.unchanged.length,
-    };
     const actionable = type === 'add-missing' ? plan.creates : type === 'update-existing' ? plan.updates : plan.deletes;
     const { verb, past } = TRANSLATION_UPDATE_VERBS[type];
+    const noun = actionable.length === 1 ? 'translation' : 'translations';
 
     if (actionable.length === 0) {
-      logger.info(`[V1:Translations:update] No translations to ${verb}`, counts);
-      res.status(200).send({ message: `No translations to ${verb}`, counts, ids, dryRun });
+      logger.info(`[V1:Translations:update] No translations to ${verb}`);
+      const response: TranslationUpdateResponse = { message: `No translations to ${verb}`, ids: [], dryRun };
+      res.status(200).send(response);
       return;
     }
 
     if (dryRun) {
-      logger.info(`[V1:Translations:update] [DryRun] Would ${verb} ${actionable.length} translations`, actionable);
-      res.status(200).send({
-        message: `[DryRun] Would ${verb} ${actionable.length} translations`,
-        counts,
-        ids,
+      logger.info(`[V1:Translations:update] [DryRun] Would ${verb} ${actionable.length} ${noun}`, actionable);
+      const response: TranslationUpdateResponse = {
+        message: `[DryRun] Would ${verb} ${actionable.length} ${noun}`,
+        ids: actionable,
         dryRun: true,
-      });
+      };
+      res.status(200).send(response);
       return;
     }
 
@@ -168,8 +163,9 @@ MANAGE.post(
       );
     }
     await generateTranslationsDraft(spaceId, space);
-    logger.info(`[V1:Translations:update] ${past} ${actionable.length} translations`, actionable);
-    res.status(200).send({ message: `${past} ${actionable.length} translations`, counts, ids });
+    logger.info(`[V1:Translations:update] ${past} ${actionable.length} ${noun}`, actionable);
+    const response: TranslationUpdateResponse = { message: `${past} ${actionable.length} ${noun}`, ids: actionable };
+    res.status(200).send(response);
   }
 );
 

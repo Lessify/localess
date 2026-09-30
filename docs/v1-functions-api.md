@@ -111,14 +111,13 @@ Returns `400 invalid-argument` (`Locale not supported by this space`) when `:loc
 
 ```typescript
 {
-  message: string;
-  counts: { created: number; updated: number; deleted: number; unchanged: number };
-  ids: { created: string[]; updated: string[]; deleted: string[] };
+  message: string;  // e.g. "Added 1 translation", "[DryRun] Would delete 3 translations", "No translations to update"
+  ids: string[];    // only the IDs `type` wrote (or, on a dry run, would write)
   dryRun?: true;
 }
 ```
 
-`counts`/`ids` describe the full plan for the pushed `values`, regardless of `type`; only the IDs matching `type` are actually written.
+`update-existing` only lists (and writes) IDs whose value for `:locale` actually differs; identical values are skipped.
 
 #### Schema push (`POST /api/v1/spaces/:spaceId/schemas`)
 
