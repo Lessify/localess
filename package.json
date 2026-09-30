@@ -44,7 +44,7 @@
     "@angular/common": "^21.2.24",
     "@angular/compiler": "^21.2.24",
     "@angular/core": "^21.2.24",
-    "@angular/fire": "^21.0.0-rc.0",
+    "@angular/fire": "^21.0.0-rc.1",
     "@angular/forms": "^21.2.24",
     "@angular/material": "^21.2.14",
     "@angular/platform-browser": "^21.2.24",
@@ -93,6 +93,7 @@
     "embla-carousel-angular": "21.0.0",
     "embla-carousel-autoplay": "^8.6.0",
     "file-saver-es": "^2.0.5",
+    "firebase": "^12.19.0",
     "lowlight": "^3.3.0",
     "ngx-scrollbar": "^19.1.5",
     "ngx-sonner": ">=3.0.0",
@@ -103,7 +104,6 @@
     "uuid": "^14.0.2"
   },
   "overrides": {
-    "firebase": "^12.9.0",
     "@stoplight/elements": {
       "react": "18.3.1",
       "react-dom": "18.3.1"
