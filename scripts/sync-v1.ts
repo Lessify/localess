@@ -34,9 +34,67 @@
     return window.top !== window.self;
   }
 
+  /**
+   * Origin the Visual Editor is expected to post from, resolved once while the script is
+   * still executing (`document.currentScript` is only set during that first run).
+   *
+   * `location.ancestorOrigins` comes first because it is the parent's real origin, which
+   * also covers deployments reached through a second domain or a proxy. Firefox does not
+   * implement it, so there the script's own origin is used instead: the script is served
+   * by the same Localess deployment as the editor (`<origin>/scripts/sync-v1.js`).
+   * `undefined` only when the script was inlined without a `src`.
+   */
+  const expectedEditorOrigin = resolveExpectedEditorOrigin();
+  /** Origin of the editor that answered the handshake; every later message is bound to it. */
+  let editorOrigin: string | undefined;
+  let originMismatchWarned = false;
+
+  function resolveExpectedEditorOrigin(): string | undefined {
+    const ancestorOrigin = location.ancestorOrigins?.item(0);
+    if (ancestorOrigin && ancestorOrigin !== 'null') {
+      return ancestorOrigin;
+    }
+    const src = (document.currentScript as HTMLScriptElement | null)?.src;
+    if (src) {
+      try {
+        return new URL(src).origin;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  }
+
   function sendEditorData(data: EventToEditor) {
+    // Only `ping` may go out before the handshake. It carries no data, so falling back to
+    // '*' when the editor origin could not be resolved exposes nothing.
+    const targetOrigin = editorOrigin ?? (data.type === 'ping' ? (expectedEditorOrigin ?? '*') : undefined);
+    if (!targetOrigin) return;
     console.log(LOG_GROUP, 'SyncToEditorEvent', data);
-    window.parent.postMessage({ owner: 'LOCALESS', ...data }, '*');
+    window.parent.postMessage({ owner: 'LOCALESS', ...data }, targetOrigin);
+  }
+
+  /**
+   * Accepts a message only from the parent frame, and only from the editor origin. Before the
+   * handshake only a `pong` is accepted, and the origin it came from is pinned for the session.
+   */
+  function isFromEditor(event: MessageEvent): boolean {
+    if (event.source !== window.parent) return false;
+    if (editorOrigin !== undefined) return event.origin === editorOrigin;
+    if ((event.data as EventToApp | undefined)?.type !== 'pong') return false;
+    if (expectedEditorOrigin !== undefined && event.origin !== expectedEditorOrigin) {
+      if (!originMismatchWarned) {
+        originMismatchWarned = true;
+        console.warn(
+          LOG_GROUP,
+          `Ignoring Visual Editor at ${event.origin}: expected ${expectedEditorOrigin}. ` +
+            'The Localess origin configured in the SDK must match the address the editor is opened from.',
+        );
+      }
+      return false;
+    }
+    editorOrigin = event.origin;
+    return true;
   }
 
   function createCSS() {
@@ -269,7 +327,7 @@
         addMessage('Localess: Sync initialized.');
         // Receive message from Visual Editor
         addEventListener('message', event => {
-          if (event.origin === location.ancestorOrigins.item(0)) {
+          if (isFromEditor(event)) {
             console.log(LOG_GROUP, 'EditorToSyncEvent', event.data);
             const data = event.data as EventToApp;
             switch (data.type) {
