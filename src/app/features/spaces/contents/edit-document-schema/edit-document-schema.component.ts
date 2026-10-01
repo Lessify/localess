@@ -48,7 +48,8 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { debounceTime, filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { auditTime, filter, tap } from 'rxjs/operators';
 import { v4 } from 'uuid';
 
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
@@ -60,6 +61,9 @@ import { ReferencesSelectComponent } from '../shared/references-select/reference
 import { RichTextEditorComponent } from '../shared/rich-text-editor/rich-text-editor.component';
 import { TranslateMenuComponent } from '../shared/translate-menu/translate-menu.component';
 import { SchemaSelectChange } from './edit-document-schema.model';
+
+// Preview updates are sent at most this often while typing.
+const FORM_CHANGE_INTERVAL = 200;
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -114,6 +118,8 @@ export class EditDocumentSchemaComponent {
 
   // Form
   form: FormRecord = this.fb.record({});
+  private formChanges?: Subscription;
+  private pendingFormChange?: Record<string, unknown>;
 
   schemaForm = viewChild<ElementRef<HTMLFormElement>>('schemaForm');
 
@@ -235,90 +241,101 @@ export class EditDocumentSchemaComponent {
   }
 
   generateForm(): void {
+    this.stopFormChanges();
     const rootSchema = this.rootSchema();
     if (rootSchema && (rootSchema.type === SchemaType.ROOT || rootSchema.type === SchemaType.NODE)) {
       // true - check all fields, false - all fields become optional
       this.form = this.contentHelperService.generateSchemaForm(rootSchema, this.isDefaultLocale());
-
-      this.form.valueChanges
-        .pipe(
-          debounceTime(500),
-          filter(it => Object.keys(it).length !== 0),
-          takeUntilDestroyed(this.destroyRef),
-        )
-        .subscribe({
-          next: formValue => {
-            //console.group('form');
-            //console.log(Object.getOwnPropertyNames(formValue));
-            //console.log('formValue', ObjectUtils.clone(formValue));
-            //console.log('Before data', ObjectUtils.clone(this.data));
-            //console.log('rootSchema', ObjectUtils.clone(this.rootSchema));
-            for (const field of rootSchema?.fields || []) {
-              //console.log('field', field.name, field.kind);
-              if (field.kind === SchemaFieldKind.SCHEMAS) continue;
-              if (field.kind === SchemaFieldKind.SCHEMA) continue;
-              const value = formValue[field.name];
-              //console.log('value', value);
-              if (this.isDefaultLocale()) {
-                // check everything
-                if (value === null) {
-                  delete this.data()[field.name];
-                } else {
-                  this.data()[field.name] = value;
-                }
-              } else {
-                // check only locale
-                if (field.translatable) {
-                  if (value === undefined || value === null || value === '') {
-                    delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
-                  } else if (Array.isArray(value) && value.length === 0) {
-                    delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
-                  } else {
-                    this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
-                  }
-                } else {
-                  // Non-translatable fields are disabled on non-default locales and are
-                  // excluded from form.value (value === undefined). Skip them so the
-                  // shared value in this.data is never overwritten with undefined.
-                  if (value === undefined) continue;
-                  if (value === null) {
-                    delete this.data()[field.name];
-                  } else {
-                    this.data()[field.name] = value;
-                  }
-                }
-              }
-            }
-
-            this.formChange.emit(JSON.stringify(formValue));
-            //console.log('After data', ObjectUtils.clone(this.data));
-            //console.groupEnd();
-          },
-          error: (err: unknown) => console.error(err),
-          complete: () => console.log('completed'),
-        });
     }
   }
 
   onChanged(): void {
-    //console.group('onChanged')
     this.isFormLoading.set(true);
     this.cd.detectChanges();
     this.generateForm();
     this.formPatch();
-    //this.form.reset();
-    //this.form.patchValue(this.contentService.extractSchemaContent(this.data, this.rootSchema!, this.locale));
+    // Subscribed after the patch, so loading the form isn't reported as an edit.
+    this.listenToFormChanges();
     this.isFormLoading.set(false);
-    //console.groupEnd()
+  }
+
+  // Form values are written to data() on every change, so save/publish always see the latest
+  // edit; only the formChange notification (the preview update) is throttled.
+  private listenToFormChanges(): void {
+    const rootSchema = this.rootSchema();
+    if (!rootSchema || (rootSchema.type !== SchemaType.ROOT && rootSchema.type !== SchemaType.NODE)) return;
+    this.formChanges = this.form.valueChanges
+      .pipe(
+        filter(it => Object.keys(it).length !== 0),
+        tap(formValue => {
+          this.writeFormValue(rootSchema, formValue);
+          this.pendingFormChange = formValue;
+        }),
+        auditTime(FORM_CHANGE_INTERVAL),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: () => this.emitPendingFormChange(),
+        error: (err: unknown) => console.error(err),
+      });
+  }
+
+  // Drops the previous form's subscription, first delivering an edit it was still holding back.
+  private stopFormChanges(): void {
+    this.formChanges?.unsubscribe();
+    this.formChanges = undefined;
+    this.emitPendingFormChange();
+  }
+
+  private emitPendingFormChange(): void {
+    if (this.pendingFormChange === undefined) return;
+    const formValue = this.pendingFormChange;
+    this.pendingFormChange = undefined;
+    this.formChange.emit(JSON.stringify(formValue));
+  }
+
+  private writeFormValue(rootSchema: SchemaComponent, formValue: Record<string, unknown>): void {
+    for (const field of rootSchema.fields || []) {
+      if (field.kind === SchemaFieldKind.SCHEMAS) continue;
+      if (field.kind === SchemaFieldKind.SCHEMA) continue;
+      const value = formValue[field.name];
+      if (this.isDefaultLocale()) {
+        // check everything
+        if (value === null) {
+          delete this.data()[field.name];
+        } else {
+          this.data()[field.name] = value;
+        }
+      } else {
+        // check only locale
+        if (field.translatable) {
+          if (value === undefined || value === null || value === '') {
+            delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
+          } else if (Array.isArray(value) && value.length === 0) {
+            delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
+          } else {
+            this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
+          }
+        } else {
+          // Non-translatable fields are disabled on non-default locales and are
+          // excluded from form.value (value === undefined). Skip them so the
+          // shared value in this.data is never overwritten with undefined.
+          if (value === undefined) continue;
+          if (value === null) {
+            delete this.data()[field.name];
+          } else {
+            this.data()[field.name] = value;
+          }
+        }
+      }
+    }
   }
 
   formPatch(): void {
-    //console.group('formPatch')
     this.form.reset();
     const rootSchema = this.rootSchema();
     if (rootSchema) {
       const extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data(), rootSchema, this.selectedLocaleId(), false);
-      //console.log('extractSchemaContent', ObjectUtils.clone(extractSchemaContent))
       this.form.patchValue(extractSchemaContent);
       Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
         const content = extractSchemaContent[fieldName];
@@ -338,7 +355,6 @@ export class EditDocumentSchemaComponent {
         }
       });
     }
-    //console.groupEnd()
   }
 
   filterSchema(ids: string[]): SchemaComponent[] {
@@ -415,7 +431,6 @@ export class EditDocumentSchemaComponent {
   duplicateSchemaMany(data: any[], item: ContentData, idx: number): void {
     const clone = this.contentHelperService.clone(item, true);
     data.splice(idx + 1, 0, clone);
-    //console.log(data)
     this.structureChange.emit(`duplicateSchemaMany ${item.schema} ${item._id}`);
   }
 

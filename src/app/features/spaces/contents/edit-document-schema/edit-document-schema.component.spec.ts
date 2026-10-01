@@ -9,7 +9,7 @@ import { Router } from '@angular/router';
 import { ContentData } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserStore } from '@shared/stores/user.store';
 
 import { EditDocumentSchemaComponent } from './edit-document-schema.component';
@@ -217,7 +217,6 @@ describe('EditDocumentSchemaComponent', () => {
 
     function typeAndFlush(component: EditDocumentSchemaComponent, value: string) {
       component.form.controls['title'].setValue(value);
-      // the form -> data subscription is debounced by 500ms
       vi.advanceTimersByTime(600);
     }
 
@@ -257,6 +256,90 @@ describe('EditDocumentSchemaComponent', () => {
       expect(data['title_i18n_de']).toBeUndefined();
       expect(data['title']).toBe('Hello');
       vi.useRealTimers();
+    });
+  });
+
+  describe('form changes', () => {
+    const titleSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never], 'root-1');
+    const labelSchema = schema([{ name: 'label', kind: SchemaFieldKind.TEXT } as never], 'child-1');
+
+    function setupWithEvents(data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' }) {
+      vi.useFakeTimers();
+      const result = setup({ schemas: [titleSchema, labelSchema], data });
+      const events: string[] = [];
+      result.component.formChange.subscribe(e => events.push(e));
+      return { ...result, data, events };
+    }
+
+    afterEach(() => vi.useRealTimers());
+
+    // Save and publish read data() directly, so an edit must not wait for the preview throttle.
+    it('writes an edit to data() immediately', () => {
+      const { component, data } = setupWithEvents();
+
+      component.form.controls['title'].setValue('Changed');
+
+      expect(data['title']).toBe('Changed');
+    });
+
+    it('emits formChange once per burst of edits, with the latest value', () => {
+      const { component, events } = setupWithEvents();
+
+      component.form.controls['title'].setValue('A');
+      component.form.controls['title'].setValue('AB');
+      component.form.controls['title'].setValue('ABC');
+      expect(events).toEqual([]);
+
+      vi.advanceTimersByTime(200);
+      expect(events.map(e => JSON.parse(e).title)).toEqual(['ABC']);
+
+      vi.advanceTimersByTime(1000);
+      expect(events).toHaveLength(1);
+    });
+
+    it('keeps emitting while the user types without pausing', () => {
+      const { component, events } = setupWithEvents();
+
+      for (let i = 1; i <= 10; i++) {
+        component.form.controls['title'].setValue('x'.repeat(i));
+        vi.advanceTimersByTime(100);
+      }
+
+      expect(events.length).toBeGreaterThanOrEqual(4);
+      vi.advanceTimersByTime(200);
+      expect(JSON.parse(events.at(-1)!).title).toBe('x'.repeat(10));
+    });
+
+    it('does not emit when the form is loaded or regenerated', () => {
+      const { fixture, events } = setupWithEvents();
+
+      fixture.componentRef.setInput('selectedLocale', { id: 'fr', name: 'French' });
+      TestBed.tick();
+      fixture.componentRef.setInput('data', { _id: '2', _schema: 'child-1', schema: 'child-1', label: 'Nested' });
+      TestBed.tick();
+      vi.advanceTimersByTime(1000);
+
+      expect(events).toEqual([]);
+    });
+
+    it('delivers a held-back edit when switching documents, and the old form no longer writes', () => {
+      const { component, fixture, data, events } = setupWithEvents();
+      const oldForm = component.form;
+      oldForm.controls['title'].setValue('Changed');
+
+      const child: ContentData = { _id: '2', _schema: 'child-1', schema: 'child-1', label: 'Nested' };
+      fixture.componentRef.setInput('data', child);
+      TestBed.tick();
+
+      expect(events.map(e => JSON.parse(e).title)).toEqual(['Changed']);
+      expect(data['title']).toBe('Changed');
+
+      oldForm.controls['title'].setValue('Stale');
+      vi.advanceTimersByTime(1000);
+
+      expect(child['title']).toBeUndefined();
+      expect(data['title']).toBe('Changed');
+      expect(events).toHaveLength(1);
     });
   });
 
