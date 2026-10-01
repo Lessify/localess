@@ -431,26 +431,42 @@
       }
 
       emit(event: EventToApp) {
-        const cbList = this.events[event.type] as EventCallback[];
+        // A copy: a callback that unsubscribes itself would otherwise make the next one get skipped.
+        const cbList = [...this.events[event.type]] as EventCallback[];
         for (const cb of cbList) {
           cb.apply(this, [event]);
         }
       }
 
-      onChange(callback: (event: EventToAppOf<'change' | 'input'>) => void) {
-        this.on(['input', 'change'], callback);
+      /** Subscribes to `input` and `change`. Returns a function that removes the subscription. */
+      onChange(callback: (event: EventToAppOf<'change' | 'input'>) => void): () => void {
+        return this.on(['input', 'change'], callback);
       }
 
-      on<T extends EventToAppType>(type: T | T[], callback: (event: EventToAppOf<T>) => void) {
-        if (Array.isArray(type)) {
-          for (const e of type) {
-            this.addEvent(e, callback);
-          }
-          log(`Sync event added [${type.join(', ')}]`);
-        } else {
-          this.addEvent(type, callback);
-          log(`Sync event added [${type}]`);
+      /**
+       * Subscribes to one or more editor events. Returns a function that removes the subscription.
+       * Registering the same callback twice for an event is a no-op, so one removal undoes both.
+       */
+      on<T extends EventToAppType>(type: T | T[], callback: (event: EventToAppOf<T>) => void): () => void {
+        const types = Array.isArray(type) ? type : [type];
+        for (const e of types) {
+          this.addEvent(e, callback);
         }
+        log(`Sync event added [${types.join(', ')}]`);
+        return () => this.off(types, callback);
+      }
+
+      /** Removes a callback added with {@link on} or {@link onChange}. */
+      off<T extends EventToAppType>(type: T | T[], callback: (event: EventToAppOf<T>) => void) {
+        const types = Array.isArray(type) ? type : [type];
+        for (const e of types) {
+          const list = this.events[e];
+          const index = list.indexOf(callback);
+          if (index !== -1) {
+            list.splice(index, 1);
+          }
+        }
+        log(`Sync event removed [${types.join(', ')}]`);
       }
 
       private addEvent<T extends EventToAppType>(type: T, callback: (event: EventToAppOf<T>) => void) {

@@ -313,3 +313,73 @@ describe('sync-v1 debug mode', () => {
     });
   }
 });
+
+describe('sync-v1 subscriptions', () => {
+  async function connected() {
+    const loaded = await loadSync();
+    loaded.fromEditor({ type: 'pong' });
+    return loaded;
+  }
+
+  it('on() returns a function that removes the subscription', async () => {
+    const { sync, fromEditor } = await connected();
+    const onSave = mock.fn();
+
+    const unsubscribe = sync.on('save', onSave);
+    fromEditor({ type: 'save' });
+    unsubscribe();
+    fromEditor({ type: 'save' });
+
+    assert.equal(onSave.mock.callCount(), 1);
+  });
+
+  it('onChange() returns a function that removes both input and change', async () => {
+    const { sync, fromEditor } = await connected();
+    const onChange = mock.fn();
+
+    const unsubscribe = sync.onChange(onChange);
+    fromEditor({ type: 'input', data: { a: 1 } });
+    unsubscribe();
+    fromEditor({ type: 'input', data: { a: 2 } });
+    fromEditor({ type: 'change', data: { a: 3 } });
+
+    assert.equal(onChange.mock.callCount(), 1);
+  });
+
+  it('off() removes a callback from every listed event', async () => {
+    const { sync, fromEditor } = await connected();
+    const callback = mock.fn();
+
+    sync.on(['save', 'publish'], callback);
+    sync.off(['save', 'publish'], callback);
+    fromEditor({ type: 'save' });
+    fromEditor({ type: 'publish' });
+
+    assert.equal(callback.mock.callCount(), 0);
+  });
+
+  it('off() leaves other callbacks for the same event in place', async () => {
+    const { sync, fromEditor } = await connected();
+    const removed = mock.fn();
+    const kept = mock.fn();
+
+    sync.on('save', removed);
+    sync.on('save', kept);
+    sync.off('save', removed);
+    fromEditor({ type: 'save' });
+
+    assert.equal(removed.mock.callCount(), 0);
+    assert.equal(kept.mock.callCount(), 1);
+  });
+
+  it('a callback unsubscribing itself does not make the next one get skipped', async () => {
+    const { sync, fromEditor } = await connected();
+    const second = mock.fn();
+    const unsubscribe = sync.on('save', () => unsubscribe());
+    sync.on('save', second);
+
+    fromEditor({ type: 'save' });
+
+    assert.equal(second.mock.callCount(), 1);
+  });
+});
