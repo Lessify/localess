@@ -313,18 +313,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   save(): void {
-    //console.group('save')
     this.isSaveLoading.set(true);
 
-    //console.log('documentData', this.documentData)
-    //console.log('document', this.document)
     this.contentErrors = [];
     this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), CONTENT_DEFAULT_LOCALE.id));
     for (const locale of this.selectedSpace()?.locales || []) {
       this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }
-
-    //console.log(this.contentErrors)
 
     if (this.contentErrors.length === 0) {
       const refs = this.availableLocales()
@@ -361,7 +356,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.notificationService.error('Content is not valid. Please check all fields are filled correctly.');
       this.isSaveLoading.set(false);
     }
-    //console.groupEnd()
   }
 
   back(): void {
@@ -418,7 +412,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onSchemaChange(event: SchemaSelectChange): void {
-    console.log('onSchemaChange', event);
     this.navigateToSchemaForwards({
       contentId: event.contentId,
       schemaName: event.schemaName,
@@ -473,7 +466,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   generateDocumentIdsTree() {
-    //console.group('generateDocumentIdsTree')
     const nodeIterator: { path: string[]; data: ContentData }[] = [
       {
         path: [this.documentData._id],
@@ -504,8 +496,6 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       }
       node = nodeIterator.shift();
     }
-    //console.log(this.documentIdsTree)
-    //console.groupEnd()
   }
 
   captureKeyboard(event: KeyboardEvent): void {
@@ -521,15 +511,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onPreviewSchemaSelect(event: { id: string; schema: string; field?: string }): void {
-    const { id, schema, field } = event;
-    console.log('llve', id, 'selectSchema', schema, field);
+    const { id, field } = event;
     // find element path
     const contentIdIteration = ObjectUtils.clone(this.documentIdsTree.get(id)) || [];
     // Iterative traversing content and validating fields.
     let selectedContentId = contentIdIteration.shift();
     // check Root Schema
     if (this.documentData._id === selectedContentId) {
-      console.log('root', selectedContentId);
       const rootSchema = this.schemaMapById().get(this.documentData.schema);
       if (rootSchema) {
         this.navigateToSchemaBackwards({
@@ -539,16 +527,15 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         });
         selectedContentId = contentIdIteration.shift();
       } else {
-        console.log(`schema ${this.selectedDocumentData.schema} not-found`);
+        console.warn(`onPreviewSchemaSelect: schema "${this.documentData.schema}" not found`);
         return;
       }
     } else {
-      console.log(`root id ${selectedContentId} not-found`);
+      console.warn(`onPreviewSchemaSelect: element "${id}" not found in the current document`);
       return;
     }
     // Navigate to child
     while (selectedContentId) {
-      console.log('child', selectedContentId);
       const schema = this.schemaMapById().get(this.selectedDocumentData.schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         schemaFieldsLoop: for (const schemaField of schema.fields || []) {
@@ -580,11 +567,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         selectedContentId = contentIdIteration.shift();
         this.clickSchemaField.set(field);
       } else {
-        console.log(`schema ${this.selectedDocumentData.schema} not-found`);
+        console.warn(`onPreviewSchemaSelect: schema "${this.selectedDocumentData.schema}" not found`);
         return;
       }
     }
-    console.log(`id ${selectedContentId} not-found`);
   }
 
   onPreviewSchemaHover(event: { id: string; field?: string }): void {
@@ -598,15 +584,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.hoverSchemaField.set(undefined);
   }
 
-  onFormChange(event: string) {
+  onFormChange(): void {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
-    console.debug('onFormChange', event, data);
     this.previewComponent()?.sendEvent({ type: 'input', data: data });
   }
 
-  onStructureChange(event: string) {
+  onStructureChange(): void {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
-    console.debug('onStructureChange', event, data);
     this.generateDocumentIdsTree();
     this.previewComponent()?.sendEvent({ type: 'change', data: data });
   }
