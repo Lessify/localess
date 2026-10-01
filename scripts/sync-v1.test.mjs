@@ -28,7 +28,7 @@ afterEach(async () => {
  * Firefox code path. By default the script is loaded from `<LOCALESS_ORIGIN>/scripts/sync-v1.js`,
  * the way the SDK injects it; `inline: true` inlines it without a `src` instead.
  */
-async function loadSync({ ancestorOrigins = undefined, inline = false, body = '' } = {}) {
+async function loadSync({ ancestorOrigins = undefined, inline = false, debug = undefined, body = '' } = {}) {
   const window = new Window({
     url: 'https://site.test/',
     settings: {
@@ -49,11 +49,13 @@ async function loadSync({ ancestorOrigins = undefined, inline = false, body = ''
   }
   const scrollIntoView = mock.fn();
   window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
-  mock.method(window.console, 'log', () => {});
+  const log = mock.method(window.console, 'log', () => {});
+  const info = mock.method(window.console, 'info', () => {});
   const warn = mock.method(window.console, 'warn', () => {});
   window.document.body.innerHTML = body;
 
   const script = window.document.createElement('script');
+  if (debug !== undefined) script.setAttribute('data-debug', debug);
   if (inline) {
     script.textContent = SYNC_SCRIPT;
   } else {
@@ -70,7 +72,8 @@ async function loadSync({ ancestorOrigins = undefined, inline = false, body = ''
   const posted = () =>
     parent.postMessage.mock.calls.map(call => ({ data: JSON.parse(JSON.stringify(call.arguments[0])), targetOrigin: call.arguments[1] }));
   const flush = () => new Promise(resolve => window.setTimeout(resolve, 0));
-  return { window, sync: window.localess, fromEditor, posted, warn, flush, scrollIntoView };
+  const snackbars = () => [...window.document.querySelectorAll('.ll-snackbar')].map(it => it.textContent);
+  return { window, sync: window.localess, fromEditor, posted, log, info, warn, flush, scrollIntoView, snackbars };
 }
 
 describe('sync-v1 handshake', () => {
@@ -268,4 +271,45 @@ describe('sync-v1 enterSchema selection', () => {
     assert.deepEqual(selected(), ['a']);
     assert.equal(window.document.querySelector('[data-ll-selected]'), replacement);
   });
+});
+
+describe('sync-v1 debug mode', () => {
+  it('is quiet by default: no snackbars, no logs, one info line on connect', async () => {
+    const { sync, fromEditor, log, info, snackbars } = await loadSync();
+    sync.on('save', () => {});
+
+    fromEditor({ type: 'pong' });
+    fromEditor({ type: 'input', data: { title: 'Hello' } });
+
+    assert.deepEqual(snackbars(), []);
+    assert.equal(log.mock.callCount(), 0);
+    assert.equal(info.mock.callCount(), 1);
+    assert.match(info.mock.calls[0].arguments.join(' '), new RegExp(`Sync connected to Visual Editor \\(${LOCALESS_ORIGIN}\\)`));
+  });
+
+  it('is quiet with data-debug="false"', async () => {
+    const { fromEditor, log, snackbars } = await loadSync({ debug: 'false' });
+
+    fromEditor({ type: 'pong' });
+
+    assert.deepEqual(snackbars(), []);
+    assert.equal(log.mock.callCount(), 0);
+  });
+
+  for (const debug of ['', 'true']) {
+    it(`shows the initialized and connected snackbars and logs everything else with data-debug="${debug}"`, async () => {
+      const { sync, fromEditor, log, info, snackbars } = await loadSync({ debug });
+      sync.on('save', () => {});
+
+      fromEditor({ type: 'pong' });
+      fromEditor({ type: 'input', data: { title: 'Hello' } });
+
+      assert.deepEqual(snackbars(), ['Localess: Sync initialized.', 'Localess: Sync connected to Visual Editor.']);
+      const logged = log.mock.calls.map(call => call.arguments.join(' '));
+      assert.ok(logged.some(it => it.includes('Sync event added [save]')));
+      assert.ok(logged.some(it => it.includes('EditorToSyncEvent')));
+      assert.ok(logged.some(it => it.includes('SyncToEditorEvent')));
+      assert.equal(info.mock.callCount(), 1);
+    });
+  }
 });

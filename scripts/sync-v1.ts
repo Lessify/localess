@@ -34,9 +34,21 @@
     return window.top !== window.self;
   }
 
+  /** Only set while the script first runs, so everything read from it is read up front. */
+  const currentScript = document.currentScript as HTMLScriptElement | null;
   /**
-   * Origin the Visual Editor is expected to post from, resolved once while the script is
-   * still executing (`document.currentScript` is only set during that first run).
+   * Debug mode, enabled with `data-debug` on the script tag (any value but `"false"`); the SDK
+   * sets it from the client's `debug` option. Off by default: content editors see the preview,
+   * so it only logs one line on connect, plus warnings for real misconfiguration.
+   */
+  const debug = currentScript?.hasAttribute('data-debug') === true && currentScript.getAttribute('data-debug') !== 'false';
+
+  function log(...args: unknown[]) {
+    if (debug) console.log(LOG_GROUP, ...args);
+  }
+
+  /**
+   * Origin the Visual Editor is expected to post from, resolved once at load.
    *
    * `location.ancestorOrigins` comes first because it is the parent's real origin, which
    * also covers deployments reached through a second domain or a proxy. Firefox does not
@@ -54,7 +66,7 @@
     if (ancestorOrigin && ancestorOrigin !== 'null') {
       return ancestorOrigin;
     }
-    const src = (document.currentScript as HTMLScriptElement | null)?.src;
+    const src = currentScript?.src;
     if (src) {
       try {
         return new URL(src).origin;
@@ -70,7 +82,7 @@
     // '*' when the editor origin could not be resolved exposes nothing.
     const targetOrigin = editorOrigin ?? (data.type === 'ping' ? (expectedEditorOrigin ?? '*') : undefined);
     if (!targetOrigin) return;
-    console.log(LOG_GROUP, 'SyncToEditorEvent', data);
+    log('SyncToEditorEvent', data);
     window.parent.postMessage({ owner: 'LOCALESS', ...data }, targetOrigin);
   }
 
@@ -266,7 +278,7 @@
     applySelectedHighlight();
 
     if (schemas > 0 || fields > 0) {
-      console.log(LOG_GROUP, 'markVisualEditorElements', source, { schemas, fields });
+      log('markVisualEditorElements', source, { schemas, fields });
     }
   }
 
@@ -321,7 +333,9 @@
     document.body.appendChild(snackbarContainer);
   }
 
+  /** Snackbar inside the preview. Debug only: content editors are the ones who see it. */
   function addMessage(message: string) {
+    if (!debug) return;
     const snackbar = document.createElement('div');
     snackbar.className = 'll-snackbar';
     snackbar.style =
@@ -353,16 +367,18 @@
       };
 
       constructor() {
-        console.log(
-          `%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`,
-          'background: #222; color: #0063EB; font-size: 2rem;',
-        );
-        addMessageContainer();
+        if (debug) {
+          console.log(
+            `%c🚀🚀🚀LOCALESS: Sync version ${this.version} initialized🚀🚀🚀`,
+            'background: #222; color: #0063EB; font-size: 2rem;',
+          );
+          addMessageContainer();
+        }
         addMessage('Localess: Sync initialized.');
         // Receive message from Visual Editor
         addEventListener('message', event => {
           if (isFromEditor(event)) {
-            console.log(LOG_GROUP, 'EditorToSyncEvent', event.data);
+            log('EditorToSyncEvent', event.data);
             const data = event.data as EventToApp;
             switch (data.type) {
               case 'save': {
@@ -430,10 +446,10 @@
           for (const e of type) {
             this.addEvent(e, callback);
           }
-          addMessage(`Localess: Sync event added [${type.join(', ')}].`);
+          log(`Sync event added [${type.join(', ')}]`);
         } else {
           this.addEvent(type, callback);
-          addMessage(`Localess: Sync event added [${type}].`);
+          log(`Sync event added [${type}]`);
         }
       }
 
@@ -458,6 +474,7 @@
         createCSS();
         markVisualEditorElements('pong');
         observeVisualEditorElements();
+        console.info(LOG_GROUP, `Sync connected to Visual Editor (${editorOrigin})`);
         addMessage('Localess: Sync connected to Visual Editor.');
       }
     }
