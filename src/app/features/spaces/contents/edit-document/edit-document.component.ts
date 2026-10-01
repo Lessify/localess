@@ -442,6 +442,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
     const idx = this.schemaPath().findIndex(it => it.contentId == pathItem.contentId);
     const truncatedPath = this.schemaPath().slice(0, idx + 1);
+    let target = pathItem;
+    let root = idx == 0;
     // Select Root
     if (idx == 0) {
       this.schemaPath.set(truncatedPath);
@@ -458,13 +460,16 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         console.warn('navigateToSchemaBackwards: intermediate node not found, falling back to root', pathItem);
         this.schemaPath.set(this.schemaPath().slice(0, 1));
         this.selectedDocumentData = this.documentData;
+        target = this.schemaPath()[0];
+        root = true;
       } else {
         this.schemaPath.set(truncatedPath);
         this.selectedDocumentData = localSelectedContent;
       }
     }
-    // Send Message to iFrame about Schema Selection
-    this.previewComponent()?.sendEvent({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
+    // Send Message to iFrame about Schema Selection. `root` lets the sync script clear its
+    // selection highlight instead of outlining the whole page.
+    this.previewComponent()?.sendEvent({ type: 'enterSchema', id: target.contentId, schema: target.schemaName, root: root });
   }
 
   generateDocumentIdsTree() {

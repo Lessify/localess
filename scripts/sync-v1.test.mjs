@@ -47,7 +47,8 @@ async function loadSync({ ancestorOrigins = undefined, inline = false, body = ''
       value: { length: ancestorOrigins.length, item: i => ancestorOrigins[i] ?? null },
     });
   }
-  window.HTMLElement.prototype.scrollIntoView = () => {};
+  const scrollIntoView = mock.fn();
+  window.HTMLElement.prototype.scrollIntoView = scrollIntoView;
   mock.method(window.console, 'log', () => {});
   const warn = mock.method(window.console, 'warn', () => {});
   window.document.body.innerHTML = body;
@@ -69,7 +70,7 @@ async function loadSync({ ancestorOrigins = undefined, inline = false, body = ''
   const posted = () =>
     parent.postMessage.mock.calls.map(call => ({ data: JSON.parse(JSON.stringify(call.arguments[0])), targetOrigin: call.arguments[1] }));
   const flush = () => new Promise(resolve => window.setTimeout(resolve, 0));
-  return { window, sync: window.localess, fromEditor, posted, warn, flush };
+  return { window, sync: window.localess, fromEditor, posted, warn, flush, scrollIntoView };
 }
 
 describe('sync-v1 handshake', () => {
@@ -190,5 +191,81 @@ describe('sync-v1 outgoing messages', () => {
       posted().map(it => it.data.type),
       ['ping'],
     );
+  });
+});
+
+describe('sync-v1 enterSchema selection', () => {
+  const body = '<main data-ll-id="root" data-ll-schema="Page"><div data-ll-id="a" data-ll-schema="Hero"></div><div data-ll-id="b" data-ll-schema="Card"></div></main>';
+
+  async function connected() {
+    const loaded = await loadSync({ body });
+    loaded.fromEditor({ type: 'pong' });
+    await loaded.flush();
+    const selected = () => [...loaded.window.document.querySelectorAll('[data-ll-selected]')].map(it => it.getAttribute('data-ll-id'));
+    const enter = (id, extra = {}) => loaded.fromEditor({ type: 'enterSchema', id, schema: 'Any', ...extra });
+    return { ...loaded, selected, enter };
+  }
+
+  it('marks the entered schema and moves the mark to the next one', async () => {
+    const { selected, enter } = await connected();
+
+    enter('a');
+    assert.deepEqual(selected(), ['a']);
+    enter('b');
+    assert.deepEqual(selected(), ['b']);
+  });
+
+  it('scrolls the entered schema into view only as far as needed', async () => {
+    const { enter, scrollIntoView, window } = await connected();
+
+    enter('a');
+
+    assert.equal(scrollIntoView.mock.callCount(), 1);
+    assert.equal(scrollIntoView.mock.calls[0].this, window.document.querySelector('[data-ll-id="a"]'));
+    assert.deepEqual(JSON.parse(JSON.stringify(scrollIntoView.mock.calls[0].arguments[0])), { block: 'nearest', behavior: 'smooth' });
+  });
+
+  it('clears the mark when entering the root, instead of outlining the page', async () => {
+    const { selected, enter, scrollIntoView } = await connected();
+    enter('a');
+
+    enter('root', { root: true });
+
+    assert.deepEqual(selected(), []);
+    assert.equal(scrollIntoView.mock.callCount(), 1);
+  });
+
+  it('clears the mark when the entered schema is not on the page', async () => {
+    const { selected, enter } = await connected();
+    enter('a');
+
+    enter('missing');
+
+    assert.deepEqual(selected(), []);
+  });
+
+  it('re-applies the mark after a re-render strips the attribute', async () => {
+    const { selected, enter, window, flush } = await connected();
+    enter('a');
+
+    window.document.querySelector('[data-ll-id="a"]').removeAttribute('data-ll-selected');
+    await flush();
+    await flush();
+
+    assert.deepEqual(selected(), ['a']);
+  });
+
+  it('re-applies the mark after the element is replaced by a new node with the same id', async () => {
+    const { selected, enter, window, flush } = await connected();
+    enter('a');
+
+    const replacement = window.document.createElement('div');
+    replacement.setAttribute('data-ll-id', 'a');
+    window.document.querySelector('[data-ll-id="a"]').replaceWith(replacement);
+    await flush();
+    await flush();
+
+    assert.deepEqual(selected(), ['a']);
+    assert.equal(window.document.querySelector('[data-ll-selected]'), replacement);
   });
 });

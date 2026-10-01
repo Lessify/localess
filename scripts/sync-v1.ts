@@ -19,7 +19,7 @@
     | { type: 'leaveSchema' }
     | { type: 'input'; data: any }
     | { type: 'change'; data: any }
-    | { type: 'enterSchema'; id: string; schema: string; field?: string }
+    | { type: 'enterSchema'; id: string; schema: string; field?: string; root?: boolean }
     | { type: 'hoverSchema'; id: string; schema: string; field?: string };
   /**
    * Narrows {@link EventToApp} down to the variant(s) matching event type `T`.
@@ -103,7 +103,8 @@
     // Highlight Visual Editor Elements
     style.textContent = `
     [data-ll-id],[data-ll-field]{outline: 2px dashed rgba(0,92,187,0.5);transition: box-shadow ease-out 150ms;}
-    [data-ll-id]:hover,[data-ll-field]:hover,.ll-hover-highlight{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}`;
+    [data-ll-id]:hover,[data-ll-field]:hover,.ll-hover-highlight{box-shadow: inset 100vi 100vh rgba(0,92,187,0.1);outline: 2px solid rgba(0,92,187,1);cursor: pointer;}
+    [data-ll-id][data-ll-selected]{outline: 3px solid rgba(0,92,187,1);outline-offset: 2px;}`;
     // Snackbar KeyFames
     style.textContent += `
       @keyframes ll-fadein {from {bottom: 0; opacity: 0;}to {bottom: 30px; opacity: 1;}}
@@ -127,6 +128,35 @@
     target.classList.add('ll-hover-highlight');
     target.scrollIntoView({ block: 'center', behavior: 'smooth' });
     currentHoverHighlightElement = target;
+  }
+
+  /**
+   * Id of the schema the editor has entered, kept as an id rather than an element: frameworks
+   * re-render or recreate the node, and morphdom-style patchers strip unknown attributes, so
+   * {@link markVisualEditorElements} re-applies the mark on every scan.
+   */
+  let selectedSchemaId: string | undefined;
+
+  function findSchemaElement(id: string) {
+    return document.querySelector<HTMLElement>(`[data-ll-id="${CSS.escape(id)}"]`);
+  }
+
+  function applySelectedHighlight() {
+    const target = selectedSchemaId ? findSchemaElement(selectedSchemaId) : null;
+    document.querySelectorAll('[data-ll-selected]').forEach(element => {
+      if (element !== target) element.removeAttribute('data-ll-selected');
+    });
+    if (target && !target.hasAttribute('data-ll-selected')) {
+      target.setAttribute('data-ll-selected', 'true');
+    }
+  }
+
+  function selectSchema(id: string | undefined) {
+    selectedSchemaId = id;
+    applySelectedHighlight();
+    if (id) {
+      findSchemaElement(id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
   }
 
   /**
@@ -233,6 +263,8 @@
       });
     });
 
+    applySelectedHighlight();
+
     if (schemas > 0 || fields > 0) {
       console.log(LOG_GROUP, 'markVisualEditorElements', source, { schemas, fields });
     }
@@ -276,7 +308,9 @@
       // text nodes produced no observed mutation at all and the marker stayed missing.
       // This does not feed back on itself: re-adding the attribute schedules one more scan,
       // which finds it present, changes nothing, and ends the chain.
-      attributeFilter: ['data-ll-id', 'data-ll-hook'],
+      // `data-ll-selected` is watched for the same reason: a patch that strips it schedules the
+      // scan that re-applies it, and re-applying converges the same way.
+      attributeFilter: ['data-ll-id', 'data-ll-hook', 'data-ll-selected'],
     });
   }
 
@@ -356,6 +390,8 @@
               }
               case 'enterSchema': {
                 this.emit(data);
+                // Root is the whole page: outlining it is noise, so entering it clears the selection.
+                selectSchema(data.root ? undefined : data.id);
                 break;
               }
               case 'hoverSchema': {

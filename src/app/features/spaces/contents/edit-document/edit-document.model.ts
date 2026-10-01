@@ -23,4 +23,5 @@ export type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input'
 export type EventToApp =
   | { type: 'save' | 'publish' | 'unpublish' | 'pong' | 'leaveSchema' }
   | { type: 'input' | 'change'; data: any }
-  | { type: 'enterSchema' | 'hoverSchema'; id: string; schema: string; field?: string };
+  | { type: 'enterSchema'; id: string; schema: string; field?: string; root?: boolean }
+  | { type: 'hoverSchema'; id: string; schema: string; field?: string };

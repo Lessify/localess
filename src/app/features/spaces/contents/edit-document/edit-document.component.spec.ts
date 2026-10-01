@@ -16,6 +16,7 @@ import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { ContentPreviewComponent } from '../content-preview/content-preview.component';
 import { EditDocumentComponent } from './edit-document.component';
 
 const en: Locale = { id: 'en', name: 'English' };
@@ -304,6 +305,36 @@ describe('EditDocumentComponent', () => {
 
       expect(component.selectedDocumentData).toEqual(data);
       expect(component.schemaPath()).toHaveLength(1);
+    });
+
+    it('tells the preview it entered the root when navigating back to it', () => {
+      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const { component } = setup(documentOf(data));
+      const sendEvent = vi.fn();
+      vi.spyOn(component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
+
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
+      component.navigateToSchemaBackwards({ contentId: 'root-id', schemaName: 'root1', fieldName: '' });
+
+      expect(sendEvent.mock.calls.map(([event]) => event)).toEqual([
+        { type: 'enterSchema', id: 'child-id', schema: 'child1' },
+        { type: 'enterSchema', id: 'root-id', schema: 'root1', root: true },
+      ]);
+    });
+
+    it('tells the preview it entered the root when navigating back falls back to it', () => {
+      const data = { _id: 'root-id', schema: 'root1', children: [{ _id: 'child-id', schema: 'child1' }] };
+      const { component } = setup(documentOf(data));
+      component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'children' });
+      const sendEvent = vi.fn();
+      vi.spyOn(component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      component.documentData['children'] = [];
+
+      component.navigateToSchemaBackwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'children' });
+
+      expect(sendEvent).toHaveBeenCalledWith({ type: 'enterSchema', id: 'root-id', schema: 'root1', root: true });
+      warnSpy.mockRestore();
     });
 
     it('navigateToSchemaForwards() aborts and leaves state unchanged when the array target is not found', () => {
