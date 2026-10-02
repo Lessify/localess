@@ -28,7 +28,7 @@ afterEach(async () => {
  * Firefox code path. By default the script is loaded from `<LOCALESS_ORIGIN>/scripts/sync-v1.js`,
  * the way the SDK injects it; `inline: true` inlines it without a `src` instead.
  */
-async function loadSync({ ancestorOrigins = undefined, inline = false, debug = undefined, body = '' } = {}) {
+async function loadSync({ ancestorOrigins = undefined, inline = false, debug = undefined, sdk = undefined, body = '' } = {}) {
   const window = new Window({
     url: 'https://site.test/',
     settings: {
@@ -56,6 +56,7 @@ async function loadSync({ ancestorOrigins = undefined, inline = false, debug = u
 
   const script = window.document.createElement('script');
   if (debug !== undefined) script.setAttribute('data-debug', debug);
+  if (sdk !== undefined) script.setAttribute('data-sdk', sdk);
   if (inline) {
     script.textContent = SYNC_SCRIPT;
   } else {
@@ -80,7 +81,9 @@ describe('sync-v1 handshake', () => {
   it('connects without location.ancestorOrigins (Firefox), using the script origin', async () => {
     const { sync, fromEditor, posted } = await loadSync();
 
-    assert.deepEqual(posted(), [{ data: { owner: 'LOCALESS', type: 'ping' }, targetOrigin: LOCALESS_ORIGIN }]);
+    assert.deepEqual(posted(), [
+      { data: { owner: 'LOCALESS', type: 'ping', protocol: 1, scriptOrigin: LOCALESS_ORIGIN }, targetOrigin: LOCALESS_ORIGIN },
+    ]);
     fromEditor({ type: 'pong' });
 
     assert.equal(sync.inEditor, true);
@@ -90,7 +93,9 @@ describe('sync-v1 handshake', () => {
     const editorOrigin = 'https://cms.company.test';
     const { sync, fromEditor, posted } = await loadSync({ ancestorOrigins: [editorOrigin] });
 
-    assert.deepEqual(posted(), [{ data: { owner: 'LOCALESS', type: 'ping' }, targetOrigin: editorOrigin }]);
+    assert.deepEqual(posted(), [
+      { data: { owner: 'LOCALESS', type: 'ping', protocol: 1, scriptOrigin: LOCALESS_ORIGIN }, targetOrigin: editorOrigin },
+    ]);
     fromEditor({ type: 'pong' }, { origin: LOCALESS_ORIGIN });
     assert.equal(sync.inEditor, false);
     fromEditor({ type: 'pong' }, { origin: editorOrigin });
@@ -141,13 +146,26 @@ describe('sync-v1 handshake', () => {
     assert.equal(onSave.mock.callCount(), 1);
   });
 
+  it('reports the SDK that loaded it in the ping', async () => {
+    const { posted } = await loadSync({ sdk: '@localess/react@4.0.3' });
+
+    assert.equal(posted()[0].data.sdk, '@localess/react@4.0.3');
+  });
+
+  it('withholds the SDK from a wildcard ping', async () => {
+    const { posted } = await loadSync({ inline: true, sdk: '@localess/react@4.0.3' });
+
+    assert.equal(posted()[0].data.sdk, undefined);
+  });
+
   it('falls back to a wildcard ping and pins the first pong when no origin can be resolved', async () => {
     const editorOrigin = 'https://anywhere.test';
     const { sync, fromEditor, posted } = await loadSync({ inline: true });
     const onSave = mock.fn();
     sync.on('save', onSave);
 
-    assert.deepEqual(posted(), [{ data: { owner: 'LOCALESS', type: 'ping' }, targetOrigin: '*' }]);
+    // Only the bare handshake goes to an unknown parent.
+    assert.deepEqual(posted(), [{ data: { owner: 'LOCALESS', type: 'ping', protocol: 1 }, targetOrigin: '*' }]);
     fromEditor({ type: 'pong' }, { origin: editorOrigin });
     fromEditor({ type: 'save', documentId: 'doc-1' }, { origin: EVIL_ORIGIN });
     fromEditor({ type: 'save', documentId: 'doc-1' }, { origin: editorOrigin });

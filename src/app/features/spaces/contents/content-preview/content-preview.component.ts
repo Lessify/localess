@@ -134,6 +134,24 @@ export class ContentPreviewComponent {
     return blocks.some(id => documentBlockIds.has(id)) ? undefined : 'other-document';
   });
   readonly documentHint = signal<'other-document' | 'no-blocks' | undefined>(undefined);
+  // What the connected page's sync script reported about itself in its ping.
+  readonly pageSync = linkedSignal<{ protocol?: number; sdk?: string; scriptOrigin?: string } | undefined>(() => {
+    this.iframeUrl();
+    return undefined;
+  });
+  readonly connectedTooltip = computed(() => {
+    const sync = this.pageSync();
+    if (!sync) return 'Connected to Localess SDK';
+    if (sync.protocol === undefined) return 'Connected · older sync script';
+    return sync.sdk ? `Connected · ${sync.sdk.replace(/@(?=[^@]+$)/, ' ')}` : 'Connected to Localess SDK';
+  });
+  readonly editorOrigin = location.origin;
+  // The page loads the sync script, and so talks to, a Localess deployment other than this editor.
+  readonly scriptOriginMismatch = computed(() => {
+    const scriptOrigin = this.pageSync()?.scriptOrigin;
+    return scriptOrigin && scriptOrigin !== this.editorOrigin ? scriptOrigin : undefined;
+  });
+  readonly originHintDismissed = signal(false);
 
   constructor() {
     let initialized = false;
@@ -184,6 +202,8 @@ export class ContentPreviewComponent {
     if (event.source !== contentWindow || event.origin !== new URL(env.url).origin) return;
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       if (event.data.type === 'ping') {
+        const { protocol, sdk, scriptOrigin } = event.data;
+        this.pageSync.set({ protocol, sdk, scriptOrigin });
         this.iframeStatus.set('connected');
         this.sendEvent({ type: 'pong' });
         this.connected.emit();
@@ -194,6 +214,7 @@ export class ContentPreviewComponent {
         // the leaving page says so instead, and the next page has to ping again.
         this.iframeStatus.set('loading');
         this.pageBlocks.set(undefined);
+        this.pageSync.set(undefined);
         return;
       }
       if (event.data.type === 'blocks') {
@@ -223,6 +244,10 @@ export class ContentPreviewComponent {
 
   dismissDocumentHint(): void {
     this.documentHint.set(undefined);
+  }
+
+  dismissOriginHint(): void {
+    this.originHintDismissed.set(true);
   }
 
   protected reloadEnvironment() {

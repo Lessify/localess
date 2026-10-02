@@ -48,7 +48,7 @@
                     hlmTooltip="Page loaded — no Localess SDK detected" />
                 }
                 @case ('connected') {
-                  <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" hlmTooltip="Connected to Localess SDK" />
+                  <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" [hlmTooltip]="connectedTooltip()" />
                 }
               }
             </hlm-input-group-addon>
@@ -113,6 +113,23 @@
           <ng-icon hlm size="sm" name="lucideX" />
         </button>
       </div>
+    }
+    @if (scriptOriginMismatch(); as scriptOrigin) {
+      @if (!originHintDismissed()) {
+        <div id="origin-hint" class="bg-muted/50 flex items-start gap-3 border-b p-3 text-sm" role="status">
+          <ng-icon hlm size="sm" name="lucideInfo" class="text-muted-foreground mt-0.5 shrink-0" />
+          <p class="flex-1">
+            <span class="font-medium">This page loads Localess from {{ scriptOrigin }}, but this editor runs on {{ editorOrigin }}.</span>
+            <span class="text-muted-foreground">
+              Your edits show, but if these are different Localess instances, the page fetches content and assets from the other one. Set
+              the SDK's <code>origin</code> to {{ editorOrigin }}.
+            </span>
+          </p>
+          <button hlmBtn size="icon-sm" variant="ghost" aria-label="Dismiss" (click)="dismissOriginHint()">
+            <ng-icon hlm size="sm" name="lucideX" />
+          </button>
+        </div>
+      }
     }
     @switch (documentHint()) {
       @case ('other-document') {

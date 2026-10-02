@@ -95,6 +95,12 @@ the message handling itself.
 2. The embedded app sends `{ type: 'ping' }` → `onWindowMessage()` sets `connected`, replies `{ type: 'pong' }` via `sendEvent()`, and emits
    the `connected` output — `EditDocumentComponent.onPreviewConnected()` then calls `sendCurrentContentToApp()` to push the full current
    content as a `change` event
+   The ping carries `protocol` (bumped when the message contract changes), `sdk` (from the script tag's `data-sdk`, set by the
+   SDK loader, e.g. `@localess/react@4.0.3`) and `scriptOrigin` (where the script was loaded from, i.e. the SDK's `origin`). They are
+   kept in `pageSync()`: the green status tooltip shows the SDK (`connectedTooltip()`), or "older sync script" when `protocol` is
+   missing, and `scriptOriginMismatch()` shows a dismissible hint when `scriptOrigin` isn't the editor's own origin, meaning the page
+   fetches content and assets from another Localess deployment. A ping that falls back to `'*'` (no resolvable editor origin) is sent
+   bare, without `sdk`/`scriptOrigin`.
 3. The connected page sends `{ type: 'unload' }` on `pagehide` (reload or navigation inside the iframe) → status goes back to `loading`, so
    the next page must ping again. The status can't be reset on the iframe's load event instead, because of the ordering in step 1.
 

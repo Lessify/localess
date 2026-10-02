@@ -5,7 +5,11 @@
   // Event emitted from Application to Visual Editor
   type EventToEditorType = 'ping' | 'unload' | 'blocks' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
   type EventToEditor =
-    | { type: 'ping' }
+    /**
+     * Handshake. `protocol` is bumped whenever the message contract changes; `sdk` is the SDK that
+     * loaded the script (its `data-sdk`); `scriptOrigin` is where the script was loaded from.
+     */
+    | { type: 'ping'; protocol: number; sdk?: string; scriptOrigin?: string }
     // The top-level blocks on the page, roughly one per rendered document, so the editor can tell
     // whether the page shows the document being edited.
     | { type: 'blocks'; ids: string[] }
@@ -42,6 +46,20 @@
 
   /** Only set while the script first runs, so everything read from it is read up front. */
   const currentScript = document.currentScript as HTMLScriptElement | null;
+  const PROTOCOL = 1;
+  /** Set by the SDK loader, e.g. `@localess/react@4.0.3`; absent for a hand-written script tag. */
+  const sdk = currentScript?.getAttribute('data-sdk') ?? undefined;
+  /** The Localess deployment the script came from, i.e. the SDK's `origin`. */
+  const scriptOrigin = originOf(currentScript?.src);
+
+  function originOf(url: string | undefined): string | undefined {
+    if (!url) return undefined;
+    try {
+      return new URL(url).origin;
+    } catch {
+      return undefined;
+    }
+  }
   /**
    * Debug mode, enabled with `data-debug` on the script tag (any value but `"false"`); the SDK
    * sets it from the client's `debug` option. Off by default: content editors see the preview,
@@ -72,24 +90,17 @@
     if (ancestorOrigin && ancestorOrigin !== 'null') {
       return ancestorOrigin;
     }
-    const src = currentScript?.src;
-    if (src) {
-      try {
-        return new URL(src).origin;
-      } catch {
-        return undefined;
-      }
-    }
-    return undefined;
+    return scriptOrigin;
   }
 
   function sendEditorData(data: EventToEditor) {
-    // Only `ping` may go out before the handshake. It carries no data, so falling back to
-    // '*' when the editor origin could not be resolved exposes nothing.
+    // Only `ping` may go out before the handshake. When the editor origin could not be resolved it
+    // falls back to '*', stripped to the bare handshake so it exposes nothing to an unknown parent.
     const targetOrigin = editorOrigin ?? (data.type === 'ping' ? (expectedEditorOrigin ?? '*') : undefined);
     if (!targetOrigin) return;
-    log('SyncToEditorEvent', data);
-    window.parent.postMessage({ owner: 'LOCALESS', ...data }, targetOrigin);
+    const payload: EventToEditor = targetOrigin === '*' && data.type === 'ping' ? { type: 'ping', protocol: PROTOCOL } : data;
+    log('SyncToEditorEvent', payload);
+    window.parent.postMessage({ owner: 'LOCALESS', ...payload }, targetOrigin);
   }
 
   /**
@@ -497,7 +508,7 @@
       }
 
       private pingEditor() {
-        sendEditorData({ type: 'ping' });
+        sendEditorData({ type: 'ping', protocol: PROTOCOL, sdk, scriptOrigin });
         this.on('pong', this.pingBack);
         addEventListener('pagehide', () => sendEditorData({ type: 'unload' }));
       }

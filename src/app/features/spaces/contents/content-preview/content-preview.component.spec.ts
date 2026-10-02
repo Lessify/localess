@@ -172,6 +172,45 @@ describe('ContentPreviewComponent', () => {
     });
   });
 
+  describe('page sync info', () => {
+    function pingWith(data: Record<string, unknown>) {
+      const result = setup({ selectedSpace: space({ environments: [preview] }) });
+      vi.spyOn(result.frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
+      result.component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping', ...data }, { source: result.frameWindow }));
+      return result;
+    }
+
+    it('shows the reported SDK in the connected tooltip', () => {
+      const { component } = pingWith({ protocol: 1, sdk: '@localess/react@4.0.3', scriptOrigin: location.origin });
+
+      expect(component.connectedTooltip()).toBe('Connected · @localess/react 4.0.3');
+      expect(component.scriptOriginMismatch()).toBeUndefined();
+    });
+
+    it('marks a page running an older sync script', () => {
+      const { component } = pingWith({});
+
+      expect(component.connectedTooltip()).toBe('Connected · older sync script');
+    });
+
+    it('flags a script loaded from another Localess deployment, until dismissed', () => {
+      const { component } = pingWith({ protocol: 1, scriptOrigin: 'https://localess-prod.web.app' });
+
+      expect(component.scriptOriginMismatch()).toBe('https://localess-prod.web.app');
+      component.dismissOriginHint();
+      expect(component.originHintDismissed()).toBe(true);
+    });
+
+    it('forgets the page sync info when the page unloads', () => {
+      const { component, frameWindow } = pingWith({ protocol: 1, scriptOrigin: 'https://localess-prod.web.app' });
+
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'unload' }, { source: frameWindow }));
+
+      expect(component.pageSync()).toBeUndefined();
+      expect(component.scriptOriginMismatch()).toBeUndefined();
+    });
+  });
+
   describe('preview URL safety', () => {
     it.each([['javascript:alert(document.domain)//'], ['data:text/html,<script>alert(1)</script>'], ['/relative/path'], ['not a url']])(
       'does not load %s and flags the environment as invalid',

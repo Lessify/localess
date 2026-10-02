@@ -9,7 +9,8 @@ export interface SchemaPathItem {
 // Event emitted from Application to Visual Editor
 export type EventToEditorType = 'ping' | 'unload' | 'blocks' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
 export type EventToEditor =
-  | { owner: 'LOCALESS'; type: 'ping' }
+  // `protocol`, `sdk` and `scriptOrigin` are absent when the page runs an older sync script.
+  | { owner: 'LOCALESS'; type: 'ping'; protocol?: number; sdk?: string; scriptOrigin?: string }
   // The page's top-level block ids (`data-ll-id` not nested in another block).
   | { owner: 'LOCALESS'; type: 'blocks'; ids: string[] }
   // Sent on pagehide: the connected page is reloading or navigating away.
