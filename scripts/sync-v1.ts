@@ -3,9 +3,12 @@
   const RESET = '\x1b[0m';
   const LOG_GROUP = `${FG_BLUE}[Localess:Sync]${RESET}`;
   // Event emitted from Application to Visual Editor
-  type EventToEditorType = 'ping' | 'unload' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
+  type EventToEditorType = 'ping' | 'unload' | 'blocks' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
   type EventToEditor =
     | { type: 'ping' }
+    // The top-level blocks on the page, roughly one per rendered document, so the editor can tell
+    // whether the page shows the document being edited.
+    | { type: 'blocks'; ids: string[] }
     // The page is going away (reload or navigation), so the editor waits for the next page's ping.
     | { type: 'unload' }
     | { type: 'selectSchema' | 'hoverSchema' | 'leaveSchema'; id: string; schema: string; field?: string };
@@ -279,10 +282,24 @@
     });
 
     applySelectedHighlight();
+    reportBlocks();
 
     if (schemas > 0 || fields > 0) {
       log('markVisualEditorElements', source, { schemas, fields });
     }
+  }
+
+  let reportedBlocks: string | undefined;
+
+  /** Sends the top-level block ids to the editor, only when they changed since the last report. */
+  function reportBlocks() {
+    const ids = [...document.querySelectorAll<HTMLElement>('[data-ll-id]')]
+      .filter(element => !element.parentElement?.closest('[data-ll-id]'))
+      .map(element => element.getAttribute('data-ll-id') as string);
+    const key = ids.join(',');
+    if (key === reportedBlocks) return;
+    reportedBlocks = key;
+    sendEditorData({ type: 'blocks', ids });
   }
 
   let elementObserver: MutationObserver | undefined;

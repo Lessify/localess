@@ -191,6 +191,7 @@
       <hlm-resizable-panel [defaultSize]="60" class="overflow-hidden">
         <ll-content-preview
           [document]="document()"
+          [documentBlockIds]="documentBlockIds()"
           [selectedLocale]="selectedLocale()"
           [resizing]="isResizing()"
           (connected)="onPreviewConnected()"

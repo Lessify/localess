@@ -34,6 +34,8 @@ import { EventToApp, EventToEditor } from '../edit-document/edit-document.model'
 
 // How long a loaded page may stay silent before the editor explains how to connect it.
 const CONNECTION_HINT_DELAY = 3000;
+// How long the page's blocks must stay mismatched before the editor says so; pages render in steps.
+const DOCUMENT_HINT_DELAY = 1000;
 
 @Component({
   selector: 'll-content-preview',
@@ -75,6 +77,7 @@ export class ContentPreviewComponent {
 
   // Inputs
   readonly document = input.required<ContentDocument>();
+  readonly documentBlockIds = input<ReadonlySet<string>>(new Set());
   readonly selectedLocale = input.required<Locale>();
   readonly resizing = input(false);
 
@@ -118,6 +121,19 @@ export class ContentPreviewComponent {
     return 'loading';
   });
   readonly connectionHintVisible = signal(false);
+  // The top-level block ids the connected page reported; undefined until it reports.
+  readonly pageBlocks = linkedSignal<string[] | undefined>(() => {
+    this.iframeUrl();
+    return undefined;
+  });
+  readonly pageMismatch = computed<'other-document' | 'no-blocks' | undefined>(() => {
+    const blocks = this.pageBlocks();
+    if (this.iframeStatus() !== 'connected' || blocks === undefined) return undefined;
+    if (blocks.length === 0) return 'no-blocks';
+    const documentBlockIds = this.documentBlockIds();
+    return blocks.some(id => documentBlockIds.has(id)) ? undefined : 'other-document';
+  });
+  readonly documentHint = signal<'other-document' | 'no-blocks' | undefined>(undefined);
 
   constructor() {
     let initialized = false;
@@ -137,6 +153,15 @@ export class ContentPreviewComponent {
         return;
       }
       const timer = setTimeout(() => this.connectionHintVisible.set(true), CONNECTION_HINT_DELAY);
+      onCleanup(() => clearTimeout(timer));
+    });
+    effect(onCleanup => {
+      const mismatch = this.pageMismatch();
+      if (mismatch === undefined) {
+        this.documentHint.set(undefined);
+        return;
+      }
+      const timer = setTimeout(() => this.documentHint.set(mismatch), DOCUMENT_HINT_DELAY);
       onCleanup(() => clearTimeout(timer));
     });
   }
@@ -168,6 +193,11 @@ export class ContentPreviewComponent {
         // A ping can arrive before the iframe's load event, so the status can't be reset on load;
         // the leaving page says so instead, and the next page has to ping again.
         this.iframeStatus.set('loading');
+        this.pageBlocks.set(undefined);
+        return;
+      }
+      if (event.data.type === 'blocks') {
+        this.pageBlocks.set(event.data.ids);
         return;
       }
       const { id, type, schema, field } = event.data;
@@ -189,6 +219,10 @@ export class ContentPreviewComponent {
 
   dismissConnectionHint(): void {
     this.connectionHintVisible.set(false);
+  }
+
+  dismissDocumentHint(): void {
+    this.documentHint.set(undefined);
   }
 
   protected reloadEnvironment() {

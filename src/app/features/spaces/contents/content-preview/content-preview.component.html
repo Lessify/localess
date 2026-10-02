@@ -114,6 +114,36 @@
         </button>
       </div>
     }
+    @switch (documentHint()) {
+      @case ('other-document') {
+        <div id="document-hint" class="bg-muted/50 flex items-center gap-3 border-b p-3 text-sm" role="status">
+          <ng-icon hlm size="sm" name="lucideInfo" class="text-muted-foreground shrink-0" />
+          <p class="flex-1">
+            <span class="font-medium">This page doesn't show '{{ document().name }}'.</span>
+            <span class="text-muted-foreground"> Edits won't appear here.</span>
+          </p>
+          <button hlmBtn size="sm" variant="outline" (click)="reloadEnvironment()">Back to {{ document().name }}</button>
+          <button hlmBtn size="icon-sm" variant="ghost" aria-label="Dismiss" (click)="dismissDocumentHint()">
+            <ng-icon hlm size="sm" name="lucideX" />
+          </button>
+        </div>
+      }
+      @case ('no-blocks') {
+        <div id="document-hint" class="bg-muted/50 flex items-center gap-3 border-b p-3 text-sm" role="status">
+          <ng-icon hlm size="sm" name="lucideInfo" class="text-muted-foreground shrink-0" />
+          <p class="flex-1">
+            <span class="font-medium">No editable blocks found on this page.</span>
+            <span class="text-muted-foreground">
+              To select blocks from the preview, render content with <code>LocalessDocument</code> or add <code>localessEditable</code> to
+              your components.
+            </span>
+          </p>
+          <button hlmBtn size="icon-sm" variant="ghost" aria-label="Dismiss" (click)="dismissDocumentHint()">
+            <ng-icon hlm size="sm" name="lucideX" />
+          </button>
+        </div>
+      }
+    }
     <div id="browser-content" class="flex h-full justify-center-safe overflow-auto">
       @if (iframeUrl(); as url) {
         <iframe

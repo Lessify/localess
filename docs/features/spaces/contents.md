@@ -102,6 +102,13 @@ If the status stays `loaded` for 3 seconds (`CONNECTION_HINT_DELAY`), `connectio
 listing what to check (sync enabled, SDK `origin`, environment origin) with a link to the Visual Editor docs. The iframe `error` event isn't
 used: browsers don't fire it for a page that fails to load in an iframe.
 
+**Document check:** once connected, the sync script reports the page's top-level blocks (`[data-ll-id]` not nested in another one, roughly
+one per rendered document) as `{ type: 'blocks', ids }`, again whenever that set changes. `ContentPreviewComponent.pageMismatch()` compares
+them with `documentBlockIds` (every block id of the open document, from `EditDocumentComponent.generateDocumentIdsTree()`). Any shared id
+counts as a match, so a page that doesn't mark its root block still passes. After 1 second (`DOCUMENT_HINT_DELAY`) of mismatch,
+`documentHint()` shows either "This page doesn't show '<name>'" with a **Back to <name>** button that reloads the preview, or "No editable
+blocks found on this page". An `unload` clears the reported blocks.
+
 `ContentPreviewComponent.sendEvent()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are
 dropped. `EditDocumentComponent` triggers it via `this.previewComponent()?.sendEvent(...)`.
 
@@ -126,7 +133,7 @@ the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview U
 several documents (a shared header plus the page) applies them only to the matching one. The SDKs' `LocalessDocument` components filter on
 it.
 
-**Events app → editor** (`EventToEditorType`): `ping`, `unload`, `selectSchema`, `hoverSchema`, `leaveSchema`
+**Events app → editor** (`EventToEditorType`): `ping`, `unload`, `blocks`, `selectSchema`, `hoverSchema`, `leaveSchema`
 
 **Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` →
 `EditDocumentComponent.onFormSchemaHover()`/`onFormSchemaLeave()` → forwarded to the app via

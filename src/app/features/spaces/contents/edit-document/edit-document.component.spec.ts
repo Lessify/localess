@@ -285,6 +285,13 @@ describe('EditDocumentComponent', () => {
     });
   });
 
+  it('exposes every block id of the open document for the preview', () => {
+    const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+    const { component } = setup(documentOf(data));
+
+    expect([...component.documentBlockIds()]).toEqual(expect.arrayContaining(['root-id', 'child-id']));
+  });
+
   describe('preview content events', () => {
     // documentId lets a page that renders several documents apply the edit to this one only.
     it('tags input, change and the on-connect update with the edited document id', () => {

@@ -7,9 +7,11 @@ export interface SchemaPathItem {
 // Events
 
 // Event emitted from Application to Visual Editor
-export type EventToEditorType = 'ping' | 'unload' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
+export type EventToEditorType = 'ping' | 'unload' | 'blocks' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
 export type EventToEditor =
   | { owner: 'LOCALESS'; type: 'ping' }
+  // The page's top-level block ids (`data-ll-id` not nested in another block).
+  | { owner: 'LOCALESS'; type: 'blocks'; ids: string[] }
   // Sent on pagehide: the connected page is reloading or navigating away.
   | { owner: 'LOCALESS'; type: 'unload' }
   | {

@@ -176,7 +176,7 @@ describe('sync-v1 outgoing messages', () => {
     const events = posted().slice(1);
     assert.deepEqual(
       events.map(it => it.data.type),
-      ['selectSchema', 'hoverSchema', 'leaveSchema', 'selectSchema'],
+      ['blocks', 'selectSchema', 'hoverSchema', 'leaveSchema', 'selectSchema'],
     );
     assert.deepEqual(events.at(-1).data, { owner: 'LOCALESS', type: 'selectSchema', id: 'a', schema: 'Hero', field: 'title' });
     for (const event of events) {
@@ -214,6 +214,51 @@ describe('sync-v1 outgoing messages', () => {
       posted().map(it => it.data.type),
       ['ping'],
     );
+  });
+});
+
+describe('sync-v1 blocks report', () => {
+  const blocksPosted = posted => posted().filter(it => it.data.type === 'blocks').map(it => it.data.ids);
+
+  it('reports only the top-level blocks once connected', async () => {
+    const body =
+      '<header data-ll-id="nav"><a data-ll-id="nav-link"></a></header>' +
+      '<main data-ll-id="page"><section data-ll-id="hero"><h1 data-ll-field="title"></h1></section></main>';
+    const { fromEditor, posted, flush } = await loadSync({ body });
+    await flush();
+    assert.deepEqual(blocksPosted(posted), []);
+
+    fromEditor({ type: 'pong' });
+
+    assert.deepEqual(blocksPosted(posted), [['nav', 'page']]);
+    assert.equal(posted().find(it => it.data.type === 'blocks').targetOrigin, LOCALESS_ORIGIN);
+  });
+
+  it('reports again only when the set of top-level blocks changes', async () => {
+    const { window, fromEditor, posted, flush } = await loadSync({ body: '<main data-ll-id="page"></main>' });
+    fromEditor({ type: 'pong' });
+
+    const page = window.document.querySelector('[data-ll-id="page"]');
+    page.appendChild(window.document.createElement('p'));
+    page.appendChild(Object.assign(window.document.createElement('div'), { id: 'x' }));
+    window.document.getElementById('x').setAttribute('data-ll-id', 'nested');
+    await flush();
+    await flush();
+    const footer = window.document.createElement('footer');
+    footer.setAttribute('data-ll-id', 'footer');
+    window.document.body.appendChild(footer);
+    await flush();
+    await flush();
+
+    assert.deepEqual(blocksPosted(posted), [['page'], ['page', 'footer']]);
+  });
+
+  it('reports an empty list for a page without editable blocks', async () => {
+    const { fromEditor, posted } = await loadSync({ body: '<main>Plain page</main>' });
+
+    fromEditor({ type: 'pong' });
+
+    assert.deepEqual(blocksPosted(posted), [[]]);
   });
 });
 

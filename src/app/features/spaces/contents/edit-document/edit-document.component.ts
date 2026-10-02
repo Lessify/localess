@@ -218,6 +218,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   formRefresh = signal(0);
   selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
+  // Every block id of the open document, so the preview can tell whether the page shows it.
+  readonly documentBlockIds = signal<ReadonlySet<string>>(new Set());
   private savedDocumentData = signal<ContentData | undefined>(undefined);
 
   contentErrors: ContentError[] = [];
@@ -496,6 +498,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       }
       node = nodeIterator.shift();
     }
+    this.documentBlockIds.set(new Set(this.documentIdsTree.keys()));
   }
 
   captureKeyboard(event: KeyboardEvent): void {

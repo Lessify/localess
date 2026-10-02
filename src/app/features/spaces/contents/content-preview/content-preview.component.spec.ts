@@ -44,7 +44,7 @@ describe('ContentPreviewComponent', () => {
     fixture.componentRef.setInput('selectedLocale', en);
     fixture.detectChanges();
     const frameWindow = fixture.componentInstance.preview()?.nativeElement.contentWindow;
-    return { component: fixture.componentInstance, changeEnvironment, frameWindow };
+    return { fixture, component: fixture.componentInstance, changeEnvironment, frameWindow };
   }
 
   it('restores the previously stored environment when available', () => {
@@ -104,6 +104,71 @@ describe('ContentPreviewComponent', () => {
       component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow }));
       TestBed.tick();
       expect(component.connectionHintVisible()).toBe(false);
+    });
+  });
+
+  describe('document hint', () => {
+    afterEach(() => vi.useRealTimers());
+
+    function connectedPreview(documentBlockIds: string[]) {
+      vi.useFakeTimers();
+      const result = setup({ selectedSpace: space({ environments: [preview] }) });
+      vi.spyOn(result.frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
+      result.fixture.componentRef.setInput('documentBlockIds', new Set(documentBlockIds));
+      result.component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: result.frameWindow }));
+      const reportBlocks = (ids: string[]) =>
+        result.component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'blocks', ids }, { source: result.frameWindow }));
+      const settle = (ms: number) => {
+        TestBed.tick();
+        vi.advanceTimersByTime(ms);
+      };
+      return { ...result, reportBlocks, settle };
+    }
+
+    it('stays hidden while the page shows a block of the open document', () => {
+      const { component, reportBlocks, settle } = connectedPreview(['root', 'hero']);
+
+      reportBlocks(['header', 'hero']);
+      settle(2000);
+
+      expect(component.documentHint()).toBeUndefined();
+    });
+
+    it('says the page shows another document after 1s, and clears once it shows this one', () => {
+      const { component, reportBlocks, settle } = connectedPreview(['root', 'hero']);
+
+      reportBlocks(['other-root']);
+      settle(900);
+      expect(component.documentHint()).toBeUndefined();
+      settle(100);
+      expect(component.documentHint()).toBe('other-document');
+
+      reportBlocks(['root']);
+      settle(0);
+      expect(component.documentHint()).toBeUndefined();
+    });
+
+    it('says the page has no editable blocks, and can be dismissed', () => {
+      const { component, reportBlocks, settle } = connectedPreview(['root']);
+
+      reportBlocks([]);
+      settle(1000);
+      expect(component.documentHint()).toBe('no-blocks');
+
+      component.dismissDocumentHint();
+      expect(component.documentHint()).toBeUndefined();
+    });
+
+    it('forgets the reported blocks when the page unloads', () => {
+      const { component, frameWindow, reportBlocks, settle } = connectedPreview(['root']);
+      reportBlocks(['other-root']);
+      settle(1000);
+
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'unload' }, { source: frameWindow }));
+      settle(0);
+
+      expect(component.pageBlocks()).toBeUndefined();
+      expect(component.documentHint()).toBeUndefined();
     });
   });
 
