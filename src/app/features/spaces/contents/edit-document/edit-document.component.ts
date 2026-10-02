@@ -277,7 +277,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.contentService.publish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been published.');
-        this.previewComponent()?.sendEvent({ type: 'publish' });
+        this.previewComponent()?.sendEvent({ type: 'publish', documentId: this.contentId() });
         this.documentPublishedAt.set(Date.now() / 100);
       },
       error: () => {
@@ -297,7 +297,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.contentService.unpublish(this.spaceId(), this.contentId()).subscribe({
       next: () => {
         this.notificationService.success('Content has been unpublished.');
-        this.previewComponent()?.sendEvent({ type: 'unpublish' });
+        this.previewComponent()?.sendEvent({ type: 'unpublish', documentId: this.contentId() });
         this.documentPublishedAt.set(undefined);
       },
       error: () => {
@@ -338,7 +338,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
-          this.previewComponent()?.sendEvent({ type: 'save' });
+          this.previewComponent()?.sendEvent({ type: 'save', documentId: this.contentId() });
           this.documentUpdatedAt.set(Date.now() / 100);
           this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
         },
@@ -586,13 +586,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   onFormChange(): void {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
-    this.previewComponent()?.sendEvent({ type: 'input', data: data });
+    this.previewComponent()?.sendEvent({ type: 'input', documentId: this.contentId(), data });
   }
 
   onStructureChange(): void {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
     this.generateDocumentIdsTree();
-    this.previewComponent()?.sendEvent({ type: 'change', data: data });
+    this.previewComponent()?.sendEvent({ type: 'change', documentId: this.contentId(), data });
   }
 
   onFormSchemaHover(event: { id: string; schema: string; field?: string }): void {
@@ -605,7 +605,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   private sendCurrentContentToApp(): void {
     const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
-    this.previewComponent()?.sendEvent({ type: 'change', data });
+    this.previewComponent()?.sendEvent({ type: 'change', documentId: this.contentId(), data });
   }
 
   copiedSlug() {

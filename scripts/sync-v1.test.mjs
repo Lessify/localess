@@ -122,7 +122,7 @@ describe('sync-v1 handshake', () => {
     const onSave = mock.fn();
     sync.on('save', onSave);
 
-    fromEditor({ type: 'save' });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
 
     assert.equal(onSave.mock.callCount(), 0);
     assert.equal(sync.inEditor, false);
@@ -134,9 +134,9 @@ describe('sync-v1 handshake', () => {
     sync.on('save', onSave);
     fromEditor({ type: 'pong' });
 
-    fromEditor({ type: 'save' }, { origin: EVIL_ORIGIN });
-    fromEditor({ type: 'save' }, { source: {} });
-    fromEditor({ type: 'save' });
+    fromEditor({ type: 'save', documentId: 'doc-1' }, { origin: EVIL_ORIGIN });
+    fromEditor({ type: 'save', documentId: 'doc-1' }, { source: {} });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
 
     assert.equal(onSave.mock.callCount(), 1);
   });
@@ -149,8 +149,8 @@ describe('sync-v1 handshake', () => {
 
     assert.deepEqual(posted(), [{ data: { owner: 'LOCALESS', type: 'ping' }, targetOrigin: '*' }]);
     fromEditor({ type: 'pong' }, { origin: editorOrigin });
-    fromEditor({ type: 'save' }, { origin: EVIL_ORIGIN });
-    fromEditor({ type: 'save' }, { origin: editorOrigin });
+    fromEditor({ type: 'save', documentId: 'doc-1' }, { origin: EVIL_ORIGIN });
+    fromEditor({ type: 'save', documentId: 'doc-1' }, { origin: editorOrigin });
 
     assert.equal(sync.inEditor, true);
     assert.equal(onSave.mock.callCount(), 1);
@@ -279,7 +279,7 @@ describe('sync-v1 debug mode', () => {
     sync.on('save', () => {});
 
     fromEditor({ type: 'pong' });
-    fromEditor({ type: 'input', data: { title: 'Hello' } });
+    fromEditor({ type: 'input', documentId: 'doc-1', data: { title: 'Hello' } });
 
     assert.deepEqual(snackbars(), []);
     assert.equal(log.mock.callCount(), 0);
@@ -302,7 +302,7 @@ describe('sync-v1 debug mode', () => {
       sync.on('save', () => {});
 
       fromEditor({ type: 'pong' });
-      fromEditor({ type: 'input', data: { title: 'Hello' } });
+      fromEditor({ type: 'input', documentId: 'doc-1', data: { title: 'Hello' } });
 
       assert.deepEqual(snackbars(), ['Localess: Sync initialized.', 'Localess: Sync connected to Visual Editor.']);
       const logged = log.mock.calls.map(call => call.arguments.join(' '));
@@ -326,11 +326,29 @@ describe('sync-v1 subscriptions', () => {
     const onSave = mock.fn();
 
     const unsubscribe = sync.on('save', onSave);
-    fromEditor({ type: 'save' });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
     unsubscribe();
-    fromEditor({ type: 'save' });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
 
     assert.equal(onSave.mock.callCount(), 1);
+  });
+
+  it('passes documentId through to subscribers unchanged', async () => {
+    const { sync, fromEditor } = await connected();
+    const onChange = mock.fn();
+    const onSave = mock.fn();
+    sync.onChange(onChange);
+    sync.on('save', onSave);
+
+    fromEditor({ type: 'input', documentId: 'doc-1', data: { a: 1 } });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
+
+    assert.deepEqual(JSON.parse(JSON.stringify(onChange.mock.calls[0].arguments[0])), {
+      type: 'input',
+      documentId: 'doc-1',
+      data: { a: 1 },
+    });
+    assert.equal(onSave.mock.calls[0].arguments[0].documentId, 'doc-1');
   });
 
   it('onChange() returns a function that removes both input and change', async () => {
@@ -338,10 +356,10 @@ describe('sync-v1 subscriptions', () => {
     const onChange = mock.fn();
 
     const unsubscribe = sync.onChange(onChange);
-    fromEditor({ type: 'input', data: { a: 1 } });
+    fromEditor({ type: 'input', documentId: 'doc-1', data: { a: 1 } });
     unsubscribe();
-    fromEditor({ type: 'input', data: { a: 2 } });
-    fromEditor({ type: 'change', data: { a: 3 } });
+    fromEditor({ type: 'input', documentId: 'doc-1', data: { a: 2 } });
+    fromEditor({ type: 'change', documentId: 'doc-1', data: { a: 3 } });
 
     assert.equal(onChange.mock.callCount(), 1);
   });
@@ -352,8 +370,8 @@ describe('sync-v1 subscriptions', () => {
 
     sync.on(['save', 'publish'], callback);
     sync.off(['save', 'publish'], callback);
-    fromEditor({ type: 'save' });
-    fromEditor({ type: 'publish' });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
+    fromEditor({ type: 'publish', documentId: 'doc-1' });
 
     assert.equal(callback.mock.callCount(), 0);
   });
@@ -366,7 +384,7 @@ describe('sync-v1 subscriptions', () => {
     sync.on('save', removed);
     sync.on('save', kept);
     sync.off('save', removed);
-    fromEditor({ type: 'save' });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
 
     assert.equal(removed.mock.callCount(), 0);
     assert.equal(kept.mock.callCount(), 1);
@@ -378,7 +396,7 @@ describe('sync-v1 subscriptions', () => {
     const unsubscribe = sync.on('save', () => unsubscribe());
     sync.on('save', second);
 
-    fromEditor({ type: 'save' });
+    fromEditor({ type: 'save', documentId: 'doc-1' });
 
     assert.equal(second.mock.callCount(), 1);
   });

@@ -285,6 +285,25 @@ describe('EditDocumentComponent', () => {
     });
   });
 
+  describe('preview content events', () => {
+    // documentId lets a page that renders several documents apply the edit to this one only.
+    it('tags input, change and the on-connect update with the edited document id', () => {
+      const { component } = setup(documentOf({ _id: 'root-id', schema: 'root1' }));
+      const sendEvent = vi.fn();
+      vi.spyOn(component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
+
+      component.onFormChange();
+      component.onStructureChange();
+      component.onPreviewConnected();
+
+      expect(sendEvent.mock.calls.map(([event]) => [event.type, event.documentId])).toEqual([
+        ['input', 'doc1'],
+        ['change', 'doc1'],
+        ['change', 'doc1'],
+      ]);
+    });
+  });
+
   describe('schema path navigation', () => {
     it('onSchemaChange()/navigateToSchemaForwards() pushes the path and selects the child data', () => {
       const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };

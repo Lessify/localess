@@ -12,13 +12,14 @@
   type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema' | 'leaveSchema';
   type EventCallback = (event: EventToApp) => void;
   type EventToApp =
-    | { type: 'save' }
-    | { type: 'publish' }
-    | { type: 'unpublish' }
+    | { type: 'save'; documentId: string }
+    | { type: 'publish'; documentId: string }
+    | { type: 'unpublish'; documentId: string }
     | { type: 'pong' }
     | { type: 'leaveSchema' }
-    | { type: 'input'; data: any }
-    | { type: 'change'; data: any }
+    // `documentId` is the edited document's id; a page rendering several documents applies it only to that one.
+    | { type: 'input'; documentId: string; data: any }
+    | { type: 'change'; documentId: string; data: any }
     | { type: 'enterSchema'; id: string; schema: string; field?: string; root?: boolean }
     | { type: 'hoverSchema'; id: string; schema: string; field?: string };
   /**

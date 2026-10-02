@@ -21,7 +21,9 @@ export type EventToEditor =
 // Event emitted from Visual Editor to Application
 export type EventToAppType = 'save' | 'publish' | 'unpublish' | 'pong' | 'input' | 'change' | 'enterSchema' | 'hoverSchema' | 'leaveSchema';
 export type EventToApp =
-  | { type: 'save' | 'publish' | 'unpublish' | 'pong' | 'leaveSchema' }
-  | { type: 'input' | 'change'; data: any }
+  | { type: 'pong' | 'leaveSchema' }
+  // documentId is the edited document's id, so a page rendering several documents updates only this one.
+  | { type: 'save' | 'publish' | 'unpublish'; documentId: string }
+  | { type: 'input' | 'change'; documentId: string; data: any }
   | { type: 'enterSchema'; id: string; schema: string; field?: string; root?: boolean }
   | { type: 'hoverSchema'; id: string; schema: string; field?: string };

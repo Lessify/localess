@@ -116,6 +116,10 @@ the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview U
 **Events editor → app** (`EventToAppType`): `save`, `publish`, `unpublish`, `pong`, `input`, `change`, `enterSchema`, `hoverSchema`,
 `leaveSchema`
 
+`save`, `publish`, `unpublish`, `input` and `change` carry `documentId` (the edited document's id, `contentId()`), so a page that renders
+several documents (a shared header plus the page) applies them only to the matching one. The SDKs' `LocalessDocument` components filter on
+it.
+
 **Events app → editor** (`EventToEditorType`): `ping`, `selectSchema`, `hoverSchema`, `leaveSchema`
 
 **Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` →
