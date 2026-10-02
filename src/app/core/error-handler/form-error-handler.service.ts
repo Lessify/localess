@@ -63,6 +63,9 @@ export class FormErrorHandlerService {
       if (errors['previewUrl']) {
         return `Should be an absolute http:// or https:// URL of your site.`;
       }
+      if (errors['previewUrlPlaceholder']) {
+        return `Unknown placeholder ${errors['previewUrlPlaceholder']}.`;
+      }
       if (errors['requireObject']) {
         return `Choose value from the drop-down.`;
       }

@@ -55,6 +55,13 @@ describe('VisualEditorComponent', () => {
     expect(component.environments.at(0).value).toEqual({ name: 'prod', url: 'https://prod' });
   });
 
+  it('exampleUrl() shows what an environment URL opens for the sample document', () => {
+    const { component } = setup(space([]));
+
+    expect(component.exampleUrl('https://site.com/')).toBe('https://site.com/de/blog/hello');
+    expect(component.exampleUrl('https://site.com/{locale/}news/{slug}/')).toBe('https://site.com/de/news/hello/');
+  });
+
   it('addEnvironment() appends an empty group by default', () => {
     const { component } = setup(space([]));
 

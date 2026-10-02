@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
+import { PreviewUrlContext, resolvePreviewUrl, unknownPreviewUrlPlaceholders } from '@core/utils/preview-url';
 
 import { CommonValidator } from './common.validator';
 
@@ -31,8 +32,23 @@ function previewUrl(control: AbstractControl): ValidationErrors | null {
   if (value == null || value === '') {
     return null; // `required` reports empty values
   }
-  return isSafePreviewUrl(value) ? null : { previewUrl: true };
+  const unknown = unknownPreviewUrlPlaceholders(value);
+  if (unknown.length > 0) {
+    return { previewUrlPlaceholder: unknown.join(', ') };
+  }
+  // Checked with its placeholders filled in, since `{locale}` may sit in the host.
+  return isSafePreviewUrl(resolvePreviewUrl(value, SAMPLE_PREVIEW_CONTEXT)) ? null : { previewUrl: true };
 }
+
+/** A document used to check, and show an example of, an environment URL. */
+export const SAMPLE_PREVIEW_CONTEXT: PreviewUrlContext = {
+  documentId: 'document-id',
+  fullSlug: 'blog/hello',
+  slug: 'hello',
+  parentSlug: 'blog',
+  localeId: 'de',
+  fallbackLocaleId: 'en',
+};
 
 export class SpaceValidator {
   public static NAME: ValidatorFn[] = [

@@ -21,6 +21,17 @@
 }
 
 <div class="my-3">
+  <p class="text-muted-foreground mb-3 text-sm">
+    The preview opens the URL followed by the locale (left out for the default locale) and the document's full slug:
+    <code>https://site.com/</code> opens <code>https://site.com/de/blog/hello</code>. To build it differently, use placeholders:
+    <code>{{ '{fullSlug}' }}</code
+    >, <code>{{ '{slug}' }}</code
+    >, <code>{{ '{parentSlug}' }}</code
+    >, <code>{{ '{documentId}' }}</code
+    >, <code>{{ '{locale}' }}</code> (the fallback locale for the default locale) and <code>{{ '{locale/}' }}</code> (<code>de/</code>, or
+    nothing for the default locale). For example <code>{{ 'https://site.com/{locale/}blog/{slug}/' }}</code
+    >.
+  </p>
   <form [formGroup]="form">
     <div
       hlmItemGroup
@@ -64,6 +75,10 @@
                   placeholder="https://localess.io/api/url" />
                 @if (option.controls['url'].errors; as errors) {
                   <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+                } @else if (option.controls['url'].value) {
+                  <p class="text-muted-foreground text-xs" [id]="'url-example-' + idx">
+                    Opens <code>{{ exampleUrl(option.controls['url'].value) }}</code> for <i>blog/hello</i> in German
+                  </p>
                 }
               </div>
             </div>

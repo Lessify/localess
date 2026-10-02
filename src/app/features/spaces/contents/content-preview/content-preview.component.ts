@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import { resolvePreviewUrl } from '@core/utils/preview-url';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideCircleCheck, lucideFullscreen, lucideInfo, lucideRefreshCcw, lucideX } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
@@ -101,19 +102,34 @@ export class ContentPreviewComponent {
   });
   // The URL is read from the space document, which can be written without going through the
   // settings form, so it is checked again here before being trusted as an iframe source.
-  readonly invalidEnvironmentUrl = computed(() => {
+  // The environment URL filled in for this document and locale; it may be a pattern like
+  // `https://{locale}.site.com/{fullSlug}`, so it is only checked once resolved.
+  readonly previewUrl = computed(() => {
     const env = this.selectedEnvironment();
-    return env !== undefined && !isSafePreviewUrl(env.url);
+    if (!env) return undefined;
+    const document = this.document();
+    return resolvePreviewUrl(env.url, {
+      documentId: document.id,
+      fullSlug: document.fullSlug,
+      slug: document.slug ?? '',
+      parentSlug: document.parentSlug ?? '',
+      localeId: this.selectedLocale().id,
+      fallbackLocaleId: this.selectedSpace()?.localeFallback?.id ?? CONTENT_DEFAULT_LOCALE.id,
+    });
   });
+  readonly safePreviewUrl = computed(() => {
+    const url = this.previewUrl();
+    return isSafePreviewUrl(url) ? url : undefined;
+  });
+  // Messages are exchanged only with the resolved URL's origin.
+  readonly previewOrigin = computed(() => {
+    const url = this.safePreviewUrl();
+    return url ? new URL(url).origin : undefined;
+  });
+  readonly invalidEnvironmentUrl = computed(() => this.previewUrl() !== undefined && this.safePreviewUrl() === undefined);
   readonly iframeUrl = computed(() => {
-    const env = this.selectedEnvironment();
-    const locale = this.selectedLocale();
-    if (env && isSafePreviewUrl(env.url)) {
-      const localePart = locale.id !== CONTENT_DEFAULT_LOCALE.id ? locale.id + '/' : '';
-      return this.sanitizer.bypassSecurityTrustResourceUrl(`${env.url}${localePart}${this.document().fullSlug}`);
-    } else {
-      return undefined;
-    }
+    const url = this.safePreviewUrl();
+    return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : undefined;
   });
 
   readonly iframeStatus = linkedSignal<'loading' | 'loaded' | 'connected'>(() => {
@@ -186,20 +202,19 @@ export class ContentPreviewComponent {
 
   sendEvent(event: EventToApp): void {
     const contentWindow = this.preview()?.nativeElement.contentWindow;
-    const selectedEnvironment = this.selectedEnvironment();
-    if (contentWindow && selectedEnvironment && isSafePreviewUrl(selectedEnvironment.url) && this.iframeStatus() === 'connected') {
-      const url = new URL(selectedEnvironment.url);
-      contentWindow.postMessage(event, url.origin);
+    const origin = this.previewOrigin();
+    if (contentWindow && origin && this.iframeStatus() === 'connected') {
+      contentWindow.postMessage(event, origin);
     }
   }
 
   onWindowMessage(event: MessageEvent<EventToEditor>): void {
     // Only the preview iframe, on the selected environment's origin, may drive the editor - not
     // another tab, popup or frame that happens to post a LOCALESS-shaped message.
-    const env = this.selectedEnvironment();
+    const origin = this.previewOrigin();
     const contentWindow = this.preview()?.nativeElement.contentWindow;
-    if (!env || !isSafePreviewUrl(env.url) || !contentWindow) return;
-    if (event.source !== contentWindow || event.origin !== new URL(env.url).origin) return;
+    if (!origin || !contentWindow) return;
+    if (event.source !== contentWindow || event.origin !== origin) return;
     if (event.isTrusted && event.data && event.data.owner === 'LOCALESS') {
       if (event.data.type === 'ping') {
         const { protocol, sdk, scriptOrigin } = event.data;

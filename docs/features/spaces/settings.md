@@ -204,6 +204,23 @@ The URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an ab
 (error key `previewUrl`). This only gives feedback in the form; the security check that matters runs again when the preview renders. See
 "Preview security" in [contents.md](contents.md).
 
+**URL patterns:** a URL without `{` keeps the original convention, `url + locale/ + fullSlug` with the locale left out for the default
+locale. A URL with placeholders is filled in instead by `resolvePreviewUrl()` (`core/utils/preview-url.ts`):
+
+| Placeholder    | Value for `blog/hello` in German (fallback locale `en`)               |
+|----------------|-----------------------------------------------------------------------|
+| `{fullSlug}`   | `blog/hello`                                                          |
+| `{slug}`       | `hello`                                                               |
+| `{parentSlug}` | `blog`                                                                |
+| `{documentId}` | the document id                                                       |
+| `{locale}`     | `de`; the space's fallback locale (`en`) for the default locale       |
+| `{locale/}`    | `de/`; nothing for the default locale                                 |
+
+Values are URL-encoded per path segment. The validator rejects unknown placeholders (error key `previewUrlPlaceholder`) and checks the URL
+filled with `SAMPLE_PREVIEW_CONTEXT`, because `{locale}` may sit in the host. Each valid field shows what it opens for that sample
+(`exampleUrl()`). The preview resolves the URL for the open document and locale, checks the result with `isSafePreviewUrl`, and exchanges
+messages only with the resolved URL's origin (`ContentPreviewComponent.previewOrigin()`).
+
 **Services:** `SpaceService`, `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
 
 ---

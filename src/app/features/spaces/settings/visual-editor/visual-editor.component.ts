@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { resolvePreviewUrl } from '@core/utils/preview-url';
 import { provideIcons } from '@ng-icons/core';
 import { lucideGripVertical, lucidePlus, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import { SpaceEnvironment } from '@shared/models/space.model';
@@ -12,7 +13,7 @@ import { PlatformService } from '@shared/services/platform.service';
 import { SpaceService } from '@shared/services/space.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
-import { SpaceValidator } from '@shared/validators/space.validator';
+import { SAMPLE_PREVIEW_CONTEXT, SpaceValidator } from '@shared/validators/space.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -105,6 +106,11 @@ export class VisualEditorComponent {
       url: this.fb.control<string>(env?.url || '', SpaceValidator.ENVIRONMENT_URL),
     });
     this.environments.push(environment);
+  }
+
+  /** What a valid environment URL opens for the sample document, shown under its field. */
+  exampleUrl(url: string): string {
+    return resolvePreviewUrl(url, SAMPLE_PREVIEW_CONTEXT);
   }
 
   removeEnvironment(i: number): void {

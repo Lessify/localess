@@ -235,6 +235,31 @@ describe('ContentPreviewComponent', () => {
       expect(component.iframeUrl()).toBeDefined();
       expect(component.invalidEnvironmentUrl()).toBe(false);
     });
+
+    it('fills a URL pattern, and talks only to the resolved origin', () => {
+      const pattern: SpaceEnvironment = { name: 'localized', url: 'https://{locale}.preview.example.com/{fullSlug}/' };
+      const { component, frameWindow, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
+      fixture.componentRef.setInput('selectedLocale', { id: 'de', name: 'German' });
+      const postMessage = vi.spyOn(frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
+
+      expect(component.previewUrl()).toBe('https://de.preview.example.com/doc/');
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow }));
+      expect(component.iframeStatus()).not.toBe('connected');
+      component.onWindowMessage(
+        messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow, origin: 'https://de.preview.example.com' }),
+      );
+
+      expect(component.iframeStatus()).toBe('connected');
+      expect(postMessage).toHaveBeenCalledWith({ type: 'pong' }, 'https://de.preview.example.com');
+    });
+
+    it('uses the space fallback locale for {locale} on the default locale', () => {
+      const pattern: SpaceEnvironment = { name: 'query', url: 'https://preview.example.com/{fullSlug}?lang={locale}' };
+      const { component, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
+      fixture.componentRef.setInput('selectedLocale', { id: 'default', name: 'Default' });
+
+      expect(component.previewUrl()).toBe('https://preview.example.com/doc?lang=en');
+    });
   });
 
   describe('onWindowMessage', () => {

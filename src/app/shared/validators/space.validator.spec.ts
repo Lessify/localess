@@ -60,6 +60,23 @@ describe('SpaceValidator', () => {
     it.each([['javascript:alert(1)//'], ['data:text/html,x'], ['/relative'], ['example.com']])('rejects %s', url => {
       expect(new FormControl(url, SpaceValidator.ENVIRONMENT_URL).hasError('previewUrl')).toBe(true);
     });
+
+    it.each([['https://site.com/blog/{slug}'], ['https://{locale}.site.com/{fullSlug}'], ['https://site.com/{locale/}{fullSlug}/']])(
+      'accepts the pattern %s',
+      url => {
+        expect(new FormControl(url, SpaceValidator.ENVIRONMENT_URL).valid).toBe(true);
+      },
+    );
+
+    it('rejects an unknown placeholder, naming it', () => {
+      const control = new FormControl('https://site.com/{lang}/{slug}', SpaceValidator.ENVIRONMENT_URL);
+
+      expect(control.getError('previewUrlPlaceholder')).toBe('{lang}');
+    });
+
+    it('rejects a pattern that is not a safe URL once filled in', () => {
+      expect(new FormControl('{fullSlug}', SpaceValidator.ENVIRONMENT_URL).hasError('previewUrl')).toBe(true);
+    });
   });
 });
 

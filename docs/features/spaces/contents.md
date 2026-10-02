@@ -127,7 +127,8 @@ the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview U
 - **Sandbox:** the iframe is sandboxed (`allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals
   allow-downloads`). The preview site behaves normally but cannot navigate the editor's top-level tab.
 - **Incoming messages:** `onWindowMessage()` accepts a message only when `event.source` is the preview iframe's window and `event.origin` matches
-  the environment's origin.
+  `previewOrigin()`, the origin of the environment URL as resolved for this document and locale (patterns may put `{locale}` in the host;
+  see [settings.md](settings.md)).
 - **Outgoing messages:** `sendEvent()` posts only to that origin.
 - **Redirects:** a preview URL that redirects to a different origin, for example `example.com` → `www.example.com`, will not connect. Configure
   the final origin.
