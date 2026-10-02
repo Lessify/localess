@@ -8,11 +8,12 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { provideIcons } from '@ng-icons/core';
-import { lucideChevronDown, lucideCircleCheck, lucideCircleX, lucideFullscreen, lucideRefreshCcw } from '@ng-icons/lucide';
+import { lucideChevronDown, lucideCircleCheck, lucideFullscreen, lucideInfo, lucideRefreshCcw, lucideX } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
 import { ContentDocument } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
@@ -30,6 +31,9 @@ import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { EventToApp, EventToEditor } from '../edit-document/edit-document.model';
+
+// How long a loaded page may stay silent before the editor explains how to connect it.
+const CONNECTION_HINT_DELAY = 3000;
 
 @Component({
   selector: 'll-content-preview',
@@ -55,7 +59,8 @@ import { EventToApp, EventToEditor } from '../edit-document/edit-document.model'
       lucideChevronDown,
       lucideFullscreen,
       lucideCircleCheck,
-      lucideCircleX,
+      lucideInfo,
+      lucideX,
       tablerDeviceMobile,
       tablerDeviceTablet,
       tablerDeviceLaptop,
@@ -108,10 +113,11 @@ export class ContentPreviewComponent {
     }
   });
 
-  readonly iframeStatus = linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>(() => {
+  readonly iframeStatus = linkedSignal<'loading' | 'loaded' | 'connected'>(() => {
     this.iframeUrl();
     return 'loading';
   });
+  readonly connectionHintVisible = signal(false);
 
   constructor() {
     let initialized = false;
@@ -124,6 +130,14 @@ export class ContentPreviewComponent {
         const environment = envs.find(it => it.name === storedEnvironment.name) ?? envs[0];
         this.selectedEnvironment.set(environment);
       }
+    });
+    effect(onCleanup => {
+      if (this.iframeStatus() !== 'loaded') {
+        this.connectionHintVisible.set(false);
+        return;
+      }
+      const timer = setTimeout(() => this.connectionHintVisible.set(true), CONNECTION_HINT_DELAY);
+      onCleanup(() => clearTimeout(timer));
     });
   }
 
@@ -150,6 +164,12 @@ export class ContentPreviewComponent {
         this.connected.emit();
         return;
       }
+      if (event.data.type === 'unload') {
+        // A ping can arrive before the iframe's load event, so the status can't be reset on load;
+        // the leaving page says so instead, and the next page has to ping again.
+        this.iframeStatus.set('loading');
+        return;
+      }
       const { id, type, schema, field } = event.data;
       if (type === 'selectSchema') {
         this.schemaSelect.emit({ id, schema, field });
@@ -167,8 +187,8 @@ export class ContentPreviewComponent {
     }
   }
 
-  onIframeError(): void {
-    this.iframeStatus.set('error');
+  dismissConnectionHint(): void {
+    this.connectionHintVisible.set(false);
   }
 
   protected reloadEnvironment() {

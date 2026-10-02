@@ -195,6 +195,26 @@ describe('sync-v1 outgoing messages', () => {
       ['ping'],
     );
   });
+
+  it('tells the connected editor when the page goes away', async () => {
+    const { window, fromEditor, posted } = await loadSync();
+    fromEditor({ type: 'pong' });
+
+    window.dispatchEvent(new window.Event('pagehide'));
+
+    assert.deepEqual(posted().at(-1), { data: { owner: 'LOCALESS', type: 'unload' }, targetOrigin: LOCALESS_ORIGIN });
+  });
+
+  it('does not announce unload to an editor it never connected to', async () => {
+    const { window, posted } = await loadSync();
+
+    window.dispatchEvent(new window.Event('pagehide'));
+
+    assert.deepEqual(
+      posted().map(it => it.data.type),
+      ['ping'],
+    );
+  });
 });
 
 describe('sync-v1 enterSchema selection', () => {

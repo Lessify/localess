@@ -88,13 +88,19 @@ When the visual editor preview is enabled, `EditDocumentComponent` renders a `Co
 the message handling itself.
 
 **Connection lifecycle** — owned by `ContentPreviewComponent`, tracked in its `iframeStatus`
-(`linkedSignal<'loading' | 'loaded' | 'connected' | 'error'>`):
+(`linkedSignal<'loading' | 'loaded' | 'connected'>`):
 
-1. `loading` → `onIframeLoad()` sets `loaded` (only if still `loading`, so it won't downgrade `connected`/`error`)
+1. `loading` → `onIframeLoad()` sets `loaded` (only if still `loading`, so it won't downgrade `connected`; the ping can arrive before the
+   load event)
 2. The embedded app sends `{ type: 'ping' }` → `onWindowMessage()` sets `connected`, replies `{ type: 'pong' }` via `sendEvent()`, and emits
    the `connected` output — `EditDocumentComponent.onPreviewConnected()` then calls `sendCurrentContentToApp()` to push the full current
    content as a `change` event
-3. `onIframeError()` sets `error` on load failure
+3. The connected page sends `{ type: 'unload' }` on `pagehide` (reload or navigation inside the iframe) → status goes back to `loading`, so
+   the next page must ping again. The status can't be reset on the iframe's load event instead, because of the ordering in step 1.
+
+If the status stays `loaded` for 3 seconds (`CONNECTION_HINT_DELAY`), `connectionHintVisible()` shows a dismissible hint above the preview
+listing what to check (sync enabled, SDK `origin`, environment origin) with a link to the Visual Editor docs. The iframe `error` event isn't
+used: browsers don't fire it for a page that fails to load in an iframe.
 
 `ContentPreviewComponent.sendEvent()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are
 dropped. `EditDocumentComponent` triggers it via `this.previewComponent()?.sendEvent(...)`.
@@ -120,7 +126,7 @@ the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview U
 several documents (a shared header plus the page) applies them only to the matching one. The SDKs' `LocalessDocument` components filter on
 it.
 
-**Events app → editor** (`EventToEditorType`): `ping`, `selectSchema`, `hoverSchema`, `leaveSchema`
+**Events app → editor** (`EventToEditorType`): `ping`, `unload`, `selectSchema`, `hoverSchema`, `leaveSchema`
 
 **Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` →
 `EditDocumentComponent.onFormSchemaHover()`/`onFormSchemaLeave()` → forwarded to the app via

@@ -7,9 +7,11 @@ export interface SchemaPathItem {
 // Events
 
 // Event emitted from Application to Visual Editor
-export type EventToEditorType = 'ping' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
+export type EventToEditorType = 'ping' | 'unload' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
 export type EventToEditor =
   | { owner: 'LOCALESS'; type: 'ping' }
+  // Sent on pagehide: the connected page is reloading or navigating away.
+  | { owner: 'LOCALESS'; type: 'unload' }
   | {
       owner: 'LOCALESS';
       type: 'selectSchema' | 'hoverSchema' | 'leaveSchema';

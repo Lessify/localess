@@ -50,9 +50,6 @@
                 @case ('connected') {
                   <ng-icon hlm size="sm" name="lucideCircleCheck" class="text-green-500" hlmTooltip="Connected to Localess SDK" />
                 }
-                @case ('error') {
-                  <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive" hlmTooltip="Failed to load page" />
-                }
               }
             </hlm-input-group-addon>
           </div>
@@ -96,6 +93,27 @@
         </button>
       </hlm-toggle-group>
     </div>
+    @if (connectionHintVisible()) {
+      <div id="connection-hint" class="bg-muted/50 flex items-start gap-3 border-b p-3 text-sm" role="status">
+        <ng-icon hlm size="sm" name="lucideInfo" class="text-muted-foreground mt-0.5 shrink-0" />
+        <div class="flex-1">
+          <p class="font-medium">This page isn't connected to the Visual Editor.</p>
+          <ul class="text-muted-foreground mt-1 list-disc space-y-0.5 pl-5">
+            <li>
+              The page loads the Localess sync: <code>enableSync</code> is on and content is rendered with <code>LocalessDocument</code>.
+            </li>
+            <li>The SDK's <code>origin</code> points to this Localess instance.</li>
+            <li>The page is served from the environment URL's origin, without redirecting to another one.</li>
+          </ul>
+          <a class="mt-1 inline-block underline" href="https://localess.org/docs/visual-editor" target="_blank" rel="noopener noreferrer">
+            Visual Editor setup guide
+          </a>
+        </div>
+        <button hlmBtn size="icon-sm" variant="ghost" aria-label="Dismiss" (click)="dismissConnectionHint()">
+          <ng-icon hlm size="sm" name="lucideX" />
+        </button>
+      </div>
+    }
     <div id="browser-content" class="flex h-full justify-center-safe overflow-auto">
       @if (iframeUrl(); as url) {
         <iframe
@@ -106,8 +124,7 @@
           [src]="url"
           [class]="settingsStore.editorSize()"
           [class.resizing]="resizing()"
-          (load)="onIframeLoad()"
-          (error)="onIframeError()">
+          (load)="onIframeLoad()">
         </iframe>
       } @else if (invalidEnvironmentUrl()) {
         <div class="m-auto max-w-md text-center">

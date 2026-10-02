@@ -73,12 +73,38 @@ describe('ContentPreviewComponent', () => {
     expect(component.iframeStatus()).toBe('loaded');
   });
 
-  it('onIframeError() sets the error status', () => {
-    const { component } = setup();
+  describe('connection hint', () => {
+    afterEach(() => vi.useRealTimers());
 
-    component.onIframeError();
+    it('appears when a loaded page has not connected after 3s, and can be dismissed', () => {
+      vi.useFakeTimers();
+      const { component } = setup();
 
-    expect(component.iframeStatus()).toBe('error');
+      component.onIframeLoad();
+      TestBed.tick();
+      vi.advanceTimersByTime(2900);
+      expect(component.connectionHintVisible()).toBe(false);
+      vi.advanceTimersByTime(100);
+      expect(component.connectionHintVisible()).toBe(true);
+
+      component.dismissConnectionHint();
+      expect(component.connectionHintVisible()).toBe(false);
+    });
+
+    it('hides once the page connects', () => {
+      vi.useFakeTimers();
+      const { component, frameWindow } = setup({ selectedSpace: space({ environments: [preview] }) });
+      vi.spyOn(frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
+
+      component.onIframeLoad();
+      TestBed.tick();
+      vi.advanceTimersByTime(3000);
+      expect(component.connectionHintVisible()).toBe(true);
+
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow }));
+      TestBed.tick();
+      expect(component.connectionHintVisible()).toBe(false);
+    });
   });
 
   describe('preview URL safety', () => {
@@ -150,6 +176,30 @@ describe('ContentPreviewComponent', () => {
       expect(spy).toHaveBeenCalled();
       // The pong goes only to the environment's origin.
       expect(postMessage).toHaveBeenCalledWith({ type: 'pong' }, 'https://preview.example.com');
+    });
+
+    it('goes back to loading when the connected page unloads, and stops sending to it', () => {
+      const { component, frameWindow } = setupWithPreview();
+      const postMessage = vi.spyOn(frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow }));
+
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'unload' }, { source: frameWindow }));
+      component.sendEvent({ type: 'save', documentId: 'doc1' });
+
+      expect(component.iframeStatus()).toBe('loading');
+      expect(postMessage).toHaveBeenCalledTimes(1); // only the pong
+    });
+
+    it('stays connected when the next page pings before its load event fires', () => {
+      const { component, frameWindow } = setupWithPreview();
+      vi.spyOn(frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow }));
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'unload' }, { source: frameWindow }));
+
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'ping' }, { source: frameWindow }));
+      component.onIframeLoad();
+
+      expect(component.iframeStatus()).toBe('connected');
     });
 
     it('emits schemaSelect/schemaHover/schemaLeave with the parsed payload', () => {

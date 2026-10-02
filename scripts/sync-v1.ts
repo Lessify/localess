@@ -3,9 +3,11 @@
   const RESET = '\x1b[0m';
   const LOG_GROUP = `${FG_BLUE}[Localess:Sync]${RESET}`;
   // Event emitted from Application to Visual Editor
-  type EventToEditorType = 'ping' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
+  type EventToEditorType = 'ping' | 'unload' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
   type EventToEditor =
     | { type: 'ping' }
+    // The page is going away (reload or navigation), so the editor waits for the next page's ping.
+    | { type: 'unload' }
     | { type: 'selectSchema' | 'hoverSchema' | 'leaveSchema'; id: string; schema: string; field?: string };
 
   // Event emitted from Visual Editor to Application
@@ -480,6 +482,7 @@
       private pingEditor() {
         sendEditorData({ type: 'ping' });
         this.on('pong', this.pingBack);
+        addEventListener('pagehide', () => sendEditorData({ type: 'unload' }));
       }
 
       private pingBack() {
