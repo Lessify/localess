@@ -57,6 +57,7 @@ import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
+import { collectTranslatableFields, extractContent, extractReferences, normalizeContent } from '@shared/utils/content';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -79,6 +80,16 @@ import { v4 } from 'uuid';
 import { ContentPreviewComponent } from '../content-preview/content-preview.component';
 import { EditDocumentSchemaComponent } from '../edit-document-schema/edit-document-schema.component';
 import { SchemaSelectChange } from '../edit-document-schema/edit-document-schema.model';
+import {
+  BlockAction,
+  blockActions,
+  duplicateBlock,
+  findBlock,
+  isInList,
+  moveBlockDown,
+  moveBlockUp,
+  removeBlock,
+} from '../shared/block-actions';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
 import { SchemaPathItem } from './edit-document.model';
 
@@ -251,7 +262,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         this.documentData = ObjectUtils.clone(document.data);
       }
       this.selectedDocumentData = this.documentData;
-      this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
+      this.savedDocumentData.set(normalizeContent(this.documentData));
     }
     this.generateDocumentIdsTree();
   }
@@ -259,7 +270,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   get isFormDirty(): boolean {
     const saved = this.savedDocumentData();
     if (saved !== undefined) {
-      return !ObjectUtils.isEqual(this.contentHelperService.clone(saved), this.contentHelperService.clone(this.documentData));
+      return !ObjectUtils.isEqual(normalizeContent(saved), normalizeContent(this.documentData));
     }
 
     const data = this.document().data;
@@ -268,8 +279,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
 
     const originalData = typeof data === 'string' ? JSON.parse(data) : data;
-    const normalizedOriginal = this.contentHelperService.clone(originalData);
-    const normalizedCurrent = this.contentHelperService.clone(this.documentData);
+    const normalizedOriginal = normalizeContent(originalData);
+    const normalizedCurrent = normalizeContent(this.documentData);
 
     return !ObjectUtils.isEqual(normalizedOriginal, normalizedCurrent);
   }
@@ -325,7 +336,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
     if (this.contentErrors.length === 0) {
       const refs = this.availableLocales()
-        .map(it => this.contentHelperService.extractReferences(this.documentData, this.schemas(), it.id))
+        .map(it => extractReferences(this.documentData, this.schemas(), it.id))
         .reduce(
           (acc, val) => {
             const [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc] = acc;
@@ -342,7 +353,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           this.notificationService.success('Content has been saved in draft.');
           this.previewComponent()?.sendEvent({ type: 'save', documentId: this.contentId() });
           this.documentUpdatedAt.set(Date.now() / 100);
-          this.savedDocumentData.set(this.contentHelperService.clone(this.documentData));
+          this.savedDocumentData.set(normalizeContent(this.documentData));
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
@@ -430,15 +441,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
     this.schemaPath.update(it => [...it, pathItem]);
     this.selectedDocumentData = next;
-    // Send Message to iFrame about Schema Selection
-    this.previewComponent()?.sendEvent({ type: 'enterSchema', id: pathItem.contentId, schema: pathItem.schemaName });
+    this.sendSelection();
   }
 
   navigateToSchemaBackwards(pathItem: SchemaPathItem): void {
     const idx = this.schemaPath().findIndex(it => it.contentId == pathItem.contentId);
     const truncatedPath = this.schemaPath().slice(0, idx + 1);
-    let target = pathItem;
-    let root = idx == 0;
     // Select Root
     if (idx == 0) {
       this.schemaPath.set(truncatedPath);
@@ -455,16 +463,28 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         console.warn('navigateToSchemaBackwards: intermediate node not found, falling back to root', pathItem);
         this.schemaPath.set(this.schemaPath().slice(0, 1));
         this.selectedDocumentData = this.documentData;
-        target = this.schemaPath()[0];
-        root = true;
       } else {
         this.schemaPath.set(truncatedPath);
         this.selectedDocumentData = localSelectedContent;
       }
     }
-    // Send Message to iFrame about Schema Selection. `root` lets the sync script clear its
-    // selection highlight instead of outlining the whole page.
-    this.previewComponent()?.sendEvent({ type: 'enterSchema', id: target.contentId, schema: target.schemaName, root: root });
+    this.sendSelection();
+  }
+
+  /**
+   * Tells the page which block the form shows. `root` lets the sync script clear its selection
+   * highlight instead of outlining the whole page. The sync script works out the block's toolbar
+   * from the document it last received in `input`/`change`.
+   */
+  private sendSelection(): void {
+    const path = this.schemaPath();
+    const selected = path.at(-1);
+    if (!selected) return;
+    if (path.length === 1) {
+      this.previewComponent()?.sendEvent({ type: 'enterSchema', id: selected.contentId, schema: selected.schemaName, root: true });
+    } else {
+      this.previewComponent()?.sendEvent({ type: 'enterSchema', id: selected.contentId, schema: selected.schemaName });
+    }
   }
 
   generateDocumentIdsTree() {
@@ -587,13 +607,41 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.hoverSchemaField.set(undefined);
   }
 
+  /**
+   * Applies a toolbar click from the preview. Only the selected block has a toolbar, and the action
+   * is checked against what the block allows now, so a stale or forged message changes nothing.
+   * The result is an unsaved edit, like one made in the form.
+   */
+  onPreviewBlockAction(event: { id: string; action: BlockAction }): void {
+    const path = this.schemaPath();
+    if (path.length < 2 || path.at(-1)?.contentId !== event.id) return;
+    const location = findBlock(this.documentData, event.id, this.schemaMapById());
+    if (!location || !blockActions(location).includes(event.action)) return;
+    if (event.action === 'remove') {
+      removeBlock(location);
+      // The form showed the removed block, so it goes up to the block that held it.
+      this.schemaPath.set(path.slice(0, -1));
+      this.selectedDocumentData = location.parent;
+      this.onStructureChange();
+      this.sendSelection();
+      return;
+    }
+    if (isInList(location)) {
+      if (event.action === 'moveUp') moveBlockUp(location);
+      if (event.action === 'moveDown') moveBlockDown(location);
+      if (event.action === 'duplicate') duplicateBlock(location);
+    }
+    // The block stays selected; the `change` this sends also updates the page's toolbar.
+    this.onStructureChange();
+  }
+
   onFormChange(): void {
-    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    const data = extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
     this.previewComponent()?.sendEvent({ type: 'input', documentId: this.contentId(), data });
   }
 
   onStructureChange(): void {
-    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    const data = extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
     this.generateDocumentIdsTree();
     this.previewComponent()?.sendEvent({ type: 'change', documentId: this.contentId(), data });
   }
@@ -607,7 +655,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   private sendCurrentContentToApp(): void {
-    const data = this.contentHelperService.extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    const data = extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
     this.previewComponent()?.sendEvent({ type: 'change', documentId: this.contentId(), data });
   }
 
@@ -640,13 +688,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         take(1),
         filter(it => it !== undefined),
         switchMap(it => {
-          const fields = this.contentHelperService.collectTranslatableFields(
-            this.documentData,
-            this.schemas(),
-            it.sourceLocale,
-            it.targetLocale,
-            { overwrite: it.overwrite },
-          );
+          const fields = collectTranslatableFields(this.documentData, this.schemas(), it.sourceLocale, it.targetLocale, {
+            overwrite: it.overwrite,
+          });
           if (fields.length === 0) {
             this.notificationService.success('Nothing to translate: every field already has a translation.');
             return EMPTY;

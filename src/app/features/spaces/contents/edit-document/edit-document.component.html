@@ -197,7 +197,8 @@
           (connected)="onPreviewConnected()"
           (schemaSelect)="onPreviewSchemaSelect($event)"
           (schemaHover)="onPreviewSchemaHover($event)"
-          (schemaLeave)="onPreviewSchemaLeave()" />
+          (schemaLeave)="onPreviewSchemaLeave()"
+          (blockAction)="onPreviewBlockAction($event)" />
       </hlm-resizable-panel>
       <hlm-resizable-handle withHandle (mousedown)="isResizing.set(true)" (mouseup)="isResizing.set(false)" />
     }

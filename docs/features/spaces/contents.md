@@ -84,7 +84,7 @@ Full schema-driven editor for a single `ContentDocument`. Loaded via `documentRe
 When the visual editor preview is enabled, `EditDocumentComponent` renders a `ContentPreviewComponent` (`content-preview/`), which owns the
 `<iframe>` embedding the target environment and the `postMessage` exchange with the embedded app (see `edit-document.model.ts` for
 `EventToEditorType`/`EventToAppType`). `EditDocumentComponent` only reacts to `ContentPreviewComponent`'s outputs (`connected`,
-`schemaSelect`, `schemaHover`, `schemaLeave`) via `previewComponent = viewChild(ContentPreviewComponent)` — it does not manage the iframe or
+`schemaSelect`, `schemaHover`, `schemaLeave`, `blockAction`) via `previewComponent = viewChild(ContentPreviewComponent)` — it does not manage the iframe or
 the message handling itself.
 
 **Connection lifecycle** — owned by `ContentPreviewComponent`, tracked in its `iframeStatus`
@@ -140,7 +140,33 @@ the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview U
 several documents (a shared header plus the page) applies them only to the matching one. The SDKs' `LocalessDocument` components filter on
 it.
 
-**Events app → editor** (`EventToEditorType`): `ping`, `unload`, `blocks`, `selectSchema`, `hoverSchema`, `leaveSchema`
+**Events app → editor** (`EventToEditorType`): `ping`, `unload`, `blocks`, `selectSchema`, `hoverSchema`, `leaveSchema`, `blockAction`
+
+**Block toolbar:** the sync script shows a toolbar on the selected block (the one `enterSchema` marked). It needs no message of its own:
+the script works out the actions from where the block sits in the document it last received in `input`/`change` (`blockActionsOf()`).
+A block is an object with an `_id`, so the script needs no schemas:
+
+| Block in…                  | Actions                                                                                      |
+|----------------------------|----------------------------------------------------------------------------------------------|
+| a list (`SCHEMAS` field)   | `moveUp` (not on the first item), `moveDown` (not on the last), `duplicate`, `remove`        |
+| a single `SCHEMA` field    | `remove`                                                                                     |
+| the root, or not found     | none: no toolbar                                                                             |
+
+The toolbar shows the actions as icon buttons in the block's top-right corner. It is a `<localess-toolbar>` element attached to
+`<html>`, with its UI in a Shadow DOM so site CSS can't reach it. It follows the block on scroll, resize and re-render, and hides while
+the block is out of view. Delete needs a second click ("Delete?", reset after 3 seconds or on a new selection). A click sends
+`{ type: 'blockAction', id, action }`.
+
+`EditDocumentComponent.onPreviewBlockAction()` applies the action only if `id` is the selected block and `blockActions()`
+(`shared/block-actions.ts`, the same rules computed from the schemas) still allows it, so stale or forged messages change nothing.
+Each action is its own function in `block-actions.ts`: `moveBlockUp()`, `moveBlockDown()` and `duplicateBlock()` take a block in a list
+(`ListBlockLocation`, checked with `isInList()`), and `removeBlock()` takes any block. The form's delete and duplicate buttons use the
+same functions. `duplicateBlock()` gives the copy new ids with `copyBlock()` from `shared/utils/content.ts`.
+
+Then `onStructureChange()` rebuilds the id tree and sends `change`. For move and duplicate that's all: the block stays selected, and the
+script reads its new position from that `change`, so the page doesn't re-select or scroll. Remove selects the block that held it,
+through `sendSelection()`. Nothing is saved: the change is an unsaved edit, like one made in the form. Adding blocks from the page isn't
+supported, because it needs a schema picker.
 
 **Hover highlighting:** hovering a schema field in `EditDocumentSchemaComponent` fires `(schemaHover)`/`(schemaLeave)` →
 `EditDocumentComponent.onFormSchemaHover()`/`onFormSchemaLeave()` → forwarded to the app via
@@ -257,7 +283,7 @@ Two things to know when touching this:
 
 #### Whole-document translation
 
-Driven from the browser, not the server. `ContentHelperService.collectTranslatableFields()` walks `documentData`, serializing RICH_TEXT with
+Driven from the browser, not the server. `collectTranslatableFields()` (`shared/utils/content.ts`) walks `documentData`, serializing RICH_TEXT with
 `generateHTML(json, createRichTextExtensions())` and everything else as plain text, and returns entries carrying an `apply` closure. Those
 go to the `translate` callable's batch mode as `{id, content, format}`; `translateItems` (`functions/src/utils/translate-batch.ts`) groups
 by format, chunks to 27,000 code points and translates each chunk in **one** provider round-trip — both Google and DeepL accept arrays.

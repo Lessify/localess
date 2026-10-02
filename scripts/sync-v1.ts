@@ -3,7 +3,9 @@
   const RESET = '\x1b[0m';
   const LOG_GROUP = `${FG_BLUE}[Localess:Sync]${RESET}`;
   // Event emitted from Application to Visual Editor
-  type EventToEditorType = 'ping' | 'unload' | 'blocks' | 'selectSchema' | 'hoverSchema' | 'leaveSchema';
+  type EventToEditorType = 'ping' | 'unload' | 'blocks' | 'selectSchema' | 'hoverSchema' | 'leaveSchema' | 'blockAction';
+  // Structure changes the editor allows on the selected block, shown in a toolbar on it.
+  type BlockAction = 'moveUp' | 'moveDown' | 'duplicate' | 'remove';
   type EventToEditor =
     /**
      * Handshake. `protocol` is bumped whenever the message contract changes; `sdk` is the SDK that
@@ -15,6 +17,8 @@
     | { type: 'blocks'; ids: string[] }
     // The page is going away (reload or navigation), so the editor waits for the next page's ping.
     | { type: 'unload' }
+    // A click in the selected block's toolbar; the editor applies it to the document.
+    | { type: 'blockAction'; id: string; action: BlockAction }
     | { type: 'selectSchema' | 'hoverSchema' | 'leaveSchema'; id: string; schema: string; field?: string };
 
   // Event emitted from Visual Editor to Application
@@ -178,6 +182,7 @@
     if (target && !target.hasAttribute('data-ll-selected')) {
       target.setAttribute('data-ll-selected', 'true');
     }
+    updateToolbar(target);
   }
 
   function selectSchema(id: string | undefined) {
@@ -186,6 +191,198 @@
     if (id) {
       findSchemaElement(id)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
+  }
+
+  const ICON_ATTRIBUTES =
+    'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+  const BLOCK_ACTIONS: Record<BlockAction, { label: string; icon: string }> = {
+    moveUp: { label: 'Move up', icon: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>' },
+    moveDown: { label: 'Move down', icon: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>' },
+    duplicate: {
+      label: 'Duplicate',
+      icon: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    },
+    remove: {
+      label: 'Delete',
+      icon: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+    },
+  };
+  // How long the delete button waits for its confirming second click.
+  const CONFIRM_REMOVE_TIMEOUT = 3000;
+  const TOOLBAR_CSS = `
+    .bar{display:flex;gap:2px;padding:2px;background:#005cbb;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,.3);font:500 12px/1 system-ui,sans-serif;}
+    button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:26px;height:26px;padding:0 5px;border-radius:4px;color:#fff;cursor:pointer;}
+    button:hover{background:rgba(255,255,255,.2);}
+    button:focus-visible{outline:2px solid #fff;outline-offset:-2px;}
+    button.confirm{background:#d92d20;}
+    svg{width:16px;height:16px;}`;
+
+  /** The document from the editor's last `input` or `change`; the toolbar's actions are read from it. */
+  let editedDocument: unknown;
+  /** Actions the selected block allows; empty hides the toolbar. */
+  let selectedActions: BlockAction[] = [];
+
+  type Block = { _id: string; [field: string]: unknown };
+
+  function isBlock(value: unknown): value is Block {
+    return typeof value === 'object' && value !== null && typeof (value as Block)._id === 'string';
+  }
+
+  /**
+   * The actions a block allows, from where it sits in the edited document: a block in a list can
+   * move, be duplicated and be removed; a block in a single field can only be removed. The root and
+   * blocks that aren't in the document get none. The editor checks every action again before it
+   * applies it.
+   */
+  function blockActionsOf(id: string): BlockAction[] {
+    const queue: unknown[] = [editedDocument];
+    for (let node = queue.shift(); node !== undefined; node = queue.shift()) {
+      if (!isBlock(node)) continue;
+      for (const value of Object.values(node)) {
+        if (isBlock(value)) {
+          if (value._id === id) return ['remove'];
+          queue.push(value);
+        } else if (Array.isArray(value)) {
+          const index = value.findIndex(item => isBlock(item) && item._id === id);
+          if (index >= 0) {
+            const actions: BlockAction[] = [];
+            if (index > 0) actions.push('moveUp');
+            if (index < value.length - 1) actions.push('moveDown');
+            actions.push('duplicate', 'remove');
+            return actions;
+          }
+          queue.push(...value);
+        }
+      }
+    }
+    return [];
+  }
+
+  function setEditedDocument(data: unknown) {
+    editedDocument = data;
+    applySelectedHighlight();
+  }
+  let toolbarHost: HTMLElement | undefined;
+  let toolbarBar: HTMLElement | undefined;
+  let toolbarTarget: HTMLElement | null = null;
+  /** The block and actions the buttons were built for, so a re-scan doesn't rebuild them. */
+  let toolbarKey: string | undefined;
+  let confirmRemoveTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Set after a move or duplicate, so the next scan scrolls the re-rendered block into view. */
+  let followSelection = false;
+
+  /**
+   * The toolbar lives in a Shadow DOM, so the site's CSS can't restyle it and ours can't leak out.
+   * It is attached to `<html>` rather than `<body>`, which frameworks often render into, and kept
+   * outside every block so its clicks never reach their listeners.
+   */
+  function createToolbar() {
+    const host = document.createElement('localess-toolbar');
+    host.style.cssText = 'all:initial;position:fixed;z-index:2147483647;top:0;left:0;display:none;';
+    const root = host.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = TOOLBAR_CSS;
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', 'Block actions');
+    root.append(style, bar);
+    bar.addEventListener('click', event => {
+      const button = (event.target as Element).closest<HTMLButtonElement>('button');
+      if (button) onToolbarAction(button, button.dataset['action'] as BlockAction);
+    });
+    // The page's own handlers would take these for clicks on the page.
+    for (const type of ['click', 'mousedown', 'pointerdown', 'mouseup', 'pointerup']) {
+      host.addEventListener(type, event => event.stopPropagation());
+    }
+    toolbarHost = host;
+    toolbarBar = bar;
+  }
+
+  function renderToolbarButtons() {
+    clearTimeout(confirmRemoveTimer);
+    toolbarBar!.replaceChildren(
+      ...selectedActions.map(action => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset['action'] = action;
+        button.title = BLOCK_ACTIONS[action].label;
+        button.setAttribute('aria-label', BLOCK_ACTIONS[action].label);
+        button.innerHTML = `<svg ${ICON_ATTRIBUTES}>${BLOCK_ACTIONS[action].icon}</svg>`;
+        return button;
+      }),
+    );
+  }
+
+  function onToolbarAction(button: HTMLButtonElement, action: BlockAction) {
+    if (!selectedSchemaId || !selectedActions.includes(action)) return;
+    // Deleting takes a second click: a slip on the page is easier than in the form.
+    if (action === 'remove' && !button.classList.contains('confirm')) {
+      button.classList.add('confirm');
+      button.append(document.createTextNode('Delete?'));
+      button.setAttribute('aria-label', 'Confirm delete');
+      confirmRemoveTimer = setTimeout(() => {
+        renderToolbarButtons();
+        positionToolbar();
+      }, CONFIRM_REMOVE_TIMEOUT);
+      positionToolbar();
+      return;
+    }
+    clearTimeout(confirmRemoveTimer);
+    followSelection = action !== 'remove';
+    sendEditorData({ type: 'blockAction', id: selectedSchemaId, action });
+  }
+
+  function updateToolbar(target: HTMLElement | null) {
+    selectedActions = selectedSchemaId ? blockActionsOf(selectedSchemaId) : [];
+    toolbarTarget = selectedActions.length > 0 ? target : null;
+    if (!toolbarTarget) {
+      if (toolbarHost) toolbarHost.style.display = 'none';
+      return;
+    }
+    if (!toolbarHost) createToolbar();
+    // A framework that re-renders the whole document can drop it.
+    if (!toolbarHost!.isConnected) document.documentElement.appendChild(toolbarHost!);
+    const key = `${selectedSchemaId}|${selectedActions.join(',')}`;
+    if (key !== toolbarKey) {
+      toolbarKey = key;
+      renderToolbarButtons();
+    }
+    positionToolbar();
+  }
+
+  /** Puts the toolbar in the selected block's top-right corner, inside the visible part of the block. */
+  function positionToolbar() {
+    const host = toolbarHost;
+    if (!host || !toolbarTarget) return;
+    const rect = toolbarTarget.getBoundingClientRect();
+    const inView = rect.bottom > 0 && rect.right > 0 && rect.top < window.innerHeight && rect.left < window.innerWidth;
+    if (!toolbarTarget.isConnected || !inView) {
+      host.style.display = 'none';
+      return;
+    }
+    host.style.display = 'block';
+    const inset = 6;
+    const top = Math.max(rect.top, 0) + inset;
+    const left = Math.max(Math.min(rect.right, window.innerWidth) - host.offsetWidth - inset, Math.max(rect.left, 0) + inset, 0);
+    host.style.top = `${Math.round(top)}px`;
+    host.style.left = `${Math.round(left)}px`;
+  }
+
+  let positionScheduled = false;
+
+  function schedulePositionToolbar() {
+    if (positionScheduled || !toolbarTarget) return;
+    positionScheduled = true;
+    requestAnimationFrame(() => {
+      positionScheduled = false;
+      positionToolbar();
+    });
+  }
+
+  function followToolbar() {
+    addEventListener('scroll', schedulePositionToolbar, { capture: true, passive: true });
+    addEventListener('resize', schedulePositionToolbar, { passive: true });
   }
 
   /**
@@ -293,6 +490,10 @@
     });
 
     applySelectedHighlight();
+    if (followSelection && toolbarTarget) {
+      followSelection = false;
+      toolbarTarget.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
     reportBlocks();
 
     if (schemas > 0 || fields > 0) {
@@ -429,10 +630,12 @@
               // both immediate and correct for renders that take longer than a second.
               case 'input': {
                 this.emit(data);
+                setEditedDocument(data.data);
                 break;
               }
               case 'change': {
                 this.emit(data);
+                setEditedDocument(data.data);
                 break;
               }
               case 'enterSchema': {
@@ -522,6 +725,7 @@
         createCSS();
         markVisualEditorElements('pong');
         observeVisualEditorElements();
+        followToolbar();
         console.info(LOG_GROUP, `Sync connected to Visual Editor (${editorOrigin})`);
         addMessage('Localess: Sync connected to Visual Editor.');
       }

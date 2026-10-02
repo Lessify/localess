@@ -349,5 +349,15 @@ describe('ContentPreviewComponent', () => {
       component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'leaveSchema', id: 'c1', schema: 's1' }, { source: frameWindow }));
       expect(leave).toHaveBeenCalled();
     });
+
+    it('emits blockAction with the block id and action', () => {
+      const { component, frameWindow } = setupWithPreview();
+      const blockAction = vi.fn();
+      component.blockAction.subscribe(blockAction);
+
+      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'blockAction', id: 'c1', action: 'moveUp' }, { source: frameWindow }));
+
+      expect(blockAction).toHaveBeenCalledWith({ id: 'c1', action: 'moveUp' });
+    });
   });
 });

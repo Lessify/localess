@@ -23,7 +23,7 @@ function schemasMap(...schemas: Schema[]): Map<string, Schema> {
  * storage rule is applied before content leaves the system: the default locale lives under the
  * bare field name, every other locale under `{field}_i18n_{locale}`.
  *
- * It is duplicated from `ContentHelperService.extractContent` on the frontend - the two sides of
+ * It is duplicated from `extractContent` in `src/app/shared/utils/content.ts` on the frontend - the two sides of
  * this repo hand-copy their models and this logic with them - so it needs its own guard. A break
  * here is invisible in the editor and only shows up as wrong content on the public API.
  *

@@ -484,3 +484,120 @@ describe('sync-v1 subscriptions', () => {
     assert.equal(second.mock.callCount(), 1);
   });
 });
+
+describe('sync-v1 block toolbar', () => {
+  const body =
+    '<main data-ll-id="root" data-ll-schema="Page">' +
+    '<div data-ll-id="hero" data-ll-schema="Hero"></div>' +
+    '<div data-ll-id="a" data-ll-schema="Card"></div><div data-ll-id="b" data-ll-schema="Card"></div>' +
+    '</main>';
+  // The edited document, as the editor sends it in `change`: `hero` is a single field, `body` a list.
+  const page = (ids = ['a', 'b']) => ({
+    _id: 'root',
+    schema: 'Page',
+    hero: { _id: 'hero', schema: 'Hero', image: { kind: 'ASSET', uri: 'x.png' } },
+    body: ids.map(id => ({ _id: id, schema: 'Card' })),
+  });
+
+  async function connected({ document = page() } = {}) {
+    const loaded = await loadSync({ body });
+    loaded.fromEditor({ type: 'pong' });
+    await loaded.flush();
+    // happy-dom does no layout, so the blocks get a box in view.
+    loaded.window.HTMLElement.prototype.getBoundingClientRect = () => ({ top: 100, bottom: 300, left: 0, right: 400, width: 400, height: 200 });
+    const change = data => loaded.fromEditor({ type: 'change', documentId: 'doc-1', data });
+    if (document) change(document);
+    const enter = (id, extra = {}) => loaded.fromEditor({ type: 'enterSchema', id, schema: 'Card', ...extra });
+    const host = () => loaded.window.document.querySelector('localess-toolbar');
+    const buttons = () => [...(host()?.shadowRoot.querySelectorAll('button') ?? [])];
+    const visibleActions = () => (host()?.style.display === 'block' ? buttons().map(it => it.dataset.action) : []);
+    const click = action => buttons().find(it => it.dataset.action === action).click();
+    const actionsSent = () => loaded.posted().filter(it => it.data.type === 'blockAction').map(it => it.data);
+    return { ...loaded, change, enter, host, buttons, visibleActions, click, actionsSent };
+  }
+
+  it('offers moves, duplicate and delete for a block in a list, by its position', async () => {
+    const { enter, visibleActions } = await connected();
+
+    enter('a');
+    assert.deepEqual(visibleActions(), ['moveDown', 'duplicate', 'remove']);
+    enter('b');
+    assert.deepEqual(visibleActions(), ['moveUp', 'duplicate', 'remove']);
+  });
+
+  it('offers only delete for a block in a single field', async () => {
+    const { enter, visibleActions } = await connected();
+
+    enter('hero');
+
+    assert.deepEqual(visibleActions(), ['remove']);
+  });
+
+  it('shows no toolbar for the root, a block missing from the document, or before a document arrives', async () => {
+    const { enter, visibleActions, change } = await connected({ document: null });
+
+    enter('a');
+    assert.deepEqual(visibleActions(), []);
+    change(page(['b']));
+    assert.deepEqual(visibleActions(), []);
+    enter('root', { root: true });
+    assert.deepEqual(visibleActions(), []);
+  });
+
+  it('follows the document the editor sends after an action, without scrolling to the block again', async () => {
+    const { enter, change, visibleActions, scrollIntoView } = await connected();
+    enter('a');
+    const scrolls = scrollIntoView.mock.callCount();
+
+    change(page(['b', 'a']));
+
+    assert.deepEqual(visibleActions(), ['moveUp', 'duplicate', 'remove']);
+    assert.equal(scrollIntoView.mock.callCount(), scrolls);
+  });
+
+  it('sends the clicked action for the selected block, without selecting anything', async () => {
+    const { enter, click, actionsSent, posted } = await connected();
+    enter('b');
+
+    click('moveUp');
+
+    assert.deepEqual(actionsSent(), [{ owner: 'LOCALESS', type: 'blockAction', id: 'b', action: 'moveUp' }]);
+    assert.equal(posted().filter(it => it.data.type === 'selectSchema').length, 0);
+  });
+
+  it('asks for a second click before deleting', async () => {
+    const { enter, click, actionsSent, buttons } = await connected();
+    enter('a');
+
+    click('remove');
+    assert.deepEqual(actionsSent(), []);
+    assert.match(buttons().find(it => it.dataset.action === 'remove').textContent, /Delete\?/);
+
+    click('remove');
+    assert.deepEqual(actionsSent(), [{ owner: 'LOCALESS', type: 'blockAction', id: 'a', action: 'remove' }]);
+  });
+
+  it('drops a pending delete confirmation when the selection changes', async () => {
+    const { enter, click, actionsSent } = await connected();
+    enter('a');
+    click('remove');
+
+    enter('b');
+    click('remove');
+
+    assert.deepEqual(actionsSent(), []);
+  });
+
+  it('hides the toolbar when the block scrolls out of view', async () => {
+    const { enter, visibleActions, window } = await connected();
+    enter('a');
+    assert.deepEqual(visibleActions(), ['moveDown', 'duplicate', 'remove']);
+
+    window.HTMLElement.prototype.getBoundingClientRect = () => ({ top: -500, bottom: -300, left: 0, right: 400, width: 400, height: 200 });
+    window.dispatchEvent(new window.Event('scroll'));
+    await new Promise(resolve => window.requestAnimationFrame(resolve));
+    await new Promise(resolve => window.requestAnimationFrame(resolve));
+
+    assert.deepEqual(visibleActions(), []);
+  });
+});

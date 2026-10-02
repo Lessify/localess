@@ -32,6 +32,7 @@ import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 import { EventToApp, EventToEditor } from '../edit-document/edit-document.model';
+import { BlockAction } from '../shared/block-actions';
 
 // How long a loaded page may stay silent before the editor explains how to connect it.
 const CONNECTION_HINT_DELAY = 3000;
@@ -87,6 +88,7 @@ export class ContentPreviewComponent {
   readonly schemaSelect = output<{ id: string; schema: string; field?: string }>();
   readonly schemaHover = output<{ id: string; schema: string; field?: string }>();
   readonly schemaLeave = output<void>();
+  readonly blockAction = output<{ id: string; action: BlockAction }>();
 
   readonly preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
 
@@ -234,6 +236,10 @@ export class ContentPreviewComponent {
       }
       if (event.data.type === 'blocks') {
         this.pageBlocks.set(event.data.ids);
+        return;
+      }
+      if (event.data.type === 'blockAction') {
+        this.blockAction.emit({ id: event.data.id, action: event.data.action });
         return;
       }
       const { id, type, schema, field } = event.data;

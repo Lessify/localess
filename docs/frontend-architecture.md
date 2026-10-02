@@ -133,6 +133,9 @@ shared/
   directives/    ← custom Angular directives
   pipes/         ← custom Angular pipes (incl. `canUserPerform`, see frontend-permissions.md)
   validators/    ← custom reactive form validators
+  utils/         ← pure functions over domain data, e.g. `content.ts`: `extractContent`, `extractSchemaContent`, `extractReferences`,
+                   `collectTranslatableFields`, `normalizeContent`, `copyBlock`. `ContentHelperService` keeps only what builds
+                   forms (`generateSchemaForm`, `validateContent`, `assetContentToForm`, `referenceContentToForm`)
   generated/     ← auto-generated code (do not edit manually)
 ```
 

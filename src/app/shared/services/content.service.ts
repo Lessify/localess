@@ -35,7 +35,7 @@ import {
   ContentKind,
   ContentUpdate,
 } from '@shared/models/content.model';
-import { ContentHelperService } from '@shared/services/content-helper.service';
+import { normalizeContent } from '@shared/utils/content';
 import { from, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -44,7 +44,6 @@ export class ContentService {
   private readonly firestore = inject(Firestore);
   private readonly functions = inject(Functions);
   private readonly auth = inject(Auth);
-  private readonly contentHelperService = inject(ContentHelperService);
 
   findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
     const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')];
@@ -231,7 +230,7 @@ export class ContentService {
     console.log('updateDocumentData:refs', refs);
     console.log('updateDocumentData:data', data);
     const update: UpdateData<ContentDocument> = {
-      data: JSON.stringify(this.contentHelperService.clone(data)),
+      data: JSON.stringify(normalizeContent(data)),
       updatedAt: serverTimestamp(),
       assets: Array.from(refs[0]),
       links: Array.from(refs[1]),

@@ -179,9 +179,9 @@ describe('EditDocumentSchemaComponent', () => {
     });
 
     it('duplicateSchemaMany inserts a clone right after the source item with a new _id', () => {
-      const { component } = setup();
       const data = [{ _id: 'a', schema: 'child-1', label: 'Original' }];
-      component.duplicateSchemaMany(data, data[0], 0);
+      const { component } = setup({ data: { _id: '1', schema: 'root-1', children: data } });
+      component.duplicateSchemaMany({ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never, data[0], 0);
       expect(data).toHaveLength(2);
       expect(data[1]).toMatchObject({ schema: 'child-1', label: 'Original' });
       expect(data[1]._id).not.toBe('a');

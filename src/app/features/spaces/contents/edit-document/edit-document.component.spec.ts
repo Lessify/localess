@@ -507,6 +507,80 @@ describe('EditDocumentComponent', () => {
     expect(updateDocumentData).not.toHaveBeenCalled();
   });
 
+  describe('preview block actions', () => {
+    const listSchema: Schema = {
+      id: 'root1',
+      type: SchemaType.ROOT,
+      fields: [{ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never],
+    } as unknown as Schema;
+    const children = () => [
+      { _id: 'a', schema: 'child1' },
+      { _id: 'b', schema: 'child1' },
+      { _id: 'c', schema: 'child1' },
+    ];
+
+    function setupList() {
+      const result = setup(documentOf({ _id: 'root-id', schema: 'root1', children: children() }), { schemas: [listSchema, childSchema] });
+      const sendEvent = vi.fn();
+      vi.spyOn(result.component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
+      const select = (id: string) => result.component.navigateToSchemaForwards({ contentId: id, schemaName: 'child1', fieldName: 'children' });
+      const ids = () => (result.component.documentData['children'] as { _id: string }[] | undefined)?.map(it => it._id);
+      return { ...result, sendEvent, select, ids };
+    }
+
+    it('moves the selected block, keeps it selected and updates the preview', () => {
+      const { component, sendEvent, select, ids } = setupList();
+      select('a');
+      sendEvent.mockClear();
+
+      component.onPreviewBlockAction({ id: 'a', action: 'moveDown' });
+
+      expect(ids()).toEqual(['b', 'a', 'c']);
+      expect(component.schemaPath().at(-1)?.contentId).toBe('a');
+      expect(component.isFormDirty).toBe(true);
+      // Only the new document: the page keeps the block selected and reads its new position from it.
+      expect(sendEvent.mock.calls.map(([event]) => event.type)).toEqual(['change']);
+      expect(sendEvent.mock.calls[0][0].data.children.map((it: { _id: string }) => it._id)).toEqual(['b', 'a', 'c']);
+    });
+
+    it('duplicates the selected block right after it, with new ids', () => {
+      const { component, select, ids } = setupList();
+      select('b');
+
+      component.onPreviewBlockAction({ id: 'b', action: 'duplicate' });
+
+      const after = ids()!;
+      expect(after).toHaveLength(4);
+      expect(after[1]).toBe('b');
+      expect(after[2]).not.toBe('b');
+      expect(component.documentBlockIds().has(after[2])).toBe(true);
+    });
+
+    it('removes the selected block and selects the block that held it', () => {
+      const { component, sendEvent, select, ids } = setupList();
+      select('b');
+      sendEvent.mockClear();
+
+      component.onPreviewBlockAction({ id: 'b', action: 'remove' });
+
+      expect(ids()).toEqual(['a', 'c']);
+      expect(component.schemaPath()).toHaveLength(1);
+      expect(component.selectedDocumentData).toBe(component.documentData);
+      expect(sendEvent).toHaveBeenLastCalledWith({ type: 'enterSchema', id: 'root-id', schema: 'root1', root: true });
+    });
+
+    it('ignores actions for a block that is not selected, or that the block does not allow', () => {
+      const { component, select, ids } = setupList();
+      select('a');
+
+      component.onPreviewBlockAction({ id: 'b', action: 'remove' });
+      component.onPreviewBlockAction({ id: 'a', action: 'moveUp' });
+
+      expect(ids()).toEqual(['a', 'b', 'c']);
+      expect(component.isFormDirty).toBe(false);
+    });
+  });
+
   describe('preview schema hover/leave', () => {
     it('onPreviewSchemaHover() tracks the hover path and field', () => {
       const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };

@@ -37,6 +37,7 @@ import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { extractSchemaContent } from '@shared/utils/content';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -54,6 +55,7 @@ import { v4 } from 'uuid';
 
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
 import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
+import { duplicateBlock, removeBlock } from '../shared/block-actions';
 import { LinkSelectComponent } from '../shared/link-select/link-select.component';
 import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-editor.component';
 import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';
@@ -335,10 +337,10 @@ export class EditDocumentSchemaComponent {
     this.form.reset();
     const rootSchema = this.rootSchema();
     if (rootSchema) {
-      const extractSchemaContent = this.contentHelperService.extractSchemaContent(this.data(), rootSchema, this.selectedLocaleId(), false);
-      this.form.patchValue(extractSchemaContent);
-      Object.getOwnPropertyNames(extractSchemaContent).forEach(fieldName => {
-        const content = extractSchemaContent[fieldName];
+      const schemaContent = extractSchemaContent(this.data(), rootSchema, this.selectedLocaleId(), false);
+      this.form.patchValue(schemaContent);
+      Object.getOwnPropertyNames(schemaContent).forEach(fieldName => {
+        const content = schemaContent[fieldName];
         if (content instanceof Array) {
           // Assets
           if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
@@ -395,7 +397,7 @@ export class EditDocumentSchemaComponent {
   }
 
   removeSchemaOne(field: SchemaField): void {
-    delete this.data()[field.name];
+    removeBlock({ parent: this.data(), field: field.name });
     this.structureChange.emit(`removeSchemaOne ${field.name}`);
   }
 
@@ -428,22 +430,16 @@ export class EditDocumentSchemaComponent {
     this.structureChange.emit(`addSchemaMany ${field.name} ${schema.id}`);
   }
 
-  duplicateSchemaMany(data: any[], item: ContentData, idx: number): void {
-    const clone = this.contentHelperService.clone(item, true);
-    data.splice(idx + 1, 0, clone);
+  duplicateSchemaMany(field: SchemaField, item: ContentData, idx: number): void {
+    duplicateBlock({ parent: this.data(), field: field.name, index: idx });
     this.structureChange.emit(`duplicateSchemaMany ${item.schema} ${item._id}`);
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
     const sch: ContentData[] | undefined = this.data()[field.name];
-    if (sch) {
-      const idx = sch.findIndex(it => it._id == schemaId);
-      if (idx >= 0) {
-        sch.splice(idx, 1);
-      }
-      if (sch.length == 0) {
-        delete this.data()[field.name];
-      }
+    const index = sch?.findIndex(it => it._id == schemaId) ?? -1;
+    if (index >= 0) {
+      removeBlock({ parent: this.data(), field: field.name, index });
     }
     this.structureChange.emit(`removeSchemaMany ${field.name}`);
   }
