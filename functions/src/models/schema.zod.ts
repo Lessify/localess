@@ -101,15 +101,21 @@ export const schemaFieldBooleanSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.BOOLEAN),
 });
 
-export const schemaFieldSchemasSchema = schemaFieldBaseSchema.extend({
-  kind: z.literal(SchemaFieldKind.SCHEMAS),
-  schemas: z.array(z.string()).optional(),
-});
+// REFERENCE/REFERENCES/SCHEMA/SCHEMAS are never translatable — the schema editor offers no switch for
+// them — so `translatable` is omitted and stripped on parse, matching what the editor saves.
+export const schemaFieldSchemasSchema = schemaFieldBaseSchema
+  .extend({
+    kind: z.literal(SchemaFieldKind.SCHEMAS),
+    schemas: z.array(z.string()).optional(),
+  })
+  .omit({ translatable: true });
 
-export const schemaFieldSchemaSchema = schemaFieldBaseSchema.extend({
-  kind: z.literal(SchemaFieldKind.SCHEMA),
-  schemas: z.array(z.string()).optional(),
-});
+export const schemaFieldSchemaSchema = schemaFieldBaseSchema
+  .extend({
+    kind: z.literal(SchemaFieldKind.SCHEMA),
+    schemas: z.array(z.string()).optional(),
+  })
+  .omit({ translatable: true });
 
 export const schemaFieldOptionSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTION),
@@ -127,15 +133,19 @@ export const schemaFieldLinkSchema = schemaFieldBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.LINK),
 });
 
-export const schemaFieldReferenceSchema = schemaFieldBaseSchema.extend({
-  kind: z.literal(SchemaFieldKind.REFERENCE),
-  path: z.string().optional(),
-});
+export const schemaFieldReferenceSchema = schemaFieldBaseSchema
+  .extend({
+    kind: z.literal(SchemaFieldKind.REFERENCE),
+    path: z.string().optional(),
+  })
+  .omit({ translatable: true });
 
-export const schemaFieldReferencesSchema = schemaFieldBaseSchema.extend({
-  kind: z.literal(SchemaFieldKind.REFERENCES),
-  path: z.string().optional(),
-});
+export const schemaFieldReferencesSchema = schemaFieldBaseSchema
+  .extend({
+    kind: z.literal(SchemaFieldKind.REFERENCES),
+    path: z.string().optional(),
+  })
+  .omit({ translatable: true });
 
 export const assetFileTypeSchema = z.enum(AssetFileType);
 

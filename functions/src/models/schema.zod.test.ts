@@ -62,6 +62,28 @@ describe('zSchemaPushSchema', () => {
     expect(zSchemaPushSchema.safeParse(withField({ name: 'blocks', kind: 'SCHEMAS', schemas: [] })).success).toBe(false);
     expect(zSchemaPushSchema.safeParse(withField({ name: 'blocks', kind: 'SCHEMAS', schemas: ['Button'] })).success).toBe(true);
   });
+  it('strips translatable from REFERENCE/REFERENCES/SCHEMA/SCHEMAS fields, keeping it elsewhere', () => {
+    const parsed = zSchemaPushSchema.parse({
+      type: 'upsert',
+      schemas: [
+        {
+          id: 'Page',
+          type: 'ROOT',
+          fields: [
+            { name: 'author', kind: 'REFERENCE', translatable: true },
+            { name: 'related', kind: 'REFERENCES', translatable: true },
+            { name: 'hero', kind: 'SCHEMA', schemas: ['Button'], translatable: true },
+            { name: 'blocks', kind: 'SCHEMAS', schemas: ['Button'], translatable: true },
+            { name: 'title', kind: 'TEXT', translatable: true },
+          ],
+        },
+      ],
+    });
+    const fields = (parsed.schemas[0] as { fields: Record<string, unknown>[] }).fields;
+
+    expect(fields.slice(0, 4).map(it => 'translatable' in it)).toEqual([false, false, false, false]);
+    expect(fields[4]['translatable']).toBe(true);
+  });
   it('leaves imports free to carry existing SCHEMA fields without schemas', () => {
     expect(zSchemaExportArraySchema.safeParse([{ id: 'Page', type: 'ROOT', fields: [{ name: 'hero', kind: 'SCHEMA' }] }]).success).toBe(true);
   });
