@@ -63,6 +63,16 @@ import {
 } from './middleware/query-auth.middleware';
 import { validateIdParams } from './middleware/id-param.middleware';
 
+/**
+ * Encodes a request value re-inserted into a `cv` redirect. Express has already decoded it, so
+ * re-inserting it raw would let a value like `en&token=x` add parameters to the redirect.
+ * @param {unknown} value decoded path or query value
+ * @return {string} the value encoded for a URL path segment or query value
+ */
+function q(value: unknown): string {
+  return encodeURIComponent(String(value));
+}
+
 // eslint-disable-next-line new-cap
 export const CDN = Router();
 validateIdParams(CDN);
@@ -93,12 +103,12 @@ CDN.get('/api/v1/spaces/:spaceId/translations/:locale', requireTranslationPermis
   }
   logger.info('[V1:Translations] cache meta : ' + JSON.stringify(cacheMetadata));
   if (cv === undefined || cv != cacheMetadata['generation']) {
-    let url = `/api/v1/spaces/${spaceId}/translations/${locale}?cv=${cacheMetadata['generation']}`;
+    let url = `/api/v1/spaces/${spaceId}/translations/${q(locale)}?cv=${cacheMetadata['generation']}`;
     if (version) {
-      url += `&version=${version}`;
+      url += `&version=${q(version)}`;
     }
     if (token) {
-      url += `&token=${token}`;
+      url += `&token=${q(token)}`;
     }
     logger.info(`[V1:Translations] redirect to => ${url}`);
     const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
@@ -166,16 +176,16 @@ CDN.get(
     if (cv === undefined || cv != cacheMetadata['generation']) {
       let url = `/api/v1/spaces/${spaceId}/links?cv=${cacheMetadata['generation']}`;
       if (parentSlug !== undefined) {
-        url += `&parentSlug=${parentSlug}`;
+        url += `&parentSlug=${q(parentSlug)}`;
       }
       if (excludeChildren === 'true') {
-        url += `&excludeChildren=${excludeChildren}`;
+        url += `&excludeChildren=${q(excludeChildren)}`;
       }
       if (kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER) {
-        url += `&kind=${kind}`;
+        url += `&kind=${q(kind)}`;
       }
       if (token) {
-        url += `&token=${token}`;
+        url += `&token=${q(token)}`;
       }
       const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
       if (tokenCacheTtl === 0) {
@@ -278,24 +288,24 @@ CDN.get('/api/v1/spaces/:spaceId/contents/slugs/*slug', requireContentPermission
     return;
   }
   if (cv === undefined || cv != cacheMetadata['generation']) {
-    let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug}?cv=${cacheMetadata['generation']}`;
+    let url = `/api/v1/spaces/${spaceId}/contents/slugs/${fullSlug.split('/').map(q).join('/')}?cv=${cacheMetadata['generation']}`;
     if (locale) {
-      url += `&locale=${locale}`;
+      url += `&locale=${q(locale)}`;
     }
     if (version) {
-      url += `&version=${version}`;
+      url += `&version=${q(version)}`;
     }
     if (token) {
-      url += `&token=${token}`;
+      url += `&token=${q(token)}`;
     }
     if (resolveReference) {
-      url += `&resolveReference=${resolveReference}`;
+      url += `&resolveReference=${q(resolveReference)}`;
     }
     if (resolveLink) {
-      url += `&resolveLink=${resolveLink}`;
+      url += `&resolveLink=${q(resolveLink)}`;
     }
     if (resolveAsset) {
-      url += `&resolveAsset=${resolveAsset}`;
+      url += `&resolveAsset=${q(resolveAsset)}`;
     }
     logger.info(`[V1:ContentBySlug] redirect to => ${url}`);
     const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
@@ -384,24 +394,24 @@ CDN.get('/api/v1/spaces/:spaceId/contents/:contentId', requireContentPermissions
     return;
   }
   if (cv === undefined || cv != cacheMetadata['generation']) {
-    let url = `/api/v1/spaces/${spaceId}/contents/${contentId}?cv=${cacheMetadata['generation']}`;
+    let url = `/api/v1/spaces/${spaceId}/contents/${q(contentId)}?cv=${cacheMetadata['generation']}`;
     if (locale) {
-      url += `&locale=${locale}`;
+      url += `&locale=${q(locale)}`;
     }
     if (version) {
-      url += `&version=${version}`;
+      url += `&version=${q(version)}`;
     }
     if (token) {
-      url += `&token=${token}`;
+      url += `&token=${q(token)}`;
     }
     if (resolveReference) {
-      url += `&resolveReference=${resolveReference}`;
+      url += `&resolveReference=${q(resolveReference)}`;
     }
     if (resolveLink) {
-      url += `&resolveLink=${resolveLink}`;
+      url += `&resolveLink=${q(resolveLink)}`;
     }
     if (resolveAsset) {
-      url += `&resolveAsset=${resolveAsset}`;
+      url += `&resolveAsset=${q(resolveAsset)}`;
     }
     logger.info(`[V1:ContentById] redirect to => ${url}`);
     const tokenCacheTtl = req.token && isTokenV2(req.token) ? req.token.cacheTtl : undefined;
