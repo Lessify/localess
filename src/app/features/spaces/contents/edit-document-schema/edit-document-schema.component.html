@@ -340,13 +340,13 @@
           <!--REFERENCE-->
           @case ('REFERENCE') {
             @if (form.controls[field.name]; as control) {
-              <ll-reference-select [form]="control" [component]="field" [space]="space()" />
+              <ll-reference-select [form]="control" [component]="field" [space]="space()" [locked]="isLockedInLocale(field)" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCES') {
             @if (form.controls[field.name]; as control) {
-              <ll-references-select [form]="control" [component]="field" [space]="space()" />
+              <ll-references-select [form]="control" [component]="field" [space]="space()" [locked]="isLockedInLocale(field)" />
             }
           }
           <!--ASSET-->
@@ -355,11 +355,17 @@
               [component]="field"
               [form]="form.controls[field.name]"
               [space]="space()"
-              [hover]="hoverSchemaField() === field.name" />
+              [hover]="hoverSchemaField() === field.name"
+              [locked]="isLockedInLocale(field)" />
           }
           <!--ASSETS-->
           @case ('ASSETS') {
-            <ll-assets-select [component]="field" [form]="form.controls[field.name]" [space]="space()" (assetsChange)="onAssetsChange()" />
+            <ll-assets-select
+              [component]="field"
+              [form]="form.controls[field.name]"
+              [space]="space()"
+              [locked]="isLockedInLocale(field)"
+              (assetsChange)="onAssetsChange()" />
           }
           <!--SCHEMA-->
           @case ('SCHEMA') {

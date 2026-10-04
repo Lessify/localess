@@ -244,6 +244,64 @@ describe('EditDocumentSchemaComponent', () => {
       vi.useRealTimers();
     });
 
+    // Reference and asset pickers keep their controls enabled on every locale so the shared value
+    // stays visible; the write-back is what keeps another locale from overwriting it. Called directly:
+    // a REFERENCE value makes the picker load the document from Firestore, which isn't under test here.
+    function writeBack(component: EditDocumentSchemaComponent, root: SchemaComponent, value: Record<string, unknown>) {
+      (component as unknown as { writeFormValue(root: SchemaComponent, value: Record<string, unknown>): void }).writeFormValue(
+        root,
+        value,
+      );
+    }
+
+    it('never writes a non-translatable REFERENCE back from another locale', () => {
+      const shared = { kind: SchemaFieldKind.REFERENCE, uri: 'doc-en' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', author: shared };
+      const references = schema([{ name: 'author', kind: SchemaFieldKind.REFERENCE } as never]);
+      const { component } = setup({ schemas: [], data, locale: { id: 'de', name: 'German' } });
+
+      writeBack(component, references, { author: { kind: SchemaFieldKind.REFERENCE, uri: 'doc-de' } });
+
+      expect(data['author']).toEqual(shared);
+      expect(data['author_i18n_de']).toBeUndefined();
+    });
+
+    it('treats a leftover translatable flag on a REFERENCE as not translatable', () => {
+      const shared = { kind: SchemaFieldKind.REFERENCE, uri: 'doc-en' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', author: shared };
+      const leftover = schema([{ name: 'author', kind: SchemaFieldKind.REFERENCE, translatable: true } as never]);
+      const { component } = setup({ schemas: [], data, locale: { id: 'de', name: 'German' } });
+
+      writeBack(component, leftover, { author: { kind: SchemaFieldKind.REFERENCE, uri: 'doc-de' } });
+
+      expect(data['author_i18n_de']).toBeUndefined();
+      expect(data['author']).toEqual(shared);
+      expect(component.isLockedInLocale(leftover.fields![0])).toBe(true);
+    });
+
+    it('still writes a translatable ASSET to the suffixed key on another locale', () => {
+      const data: ContentData = { _id: '1', _schema: 'root-1' };
+      const assets = schema([{ name: 'image', kind: SchemaFieldKind.ASSET, translatable: true } as never]);
+      const { component } = setup({ schemas: [], data, locale: { id: 'de', name: 'German' } });
+      const german = { kind: SchemaFieldKind.ASSET, uri: 'asset-de' };
+
+      writeBack(component, assets, { image: german });
+
+      expect(data['image_i18n_de']).toEqual(german);
+      expect(data['image']).toBeUndefined();
+    });
+
+    it('locks shared fields only outside the default locale', () => {
+      const field = { name: 'image', kind: SchemaFieldKind.ASSET } as never;
+      const translatableAsset = { name: 'image', kind: SchemaFieldKind.ASSET, translatable: true } as never;
+
+      expect(setup({ locale: CONTENT_DEFAULT_LOCALE }).component.isLockedInLocale(field)).toBe(false);
+      TestBed.resetTestingModule();
+      const { component } = setup({ locale: { id: 'de', name: 'German' } });
+      expect(component.isLockedInLocale(field)).toBe(true);
+      expect(component.isLockedInLocale(translatableAsset)).toBe(false);
+    });
+
     // Clearing a translation removes the key rather than storing an empty string, so serving falls
     // back to the default locale again.
     it('removes the suffixed key when the translation is cleared', () => {

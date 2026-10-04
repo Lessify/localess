@@ -24,6 +24,7 @@ import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icon
 import { ContentAsset, ContentData, ContentDocument, ContentReference } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale, toProviderLocale } from '@shared/models/locale.model';
 import {
+  isFieldTranslatable,
   Schema,
   SchemaComponent,
   SchemaEnum,
@@ -126,6 +127,11 @@ export class EditDocumentSchemaComponent {
   schemaForm = viewChild<ElementRef<HTMLFormElement>>('schemaForm');
 
   isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
+
+  /** A non-translatable field viewed outside the default locale: its shared value is read-only. */
+  isLockedInLocale(field: SchemaField): boolean {
+    return !this.isDefaultLocale() && !isFieldTranslatable(field);
+  }
   selectedLocaleId = computed(() => this.selectedLocale().id);
   // Subscriptions
   settingsStore = inject(LocalSettingsStore);
@@ -310,7 +316,7 @@ export class EditDocumentSchemaComponent {
         }
       } else {
         // check only locale
-        if (field.translatable) {
+        if (isFieldTranslatable(field)) {
           if (value === undefined || value === null || value === '') {
             delete this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`];
           } else if (Array.isArray(value) && value.length === 0) {
@@ -318,17 +324,10 @@ export class EditDocumentSchemaComponent {
           } else {
             this.data()[`${field.name}_i18n_${this.selectedLocaleId()}`] = value;
           }
-        } else {
-          // Non-translatable fields are disabled on non-default locales and are
-          // excluded from form.value (value === undefined). Skip them so the
-          // shared value in this.data is never overwritten with undefined.
-          if (value === undefined) continue;
-          if (value === null) {
-            delete this.data()[field.name];
-          } else {
-            this.data()[field.name] = value;
-          }
         }
+        // A non-translatable field holds one value shared by every locale, editable only in the
+        // default locale. Its control is not always disabled here (reference and asset pickers keep
+        // theirs enabled to show the value), so never write it back from another locale.
       }
     }
   }
@@ -470,7 +469,7 @@ export class EditDocumentSchemaComponent {
     if (schema.previewField) {
       const field = schema.fields?.find(it => it.name === schema.previewField);
       if (field) {
-        if (field.translatable && !this.isDefaultLocale()) {
+        if (isFieldTranslatable(field) && !this.isDefaultLocale()) {
           return content[schema.previewField + '_i18n_' + localeId];
         } else {
           return content[schema.previewField];

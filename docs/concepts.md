@@ -97,6 +97,15 @@ talking to a translation provider must resolve it first — see `toProviderLocal
 `functions/src/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
 from a German translation of `title`.
 
+**Not every field kind can be translatable.** `translatable` lives on `SchemaFieldTranslatable`,
+mixed into every kind except `REFERENCE`, `REFERENCES`, `SCHEMA` and `SCHEMAS` — their value is
+shared by every locale, and nested blocks translate their own fields. Read it through
+`isFieldTranslatable()` (in both `schema.model.ts` files), never `field.translatable`: it also
+ignores a leftover flag that schemas pushed through the API before the push started stripping it
+can still carry. A non-translatable field is read-only outside the default locale; reference and
+asset pickers keep their controls enabled to show the shared value but take `[locked]`, and
+`EditDocumentSchemaComponent` never writes a non-translatable field back from another locale.
+
 **Only `_`-prefixed keys are internal.** A block's identity lives in `_id` and `_schema`, and those
 two are the only reserved field names, so `schema` is an ordinary field name. Blocks stored before
 `_schema` existed carry the schema id under a legacy `schema` key instead. It is never served:

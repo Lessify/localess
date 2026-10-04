@@ -67,6 +67,8 @@ export class AssetsSelectComponent implements OnInit {
   form = input.required<FormArray>();
   component = input.required<SchemaFieldAssets>();
   space = input.required<Space>();
+  /** Shared, non-translatable value viewed outside the default locale: shown, but not editable. */
+  locked = input(false);
   // Outputs
   assetsChange = output<string[]>();
 

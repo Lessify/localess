@@ -117,6 +117,14 @@ describe('extractContent', () => {
     expect(extractContent(content, schemas, 'de')).toEqual({ _id: '1', _schema: 'root-1', title: 'Hello' });
   });
 
+  it('ignores a leftover translatable flag on a REFERENCE field, serving the shared value', () => {
+    const shared = { kind: 'REFERENCE', uri: 'doc-en' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', author: shared, author_i18n_de: { kind: 'REFERENCE', uri: 'doc-de' } };
+    const schemas = schemasMap(schemaOf([{ name: 'author', kind: SchemaFieldKind.REFERENCE, translatable: true }]));
+
+    expect(extractContent(content, schemas, 'de').author).toEqual(shared);
+  });
+
   it('serves a user field named schema as a regular field', () => {
     const content: ContentData = { _id: '1', _schema: 'root-1', schema: 'user value' };
     const schemas = schemasMap(schemaOf([{ name: 'schema', kind: SchemaFieldKind.TEXT }]));

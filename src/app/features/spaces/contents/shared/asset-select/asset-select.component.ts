@@ -64,6 +64,8 @@ export class AssetSelectComponent implements OnInit {
   form = input.required<FormGroup>();
   component = input.required<SchemaFieldAsset>();
   space = input.required<Space>();
+  /** Shared, non-translatable value viewed outside the default locale: shown, but not editable. */
+  locked = input(false);
   hover = input(false);
   asset = signal<AssetFile | undefined>(undefined);
 

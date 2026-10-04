@@ -82,52 +82,77 @@ export interface SchemaFieldBase {
   required?: boolean;
   description?: string;
   defaultValue?: string;
+}
+
+/**
+ * Mixed into the field kinds that can hold a value per locale. REFERENCE, REFERENCES, SCHEMA and
+ * SCHEMAS can't: their value is shared by every locale, and nested blocks translate their own fields.
+ */
+export interface SchemaFieldTranslatable {
   translatable?: boolean;
 }
 
-export interface SchemaFieldText extends SchemaFieldBase {
+/** Field kinds that can never be translatable. */
+const UNTRANSLATABLE_FIELD_KINDS: ReadonlySet<SchemaFieldKind> = new Set([
+  SchemaFieldKind.REFERENCE,
+  SchemaFieldKind.REFERENCES,
+  SchemaFieldKind.SCHEMA,
+  SchemaFieldKind.SCHEMAS,
+]);
+
+/**
+ * Whether a field holds a value per locale. Always false for REFERENCE, REFERENCES, SCHEMA and
+ * SCHEMAS, even when stored data still carries a leftover `translatable` flag on them.
+ * @param {SchemaField} field schema field
+ * @return {boolean} true when the field is translatable
+ */
+export function isFieldTranslatable(field: SchemaField): boolean {
+  return !UNTRANSLATABLE_FIELD_KINDS.has(field.kind) && 'translatable' in field && field.translatable === true;
+}
+
+export interface SchemaFieldText extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.TEXT;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchemaFieldTextarea extends SchemaFieldBase {
+export interface SchemaFieldTextarea extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.TEXTAREA;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchemaFieldRichText extends SchemaFieldBase {
+export interface SchemaFieldRichText extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.RICH_TEXT;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchemaFieldMarkdown extends SchemaFieldBase {
+export interface SchemaFieldMarkdown extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.MARKDOWN;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface SchemaFieldNumber extends SchemaFieldBase {
+export interface SchemaFieldNumber extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.NUMBER;
   minValue?: number;
   maxValue?: number;
 }
 
-export interface SchemaFieldColor extends SchemaFieldBase {
+export interface SchemaFieldColor extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.COLOR;
 }
 
-export interface SchemaFieldDate extends SchemaFieldBase {
+export interface SchemaFieldDate extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.DATE;
 }
 
-export interface SchemaFieldDateTime extends SchemaFieldBase {
+export interface SchemaFieldDateTime extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.DATETIME;
 }
 
-export interface SchemaFieldBoolean extends SchemaFieldBase {
+export interface SchemaFieldBoolean extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.BOOLEAN;
 }
 
@@ -141,19 +166,19 @@ export interface SchemaFieldSchema extends SchemaFieldBase {
   schemas?: string[];
 }
 
-export interface SchemaFieldOption extends SchemaFieldBase {
+export interface SchemaFieldOption extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.OPTION;
   source: string;
 }
 
-export interface SchemaFieldOptions extends SchemaFieldBase {
+export interface SchemaFieldOptions extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.OPTIONS;
   source: string;
   minValues?: number;
   maxValues?: number;
 }
 
-export interface SchemaFieldLink extends SchemaFieldBase {
+export interface SchemaFieldLink extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.LINK;
 }
 
@@ -167,13 +192,13 @@ export interface SchemaFieldReferences extends SchemaFieldBase {
   path?: string;
 }
 
-export interface SchemaFieldAsset extends SchemaFieldBase {
+export interface SchemaFieldAsset extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.ASSET;
   fileTypes?: AssetFileType[];
   fileType?: AssetFileType;
 }
 
-export interface SchemaFieldAssets extends SchemaFieldBase {
+export interface SchemaFieldAssets extends SchemaFieldBase, SchemaFieldTranslatable {
   kind: SchemaFieldKind.ASSETS;
   fileTypes?: AssetFileType[];
   fileType?: AssetFileType;

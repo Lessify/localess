@@ -52,100 +52,95 @@ export const schemaFieldBaseSchema = z.object({
   required: z.boolean().optional(),
   description: z.string().max(250).optional(),
   defaultValue: z.string().max(250).optional(),
+});
+
+// Mirrors SchemaFieldTranslatable: only these kinds carry `translatable`. On REFERENCE/REFERENCES/SCHEMA/SCHEMAS
+// it is not part of the schema, so a stray flag is stripped on parse — matching what the schema editor saves.
+const schemaFieldTranslatableBaseSchema = schemaFieldBaseSchema.extend({
   translatable: z.boolean().optional(),
 });
 
-export const schemaFieldTextSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldTextSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.TEXT),
   minLength: z.number().optional(),
   maxLength: z.number().optional(),
 });
 
-export const schemaFieldTextareaSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldTextareaSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.TEXTAREA),
   minLength: z.number().optional(),
   maxLength: z.number().optional(),
 });
 
-export const schemaFieldRichTextSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldRichTextSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.RICH_TEXT),
   minLength: z.number().optional(),
   maxLength: z.number().optional(),
 });
 
-export const schemaFieldMarkdownSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldMarkdownSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.MARKDOWN),
   minLength: z.number().optional(),
   maxLength: z.number().optional(),
 });
 
-export const schemaFieldNumberSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldNumberSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.NUMBER),
   minValue: z.number().optional(),
   maxValue: z.number().optional(),
 });
 
-export const schemaFieldColorSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldColorSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.COLOR),
 });
 
-export const schemaFieldDateSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldDateSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.DATE),
 });
 
-export const schemaFieldDateTimeSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldDateTimeSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.DATETIME),
 });
 
-export const schemaFieldBooleanSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldBooleanSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.BOOLEAN),
 });
 
-// REFERENCE/REFERENCES/SCHEMA/SCHEMAS are never translatable — the schema editor offers no switch for
-// them — so `translatable` is omitted and stripped on parse, matching what the editor saves.
-export const schemaFieldSchemasSchema = schemaFieldBaseSchema
-  .extend({
-    kind: z.literal(SchemaFieldKind.SCHEMAS),
-    schemas: z.array(z.string()).optional(),
-  })
-  .omit({ translatable: true });
+export const schemaFieldSchemasSchema = schemaFieldBaseSchema.extend({
+  kind: z.literal(SchemaFieldKind.SCHEMAS),
+  schemas: z.array(z.string()).optional(),
+});
 
-export const schemaFieldSchemaSchema = schemaFieldBaseSchema
-  .extend({
-    kind: z.literal(SchemaFieldKind.SCHEMA),
-    schemas: z.array(z.string()).optional(),
-  })
-  .omit({ translatable: true });
+export const schemaFieldSchemaSchema = schemaFieldBaseSchema.extend({
+  kind: z.literal(SchemaFieldKind.SCHEMA),
+  schemas: z.array(z.string()).optional(),
+});
 
-export const schemaFieldOptionSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldOptionSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTION),
   source: z.string(),
 });
 
-export const schemaFieldOptionsSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldOptionsSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.OPTIONS),
   source: z.string(),
   minValues: z.number().optional(),
   maxValues: z.number().optional(),
 });
 
-export const schemaFieldLinkSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldLinkSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.LINK),
 });
 
-export const schemaFieldReferenceSchema = schemaFieldBaseSchema
-  .extend({
-    kind: z.literal(SchemaFieldKind.REFERENCE),
-    path: z.string().optional(),
-  })
-  .omit({ translatable: true });
+export const schemaFieldReferenceSchema = schemaFieldBaseSchema.extend({
+  kind: z.literal(SchemaFieldKind.REFERENCE),
+  path: z.string().optional(),
+});
 
-export const schemaFieldReferencesSchema = schemaFieldBaseSchema
-  .extend({
-    kind: z.literal(SchemaFieldKind.REFERENCES),
-    path: z.string().optional(),
-  })
-  .omit({ translatable: true });
+export const schemaFieldReferencesSchema = schemaFieldBaseSchema.extend({
+  kind: z.literal(SchemaFieldKind.REFERENCES),
+  path: z.string().optional(),
+});
 
 export const assetFileTypeSchema = z.enum(AssetFileType);
 
@@ -154,13 +149,13 @@ export const schemaEnumSchema = schemaBaseSchema.extend({
   values: z.array(schemaEnumValueSchema).optional(),
 });
 
-export const schemaFieldAssetSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldAssetSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSET),
   fileTypes: z.array(assetFileTypeSchema).optional(),
   fileType: assetFileTypeSchema.optional(),
 });
 
-export const schemaFieldAssetsSchema = schemaFieldBaseSchema.extend({
+export const schemaFieldAssetsSchema = schemaFieldTranslatableBaseSchema.extend({
   kind: z.literal(SchemaFieldKind.ASSETS),
   fileTypes: z.array(assetFileTypeSchema).optional(),
   fileType: assetFileTypeSchema.optional(),

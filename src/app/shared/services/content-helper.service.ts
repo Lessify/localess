@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
 import { ContentAsset, ContentData, ContentError, ContentReference } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { isFieldTranslatable, Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { extractSchemaContent } from '@shared/utils/content';
 import { CommonValidator } from '@shared/validators/common.validator';
 
@@ -164,7 +164,7 @@ export class ContentHelperService {
       // translatable + !isDefaultLocale => disabled = false
       // !translatable + isDefaultLocale => disabled = false
       // !translatable + !isDefaultLocale => disabled = true
-      const disabled = !(field.translatable === true || isDefaultLocale);
+      const disabled = !(isFieldTranslatable(field) || isDefaultLocale);
       switch (field.kind) {
         case SchemaFieldKind.TEXT:
         case SchemaFieldKind.TEXTAREA:

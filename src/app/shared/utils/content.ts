@@ -7,7 +7,7 @@ import {
   isContentReference,
 } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { isSchemaArray, Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { isFieldTranslatable, isSchemaArray, Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
 import { TranslatableField } from '@shared/models/translate.model';
 import { generateHTML, generateJSON, JSONContent } from '@tiptap/core';
 import { v4 } from 'uuid';
@@ -61,7 +61,7 @@ export function extractSchemaContent(data: ContentData, schema: SchemaComponent,
     ?.forEach(field => {
       //console.log('field', field)
       let value;
-      if (field.translatable && !isDefaultLocale) {
+      if (isFieldTranslatable(field) && !isDefaultLocale) {
         // Extract Locale specific values
         value = data[`${field.name}_i18n_${locale}`];
       } else {
@@ -111,7 +111,7 @@ export function extractContent(content: ContentData, schemas: Map<string, Schema
           extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
         }
       } else {
-        if (field.translatable) {
+        if (isFieldTranslatable(field)) {
           let value = content[`${field.name}_i18n_${locale}`];
           if (value === undefined) {
             value = content[field.name];
@@ -241,7 +241,7 @@ export function collectTranslatableFields(
           children?.forEach(it => contentIteration.push(it));
           continue;
         }
-        if (!field.translatable) continue;
+        if (!isFieldTranslatable(field)) continue;
         if (!TRANSLATABLE_KINDS.has(field.kind)) continue;
 
         // The default locale's value lives under the bare field name; every other locale is

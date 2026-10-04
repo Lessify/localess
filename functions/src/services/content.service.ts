@@ -15,6 +15,7 @@ import {
   ContentKind,
   ContentDocumentApi,
   ContentMetadata,
+  isFieldTranslatable,
   Schema,
   SchemaFieldKind,
   SchemaType,
@@ -206,7 +207,7 @@ export function extractContent(content: ContentData, schemas: Map<string, Schema
           extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
         }
       } else {
-        if (field.translatable) {
+        if (isFieldTranslatable(field)) {
           let value = content[`${field.name}_i18n_${locale}`];
           if (value === undefined) {
             value = content[field.name];

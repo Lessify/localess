@@ -59,6 +59,8 @@ export class ReferencesSelectComponent implements OnInit {
   form = input.required<FormArray>();
   component = input.required<SchemaFieldReferences>();
   space = input.required<Space>();
+  /** Shared, non-translatable value viewed outside the default locale: shown, but not editable. */
+  locked = input(false);
   // Outputs
   referencesChange = output<string[]>();
 

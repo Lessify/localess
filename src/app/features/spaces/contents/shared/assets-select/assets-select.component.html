@@ -7,7 +7,7 @@
           <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
         }
       </span>
-      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Assets" (click)="openAssetSelectDialog()">
+      <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Assets" [disabled]="locked()" (click)="openAssetSelectDialog()">
         <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
       </button>
     </legend>
@@ -15,7 +15,7 @@
       <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
     <hlm-field-separator />
-    <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="assetDropDrop($event)">
+    <div hlmItemGroup class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="assetDropDrop($event)">
       @for (asset of assets(); track asset.id; let idx = $index) {
         <div
           hlmItem
@@ -53,10 +53,17 @@
             </p>
           </div>
           <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-            <button hlmBtn size="icon" variant="outline" (click)="deleteAsset(idx)" hlmTooltip="Delete">
+            <button hlmBtn size="icon" variant="outline" [disabled]="locked()" (click)="deleteAsset(idx)" hlmTooltip="Delete">
               <ng-icon hlm size="sm" name="lucideTrash" />
             </button>
-            <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+            <button
+              hlmBtn
+              size="icon"
+              variant="ghost"
+              cdkDragHandle
+              [disabled]="locked()"
+              class="cursor-grab active:cursor-grabbing"
+              hlmTooltip="Move">
               <ng-icon hlm size="sm" name="lucideGripVertical" />
             </button>
           </div>
