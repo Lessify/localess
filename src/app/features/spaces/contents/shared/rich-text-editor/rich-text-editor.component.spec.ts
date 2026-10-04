@@ -20,7 +20,7 @@ function doc(text: string, marks?: { type: string }[]) {
 }
 
 describe('RichTextEditorComponent', () => {
-  function setup(data: ContentData = { _id: 'c1', schema: 's1' }, selectedLocale: Locale = de) {
+  function setup(data: ContentData = { _id: 'c1', _schema: 's1' }, selectedLocale: Locale = de) {
     const translate = vi.fn().mockReturnValue(of('<p>translated</p>'));
     const success = vi.fn();
     const error = vi.fn();
@@ -78,7 +78,7 @@ describe('RichTextEditorComponent', () => {
    */
   describe('translate', () => {
     it('sends the source document as HTML', () => {
-      const { component, translate } = setup({ _id: 'c1', schema: 's1', body: doc('Hello') });
+      const { component, translate } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -94,7 +94,7 @@ describe('RichTextEditorComponent', () => {
     // `default` is a storage sentinel, not a language. Given the space's fallback, the provider is
     // told the real source language instead of being left to auto-detect.
     it('sends the fallback language when the source is the default locale', () => {
-      const { component, fixture, translate } = setup({ _id: 'c1', schema: 's1', body: doc('Hello') });
+      const { component, fixture, translate } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
       fixture.componentRef.setInput('fallbackLocale', { id: 'en', name: 'English' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
@@ -104,7 +104,7 @@ describe('RichTextEditorComponent', () => {
 
     // The reason HTML is the interchange format: marks have to survive the trip.
     it('keeps marks in the HTML it sends', () => {
-      const { component, translate } = setup({ _id: 'c1', schema: 's1', body: doc('Hello', [{ type: 'bold' }]) });
+      const { component, translate } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello', [{ type: 'bold' }]) });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -112,7 +112,7 @@ describe('RichTextEditorComponent', () => {
     });
 
     it('uses the locale-suffixed field for a non-default source locale', () => {
-      const { component, translate } = setup({ _id: 'c1', schema: 's1', ['body_i18n_de']: doc('Hallo') });
+      const { component, translate } = setup({ _id: 'c1', _schema: 's1', ['body_i18n_de']: doc('Hallo') });
 
       component.translate('body', 'de', 'en');
 
@@ -125,7 +125,7 @@ describe('RichTextEditorComponent', () => {
     });
 
     it('parses the translated HTML back into the editor and the form control', () => {
-      const { component, control, translate, success } = setup({ _id: 'c1', schema: 's1', body: doc('Hello') });
+      const { component, control, translate, success } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
       translate.mockReturnValue(of('<p>Hallo <strong>Welt</strong></p>'));
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
@@ -137,7 +137,7 @@ describe('RichTextEditorComponent', () => {
     });
 
     it('notifies an error when the field has no value', () => {
-      const { component, translate, error } = setup({ _id: 'c1', schema: 's1' });
+      const { component, translate, error } = setup({ _id: 'c1', _schema: 's1' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -150,7 +150,7 @@ describe('RichTextEditorComponent', () => {
     it('notifies an error for an empty document', () => {
       const { component, translate, error } = setup({
         _id: 'c1',
-        schema: 's1',
+        _schema: 's1',
         body: { type: 'doc', content: [{ type: 'paragraph' }] },
       });
 
@@ -162,7 +162,7 @@ describe('RichTextEditorComponent', () => {
 
     // A field that predates the editor, or was written through the API, can hold a plain string.
     it('passes a legacy string value through unchanged', () => {
-      const { component, translate } = setup({ _id: 'c1', schema: 's1', body: '<p>Hello</p>' });
+      const { component, translate } = setup({ _id: 'c1', _schema: 's1', body: '<p>Hello</p>' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -170,7 +170,7 @@ describe('RichTextEditorComponent', () => {
     });
 
     it('notifies an error with a documentation link on failure', () => {
-      const { component, translate, error } = setup({ _id: 'c1', schema: 's1', body: doc('Hello') });
+      const { component, translate, error } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
       translate.mockReturnValue(throwError(() => new Error('boom')));
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');

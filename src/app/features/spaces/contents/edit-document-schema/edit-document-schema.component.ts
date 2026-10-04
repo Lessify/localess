@@ -135,7 +135,7 @@ export class EditDocumentSchemaComponent {
   // Inputs
   readonly documents = input<ContentDocument[]>([]);
   readonly space = input<Space>();
-  readonly data = input<ContentData>({ _id: '', _schema: '', schema: '' });
+  readonly data = input<ContentData>({ _id: '', _schema: '' });
   schemas = input.required<Schema[]>();
   /**
    * Incremented by the parent to force a regeneration after it mutates the document in place.
@@ -163,7 +163,7 @@ export class EditDocumentSchemaComponent {
     this.schemas()
       .filter(it => it.type === SchemaType.ROOT || it.type === SchemaType.NODE)
       .map(it => it as SchemaComponent)
-      .find(it => it.id == this.data()?.schema),
+      .find(it => it.id == this.data()?._schema),
   );
   documentId = computed(() => this.data()._id);
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
@@ -384,13 +384,11 @@ export class EditDocumentSchemaComponent {
       this.data()[field.name] = {
         _id: v4(),
         _schema: schema.id,
-        schema: schema.id,
       };
     } else {
       this.data()[field.name] = {
         _id: v4(),
         _schema: schema.id,
-        schema: schema.id,
       };
     }
     this.structureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
@@ -409,13 +407,11 @@ export class EditDocumentSchemaComponent {
         fieldData.splice(index, 0, {
           _id: v4(),
           _schema: schema.id,
-          schema: schema.id,
         });
       } else {
         fieldData.push({
           _id: v4(),
           _schema: schema.id,
-          schema: schema.id,
         });
       }
     } else {
@@ -423,7 +419,6 @@ export class EditDocumentSchemaComponent {
         {
           _id: v4(),
           _schema: schema.id,
-          schema: schema.id,
         },
       ];
     }
@@ -432,7 +427,7 @@ export class EditDocumentSchemaComponent {
 
   duplicateSchemaMany(field: SchemaField, item: ContentData, idx: number): void {
     duplicateBlock({ parent: this.data(), field: field.name, index: idx });
-    this.structureChange.emit(`duplicateSchemaMany ${item.schema} ${item._id}`);
+    this.structureChange.emit(`duplicateSchemaMany ${item._schema} ${item._id}`);
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
@@ -449,11 +444,11 @@ export class EditDocumentSchemaComponent {
   }
 
   onFieldHover(fieldName: string): void {
-    this.schemaHover.emit({ id: this.data()._id, schema: this.data().schema, field: fieldName });
+    this.schemaHover.emit({ id: this.data()._id, schema: this.data()._schema, field: fieldName });
   }
 
   onItemHover(item: ContentData): void {
-    this.schemaHover.emit({ id: item._id, schema: item.schema });
+    this.schemaHover.emit({ id: item._id, schema: item._schema });
   }
 
   onSchemaLeave(): void {

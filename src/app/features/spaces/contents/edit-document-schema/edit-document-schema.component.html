@@ -401,10 +401,10 @@
                       [ngClass]="{ 'border-primary border': hoverSchemaPath()?.includes(item._id) }"
                       (mouseenter)="onItemHover(item)"
                       (mouseleave)="onSchemaLeave()"
-                      (click)="navigationTo(item._id, field.name, item.schema)"
-                      (keydown)="navigationTo(item._id, field.name, item.schema)">
+                      (click)="navigationTo(item._id, field.name, item._schema)"
+                      (keydown)="navigationTo(item._id, field.name, item._schema)">
                       <div hlmItemContent class="min-w-0 overflow-hidden">
-                        @if (schemaCompNodeById().get(item.schema); as sch) {
+                        @if (schemaCompNodeById().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
                             {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
                           </div>
@@ -413,7 +413,7 @@
                           }
                         } @else {
                           <div hlmItemTitle class="text-destructive line-clamp-1">
-                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
+                            Schema with ID <b>#{{ item._schema }}</b> can't be found.
                           </div>
                         }
                       </div>
@@ -464,10 +464,10 @@
                       cdkDragPreviewContainer="parent"
                       (mouseenter)="onItemHover(item)"
                       (mouseleave)="onSchemaLeave()"
-                      (click)="navigationTo(item._id, field.name, item.schema)"
-                      (keydown)="navigationTo(item._id, field.name, item.schema)">
+                      (click)="navigationTo(item._id, field.name, item._schema)"
+                      (keydown)="navigationTo(item._id, field.name, item._schema)">
                       <div hlmItemContent class="min-w-0 overflow-hidden">
-                        @if (schemaCompNodeById().get(item.schema); as sch) {
+                        @if (schemaCompNodeById().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
                             {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
                           </div>
@@ -476,7 +476,7 @@
                           }
                         } @else {
                           <div hlmItemTitle class="text-destructive line-clamp-1">
-                            Schema with ID <b>#{{ item.schema }}</b> can't be found.
+                            Schema with ID <b>#{{ item._schema }}</b> can't be found.
                           </div>
                         }
                       </div>

@@ -113,19 +113,18 @@ describe('EditDocumentComponent', () => {
       const { component } = setup(documentOf(undefined));
 
       expect(component.documentData._schema).toBe('root1');
-      expect(component.documentData.schema).toBe('root1');
       expect(component.documentData._id).toBeTruthy();
     });
 
     it('parses stringified document data', () => {
-      const data = JSON.stringify({ _id: 'd1', schema: 'root1' });
+      const data = JSON.stringify({ _id: 'd1', _schema: 'root1' });
       const { component } = setup(documentOf(data));
 
-      expect(component.documentData).toEqual({ _id: 'd1', schema: 'root1' });
+      expect(component.documentData).toEqual({ _id: 'd1', _schema: 'root1' });
     });
 
     it('clones object document data', () => {
-      const data = { _id: 'd1', schema: 'root1' };
+      const data = { _id: 'd1', _schema: 'root1' };
       const { component } = setup(documentOf(data));
 
       expect(component.documentData).toEqual(data);
@@ -133,24 +132,31 @@ describe('EditDocumentComponent', () => {
     });
 
     it('generates the document id tree including nested SCHEMA fields', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
 
       expect(component.documentIdsTree.get('root-id')).toEqual(['root-id']);
       expect(component.documentIdsTree.get('child-id')).toEqual(['root-id', 'child-id']);
     });
 
+    it('migrates blocks stored with only the legacy schema key, without marking the form dirty', () => {
+      const data = JSON.stringify({ _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } });
+      const { component } = setup(documentOf(data));
+
+      expect(component.documentData).toEqual({ _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } });
+      expect(component.isFormDirty).toBe(false);
+    });
   });
 
   describe('isFormDirty', () => {
     it('is false immediately after init', () => {
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
       expect(component.isFormDirty).toBe(false);
     });
 
     it('is true after the document data changes', () => {
-      const { component } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
       component.documentData['title'] = 'Changed';
 
@@ -161,7 +167,7 @@ describe('EditDocumentComponent', () => {
   describe('publish / unpublish', () => {
     it('publish() notifies success and updates publishedAt, resetting loading after a delay', async () => {
       vi.useFakeTimers();
-      const { component, publish, success } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, publish, success } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
       component.publish();
 
@@ -174,7 +180,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('publish() notifies an error on failure', () => {
-      const { component, publish, error } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, publish, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       publish.mockReturnValue(throwError(() => new Error('boom')));
 
       component.publish();
@@ -183,7 +189,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('unpublish() notifies success and clears publishedAt', () => {
-      const { component, unpublish, success } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, unpublish, success } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
       component.unpublish();
 
@@ -196,7 +202,7 @@ describe('EditDocumentComponent', () => {
   describe('save', () => {
     it('saves valid content and notifies success', async () => {
       vi.useFakeTimers();
-      const { component, updateDocumentData, success } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, updateDocumentData, success } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
       component.save();
 
@@ -211,7 +217,7 @@ describe('EditDocumentComponent', () => {
     it('notifies an error and does not save when content is invalid', () => {
       const requiredField = { name: 'title', kind: SchemaFieldKind.TEXT, required: true } as never;
       const invalidRootSchema: Schema = { id: 'root1', type: SchemaType.ROOT, fields: [requiredField] } as unknown as Schema;
-      const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', schema: 'root1' }), {
+      const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }), {
         schemas: [invalidRootSchema],
       });
 
@@ -223,7 +229,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('notifies an error on a failed save', () => {
-      const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       updateDocumentData.mockReturnValue(throwError(() => new Error('boom')));
 
       component.save();
@@ -233,7 +239,7 @@ describe('EditDocumentComponent', () => {
   });
 
   it('back() navigates to the contents list', () => {
-    const { component, navigate } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+    const { component, navigate } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
     component.back();
 
@@ -242,7 +248,7 @@ describe('EditDocumentComponent', () => {
 
   describe('token-gated API links', () => {
     it('openDraftV1InNewTab() fetches a token then opens the link', () => {
-      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openDraftV1InNewTab('en');
@@ -253,7 +259,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('openDraftV1InNewTab() reuses the cached token', () => {
-      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
       component.openDraftV1InNewTab('en');
       findFirstByPermission.mockClear();
@@ -265,7 +271,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('openDraftV1InNewTab() notifies an error when no single token is available', () => {
-      const { component, findFirstByPermission, error } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, findFirstByPermission, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       findFirstByPermission.mockReturnValue(of([]));
 
       component.openDraftV1InNewTab('en');
@@ -274,7 +280,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('openPublishedV1InNewTab() fetches a token then opens the link', () => {
-      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openPublishedV1InNewTab('en');
@@ -286,7 +292,7 @@ describe('EditDocumentComponent', () => {
   });
 
   it('exposes every block id of the open document for the preview', () => {
-    const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+    const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
     const { component } = setup(documentOf(data));
 
     expect([...component.documentBlockIds()]).toEqual(expect.arrayContaining(['root-id', 'child-id']));
@@ -295,7 +301,7 @@ describe('EditDocumentComponent', () => {
   describe('preview content events', () => {
     // documentId lets a page that renders several documents apply the edit to this one only.
     it('tags input, change and the on-connect update with the edited document id', () => {
-      const { component } = setup(documentOf({ _id: 'root-id', schema: 'root1' }));
+      const { component } = setup(documentOf({ _id: 'root-id', _schema: 'root1' }));
       const sendEvent = vi.fn();
       vi.spyOn(component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
 
@@ -313,7 +319,7 @@ describe('EditDocumentComponent', () => {
 
   describe('schema path navigation', () => {
     it('onSchemaChange()/navigateToSchemaForwards() pushes the path and selects the child data', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
 
       component.onSchemaChange({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
@@ -323,7 +329,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('navigateToSchemaBackwards() to the root restores the root document data', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
       component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
 
@@ -334,7 +340,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('tells the preview it entered the root when navigating back to it', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
       const sendEvent = vi.fn();
       vi.spyOn(component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
@@ -349,7 +355,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('tells the preview it entered the root when navigating back falls back to it', () => {
-      const data = { _id: 'root-id', schema: 'root1', children: [{ _id: 'child-id', schema: 'child1' }] };
+      const data = { _id: 'root-id', _schema: 'root1', children: [{ _id: 'child-id', _schema: 'child1' }] };
       const { component } = setup(documentOf(data));
       component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'children' });
       const sendEvent = vi.fn();
@@ -364,7 +370,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('navigateToSchemaForwards() aborts and leaves state unchanged when the array target is not found', () => {
-      const data = { _id: 'root-id', schema: 'root1', children: [{ _id: 'child-id', schema: 'child1' }] };
+      const data = { _id: 'root-id', _schema: 'root1', children: [{ _id: 'child-id', _schema: 'child1' }] };
       const { component } = setup(documentOf(data));
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -377,7 +383,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('navigateToSchemaBackwards() falls back to root and warns when an intermediate array node is not found', () => {
-      const data = { _id: 'root-id', schema: 'root1', children: [{ _id: 'child-id', schema: 'child1' }] };
+      const data = { _id: 'root-id', _schema: 'root1', children: [{ _id: 'child-id', _schema: 'child1' }] };
       const { component } = setup(documentOf(data));
       component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'children' });
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -395,11 +401,11 @@ describe('EditDocumentComponent', () => {
     it('navigateToSchemaBackwards() to a middle breadcrumb selects that level, not the current deepest level', () => {
       const data = {
         _id: 'root-id',
-        schema: 'root1',
+        _schema: 'root1',
         child: {
           _id: 'child-id',
-          schema: 'child1',
-          grandchild: { _id: 'grandchild-id', schema: 'grandchild1' },
+          _schema: 'child1',
+          grandchild: { _id: 'grandchild-id', _schema: 'grandchild1' },
         },
       };
       const { component } = setup(documentOf(data));
@@ -416,10 +422,10 @@ describe('EditDocumentComponent', () => {
     it('navigateToSchemaForwards() selects the matching item out of an array field', () => {
       const data = {
         _id: 'root-id',
-        schema: 'root1',
+        _schema: 'root1',
         children: [
-          { _id: 'child-a', schema: 'child1' },
-          { _id: 'child-b', schema: 'child1' },
+          { _id: 'child-a', _schema: 'child1' },
+          { _id: 'child-b', _schema: 'child1' },
         ],
       };
       const { component } = setup(documentOf(data));
@@ -433,13 +439,13 @@ describe('EditDocumentComponent', () => {
     it('navigateToSchemaBackwards() to a middle breadcrumb through a mix of single and array fields selects that level', () => {
       const data = {
         _id: 'root-id',
-        schema: 'root1',
+        _schema: 'root1',
         child: {
           _id: 'child-id',
-          schema: 'child1',
+          _schema: 'child1',
           grandchildren: [
-            { _id: 'grandchild-a', schema: 'grandchild1' },
-            { _id: 'grandchild-b', schema: 'grandchild1' },
+            { _id: 'grandchild-a', _schema: 'grandchild1' },
+            { _id: 'grandchild-b', _schema: 'grandchild1' },
           ],
         },
       };
@@ -457,11 +463,11 @@ describe('EditDocumentComponent', () => {
     it('navigateToSchemaBackwards() to the root from a 3-level-deep path truncates the whole path', () => {
       const data = {
         _id: 'root-id',
-        schema: 'root1',
+        _schema: 'root1',
         child: {
           _id: 'child-id',
-          schema: 'child1',
-          grandchild: { _id: 'grandchild-id', schema: 'grandchild1' },
+          _schema: 'child1',
+          grandchild: { _id: 'grandchild-id', _schema: 'grandchild1' },
         },
       };
       const { component } = setup(documentOf(data));
@@ -475,7 +481,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('navigateToSchemaBackwards() clicking the current deepest breadcrumb is a no-op', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
       component.navigateToSchemaForwards({ contentId: 'child-id', schemaName: 'child1', fieldName: 'child' });
 
@@ -487,7 +493,7 @@ describe('EditDocumentComponent', () => {
   });
 
   it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {
-    const { component, isActionSave, updateDocumentData } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+    const { component, isActionSave, updateDocumentData } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
     isActionSave.mockReturnValue(true);
     const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
 
@@ -498,7 +504,7 @@ describe('EditDocumentComponent', () => {
   });
 
   it('captureKeyboard() does nothing for other key combinations', () => {
-    const { component, updateDocumentData } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+    const { component, updateDocumentData } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
     const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
 
     component.captureKeyboard(event);
@@ -514,13 +520,13 @@ describe('EditDocumentComponent', () => {
       fields: [{ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never],
     } as unknown as Schema;
     const children = () => [
-      { _id: 'a', schema: 'child1' },
-      { _id: 'b', schema: 'child1' },
-      { _id: 'c', schema: 'child1' },
+      { _id: 'a', _schema: 'child1' },
+      { _id: 'b', _schema: 'child1' },
+      { _id: 'c', _schema: 'child1' },
     ];
 
     function setupList() {
-      const result = setup(documentOf({ _id: 'root-id', schema: 'root1', children: children() }), { schemas: [listSchema, childSchema] });
+      const result = setup(documentOf({ _id: 'root-id', _schema: 'root1', children: children() }), { schemas: [listSchema, childSchema] });
       const sendEvent = vi.fn();
       vi.spyOn(result.component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
       const select = (id: string) => result.component.navigateToSchemaForwards({ contentId: id, schemaName: 'child1', fieldName: 'children' });
@@ -583,7 +589,7 @@ describe('EditDocumentComponent', () => {
 
   describe('preview schema hover/leave', () => {
     it('onPreviewSchemaHover() tracks the hover path and field', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
 
       component.onPreviewSchemaHover({ id: 'child-id', field: 'title' });
@@ -593,7 +599,7 @@ describe('EditDocumentComponent', () => {
     });
 
     it('onPreviewSchemaLeave() clears the hover path and field', () => {
-      const data = { _id: 'root-id', schema: 'root1', child: { _id: 'child-id', schema: 'child1' } };
+      const data = { _id: 'root-id', _schema: 'root1', child: { _id: 'child-id', _schema: 'child1' } };
       const { component } = setup(documentOf(data));
       component.onPreviewSchemaHover({ id: 'child-id', field: 'title' });
 
@@ -605,7 +611,7 @@ describe('EditDocumentComponent', () => {
   });
 
   it('copiedSlug()/copiedFullSlug() notify success', () => {
-    const { component, success } = setup(documentOf({ _id: 'd1', schema: 'root1' }));
+    const { component, success } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
 
     component.copiedSlug();
     component.copiedFullSlug();
@@ -627,7 +633,7 @@ describe('EditDocumentComponent', () => {
     } as unknown as Schema;
 
     function translatableSetup() {
-      return setup(documentOf({ _id: 'd1', schema: 'root1', title: 'Hello' }), { schemas: [translatableSchema] });
+      return setup(documentOf({ _id: 'd1', _schema: 'root1', title: 'Hello' }), { schemas: [translatableSchema] });
     }
 
     // The dialog preselects the locale the document is open in as the translation target and marks
@@ -666,7 +672,7 @@ describe('EditDocumentComponent', () => {
     // Translating *into* the default locale asks the provider for the fallback language, and the
     // result belongs under the bare field name. Sending `default` would be rejected as a language.
     it('resolves the default locale to the fallback language in both directions', () => {
-      const { component, open, translateBatch } = setup(documentOf({ _id: 'd1', schema: 'root1', title_i18n_de: 'Hallo' }), {
+      const { component, open, translateBatch } = setup(documentOf({ _id: 'd1', _schema: 'root1', title_i18n_de: 'Hallo' }), {
         schemas: [translatableSchema],
       });
       open.mockReturnValue({ closed$: of({ sourceLocale: 'de', targetLocale: CONTENT_DEFAULT_LOCALE.id, overwrite: false }) });
@@ -696,7 +702,7 @@ describe('EditDocumentComponent', () => {
 
     it('passes the overwrite choice through to collection', () => {
       const { component, open, translateBatch } = setup(
-        documentOf({ _id: 'd1', schema: 'root1', title: 'Hello', title_i18n_de: 'Hallo' }),
+        documentOf({ _id: 'd1', _schema: 'root1', title: 'Hello', title_i18n_de: 'Hallo' }),
         { schemas: [translatableSchema] },
       );
       open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: true }) });
@@ -711,7 +717,7 @@ describe('EditDocumentComponent', () => {
 
     it('does not call the provider when every target is already translated', () => {
       const { component, open, translateBatch, success } = setup(
-        documentOf({ _id: 'd1', schema: 'root1', title: 'Hello', title_i18n_de: 'Hallo' }),
+        documentOf({ _id: 'd1', _schema: 'root1', title: 'Hello', title_i18n_de: 'Hallo' }),
         { schemas: [translatableSchema] },
       );
       open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });

@@ -29,7 +29,7 @@ export function isInList(location: BlockLocation): location is ListBlockLocation
 export function findBlock(root: ContentData, id: string, schemas: ReadonlyMap<string, Schema>): BlockLocation | undefined {
   const queue: ContentData[] = [root];
   for (let node = queue.shift(); node; node = queue.shift()) {
-    const schema = schemas.get(node.schema);
+    const schema = schemas.get(node._schema);
     if (!schema || (schema.type !== SchemaType.ROOT && schema.type !== SchemaType.NODE)) continue;
     for (const field of schema.fields || []) {
       const value = node[field.name];

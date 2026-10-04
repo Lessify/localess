@@ -99,14 +99,14 @@ describe('ContentHelperService', () => {
     it('reports no errors when all required fields are present', () => {
       const { service } = setup();
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, required: true })]);
-      const data: ContentData = { _id: '1', schema: 'root-1', title: 'Hello' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' };
       expect(service.validateContent(data, [schema], CONTENT_DEFAULT_LOCALE.id)).toEqual([]);
     });
 
     it('reports an error for a missing required field', () => {
       const { service } = setup();
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, required: true, displayName: 'Title' })]);
-      const data: ContentData = { _id: '1', schema: 'root-1' };
+      const data: ContentData = { _id: '1', _schema: 'root-1' };
       const errors = service.validateContent(data, [schema], CONTENT_DEFAULT_LOCALE.id);
       expect(errors).toHaveLength(1);
       expect(errors[0]).toMatchObject({ contentId: '1', fieldName: 'title', fieldDisplayName: 'Title' });
@@ -115,7 +115,7 @@ describe('ContentHelperService', () => {
     it('reports a required error for an empty required REFERENCES array', () => {
       const { service } = setup();
       const schema = rootSchema([field({ name: 'refs', kind: SchemaFieldKind.REFERENCES, required: true })]);
-      const data: ContentData = { _id: '1', schema: 'root-1' };
+      const data: ContentData = { _id: '1', _schema: 'root-1' };
       const errors = service.validateContent(data, [schema], CONTENT_DEFAULT_LOCALE.id);
       expect(errors).toEqual([
         expect.objectContaining({ fieldName: 'refs', errors: { required: true, minlength: { requiredLength: 1, actualLength: 0 } } }),
@@ -126,7 +126,7 @@ describe('ContentHelperService', () => {
       const { service } = setup();
       const childSchema = rootSchema([field({ name: 'label', kind: SchemaFieldKind.TEXT, required: true })], 'child-1');
       const parentSchema = rootSchema([field({ name: 'child', kind: SchemaFieldKind.SCHEMA })], 'root-1');
-      const data: ContentData = { _id: '1', schema: 'root-1', child: { _id: '2', schema: 'child-1' } };
+      const data: ContentData = { _id: '1', _schema: 'root-1', child: { _id: '2', _schema: 'child-1' } };
       const errors = service.validateContent(data, [parentSchema, childSchema], CONTENT_DEFAULT_LOCALE.id);
       expect(errors).toEqual([expect.objectContaining({ contentId: '2', fieldName: 'label' })]);
     });

@@ -211,7 +211,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       return [
         {
           contentId: this.documentData._id,
-          schemaName: this.documentData.schema,
+          schemaName: this.documentData._schema,
           fieldName: '',
         },
       ];
@@ -224,10 +224,10 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   });
   schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
 
-  documentData: ContentData = { _id: '', _schema: '', schema: '' };
+  documentData: ContentData = { _id: '', _schema: '' };
   /** Bumped to rebuild the schema form after a bulk translation mutates the document in place. */
   formRefresh = signal(0);
-  selectedDocumentData: ContentData = { _id: '', _schema: '', schema: '' };
+  selectedDocumentData: ContentData = { _id: '', _schema: '' };
   documentIdsTree: Map<string, string[]> = new Map<string, string[]>();
   // Every block id of the open document, so the preview can tell whether the page shows it.
   readonly documentBlockIds = signal<ReadonlySet<string>>(new Set());
@@ -254,12 +254,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         this.documentData = {
           _id: v4(),
           _schema: this.rootSchema()?.id || '',
-          schema: this.rootSchema()?.id || '',
         };
       } else if (typeof document.data === 'string') {
-        this.documentData = JSON.parse(document.data);
+        this.documentData = normalizeContent(JSON.parse(document.data));
       } else {
-        this.documentData = ObjectUtils.clone(document.data);
+        this.documentData = normalizeContent(document.data);
       }
       this.selectedDocumentData = this.documentData;
       this.savedDocumentData.set(normalizeContent(this.documentData));
@@ -497,7 +496,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     let node = nodeIterator.shift();
     while (node) {
       this.documentIdsTree.set(node.data._id, node.path);
-      const schema = this.schemaMapById().get(node.data.schema);
+      const schema = this.schemaMapById().get(node.data._schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         for (const field of schema.fields || []) {
           if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -541,16 +540,16 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     let selectedContentId = contentIdIteration.shift();
     // check Root Schema
     if (this.documentData._id === selectedContentId) {
-      const rootSchema = this.schemaMapById().get(this.documentData.schema);
+      const rootSchema = this.schemaMapById().get(this.documentData._schema);
       if (rootSchema) {
         this.navigateToSchemaBackwards({
           contentId: this.documentData._id,
-          schemaName: this.documentData.schema,
+          schemaName: this.documentData._schema,
           fieldName: '',
         });
         selectedContentId = contentIdIteration.shift();
       } else {
-        console.warn(`onPreviewSchemaSelect: schema "${this.documentData.schema}" not found`);
+        console.warn(`onPreviewSchemaSelect: schema "${this.documentData._schema}" not found`);
         return;
       }
     } else {
@@ -559,7 +558,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
     // Navigate to child
     while (selectedContentId) {
-      const schema = this.schemaMapById().get(this.selectedDocumentData.schema);
+      const schema = this.schemaMapById().get(this.selectedDocumentData._schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         schemaFieldsLoop: for (const schemaField of schema.fields || []) {
           if (schemaField.kind === SchemaFieldKind.SCHEMA) {
@@ -568,7 +567,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
               this.navigateToSchemaForwards({
                 contentId: selectedContentId!,
                 fieldName: schemaField.name,
-                schemaName: cData.schema,
+                schemaName: cData._schema,
               });
               break;
             }
@@ -580,7 +579,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
                 this.navigateToSchemaForwards({
                   contentId: selectedContentId,
                   fieldName: schemaField.name,
-                  schemaName: content.schema,
+                  schemaName: content._schema,
                 });
                 break schemaFieldsLoop;
               }
@@ -590,7 +589,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         selectedContentId = contentIdIteration.shift();
         this.clickSchemaField.set(field);
       } else {
-        console.warn(`onPreviewSchemaSelect: schema "${this.selectedDocumentData.schema}" not found`);
+        console.warn(`onPreviewSchemaSelect: schema "${this.selectedDocumentData._schema}" not found`);
         return;
       }
     }

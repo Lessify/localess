@@ -31,7 +31,7 @@ function schemasMap(...schemas: Schema[]): Map<string, Schema> {
  */
 describe('extractContent', () => {
   it('serves the locale-suffixed value when the translation exists', () => {
-    const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
     const schemas = schemasMap(schemaOf([{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }]));
 
     expect(extractContent(content, schemas, 'de').title).toBe('Hallo');
@@ -40,14 +40,14 @@ describe('extractContent', () => {
   // The whole reason the default locale sits in the bare key: it is the fallback value, so an
   // untranslated field still serves content rather than a blank.
   it('falls back to the bare field name when the translation is missing', () => {
-    const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' };
     const schemas = schemasMap(schemaOf([{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }]));
 
     expect(extractContent(content, schemas, 'de').title).toBe('Hello');
   });
 
   it('serves the bare field name for the default locale', () => {
-    const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
     const schemas = schemasMap(schemaOf([{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }]));
 
     expect(extractContent(content, schemas, 'default').title).toBe('Hello');
@@ -55,27 +55,27 @@ describe('extractContent', () => {
 
   // A non-translatable field has one value shared by every locale, and it lives in the bare key.
   it('ignores locale suffixes for a non-translatable field', () => {
-    const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
     const schemas = schemasMap(schemaOf([{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: false }]));
 
     expect(extractContent(content, schemas, 'de').title).toBe('Hello');
   });
 
   it('never leaks a suffixed key into the served payload', () => {
-    const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo', title_i18n_fr: 'Bonjour' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo', title_i18n_fr: 'Bonjour' };
     const schemas = schemasMap(schemaOf([{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }]));
 
     const result = extractContent(content, schemas, 'de');
 
     expect(Object.keys(result).some(key => key.includes('_i18n_'))).toBe(false);
-    expect(result).toEqual({ _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hallo' });
+    expect(result).toEqual({ _id: '1', _schema: 'root-1', title: 'Hallo' });
   });
 
   it('applies the rule inside a nested SCHEMA field', () => {
     const content: ContentData = {
       _id: '1',
-      schema: 'root-1',
-      hero: { _id: '2', schema: 'block', label: 'Hello', label_i18n_de: 'Hallo' },
+      _schema: 'root-1',
+      hero: { _id: '2', _schema: 'block', label: 'Hello', label_i18n_de: 'Hallo' },
     };
     const schemas = schemasMap(
       schemaOf([{ name: 'hero', kind: SchemaFieldKind.SCHEMA }]),
@@ -88,10 +88,10 @@ describe('extractContent', () => {
   it('applies the rule to every entry of a SCHEMAS array', () => {
     const content: ContentData = {
       _id: '1',
-      schema: 'root-1',
+      _schema: 'root-1',
       rows: [
-        { _id: '2', schema: 'block', label: 'One', label_i18n_de: 'Eins' },
-        { _id: '3', schema: 'block', label: 'Two' },
+        { _id: '2', _schema: 'block', label: 'One', label_i18n_de: 'Eins' },
+        { _id: '3', _schema: 'block', label: 'Two' },
       ],
     };
     const schemas = schemasMap(
@@ -104,9 +104,23 @@ describe('extractContent', () => {
     expect(rows.map(it => it.label)).toEqual(['Eins', 'Two']);
   });
 
-  it('carries the identity fields and defaults _schema to schema', () => {
-    const content: ContentData = { _id: '1', schema: 'root-1' };
+  it('carries only the underscore-prefixed identity fields', () => {
+    const content: ContentData = { _id: '1', _schema: 'root-1' };
 
-    expect(extractContent(content, schemasMap(schemaOf([])), 'de')).toEqual({ _id: '1', _schema: 'root-1', schema: 'root-1' });
+    expect(extractContent(content, schemasMap(schemaOf([])), 'de')).toEqual({ _id: '1', _schema: 'root-1' });
+  });
+
+  it('resolves a legacy block stored with only the schema key, without serving that key', () => {
+    const content = { _id: '1', schema: 'root-1', title: 'Hello' } as unknown as ContentData;
+    const schemas = schemasMap(schemaOf([{ name: 'title', kind: SchemaFieldKind.TEXT }]));
+
+    expect(extractContent(content, schemas, 'de')).toEqual({ _id: '1', _schema: 'root-1', title: 'Hello' });
+  });
+
+  it('serves a user field named schema as a regular field', () => {
+    const content: ContentData = { _id: '1', _schema: 'root-1', schema: 'user value' };
+    const schemas = schemasMap(schemaOf([{ name: 'schema', kind: SchemaFieldKind.TEXT }]));
+
+    expect(extractContent(content, schemas, 'de')).toEqual({ _id: '1', _schema: 'root-1', schema: 'user value' });
   });
 });

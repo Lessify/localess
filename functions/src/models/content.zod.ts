@@ -3,8 +3,8 @@ import { ContentKind } from './content.model';
 
 export const contentDataSchema = z.object({
   _id: z.string(),
+  // Optional: blocks stored before `_schema` existed carry only the legacy `schema` key.
   _schema: z.string().optional(),
-  schema: z.string(),
 });
 
 export const contentBaseSchema = z.object({

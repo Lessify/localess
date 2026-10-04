@@ -68,7 +68,7 @@ One `data` payload holds every locale. Which key a value lives under depends on 
 
 ```jsonc
 {
-  "_id": "…", "schema": "page",
+  "_id": "…", "_schema": "page",
   "title": "Hello",             // default locale
   "title_i18n_de": "Hallo",     // German
   "title_i18n_fr": "Bonjour"    // French
@@ -96,6 +96,12 @@ talking to a translation provider must resolve it first — see `toProviderLocal
 `CommonValidator.SCHEMA_FIELD_NAME_TRANSLATION` in the UI and a `refine` in
 `functions/src/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
 from a German translation of `title`.
+
+**Only `_`-prefixed keys are internal.** A block's identity lives in `_id` and `_schema`, and those
+two are the only reserved field names, so `schema` is an ordinary field name. Blocks stored before
+`_schema` existed carry the schema id under a legacy `schema` key instead. It is never served:
+`extractContent()` in `functions/` reads it only as a fallback (`contentSchemaId()`), and the
+editor's `normalizeContent()` moves it to `_schema` on load, so the next save migrates the block.
 
 > Any code that reads or writes a localised value applies the table above — writing the default to
 > `title_i18n_default` produces a key nothing reads, and reading the default from that key finds

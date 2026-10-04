@@ -18,8 +18,7 @@ export interface ContentError {
 
 export interface ContentData extends Record<string, any> {
   _id: string;
-  _schema?: string;
-  schema: string;
+  _schema: string;
 }
 
 export type Content = ContentDocument | ContentFolder;

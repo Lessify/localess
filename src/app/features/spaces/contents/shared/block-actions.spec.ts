@@ -23,11 +23,10 @@ function page(): ContentData {
   return {
     _id: 'root',
     _schema: 'page',
-    schema: 'page',
-    hero: { _id: 'hero', schema: 'card' },
+    hero: { _id: 'hero', _schema: 'card' },
     body: [
-      { _id: 's1', schema: 'section', cards: [{ _id: 'c1', schema: 'card', title: 'One' }] },
-      { _id: 's2', schema: 'section' },
+      { _id: 's1', _schema: 'section', cards: [{ _id: 'c1', _schema: 'card', title: 'One' }] },
+      { _id: 's2', _schema: 'section' },
     ],
   };
 }
@@ -86,7 +85,7 @@ describe('block actions', () => {
     const [original, copy] = data['body'] as ContentData[];
     expect(ids(data)).toEqual(['s1', copy._id, 's2']);
     expect(copy._id).not.toBe('s1');
-    expect(copy['cards'][0]).toMatchObject({ schema: 'card', title: 'One' });
+    expect(copy['cards'][0]).toMatchObject({ _schema: 'card', title: 'One' });
     expect(copy['cards'][0]._id).not.toBe(original['cards'][0]._id);
   });
 

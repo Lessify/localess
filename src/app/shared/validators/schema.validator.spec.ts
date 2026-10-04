@@ -90,6 +90,10 @@ describe('SchemaValidator', () => {
       expect(new FormControl('_id', SchemaValidator.FIELD_NAME).hasError('reservedName')).toBe(true);
     });
 
+    it('allows schema, since only underscore-prefixed names are internal', () => {
+      expect(new FormControl('schema', SchemaValidator.FIELD_NAME).hasError('reservedName')).toBe(false);
+    });
+
     it('is valid for a well-formed field name', () => {
       expect(new FormControl('title', SchemaValidator.FIELD_NAME).valid).toBe(true);
     });

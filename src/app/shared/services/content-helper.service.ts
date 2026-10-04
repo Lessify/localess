@@ -25,7 +25,7 @@ export class ContentHelperService {
     // Iterative traversing content and validating fields.
     let selectedContent = contentIteration.pop();
     while (selectedContent) {
-      const schema = schemasById.get(selectedContent.schema);
+      const schema = schemasById.get(selectedContent._schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         const schemaFieldsMap = new Map<string, SchemaField>(schema.fields?.map(it => [it.name, it]));
         const form = this.generateSchemaForm(schema, isDefaultLocale);

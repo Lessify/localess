@@ -17,19 +17,19 @@ describe('content utils', () => {
   describe('extractSchemaContent', () => {
     it('reads the default-locale value for non-translatable fields regardless of locale', () => {
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: false })]);
-      const data: ContentData = { _id: '1', schema: 'root-1', title: 'Hello' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' };
       expect(extractSchemaContent(data, schema, 'fr', false)).toEqual({ title: 'Hello' });
     });
 
     it('reads the locale-suffixed value for translatable fields on a non-default locale', () => {
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })]);
-      const data: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
       expect(extractSchemaContent(data, schema, 'fr', false)).toEqual({ title: 'Bonjour' });
     });
 
     it('reads the base value for translatable fields on the default locale', () => {
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })]);
-      const data: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
       expect(extractSchemaContent(data, schema, CONTENT_DEFAULT_LOCALE.id, false)).toEqual({ title: 'Hello' });
     });
 
@@ -38,48 +38,47 @@ describe('content utils', () => {
         field({ name: 'title', kind: SchemaFieldKind.TEXT }),
         field({ name: 'child', kind: SchemaFieldKind.SCHEMA }),
       ]);
-      const data: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', child: { _id: '2', schema: 'x' } };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', child: { _id: '2', _schema: 'x' } };
       expect(extractSchemaContent(data, schema, 'default', false)).toEqual({ title: 'Hello' });
-      expect(extractSchemaContent(data, schema, 'default', true)).toEqual({ title: 'Hello', child: { _id: '2', schema: 'x' } });
+      expect(extractSchemaContent(data, schema, 'default', true)).toEqual({ title: 'Hello', child: { _id: '2', _schema: 'x' } });
     });
 
     it('only includes array-kind fields (OPTIONS/REFERENCES/ASSETS/SCHEMAS) when the value is actually an array', () => {
       const schema = rootSchema([field({ name: 'tags', kind: SchemaFieldKind.OPTIONS })]);
-      const arrayData: ContentData = { _id: '1', schema: 'root-1', tags: ['a', 'b'] };
-      const scalarData: ContentData = { _id: '1', schema: 'root-1', tags: 'not-an-array' };
+      const arrayData: ContentData = { _id: '1', _schema: 'root-1', tags: ['a', 'b'] };
+      const scalarData: ContentData = { _id: '1', _schema: 'root-1', tags: 'not-an-array' };
       expect(extractSchemaContent(arrayData, schema, 'default', true)).toEqual({ tags: ['a', 'b'] });
       expect(extractSchemaContent(scalarData, schema, 'default', true)).toEqual({});
     });
 
     it('skips fields whose value is undefined', () => {
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT })]);
-      const data: ContentData = { _id: '1', schema: 'root-1' };
+      const data: ContentData = { _id: '1', _schema: 'root-1' };
       expect(extractSchemaContent(data, schema, 'default', true)).toEqual({});
     });
   });
 
   describe('extractContent', () => {
-    it('always carries _id/_schema/schema and falls back _schema to schema', () => {
+    it('always carries _id and _schema', () => {
       const schemas = new Map([['root-1', rootSchema([])]]);
-      const content: ContentData = { _id: '1', schema: 'root-1' };
-      expect(extractContent(content, schemas, 'default')).toEqual({ _id: '1', _schema: 'root-1', schema: 'root-1' });
+      const content: ContentData = { _id: '1', _schema: 'root-1' };
+      expect(extractContent(content, schemas, 'default')).toEqual({ _id: '1', _schema: 'root-1' });
     });
 
     it('falls back to the base value when the locale-suffixed value is missing for a translatable field', () => {
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })]);
       const schemas = new Map([['root-1', schema]]);
-      const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello' };
-      expect(extractContent(content, schemas, 'fr')).toEqual({ _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' });
+      const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' };
+      expect(extractContent(content, schemas, 'fr')).toEqual({ _id: '1', _schema: 'root-1', title: 'Hello' });
     });
 
     it('prefers the locale-suffixed value for a translatable field when present', () => {
       const schema = rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })]);
       const schemas = new Map([['root-1', schema]]);
-      const content: ContentData = { _id: '1', schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
+      const content: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
       expect(extractContent(content, schemas, 'fr')).toEqual({
         _id: '1',
         _schema: 'root-1',
-        schema: 'root-1',
         title: 'Bonjour',
       });
     });
@@ -93,13 +92,12 @@ describe('content utils', () => {
       ]);
       const content: ContentData = {
         _id: '1',
-        schema: 'root-1',
-        child: { _id: '2', schema: 'child-1', label: 'Nested' },
+        _schema: 'root-1',
+        child: { _id: '2', _schema: 'child-1', label: 'Nested' },
       };
       expect(extractContent(content, schemas, 'default')['child']).toEqual({
         _id: '2',
         _schema: 'child-1',
-        schema: 'child-1',
         label: 'Nested',
       });
     });
@@ -113,11 +111,11 @@ describe('content utils', () => {
       ]);
       const content: ContentData = {
         _id: '1',
-        schema: 'root-1',
-        children: [{ _id: '2', schema: 'child-1', label: 'A' }],
+        _schema: 'root-1',
+        children: [{ _id: '2', _schema: 'child-1', label: 'A' }],
       };
       expect(extractContent(content, schemas, 'default')['children']).toEqual([
-        { _id: '2', _schema: 'child-1', schema: 'child-1', label: 'A' },
+        { _id: '2', _schema: 'child-1', label: 'A' },
       ]);
     });
   });
@@ -141,9 +139,27 @@ describe('content utils', () => {
       expect(normalizeContent<Record<string, any>>({ _id: 'original' })['_id']).toBe('original');
     });
 
-    it('backfills _schema from schema when _schema is missing', () => {
-      expect(normalizeContent<Record<string, any>>({ schema: 'root-1' })['_schema']).toBe('root-1');
-      expect(normalizeContent<Record<string, any>>({ schema: 'root-1', _schema: 'explicit' })['_schema']).toBe('explicit');
+    it('moves the legacy schema key of a block stored before _schema existed', () => {
+      expect(normalizeContent<Record<string, any>>({ _id: '1', schema: 'root-1' })).toEqual({ _id: '1', _schema: 'root-1' });
+    });
+
+    it('migrates legacy blocks nested in SCHEMA and SCHEMAS fields', () => {
+      const legacy = { _id: '1', schema: 'root-1', hero: { _id: '2', schema: 'hero' }, rows: [{ _id: '3', schema: 'row' }] };
+
+      expect(normalizeContent<Record<string, any>>(legacy)).toEqual({
+        _id: '1',
+        _schema: 'root-1',
+        hero: { _id: '2', _schema: 'hero' },
+        rows: [{ _id: '3', _schema: 'row' }],
+      });
+    });
+
+    it('keeps a user field named schema on a block that has _schema', () => {
+      expect(normalizeContent<Record<string, any>>({ _id: '1', _schema: 'root-1', schema: 'user value' })).toEqual({
+        _id: '1',
+        _schema: 'root-1',
+        schema: 'user value',
+      });
     });
 
     it('drops null/undefined fields and empty arrays', () => {
@@ -167,25 +183,24 @@ describe('content utils', () => {
     it('gives the block and every block inside it a new id, keeping the content', () => {
       const block: ContentData = {
         _id: 'a',
-        schema: 'section',
+        _schema: 'section',
         title: 'Hello',
-        child: { _id: 'b', schema: 'card' },
-        cards: [{ _id: 'c', schema: 'card' }],
+        child: { _id: 'b', _schema: 'card' },
+        cards: [{ _id: 'c', _schema: 'card' }],
       };
 
       const copy = copyBlock(block);
 
-      expect(copy).toMatchObject({ schema: 'section', _schema: 'section', title: 'Hello' });
+      expect(copy).toMatchObject({ _schema: 'section', title: 'Hello' });
       expect([copy._id, copy['child']._id, copy['cards'][0]._id]).not.toContain('a');
       expect(new Set([copy._id, copy['child']._id, copy['cards'][0]._id, 'a', 'b', 'c']).size).toBe(6);
       expect(block._id).toBe('a');
     });
 
     it('normalizes the copy like normalizeContent', () => {
-      expect(copyBlock({ _id: 'a', schema: 'card', empty: [], link: { kind: 'LINK', uri: '' } } as ContentData)).toEqual({
+      expect(copyBlock({ _id: 'a', _schema: 'card', empty: [], link: { kind: 'LINK', uri: '' } } as ContentData)).toEqual({
         _id: expect.any(String),
         _schema: 'card',
-        schema: 'card',
       });
     });
   });
@@ -203,7 +218,7 @@ describe('content utils', () => {
       ]);
       const data: ContentData = {
         _id: '1',
-        schema: 'root-1',
+        _schema: 'root-1',
         cover: { kind: 'ASSET', uri: 'asset-1' } as ContentAsset,
         link: { kind: 'LINK', type: 'content', target: '_self', uri: 'link-1' },
         ref: { kind: 'REFERENCE', uri: 'ref-1' } as ContentReference,
@@ -218,7 +233,7 @@ describe('content utils', () => {
       const schema = rootSchema([field({ name: 'assets', kind: SchemaFieldKind.ASSETS })]);
       const data: ContentData = {
         _id: '1',
-        schema: 'root-1',
+        _schema: 'root-1',
         assets: [
           { kind: 'ASSET', uri: 'asset-1' },
           { kind: 'ASSET', uri: 'asset-2' },
@@ -233,8 +248,8 @@ describe('content utils', () => {
       const parentSchema = rootSchema([field({ name: 'child', kind: SchemaFieldKind.SCHEMA })], 'root-1');
       const data: ContentData = {
         _id: '1',
-        schema: 'root-1',
-        child: { _id: '2', schema: 'child-1', cover: { kind: 'ASSET', uri: 'nested-asset' } },
+        _schema: 'root-1',
+        child: { _id: '2', _schema: 'child-1', cover: { kind: 'ASSET', uri: 'nested-asset' } },
       };
       const [assets] = extractReferences(data, [parentSchema, childSchema], 'default');
       expect(assets).toEqual(new Set(['nested-asset']));
@@ -247,7 +262,7 @@ describe('content utils', () => {
     }
 
     it('collects a translatable TEXT field whose target is empty', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       const fields = collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de');
@@ -258,7 +273,7 @@ describe('content utils', () => {
     });
 
     it('applies a translation onto the target locale key, leaving the source alone', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')[0].apply('Hallo');
@@ -268,21 +283,21 @@ describe('content utils', () => {
     });
 
     it('skips a field whose target already has a value', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
     });
 
     it('includes a filled target when overwrite is requested', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de', { overwrite: true })).toHaveLength(1);
     });
 
     it('skips fields that are not translatable and kinds that are not text', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', count: 5 };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello', count: 5 };
       const schemas = [
         rootSchema([
           field({ name: 'title', kind: SchemaFieldKind.TEXT }),
@@ -294,14 +309,14 @@ describe('content utils', () => {
     });
 
     it('skips a field with no source value', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: '' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: '' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
     });
 
     it('reads the locale-suffixed key when the source is not the default locale', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello', title_i18n_fr: 'Bonjour' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, 'fr', 'de')[0].content).toBe('Bonjour');
@@ -310,11 +325,11 @@ describe('content utils', () => {
     it('recurses into SCHEMA and SCHEMAS children', () => {
       const data: ContentData = {
         _id: 'c1',
-        schema: 'root-1',
-        hero: { _id: 'c2', schema: 'block', title: 'Hero' },
+        _schema: 'root-1',
+        hero: { _id: 'c2', _schema: 'block', title: 'Hero' },
         rows: [
-          { _id: 'c3', schema: 'block', title: 'One' },
-          { _id: 'c4', schema: 'block', title: 'Two' },
+          { _id: 'c3', _schema: 'block', title: 'One' },
+          { _id: 'c4', _schema: 'block', title: 'Two' },
         ],
       };
       const schemas = [
@@ -331,7 +346,7 @@ describe('content utils', () => {
     // flattening the document.
     it('serializes RICH_TEXT to HTML and parses the translation back to a document', () => {
       const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }] };
-      const data: ContentData = { _id: 'c1', schema: 'root-1', body: doc };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', body: doc };
       const schemas = [rootSchema([field({ name: 'body', kind: SchemaFieldKind.RICH_TEXT, translatable: true })])];
 
       const fields = collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de');
@@ -345,7 +360,7 @@ describe('content utils', () => {
     });
 
     it('skips an empty RICH_TEXT document', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', body: { type: 'doc', content: [{ type: 'paragraph' }] } };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', body: { type: 'doc', content: [{ type: 'paragraph' }] } };
       const schemas = [rootSchema([field({ name: 'body', kind: SchemaFieldKind.RICH_TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
@@ -354,14 +369,14 @@ describe('content utils', () => {
     // Whitespace is nothing to translate: sending it costs a provider request and returns
     // whitespace back.
     it('skips a source value that is only whitespace', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: '   ' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: '   ' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
     });
 
     it('treats a whitespace-only target as empty and fills it', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title: 'Hello', title_i18n_de: '  ' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title: 'Hello', title_i18n_de: '  ' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toHaveLength(1);
@@ -369,7 +384,7 @@ describe('content utils', () => {
 
     it('skips a RICH_TEXT document whose only text is whitespace', () => {
       const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '   ' }] }] };
-      const data: ContentData = { _id: 'c1', schema: 'root-1', body: doc };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', body: doc };
       const schemas = [rootSchema([field({ name: 'body', kind: SchemaFieldKind.RICH_TEXT, translatable: true })])];
 
       expect(collectTranslatableFields(data, schemas, CONTENT_DEFAULT_LOCALE.id, 'de')).toEqual([]);
@@ -377,7 +392,7 @@ describe('content utils', () => {
 
     // The default locale's value lives under the bare field name, at either end of the translation.
     it('writes to the bare field name when the target is the default locale', () => {
-      const data: ContentData = { _id: 'c1', schema: 'root-1', title_i18n_de: 'Hallo' };
+      const data: ContentData = { _id: 'c1', _schema: 'root-1', title_i18n_de: 'Hallo' };
       const schemas = [rootSchema([field({ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true })])];
 
       const fields = collectTranslatableFields(data, schemas, 'de', CONTENT_DEFAULT_LOCALE.id);
@@ -393,10 +408,10 @@ describe('content utils', () => {
     it('gives every field a unique id', () => {
       const data: ContentData = {
         _id: 'c1',
-        schema: 'root-1',
+        _schema: 'root-1',
         rows: [
-          { _id: 'c2', schema: 'block', title: 'One' },
-          { _id: 'c3', schema: 'block', title: 'Two' },
+          { _id: 'c2', _schema: 'block', title: 'One' },
+          { _id: 'c3', _schema: 'block', title: 'Two' },
         ],
       };
       const schemas = [

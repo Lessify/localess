@@ -81,21 +81,21 @@ describe('MarkdownEditorComponent', () => {
   }
 
   it('isDefaultLocale()/selectedLocaleId() reflect the selected locale', () => {
-    const { component } = setup({ _id: 'c1', schema: 's1' }, CONTENT_DEFAULT_LOCALE);
+    const { component } = setup({ _id: 'c1', _schema: 's1' }, CONTENT_DEFAULT_LOCALE);
 
     expect(component.isDefaultLocale()).toBe(true);
     expect(component.selectedLocaleId()).toBe(CONTENT_DEFAULT_LOCALE.id);
   });
 
   it('is not the default locale for a non-default selection', () => {
-    const { component } = setup({ _id: 'c1', schema: 's1' }, de);
+    const { component } = setup({ _id: 'c1', _schema: 's1' }, de);
 
     expect(component.isDefaultLocale()).toBe(false);
   });
 
   describe('modes', () => {
     it('defaults to source mode for an author with no stored preference', () => {
-      const { component } = setup({ _id: 'c1', schema: 's1' });
+      const { component } = setup({ _id: 'c1', _schema: 's1' });
 
       expect(component.mode()).toBe('source');
       // A schema can hold many markdown fields; none of them should pay for TipTap unopened.
@@ -103,7 +103,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('builds the editor on the first switch into wysiwyg mode and loads the markdown', () => {
-      const { component, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, '## Title');
+      const { component, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, '## Title');
 
       toggleMode();
 
@@ -113,7 +113,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('reuses the same editor across further mode switches', () => {
-      const { component, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'text');
+      const { component, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'text');
       toggleMode();
       const editor = component.editor();
 
@@ -126,7 +126,7 @@ describe('MarkdownEditorComponent', () => {
 
     // The whole point of the field kind: whichever mode the author used, the control holds markdown.
     it('writes markdown back to the form when the document is edited in wysiwyg mode', () => {
-      const { component, control, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'plain');
+      const { component, control, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'plain');
       toggleMode();
 
       component.editor()?.chain().setContent('start').selectAll().toggleBold().run();
@@ -137,7 +137,7 @@ describe('MarkdownEditorComponent', () => {
     // Opening a document must not rewrite it. Entering wysiwyg mode reparses the markdown, and the
     // serializer is entitled to normalize it - so that pass has to stay out of the form control.
     it('does not touch the form value when only switching modes', () => {
-      const { control, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'visit https://example.com now');
+      const { control, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'visit https://example.com now');
       const changes = vi.fn();
       control.valueChanges.subscribe(changes);
 
@@ -149,7 +149,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('mirrors a disabled control into a read-only editor', () => {
-      const { component, control, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'text');
+      const { component, control, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'text');
       control.disable();
 
       toggleMode();
@@ -158,7 +158,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('destroys the editor on component destroy', () => {
-      const { component, fixture, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'text');
+      const { component, fixture, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'text');
       toggleMode();
       const destroySpy = vi.spyOn(component.editor()!, 'destroy');
 
@@ -168,7 +168,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('highlights a code block through the lowlight integration', () => {
-      const { component, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, '```typescript\nconst answer: number = 42;\n```');
+      const { component, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, '```typescript\nconst answer: number = 42;\n```');
 
       toggleMode();
 
@@ -183,21 +183,21 @@ describe('MarkdownEditorComponent', () => {
    */
   describe('remembered preference', () => {
     it('opens straight into wysiwyg when that is the stored preference, with no toggle', () => {
-      const { component } = setup({ _id: 'c1', schema: 's1' }, de, '## Title', 'wysiwyg');
+      const { component } = setup({ _id: 'c1', _schema: 's1' }, de, '## Title', 'wysiwyg');
 
       expect(component.mode()).toBe('wysiwyg');
       expect(component.editor()?.getMarkdown().trim()).toBe('## Title');
     });
 
     it('opens in source when that is the stored preference', () => {
-      const { component } = setup({ _id: 'c1', schema: 's1' }, de, '## Title', 'source');
+      const { component } = setup({ _id: 'c1', _schema: 's1' }, de, '## Title', 'source');
 
       expect(component.mode()).toBe('source');
       expect(component.editor()).toBeNull();
     });
 
     it('records the choice when the author switches to wysiwyg', () => {
-      const { settings, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'text');
+      const { settings, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'text');
 
       toggleMode();
 
@@ -205,7 +205,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('records the choice when the author switches back to source', () => {
-      const { settings, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'text', 'wysiwyg');
+      const { settings, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'text', 'wysiwyg');
 
       toggleMode();
 
@@ -215,7 +215,7 @@ describe('MarkdownEditorComponent', () => {
     // Every markdown field on the page follows the one preference, rather than each remembering
     // its own mode - the author chose a way of working, not a per-field setting.
     it('applies the choice to every markdown field on the page', () => {
-      const { toggleMode, createSiblingField } = setup({ _id: 'c1', schema: 's1' }, de, 'text');
+      const { toggleMode, createSiblingField } = setup({ _id: 'c1', _schema: 's1' }, de, 'text');
 
       toggleMode();
 
@@ -225,14 +225,14 @@ describe('MarkdownEditorComponent', () => {
 
   describe('lossy content guard', () => {
     it('flags stored markdown that wysiwyg mode cannot represent', () => {
-      const { component } = setup({ _id: 'c1', schema: 's1' }, de, 'text with <sup>2</sup>');
+      const { component } = setup({ _id: 'c1', _schema: 's1' }, de, 'text with <sup>2</sup>');
 
       expect(component.lossy()).toBe(true);
       expect(component.modeTooltip()).toContain('cannot represent');
     });
 
     it('refuses to enter wysiwyg mode rather than destroying the HTML', () => {
-      const { component, control, error, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, '<div>callout</div>');
+      const { component, control, error, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, '<div>callout</div>');
 
       toggleMode();
 
@@ -248,14 +248,14 @@ describe('MarkdownEditorComponent', () => {
      * - and the next reload - stays in their chosen mode.
      */
     it('shows source for a lossy field without changing the stored preference', () => {
-      const { component, settings } = setup({ _id: 'c1', schema: 's1' }, de, 'has <br> html', 'wysiwyg');
+      const { component, settings } = setup({ _id: 'c1', _schema: 's1' }, de, 'has <br> html', 'wysiwyg');
 
       expect(component.mode()).toBe('source');
       expect(settings.markdownMode()).toBe('wysiwyg');
     });
 
     it('returns to the preferred wysiwyg mode once the content is no longer lossy', () => {
-      const { component, setValue } = setup({ _id: 'c1', schema: 's1' }, de, 'has <br> html', 'wysiwyg');
+      const { component, setValue } = setup({ _id: 'c1', _schema: 's1' }, de, 'has <br> html', 'wysiwyg');
       expect(component.mode()).toBe('source');
 
       setValue('## now clean');
@@ -265,7 +265,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('tracks the live control value as it changes', () => {
-      const { component, setValue } = setup({ _id: 'c1', schema: 's1' }, de, 'clean text');
+      const { component, setValue } = setup({ _id: 'c1', _schema: 's1' }, de, 'clean text');
       expect(component.lossy()).toBe(false);
 
       setValue('now with <br> html');
@@ -274,7 +274,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('allows wysiwyg mode for markdown that only looks like HTML inside code', () => {
-      const { component, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'use the `<div>` element');
+      const { component, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'use the `<div>` element');
 
       toggleMode();
 
@@ -284,7 +284,7 @@ describe('MarkdownEditorComponent', () => {
 
   describe('translate', () => {
     it('notifies an error when there is no content to translate', () => {
-      const { component, translate, error } = setup({ _id: 'c1', schema: 's1', body: '' });
+      const { component, translate, error } = setup({ _id: 'c1', _schema: 's1', body: '' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -297,7 +297,7 @@ describe('MarkdownEditorComponent', () => {
      * Told what that is, the provider gets the real source language instead of auto-detecting.
      */
     it('sends the fallback language when the source is the default locale', () => {
-      const { component, fixture, translate } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
+      const { component, fixture, translate } = setup({ _id: 'c1', _schema: 's1', body: 'Hello' });
       fixture.componentRef.setInput('fallbackLocale', { id: 'en', name: 'English' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
@@ -308,7 +308,7 @@ describe('MarkdownEditorComponent', () => {
     // A space always has a fallback, so an unresolved sentinel means the space never arrived.
     // Sending it on gets a clear rejection from the provider instead of a silent auto-detect.
     it('sends the sentinel on when no fallback locale is supplied', () => {
-      const { component, translate } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
+      const { component, translate } = setup({ _id: 'c1', _schema: 's1', body: 'Hello' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -316,7 +316,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('uses the plain field for the default locale and sets the result on the form', () => {
-      const { component, translate, success, control } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
+      const { component, translate, success, control } = setup({ _id: 'c1', _schema: 's1', body: 'Hello' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
@@ -326,7 +326,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('uses the locale-suffixed field for a non-default source locale', () => {
-      const { component, translate } = setup({ _id: 'c1', schema: 's1', ['body_i18n_de']: 'Hallo' });
+      const { component, translate } = setup({ _id: 'c1', _schema: 's1', ['body_i18n_de']: 'Hallo' });
 
       component.translate('body', 'de', 'en');
 
@@ -334,7 +334,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('pushes the translation into the editor when wysiwyg mode is open', () => {
-      const { component, translate, toggleMode } = setup({ _id: 'c1', schema: 's1', body: 'Hello' }, de, 'Hello');
+      const { component, translate, toggleMode } = setup({ _id: 'c1', _schema: 's1', body: 'Hello' }, de, 'Hello');
       translate.mockReturnValue(of('## Hallo'));
       toggleMode();
 
@@ -346,7 +346,7 @@ describe('MarkdownEditorComponent', () => {
     // A translation carrying HTML would be stripped on the next keystroke in wysiwyg mode, so the
     // field drops to source instead of showing content it cannot keep - the preference is untouched.
     it('falls back to source mode when the translation contains HTML', () => {
-      const { component, translate, control, settings, toggleMode } = setup({ _id: 'c1', schema: 's1', body: 'Hello' }, de, 'Hello');
+      const { component, translate, control, settings, toggleMode } = setup({ _id: 'c1', _schema: 's1', body: 'Hello' }, de, 'Hello');
       translate.mockReturnValue(of('Hallo <br> Welt'));
       toggleMode();
 
@@ -358,7 +358,7 @@ describe('MarkdownEditorComponent', () => {
     });
 
     it('notifies an error with a documentation link on failure', () => {
-      const { component, translate, error } = setup({ _id: 'c1', schema: 's1', body: 'Hello' });
+      const { component, translate, error } = setup({ _id: 'c1', _schema: 's1', body: 'Hello' });
       translate.mockReturnValue(throwError(() => new Error('boom')));
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
@@ -370,7 +370,7 @@ describe('MarkdownEditorComponent', () => {
   // Underline is the mark that let both editors share one toolbar; it has to reach the form as
   // portable markdown rather than TipTap's default `++text++`.
   it('writes underline back as inline HTML', () => {
-    const { component, control, toggleMode } = setup({ _id: 'c1', schema: 's1' }, de, 'plain');
+    const { component, control, toggleMode } = setup({ _id: 'c1', _schema: 's1' }, de, 'plain');
     toggleMode();
 
     component.editor()?.chain().setContent('plain').selectAll().toggleUnderline().run();

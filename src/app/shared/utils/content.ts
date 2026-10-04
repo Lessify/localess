@@ -95,10 +95,9 @@ export function extractSchemaContent(data: ContentData, schema: SchemaComponent,
 export function extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
   const extractedContentData: ContentData = {
     _id: content._id,
-    _schema: content._schema || content.schema,
-    schema: content.schema,
+    _schema: content._schema,
   };
-  const schema = schemas.get(content.schema);
+  const schema = schemas.get(content._schema);
   if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
     for (const field of schema?.fields || []) {
       if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -145,7 +144,7 @@ export function extractReferences(data: ContentData | undefined, schemas: Schema
   // Iterative traversing content and extracting references.
   let selectedContent = contentIteration.pop();
   while (selectedContent) {
-    const schema = schemasById.get(selectedContent.schema);
+    const schema = schemasById.get(selectedContent._schema);
     if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
       const schemaContent = extractSchemaContent(selectedContent, schema, locale, true);
       // handle array like Asset/Reference Array
@@ -229,7 +228,7 @@ export function collectTranslatableFields(
 
   while (selectedContent) {
     const node = selectedContent;
-    const schema = schemasById.get(node.schema);
+    const schema = schemasById.get(node._schema);
     if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
       for (const field of (schema as SchemaComponent).fields || []) {
         if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -280,8 +279,8 @@ export function collectTranslatableFields(
 
 /**
  * A deep copy of `data` in the shape it is stored in: links, references and assets without a `uri`,
- * `null`/`undefined` values and empty arrays are dropped, and a missing `_schema` is filled in from
- * `schema`. Documents are compared and saved in this shape.
+ * `null`/`undefined` values and empty arrays are dropped, and a block stored before `_schema` existed
+ * has its legacy `schema` key moved to `_schema`. Documents are loaded, compared and saved in this shape.
  */
 export function normalizeContent<T>(data: T): T {
   return copyContent(data, false);
@@ -320,8 +319,11 @@ function copyContent<T>(source: T, generateNewID: boolean): T {
       if (generateNewID && fieldName === '_id') {
         target[fieldName] = v4();
       }
-      if (fieldName === 'schema' && target['_schema'] === undefined) {
-        target['_schema'] = target['schema'];
+      // Only a block without `_schema` predates it, so only there is `schema` the legacy key rather than a field.
+      if (fieldName === 'schema' && '_id' in target && target['_schema'] === undefined) {
+        target['_schema'] = value;
+        delete target[fieldName];
+        return;
       }
       if (value == null) {
         delete target[fieldName];

@@ -170,6 +170,16 @@ export function spaceContentCachePath(spaceId: string): string {
 }
 
 /**
+ * Schema id of a stored block. Blocks saved before `_schema` existed carry it only under the
+ * legacy `schema` key, which is read as a fallback and never served.
+ * @param {ContentData} content stored block
+ * @return {string} schema id
+ */
+export function contentSchemaId(content: ContentData): string {
+  return content._schema || content['schema'];
+}
+
+/**
  * extract Locale Content
  * @param {ContentData} content content
  * @param {Schema[]} schemas schema
@@ -177,12 +187,12 @@ export function spaceContentCachePath(spaceId: string): string {
  * @return {ContentData} content
  */
 export function extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
+  const schemaId = contentSchemaId(content);
   const extractedContentData: ContentData = {
     _id: content._id,
-    _schema: content._schema || content.schema,
-    schema: content.schema,
+    _schema: schemaId,
   };
-  const schema = schemas.get(content.schema);
+  const schema = schemas.get(schemaId);
   if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
     for (const field of schema?.fields || []) {
       if (field.kind === SchemaFieldKind.SCHEMA) {

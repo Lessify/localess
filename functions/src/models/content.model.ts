@@ -89,8 +89,7 @@ export interface ContentDocumentApi {
 
 export interface ContentData extends Record<string, any | ContentData | ContentData[]> {
   _id: string;
-  _schema?: string;
-  schema: string;
+  _schema: string;
 }
 
 export interface ContentMetadata {

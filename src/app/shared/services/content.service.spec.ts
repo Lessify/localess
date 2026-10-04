@@ -165,7 +165,7 @@ describe('ContentService', () => {
   it('updateDocumentData() serializes the data and converts the reference sets to arrays', async () => {
     const service = setup();
 
-    const data: ContentData = { _id: 'c1', schema: 'root', key: 'value' };
+    const data: ContentData = { _id: 'c1', _schema: 'root', key: 'value' };
     await firstValueFrom(service.updateDocumentData('space-1', 'c1', data, [new Set(['a1']), new Set(['l1']), new Set(['r1'])]));
 
     const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];

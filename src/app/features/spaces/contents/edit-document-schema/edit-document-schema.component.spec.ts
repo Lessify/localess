@@ -35,7 +35,7 @@ function setup(config: { schemas?: Schema[]; data?: ContentData; locale?: Locale
   fixture.componentRef.setInput('schemas', config.schemas ?? []);
   fixture.componentRef.setInput('selectedLocale', config.locale ?? CONTENT_DEFAULT_LOCALE);
   fixture.componentRef.setInput('availableLocales', [CONTENT_DEFAULT_LOCALE]);
-  fixture.componentRef.setInput('data', config.data ?? { _id: '1', _schema: 'root-1', schema: 'root-1' });
+  fixture.componentRef.setInput('data', config.data ?? { _id: '1', _schema: 'root-1' });
   TestBed.tick(); // flushes the constructor effect that generates the form — does not render the template
   return { fixture, component };
 }
@@ -44,7 +44,7 @@ describe('EditDocumentSchemaComponent', () => {
   describe('form generation on creation', () => {
     it('finds the root schema matching data().schema and builds a control per field', () => {
       const rootSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never]);
-      const { component } = setup({ schemas: [rootSchema], data: { _id: '1', schema: 'root-1' } });
+      const { component } = setup({ schemas: [rootSchema], data: { _id: '1', _schema: 'root-1' } });
 
       expect(component.rootSchema()).toBe(rootSchema);
       expect(component.form.contains('title')).toBe(true);
@@ -52,14 +52,14 @@ describe('EditDocumentSchemaComponent', () => {
 
     it('patches the form from data() field values after generating it', () => {
       const rootSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never]);
-      const { component } = setup({ schemas: [rootSchema], data: { _id: '1', schema: 'root-1', title: 'Hello' } });
+      const { component } = setup({ schemas: [rootSchema], data: { _id: '1', _schema: 'root-1', title: 'Hello' } });
 
       expect(component.form.controls['title'].value).toBe('Hello');
     });
 
     it('rootSchema() returns undefined instead of throwing when data() is undefined', () => {
       const rootSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never]);
-      const { component, fixture } = setup({ schemas: [rootSchema], data: { _id: '1', schema: 'root-1' } });
+      const { component, fixture } = setup({ schemas: [rootSchema], data: { _id: '1', _schema: 'root-1' } });
 
       fixture.componentRef.setInput('data', undefined);
 
@@ -74,12 +74,12 @@ describe('EditDocumentSchemaComponent', () => {
       const rootSchema1 = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never], 'root-1');
       const { component, fixture } = setup({
         schemas: [rootSchema1, childSchema],
-        data: { _id: '1', schema: 'root-1', title: 'Hello' },
+        data: { _id: '1', _schema: 'root-1', title: 'Hello' },
       });
       expect(component.form.contains('title')).toBe(true);
       expect(component.form.contains('label')).toBe(false);
 
-      const newData: ContentData = { _id: '2', schema: 'child-1', label: 'Nested' };
+      const newData: ContentData = { _id: '2', _schema: 'child-1', label: 'Nested' };
       fixture.componentRef.setInput('data', newData);
       TestBed.tick();
 
@@ -93,12 +93,12 @@ describe('EditDocumentSchemaComponent', () => {
       const rootSchema1 = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never], 'root-1');
       const { component, fixture } = setup({
         schemas: [rootSchema1],
-        data: { _id: '1', schema: 'root-1', title: 'Hello' },
+        data: { _id: '1', _schema: 'root-1', title: 'Hello' },
       });
       expect(component.form.contains('title')).toBe(true);
       const formBeforeChange = component.form;
 
-      const newData: ContentData = { _id: '1', schema: 'root-1', title: 'Updated' };
+      const newData: ContentData = { _id: '1', _schema: 'root-1', title: 'Updated' };
       fixture.componentRef.setInput('data', newData);
       TestBed.tick();
 
@@ -110,7 +110,7 @@ describe('EditDocumentSchemaComponent', () => {
       const rootSchema1 = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never], 'root-1');
       const { component, fixture } = setup({
         schemas: [rootSchema1],
-        data: { _id: '1', schema: 'root-1', title: 'Hello' },
+        data: { _id: '1', _schema: 'root-1', title: 'Hello' },
       });
       const formBeforeChange = component.form;
 
@@ -134,13 +134,13 @@ describe('EditDocumentSchemaComponent', () => {
 
       component.addSchemaOne({ name: 'child', kind: SchemaFieldKind.SCHEMA } as never, targetSchema);
 
-      expect(component.data()['child']).toMatchObject({ schema: 'child-1', _schema: 'child-1' });
+      expect(component.data()['child']).toMatchObject({ _schema: 'child-1' });
       expect(events).toEqual(['addSchemaOne child child-1']);
       expect(fixture.componentInstance.data()).toBe(component.data());
     });
 
     it('removeSchemaOne deletes the nested content and emits structureChange', () => {
-      const { component } = setup({ data: { _id: '1', schema: 'root-1', child: { _id: '2', schema: 'child-1' } } });
+      const { component } = setup({ data: { _id: '1', _schema: 'root-1', child: { _id: '2', _schema: 'child-1' } } });
       const events: string[] = [];
       component.structureChange.subscribe(e => events.push(e));
 
@@ -154,7 +154,7 @@ describe('EditDocumentSchemaComponent', () => {
   describe('addSchemaMany / removeSchemaMany / duplicateSchemaMany', () => {
     it('addSchemaMany appends to an existing array field', () => {
       const { component } = setup({
-        data: { _id: '1', schema: 'root-1', children: [{ _id: 'a', schema: 'child-1' }] },
+        data: { _id: '1', _schema: 'root-1', children: [{ _id: 'a', _schema: 'child-1' }] },
       });
       component.addSchemaMany({ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never, schema([], 'child-1'));
       expect(component.data()['children']).toHaveLength(2);
@@ -166,24 +166,24 @@ describe('EditDocumentSchemaComponent', () => {
       expect(component.data()['children']).toHaveLength(1);
 
       component.addSchemaMany({ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never, schema([], 'child-2'), 0);
-      expect(component.data()['children'][0].schema).toBe('child-2');
+      expect(component.data()['children'][0]._schema).toBe('child-2');
       expect(component.data()['children']).toHaveLength(2);
     });
 
     it('removeSchemaMany removes the matching item and deletes the field once empty', () => {
       const { component } = setup({
-        data: { _id: '1', schema: 'root-1', children: [{ _id: 'a', schema: 'child-1' }] },
+        data: { _id: '1', _schema: 'root-1', children: [{ _id: 'a', _schema: 'child-1' }] },
       });
       component.removeSchemaMany({ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never, 'a');
       expect(component.data()['children']).toBeUndefined();
     });
 
     it('duplicateSchemaMany inserts a clone right after the source item with a new _id', () => {
-      const data = [{ _id: 'a', schema: 'child-1', label: 'Original' }];
-      const { component } = setup({ data: { _id: '1', schema: 'root-1', children: data } });
+      const data = [{ _id: 'a', _schema: 'child-1', label: 'Original' }];
+      const { component } = setup({ data: { _id: '1', _schema: 'root-1', children: data } });
       component.duplicateSchemaMany({ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never, data[0], 0);
       expect(data).toHaveLength(2);
-      expect(data[1]).toMatchObject({ schema: 'child-1', label: 'Original' });
+      expect(data[1]).toMatchObject({ _schema: 'child-1', label: 'Original' });
       expect(data[1]._id).not.toBe('a');
     });
   });
@@ -222,7 +222,7 @@ describe('EditDocumentSchemaComponent', () => {
 
     it('writes to the bare field name on the default locale', () => {
       vi.useFakeTimers();
-      const data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' };
       const { component } = setup({ schemas: [translatable], data, locale: CONTENT_DEFAULT_LOCALE });
 
       typeAndFlush(component, 'Changed');
@@ -234,7 +234,7 @@ describe('EditDocumentSchemaComponent', () => {
 
     it('writes to the suffixed key on another locale, leaving the default untouched', () => {
       vi.useFakeTimers();
-      const data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' };
       const { component } = setup({ schemas: [translatable], data, locale: { id: 'de', name: 'German' } });
 
       typeAndFlush(component, 'Hallo');
@@ -248,7 +248,7 @@ describe('EditDocumentSchemaComponent', () => {
     // back to the default locale again.
     it('removes the suffixed key when the translation is cleared', () => {
       vi.useFakeTimers();
-      const data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
+      const data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' };
       const { component } = setup({ schemas: [translatable], data, locale: { id: 'de', name: 'German' } });
 
       typeAndFlush(component, '');
@@ -263,7 +263,7 @@ describe('EditDocumentSchemaComponent', () => {
     const titleSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never], 'root-1');
     const labelSchema = schema([{ name: 'label', kind: SchemaFieldKind.TEXT } as never], 'child-1');
 
-    function setupWithEvents(data: ContentData = { _id: '1', _schema: 'root-1', schema: 'root-1', title: 'Hello' }) {
+    function setupWithEvents(data: ContentData = { _id: '1', _schema: 'root-1', title: 'Hello' }) {
       vi.useFakeTimers();
       const result = setup({ schemas: [titleSchema, labelSchema], data });
       const events: string[] = [];
@@ -315,7 +315,7 @@ describe('EditDocumentSchemaComponent', () => {
 
       fixture.componentRef.setInput('selectedLocale', { id: 'fr', name: 'French' });
       TestBed.tick();
-      fixture.componentRef.setInput('data', { _id: '2', _schema: 'child-1', schema: 'child-1', label: 'Nested' });
+      fixture.componentRef.setInput('data', { _id: '2', _schema: 'child-1', label: 'Nested' });
       TestBed.tick();
       vi.advanceTimersByTime(1000);
 
@@ -327,7 +327,7 @@ describe('EditDocumentSchemaComponent', () => {
       const oldForm = component.form;
       oldForm.controls['title'].setValue('Changed');
 
-      const child: ContentData = { _id: '2', _schema: 'child-1', schema: 'child-1', label: 'Nested' };
+      const child: ContentData = { _id: '2', _schema: 'child-1', label: 'Nested' };
       fixture.componentRef.setInput('data', child);
       TestBed.tick();
 
@@ -347,20 +347,20 @@ describe('EditDocumentSchemaComponent', () => {
     it('returns the base value on the default locale', () => {
       const { component } = setup();
       const previewSchema = { previewField: 'title', fields: [{ name: 'title', translatable: true }] } as unknown as SchemaComponent;
-      expect(component.previewText({ _id: '1', schema: 'x', title: 'Hello' }, previewSchema, 'default')).toBe('Hello');
+      expect(component.previewText({ _id: '1', _schema: 'x', title: 'Hello' }, previewSchema, 'default')).toBe('Hello');
     });
 
     it('returns the locale-suffixed value for a translatable preview field on a non-default locale', () => {
       const { component } = setup({ locale: { id: 'fr', name: 'French' } });
       const previewSchema = { previewField: 'title', fields: [{ name: 'title', translatable: true }] } as unknown as SchemaComponent;
-      const content = { _id: '1', schema: 'x', title: 'Hello', title_i18n_fr: 'Bonjour' };
+      const content = { _id: '1', _schema: 'x', title: 'Hello', title_i18n_fr: 'Bonjour' };
       expect(component.previewText(content, previewSchema, 'fr')).toBe('Bonjour');
     });
 
     it('returns undefined when the schema has no previewField', () => {
       const { component } = setup();
       const previewSchema = {} as SchemaComponent;
-      expect(component.previewText({ _id: '1', schema: 'x' }, previewSchema, 'default')).toBeUndefined();
+      expect(component.previewText({ _id: '1', _schema: 'x' }, previewSchema, 'default')).toBeUndefined();
     });
   });
 
@@ -400,7 +400,7 @@ describe('EditDocumentSchemaComponent', () => {
     });
 
     it('onFieldHover emits schemaHover using data()._id/schema', () => {
-      const { component } = setup({ data: { _id: '1', schema: 'root-1' } });
+      const { component } = setup({ data: { _id: '1', _schema: 'root-1' } });
       const events: unknown[] = [];
       component.schemaHover.subscribe(e => events.push(e));
       component.onFieldHover('title');
@@ -411,7 +411,7 @@ describe('EditDocumentSchemaComponent', () => {
       const { component } = setup();
       const events: unknown[] = [];
       component.schemaHover.subscribe(e => events.push(e));
-      component.onItemHover({ _id: '2', schema: 'child-1' });
+      component.onItemHover({ _id: '2', _schema: 'child-1' });
       expect(events).toEqual([{ id: '2', schema: 'child-1' }]);
     });
 
@@ -444,7 +444,7 @@ describe('EditDocumentSchemaComponent', () => {
       fixture.componentRef.setInput('schemas', config.schemas ?? []);
       fixture.componentRef.setInput('selectedLocale', CONTENT_DEFAULT_LOCALE);
       fixture.componentRef.setInput('availableLocales', [CONTENT_DEFAULT_LOCALE]);
-      fixture.componentRef.setInput('data', config.data ?? { _id: '1', schema: 'root-1' });
+      fixture.componentRef.setInput('data', config.data ?? { _id: '1', _schema: 'root-1' });
       fixture.detectChanges(); // initial render + flush constructor effects, incl. form generation
       return { fixture, component: fixture.componentInstance };
     }
