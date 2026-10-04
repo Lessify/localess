@@ -159,6 +159,7 @@ Space introspection and OpenAPI generation. Uses `token` query param auth.
 | `GET`  | `/api/v1/spaces/:spaceId`          | `DEV_TOOLS` | `{ id, name, locales, localeFallback, createdAt, updatedAt }` |
 | `GET`  | `/api/v1/spaces/:spaceId/open-api` | `DEV_TOOLS` | OpenAPI 3.0 JSON spec generated from schemas                  |
 | `GET`  | `/api/v1/spaces/:spaceId/schemas`  | `DEV_TOOLS` | `SchemaExport[]` (id + type-specific fields, no timestamps)   |
+| `GET`  | `/api/v1/spaces/:spaceId/translations/:locale/values` | `DEV_TOOLS` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |
 
 > **Breaking change (v3.3):** `GET /schemas` previously returned `Record<schemaId, Schema>` with raw Firestore timestamps. It now returns a `SchemaExport[]` array — the same shape the push endpoint accepts and the export zip contains. Upgrade `@localess/cli` before upgrading Localess; the current CLI accepts both shapes.
 
@@ -243,7 +244,7 @@ Token passed as `X-API-KEY` header. No caching — direct Firestore lookup on ev
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | `functions/src/v1/cdn.ts`                                | CDN router — all 7 delivery endpoints                                                     |
 | `functions/src/v1/manage.ts`                             | MANAGE router — translation bulk-write and schema push                                    |
-| `functions/src/v1/dev-tools.ts`                          | DEV_TOOLS router — space metadata, OpenAPI, schemas                                       |
+| `functions/src/v1/dev-tools.ts`                          | DEV_TOOLS router — space metadata, OpenAPI, schemas, stored translation values             |
 | `functions/src/v1/middleware/query-auth.middleware.ts`   | Query-param auth with 5-min token cache                                                   |
 | `functions/src/v1/middleware/api-key-auth.middleware.ts` | Header-based auth (no cache)                                                              |
 | `functions/src/config.ts`                                | Cache TTL constants, `bucket`, `firestoreService`                                         |

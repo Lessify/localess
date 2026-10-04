@@ -2,10 +2,10 @@ import { bucket, firestoreService } from '../config';
 import { DocumentReference, QueryDocumentSnapshot, Query, Timestamp } from 'firebase-admin/firestore';
 import { Space, Translation, TranslationExport } from '../models';
 import { triggerWebHooksForEvent } from '../utils/webhook-utils';
-import { WebHookEvent, WebHookPayload } from '../models/webhook.model';
+import { WebHookEvent, WebHookPayload } from '../models';
 import { isLabelsEqual } from '../utils/import-utils';
 
-export { planTranslationUpdate } from '../utils/translation.utils';
+export { planTranslationUpdate, storedLocaleValues } from '../utils/translation.utils';
 export type { TranslationUpdatePlan } from '../utils/translation.utils';
 
 /**

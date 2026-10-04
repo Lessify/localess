@@ -32,6 +32,7 @@ describe('v1 route id validation', () => {
     ['asset id on /original', '/api/v1/spaces/S1/assets/A1%2Fx/original'],
     ['space id on the translations route', '/api/v1/spaces/S1%2Fx/translations/en'],
     ['space id on the dev-tools route', '/api/v1/spaces/S1%2Fx'],
+    ['space id on the translation values route', '/api/v1/spaces/S1%2Fx/translations/en/values'],
   ])('rejects a %s with 400', async (_name, url) => {
     const res = await request(app).get(url);
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Translation, TranslationType } from '../models';
-import { planTranslationUpdate } from './translation.utils';
+import { planTranslationUpdate, storedLocaleValues } from './translation.utils';
 
 const timestamps = { createdAt: {} as never, updatedAt: {} as never };
 
@@ -66,5 +66,24 @@ describe('planTranslationUpdate', () => {
   it('returns an empty plan for empty existing and values', () => {
     const plan = planTranslationUpdate(new Map(), 'en', {});
     expect(plan).toEqual({ creates: [], updates: [], deletes: [], unchanged: [] });
+  });
+});
+
+describe('storedLocaleValues', () => {
+  it('returns only the values stored for the locale, without falling back', () => {
+    const translations = new Map([
+      ['nav.home', translation({ en: 'Home', de: 'Startseite' })],
+      ['nav.about', translation({ en: 'About' })],
+      ['nav.blog', translation({ en: 'Blog', de: '' })],
+    ]);
+
+    expect(storedLocaleValues(translations, 'de')).toEqual({ 'nav.home': 'Startseite' });
+    expect(storedLocaleValues(translations, 'en')).toEqual({ 'nav.home': 'Home', 'nav.about': 'About', 'nav.blog': 'Blog' });
+  });
+
+  it('keeps PLURAL and ARRAY values as their stored JSON strings', () => {
+    const translations = new Map([['items', translation({ en: '{"0":"No items","1":"One item"}' })]]);
+
+    expect(storedLocaleValues(translations, 'en')).toEqual({ items: '{"0":"No items","1":"One item"}' });
   });
 });
