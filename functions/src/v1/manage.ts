@@ -58,10 +58,16 @@ async function commitInBatches(
 }
 
 /** Per-type verb labels used for log/response messages. */
-const TRANSLATION_UPDATE_VERBS: Record<'add-missing' | 'update-existing' | 'delete-missing', { verb: string; past: string }> = {
-  'add-missing': { verb: 'add', past: 'Added' },
-  'update-existing': { verb: 'update', past: 'Updated' },
-  'delete-missing': { verb: 'delete', past: 'Deleted' },
+const TRANSLATION_UPDATE_VERBS: Record<
+  'add-missing' | 'update-existing' | 'delete-missing-key' | 'delete-missing-value',
+  { verb: string; past: string; noun: [string, string] }
+> = {
+  'add-missing': { verb: 'add', past: 'Added', noun: ['translation', 'translations'] },
+  'update-existing': { verb: 'update', past: 'Updated', noun: ['translation', 'translations'] },
+  // Removes the whole translation, in every locale.
+  'delete-missing-key': { verb: 'delete', past: 'Deleted', noun: ['translation key', 'translation keys'] },
+  // Removes only the pushed locale's value; other locales keep theirs.
+  'delete-missing-value': { verb: 'remove', past: 'Removed', noun: ['locale value', 'locale values'] },
 };
 
 MANAGE.post(
@@ -93,10 +99,10 @@ MANAGE.post(
     }
 
     // Fetch strategy matches each type's original cost: add-missing/update-existing only ever
-    // need the docs for the ids being pushed (targeted reads); only delete-missing needs to know
-    // about every existing id, so only it pays for a full collection scan.
+    // need the docs for the ids being pushed (targeted reads); only the delete types need to know
+    // about every existing id, so only they pay for a full collection scan.
     const existing = new Map<string, Translation>();
-    if (type === 'delete-missing') {
+    if (type === 'delete-missing-key' || type === 'delete-missing-value') {
       const translationsSnapshot = await findTranslations(spaceId).get();
       translationsSnapshot.docs.forEach(it => existing.set(it.id, it.data() as Translation));
     } else {
@@ -108,13 +114,18 @@ MANAGE.post(
     }
 
     const plan = planTranslationUpdate(existing, locale, values);
-    const actionable = type === 'add-missing' ? plan.creates : type === 'update-existing' ? plan.updates : plan.deletes;
+    const actionable = {
+      'add-missing': plan.creates,
+      'update-existing': plan.updates,
+      'delete-missing-key': plan.keyDeletes,
+      'delete-missing-value': plan.valueDeletes,
+    }[type];
     const { verb, past } = TRANSLATION_UPDATE_VERBS[type];
-    const noun = actionable.length === 1 ? 'translation' : 'translations';
+    const noun = TRANSLATION_UPDATE_VERBS[type].noun[actionable.length === 1 ? 0 : 1];
 
     if (actionable.length === 0) {
-      logger.info(`[V1:Translations:update] No translations to ${verb}`);
-      const response: TranslationUpdateResponse = { message: `No translations to ${verb}`, ids: [], dryRun };
+      logger.info(`[V1:Translations:update] No ${TRANSLATION_UPDATE_VERBS[type].noun[1]} to ${verb}`);
+      const response: TranslationUpdateResponse = { message: `No ${TRANSLATION_UPDATE_VERBS[type].noun[1]} to ${verb}`, ids: [], dryRun };
       res.status(200).send(response);
       return;
     }
@@ -155,6 +166,15 @@ MANAGE.post(
           data[`locales.${locale}`] = values[ref.id];
           batch.update(ref, data);
         }
+      );
+    } else if (type === 'delete-missing-value') {
+      await commitInBatches(
+        actionable.map(id => findTranslationById(spaceId, id)),
+        (batch, ref) =>
+          batch.update(ref, {
+            [`locales.${locale}`]: FieldValue.delete(),
+            updatedAt: FieldValue.serverTimestamp(),
+          })
       );
     } else {
       await commitInBatches(

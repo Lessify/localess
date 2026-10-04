@@ -8,16 +8,21 @@ export interface TranslationUpdatePlan {
   creates: string[];
   /** Translation ids present in both, with a different value for this locale. */
   updates: string[];
-  /** Translation ids present in `existing` but absent from `values`. */
-  deletes: string[];
+  /** Translation ids present in `existing` but absent from `values` — deleted whole by `delete-missing-key`. */
+  keyDeletes: string[];
+  /**
+   * The subset of `keyDeletes` that has a value in this locale — the values `delete-missing-value`
+   * removes. A key with no value here has nothing to remove.
+   */
+  valueDeletes: string[];
   /** Translation ids present in both, with an identical value for this locale. */
   unchanged: string[];
 }
 
 /**
  * Compute the changes a translation update would apply, without touching Firestore.
- * Fetch-strategy agnostic: pass a full collection map to get `deletes` populated, or a map
- * scoped to only the ids in `values` (cheaper) when deletes aren't needed for this request.
+ * Fetch-strategy agnostic: pass a full collection map to get `keyDeletes`/`valueDeletes` populated,
+ * or a map scoped to only the ids in `values` (cheaper) when deletes aren't needed for this request.
  * @param {Map<string, Translation>} existing current translation documents keyed by id
  * @param {string} locale locale being pushed
  * @param {Record<string, string>} values pushed locale values keyed by translation id
@@ -37,11 +42,14 @@ export function planTranslationUpdate(
     else if (orig.locales[locale] !== values[id]) updates.push(id);
     else unchanged.push(id);
   }
-  const deletes: string[] = [];
-  for (const id of existing.keys()) {
-    if (values[id] === undefined) deletes.push(id);
+  const keyDeletes: string[] = [];
+  const valueDeletes: string[] = [];
+  for (const [id, translation] of existing) {
+    if (values[id] !== undefined) continue;
+    keyDeletes.push(id);
+    if (translation.locales[locale] !== undefined) valueDeletes.push(id);
   }
-  return { creates, updates, deletes, unchanged };
+  return { creates, updates, keyDeletes, valueDeletes, unchanged };
 }
 
 /**

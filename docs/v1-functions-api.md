@@ -91,7 +91,7 @@ Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header
 
 ```typescript
 {
-  type: 'add-missing' | 'update-existing' | 'delete-missing';
+  type: 'add-missing' | 'update-existing' | 'delete-missing-key' | 'delete-missing-value';
   dryRun?: boolean;
   values: Record<string, string>; // translationId → value
 }
@@ -99,11 +99,16 @@ Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header
 
 **Operation types:**
 
-| Type              | Behavior                                                     |
-|-------------------|--------------------------------------------------------------|
-| `add-missing`     | Creates new `Translation` docs for IDs that don't exist yet  |
-| `update-existing` | Updates `locales.{locale}` field for IDs that already exist  |
-| `delete-missing`  | Deletes all translation docs whose ID is **not** in `values` |
+| Type                   | Behavior                                                                                                   |
+|------------------------|------------------------------------------------------------------------------------------------------------|
+| `add-missing`          | Creates new `Translation` docs for IDs that don't exist yet                                                |
+| `update-existing`      | Updates `locales.{locale}` field for IDs that already exist                                                |
+| `delete-missing-key`   | Deletes the whole translation doc — **every locale's value** — for each ID **not** in `values`             |
+| `delete-missing-value` | Removes only `locales.{locale}` for each ID **not** in `values` that has a value there; other locales keep theirs |
+
+`:locale` scopes everything except `delete-missing-key`, which deletes keys across the space whatever locale is pushed —
+run it with a complete file (normally the source locale). The former `delete-missing` was split into these two and is
+no longer accepted.
 
 Returns `400 invalid-argument` (`Locale not supported by this space`) when `:locale` is not one of the space's locales.
 
@@ -111,7 +116,7 @@ Returns `400 invalid-argument` (`Locale not supported by this space`) when `:loc
 
 ```typescript
 {
-  message: string;  // e.g. "Added 1 translation", "[DryRun] Would delete 3 translations", "No translations to update"
+  message: string;  // e.g. "Added 1 translation", "[DryRun] Would delete 3 translation keys", "Removed 2 locale values", "No translations to update"
   ids: string[];    // only the IDs `type` wrote (or, on a dry run, would write)
   dryRun?: true;
 }
