@@ -55,4 +55,14 @@ describe('zSchemaPushSchema', () => {
   it('rejects unknown types', () => {
     expect(zSchemaPushSchema.safeParse({ type: 'replace', schemas: [] }).success).toBe(false);
   });
+  it('rejects SCHEMA/SCHEMAS fields that allow no schema', () => {
+    const withField = (field: object) => ({ type: 'upsert', schemas: [{ id: 'Page', type: 'ROOT', fields: [field] }] });
+
+    expect(zSchemaPushSchema.safeParse(withField({ name: 'hero', kind: 'SCHEMA' })).success).toBe(false);
+    expect(zSchemaPushSchema.safeParse(withField({ name: 'blocks', kind: 'SCHEMAS', schemas: [] })).success).toBe(false);
+    expect(zSchemaPushSchema.safeParse(withField({ name: 'blocks', kind: 'SCHEMAS', schemas: ['Button'] })).success).toBe(true);
+  });
+  it('leaves imports free to carry existing SCHEMA fields without schemas', () => {
+    expect(zSchemaExportArraySchema.safeParse([{ id: 'Page', type: 'ROOT', fields: [{ name: 'hero', kind: 'SCHEMA' }] }]).success).toBe(true);
+  });
 });

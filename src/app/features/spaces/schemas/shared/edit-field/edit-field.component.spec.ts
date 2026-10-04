@@ -116,6 +116,18 @@ describe('EditFieldComponent', () => {
       expect(present).toEqual(['schemas']);
       expect(absent).toContain('translatable');
     });
+
+    it.each([SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS])('%s requires at least one allowed schema', kind => {
+      const { editField } = setup();
+      editField.selectFieldKind(kind);
+      const schemas = editField.form().controls['schemas'];
+
+      expect(schemas.hasError('required')).toBe(true);
+      schemas.setValue([]);
+      expect(schemas.hasError('required')).toBe(true);
+      schemas.setValue(['node-a']);
+      expect(schemas.valid).toBe(true);
+    });
   });
 
   describe('nodeSchemas / enumSchemas', () => {

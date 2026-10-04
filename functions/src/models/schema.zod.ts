@@ -187,8 +187,25 @@ export const schemaSchema = z.union([schemaComponentSchema, schemaEnumSchema]);
 
 export const zSchemaExportArraySchema = z.array(schemaSchema);
 
-export const zSchemaPushSchema = z.object({
-  dryRun: z.boolean().optional(),
-  type: z.enum(['upsert', 'sync']),
-  schemas: zSchemaExportArraySchema,
-});
+// Push only: a SCHEMA/SCHEMAS field must allow at least one schema, or the editor can add no block.
+// Imports keep accepting such fields, since existing spaces and their exports may already hold them.
+export const zSchemaPushSchema = z
+  .object({
+    dryRun: z.boolean().optional(),
+    type: z.enum(['upsert', 'sync']),
+    schemas: zSchemaExportArraySchema,
+  })
+  .superRefine((push, ctx) => {
+    push.schemas.forEach((schema, schemaIndex) => {
+      if (!('fields' in schema)) return;
+      schema.fields?.forEach((field, fieldIndex) => {
+        if ((field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) && !field.schemas?.length) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['schemas', schemaIndex, 'fields', fieldIndex, 'schemas'],
+            message: `${field.kind} field '${field.name}' must allow at least one schema`,
+          });
+        }
+      });
+    });
+  });

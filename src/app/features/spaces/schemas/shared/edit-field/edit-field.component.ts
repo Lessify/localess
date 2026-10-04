@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -431,7 +431,7 @@ export class EditFieldComponent {
       }
       case SchemaFieldKind.SCHEMA: {
         // ADD
-        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined));
+        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined, Validators.required));
         // REMOVE
         this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
@@ -453,7 +453,7 @@ export class EditFieldComponent {
       }
       case SchemaFieldKind.SCHEMAS: {
         // ADD
-        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined));
+        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined, Validators.required));
         // REMOVE
         this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
