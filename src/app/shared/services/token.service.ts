@@ -20,7 +20,7 @@ import {
 } from '@angular/fire/firestore';
 import { traceUntilFirst } from '@angular/fire/performance';
 import { UpdateData } from '@firebase/firestore';
-import { isTokenV2, Token, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
+import { isTokenV2, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
 import { from, Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
@@ -88,7 +88,8 @@ export class TokenService {
     const addEntity: WithFieldValue<TokenFS> = {
       version: 2,
       name: token.name,
-      permissions: isTokenV2(token) ? token.permissions : [],
+      // A v1 token has no stored permissions but implicitly grants these — keep them explicitly.
+      permissions: isTokenV2(token) ? token.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
       createdAt: token.createdAt,
       updatedAt: serverTimestamp(),
     };

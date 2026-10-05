@@ -1,10 +1,10 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DOCUMENT } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideTrash } from '@ng-icons/lucide';
+import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideSquareTerminal, lucideTrash } from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -62,6 +62,7 @@ import { TokenDialogComponent } from './token-dialog/token-dialog.component';
       lucideCopy,
       lucidePencil,
       lucideRefreshCw,
+      lucideSquareTerminal,
     }),
   ],
 })
@@ -70,6 +71,7 @@ export class TokensComponent implements AfterViewInit {
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
+  private readonly document = inject(DOCUMENT);
 
   sort = viewChild.required(TableSort);
   paginator = viewChild.required(Paginator);
@@ -138,7 +140,8 @@ export class TokensComponent implements AfterViewInit {
       .open<TokenForm, TokenForm>(TokenDialogComponent, {
         context: {
           name: element.name,
-          permissions: isTokenV2(element) ? element.permissions : [],
+          // A v1 token implicitly grants these; pre-tick them so saving doesn't silently narrow its access.
+          permissions: isTokenV2(element) ? element.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
           cacheTtl: isTokenV2(element) ? element.cacheTtl : undefined,
         },
         contentClass: DIALOG_WIDTH_SM,
@@ -221,5 +224,21 @@ export class TokensComponent implements AfterViewInit {
 
   copied() {
     this.notificationService.success(`Token ID copied to clipboard.`);
+  }
+
+  /** Only tokens holding Development Tools can be used by `@localess/cli`. */
+  isCliToken(element: Token): boolean {
+    return isTokenV2(element) && element.permissions.includes(TokenPermission.DEV_TOOLS);
+  }
+
+  /** `@localess/cli` login command for this token, pointing at the Localess the user is on. */
+  cliLoginCommand(element: Token): string {
+    const origin = this.document.location.origin;
+    const spaceId = this.spaceStore.selectedSpaceId();
+    return `localess login --origin ${origin} --space ${spaceId} --token ${element.id}`;
+  }
+
+  cliLoginCopied() {
+    this.notificationService.success(`CLI login command copied to clipboard.`);
   }
 }

@@ -76,6 +76,23 @@
             hlmTooltip="Copy Token">
             <ng-icon hlm size="sm" name="lucideCopy" />
           </button>
+          @if (isCliToken(element)) {
+            <button
+              hlmBtn
+              size="icon"
+              variant="ghost"
+              [cdkCopyToClipboard]="cliLoginCommand(element)"
+              (cdkCopyToClipboardCopied)="cliLoginCopied()"
+              hlmTooltip="Copy CLI Login">
+              <ng-icon hlm size="sm" name="lucideSquareTerminal" />
+            </button>
+          } @else {
+            <span class="inline-flex" hlmTooltip="The Development Tools permission is required to use this token with the CLI.">
+              <button hlmBtn size="icon" variant="ghost" disabled aria-label="Copy CLI Login unavailable">
+                <ng-icon hlm size="sm" name="lucideSquareTerminal" />
+              </button>
+            </span>
+          }
           <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>

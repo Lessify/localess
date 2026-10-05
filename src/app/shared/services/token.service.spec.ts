@@ -6,7 +6,7 @@ import { addDoc, collectionData, deleteDoc, deleteField, docData, updateDoc } fr
 import { Firestore } from '@angular/fire/firestore';
 import { firstValueFrom, of } from 'rxjs';
 
-import { Token, TokenForm, TokenPermission } from '../models/token.model';
+import { Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenForm, TokenPermission } from '../models/token.model';
 import { TokenService } from './token.service';
 
 describe('TokenService', () => {
@@ -152,7 +152,7 @@ describe('TokenService', () => {
     expect(result).toEqual({ id: 'new-token' });
   });
 
-  it('regenerate() defaults permissions to [] and omits cacheTtl for a v1 token', async () => {
+  it('regenerate() carries over the implicit v1 permissions and omits cacheTtl for a v1 token', async () => {
     const service = setup();
     vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
     const createdAt = { seconds: 222, nanoseconds: 0 } as never;
@@ -167,7 +167,9 @@ describe('TokenService', () => {
     await firstValueFrom(service.regenerate('space-1', token));
 
     const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ version: 2, name: 'Legacy token', permissions: [] });
+    // A v1 token implicitly grants every translation/content permission, so the regenerated v2
+    // token must keep them explicitly — an empty list would silently revoke all access.
+    expect(addedEntity).toMatchObject({ version: 2, name: 'Legacy token', permissions: TOKEN_V1_IMPLICIT_PERMISSIONS });
     expect(addedEntity).not.toHaveProperty('cacheTtl');
   });
 });

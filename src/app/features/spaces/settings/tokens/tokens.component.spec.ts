@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Space } from '@shared/models/space.model';
-import { Token, TokenPermission } from '@shared/models/token.model';
+import { Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';
@@ -118,6 +118,19 @@ describe('TokensComponent', () => {
     expect(success).toHaveBeenCalledWith('Token has been created.');
   });
 
+  it('openEditDialog() prefills the implicit permissions for a v1 token', () => {
+    const { component, open } = setup([], space());
+    const element = { id: 't0', name: 'Legacy', version: undefined } as unknown as Token;
+    open.mockReturnValue({ closed$: of(undefined) });
+
+    component.openEditDialog(element);
+
+    expect(open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ context: { name: 'Legacy', permissions: TOKEN_V1_IMPLICIT_PERMISSIONS, cacheTtl: undefined } }),
+    );
+  });
+
   it('openEditDialog() notifies an error on failure', () => {
     const { component, open, update, error } = setup([], space());
     update.mockReturnValue(throwError(() => new Error('boom')));
@@ -230,5 +243,29 @@ describe('TokensComponent', () => {
     component.copied();
 
     expect(success).toHaveBeenCalledWith('Token ID copied to clipboard.');
+  });
+
+  it('isCliToken() is true only for v2 tokens holding Development Tools', () => {
+    const { component } = setup([], space());
+
+    expect(component.isCliToken(token({ permissions: [TokenPermission.DEV_TOOLS] }))).toBe(true);
+    expect(component.isCliToken(token({ permissions: [TokenPermission.CONTENT_DRAFT] }))).toBe(false);
+    expect(component.isCliToken({ id: 't1', name: 'Legacy', version: undefined } as unknown as Token)).toBe(false);
+  });
+
+  it('cliLoginCommand() builds the login command for the current origin, space and token', () => {
+    const { component } = setup([], space());
+
+    const command = component.cliLoginCommand(token({ id: 'tok-123', permissions: [TokenPermission.DEV_TOOLS] }));
+
+    expect(command).toBe(`localess login --origin ${window.location.origin} --space space-1 --token tok-123`);
+  });
+
+  it('cliLoginCopied() notifies success', () => {
+    const { component, success } = setup([], space());
+
+    component.cliLoginCopied();
+
+    expect(success).toHaveBeenCalledWith('CLI login command copied to clipboard.');
   });
 });

@@ -28,12 +28,17 @@ describe('TokenValidator', () => {
   });
 
   describe('CACHE_TTL', () => {
-    it('only enforces the max bound, due to the comma-operator bug collapsing the array to Validators.max', () => {
+    it('is invalid above one year (max)', () => {
       expect(new FormControl(31536001, TokenValidator.CACHE_TTL).hasError('max')).toBe(true);
     });
 
-    it('does not enforce a minimum bound (Validators.min is discarded by the comma operator)', () => {
-      expect(new FormControl(-100, TokenValidator.CACHE_TTL).valid).toBe(true);
+    it('is invalid below 0 (min)', () => {
+      expect(new FormControl(-100, TokenValidator.CACHE_TTL).hasError('min')).toBe(true);
+    });
+
+    it('accepts 0 (no cache) and an empty value (default)', () => {
+      expect(new FormControl(0, TokenValidator.CACHE_TTL).valid).toBe(true);
+      expect(new FormControl(null, TokenValidator.CACHE_TTL).valid).toBe(true);
     });
 
     it('is valid within bounds', () => {
