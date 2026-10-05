@@ -9,6 +9,56 @@ import { WhatsNewRelease } from './whats-new.model';
  */
 export const WHATS_NEW: WhatsNewRelease[] = [
   {
+    version: '4.1.0',
+    date: '2026-10-05',
+    description:
+      'A Visual Editor release: blocks can be rearranged straight from the page preview, preview URLs take placeholders, and the preview explains itself when something is off.',
+    items: [
+      {
+        label: 'new',
+        title: 'Edit blocks from the page preview',
+        description:
+          'Selecting a block in the preview shows a toolbar on it to move it up or down, duplicate it or delete it, without going back to the form. Changes stay unsaved edits until you save, just like edits made in the form.',
+      },
+      {
+        label: 'new',
+        title: 'Flexible preview URLs',
+        description:
+          'Environment URLs accept `{fullSlug}`, `{slug}`, `{parentSlug}`, `{documentId}`, `{locale}` and `{locale/}` placeholders, even in the host, and each URL field shows an example of the page it will open. URLs without placeholders work as before.',
+      },
+      {
+        label: 'improved',
+        title: 'Clearer preview connection',
+        description:
+          'If the page does not connect, a hint lists what to check. The status tooltip shows the connected SDK, a notice appears when the page shows a different document than the one being edited, and reloads inside the preview reconnect on their own.',
+      },
+      {
+        label: 'new',
+        title: 'Raw translation export',
+        description:
+          'A new endpoint returns only the values stored for a locale, without fallback filling, so a file can be pulled, edited and pushed back without saving the fallback language as translations. The CLI uses it for `localess translation pull --raw`.',
+      },
+      {
+        label: 'improved',
+        title: 'Shareable space links',
+        description:
+          'The URL now decides which space is open, so a shared link opens the right space. Links to unknown spaces redirect with a warning, and live data reconnects on its own after an error.',
+      },
+      {
+        label: 'improved',
+        title: 'Correct translatable fields',
+        description:
+          'Reference, References, Schema and Schemas fields can no longer be marked translatable - their value is shared by every locale. Fields that are not translatable are read-only outside the default locale.',
+      },
+      {
+        label: 'improved',
+        title: 'Safer translation and schema push',
+        description:
+          'Translation push splits `delete-missing` into `delete-missing-key` (removes the key in every locale) and `delete-missing-value` (removes only the pushed locale) and returns only the IDs it wrote. Schema push rejects Schema fields with no allowed schemas. Upgrade `@localess/cli` with this release.',
+      },
+    ],
+  },
+  {
     version: '4.0.0',
     date: '2026-09-18',
     description:
