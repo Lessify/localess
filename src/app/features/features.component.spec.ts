@@ -19,6 +19,9 @@ import { FeaturesComponent } from './features.component';
 import { WHATS_NEW } from './whats-new/whats-new.data';
 import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component';
 
+/** A release one minor ahead of this build, derived so a version bump can't make it "current". */
+const NEWER_VERSION = (([major, minor]) => `${major}.${minor + 1}.0`)(environment.version.split('.').map(Number));
+
 function configureModule(overrides: {
   notifyError: ReturnType<typeof vi.fn>;
   /** What the user has already read in the What's New dialog; defaults to nothing seen yet. */
@@ -147,7 +150,7 @@ describe('FeaturesComponent', () => {
   it('reports a new version when the GitHub tag is ahead of this build', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
-      latestRelease: { tag_name: '4.1.0', html_url: 'https://github.com/Lessify/localess/releases/tag/4.1.0' },
+      latestRelease: { tag_name: NEWER_VERSION, html_url: `https://github.com/Lessify/localess/releases/tag/${NEWER_VERSION}` },
     });
     fixture.detectChanges();
 
@@ -183,10 +186,10 @@ describe('FeaturesComponent', () => {
 
   /** `Version: 4.0.0` above `v4.1.0 available` would read as two schemes; there is only one now. */
   it('announces the available version exactly as tagged', () => {
-    const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: '4.1.0' } });
+    const fixture = configureModule({ ...whatsNewDefaults, latestRelease: { tag_name: NEWER_VERSION } });
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.versionTooltip()).toContain('Version 4.1.0 is available.');
+    expect(fixture.componentInstance.versionTooltip()).toContain(`Version ${NEWER_VERSION} is available.`);
   });
 
   /** `timer(0, …)` emits on a macrotask, so the build date lands just after the first render. */
@@ -200,7 +203,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: NEWER_VERSION, published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -212,7 +215,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: '4.1.0', published_at: '2026-06-02T00:00:00.000Z' },
+      latestRelease: { tag_name: NEWER_VERSION, published_at: '2026-06-02T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -225,7 +228,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-08-01T00:00:00.000Z',
-      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: NEWER_VERSION, published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -236,7 +239,7 @@ describe('FeaturesComponent', () => {
   it('reports no gap before the build date has loaded', async () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
-      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: NEWER_VERSION, published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
@@ -261,7 +264,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: '4.1.0', published_at: 'not-a-date' },
+      latestRelease: { tag_name: NEWER_VERSION, published_at: 'not-a-date' },
     });
     await settleVersionCheck(fixture);
 
@@ -273,7 +276,7 @@ describe('FeaturesComponent', () => {
     const fixture = configureModule({
       ...whatsNewDefaults,
       buildDate: '2026-06-01T00:00:00.000Z',
-      latestRelease: { tag_name: '4.1.0', published_at: '2026-07-18T00:00:00.000Z' },
+      latestRelease: { tag_name: NEWER_VERSION, published_at: '2026-07-18T00:00:00.000Z' },
     });
     await settleVersionCheck(fixture);
 
