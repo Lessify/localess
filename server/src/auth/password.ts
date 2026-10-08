@@ -1,4 +1,5 @@
 import { hash, verify } from '@node-rs/argon2';
+import { verifyFirebaseScrypt } from './firebase-scrypt.js';
 
 export const PASSWORD_MIN_LENGTH = 6;
 
@@ -31,8 +32,12 @@ export async function verifyPassword(credential: StoredCredential | undefined, p
   switch (credential.hashAlgo) {
     case 'argon2id':
       return { valid: await verify(credential.passwordHash, password).catch(() => false), needsRehash: false };
+    case 'firebase-scrypt': {
+      // Imported from Firebase Auth: accepted once, then replaced by an argon2id hash.
+      const valid = credential.salt !== null && (await verifyFirebaseScrypt(password, credential.salt, credential.passwordHash));
+      return { valid, needsRehash: valid };
+    }
     default:
-      // 'firebase-scrypt' (imported accounts) is added with the Firebase import in Phase 6.
       return { valid: false, needsRehash: false };
   }
 }

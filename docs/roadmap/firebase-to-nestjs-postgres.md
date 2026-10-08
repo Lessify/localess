@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phases 0–5 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** In progress — Phases 0–6 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -420,6 +420,15 @@ phases 3–5 land together.
   the expected 401 of a signed-out visitor's session check raised an error toast (API 401s are now
   left to the auth flow); a FormData implementation dropped the upload filename of Blobs (uploads now
   append a File).
+
+- **Phase 6 — done.** `import:firebase` (re-runnable upsert of Firestore, Storage and Auth through a
+  thin `FirebaseSource`; firebase-admin adapter) and a self-hosted `check`. Firebase scrypt verified
+  against the reference vector of github.com/firebase/scrypt; imported hashes are self-contained
+  (`firebase-scrypt$rounds$memCost$saltSeparator$signerKey$hash`) and re-hashed to argon2id at first
+  sign-in. Tested end to end with a Firebase-shaped fixture (Timestamps, string `data`, published
+  snapshots, phone-only and clashing users): import → sign in with the Firebase password → public API
+  serves the imported content with the original asset ETags → re-run is idempotent. Not testable
+  here: the firebase-admin adapter against a real project (no emulator tooling in this environment).
 
 ## Open decisions
 

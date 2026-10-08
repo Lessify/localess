@@ -13,6 +13,8 @@ npm run dev            # build + start
 npm test               # vitest (starts a throwaway embedded Postgres)
 npm run db:generate    # drizzle-kit: SQL migration from src/database/schema.ts changes (commit the output)
 npm run cli -- db:migrate
+npm run cli -- check
+npm run cli -- import:firebase --project <firebase-project-id>
 LOCALESS_ADMIN_PASSWORD=… npm run cli -- admin:create --email admin@example.com [--name "Admin"]
 ```
 
@@ -118,3 +120,28 @@ The `tasks` row is the queue: `TaskWorker` claims the oldest INITIATED task with
 every 30 s, and runs one task at a time. Exports stream the zip into storage; imports read only the
 expected entries from the stored zip, each size-capped, never extracting to disk. A task still
 IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: imports may be half applied).
+
+## Migrating from a Firebase install
+
+`import:firebase` copies a Firebase-era Localess project into this server — Firestore documents
+(same ids, so public URLs, API tokens and SDK caches keep working), Storage files (asset originals;
+the published content and translation JSON snapshots are copied as served, not rebuilt) and Auth
+users with their roles and permissions. Every write is an upsert: run it once to rehearse, then
+again right before switching DNS to pick up the delta.
+
+1. Create a service account key for the Firebase project with read access to Firestore, Storage and
+   Authentication (e.g. *Firebase Admin SDK Administrator Service Agent*) and point
+   `GOOGLE_APPLICATION_CREDENTIALS` at it.
+2. Copy the project's password hash parameters (Firebase console → Authentication → Users → ⋮ →
+   *Password hash parameters*) into `FIREBASE_SCRYPT_SIGNER_KEY`, `FIREBASE_SCRYPT_SALT_SEPARATOR`,
+   `FIREBASE_SCRYPT_ROUNDS`, `FIREBASE_SCRYPT_MEM_COST`. Users then keep their passwords: the
+   Firebase hash is accepted once and replaced by argon2id on their first sign-in. Without the
+   parameters, password users must reset their password.
+3. `npm run cli -- import:firebase --project <id> [--bucket <name>]` (`--no-files` skips Storage for
+   a quick data-only rehearsal). The report lists counts and every item that was skipped.
+4. Freeze edits in the old install, run the import again, switch DNS, keep the Firebase project
+   read-only for a while as a rollback.
+
+Not imported: tasks and their files (temporary export artifacts), and Google/Microsoft identities —
+those users are linked by verified email on their first OAuth sign-in. Users whose email is already
+taken by another account here (e.g. an admin created before the import) are skipped and reported.
