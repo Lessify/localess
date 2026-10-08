@@ -10,6 +10,8 @@ const envSchema = z.object({
   // When unset, an embedded Postgres is started inside LOCALESS_DATA_DIR.
   DATABASE_URL: z.string().url().optional(),
   LOCALESS_DATA_DIR: z.string().default('.data'),
+  // Uploaded files and generated renditions. Defaults to `$LOCALESS_DATA_DIR/storage`.
+  LOCALESS_STORAGE_DIR: z.string().optional(),
   LOCALESS_EMBEDDED_PG_PORT: z.coerce.number().int().positive().default(5433),
   // Angular build output served by @fastify/static. Set to an empty string to serve the API only.
   // Minimum level printed; `debug`/`verbose` include the embedded Postgres server log.
@@ -39,6 +41,8 @@ const envSchema = z.object({
   // smtp(s)://user:pass@host:port — enables password reset emails. Without it admins copy reset links instead.
   LOCALESS_SMTP_URL: z.string().optional(),
   LOCALESS_SMTP_FROM: z.string().default('Localess <no-reply@localhost>'),
+  // ffmpeg binary for video thumbnails; defaults to `ffmpeg` on the PATH.
+  LOCALESS_FFMPEG_PATH: z.string().optional(),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../dist/localess/browser')),
 });
 
@@ -47,6 +51,8 @@ export interface AppConfig {
   host: string;
   database: { url: string } | { embedded: { dataDir: string; port: number } };
   dataDir: string;
+  storageDir: string;
+  ffmpegPath: string | undefined;
   staticDir: string | undefined;
   logLevels: LogLevel[];
   firstAdmin: { email: string; password: string } | undefined;
@@ -121,6 +127,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       ? { url: parsed.DATABASE_URL }
       : { embedded: { dataDir: resolve(dataDir, 'pgdata'), port: parsed.LOCALESS_EMBEDDED_PG_PORT } },
     dataDir,
+    ffmpegPath: parsed.LOCALESS_FFMPEG_PATH,
+    storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),
     staticDir: parsed.LOCALESS_STATIC_DIR ? resolve(parsed.LOCALESS_STATIC_DIR) : undefined,
     firstAdmin:
       parsed.LOCALESS_ADMIN_EMAIL && parsed.LOCALESS_ADMIN_PASSWORD

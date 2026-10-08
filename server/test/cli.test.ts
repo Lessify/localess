@@ -34,7 +34,7 @@ describe('CLI', () => {
 
   it('db:migrate brings an empty database up to date', async () => {
     expect(await run(['db:migrate'])).toBe(0);
-    expect(await query(`select count(*)::int as n from drizzle.__drizzle_migrations`)).toEqual([{ n: 1 }]);
+    expect(await query(`select count(*)::int as n from drizzle.__drizzle_migrations`)).toEqual([{ n: 2 }]);
   });
 
   it('admin:create takes the password from LOCALESS_ADMIN_PASSWORD', async () => {

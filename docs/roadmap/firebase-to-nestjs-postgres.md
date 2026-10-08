@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phases 0–1 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** In progress — Phases 0–2 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -358,6 +358,25 @@ phases 3–5 land together.
   would mean linking accounts by emails no tenant admin vouches for. OAuth never creates accounts
   unless `LOCALESS_AUTH_AUTO_REGISTER=true`. Importing Firebase password hashes (`firebase-scrypt`)
   lands with the Firebase import (Phase 6).
+
+- **Phase 2 — done.** Public `/api/v1` on Postgres: CDN routes (`cdn.controller.ts`), DEV_TOOLS and
+  MANAGE (`dev-tools.controller.ts`, `manage.controller.ts`), token auth with the 5-minute cache,
+  `StorageDriver` + filesystem driver, asset delivery with rendition cache, Range and per-request temp
+  dirs. Pure modules moved with their tests (image transforms, ETags, OpenAPI generation, schema push
+  planning, translation planning, locale extraction). The functions-era v1 route tests were ported as
+  acceptance tests against real rows and files (`test/v1-*.test.ts`), plus new coverage for auth
+  bodies, translations, locale fallback, drafts, resolve flags, links, CORS and video thumbnails
+  (ffmpeg-static in tests). Migration `0001` makes content and asset ids space-scoped (export/import
+  repeats ids across spaces) — hand-written, with an upgrade-path test.
+  Behaviour changes, all deliberate:
+  - `GET /links?parentSlug=blog` no longer includes sibling folders sharing the prefix
+    (`blog-archive`); the Firestore range query matched them.
+  - Drafts always exist and reflect the current schemas (they were snapshots written on save, absent
+    for never-edited documents). Translation and schema pushes bump the space version accordingly.
+  - The "Publish first" 404s keyed on a missing `cache.json` can't happen; unpublished content now
+    gets the post-redirect 404 instead.
+  - A latent vacuous test was fixed: sharp 0.35 replaced `paletteBitDepth` with `isPalette`.
+  Not yet: webhooks for translation pushes (Phase 4), the S3 driver (open decision 1).
 
 ## Open decisions
 

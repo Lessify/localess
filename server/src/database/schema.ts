@@ -1,10 +1,26 @@
 import { sql } from 'drizzle-orm';
-import { bigint, bigserial, boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  bigint,
+  bigserial,
+  boolean,
+  foreignKey,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 
 /*
  * Ids are `text`, not uuid: rows imported from Firestore keep their document ids, because content,
  * asset and token ids appear in public API URLs and customer code. New rows use the same 20-char
  * alphanumeric format (see `newId()`).
+ *
+ * Content and asset ids are only unique *within a space*: the export/import tasks upsert by id, so
+ * importing space A's export into space B legitimately repeats them. Their keys are (space_id, id).
  */
 
 const timestamps = {
@@ -144,7 +160,7 @@ const spaceId = () =>
 export const contents = pgTable(
   'contents',
   {
-    id: text('id').primaryKey(),
+    id: text('id').notNull(),
     spaceId: spaceId(),
     // 'FOLDER' | 'DOCUMENT'
     kind: text('kind').notNull(),
@@ -162,6 +178,7 @@ export const contents = pgTable(
     ...timestamps,
   },
   t => [
+    primaryKey({ columns: [t.spaceId, t.id] }),
     index('contents_parent_idx').on(t.spaceId, t.parentSlug, t.kind.desc(), t.name),
     index('contents_kind_idx').on(t.spaceId, t.kind, t.name),
     index('contents_full_slug_idx').on(t.spaceId, sql`${t.fullSlug} text_pattern_ops`),
@@ -173,14 +190,16 @@ export const contents = pgTable(
 export const contentPublished = pgTable(
   'content_published',
   {
-    contentId: text('content_id')
-      .notNull()
-      .references(() => contents.id, { onDelete: 'cascade' }),
+    spaceId: text('space_id').notNull(),
+    contentId: text('content_id').notNull(),
     locale: text('locale').notNull(),
     data: jsonb('data').$type<Record<string, unknown>>().notNull(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  t => [primaryKey({ columns: [t.contentId, t.locale] })],
+  t => [
+    primaryKey({ columns: [t.spaceId, t.contentId, t.locale] }),
+    foreignKey({ columns: [t.spaceId, t.contentId], foreignColumns: [contents.spaceId, contents.id] }).onDelete('cascade'),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -190,7 +209,7 @@ export const contentPublished = pgTable(
 export const assets = pgTable(
   'assets',
   {
-    id: text('id').primaryKey(),
+    id: text('id').notNull(),
     spaceId: spaceId(),
     // 'FOLDER' | 'FILE'
     kind: text('kind').notNull(),
@@ -200,7 +219,7 @@ export const assets = pgTable(
     extension: text('extension'),
     type: text('type'),
     size: bigint('size', { mode: 'number' }),
-    // Hex md5 of the original file, used for ETags.
+    // Base64 md5 of the original file — the same encoding as GCS `md5Hash`, so asset ETags survive the migration.
     md5: text('md5'),
     alt: text('alt'),
     source: text('source'),
@@ -209,6 +228,7 @@ export const assets = pgTable(
     ...timestamps,
   },
   t => [
+    primaryKey({ columns: [t.spaceId, t.id] }),
     index('assets_parent_idx').on(t.spaceId, t.parentPath, t.kind.desc(), t.name),
     index('assets_kind_idx').on(t.spaceId, t.kind, t.name),
     index('assets_parent_path_prefix_idx').on(t.spaceId, sql`${t.parentPath} text_pattern_ops`),

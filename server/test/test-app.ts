@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
@@ -11,6 +14,7 @@ export interface TestApp {
   app: NestFastifyApplication;
   db: ReturnType<typeof drizzle<typeof schema>>;
   database: TestDatabase;
+  storageDir: string;
   request(options: InjectOptions): Promise<LightMyRequestResponse>;
   close(): Promise<void>;
 }
@@ -18,7 +22,16 @@ export interface TestApp {
 /** A full app (all modules, migrations, global guard) against a fresh database. */
 export async function createTestApp(env: Record<string, string> = {}): Promise<TestApp> {
   const database = await createTestDatabase();
-  const app = await createApp(loadConfig({ DATABASE_URL: database.url, LOCALESS_STATIC_DIR: '', LOCALESS_LOG_LEVEL: 'error', ...env }));
+  const storageDir = await mkdtemp(join(tmpdir(), 'localess-test-storage-'));
+  const app = await createApp(
+    loadConfig({
+      DATABASE_URL: database.url,
+      LOCALESS_STATIC_DIR: '',
+      LOCALESS_STORAGE_DIR: storageDir,
+      LOCALESS_LOG_LEVEL: 'error',
+      ...env,
+    }),
+  );
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   const pool = new pg.Pool({ connectionString: database.url });
@@ -26,11 +39,13 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
     app,
     db: drizzle(pool, { schema }),
     database,
+    storageDir,
     request: options => app.getHttpAdapter().getInstance().inject(options),
     async close() {
       await app.close();
       await pool.end();
       await database.drop();
+      await rm(storageDir, { recursive: true, force: true });
     },
   };
 }

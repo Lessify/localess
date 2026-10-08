@@ -30,6 +30,8 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 | `DATABASE_URL` | – | External Postgres. Unset → embedded Postgres |
 | `LOCALESS_DATA_DIR` | `.data` | Embedded Postgres data (and, later, file storage) |
 | `LOCALESS_EMBEDDED_PG_PORT` | `5433` | Port of the embedded Postgres (127.0.0.1 only) |
+| `LOCALESS_STORAGE_DIR` | `$LOCALESS_DATA_DIR/storage` | Uploaded files and generated image renditions |
+| `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |
 | `LOCALESS_STATIC_DIR` | `../dist/localess/browser` | Angular build to serve; empty → API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`…`verbose`; `debug` includes the embedded Postgres log |
 | `LOCALESS_PUBLIC_URL` | request origin | Public origin for OAuth callbacks and reset links |
@@ -61,3 +63,18 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 | `GET /api/config` | Runtime settings for the SPA (providers, login message) |
 | `GET/PATCH /api/app/me` · `PUT /api/app/me/email` · `PUT /api/app/me/password` | Own profile |
 | `GET/POST /api/app/users` · `GET/PATCH/DELETE /api/app/users/:id` · `POST …/:id/password-reset-link` | User management |
+
+## Public API (`/api/v1`)
+
+Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` values as the former
+`publicv1` function (see [docs/cdn-caching.md](../docs/cdn-caching.md),
+[docs/v1-functions-api.md](../docs/v1-functions-api.md)). Code: `src/public-api/` (controllers) and
+`src/public-api/lib/` + `src/domain/` (pure logic moved from `functions/src` with its tests).
+
+- `cv` is the space's `content_version` / `translation_version`, bumped on every change.
+- Published documents and translations are read from `content_published` / `translation_published`;
+  `?version=draft` is built from the live rows on every request.
+- Assets stream from storage with `Range` support; generated renditions are cached under
+  `spaces/{s}/assets/{id}/renditions/` and deleted with the asset. There is no CDN in front any more —
+  put one (or a caching reverse proxy) in front for production; the headers are CDN-ready.
+- CORS reflects any origin on `/api/v1/**` only.
