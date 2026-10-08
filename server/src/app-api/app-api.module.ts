@@ -8,6 +8,10 @@ import { TranslateService } from '../translate/translate.service.js';
 import { AssetMetadataService } from './assets/asset-metadata.service.js';
 import { AssetsController } from './assets/assets.controller.js';
 import { AssetsService } from './assets/assets.service.js';
+import { OpenApiController } from './open-api/open-api.controller.js';
+import { TasksController } from './tasks/tasks.controller.js';
+import { TokensController } from './tokens/tokens.controller.js';
+import { WebhooksController } from './webhooks/webhooks.controller.js';
 import { SchemasController } from './schemas/schemas.controller.js';
 import { SchemasService } from './schemas/schemas.service.js';
 import { SettingsController } from './settings/settings.controller.js';
@@ -25,6 +29,10 @@ import { SpacesService } from './spaces/spaces.service.js';
     TranslateController,
     UnsplashController,
     AssetsController,
+    TokensController,
+    WebhooksController,
+    TasksController,
+    OpenApiController,
   ],
   providers: [SpacesService, SchemasService, ContentsService, TranslationsService, TranslateService, AssetsService, AssetMetadataService],
 })

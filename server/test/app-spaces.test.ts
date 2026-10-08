@@ -12,12 +12,16 @@ describe('app API: spaces, locales, settings', () => {
   let manager: ReturnType<typeof api>;
   let reader: ReturnType<typeof api>;
   let noRole: ReturnType<typeof api>;
+  let readerCookie: string;
+  let managerCookie: string;
 
   beforeAll(async () => {
     t = await createTestApp();
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] }));
-    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['CONTENT_READ'] }));
+    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] });
+    manager = api(t, managerCookie);
+    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['CONTENT_READ'] });
+    reader = api(t, readerCookie);
     noRole = api(t, await userWithAccess(t, 'new@example.com', { role: null }));
   });
 
@@ -93,6 +97,29 @@ describe('app API: spaces, locales, settings', () => {
         tasksCount: 0,
         totalSize: 1000,
       });
+    });
+
+    it('accepts body-less actions sent with Content-Type: application/json', async () => {
+      const response = await t.request({
+        method: 'POST',
+        url: `/api/app/spaces/${spaceId}/overview`,
+        headers: { cookie: readerCookie, 'x-requested-with': 'XMLHttpRequest', 'content-type': 'application/json' },
+      });
+      expect(response.statusCode).toBe(200);
+      const malformed = await t.request({
+        method: 'PATCH',
+        url: `/api/app/spaces/${spaceId}`,
+        headers: { cookie: readerCookie, 'x-requested-with': 'XMLHttpRequest', 'content-type': 'application/json' },
+        payload: '{"name":',
+      });
+      expect(malformed.statusCode).toBe(400);
+      const poisoned = await t.request({
+        method: 'PATCH',
+        url: `/api/app/spaces/${spaceId}`,
+        headers: { cookie: managerCookie, 'x-requested-with': 'XMLHttpRequest', 'content-type': 'application/json' },
+        payload: '{"name":"x","__proto__":{"admin":true}}',
+      });
+      expect(poisoned.statusCode).toBe(400);
     });
 
     it('deletes a space with all its rows and files', async () => {

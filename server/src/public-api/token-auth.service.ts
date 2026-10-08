@@ -1,9 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { filter, Subscription } from 'rxjs';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyReply } from 'fastify';
 import { DATABASE, Database } from '../database/database.module.js';
 import { tokens } from '../database/schema.js';
 import { TokenPermission } from '../domain/models/index.js';
+import { EventsService } from '../events/events.service.js';
 import { sendV1Error } from './v1-response.js';
 
 /** A space API token as the v1 API sees it. V1 tokens (no `version`) carry implicit permissions. */
@@ -41,10 +43,26 @@ export const canPerformAny = (permissions: TokenPermission[], token: ApiToken) =
  * `invalidate` drops an entry when a token changes.
  */
 @Injectable()
-export class TokenAuthService {
+export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
   private readonly cache = new Map<string, { token: ApiToken; expiresAt: number }>();
+  private subscription?: Subscription;
 
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly events: EventsService,
+  ) {}
+
+  /** Token edits reach every instance as change events, so a revoked token stops working at once. */
+  onModuleInit(): void {
+    this.subscription = this.events
+      .stream()
+      .pipe(filter(event => event.entity === 'tokens' && event.spaceId !== null))
+      .subscribe(event => this.invalidate(event.spaceId as string, event.id));
+  }
+
+  onModuleDestroy(): void {
+    this.subscription?.unsubscribe();
+  }
 
   async find(spaceId: string, tokenId: string): Promise<ApiToken | undefined> {
     const [row] = await this.db

@@ -21,9 +21,21 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
     }),
     {
       logger: config.logLevels,
+      // JSON parsing is configured below on Fastify directly (empty bodies allowed).
+      bodyParser: false,
     },
   );
   app.enableShutdownHooks();
+  const fastify = app.getHttpAdapter().getInstance();
+  // Body-less actions (publish, overview, regenerate…) are often sent with `Content-Type: application/json`
+  // and no body, which Fastify rejects with 400. Treat an empty body as none; everything else keeps
+  // Fastify's own parser (with its prototype-poisoning protection).
+  const parseJson = fastify.getDefaultJsonParser('error', 'error');
+  fastify.removeContentTypeParser('application/json');
+  fastify.addContentTypeParser('application/json', { parseAs: 'string' }, (request, body, done) => {
+    if (body === '') return done(null, undefined);
+    return parseJson(request, body as string, done);
+  });
   await app.register(fastifyCookie);
   // The public API is called from customer sites, so it reflects any origin (as `cors({ origin: true })`
   // did). The cookie-authenticated app API is same-origin only and gets no CORS headers.

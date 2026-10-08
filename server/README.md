@@ -32,6 +32,12 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 | `LOCALESS_EMBEDDED_PG_PORT` | `5433` | Port of the embedded Postgres (127.0.0.1 only) |
 | `LOCALESS_STORAGE_DIR` | `$LOCALESS_DATA_DIR/storage` | Uploaded files and generated image renditions |
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |
+| `LOCALESS_UPLOAD_MAX_MB` | `1024` | Largest asset / import upload |
+| `DEEPL_API_KEY` | – | Machine translation via DeepL (preferred) |
+| `GOOGLE_CLOUD_PROJECT` / `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | – / `global` | Machine translation via Google Cloud Translation (credentials from ADC) |
+| `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes inputs (development) |
+| `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker |
+| `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks reach private/loopback addresses (local development only) |
 | `LOCALESS_STATIC_DIR` | `../dist/localess/browser` | Angular build to serve; empty → API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`…`verbose`; `debug` includes the embedded Postgres log |
 | `LOCALESS_PUBLIC_URL` | request origin | Public origin for OAuth callbacks and reset links |
@@ -78,3 +84,26 @@ Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` val
   `spaces/{s}/assets/{id}/renditions/` and deleted with the asset. There is no CDN in front any more —
   put one (or a caching reverse proxy) in front for production; the headers are CDN-ready.
 - CORS reflects any origin on `/api/v1/**` only.
+
+## App API (`/api/app`)
+
+What the SPA used Firestore, Storage and the callables for. Session cookie + `X-Requested-With` on
+writes; permissions as in firestore.rules (see `src/app-api/*/*.controller.ts`). Responses keep the
+Firestore document shapes plus `id`, with ISO timestamps and absent (not null) optional fields.
+
+| Area | Endpoints |
+|---|---|
+| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }` |
+| Spaces | `/api/app/spaces` CRUD, `POST …/:id/overview`, `POST/DELETE …/:id/locales[/:locale]`, `PUT …/:id/locale-fallback` |
+| Settings | `GET /api/app/settings`, `PATCH /api/app/settings/ui` |
+| Schemas | `/api/app/spaces/:s/schemas` CRUD, `PUT …/:id/id` (rename), `POST …/template` |
+| Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
+| Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:id/locales/:locale`, `PUT …/:id/id`, `POST …/publish`, `POST …/translate-locale`, `DELETE` (all) |
+| Machine translation | `POST /api/app/translate` (`content` or `items`), `GET /api/app/translate/status` |
+| Assets | `/api/app/spaces/:s/assets` list/`count`/get, `POST …/folders`, `POST …/files` (multipart, fields before file), `PATCH …/:id`, `PUT …/:id/parent`, `DELETE` |
+| Tokens / webhooks | `/api/app/spaces/:s/tokens` (+ `POST …/:id/regenerate`), `/api/app/spaces/:s/webhooks` (+ `PATCH …/:id/status`, `GET …/:id/logs`) |
+| Tasks | `/api/app/spaces/:s/tasks` list/get/`logs`/`download`, `POST` (exports), `POST …/import` (multipart), `DELETE` |
+| Misc | `POST /api/app/spaces/:s/open-api`, `GET /api/app/plugins/unsplash/{search,random}` |
+
+Writes are transactional; change events and the space's cache version are part of the same
+transaction, and webhooks are sent only after it commits.

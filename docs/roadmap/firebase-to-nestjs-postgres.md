@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phases 0–2 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** In progress — Phases 0–3 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -377,6 +377,21 @@ phases 3–5 land together.
     gets the post-redirect 404 instead.
   - A latent vacuous test was fixed: sharp 0.35 replaced `paletteBitDepth` with `isPalette`.
   Not yet: webhooks for translation pushes (Phase 4), the S3 driver (open decision 1).
+
+- **Phase 3 — done** (slices 3a–3e). `/api/app/**` for spaces, locales, settings, schemas, contents,
+  translations, assets, tokens, webhooks, tasks (CRUD; processing is phase 4), OpenAPI, machine
+  translation (DeepL / Google / stub) and Unsplash. Change events via `pg_notify` inside the write
+  transaction → one `LISTEN` → SSE (`/api/app/events`). Webhook dispatch moved here from phase 4
+  because publish needs it: SSRF-safe, HMAC-signed, logged, sent after commit. Token edits invalidate
+  the public API's token cache on every instance. Asset uploads stream to storage, extract metadata
+  in-request, and create the row last.
+  Bugs found on the way: uploads over the size limit were stored truncated (multipart ends the stream
+  instead of failing — now 413); body-less JSON POSTs were rejected by Fastify (now accepted).
+  Behaviour changes: moving asset folders is refused (descendants carry the folder path; the UI only
+  ever moved files); deleting the fallback locale is refused; content slugs must be unique per space
+  and their parent must be a folder; `updatedBy` comes from the session; translate-locale uses the
+  configured provider (was Google only); publishing translations of an empty space is allowed;
+  settings are readable by every role (the store loads them for everyone).
 
 ## Open decisions
 
