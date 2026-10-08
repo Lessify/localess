@@ -43,6 +43,11 @@ const envSchema = z.object({
   LOCALESS_SMTP_FROM: z.string().default('Localess <no-reply@localhost>'),
   // ffmpeg binary for video thumbnails; defaults to `ffmpeg` on the PATH.
   LOCALESS_FFMPEG_PATH: z.string().optional(),
+  // Lets webhooks reach loopback/private addresses (local development only; SSRF protection otherwise).
+  LOCALESS_WEBHOOK_ALLOW_INTERNAL: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform(v => v === 'true'),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../dist/localess/browser')),
 });
 
@@ -53,6 +58,7 @@ export interface AppConfig {
   dataDir: string;
   storageDir: string;
   ffmpegPath: string | undefined;
+  webhookAllowInternal: boolean;
   staticDir: string | undefined;
   logLevels: LogLevel[];
   firstAdmin: { email: string; password: string } | undefined;
@@ -128,6 +134,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       : { embedded: { dataDir: resolve(dataDir, 'pgdata'), port: parsed.LOCALESS_EMBEDDED_PG_PORT } },
     dataDir,
     ffmpegPath: parsed.LOCALESS_FFMPEG_PATH,
+    webhookAllowInternal: parsed.LOCALESS_WEBHOOK_ALLOW_INTERNAL,
     storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),
     staticDir: parsed.LOCALESS_STATIC_DIR ? resolve(parsed.LOCALESS_STATIC_DIR) : undefined,
     firstAdmin:
