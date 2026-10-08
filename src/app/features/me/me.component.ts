@@ -1,4 +1,5 @@
 import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { MeService } from '@shared/services/me.service';
@@ -44,10 +45,7 @@ export class MeComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it =>
-          //TODO handle firestore update
-          this.meService.updateProfile(it!),
-        ),
+        switchMap(it => this.meService.updateProfile(it!)),
       )
       .subscribe({
         next: () => {
@@ -68,7 +66,7 @@ export class MeComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updateEmail(it!.newEmail)),
+        switchMap(it => this.meService.updateEmail(it!.newEmail, it!.currentPassword)),
       )
       .subscribe({
         next: () => {
@@ -76,7 +74,7 @@ export class MeComponent {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('User email can not be updated.');
+          this.notificationService.error(currentPasswordError(err) ?? 'User email can not be updated.');
         },
       });
   }
@@ -89,7 +87,7 @@ export class MeComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updatePassword(it!.newPassword)),
+        switchMap(it => this.meService.updatePassword(it!.newPassword, it!.currentPassword)),
       )
       .subscribe({
         next: () => {
@@ -97,8 +95,17 @@ export class MeComponent {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('User password can not be updated.');
+          this.notificationService.error(currentPasswordError(err) ?? 'User password can not be updated.');
         },
       });
   }
+}
+
+/** The server answers a wrong current password with 403 and a readable message. */
+function currentPasswordError(err: unknown): string | undefined {
+  if (err instanceof HttpErrorResponse && err.status === 403) {
+    const message: unknown = err.error?.message;
+    return typeof message === 'string' ? message : 'Current password is incorrect.';
+  }
+  return undefined;
 }

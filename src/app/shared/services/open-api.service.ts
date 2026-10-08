@@ -1,14 +1,14 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class OpenApiService {
-  private readonly functions = inject(Functions);
+  private readonly http = inject(HttpClient);
 
+  /** The space's OpenAPI document, serialized as JSON. */
   generate(spaceId: string): Observable<string> {
-    const openApiGenerate = httpsCallableData<{ spaceId: string }, string>(this.functions, 'openapi-generate');
-    return openApiGenerate({ spaceId }).pipe(traceUntilFirst('Functions:OpenApi:generate'));
+    return this.http.post<unknown>(`/api/app/spaces/${spaceId}/open-api`, {}).pipe(map(it => JSON.stringify(it)));
   }
 }

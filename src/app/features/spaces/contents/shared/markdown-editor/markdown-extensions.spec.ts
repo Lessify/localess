@@ -134,7 +134,10 @@ describe('markdown extensions', () => {
 
     it('serializes to <u> rather than the non-standard ++text++', () => {
       const manager = new MarkdownManager({ extensions: createMarkdownExtensions() });
-      const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'under', marks: [{ type: 'underline' }] }] }] };
+      const doc = {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'under', marks: [{ type: 'underline' }] }] }],
+      };
 
       expect(manager.serialize(doc)).toBe('<u>under</u>');
     });

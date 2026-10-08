@@ -1,142 +1,11 @@
 import { NgModule } from '@angular/core';
-import { AuthGuard, customClaims } from '@angular/fire/auth-guard';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '@shared/guards/permission.guard';
 import { spaceSelectionGuard } from '@shared/guards/space-selection.guard';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { UserPermission } from '@shared/models/user.model';
-import { pipe } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 import { FeaturesComponent } from './features.component';
-
-const ROLE_ADMIN = 'admin';
-const ROLE_CUSTOM = 'custom';
-
-// const hasRoleAdmin = () => {
-//   return pipe(
-//     customClaims,
-//     map(claims => claims.role === ROLE_ADMIN)
-//   );
-// };
-
-const hasPermissionUserManagement = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.USER_MANAGEMENT);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
-
-const hasPermissionSpaceManagement = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.SPACE_MANAGEMENT);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
-
-const hasPermissionSettingsManagement = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.SETTINGS_MANAGEMENT);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
-
-const hasPermissionTranslationRead = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.TRANSLATION_READ);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
-
-const hasPermissionSchemaRead = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.SCHEMA_READ);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
-
-const hasPermissionContentRead = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.CONTENT_READ);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
-
-const hasPermissionAssetRead = () => {
-  return pipe(
-    customClaims,
-    map(claims => {
-      if (Array.isArray(claims)) {
-        return false;
-      } else if (claims['role'] && claims['role'] === ROLE_ADMIN) {
-        return true;
-      } else if (claims['role'] && claims['role'] === ROLE_CUSTOM && claims['permissions'] && Array.isArray(claims['permissions'])) {
-        return claims['permissions']?.includes(UserPermission.ASSET_READ);
-      } else {
-        return false;
-      }
-    }),
-  );
-};
 
 const routes: Routes = [
   {
@@ -186,9 +55,8 @@ const routes: Routes = [
             path: 'translations',
             title: 'Translations',
             loadChildren: () => import('./spaces/translations/translations.module').then(m => m.TranslationsModule),
-            canActivate: [AuthGuard],
+            canActivate: [permissionGuard(UserPermission.TRANSLATION_READ)],
             data: {
-              authGuardPipe: hasPermissionTranslationRead,
               breadcrumb: {
                 label: 'Translations',
                 helpUrl: 'https://localess.org/docs/translations',
@@ -199,9 +67,8 @@ const routes: Routes = [
             path: 'contents',
             title: 'Contents',
             loadChildren: () => import('./spaces/contents/contents.module').then(m => m.ContentsModule),
-            canActivate: [AuthGuard],
+            canActivate: [permissionGuard(UserPermission.CONTENT_READ)],
             data: {
-              authGuardPipe: hasPermissionContentRead,
               breadcrumb: {
                 label: 'Contents',
                 helpUrl: 'https://localess.org/docs/content',
@@ -212,9 +79,8 @@ const routes: Routes = [
             path: 'assets',
             title: 'Assets',
             loadChildren: () => import('./spaces/assets/assets.module').then(m => m.AssetsModule),
-            canActivate: [AuthGuard],
+            canActivate: [permissionGuard(UserPermission.ASSET_READ)],
             data: {
-              authGuardPipe: hasPermissionAssetRead,
               breadcrumb: {
                 label: 'Assets',
                 helpUrl: 'https://localess.org/docs/assets',
@@ -225,9 +91,8 @@ const routes: Routes = [
             path: 'schemas',
             title: 'Schemas',
             loadChildren: () => import('./spaces/schemas/schemas.module').then(m => m.SchemasModule),
-            canActivate: [AuthGuard],
+            canActivate: [permissionGuard(UserPermission.SCHEMA_READ)],
             data: {
-              authGuardPipe: hasPermissionSchemaRead,
               breadcrumb: {
                 label: 'Schemas',
                 helpUrl: 'https://localess.org/docs/schemas',
@@ -238,9 +103,19 @@ const routes: Routes = [
             path: 'tasks',
             title: 'Tasks',
             loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
-            canActivate: [AuthGuard],
+            canActivate: [
+              permissionGuard(
+                UserPermission.ASSET_EXPORT,
+                UserPermission.ASSET_IMPORT,
+                UserPermission.CONTENT_EXPORT,
+                UserPermission.CONTENT_IMPORT,
+                UserPermission.SCHEMA_EXPORT,
+                UserPermission.SCHEMA_IMPORT,
+                UserPermission.TRANSLATION_EXPORT,
+                UserPermission.TRANSLATION_IMPORT,
+              ),
+            ],
             data: {
-              authGuardPipe: hasPermissionTranslationRead,
               breadcrumb: {
                 label: 'Tasks',
               } satisfies BreadcrumbItem,
@@ -260,9 +135,8 @@ const routes: Routes = [
             path: 'settings',
             title: 'Settings',
             loadChildren: () => import('./spaces/settings/settings.module').then(m => m.SettingsModule),
-            canActivate: [AuthGuard],
+            canActivate: [permissionGuard(UserPermission.SPACE_MANAGEMENT)],
             data: {
-              authGuardPipe: hasPermissionSpaceManagement,
               breadcrumb: {
                 label: 'Settings',
               } satisfies BreadcrumbItem,
@@ -274,9 +148,8 @@ const routes: Routes = [
         path: 'admin/users',
         title: 'Users',
         loadChildren: () => import('./admin/users/users.module').then(m => m.UsersModule),
-        canActivate: [AuthGuard],
+        canActivate: [permissionGuard(UserPermission.USER_MANAGEMENT)],
         data: {
-          authGuardPipe: hasPermissionUserManagement,
           breadcrumb: {
             label: 'Users',
           } satisfies BreadcrumbItem,
@@ -286,9 +159,8 @@ const routes: Routes = [
         path: 'admin/spaces',
         title: 'Spaces',
         loadChildren: () => import('./admin/spaces/spaces.module').then(m => m.SpacesModule),
-        canActivate: [AuthGuard],
+        canActivate: [permissionGuard(UserPermission.SPACE_MANAGEMENT)],
         data: {
-          authGuardPipe: hasPermissionSpaceManagement,
           breadcrumb: {
             label: 'Spaces',
           } satisfies BreadcrumbItem,
@@ -298,9 +170,8 @@ const routes: Routes = [
         path: 'admin/settings',
         title: 'Settings',
         loadChildren: () => import('./admin/settings/settings.module').then(m => m.SettingsModule),
-        canActivate: [AuthGuard],
+        canActivate: [permissionGuard(UserPermission.SETTINGS_MANAGEMENT)],
         data: {
-          authGuardPipe: hasPermissionSettingsManagement,
           breadcrumb: {
             label: 'Settings',
           } satisfies BreadcrumbItem,

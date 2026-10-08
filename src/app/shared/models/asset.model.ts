@@ -1,5 +1,3 @@
-import { FieldValue, Timestamp } from '@angular/fire/firestore';
-
 import { AssetFileType, assetFileTypeDescriptions } from './schema.model';
 
 export type Asset = AssetFile | AssetFolder;
@@ -15,8 +13,8 @@ export interface AssetBase {
   name: string;
   parentPath: string;
 
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AssetFolder extends AssetBase {
@@ -104,28 +102,6 @@ export interface AssetFileCreate {
 }
 
 // Firestore
-
-export interface AssetCreateFS {
-  kind: AssetKind;
-  name: string;
-  parentPath: string;
-  createdAt: FieldValue;
-  updatedAt: FieldValue;
-}
-
-export interface AssetFileCreateFS extends AssetCreateFS {
-  kind: AssetKind.FILE;
-  inProgress: true;
-  extension: string;
-  type: string;
-  size: number;
-  alt?: string;
-  source?: string;
-}
-
-export interface AssetFolderCreateFS extends AssetCreateFS {
-  kind: AssetKind.FOLDER;
-}
 
 export type AssetFileImport = {
   url: string;

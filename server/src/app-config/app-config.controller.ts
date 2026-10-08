@@ -10,6 +10,8 @@ export interface PublicAppConfig {
     loginMessage: string;
     passwordResetByEmail: boolean;
   };
+  plugins: { unsplash: boolean };
+  translate: { enabled: boolean };
 }
 
 /**
@@ -32,6 +34,8 @@ export class AppConfigController {
         loginMessage: this.config.loginMessage,
         passwordResetByEmail: this.config.smtp !== undefined,
       },
+      plugins: { unsplash: this.config.unsplash !== undefined },
+      translate: { enabled: this.config.translate.provider !== 'none' },
     };
   }
 }

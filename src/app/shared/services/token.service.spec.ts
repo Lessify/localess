@@ -1,175 +1,108 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore is mocked globally in src/test-setup.ts.
-import { addDoc, collectionData, deleteDoc, deleteField, docData, updateDoc } from '@angular/fire/firestore';
-import { Firestore } from '@angular/fire/firestore';
-import { firstValueFrom, of } from 'rxjs';
-
-import { Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenForm, TokenPermission } from '../models/token.model';
+import { Token, TokenPermission } from '../models/token.model';
 import { TokenService } from './token.service';
 
+const BASE = '/api/app/spaces/space-1/tokens';
+
 describe('TokenService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
 
   function setup() {
-    TestBed.configureTestingModule({ providers: [{ provide: Firestore, useValue: {} }] });
+    events = new Subject<ChangeEvent>();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
+    });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(TokenService);
   }
 
-  it('findAll() reads the space tokens collection ordered by createdAt desc', async () => {
-    const service = setup();
-    const tokens: Token[] = [{ id: 't1', name: 'Token 1', version: 2, permissions: [] } as unknown as Token];
-    vi.mocked(collectionData).mockReturnValue(of(tokens));
-
-    const result = await firstValueFrom(service.findAll('space-1'));
-
-    expect(result).toEqual(tokens);
-    expect(collectionData).toHaveBeenCalledWith(
-      { ref: { path: 'mock-collection-ref' }, constraints: [{ type: 'orderBy', field: 'createdAt', direction: 'desc' }] },
-      { idField: 'id' },
-    );
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('findFirst() limits the query to 1 result', async () => {
+  it('findAll() reads the space tokens', async () => {
     const service = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
-
-    await firstValueFrom(service.findFirst('space-1'));
-
-    expect(collectionData).toHaveBeenCalledWith(
-      { ref: { path: 'mock-collection-ref' }, constraints: [{ type: 'limit', n: 1 }] },
-      { idField: 'id' },
-    );
+    const result = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(BASE).flush([{ id: 't1' }]);
+    expect(await result).toEqual([{ id: 't1' }]);
   });
 
-  it('findFirstByPermission() filters by array-contains permission and limits to 1', async () => {
+  it('findAll() refetches when a token of the space changes, ignoring other entities', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
+    const results: Token[][] = [];
+    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
+    http.expectOne(BASE).flush([]);
 
-    await firstValueFrom(service.findFirstByPermission('space-1', TokenPermission.CONTENT_DRAFT));
+    events.next({ spaceId: 'space-1', entity: 'webhooks', id: 'w', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(BASE);
 
-    expect(collectionData).toHaveBeenCalledWith(
-      {
-        ref: { path: 'mock-collection-ref' },
-        constraints: [
-          { type: 'where', field: 'permissions', op: 'array-contains', value: TokenPermission.CONTENT_DRAFT },
-          { type: 'limit', n: 1 },
-        ],
-      },
-      { idField: 'id' },
-    );
+    events.next({ spaceId: 'space-1', entity: 'tokens', id: 't1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(BASE).flush([{ id: 't1' } as Token]);
+    expect(results).toEqual([[], [{ id: 't1' }]]);
+    subscription.unsubscribe();
   });
 
-  it('findById() reads the token doc at the expected path', async () => {
+  it('findFirst() limits the list to 1', async () => {
     const service = setup();
-    const token: Token = { id: 't1', name: 'Token 1', version: 2, permissions: [] } as unknown as Token;
-    vi.mocked(docData).mockReturnValue(of(token));
-
-    const result = await firstValueFrom(service.findById('space-1', 't1'));
-
-    expect(result).toEqual(token);
+    const result = firstValueFrom(service.findFirst('space-1'));
+    http.expectOne(`${BASE}?limit=1`).flush([{ id: 't1' }]);
+    expect(await result).toEqual([{ id: 't1' }]);
   });
 
-  it('create() adds a token with version 2 and omits cacheTtl when not provided', async () => {
+  it('findFirstByPermission() filters by permission and limits to 1', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
-    const model: TokenForm = { name: 'CI token', permissions: [TokenPermission.CONTENT_DRAFT] };
-
-    await firstValueFrom(service.create('space-1', model));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ version: 2, name: 'CI token', permissions: model.permissions });
-    expect(addedEntity).not.toHaveProperty('cacheTtl');
+    const result = firstValueFrom(service.findFirstByPermission('space-1', TokenPermission.CONTENT_PUBLIC));
+    http.expectOne(`${BASE}?permission=${TokenPermission.CONTENT_PUBLIC}&limit=1`).flush([]);
+    expect(await result).toEqual([]);
   });
 
-  it('create() includes cacheTtl when provided', async () => {
+  it('findById() reads one token', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
-    const model: TokenForm = { name: 'CI token', permissions: [], cacheTtl: 3600 };
-
-    await firstValueFrom(service.create('space-1', model));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ cacheTtl: 3600 });
+    const result = firstValueFrom(service.findById('space-1', 't1'));
+    http.expectOne(`${BASE}/t1`).flush({ id: 't1' });
+    expect(await result).toEqual({ id: 't1' });
   });
 
-  it('update() deletes the cacheTtl field when the model omits it', async () => {
+  it('create() posts name, permissions and cacheTtl (null when unset), returning the token', async () => {
     const service = setup();
-    const model: TokenForm = { name: 'Renamed', permissions: [] };
-
-    await firstValueFrom(service.update('space-1', 't1', model));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ name: 'Renamed', cacheTtl: deleteField() });
+    const result = firstValueFrom(service.create('space-1', { name: 'CDN', permissions: [TokenPermission.CONTENT_PUBLIC] }));
+    const request = http.expectOne({ method: 'POST', url: BASE });
+    expect(request.request.body).toEqual({ name: 'CDN', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: null });
+    request.flush({ id: 'secret' });
+    expect((await result).id).toBe('secret');
   });
 
-  it('update() sets cacheTtl when the model provides it', async () => {
+  it('update() puts the same body', async () => {
     const service = setup();
-    const model: TokenForm = { name: 'Renamed', permissions: [], cacheTtl: 60 };
-
-    await firstValueFrom(service.update('space-1', 't1', model));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ cacheTtl: 60 });
+    const done = firstValueFrom(service.update('space-1', 't1', { name: 'CDN', permissions: [], cacheTtl: 60 }));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/t1` });
+    expect(request.request.body).toEqual({ name: 'CDN', permissions: [], cacheTtl: 60 });
+    request.flush({});
+    await done;
   });
 
-  it('delete() deletes the token doc at the expected path', async () => {
+  it('regenerate() posts to the regenerate endpoint and returns the new token', async () => {
     const service = setup();
-
-    await firstValueFrom(service.delete('space-1', 't1'));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
+    const result = firstValueFrom(service.regenerate('space-1', { id: 't1' } as Token));
+    http.expectOne({ method: 'POST', url: `${BASE}/t1/regenerate` }).flush({ id: 't2' });
+    expect((await result).id).toBe('t2');
   });
 
-  it('regenerate() adds a new doc copying name/permissions/cacheTtl/createdAt and deletes the old doc', async () => {
+  it('delete() deletes the token', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
-    const createdAt = { seconds: 111, nanoseconds: 0 } as never;
-    const token: Token = {
-      id: 'old-token',
-      version: 2,
-      name: 'CI token',
-      permissions: [TokenPermission.CONTENT_DRAFT],
-      cacheTtl: 3600,
-      createdAt,
-      updatedAt: createdAt,
-    } as unknown as Token;
-
-    const result = await firstValueFrom(service.regenerate('space-1', token));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({
-      version: 2,
-      name: 'CI token',
-      permissions: [TokenPermission.CONTENT_DRAFT],
-      cacheTtl: 3600,
-      createdAt,
-    });
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
-    expect(result).toEqual({ id: 'new-token' });
-  });
-
-  it('regenerate() carries over the implicit v1 permissions and omits cacheTtl for a v1 token', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-token' } as never);
-    const createdAt = { seconds: 222, nanoseconds: 0 } as never;
-    const token: Token = {
-      id: 'old-token',
-      version: undefined,
-      name: 'Legacy token',
-      createdAt,
-      updatedAt: createdAt,
-    } as unknown as Token;
-
-    await firstValueFrom(service.regenerate('space-1', token));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    // A v1 token implicitly grants every translation/content permission, so the regenerated v2
-    // token must keep them explicitly — an empty list would silently revoke all access.
-    expect(addedEntity).toMatchObject({ version: 2, name: 'Legacy token', permissions: TOKEN_V1_IMPLICIT_PERMISSIONS });
-    expect(addedEntity).not.toHaveProperty('cacheTtl');
+    const done = firstValueFrom(service.delete('space-1', 't1'));
+    http.expectOne({ method: 'DELETE', url: `${BASE}/t1` }).flush(null);
+    await done;
   });
 });

@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phases 0–4 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** In progress — Phases 0–5 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -404,6 +404,22 @@ phases 3–5 land together.
   output, because the export schemas strip document data fields (the old code did the same).
   Changes: asset export no longer fails when an asset's file is missing (logged and skipped); new
   imported files get md5 and, when the export lacks it, extracted metadata.
+
+- **Phase 5 — done.** The SPA runs on the NestJS server: `@angular/fire` and `firebase` removed.
+  `core/api/` holds the runtime config (`GET /api/config` replaces the LOCALESS_* defines and
+  `firebase-config*.json`), the SSE change stream, `liveQuery` (services keep returning long-lived
+  Observables, refetching on change events), and the interceptor (CSRF header; 401 → signed out).
+  All 18 services moved to HttpClient with HttpTestingController specs; models use ISO strings;
+  `UserStore` reads `/api/auth/me`; `permissionGuard` replaces `@angular/fire/auth-guard` (and the
+  tasks route now requires an import/export permission instead of TRANSLATION_READ); login uses
+  OAuth redirects, reset works by email or admin-issued link (`/auth/reset/confirm`), and the profile
+  dialogs ask for the current password. Admin → Users lost "Sync" and gained "Copy password reset
+  link". Verified in a real browser against the compiled server: sign-in, dashboard, live updates
+  across sessions, edit, publish → public API, sign-out.
+  Bugs found on the way: a wrong current password answered 401, which signs the user out (now 403);
+  the expected 401 of a signed-out visitor's session check raised an error toast (API 401s are now
+  left to the auth flow); a FormData implementation dropped the upload filename of Blobs (uploads now
+  append a File).
 
 ## Open decisions
 

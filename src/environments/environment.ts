@@ -1,38 +1,8 @@
-import config from './firebase-config.json';
-// This file can be replaced during build by using the `fileReplacements` array.
-// `ng build` replaces `environment.ts` with `environment.prod.ts`.
-// The list of file replacements can be found in `angular.json`.
-
+// Build-time settings only. Runtime settings (login providers, login message, plugins) come from
+// the server: `GET /api/config` (see core/api/app-config.service.ts).
 export const environment = {
   appName: 'Localess [Dev]',
-  firebase: config,
-  functions: {
-    region: 'europe-west6',
-  },
-  auth: {
-    customDomain: '*',
-    providers: 'GOOGLE,MICROSOFT',
-  },
-  login: {
-    message: 'Hello Login Message',
-  },
-  plugins: {
-    unsplash: true,
-  },
   production: false,
-  test: true,
   debug: true,
-  emulator: {
-    enabled: true,
-  },
   version: '4.1.0',
 };
-
-/*
- * For easier debugging in development mode, you can import the following file
- * to ignore zone related error stack frames such as `zone.run`, `zoneDelegate.invokeTask`.
- *
- * This import should be commented out in production mode because it will have a negative impact
- * on performance if an error is thrown.
- */
-// import 'zone.js/plugins/zone-error';  // Included with Angular CLI.

@@ -1,6 +1,9 @@
 <h2 class="mt-8 text-2xl font-bold tracking-tight"> Sign in to your account </h2>
-@if (message) {
-  <div class="text-destructive mt-2 text-sm"> {{ message }} </div>
+@if (message()) {
+  <div class="text-destructive mt-2 text-sm"> {{ message() }} </div>
+}
+@if (oauthError(); as error) {
+  <div class="text-destructive mt-2 text-sm" role="alert"> {{ error }} </div>
 }
 
 <div class="mt-10">
@@ -34,11 +37,13 @@
     </div>
 
     <div>
-      <button hlmBtn class="w-full" [disabled]="!form.valid" (click)="loginWithEmailAndPassword()">Sign in</button>
+      <button hlmBtn class="w-full" type="submit" [disabled]="!form.valid || pending()" (click)="loginWithEmailAndPassword()"
+        >Sign in</button
+      >
     </div>
   </form>
 
-  @if (isGoogleAuthEnabled || isMicrosoftAuthEnabled) {
+  @if (isGoogleAuthEnabled() || isMicrosoftAuthEnabled()) {
     <div class="mt-10">
       <div class="relative">
         <div aria-hidden="true" class="absolute inset-0 flex items-center">
@@ -50,8 +55,8 @@
       </div>
 
       <div class="mt-6 grid grid-cols-2 gap-4">
-        @if (isGoogleAuthEnabled) {
-          <button hlmBtn variant="outline" class="flex items-center gap-3" (click)="loginWithGoogle()">
+        @if (isGoogleAuthEnabled()) {
+          <button hlmBtn variant="outline" type="button" class="flex items-center gap-3" (click)="loginWith('google')">
             <svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z"
@@ -69,8 +74,8 @@
             <span>Google</span>
           </button>
         }
-        @if (isMicrosoftAuthEnabled) {
-          <button hlmBtn variant="outline" class="flex items-center gap-3" (click)="loginWithMicrosoft()">
+        @if (isMicrosoftAuthEnabled()) {
+          <button hlmBtn variant="outline" type="button" class="flex items-center gap-3" (click)="loginWith('microsoft')">
             <svg class="h-5 w-5" viewBox="0 0 21 21" aria-hidden="true">
               <rect x="0" y="0" width="9" height="9" fill="#f25022" />
               <rect x="11" y="0" width="9" height="9" fill="#7fba00" />
@@ -87,13 +92,9 @@
   @if (settingsStore.debugEnabled()) {
     <div class="mt-6">
       <p>
-        <b>isGoogleAuthEnabled</b> = {{ isGoogleAuthEnabled }} <br />
-        <b>isMicrosoftAuthEnabled</b> = {{ isMicrosoftAuthEnabled }} <br />
-        <b>userId</b> = {{ (user | async)?.uid }} <br />
-        <b>userDisplayName</b> = {{ (user | async)?.displayName }} <br />
-        <b>userEmail</b> = {{ (user | async)?.email }} <br />
-        <b>parsedToken</b> = {{ parsedToken | async | json }} <br />
-        <b>auth</b> = {{ auth | json }} <br />
+        <b>providers</b> = {{ providers().join(', ') || 'none' }} <br />
+        <b>isAuthenticated</b> = {{ userStore.isAuthenticated() }} <br />
+        <b>userEmail</b> = {{ userStore.email() }} <br />
       </p>
     </div>
   }

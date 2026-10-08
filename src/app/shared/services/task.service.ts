@@ -1,218 +1,92 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import {
-  addDoc,
-  collection,
-  collectionData,
-  deleteDoc,
-  doc,
-  docData,
-  DocumentReference,
-  Firestore,
-  orderBy,
-  query,
-  QueryConstraint,
-  serverTimestamp,
-} from '@angular/fire/firestore';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { getDownloadURL, ref, Storage, uploadBytesResumable, UploadTaskSnapshot } from '@angular/fire/storage';
-import { WithFieldValue } from '@firebase/firestore';
-import {
-  Task,
-  TaskAssetExportFS,
-  TaskAssetImportFS,
-  TaskAssetRegenerateMetadataFS,
-  TaskContentExportFS,
-  TaskContentImportFS,
-  TaskKind,
-  TaskLog,
-  TaskSchemaExportFS,
-  TaskSchemaImportFS,
-  TaskStatus,
-  TaskTranslationExportFS,
-  TaskTranslationImportFS,
-} from '@shared/models/task.model';
-import { from, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
+import { Task, TaskKind, TaskLog } from '@shared/models/task.model';
+import { Observable, of } from 'rxjs';
 
+/** Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class TaskService {
-  private readonly firestore = inject(Firestore);
-  private readonly storage = inject(Storage);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
+
+  private base(spaceId: string): string {
+    return `/api/app/spaces/${spaceId}/tasks`;
+  }
 
   findAll(spaceId: string): Observable<Task[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc')];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tasks`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Tasks:findAll'),
-      map(it => it as Task[]),
-    );
+    return liveQueryWith(this.events, { spaceId, entities: ['tasks'] }, () => this.http.get<Task[]>(this.base(spaceId)));
   }
 
   findById(spaceId: string, id: string): Observable<Task> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/tasks/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Tasks:findById'),
-      map(it => it as Task),
-    );
-  }
-
-  createAssetExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TaskAssetExportFS> = {
-      kind: TaskKind.ASSET_EXPORT,
-      status: TaskStatus.INITIATED,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (path) {
-      addEntity.path = path;
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
-  }
-
-  createAssetImportTask(spaceId: string, file: File): Observable<DocumentReference> {
-    const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: WithFieldValue<TaskAssetImportFS> = {
-      kind: TaskKind.ASSET_IMPORT,
-      status: TaskStatus.INITIATED,
-      tmpPath: tmpPath,
-      file: {
-        name: file.name,
-        size: file.size,
-      },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
-      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create'),
-    );
-  }
-
-  createAssetRegenerateMetadataTask(spaceId: string): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TaskAssetRegenerateMetadataFS> = {
-      kind: TaskKind.ASSET_REGEN_METADATA,
-      status: TaskStatus.INITIATED,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
-  }
-
-  createContentExportTask(spaceId: string, path?: string): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TaskContentExportFS> = {
-      kind: TaskKind.CONTENT_EXPORT,
-      status: TaskStatus.INITIATED,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (path) {
-      addEntity.path = path;
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
-  }
-
-  createContentImportTask(spaceId: string, file: File): Observable<DocumentReference> {
-    const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: WithFieldValue<TaskContentImportFS> = {
-      kind: TaskKind.CONTENT_IMPORT,
-      status: TaskStatus.INITIATED,
-      tmpPath: tmpPath,
-      file: {
-        name: file.name,
-        size: file.size,
-      },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
-      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create'),
-    );
-  }
-
-  createSchemaExportTask(spaceId: string): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TaskSchemaExportFS> = {
-      kind: TaskKind.SCHEMA_EXPORT,
-      status: TaskStatus.INITIATED,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
-  }
-
-  createSchemaImportTask(spaceId: string, file: File): Observable<DocumentReference> {
-    const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: WithFieldValue<TaskSchemaImportFS> = {
-      kind: TaskKind.SCHEMA_IMPORT,
-      status: TaskStatus.INITIATED,
-      tmpPath: tmpPath,
-      file: {
-        name: file.name,
-        size: file.size,
-      },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
-      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create'),
-    );
-  }
-
-  createTranslationExportTask(spaceId: string, locale?: string): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TaskTranslationExportFS> = {
-      kind: TaskKind.TRANSLATION_EXPORT,
-      status: TaskStatus.INITIATED,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (locale) {
-      addEntity.locale = locale;
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity)).pipe(traceUntilFirst('Firestore:Tasks:create'));
-  }
-
-  createTranslationImportTask(spaceId: string, file: File, locale?: string): Observable<DocumentReference> {
-    const tmpPath = `spaces/${spaceId}/tasks/tmp/${Date.now()}`;
-    const addEntity: WithFieldValue<TaskTranslationImportFS> = {
-      kind: TaskKind.TRANSLATION_IMPORT,
-      type: 'full',
-      status: TaskStatus.INITIATED,
-      tmpPath: tmpPath,
-      file: {
-        name: file.name,
-        size: file.size,
-      },
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (locale) {
-      addEntity.type = 'flat-json';
-      addEntity.locale = locale;
-    }
-
-    return from(uploadBytesResumable(ref(this.storage, tmpPath), file) as unknown as Promise<UploadTaskSnapshot>).pipe(
-      switchMap(() => from(addDoc(collection(this.firestore, `spaces/${spaceId}/tasks`), addEntity))),
-      traceUntilFirst('Firestore:Tasks:create'),
-    );
-  }
-
-  downloadUrl(spaceId: string, id: string): Observable<string> {
-    return from(getDownloadURL(ref(this.storage, `spaces/${spaceId}/tasks/${id}/original`)));
-  }
-
-  delete(spaceId: string, id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/tasks/${id}`))).pipe(traceUntilFirst('Firestore:Tasks:delete'));
+    return liveQueryWith(this.events, { spaceId, entities: ['tasks'], id }, () => this.http.get<Task>(`${this.base(spaceId)}/${id}`));
   }
 
   findLogs(spaceId: string, taskId: string): Observable<TaskLog[]> {
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tasks/${taskId}/logs`), orderBy('createdAt', 'asc')), {
-      idField: 'id',
-    }).pipe(
-      traceUntilFirst('Firestore:Tasks:findLogs'),
-      map(it => it as TaskLog[]),
+    return liveQueryWith(this.events, { spaceId, entities: ['task_logs'], id: taskId }, () =>
+      this.http.get<TaskLog[]>(`${this.base(spaceId)}/${taskId}/logs`),
     );
+  }
+
+  createAssetExportTask(spaceId: string, path?: string): Observable<Task> {
+    return this.createExport(spaceId, path ? { kind: TaskKind.ASSET_EXPORT, path } : { kind: TaskKind.ASSET_EXPORT });
+  }
+
+  createAssetImportTask(spaceId: string, file: File): Observable<Task> {
+    return this.createImport(spaceId, TaskKind.ASSET_IMPORT, file);
+  }
+
+  createAssetRegenerateMetadataTask(spaceId: string): Observable<Task> {
+    return this.createExport(spaceId, { kind: TaskKind.ASSET_REGEN_METADATA });
+  }
+
+  createContentExportTask(spaceId: string, path?: string): Observable<Task> {
+    return this.createExport(spaceId, path ? { kind: TaskKind.CONTENT_EXPORT, path } : { kind: TaskKind.CONTENT_EXPORT });
+  }
+
+  createContentImportTask(spaceId: string, file: File): Observable<Task> {
+    return this.createImport(spaceId, TaskKind.CONTENT_IMPORT, file);
+  }
+
+  createSchemaExportTask(spaceId: string): Observable<Task> {
+    return this.createExport(spaceId, { kind: TaskKind.SCHEMA_EXPORT });
+  }
+
+  createSchemaImportTask(spaceId: string, file: File): Observable<Task> {
+    return this.createImport(spaceId, TaskKind.SCHEMA_IMPORT, file);
+  }
+
+  createTranslationExportTask(spaceId: string, locale?: string): Observable<Task> {
+    return this.createExport(spaceId, locale ? { kind: TaskKind.TRANSLATION_EXPORT, locale } : { kind: TaskKind.TRANSLATION_EXPORT });
+  }
+
+  /** With a locale the file is a flat JSON of that locale; otherwise a full export. */
+  createTranslationImportTask(spaceId: string, file: File, locale?: string): Observable<Task> {
+    return this.createImport(spaceId, TaskKind.TRANSLATION_IMPORT, file, locale);
+  }
+
+  /** Same-origin and cookie-authenticated, so the URL can be opened directly. */
+  downloadUrl(spaceId: string, id: string): Observable<string> {
+    return of(`${this.base(spaceId)}/${id}/download`);
+  }
+
+  delete(spaceId: string, id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
+  }
+
+  private createExport(spaceId: string, body: { kind: TaskKind; path?: string; locale?: string }): Observable<Task> {
+    return this.http.post<Task>(this.base(spaceId), body);
+  }
+
+  private createImport(spaceId: string, kind: TaskKind, file: File, locale?: string): Observable<Task> {
+    // The server reads the fields from the parts preceding the file, so they must come first.
+    const form = new FormData();
+    form.append('kind', kind);
+    if (locale) {
+      form.append('locale', locale);
+    }
+    form.append('file', file, file.name);
+    return this.http.post<Task>(`${this.base(spaceId)}/import`, form);
   }
 }

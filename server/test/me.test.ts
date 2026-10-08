@@ -32,7 +32,7 @@ describe('own profile', () => {
     const other = await login(t, 'me@example.com', 'old-pass');
 
     expect((await call(current, 'PUT', '/api/app/me/password', { currentPassword: 'wrong', newPassword: 'new-pass' })).statusCode).toBe(
-      401,
+      403,
     );
     expect((await call(current, 'PUT', '/api/app/me/password', { currentPassword: 'old-pass', newPassword: 'new' })).statusCode).toBe(400);
     expect((await call(current, 'PUT', '/api/app/me/password', { currentPassword: 'old-pass', newPassword: 'new-pass' })).statusCode).toBe(
@@ -47,7 +47,7 @@ describe('own profile', () => {
 
   it('changes the email with the current password, refusing one that is taken', async () => {
     const cookie = await login(t, 'me@example.com', 'new-pass');
-    expect((await call(cookie, 'PUT', '/api/app/me/email', { email: 'moved@example.com' })).statusCode).toBe(401);
+    expect((await call(cookie, 'PUT', '/api/app/me/email', { email: 'moved@example.com' })).statusCode).toBe(403);
     expect((await call(cookie, 'PUT', '/api/app/me/email', { email: 'TAKEN@example.com', currentPassword: 'new-pass' })).statusCode).toBe(
       409,
     );

@@ -1,5 +1,3 @@
-import { Timestamp } from '@angular/fire/firestore';
-
 export interface User {
   /**
    * The user's `uid`.
@@ -37,8 +35,8 @@ export interface User {
   // Providers
   providers: string[];
   // Metadata
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserInvite {

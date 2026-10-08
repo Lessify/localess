@@ -1,14 +1,21 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { UserStore } from '@shared/stores/user.store';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 
 import { MePasswordDialogComponent } from './me-password-dialog.component';
 
 describe('MePasswordDialogComponent', () => {
-  function setup() {
+  function setup(isPasswordProvider = false) {
     const close = vi.fn();
     TestBed.overrideComponent(MePasswordDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: BrnDialogRef, useValue: { close } },
+        { provide: UserStore, useValue: { isPasswordProvider: signal(isPasswordProvider) } },
+      ],
+    });
     const fixture = TestBed.createComponent(MePasswordDialogComponent);
     fixture.detectChanges();
     return { component: fixture.componentInstance, close };
@@ -44,5 +51,17 @@ describe('MePasswordDialogComponent', () => {
     component.save();
 
     expect(close).toHaveBeenCalledWith({ newPassword: '123456' });
+  });
+
+  it('asks for the current password when the account has one', () => {
+    const { component, close } = setup(true);
+
+    component.form.controls['newPassword'].setValue('123456');
+    expect(component.form.valid).toBe(false);
+
+    component.form.controls['currentPassword'].setValue('old-secret');
+    component.save();
+
+    expect(close).toHaveBeenCalledWith({ currentPassword: 'old-secret', newPassword: '123456' });
   });
 });

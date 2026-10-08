@@ -56,7 +56,7 @@
           }
         }
       }
-      <p [hlmTooltip]="asset.updatedAt?.toDate() | date: 'medium'"> {{ asset.updatedAt?.toDate() | date: 'mediumDate' }} </p>
+      <p [hlmTooltip]="asset.updatedAt | date: 'medium'"> {{ asset.updatedAt | date: 'mediumDate' }} </p>
     </div>
   </hlm-card-header>
   @if (showFooter()) {

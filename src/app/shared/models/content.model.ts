@@ -1,4 +1,3 @@
-import { FieldValue, Timestamp } from '@angular/fire/firestore';
 import { ValidationErrors } from '@angular/forms';
 
 export function sortContent(a: Content, b: Content): number {
@@ -38,15 +37,15 @@ export interface ContentBase {
     email: string;
   };
 
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ContentDocument<T extends ContentData = ContentData> extends ContentBase {
   kind: ContentKind.DOCUMENT;
   schema: string;
   data?: T | string;
-  publishedAt?: Timestamp;
+  publishedAt?: string;
   assets?: string[];
   links?: string[];
   references?: string[];
@@ -80,32 +79,6 @@ export interface ContentFolderCreate {
 }
 
 // Firestore
-
-export interface ContentCreateFS {
-  kind: ContentKind;
-  name: string;
-  slug: string;
-  parentSlug: string;
-  fullSlug: string;
-
-  updatedBy?: {
-    name: string;
-    email: string;
-  };
-
-  createdAt: FieldValue;
-  updatedAt: FieldValue;
-}
-
-export interface ContentDocumentCreateFS extends ContentCreateFS {
-  kind: ContentKind.DOCUMENT;
-  schema: string;
-  data?: any;
-}
-
-export interface ContentFolderCreateFS extends ContentCreateFS {
-  kind: ContentKind.FOLDER;
-}
 
 // Special Types
 

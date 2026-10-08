@@ -1,12 +1,4 @@
 <div class="flex justify-end gap-2 p-2">
-  <button hlmBtn (click)="sync()" [disabled]="isSyncLoading()" hlmTooltip="Synchronize Users with Database">
-    @if (isSyncLoading()) {
-      <hlm-spinner class="size-4" />
-    } @else {
-      <ng-icon hlm size="sm" name="lucideRefreshCcw" />
-    }
-    Sync
-  </button>
   <button hlmBtn (click)="inviteDialog()">
     <ng-icon hlm size="sm" name="lucideUserPlus" />
     Invite
@@ -80,14 +72,14 @@
       </ng-container>
       <ng-container llColumnDef="createdAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-          {{ element.createdAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
+          {{ element.createdAt | date: 'mediumDate' }}
         </td>
       </ng-container>
       <ng-container llColumnDef="updatedAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
+          {{ element.updatedAt | date: 'mediumDate' }}
         </td>
       </ng-container>
       <ng-container llColumnDef="actions">
@@ -110,6 +102,10 @@
                 <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                   <ng-icon hlm size="sm" name="lucidePencil" />
                   Edit
+                </button>
+                <button hlmDropdownMenuItem (click)="copyPasswordResetLink(element)">
+                  <ng-icon hlm size="sm" name="lucideKeyRound" />
+                  Copy password reset link
                 </button>
               </hlm-dropdown-menu-group>
               <hlm-dropdown-menu-separator />

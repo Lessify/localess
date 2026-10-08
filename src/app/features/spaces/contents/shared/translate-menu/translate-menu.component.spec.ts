@@ -1,5 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
-import { Firestore } from '@angular/fire/firestore';
 import { TestBed } from '@angular/core/testing';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { UserStore } from '@shared/stores/user.store';
@@ -14,14 +15,15 @@ const unsupported: Locale = { id: 'xx-XX', name: 'Nowhere' };
 
 describe('TranslateMenuComponent', () => {
   function setup(selectedLocale: Locale = de, availableLocales: Locale[] = [en, de, fr]) {
-    // The trigger's `canUserPerform` pipe reads UserStore, which would otherwise pull in Firebase
-    // Auth. Faked the same way the pipe's own spec does it.
+    // The trigger's `canUserPerform` pipe reads UserStore, which would otherwise read the session.
+    // Faked the same way the pipe's own spec does it.
     TestBed.configureTestingModule({
       providers: [
         { provide: UserStore, useValue: { role: signal('admin'), permissions: signal([]) } },
-        // The real LocaleService over a stubbed Firestore: what the menu offers should be decided
+        // The real LocaleService (over a testing HttpClient): what the menu offers should be decided
         // by the actual supported-locale lists, not by a hand-written stub of them.
-        { provide: Firestore, useValue: {} },
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     });
     const fixture = TestBed.createComponent(TranslateMenuComponent);

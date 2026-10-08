@@ -21,7 +21,14 @@ function doc(overrides: Partial<ContentDocument> = {}): ContentDocument {
 }
 
 function folder(overrides: Partial<ContentFolder> = {}): ContentFolder {
-  return { id: 'f1', kind: ContentKind.FOLDER, name: 'Folder', slug: 'folder', fullSlug: 'folder', ...overrides } as unknown as ContentFolder;
+  return {
+    id: 'f1',
+    kind: ContentKind.FOLDER,
+    name: 'Folder',
+    slug: 'folder',
+    fullSlug: 'folder',
+    ...overrides,
+  } as unknown as ContentFolder;
 }
 
 describe('ContentsComponent', () => {

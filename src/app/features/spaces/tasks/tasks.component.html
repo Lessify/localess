@@ -93,7 +93,7 @@
               <div>Locale : {{ locale }}</div>
             }
             @if (element.status === 'FINISHED') {
-              <div>Duration : {{ element.updatedAt.seconds - element.createdAt.seconds | timeDuration }}</div>
+              <div>Duration : {{ element.createdAt | timeBetween: element.updatedAt }}</div>
             }
             @if (element.message; as message) {
               <div [hlmTooltip]="element.trace">Message : {{ message }}</div>
@@ -103,8 +103,8 @@
       </ng-container>
       <ng-container llColumnDef="createdAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-          {{ element.createdAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
+          {{ element.createdAt | date: 'mediumDate' }}
         </td>
       </ng-container>
       <ng-container llColumnDef="actions">
@@ -129,7 +129,7 @@
                   hlmDropdownMenuItem
                   variant="destructive"
                   (click)="openDeleteDialog(element)"
-                  [disabled]="element.status !== 'FINISHED' && now - (element.createdAt?.toMillis() || 0) < 600000">
+                  [disabled]="element.status === 'INITIATED' || element.status === 'IN_PROGRESS'">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                   Delete
                 </button>

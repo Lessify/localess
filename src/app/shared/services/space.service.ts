@@ -1,82 +1,46 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import {
-  addDoc,
-  collection,
-  collectionData,
-  deleteDoc,
-  doc,
-  docData,
-  DocumentReference,
-  Firestore,
-  orderBy,
-  query,
-  QueryConstraint,
-  serverTimestamp,
-  UpdateData,
-  updateDoc,
-} from '@angular/fire/firestore';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
+import { Observable } from 'rxjs';
 
-import { Locale } from '../models/locale.model';
-import { Space, SpaceCreate, SpaceCreateFS, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
+import { Space, SpaceCreate, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
 
+const BASE = '/api/app/spaces';
+
+/** Spaces (`/api/app/spaces`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class SpaceService {
-  private firestore = inject(Firestore);
-  private readonly functions = inject(Functions);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
 
+  /** Ordered by name (server side). */
   findAll(): Observable<Space[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('name', 'asc')];
-    return collectionData(query(collection(this.firestore, `spaces`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Spaces:findAll'),
-      map(it => it as Space[]),
-    );
+    return liveQueryWith(this.events, { entities: ['spaces'] }, () => this.http.get<Space[]>(BASE));
   }
 
   findById(id: string): Observable<Space> {
-    return docData(doc(this.firestore, `spaces/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Spaces:findById'),
-      map(it => it as Space),
-    );
+    return liveQueryWith(this.events, { entities: ['spaces'], id }, () => this.http.get<Space>(`${BASE}/${id}`));
   }
 
-  create(entity: SpaceCreate): Observable<DocumentReference> {
-    const defaultLocale: Locale = { id: 'en', name: 'English' };
-    const add: SpaceCreateFS = {
-      name: entity.name,
-      locales: [defaultLocale],
-      localeFallback: defaultLocale,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    return from(addDoc(collection(this.firestore, 'spaces'), add)).pipe(traceUntilFirst('Firestore:Spaces:create'));
+  /** The server seeds the default `en` locale as fallback. */
+  create(entity: SpaceCreate): Observable<Space> {
+    return this.http.post<Space>(BASE, { name: entity.name });
   }
 
   update(id: string, entity: SpaceUpdate): Observable<void> {
-    const update: UpdateData<Space> = {
-      name: entity.name,
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${id}`), update)).pipe(traceUntilFirst('Firestore:Spaces:update'));
+    return this.http.patch<void>(`${BASE}/${id}`, { name: entity.name });
   }
 
   updateEnvironments(id: string, environments: SpaceEnvironment[]): Observable<void> {
-    const update: UpdateData<Space> = {
-      environments: environments,
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${id}`), update)).pipe(traceUntilFirst('Firestore:Spaces:updateEnvironments'));
+    return this.http.patch<void>(`${BASE}/${id}`, { environments });
   }
 
   delete(id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${id}`))).pipe(traceUntilFirst('Firestore:Spaces:delete'));
+    return this.http.delete<void>(`${BASE}/${id}`);
   }
 
   calculateOverview(spaceId: string): Observable<void> {
-    const calculateoverview = httpsCallableData<{ spaceId: string }, void>(this.functions, 'space-calculateoverview');
-    return calculateoverview({ spaceId }).pipe(traceUntilFirst('Functions:Spaces:calculateOverview'));
+    return this.http.post<void>(`${BASE}/${spaceId}/overview`, {});
   }
 }

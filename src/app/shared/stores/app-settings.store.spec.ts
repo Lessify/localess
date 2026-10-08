@@ -5,14 +5,13 @@ import { of } from 'rxjs';
 import { AppSettingsStore } from './app-settings.store';
 
 describe('AppSettingsStore', () => {
-  function createStore(settings: unknown, config: unknown = {}) {
+  function createStore(settings: unknown) {
     TestBed.configureTestingModule({
       providers: [
         {
           provide: SettingsService,
           useValue: {
             find: () => of(settings),
-            config: () => of(config),
           },
         },
       ],

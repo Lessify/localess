@@ -1,86 +1,25 @@
 import { IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
-import { provideHttpClient, withFetch, withInterceptorsFromDi } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, provideZonelessChangeDetection } from '@angular/core';
-import { getAnalytics, provideAnalytics, ScreenTrackingService, UserTrackingService } from '@angular/fire/analytics';
-import { getApp, initializeApp, provideFirebaseApp } from '@angular/fire/app';
-import {
-  browserPopupRedirectResolver,
-  connectAuthEmulator,
-  indexedDBLocalPersistence,
-  initializeAuth,
-  provideAuth,
-} from '@angular/fire/auth';
-import { AuthGuardModule } from '@angular/fire/auth-guard';
-import { connectFirestoreEmulator, initializeFirestore, provideFirestore } from '@angular/fire/firestore';
-import { connectFunctionsEmulator, getFunctions, provideFunctions } from '@angular/fire/functions';
-import { getPerformance, providePerformance } from '@angular/fire/performance';
-import { getRemoteConfig, provideRemoteConfig } from '@angular/fire/remote-config';
-import { connectStorageEmulator, getStorage, provideStorage } from '@angular/fire/storage';
+import { provideHttpClient, withFetch, withInterceptors, withInterceptorsFromDi } from '@angular/common/http';
+import { ApplicationConfig, importProvidersFrom, inject, provideAppInitializer, provideZonelessChangeDetection } from '@angular/core';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MAT_PAGINATOR_DEFAULT_OPTIONS } from '@angular/material/paginator';
 import { provideRouter, withComponentInputBinding, withNavigationErrorHandler } from '@angular/router';
+import { apiInterceptor } from '@core/api/api.interceptor';
+import { AppConfigService } from '@core/api/app-config.service';
 import { CoreModule } from '@core/core.module';
 import { PAGINATOR_DEFAULT_OPTIONS } from '@shared/components/paginator/paginator.component';
 
-import { environment } from '../environments/environment';
 import { routes } from './app-routing';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideRouter(routes, withComponentInputBinding(), withNavigationErrorHandler(console.error)),
-    provideHttpClient(withFetch(), withInterceptorsFromDi()),
+    provideHttpClient(withFetch(), withInterceptors([apiInterceptor]), withInterceptorsFromDi()),
     provideNativeDateAdapter(),
-    importProvidersFrom(CoreModule, AuthGuardModule),
-    // Firebase
-    provideFirebaseApp(() => initializeApp(environment.firebase)),
-    provideAuth(() => {
-      const auth = initializeAuth(getApp(), {
-        persistence: indexedDBLocalPersistence,
-        popupRedirectResolver: browserPopupRedirectResolver,
-      });
-      if (environment.emulator.enabled) {
-        connectAuthEmulator(auth, 'http://localhost:9099', {
-          disableWarnings: true,
-        });
-      }
-      return auth;
-    }),
-    provideFirestore(() => {
-      const firestore = initializeFirestore(getApp(), { localCache: { kind: 'memory' } });
-      if (environment.emulator.enabled) {
-        connectFirestoreEmulator(firestore, 'localhost', 8080);
-      }
-      return firestore;
-    }),
-    provideStorage(() => {
-      const storage = getStorage();
-      if (environment.emulator.enabled) {
-        connectStorageEmulator(storage, 'localhost', 9199);
-      }
-      return storage;
-    }),
-    provideFunctions(() => {
-      // getFunctions caches by region, so the region must be passed to the factory -
-      // mutating functions.region afterwards leaves the instance keyed as us-central1.
-      const functions = getFunctions(undefined, environment.functions.region);
-      if (environment.emulator.enabled) {
-        connectFunctionsEmulator(functions, 'localhost', 5001);
-      }
-      return functions;
-    }),
-    provideAnalytics(() => getAnalytics()),
-    ScreenTrackingService,
-    UserTrackingService,
-    providePerformance(() => getPerformance()),
-    provideRemoteConfig(() => {
-      const remoteConfig = getRemoteConfig();
-      remoteConfig.defaultConfig = {
-        unsplash_ui_enable: false,
-      };
-      console.log('RemoteConfig:init', remoteConfig);
-      return remoteConfig;
-    }),
+    importProvidersFrom(CoreModule),
+    // Runtime settings (login providers, plugins) from the server before the first render.
+    provideAppInitializer(() => inject(AppConfigService).load()),
     {
       provide: IMAGE_LOADER,
       useValue: (config: ImageLoaderConfig) => {

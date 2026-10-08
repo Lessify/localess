@@ -17,7 +17,14 @@ function space(id: string): Space {
 }
 
 function webhook(overrides: Partial<WebHook> = {}): WebHook {
-  return { id: 'w1', name: 'Slack', url: 'https://example.com', enabled: true, events: [WebHookEvent.CONTENT_PUBLISHED], ...overrides } as WebHook;
+  return {
+    id: 'w1',
+    name: 'Slack',
+    url: 'https://example.com',
+    enabled: true,
+    events: [WebHookEvent.CONTENT_PUBLISHED],
+    ...overrides,
+  } as WebHook;
 }
 
 describe('WebhooksComponent', () => {

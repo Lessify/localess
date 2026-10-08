@@ -1,211 +1,142 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore and @angular/fire/functions are mocked globally in src/test-setup.ts.
-import { collectionCount, collectionData, deleteDoc, deleteField, docData, Firestore, setDoc, updateDoc } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { firstValueFrom, of } from 'rxjs';
-
-import { Translation, TranslationCreate, TranslationType, TranslationUpdate } from '../models/translation.model';
+import { Translation, TranslationType } from '../models/translation.model';
 import { TranslationService } from './translation.service';
 
-describe('TranslationService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+const BASE = '/api/app/spaces/space-1/translations';
 
-  function setup(currentUser: unknown = null) {
-    const publishDraftCallable = vi.fn().mockReturnValue(of(undefined));
-    const translateLocaleCallable = vi.fn().mockReturnValue(of(undefined));
-    vi.mocked(httpsCallableData).mockImplementation((_functions, name: string) => {
-      if (name === 'translation-publishdraft') return publishDraftCallable;
-      if (name === 'translation-translatelocale') return translateLocaleCallable;
-      return vi.fn().mockReturnValue(of(undefined));
-    });
+describe('TranslationService', () => {
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
+
+  function setup() {
+    events = new Subject<ChangeEvent>();
     TestBed.configureTestingModule({
-      providers: [
-        { provide: Firestore, useValue: {} },
-        { provide: Functions, useValue: {} },
-        { provide: Auth, useValue: { currentUser } },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
     });
-    return { service: TestBed.inject(TranslationService), publishDraftCallable, translateLocaleCallable };
+    http = TestBed.inject(HttpTestingController);
+    return TestBed.inject(TranslationService);
   }
 
-  it('findAll() reads the space translations collection', async () => {
-    const { service } = setup();
-    const translations: Translation[] = [{ id: 't1' } as unknown as Translation];
-    vi.mocked(collectionData).mockReturnValue(of(translations));
-
-    const result = await firstValueFrom(service.findAll('space-1'));
-
-    expect(result).toEqual(translations);
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('countAll() counts the space translations collection', async () => {
-    const { service } = setup();
-    vi.mocked(collectionCount).mockReturnValue(of(5) as never);
-
-    const result = await firstValueFrom(service.countAll('space-1'));
-
-    expect(result).toBe(5);
+  it('findAll() reads the space translations', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(BASE).flush([{ id: 'hello' }]);
+    expect(await result).toEqual([{ id: 'hello' }]);
   });
 
-  it('findById() reads the translation doc', async () => {
-    const { service } = setup();
-    const translation: Translation = { id: 't1' } as unknown as Translation;
-    vi.mocked(docData).mockReturnValue(of(translation));
+  it('findAll() refetches when a translation of the space changes, ignoring other entities', async () => {
+    vi.useFakeTimers();
+    const service = setup();
+    const results: Translation[][] = [];
+    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
+    http.expectOne(BASE).flush([]);
 
-    const result = await firstValueFrom(service.findById('space-1', 't1'));
+    events.next({ spaceId: 'space-1', entity: 'schemas', id: 's', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(BASE);
 
-    expect(result).toEqual(translation);
+    events.next({ spaceId: 'space-1', entity: 'translations', id: 'hello', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(BASE).flush([{ id: 'hello' } as Translation]);
+    expect(results).toEqual([[], [{ id: 'hello' }]]);
+    subscription.unsubscribe();
   });
 
-  it('create() wraps array/plural locale values and publishes the draft', async () => {
-    const { service, publishDraftCallable } = setup();
-    const entity: TranslationCreate = {
-      id: 't1',
-      type: TranslationType.ARRAY,
-      locales: { en: 'Hello' },
-    };
-
-    await firstValueFrom(service.create('space-1', entity));
-
-    const [, addedEntity] = vi.mocked(setDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ type: TranslationType.ARRAY, locales: { en: '["Hello"]' } });
-    expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
+  it('countAll() maps the count response to a number', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.countAll('space-1'));
+    http.expectOne(`${BASE}/count`).flush({ count: 7 });
+    expect(await result).toBe(7);
   });
 
-  it('create() wraps plural locale values as an indexed object', async () => {
-    const { service } = setup();
-    const entity: TranslationCreate = {
-      id: 't1',
-      type: TranslationType.PLURAL,
-      locales: { en: 'apple' },
-    };
-
-    await firstValueFrom(service.create('space-1', entity));
-
-    const [, addedEntity] = vi.mocked(setDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ locales: { en: '{"0":"apple"}' } });
+  it('findById() reads one translation', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findById('space-1', 'hello'));
+    http.expectOne(`${BASE}/hello`).flush({ id: 'hello' });
+    expect(await result).toEqual({ id: 'hello' });
   });
 
-  it('create() leaves string locale values untouched and omits labels/description when empty', async () => {
-    const { service } = setup();
-    const entity: TranslationCreate = {
-      id: 't1',
-      type: TranslationType.STRING,
-      locales: { en: 'Hello' },
-      labels: [],
-      description: '',
-    };
+  it('create() posts the translation, wrapping locale values by type and dropping empty labels/description', async () => {
+    const service = setup();
+    const plural = firstValueFrom(
+      service.create('space-1', { id: 'items', type: TranslationType.PLURAL, locales: { en: 'Item' }, labels: [], description: '' }),
+    );
+    const request = http.expectOne({ method: 'POST', url: BASE });
+    expect(request.request.body).toEqual({ id: 'items', type: 'PLURAL', locales: { en: '{"0":"Item"}' } });
+    request.flush({});
+    await plural;
 
-    await firstValueFrom(service.create('space-1', entity));
-
-    const [, addedEntity] = vi.mocked(setDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ locales: { en: 'Hello' } });
-    expect(addedEntity).not.toHaveProperty('labels');
-    expect(addedEntity).not.toHaveProperty('description');
+    const array = firstValueFrom(
+      service.create('space-1', { id: 'list', type: TranslationType.ARRAY, locales: { en: 'A' }, labels: ['x'], description: 'd' }),
+    );
+    const arrayRequest = http.expectOne({ method: 'POST', url: BASE });
+    expect(arrayRequest.request.body).toEqual({ id: 'list', type: 'ARRAY', locales: { en: '["A"]' }, labels: ['x'], description: 'd' });
+    arrayRequest.flush({});
+    await array;
   });
 
-  it('create() sets updatedBy when the current user has an email and display name', async () => {
-    const { service } = setup({ email: 'a@b.com', displayName: 'Alex' });
-    const entity: TranslationCreate = { id: 't1', type: TranslationType.STRING, locales: {} };
-
-    await firstValueFrom(service.create('space-1', entity));
-
-    const [, addedEntity] = vi.mocked(setDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ updatedBy: { name: 'Alex', email: 'a@b.com' } });
+  it('update() patches labels and description', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.update('space-1', 'hello', { labels: ['a'], description: 'desc' }));
+    const request = http.expectOne({ method: 'PATCH', url: `${BASE}/hello` });
+    expect(request.request.body).toEqual({ labels: ['a'], description: 'desc' });
+    request.flush({});
+    await done;
   });
 
-  it('update() deletes labels/description fields when empty and publishes the draft', async () => {
-    const { service, publishDraftCallable } = setup();
-    const entity: TranslationUpdate = { labels: [], description: '' };
-
-    await firstValueFrom(service.update('space-1', 't1', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ labels: deleteField(), description: deleteField() });
-    expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
+  it('updateId() renames on the server', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateId('space-1', { id: 'old' } as Translation, 'new'));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/old/id` });
+    expect(request.request.body).toEqual({ id: 'new' });
+    request.flush({});
+    await done;
   });
 
-  it('update() sets labels/description when provided', async () => {
-    const { service } = setup();
-    const entity: TranslationUpdate = { labels: ['a'], description: 'desc' };
-
-    await firstValueFrom(service.update('space-1', 't1', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ labels: ['a'], description: 'desc' });
+  it('updateLocale() puts one locale value', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateLocale('space-1', 'hello', 'de', 'Hallo'));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/hello/locales/de` });
+    expect(request.request.body).toEqual({ value: 'Hallo' });
+    request.flush({});
+    await done;
   });
 
-  it('updateId() creates the doc under the new id, deletes the old one, and publishes the draft', async () => {
-    const { service, publishDraftCallable } = setup();
-    const entity: Translation = { id: 't1', type: TranslationType.STRING, locales: {}, createdAt: {} } as unknown as Translation;
+  it('delete() and deleteAll() delete one or all translations', async () => {
+    const service = setup();
+    const one = firstValueFrom(service.delete('space-1', 'hello'));
+    http.expectOne({ method: 'DELETE', url: `${BASE}/hello` }).flush(null);
+    await one;
 
-    await firstValueFrom(service.updateId('space-1', entity, 't2'));
-
-    expect(setDoc).toHaveBeenCalled();
-    expect(deleteDoc).toHaveBeenCalled();
-    expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
+    const all = firstValueFrom(service.deleteAll('space-1'));
+    http.expectOne({ method: 'DELETE', url: BASE }).flush(null);
+    await all;
   });
 
-  it('updateLocale() sets the given locale field and publishes the draft', async () => {
-    const { service, publishDraftCallable } = setup();
-
-    await firstValueFrom(service.updateLocale('space-1', 't1', 'en', 'Hello'));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ 'locales.en': 'Hello' });
-    expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
+  it('publish() posts to the publish endpoint', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.publish('space-1'));
+    http.expectOne({ method: 'POST', url: `${BASE}/publish` }).flush(null);
+    await done;
   });
 
-  it('delete() deletes the doc and publishes the draft', async () => {
-    const { service, publishDraftCallable } = setup();
-
-    await firstValueFrom(service.delete('space-1', 't1'));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
-    expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
-  });
-
-  it('publish() calls the translation-publish callable', async () => {
-    const { service } = setup();
-
-    await firstValueFrom(service.publish('space-1'));
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'translation-publish');
-  });
-
-  it('deleteAll() calls the translation-deleteall callable', async () => {
-    const { service } = setup();
-
-    await firstValueFrom(service.deleteAll('space-1'));
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'translation-deleteall');
-  });
-
-  it('translateLocale() calls the translate callable then publishes the draft', async () => {
-    const { service, publishDraftCallable, translateLocaleCallable } = setup();
-
-    await firstValueFrom(service.translateLocale('space-1', 'en', 'de'));
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'translation-translatelocale');
-    expect(translateLocaleCallable).toHaveBeenCalledWith({
-      spaceId: 'space-1',
-      sourceLocaleId: 'en',
-      targetLocaleId: 'de',
-      overwrite: false,
-    });
-    expect(publishDraftCallable).toHaveBeenCalledWith({ spaceId: 'space-1' });
-  });
-
-  it('translateLocale() forwards overwrite to the callable', async () => {
-    const { service, translateLocaleCallable } = setup();
-
-    await firstValueFrom(service.translateLocale('space-1', 'en', 'de', true));
-
-    expect(translateLocaleCallable).toHaveBeenCalledWith(expect.objectContaining({ overwrite: true }));
+  it('translateLocale() posts source, target and overwrite (default false)', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.translateLocale('space-1', 'en', 'de'));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/translate-locale` });
+    expect(request.request.body).toEqual({ sourceLocaleId: 'en', targetLocaleId: 'de', overwrite: false });
+    request.flush({});
+    await done;
   });
 });

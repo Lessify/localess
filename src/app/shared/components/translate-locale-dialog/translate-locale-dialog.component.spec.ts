@@ -1,5 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Firestore } from '@angular/fire/firestore';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
@@ -19,7 +20,8 @@ describe('TranslateLocaleDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: Firestore, useValue: {} },
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     });
     const fixture = TestBed.createComponent(TranslateLocaleDialogComponent);

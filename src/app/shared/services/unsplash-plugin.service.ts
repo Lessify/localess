@@ -1,26 +1,29 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
+import { AppConfigService } from '@core/api/app-config.service';
 import { UnsplashRandomResult, UnsplashSearchParams, UnsplashSearchResult } from '@shared/models/unsplash-plugin.model';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
+const BASE = '/api/app/plugins/unsplash';
 
 @Injectable({ providedIn: 'root' })
 export class UnsplashPluginService {
-  private readonly functions = inject(Functions);
+  private readonly http = inject(HttpClient);
+  private readonly appConfig = inject(AppConfigService);
 
   enabled(): boolean {
-    return environment.plugins.unsplash;
+    return this.appConfig.config().plugins.unsplash;
   }
 
   search(params: UnsplashSearchParams): Observable<UnsplashSearchResult> {
-    const unsplashSearch = httpsCallableData<UnsplashSearchParams, UnsplashSearchResult>(this.functions, 'unsplash-search');
-    return unsplashSearch(params).pipe(traceUntilFirst('Functions:Plugins:Unsplash:search'));
+    let query = new HttpParams().set('query', params.query);
+    if (params.page !== undefined) query = query.set('page', params.page);
+    if (params.perPage !== undefined) query = query.set('perPage', params.perPage);
+    if (params.orientation) query = query.set('orientation', params.orientation);
+    return this.http.get<UnsplashSearchResult>(`${BASE}/search`, { params: query });
   }
 
   random(): Observable<UnsplashRandomResult> {
-    const unsplashRandom = httpsCallableData<never, UnsplashRandomResult>(this.functions, 'unsplash-random');
-    return unsplashRandom().pipe(traceUntilFirst('Functions:Plugins:Unsplash:random'));
+    return this.http.get<UnsplashRandomResult>(`${BASE}/random`);
   }
 }

@@ -1,81 +1,47 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import {
-  collection,
-  collectionData,
-  deleteDoc,
-  deleteField,
-  doc,
-  docData,
-  Firestore,
-  serverTimestamp,
-  UpdateData,
-  updateDoc,
-} from '@angular/fire/firestore';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
+import { Observable } from 'rxjs';
 
 import { User, UserInvite, UserUpdate } from '../models/user.model';
 
+const BASE = '/api/app/users';
+
+export interface PasswordResetLink {
+  url: string;
+  expiresAt: string;
+}
+
+/** Admin → Users (`/api/app/users`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private readonly firestore = inject(Firestore);
-  private readonly functions = inject(Functions);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
 
   findAll(): Observable<User[]> {
-    return collectionData(collection(this.firestore, 'users'), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Users:findAll'),
-      map(it => it as User[]),
-    );
+    return liveQueryWith(this.events, { entities: ['users'] }, () => this.http.get<User[]>(BASE));
   }
 
   findById(id: string): Observable<User> {
-    return docData(doc(this.firestore, `users/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Users:findById'),
-      map(it => it as User),
-    );
+    return liveQueryWith(this.events, { entities: ['users'], id }, () => this.http.get<User>(`${BASE}/${id}`));
   }
 
+  /** `role` null clears the access; the server drops permissions/lock for non-custom roles. */
   update(id: string, model: UserUpdate): Observable<void> {
-    console.log('UserService:update', id, model);
-    const update: UpdateData<User> = {
-      updatedAt: serverTimestamp(),
-    };
-    switch (model.role) {
-      case 'admin': {
-        update.role = model.role;
-        update.permissions = deleteField();
-        update.lock = deleteField();
-        break;
-      }
-      case 'custom': {
-        update.role = model.role;
-        update.permissions = model.permissions;
-        update.lock = model.lock || false;
-        break;
-      }
-      case undefined: {
-        update.role = deleteField();
-        update.permissions = deleteField();
-        update.lock = deleteField();
-        break;
-      }
-    }
-    return from(updateDoc(doc(this.firestore, `users/${id}`), update)).pipe(traceUntilFirst('Firestore:Users:update'));
+    return this.http.patch<void>(`${BASE}/${id}`, { role: model.role ?? null, permissions: model.permissions, lock: model.lock });
   }
 
   delete(id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `users/${id}`))).pipe(traceUntilFirst('Firestore:Users:delete'));
+    return this.http.delete<void>(`${BASE}/${id}`);
   }
 
   invite(model: UserInvite): Observable<void> {
-    const userInvite = httpsCallableData<UserInvite, void>(this.functions, 'user-invite');
-    return userInvite(model).pipe(traceUntilFirst('Functions:Users:invite'));
+    return this.http.post<void>(BASE, model);
   }
 
-  sync(): Observable<void> {
-    const usersSync = httpsCallableData<void, void>(this.functions, 'user-sync');
-    return usersSync().pipe(traceUntilFirst('Functions:Users:sync'));
+  /** A one-hour reset link an admin can hand over (works without SMTP). */
+  passwordResetLink(id: string): Observable<PasswordResetLink> {
+    return this.http.post<PasswordResetLink>(`${BASE}/${id}/password-reset-link`, {});
   }
 }

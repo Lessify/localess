@@ -51,7 +51,6 @@ describe('TableSort', () => {
     sort.sort('name');
     expect(events).toEqual([{ active: 'name', direction: 'asc' }]);
   });
-
 });
 
 @Component({

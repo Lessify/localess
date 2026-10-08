@@ -340,10 +340,14 @@ describe('ContentPreviewComponent', () => {
       component.schemaHover.subscribe(hover);
       component.schemaLeave.subscribe(leave);
 
-      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'selectSchema', id: 'c1', schema: 's1', field: 'title' }, { source: frameWindow }));
+      component.onWindowMessage(
+        messageEvent({ owner: 'LOCALESS', type: 'selectSchema', id: 'c1', schema: 's1', field: 'title' }, { source: frameWindow }),
+      );
       expect(select).toHaveBeenCalledWith({ id: 'c1', schema: 's1', field: 'title' });
 
-      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'hoverSchema', id: 'c1', schema: 's1', field: 'title' }, { source: frameWindow }));
+      component.onWindowMessage(
+        messageEvent({ owner: 'LOCALESS', type: 'hoverSchema', id: 'c1', schema: 's1', field: 'title' }, { source: frameWindow }),
+      );
       expect(hover).toHaveBeenCalledWith({ id: 'c1', schema: 's1', field: 'title' });
 
       component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'leaveSchema', id: 'c1', schema: 's1' }, { source: frameWindow }));
@@ -355,7 +359,9 @@ describe('ContentPreviewComponent', () => {
       const blockAction = vi.fn();
       component.blockAction.subscribe(blockAction);
 
-      component.onWindowMessage(messageEvent({ owner: 'LOCALESS', type: 'blockAction', id: 'c1', action: 'moveUp' }, { source: frameWindow }));
+      component.onWindowMessage(
+        messageEvent({ owner: 'LOCALESS', type: 'blockAction', id: 'c1', action: 'moveUp' }, { source: frameWindow }),
+      );
 
       expect(blockAction).toHaveBeenCalledWith({ id: 'c1', action: 'moveUp' });
     });

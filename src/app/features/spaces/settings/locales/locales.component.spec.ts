@@ -33,7 +33,10 @@ describe('LocalesComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: LocaleService, useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo } },
+        {
+          provide: LocaleService,
+          useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo },
+        },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open: openDialog } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
@@ -41,7 +44,17 @@ describe('LocalesComponent', () => {
     });
     const fixture = TestBed.createComponent(LocalesComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, create, deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo, success, error, openDialog };
+    return {
+      component: fixture.componentInstance,
+      create,
+      deleteLocale,
+      markAsFallback,
+      isLocaleTranslatableFrom,
+      isLocaleTranslatableTo,
+      success,
+      error,
+      openDialog,
+    };
   }
 
   const en: Locale = { id: 'en', name: 'English' };

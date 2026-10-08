@@ -1,26 +1,26 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
-
-// @angular/fire/functions is mocked globally in src/test-setup.ts.
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { OpenApiService } from './open-api.service';
 
 describe('OpenApiService', () => {
-  function setup(callableReturn: unknown) {
-    const callable = vi.fn().mockReturnValue(of(callableReturn));
-    (httpsCallableData as unknown as ReturnType<typeof vi.fn>).mockReturnValue(callable);
-    TestBed.configureTestingModule({ providers: [{ provide: Functions, useValue: {} }] });
-    return { service: TestBed.inject(OpenApiService), callable };
-  }
+  let http: HttpTestingController;
 
-  it('calls the openapi-generate callable with the given spaceId and returns its data', async () => {
-    const { service, callable } = setup('openapi-json-string');
+  afterEach(() => {
+    http.verify();
+  });
 
-    const result = await firstValueFrom(service.generate('space-1'));
+  it('generate() posts to the space open-api endpoint and returns the document as JSON', async () => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    http = TestBed.inject(HttpTestingController);
+    const service = TestBed.inject(OpenApiService);
 
-    expect(result).toBe('openapi-json-string');
-    expect(callable).toHaveBeenCalledWith({ spaceId: 'space-1' });
+    const result = firstValueFrom(service.generate('space-1'));
+    const document = { openapi: '3.0.3', paths: {} };
+    http.expectOne({ method: 'POST', url: '/api/app/spaces/space-1/open-api' }).flush(document);
+
+    expect(JSON.parse(await result)).toEqual(document);
   });
 });

@@ -1,6 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { Analytics } from '@angular/fire/analytics';
-import { Performance } from '@angular/fire/performance';
+import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { HlmToasterImports } from '@spartan-ng/helm/sonner';
 
@@ -10,9 +8,4 @@ import { HlmToasterImports } from '@spartan-ng/helm/sonner';
   styleUrls: ['./app.component.scss'],
   imports: [RouterModule, HlmToasterImports],
 })
-export class AppComponent {
-  private readonly performance = inject(Performance);
-  private readonly analytics = inject(Analytics);
-
-  constructor() {}
-}
+export class AppComponent {}

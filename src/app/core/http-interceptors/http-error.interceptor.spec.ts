@@ -24,6 +24,16 @@ describe('HttpErrorInterceptor', () => {
     expect(handleError).toHaveBeenCalledWith(httpError);
   });
 
+  it('leaves 401s from the API to the auth flow (e.g. the session check of a signed-out visitor)', async () => {
+    const { interceptor, handleError } = setup();
+    const unauthorized = new HttpErrorResponse({ status: 401 });
+    const next: HttpHandler = { handle: () => throwError(() => unauthorized) };
+
+    await expect(firstValueFrom(interceptor.intercept(new HttpRequest('GET', '/api/auth/me'), next))).rejects.toBe(unauthorized);
+
+    expect(handleError).not.toHaveBeenCalled();
+  });
+
   it('does not forward non-HttpErrorResponse failures', async () => {
     const { interceptor, handleError } = setup();
     const request = new HttpRequest('GET', '/api/x');

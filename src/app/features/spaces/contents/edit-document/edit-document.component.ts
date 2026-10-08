@@ -167,8 +167,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   schemas = computed(() => this.spaceStore.schemas());
   // Computed out of inputs
   rootSchema = computed(() => this.schemas().find(it => it.id === this.document().schema));
-  documentUpdatedAt = linkedSignal(() => this.document().updatedAt.seconds);
-  documentPublishedAt = linkedSignal(() => this.document().publishedAt?.seconds);
+  documentUpdatedAt = linkedSignal(() => this.document().updatedAt);
+  documentPublishedAt = linkedSignal(() => this.document().publishedAt);
   //Store
   spaceStore = inject(SpaceStore);
   settingsStore = inject(LocalSettingsStore);
@@ -290,7 +290,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       next: () => {
         this.notificationService.success('Content has been published.');
         this.previewComponent()?.sendEvent({ type: 'publish', documentId: this.contentId() });
-        this.documentPublishedAt.set(Date.now() / 100);
+        this.documentPublishedAt.set(new Date().toISOString());
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
@@ -351,7 +351,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.previewComponent()?.sendEvent({ type: 'save', documentId: this.contentId() });
-          this.documentUpdatedAt.set(Date.now() / 100);
+          this.documentUpdatedAt.set(new Date().toISOString());
           this.savedDocumentData.set(normalizeContent(this.documentData));
         },
         error: () => {

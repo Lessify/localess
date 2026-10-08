@@ -179,14 +179,14 @@
           </ng-container>
           <ng-container llColumnDef="createdAt">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
-            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-              {{ element.createdAt?.toDate() | date: 'mediumDate' }}
+            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
+              {{ element.createdAt | date: 'mediumDate' }}
             </td>
           </ng-container>
           <ng-container llColumnDef="updatedAt">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
-            <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-              {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+            <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
+              {{ element.updatedAt | date: 'mediumDate' }}
             </td>
           </ng-container>
           <ng-container llColumnDef="actions">
@@ -223,11 +223,7 @@
                   @if ('ASSET_DELETE' | canUserPerform | async) {
                     <hlm-dropdown-menu-separator />
                     <hlm-dropdown-menu-group>
-                      <button
-                        hlmDropdownMenuItem
-                        variant="destructive"
-                        (click)="openDeleteDialog(element)"
-                        [disabled]="element.inProgress === true && now - (element.createdAt?.toMillis() || 0) < 600000">
+                      <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
                         <ng-icon hlm size="sm" name="lucideTrash" />
                         Delete
                       </button>
@@ -286,13 +282,7 @@
               </button>
             }
             @if ('ASSET_DELETE' | canUserPerform | async) {
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="openDeleteDialog(item)"
-                [disabled]="item.inProgress === true && now - (item.createdAt?.toMillis() || 0) < 600000"
-                hlmTooltip="Delete">
+              <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(item)" hlmTooltip="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>
             }

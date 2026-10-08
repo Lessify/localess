@@ -35,7 +35,7 @@ describe('EditIdDialogComponent', () => {
 
     expect(component.form.controls['id'].errors).toEqual({ reservedName: true });
   });
-it('closes with the bare id, not the form object', () => {
+  it('closes with the bare id, not the form object', () => {
     const { component, close } = setup({ id: 'greeting', reservedIds: ['other'] });
     component.form.patchValue({ id: 'renamed' });
 

@@ -1,6 +1,7 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Auth } from '@angular/fire/auth';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
@@ -46,14 +47,15 @@ function configureModule(overrides: {
       {
         provide: VersionService,
         useValue: {
-          checkRemoteVersion: vi.fn().mockReturnValue(
-            overrides.buildDate
-              ? of({ version: environment.version, gitCommitSha: 'test', buildDate: overrides.buildDate })
-              : EMPTY,
-          ),
+          checkRemoteVersion: vi
+            .fn()
+            .mockReturnValue(
+              overrides.buildDate ? of({ version: environment.version, gitCommitSha: 'test', buildDate: overrides.buildDate }) : EMPTY,
+            ),
         },
       },
-      { provide: Auth, useValue: {} },
+      provideHttpClient(),
+      provideHttpClientTesting(),
       { provide: Router, useValue: { events: of(), navigate: vi.fn() } },
       { provide: ActivatedRoute, useValue: { root: { snapshot: { data: {} }, children: [] } } },
       {
@@ -82,7 +84,7 @@ describe('FeaturesComponent', () => {
     vi.useRealTimers();
   });
 
-  it('opens the What\'s New dialog', () => {
+  it("opens the What's New dialog", () => {
     const fixture = configureModule({
       notifyError: vi.fn(),
     });

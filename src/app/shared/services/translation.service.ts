@@ -1,87 +1,52 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
-import {
-  collection,
-  collectionCount,
-  collectionData,
-  deleteDoc,
-  deleteField,
-  doc,
-  docData,
-  Firestore,
-  serverTimestamp,
-  setDoc,
-  UpdateData,
-  updateDoc,
-} from '@angular/fire/firestore';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { from, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import {
-  TranslateLocaleData,
-  Translation,
-  TranslationCreate,
-  TranslationCreateFS,
-  TranslationType,
-  TranslationUpdate,
-} from '../models/translation.model';
+import { Translation, TranslationCreate, TranslationType, TranslationUpdate } from '../models/translation.model';
 
+/**
+ * Translations of a space (`/api/app/spaces/:spaceId/translations`); reads are live.
+ * The server recomputes the draft and fires webhooks on every write, so there is no separate draft publish.
+ */
 @Injectable({ providedIn: 'root' })
 export class TranslationService {
-  private readonly firestore = inject(Firestore);
-  private readonly functions = inject(Functions);
-  private readonly auth = inject(Auth);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
+
+  private base(spaceId: string): string {
+    return `/api/app/spaces/${spaceId}/translations`;
+  }
 
   findAll(spaceId: string): Observable<Translation[]> {
-    return collectionData(collection(this.firestore, `spaces/${spaceId}/translations`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Translations:findAll'),
-      map(it => it as Translation[]),
-    );
+    return liveQueryWith(this.events, { spaceId, entities: ['translations'] }, () => this.http.get<Translation[]>(this.base(spaceId)));
   }
 
   countAll(spaceId: string): Observable<number> {
-    return collectionCount(collection(this.firestore, `spaces/${spaceId}/translations`)).pipe(
-      traceUntilFirst('Firestore:Translations:countAll'),
-    );
+    return this.http.get<{ count: number }>(`${this.base(spaceId)}/count`).pipe(map(it => it.count));
   }
 
   findById(spaceId: string, id: string): Observable<Translation> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Translations:findById'),
-      map(it => it as Translation),
+    return liveQueryWith(this.events, { spaceId, entities: ['translations'], id }, () =>
+      this.http.get<Translation>(`${this.base(spaceId)}/${id}`),
     );
   }
 
   create(spaceId: string, entity: TranslationCreate): Observable<void> {
-    const addEntity: TranslationCreateFS = {
-      type: entity.type,
-      locales: {},
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+    const locales: Record<string, string> = {};
+    for (const [locale, value] of Object.entries(entity.locales)) {
+      locales[locale] = this.wrapLocaleValue(entity.type, value);
+    }
+    const body: TranslationCreate = { id: entity.id, type: entity.type, locales };
     if (entity.labels && entity.labels.length > 0) {
-      addEntity.labels = entity.labels;
+      body.labels = entity.labels;
     }
     if (entity.description && entity.description.length > 0) {
-      addEntity.description = entity.description;
+      body.description = entity.description;
     }
-
-    for (const [locale, value] of Object.entries(entity.locales)) {
-      addEntity.locales[locale] = this.wrapLocaleValue(entity.type, value);
-    }
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      addEntity.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-
-    return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Translations:create'),
-      switchMap(() => this.publishDraft(spaceId)),
-    );
+    return this.http.post<void>(this.base(spaceId), body);
   }
 
   private wrapLocaleValue(type: TranslationType, value: string): string {
@@ -96,104 +61,34 @@ export class TranslationService {
     }
   }
 
+  /** Empty labels/description clear them. */
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
-    const update: UpdateData<Translation> = {
-      updatedAt: serverTimestamp(),
-    };
-
-    if (entity.labels && entity.labels.length > 0) {
-      update.labels = entity.labels;
-    } else {
-      update.labels = deleteField();
-    }
-    if (entity.description && entity.description.length > 0) {
-      update.description = entity.description;
-    } else {
-      update.description = deleteField();
-    }
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      update.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Translations:update'),
-      switchMap(() => this.publishDraft(spaceId)),
-    );
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { labels: entity.labels, description: entity.description });
   }
 
+  /** Renames in one server transaction (values and timestamps are kept). */
   updateId(spaceId: string, entity: Translation, newId: string): Observable<void> {
-    console.log('updateId', entity, newId);
-    const addEntity: UpdateData<Translation> = {
-      type: entity.type,
-      locales: entity.locales,
-      createdAt: entity.createdAt,
-      updatedAt: serverTimestamp(),
-    };
-    if (entity.labels) {
-      addEntity.labels = entity.labels;
-    }
-    if (entity.description) {
-      addEntity.description = entity.description;
-    }
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      addEntity.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(setDoc(doc(this.firestore, `spaces/${spaceId}/translations/${newId}`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Translations:updateId'),
-      switchMap(() => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${entity.id}`)))),
-      switchMap(() => this.publishDraft(spaceId)),
-    );
+    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/id`, { id: newId });
   }
 
+  /** An empty value removes the locale. */
   updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
-    const update: UpdateData<Translation> = {
-      updatedAt: serverTimestamp(),
-    };
-    update[`locales.${locale}`] = value;
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      update.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Translations:updateLocale'),
-      switchMap(() => this.publishDraft(spaceId)),
-    );
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/locales/${locale}`, { value });
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/translations/${id}`))).pipe(
-      traceUntilFirst('Firestore:Translations:delete'),
-      switchMap(() => this.publishDraft(spaceId)),
-    );
+    return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }
 
   publish(spaceId: string): Observable<void> {
-    const translationsPublish = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publish');
-    return translationsPublish({ spaceId }).pipe(traceUntilFirst('Functions:Translations:publish'));
-  }
-
-  publishDraft(spaceId: string): Observable<void> {
-    const translationsPublishDraft = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-publishdraft');
-    return translationsPublishDraft({ spaceId }).pipe(traceUntilFirst('Functions:Translations:publishDraft'));
+    return this.http.post<void>(`${this.base(spaceId)}/publish`, {});
   }
 
   deleteAll(spaceId: string): Observable<void> {
-    const translationsDeleteAll = httpsCallableData<{ spaceId: string }, void>(this.functions, 'translation-deleteall');
-    return translationsDeleteAll({ spaceId }).pipe(traceUntilFirst('Functions:Translations:deleteAll'));
+    return this.http.delete<void>(this.base(spaceId));
   }
 
   translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string, overwrite = false): Observable<void> {
-    const translateLocale = httpsCallableData<TranslateLocaleData, void>(this.functions, 'translation-translatelocale');
-    return translateLocale({ spaceId, sourceLocaleId, targetLocaleId, overwrite }).pipe(
-      traceUntilFirst('Functions:Translations:translateLocale'),
-      switchMap(() => this.publishDraft(spaceId)),
-    );
+    return this.http.post<void>(`${this.base(spaceId)}/translate-locale`, { sourceLocaleId, targetLocaleId, overwrite });
   }
 }

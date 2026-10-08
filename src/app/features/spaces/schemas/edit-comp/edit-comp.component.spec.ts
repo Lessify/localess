@@ -57,9 +57,7 @@ describe('EditCompComponent', () => {
   });
 
   it('populates one field group per existing field', () => {
-    const { component } = setup(
-      rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT } as never] }),
-    );
+    const { component } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT } as never] }));
 
     expect(component.fields.length).toBe(1);
     expect(component.fieldControlAt(0, 'name')?.value).toBe('title');

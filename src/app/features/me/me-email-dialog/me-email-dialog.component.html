@@ -2,6 +2,18 @@
   <h2 hlmDialogTitle>Update Email</h2>
 </hlm-dialog-header>
 <form [formGroup]="form" class="flex flex-col gap-4">
+  @if (askCurrentPassword) {
+    <div hlmField>
+      <label hlmFieldLabel for="currentPassword">Current Password</label>
+      <input
+        hlmInput
+        id="currentPassword"
+        type="password"
+        formControlName="currentPassword"
+        autocomplete="current-password"
+        class="w-full" />
+    </div>
+  }
   <div hlmField>
     <label hlmFieldLabel for="newEmail">New Email</label>
     <input hlmInput id="newEmail" type="email" formControlName="newEmail" class="w-full" />

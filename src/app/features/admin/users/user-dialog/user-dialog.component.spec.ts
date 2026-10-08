@@ -28,11 +28,7 @@ describe('UserDialogComponent', () => {
     const close = vi.fn();
     TestBed.overrideComponent(UserDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
-      providers: [
-        { provide: DIALOG_DATA, useValue: context },
-        { provide: BrnDialogRef, useValue: { close } },
-        userStoreOf(currentUser),
-      ],
+      providers: [{ provide: DIALOG_DATA, useValue: context }, { provide: BrnDialogRef, useValue: { close } }, userStoreOf(currentUser)],
     });
     const fixture = TestBed.createComponent(UserDialogComponent);
     fixture.detectChanges();
@@ -108,7 +104,7 @@ describe('UserDialogComponent', () => {
 
     expect(component.form.value.permissions).toEqual(['SPACE_MANAGEMENT']);
   });
-it('closes with the form value when saved', () => {
+  it('closes with the form value when saved', () => {
     const { component, close } = setup({ role: 'admin' });
 
     component.save();

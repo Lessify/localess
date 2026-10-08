@@ -1,11 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { Timestamp } from '@angular/fire/firestore';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
 import { vi } from 'vitest';
 
 import { AssetCardComponent } from './asset-card.component';
 
-const updatedAt = { toDate: () => new Date('2024-01-01T00:00:00Z') } as unknown as Timestamp;
+const updatedAt = '2024-01-01T00:00:00.000Z';
 
 function file(overrides: Partial<AssetFile> = {}): AssetFile {
   return {

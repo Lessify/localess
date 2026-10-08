@@ -78,7 +78,7 @@
         <td llCell *llCellDef="let element">
           @switch (element.kind) {
             @case ('DOCUMENT') {
-              <ll-document-status [updatedAt]="element.updatedAt?.seconds" [publishedAt]="element.publishedAt?.seconds" />
+              <ll-document-status [updatedAt]="element.updatedAt" [publishedAt]="element.publishedAt" />
             }
             @case ('FOLDER') {
               <ng-icon hlm name="lucideFolder" />
@@ -109,20 +109,20 @@
       </ng-container>
       <ng-container llColumnDef="publishedAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="publishedAt">Published At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.publishedAt?.toDate() | date: 'medium'">
-          {{ element.publishedAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.publishedAt | date: 'medium'">
+          {{ element.publishedAt | date: 'mediumDate' }}
         </td>
       </ng-container>
       <ng-container llColumnDef="createdAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-          {{ element.createdAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
+          {{ element.createdAt | date: 'mediumDate' }}
         </td>
       </ng-container>
       <ng-container llColumnDef="updatedAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
+          {{ element.updatedAt | date: 'mediumDate' }}
         </td>
       </ng-container>
 

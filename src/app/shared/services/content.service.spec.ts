@@ -1,226 +1,193 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore and @angular/fire/functions are mocked globally in src/test-setup.ts.
-import { Auth } from '@angular/fire/auth';
-import {
-  addDoc,
-  collectionCount,
-  collectionData,
-  deleteDoc,
-  docData,
-  Firestore,
-  updateDoc,
-} from '@angular/fire/firestore';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { firstValueFrom, of } from 'rxjs';
-
-import {
-  Content,
-  ContentData,
-  ContentDocument,
-  ContentDocumentCreate,
-  ContentFolderCreate,
-  ContentKind,
-  ContentUpdate,
-} from '../models/content.model';
+import { Content, ContentDocument, ContentKind } from '../models/content.model';
 import { ContentService } from './content.service';
 
-describe('ContentService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+const BASE = '/api/app/spaces/space-1/contents';
 
-  function setup(currentUser: unknown = null) {
-    vi.mocked(httpsCallableData).mockReturnValue(vi.fn().mockReturnValue(of(undefined)));
+describe('ContentService', () => {
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
+
+  function setup() {
+    events = new Subject<ChangeEvent>();
     TestBed.configureTestingModule({
-      providers: [
-        { provide: Firestore, useValue: {} },
-        { provide: Functions, useValue: {} },
-        { provide: Auth, useValue: { currentUser } },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
     });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(ContentService);
   }
 
-  it('findAll() reads the space contents collection filtered by parentSlug', async () => {
-    const service = setup();
-    const contents: Content[] = [{ id: 'c1' } as unknown as Content];
-    vi.mocked(collectionData).mockReturnValue(of(contents));
-
-    const result = await firstValueFrom(service.findAll('space-1', 'parent'));
-
-    expect(result).toEqual(contents);
-    expect(collectionData).toHaveBeenCalledWith(
-      {
-        ref: { path: 'mock-collection-ref' },
-        constraints: [
-          { type: 'orderBy', field: 'kind', direction: 'desc' },
-          { type: 'orderBy', field: 'name', direction: 'asc' },
-          { type: 'where', field: 'parentSlug', op: '==', value: 'parent' },
-        ],
-      },
-      { idField: 'id' },
-    );
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('findAll() filters root content by an empty parentSlug when none given', async () => {
+  it('findAll() lists the children of a parent slug, the root by default', async () => {
     const service = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
+    const root = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(`${BASE}?parentSlug=`).flush([{ id: 'c1' }]);
+    expect(await root).toEqual([{ id: 'c1' }]);
 
-    await firstValueFrom(service.findAll('space-1'));
-
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({ constraints: expect.arrayContaining([{ type: 'where', field: 'parentSlug', op: '==', value: '' }]) });
+    const nested = firstValueFrom(service.findAll('space-1', 'blog/posts'));
+    http.expectOne(`${BASE}?parentSlug=blog/posts`).flush([]);
+    expect(await nested).toEqual([]);
   });
 
-  it('countAll() counts the space contents collection', async () => {
+  it('findAll() refetches when a content of the space changes, ignoring other entities', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    vi.mocked(collectionCount).mockReturnValue(of(7) as never);
+    const results: Content[][] = [];
+    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}?parentSlug=`).flush([]);
 
-    const result = await firstValueFrom(service.countAll('space-1'));
+    events.next({ spaceId: 'space-1', entity: 'assets', id: 'a', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(`${BASE}?parentSlug=`);
 
-    expect(result).toBe(7);
+    events.next({ spaceId: 'space-1', entity: 'contents', id: 'c1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}?parentSlug=`).flush([{ id: 'c1' } as Content]);
+    expect(results).toEqual([[], [{ id: 'c1' }]]);
+    subscription.unsubscribe();
   });
 
-  it('findById() reads the content doc at the expected path', async () => {
+  it('countAll() reads the count, filtered by kind when given', async () => {
     const service = setup();
-    const content: Content = { id: 'c1' } as unknown as Content;
-    vi.mocked(docData).mockReturnValue(of(content));
+    const all = firstValueFrom(service.countAll('space-1'));
+    http.expectOne(`${BASE}/count`).flush({ count: 7 });
+    expect(await all).toBe(7);
 
-    const result = await firstValueFrom(service.findById('space-1', 'c1'));
-
-    expect(result).toEqual(content);
+    const documents = firstValueFrom(service.countAll('space-1', ContentKind.DOCUMENT));
+    http.expectOne(`${BASE}/count?kind=DOCUMENT`).flush({ count: 3 });
+    expect(await documents).toBe(3);
   });
 
-  it('createDocument() adds a document with a composed fullSlug and no updatedBy when the user has no profile', async () => {
+  it('findAllDocuments() lists documents only', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-doc' } as never);
-    const entity: ContentDocumentCreate = { name: 'Doc', slug: 'doc', schema: 'root' };
-
-    await firstValueFrom(service.createDocument('space-1', 'parent', entity));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({
-      kind: ContentKind.DOCUMENT,
-      name: 'Doc',
-      slug: 'doc',
-      parentSlug: 'parent',
-      fullSlug: 'parent/doc',
-      schema: 'root',
-    });
-    expect(addedEntity).not.toHaveProperty('updatedBy');
+    const result = firstValueFrom(service.findAllDocuments('space-1'));
+    http.expectOne(`${BASE}?kind=DOCUMENT`).flush([{ id: 'd1' }]);
+    expect(await result).toEqual([{ id: 'd1' }]);
   });
 
-  it('createDocument() sets updatedBy from the current user and a bare fullSlug at the root', async () => {
-    const service = setup({ email: 'a@b.com', displayName: 'Alex' });
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-doc' } as never);
-    const entity: ContentDocumentCreate = { name: 'Doc', slug: 'doc', schema: 'root' };
+  it('findAll*ByName() search by name prefix with kind and limit', async () => {
+    const service = setup();
+    const any = firstValueFrom(service.findAllByName('space-1', 'Ho'));
+    http.expectOne(`${BASE}?name=Ho&limit=20`).flush([]);
+    await any;
 
-    await firstValueFrom(service.createDocument('space-1', '', entity));
+    const documents = firstValueFrom(service.findAllDocumentsByName('space-1', 'Ho', 5));
+    http.expectOne(`${BASE}?name=Ho&kind=DOCUMENT&limit=5`).flush([]);
+    await documents;
 
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ fullSlug: 'doc', updatedBy: { name: 'Alex', email: 'a@b.com' } });
+    const folders = firstValueFrom(service.findAllFoldersByName('space-1', 'Ho'));
+    http.expectOne(`${BASE}?name=Ho&kind=FOLDER&limit=20`).flush([{ id: 'f1' }]);
+    expect(await folders).toEqual([{ id: 'f1' }]);
   });
 
-  it('createFolder() adds a folder with a composed fullSlug', async () => {
+  it('findById() and findDocumentById() read one content', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-folder' } as never);
-    const entity: ContentFolderCreate = { name: 'Folder', slug: 'folder' };
+    const content = firstValueFrom(service.findById('space-1', 'c1'));
+    http.expectOne(`${BASE}/c1`).flush({ id: 'c1' });
+    expect(await content).toEqual({ id: 'c1' });
 
-    await firstValueFrom(service.createFolder('space-1', 'parent', entity));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: ContentKind.FOLDER, name: 'Folder', slug: 'folder', fullSlug: 'parent/folder' });
+    const document = firstValueFrom(service.findDocumentById('space-1', 'd1'));
+    http.expectOne(`${BASE}/d1`).flush({ id: 'd1', data: { _id: 'x' } });
+    expect(await document).toEqual({ id: 'd1', data: { _id: 'x' } });
   });
 
-  it('update() sets the new slug info', async () => {
+  it('findByIds() lists the given ids, without a request when there are none', async () => {
     const service = setup();
-    const entity: ContentUpdate = { name: 'Renamed', slug: 'renamed' };
+    const result = firstValueFrom(service.findByIds('space-1', ['a', 'b']));
+    http.expectOne(`${BASE}?ids=a,b`).flush([{ id: 'a' }, { id: 'b' }]);
+    expect(await result).toEqual([{ id: 'a' }, { id: 'b' }]);
 
-    await firstValueFrom(service.update('space-1', 'c1', 'parent', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ name: 'Renamed', slug: 'renamed', parentSlug: 'parent', fullSlug: 'parent/renamed' });
+    expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);
   });
 
-  it('move() clears parentSlug when moved to the root sentinel "~"', async () => {
+  it('createDocument() and createFolder() post the new content and return it', async () => {
     const service = setup();
+    const document = firstValueFrom(service.createDocument('space-1', 'blog', { name: 'Home', slug: 'home', schema: 'page' }));
+    const request = http.expectOne({ method: 'POST', url: BASE });
+    expect(request.request.body).toEqual({ kind: 'DOCUMENT', parentSlug: 'blog', name: 'Home', slug: 'home', schema: 'page' });
+    request.flush({ id: 'd1' });
+    expect((await document).id).toBe('d1');
 
-    await firstValueFrom(service.move('space-1', 'c1', '~', 'doc'));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ parentSlug: '', fullSlug: 'doc' });
+    const folder = firstValueFrom(service.createFolder('space-1', '', { name: 'Blog', slug: 'blog' }));
+    const folderRequest = http.expectOne({ method: 'POST', url: BASE });
+    expect(folderRequest.request.body).toEqual({ kind: 'FOLDER', parentSlug: '', name: 'Blog', slug: 'blog' });
+    folderRequest.flush({ id: 'f1' });
+    expect((await folder).id).toBe('f1');
   });
 
-  it('move() composes fullSlug under a real parentSlug', async () => {
+  it('update() patches name, slug and parent slug', async () => {
     const service = setup();
-
-    await firstValueFrom(service.move('space-1', 'c1', 'parent', 'doc'));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ parentSlug: 'parent', fullSlug: 'parent/doc' });
+    const done = firstValueFrom(service.update('space-1', 'c1', 'blog', { name: 'Home', slug: 'home' }));
+    const request = http.expectOne({ method: 'PATCH', url: `${BASE}/c1` });
+    expect(request.request.body).toEqual({ name: 'Home', slug: 'home', parentSlug: 'blog' });
+    request.flush({});
+    await done;
   });
 
-  it('updateDocumentData() serializes the data and converts the reference sets to arrays', async () => {
+  it('move() patches the parent slug, mapping "~" to the root', async () => {
     const service = setup();
+    const toRoot = firstValueFrom(service.move('space-1', 'c1', '~', 'home'));
+    const request = http.expectOne({ method: 'PATCH', url: `${BASE}/c1` });
+    expect(request.request.body).toEqual({ parentSlug: '', slug: 'home' });
+    request.flush({});
+    await toRoot;
 
-    const data: ContentData = { _id: 'c1', _schema: 'root', key: 'value' };
-    await firstValueFrom(service.updateDocumentData('space-1', 'c1', data, [new Set(['a1']), new Set(['l1']), new Set(['r1'])]));
+    const toFolder = firstValueFrom(service.move('space-1', 'c1', 'blog', 'home'));
+    const folderRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/c1` });
+    expect(folderRequest.request.body).toEqual({ parentSlug: 'blog', slug: 'home' });
+    folderRequest.flush({});
+    await toFolder;
+  });
 
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({
-      data: JSON.stringify({ ...data, _schema: 'root' }),
+  it('updateDocumentData() puts the normalized data as an object with its references', async () => {
+    const service = setup();
+    // A legacy block keyed by `schema`: normalizeContent stores it as `_schema`.
+    const data = { _id: 'root', schema: 'page', title: 'Hi' };
+    const done = firstValueFrom(service.updateDocumentData('space-1', 'd1', data as never, [new Set(['a1']), new Set(['l1']), new Set()]));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/d1/data` });
+    expect(request.request.body).toEqual({
+      data: { _id: 'root', _schema: 'page', title: 'Hi' },
       assets: ['a1'],
       links: ['l1'],
-      references: ['r1'],
+      references: [],
     });
+    request.flush({});
+    await done;
   });
 
-  it('cloneDocument() clones name/slug with a random suffix', async () => {
+  it('cloneDocument() clones on the server and returns the copy', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'cloned-doc' } as never);
-    const entity: ContentDocument = {
-      id: 'c1',
-      kind: ContentKind.DOCUMENT,
-      name: 'Doc',
-      slug: 'doc',
-      parentSlug: 'parent',
-      fullSlug: 'parent/doc',
-      schema: 'root',
-    } as unknown as ContentDocument;
-
-    await firstValueFrom(service.cloneDocument('space-1', entity));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0] as [unknown, { name: string; slug: string; fullSlug: string }];
-    expect(addedEntity.name).toMatch(/^Doc /);
-    expect(addedEntity.slug).toMatch(/^doc-/);
-    expect(addedEntity.fullSlug).toMatch(/^parent\/doc-/);
+    const result = firstValueFrom(service.cloneDocument('space-1', { id: 'd1' } as ContentDocument));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/d1/clone` });
+    request.flush({ id: 'd2' });
+    expect((await result).id).toBe('d2');
   });
 
-  it('delete() deletes the content doc for the given element', async () => {
+  it('delete() deletes the content', async () => {
     const service = setup();
-    const element: Content = { id: 'c1' } as unknown as Content;
-
-    await firstValueFrom(service.delete('space-1', element));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
+    const done = firstValueFrom(service.delete('space-1', { id: 'c1' } as Content));
+    http.expectOne({ method: 'DELETE', url: `${BASE}/c1` }).flush(null);
+    await done;
   });
 
-  it('publish() calls the content-publish callable with spaceId/contentId', async () => {
+  it('publish() and unpublish() post to the content actions', async () => {
     const service = setup();
+    const publish = firstValueFrom(service.publish('space-1', 'd1'));
+    http.expectOne({ method: 'POST', url: `${BASE}/d1/publish` }).flush(null);
+    await publish;
 
-    await firstValueFrom(service.publish('space-1', 'c1'));
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'content-publish');
+    const unpublish = firstValueFrom(service.unpublish('space-1', 'd1'));
+    http.expectOne({ method: 'POST', url: `${BASE}/d1/unpublish` }).flush(null);
+    await unpublish;
   });
-
-  it('unpublish() calls the content-unpublish callable', async () => {
-    const service = setup();
-
-    await firstValueFrom(service.unpublish('space-1', 'c1'));
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'content-unpublish');
-  });
-
 });

@@ -1,27 +1,28 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
 import { TranslateBatchData, TranslateBatchResult, TranslateSingleData } from '@shared/models/translate.model';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
+/** Machine translation (`POST /api/app/translate`). */
 @Injectable({ providedIn: 'root' })
 export class TranslateService {
-  private readonly functions = inject(Functions);
+  private readonly http = inject(HttpClient);
 
   translate(data: TranslateSingleData): Observable<string> {
-    const translate = httpsCallableData<TranslateSingleData, string>(this.functions, 'translate');
-    return translate(data).pipe(tap(console.log), traceUntilFirst('Functions:Translate:translate'));
+    const body: TranslateSingleData = { sourceLocale: data.sourceLocale, targetLocale: data.targetLocale, content: data.content };
+    if (data.format) {
+      body.format = data.format;
+    }
+    return this.http.post<{ content: string }>('/api/app/translate', body).pipe(map(it => it.content));
   }
 
-  /**
-   * Translate many fields in one call.
-   *
-   * The same callable as {@link translate}: passing `items` selects batch mode, which groups by
-   * format and collapses the provider round-trips into one per chunk.
-   */
+  /** Translate many fields in one call: passing `items` selects batch mode on the same endpoint. */
   translateBatch(data: TranslateBatchData): Observable<TranslateBatchResult> {
-    const translateBatch = httpsCallableData<TranslateBatchData, TranslateBatchResult>(this.functions, 'translate');
-    return translateBatch(data).pipe(traceUntilFirst('Functions:Translate:translateBatch'));
+    return this.http.post<TranslateBatchResult>('/api/app/translate', {
+      sourceLocale: data.sourceLocale,
+      targetLocale: data.targetLocale,
+      items: data.items,
+    });
   }
 }

@@ -53,11 +53,11 @@
       </div>
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Created At</p>
-        <p class="mt-1 text-sm font-medium">{{ wh.createdAt?.toDate() | date: 'mediumDate' }}</p>
+        <p class="mt-1 text-sm font-medium">{{ wh.createdAt | date: 'mediumDate' }}</p>
       </div>
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Updated At</p>
-        <p class="mt-1 text-sm font-medium">{{ wh.updatedAt?.toDate() | date: 'mediumDate' }}</p>
+        <p class="mt-1 text-sm font-medium">{{ wh.updatedAt | date: 'mediumDate' }}</p>
       </div>
     </div>
 
@@ -109,8 +109,8 @@
           </ng-container>
           <ng-container llColumnDef="createdAt">
             <th llHeaderCell *llHeaderCellDef>Created At</th>
-            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-              {{ element.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
+            <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
+              {{ element.createdAt | date: 'MMM dd, HH:mm:ss' }}
             </td>
           </ng-container>
           <ng-container llColumnDef="expandedDetail">
@@ -243,7 +243,7 @@
                       name="lucideInfo"
                       hlmTooltip="The timestamp when this delivery attempt was made and the log entry was recorded." />
                   </dt>
-                  <dd>{{ element.createdAt?.toDate() | date: 'medium' }}</dd>
+                  <dd>{{ element.createdAt | date: 'medium' }}</dd>
                 </div>
                 @if (element.responseBody) {
                   <div class="sm:col-span-2 lg:col-span-3">

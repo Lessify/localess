@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { MeService } from '@shared/services/me.service';
@@ -70,11 +71,11 @@ describe('MeComponent', () => {
   describe('openUpdateEmailDialog', () => {
     it('updates the email on confirm', () => {
       const { component, open, updateEmail, success } = setup();
-      open.mockReturnValue({ closed$: of({ newEmail: 'new@example.com' }) });
+      open.mockReturnValue({ closed$: of({ newEmail: 'new@example.com', currentPassword: 'old-secret' }) });
 
       component.openUpdateEmailDialog();
 
-      expect(updateEmail).toHaveBeenCalledWith('new@example.com');
+      expect(updateEmail).toHaveBeenCalledWith('new@example.com', 'old-secret');
       expect(success).toHaveBeenCalledWith('User email has been updated.');
     });
 
@@ -90,7 +91,7 @@ describe('MeComponent', () => {
     it('notifies an error when the update fails', () => {
       const { component, open, updateEmail, error } = setup();
       updateEmail.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ closed$: of({ newEmail: 'new@example.com' }) });
+      open.mockReturnValue({ closed$: of({ newEmail: 'new@example.com', currentPassword: 'old-secret' }) });
 
       component.openUpdateEmailDialog();
 
@@ -101,11 +102,11 @@ describe('MeComponent', () => {
   describe('openUpdatePasswordDialog', () => {
     it('updates the password on confirm', () => {
       const { component, open, updatePassword, success } = setup();
-      open.mockReturnValue({ closed$: of({ newPassword: 'new-password' }) });
+      open.mockReturnValue({ closed$: of({ newPassword: 'new-password', currentPassword: 'old-secret' }) });
 
       component.openUpdatePasswordDialog();
 
-      expect(updatePassword).toHaveBeenCalledWith('new-password');
+      expect(updatePassword).toHaveBeenCalledWith('new-password', 'old-secret');
       expect(success).toHaveBeenCalledWith('User password has been updated.');
     });
 
@@ -121,11 +122,23 @@ describe('MeComponent', () => {
     it('notifies an error when the update fails', () => {
       const { component, open, updatePassword, error } = setup();
       updatePassword.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ closed$: of({ newPassword: 'new-password' }) });
+      open.mockReturnValue({ closed$: of({ newPassword: 'new-password', currentPassword: 'old-secret' }) });
 
       component.openUpdatePasswordDialog();
 
       expect(error).toHaveBeenCalledWith('User password can not be updated.');
+    });
+
+    it("shows the server's message when the current password is rejected", () => {
+      const { component, open, updatePassword, error } = setup();
+      updatePassword.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 403, error: { message: 'Current password is incorrect' } })),
+      );
+      open.mockReturnValue({ closed$: of({ newPassword: 'new-password', currentPassword: 'wrong' }) });
+
+      component.openUpdatePasswordDialog();
+
+      expect(error).toHaveBeenCalledWith('Current password is incorrect');
     });
   });
 });

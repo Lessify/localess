@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Timestamp } from '@angular/fire/firestore';
 import { provideIcons } from '@ng-icons/core';
 import { lucideRotateCw } from '@ng-icons/lucide';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
@@ -33,7 +32,7 @@ export class DashboardComponent {
   // Input
   spaceId = input.required<string>();
 
-  now = Timestamp.now();
+  now = Date.now();
   private destroyRef = inject(DestroyRef);
 
   spaceStore = inject(SpaceStore);
@@ -44,7 +43,7 @@ export class DashboardComponent {
       const selectedSpace = this.spaceStore.selectedSpace();
       if (selectedSpace) {
         const { overview } = selectedSpace;
-        if (overview === undefined || (overview && this.now.seconds - overview.updatedAt.seconds > 86400)) {
+        if (overview === undefined || (overview && this.now - Date.parse(overview.updatedAt) > 86_400_000)) {
           console.log('Recalculate Overview: Out of date or not existent.');
           this.calculateOverview();
         }

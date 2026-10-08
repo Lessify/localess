@@ -1,134 +1,115 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { WebHookEvent, WebHookLog } from '@shared/models/webhook.model';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore is mocked globally in src/test-setup.ts.
-import { addDoc, collectionData, deleteDoc, docData, Firestore, updateDoc } from '@angular/fire/firestore';
-import { firstValueFrom, of } from 'rxjs';
-
-import { WebHook, WebHookCreate, WebHookEvent, WebHookLog, WebHookUpdate } from '../models/webhook.model';
 import { WebHookService } from './webhook.service';
 
 describe('WebHookService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
+  const base = '/api/app/spaces/space-1/webhooks';
 
   function setup() {
-    TestBed.configureTestingModule({ providers: [{ provide: Firestore, useValue: {} }] });
+    events = new Subject<ChangeEvent>();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
+    });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(WebHookService);
   }
 
-  it('findAll() reads the space webhooks collection ordered by name asc', async () => {
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
+  });
+
+  it('findAll() reads the space webhooks', async () => {
     const service = setup();
-    const webhooks: WebHook[] = [{ id: 'w1', name: 'Slack', url: 'https://x', enabled: true, events: [] } as unknown as WebHook];
-    vi.mocked(collectionData).mockReturnValue(of(webhooks));
+    const result = firstValueFrom(service.findAll('space-1'));
+    http.expectOne({ method: 'GET', url: base }).flush([{ id: 'w1' }]);
+    expect(await result).toEqual([{ id: 'w1' }]);
+  });
 
-    const result = await firstValueFrom(service.findAll('space-1'));
+  it('findById() reads one webhook', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findById('space-1', 'w1'));
+    http.expectOne({ method: 'GET', url: `${base}/w1` }).flush({ id: 'w1' });
+    expect(await result).toEqual({ id: 'w1' });
+  });
 
-    expect(result).toEqual(webhooks);
-    expect(collectionData).toHaveBeenCalledWith(
-      { ref: { path: 'mock-collection-ref' }, constraints: [{ type: 'orderBy', field: 'name', direction: 'asc' }] },
-      { idField: 'id' },
+  it('create() posts the webhook, leaving out empty headers and secret, and returns its id', async () => {
+    const service = setup();
+    const result = firstValueFrom(
+      service.create('space-1', { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED], secret: '' }),
     );
+    const request = http.expectOne({ method: 'POST', url: base });
+    expect(request.request.body).toEqual({ name: 'Hook', url: 'https://example.com', events: ['content.published'] });
+    request.flush({ id: 'w1', name: 'Hook' });
+    expect(await result).toBe('w1');
   });
 
-  it('findById() reads the webhook doc at the expected path', async () => {
+  it('update() puts the webhook with headers and secret when given', async () => {
     const service = setup();
-    const webhook: WebHook = { id: 'w1', name: 'Slack', url: 'https://x', enabled: true, events: [] } as unknown as WebHook;
-    vi.mocked(docData).mockReturnValue(of(webhook));
-
-    const result = await firstValueFrom(service.findById('space-1', 'w1'));
-
-    expect(result).toEqual(webhook);
-  });
-
-  it('create() always sets enabled true and omits headers/secret when not provided, returning the new id', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-webhook' } as never);
-    const entity: WebHookCreate = { name: 'Slack', url: 'https://x', events: [WebHookEvent.CONTENT_PUBLISHED] };
-
-    const result = await firstValueFrom(service.create('space-1', entity));
-
-    expect(result).toBe('new-webhook');
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ name: 'Slack', url: 'https://x', enabled: true, events: entity.events });
-    expect(addedEntity).not.toHaveProperty('headers');
-    expect(addedEntity).not.toHaveProperty('secret');
-  });
-
-  it('create() includes headers/secret when provided', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-webhook' } as never);
-    const entity: WebHookCreate = {
-      name: 'Slack',
-      url: 'https://x',
-      events: [],
-      headers: { 'X-Test': '1' },
+    const entity = {
+      name: 'Hook',
+      url: 'https://example.com',
+      events: [WebHookEvent.CONTENT_CHANGED],
+      headers: { 'X-Key': 'v' },
       secret: 'shh',
     };
-
-    await firstValueFrom(service.create('space-1', entity));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ headers: { 'X-Test': '1' }, secret: 'shh' });
+    const done = firstValueFrom(service.update('space-1', 'w1', entity));
+    const request = http.expectOne({ method: 'PUT', url: `${base}/w1` });
+    expect(request.request.body).toEqual({ ...entity, events: ['content.changed'] });
+    request.flush({});
+    await done;
   });
 
-  it('update() omits headers/secret from the update when not provided', async () => {
+  it('updateStatus() patches enabled', async () => {
     const service = setup();
-    const entity: WebHookUpdate = { name: 'Renamed', url: 'https://y', events: [] };
-
-    await firstValueFrom(service.update('space-1', 'w1', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ name: 'Renamed', url: 'https://y' });
-    expect(updatedFields).not.toHaveProperty('headers');
-    expect(updatedFields).not.toHaveProperty('secret');
+    const done = firstValueFrom(service.updateStatus('space-1', 'w1', false));
+    const request = http.expectOne({ method: 'PATCH', url: `${base}/w1/status` });
+    expect(request.request.body).toEqual({ enabled: false });
+    request.flush({});
+    await done;
   });
 
-  it('updateStatus() updates only the enabled flag', async () => {
+  it('delete() deletes the webhook', async () => {
     const service = setup();
-
-    await firstValueFrom(service.updateStatus('space-1', 'w1', false));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ enabled: false });
+    const done = firstValueFrom(service.delete('space-1', 'w1'));
+    http.expectOne({ method: 'DELETE', url: `${base}/w1` }).flush(null);
+    await done;
   });
 
-  it('delete() deletes the webhook doc at the expected path', async () => {
+  it('findLogs() reads the logs, limited when max is given', async () => {
     const service = setup();
+    const limited = firstValueFrom(service.findLogs('space-1', 'w1', 20));
+    http.expectOne({ method: 'GET', url: `${base}/w1/logs?limit=20` }).flush([{ id: '1' }]);
+    expect(await limited).toEqual([{ id: '1' }]);
 
-    await firstValueFrom(service.delete('space-1', 'w1'));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
+    const all = firstValueFrom(service.findLogs('space-1', 'w1'));
+    http.expectOne({ method: 'GET', url: `${base}/w1/logs` }).flush([]);
+    expect(await all).toEqual([]);
   });
 
-  it('findLogs() orders by createdAt desc and omits the limit constraint when max is not given', async () => {
+  it('findLogs() refetches on new logs of that webhook only', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    vi.mocked(collectionData).mockReturnValue(of([] as WebHookLog[]));
+    const results: WebHookLog[][] = [];
+    const subscription = service.findLogs('space-1', 'w1').subscribe(it => results.push(it));
+    http.expectOne(`${base}/w1/logs`).flush([]);
 
-    await firstValueFrom(service.findLogs('space-1', 'w1'));
+    events.next({ spaceId: 'space-1', entity: 'webhook_logs', id: 'w2', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(`${base}/w1/logs`);
 
-    expect(collectionData).toHaveBeenCalledWith(
-      { ref: { path: 'mock-collection-ref' }, constraints: [{ type: 'orderBy', field: 'createdAt', direction: 'desc' }] },
-      { idField: 'id' },
-    );
-  });
-
-  it('findLogs() adds a limit constraint when max is given', async () => {
-    const service = setup();
-    vi.mocked(collectionData).mockReturnValue(of([] as WebHookLog[]));
-
-    await firstValueFrom(service.findLogs('space-1', 'w1', 10));
-
-    expect(collectionData).toHaveBeenCalledWith(
-      {
-        ref: { path: 'mock-collection-ref' },
-        constraints: [
-          { type: 'orderBy', field: 'createdAt', direction: 'desc' },
-          { type: 'limit', n: 10 },
-        ],
-      },
-      { idField: 'id' },
-    );
+    events.next({ spaceId: 'space-1', entity: 'webhook_logs', id: 'w1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${base}/w1/logs`).flush([{ id: '1' } as WebHookLog]);
+    expect(results).toEqual([[], [{ id: '1' }]]);
+    subscription.unsubscribe();
   });
 });

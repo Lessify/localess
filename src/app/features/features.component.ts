@@ -12,7 +12,6 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Auth, signOut } from '@angular/fire/auth';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { IconType, provideIcons } from '@ng-icons/core';
@@ -58,6 +57,7 @@ import { Space } from '@shared/models/space.model';
 import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { Version } from '@shared/models/version.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { AuthApiService } from '@shared/services/auth-api.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { VersionService } from '@shared/services/version.service';
 import { AppSettingsStore } from '@shared/stores/app-settings.store';
@@ -187,7 +187,7 @@ interface SideMenuItem {
 export class FeaturesComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly reposService = inject(ReposService);
-  private auth = inject(Auth);
+  private readonly authApi = inject(AuthApiService);
   private route = inject(ActivatedRoute);
   private readonly versionService = inject(VersionService);
   private readonly notificationService = inject(NotificationService);
@@ -337,8 +337,6 @@ export class FeaturesComponent implements OnInit {
         },
       });
     effect(async () => {
-      console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
-      console.log('User Authenticated Effect :', this.userStore.isAuthenticated());
       if (!this.userStore.isAuthenticated()) {
         await this.router.navigate(['auth', 'login']);
       }
@@ -396,8 +394,9 @@ export class FeaturesComponent implements OnInit {
     this.router.navigate(['features', 'spaces', space.id, 'dashboard']);
   }
 
-  async onLogoutClick(): Promise<void> {
-    return await signOut(this.auth);
+  onLogoutClick(): void {
+    // Signed out locally even if the request fails: the cookie is HttpOnly, the session expires anyway.
+    this.authApi.logout().subscribe({ complete: () => this.userStore.signedOut(), error: () => this.userStore.signedOut() });
   }
 
   /** Release notes ship with the build, so the dialog needs no context of its own. */

@@ -1,10 +1,7 @@
-// EditDocumentSchemaComponent transitively imports TranslateService (and thus @angular/fire/functions),
-// which is mocked globally in src/test-setup.ts (registered via the test builder's setupFiles option)
-// — see that file for why this isn't a local vi.mock here.
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Firestore } from '@angular/fire/firestore';
-import { Functions } from '@angular/fire/functions';
 import { Router } from '@angular/router';
 import { ContentData } from '@shared/models/content.model';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
@@ -21,13 +18,13 @@ function schema(fields: SchemaComponent['fields'], id = 'root-1'): SchemaCompone
 function setup(config: { schemas?: Schema[]; data?: ContentData; locale?: Locale } = {}) {
   TestBed.configureTestingModule({
     providers: [
-      { provide: Functions, useValue: {} },
+      // TranslateService and LocaleService talk HTTP; nothing here sends a request.
+      provideHttpClient(),
+      provideHttpClientTesting(),
       { provide: Router, useValue: {} },
       // On a non-default locale the translate menu renders, and its canUserPerform pipe reads
-      // UserStore, which would otherwise pull in Firebase Auth.
+      // UserStore, which would otherwise read the session.
       { provide: UserStore, useValue: { role: signal('admin'), permissions: signal([]) } },
-      // The same menu asks LocaleService which locales the provider supports, and that injects Firestore.
-      { provide: Firestore, useValue: {} },
     ],
   });
   const fixture = TestBed.createComponent(EditDocumentSchemaComponent);
@@ -205,7 +202,7 @@ describe('EditDocumentSchemaComponent', () => {
     });
   });
 
-/**
+  /**
    * The write half of the locale storage rule: what the author types has to land under the right
    * key. The default locale writes the bare field name, every other locale writes
    * `{field}_i18n_{locale}` and must leave the default value alone.
@@ -248,10 +245,7 @@ describe('EditDocumentSchemaComponent', () => {
     // stays visible; the write-back is what keeps another locale from overwriting it. Called directly:
     // a REFERENCE value makes the picker load the document from Firestore, which isn't under test here.
     function writeBack(component: EditDocumentSchemaComponent, root: SchemaComponent, value: Record<string, unknown>) {
-      (component as unknown as { writeFormValue(root: SchemaComponent, value: Record<string, unknown>): void }).writeFormValue(
-        root,
-        value,
-      );
+      (component as unknown as { writeFormValue(root: SchemaComponent, value: Record<string, unknown>): void }).writeFormValue(root, value);
     }
 
     it('never writes a non-translatable REFERENCE back from another locale', () => {
@@ -490,10 +484,7 @@ describe('EditDocumentSchemaComponent', () => {
     // what keep the view in sync.
     function setupRendered(config: { schemas?: Schema[]; data?: ContentData } = {}) {
       TestBed.configureTestingModule({
-        providers: [
-          { provide: Functions, useValue: {} },
-          { provide: Router, useValue: {} },
-        ],
+        providers: [provideHttpClient(), provideHttpClientTesting(), { provide: Router, useValue: {} }],
       });
       TestBed.overrideComponent(EditDocumentSchemaComponent, {
         set: { template: `<div class="loading-marker">{{ isFormLoading() }}</div><div class="valid-marker">{{ form.valid }}</div>` },

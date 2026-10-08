@@ -1,44 +1,63 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
-
-// @angular/fire/auth is mocked globally in src/test-setup.ts.
-import { Auth, updateEmail, updatePassword, updateProfile } from '@angular/fire/auth';
+import { UserStore } from '@shared/stores/user.store';
 import { firstValueFrom } from 'rxjs';
+import { vi } from 'vitest';
 
 import { MeService } from './me.service';
 
 describe('MeService', () => {
+  let http: HttpTestingController;
+  let load: ReturnType<typeof vi.fn>;
+
   function setup() {
-    const reload = vi.fn().mockResolvedValue(undefined);
-    const currentUser = { uid: 'user-1', reload };
-    TestBed.configureTestingModule({ providers: [{ provide: Auth, useValue: { currentUser } }] });
-    return { service: TestBed.inject(MeService), currentUser, reload };
+    load = vi.fn();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: UserStore, useValue: { load } }],
+    });
+    http = TestBed.inject(HttpTestingController);
+    return TestBed.inject(MeService);
   }
 
-  it('updateProfile calls the auth updateProfile function with the current user and reloads the user', async () => {
-    const { service, currentUser, reload } = setup();
-
-    await firstValueFrom(service.updateProfile({ displayName: 'New Name' }));
-
-    expect(updateProfile).toHaveBeenCalledWith(currentUser, { displayName: 'New Name' });
-    expect(reload).toHaveBeenCalled();
+  afterEach(() => {
+    http.verify();
   });
 
-  it('updateEmail calls the auth updateEmail function with the current user and reloads the user', async () => {
-    const { service, currentUser, reload } = setup();
-
-    await firstValueFrom(service.updateEmail('new@example.com'));
-
-    expect(updateEmail).toHaveBeenCalledWith(currentUser, 'new@example.com');
-    expect(reload).toHaveBeenCalled();
+  it('updateProfile() patches display name and photo, then reloads the user', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateProfile({ displayName: 'Alex', photoURL: 'https://example.com/a.png' }));
+    const request = http.expectOne({ method: 'PATCH', url: '/api/app/me' });
+    expect(request.request.body).toEqual({ displayName: 'Alex', photoURL: 'https://example.com/a.png' });
+    request.flush({ id: 'u1' });
+    await done;
+    expect(load).toHaveBeenCalled();
   });
 
-  it('updatePassword calls the auth updatePassword function with the current user, without reloading', async () => {
-    const { service, currentUser, reload } = setup();
+  it('updateEmail() puts the new email with the current password, then reloads the user', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateEmail('new@example.com', 'old-secret'));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/me/email' });
+    expect(request.request.body).toEqual({ email: 'new@example.com', currentPassword: 'old-secret' });
+    request.flush({ id: 'u1' });
+    await done;
+    expect(load).toHaveBeenCalled();
+  });
 
-    await firstValueFrom(service.updatePassword('new-password'));
+  it('updatePassword() puts current and new password', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updatePassword('new-secret', 'old-secret'));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/me/password' });
+    expect(request.request.body).toEqual({ currentPassword: 'old-secret', newPassword: 'new-secret' });
+    request.flush(null, { status: 204, statusText: 'No Content' });
+    await done;
+  });
 
-    expect(updatePassword).toHaveBeenCalledWith(currentUser, 'new-password');
-    expect(reload).not.toHaveBeenCalled();
+  it('does not reload the user when the server rejects the change', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateEmail('new@example.com', 'wrong'));
+    http.expectOne('/api/app/me/email').flush({ message: 'Current password is incorrect' }, { status: 401, statusText: 'Unauthorized' });
+    await expect(done).rejects.toMatchObject({ status: 401 });
+    expect(load).not.toHaveBeenCalled();
   });
 });

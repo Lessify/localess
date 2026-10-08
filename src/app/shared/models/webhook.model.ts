@@ -1,5 +1,3 @@
-import { Timestamp } from '@angular/fire/firestore';
-
 export interface WebHook {
   id: string;
   name: string;
@@ -8,8 +6,8 @@ export interface WebHook {
   events: WebHookEvent[];
   headers?: Record<string, string>;
   secret?: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export enum WebHookEvent {
@@ -48,7 +46,7 @@ export interface WebHookLogBase {
   data: WebHookPayloadData;
   deliveryId: string;
   duration: number;
-  createdAt: Timestamp;
+  createdAt: string;
 }
 
 export interface WebHookLogSuccess extends WebHookLogBase {
@@ -88,6 +86,3 @@ export interface WebHookUpdate {
   headers?: Record<string, string>;
   secret?: string;
 }
-
-// Firestore
-export type WebHookFS = Omit<WebHook, 'id'>;

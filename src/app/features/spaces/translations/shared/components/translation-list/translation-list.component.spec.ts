@@ -74,14 +74,7 @@ describe('TranslationListComponent', () => {
       const translated = translation({ id: 'a', locales: { en: 'Hi', de: 'Hallo' } });
       const untranslated = translation({ id: 'b', locales: {} });
 
-      const result = component.filterTranslations(
-        [translated, untranslated],
-        'en',
-        '',
-        [],
-        [TranslationStatus.UNTRANSLATED],
-        [],
-      );
+      const result = component.filterTranslations([translated, untranslated], 'en', '', [], [TranslationStatus.UNTRANSLATED], []);
 
       expect(result).toEqual([untranslated]);
     });
@@ -105,7 +98,14 @@ describe('TranslationListComponent', () => {
       const tree = component.buildTranslationTree(items);
 
       expect(tree).toEqual([
-        { name: 'home', key: 'home', children: [{ name: 'title', key: 'home.title' }, { name: 'subtitle', key: 'home.subtitle' }] },
+        {
+          name: 'home',
+          key: 'home',
+          children: [
+            { name: 'title', key: 'home.title' },
+            { name: 'subtitle', key: 'home.subtitle' },
+          ],
+        },
         { name: 'footer', key: 'footer' },
       ]);
     });
@@ -119,7 +119,9 @@ describe('TranslationListComponent', () => {
       fixture.detectChanges();
 
       expect(component.translationsFiltered().map(it => it.id)).toEqual(['home.title']);
-      expect(component.translationTreeFiltered()).toEqual([{ name: 'home', key: 'home', children: [{ name: 'title', key: 'home.title' }] }]);
+      expect(component.translationTreeFiltered()).toEqual([
+        { name: 'home', key: 'home', children: [{ name: 'title', key: 'home.title' }] },
+      ]);
     });
   });
 

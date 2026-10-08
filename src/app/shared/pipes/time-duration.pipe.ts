@@ -39,3 +39,16 @@ export class TimeDurationPipe implements PipeTransform {
     return `${hours}h ${minutes}m ${secs}s`;
   }
 }
+
+/** `{{ start | timeBetween: end }}` — the duration between two ISO timestamps, formatted like `timeDuration`. */
+@Pipe({
+  name: 'timeBetween',
+})
+export class TimeBetweenPipe implements PipeTransform {
+  private readonly duration = new TimeDurationPipe();
+
+  transform(start?: string | null, end?: string | null): string {
+    if (!start || !end) return this.duration.transform(undefined);
+    return this.duration.transform(Math.max(0, (Date.parse(end) - Date.parse(start)) / 1000));
+  }
+}

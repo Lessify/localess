@@ -16,7 +16,7 @@
           @if (content.kind === 'DOCUMENT') {
             <div hlmItem variant="outline" role="listitem">
               <div hlmItemMedia>
-                <ll-document-status [updatedAt]="content.updatedAt.seconds" [publishedAt]="content.publishedAt?.seconds" />
+                <ll-document-status [updatedAt]="content.updatedAt" [publishedAt]="content.publishedAt" />
               </div>
               <div hlmItemContent class="min-w-0 overflow-hidden">
                 <div hlmItemTitle class="line-clamp-1 w-full truncate">

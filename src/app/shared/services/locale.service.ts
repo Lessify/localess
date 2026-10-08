@@ -1,39 +1,27 @@
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { arrayRemove, arrayUnion, doc, Firestore, serverTimestamp, UpdateData, updateDoc } from '@angular/fire/firestore';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { from, Observable, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { Locale, toProviderLocale } from '../models/locale.model';
-import { Space } from '../models/space.model';
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
-  private firestore = inject(Firestore);
+  private readonly http = inject(HttpClient);
+
+  private base(spaceId: string): string {
+    return `/api/app/spaces/${spaceId}`;
+  }
 
   markAsFallback(spaceId: string, entity: Locale): Observable<void> {
-    const update: UpdateData<Space> = {
-      localeFallback: entity,
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update)).pipe(
-      traceUntilFirst('Firestore:Spaces:Locales:markAsFallback'),
-    );
+    return this.http.put<void>(`${this.base(spaceId)}/locale-fallback`, { id: entity.id });
   }
 
   create(spaceId: string, entity: Locale): Observable<void> {
-    const update: UpdateData<Space> = {
-      locales: arrayUnion(entity),
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update)).pipe(traceUntilFirst('Firestore:Spaces:Locales:create'));
+    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id, name: entity.name });
   }
 
   delete(spaceId: string, entity: Locale): Observable<void> {
-    const update: UpdateData<Space> = {
-      locales: arrayRemove(entity),
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}`), update)).pipe(traceUntilFirst('Firestore:Spaces:Locales:delete'));
+    return this.http.delete<void>(`${this.base(spaceId)}/locales/${entity.id}`);
   }
 
   findAllLocales(): Observable<Locale[]> {

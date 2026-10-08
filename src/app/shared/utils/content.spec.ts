@@ -114,9 +114,7 @@ describe('content utils', () => {
         _schema: 'root-1',
         children: [{ _id: '2', _schema: 'child-1', label: 'A' }],
       };
-      expect(extractContent(content, schemas, 'default')['children']).toEqual([
-        { _id: '2', _schema: 'child-1', label: 'A' },
-      ]);
+      expect(extractContent(content, schemas, 'default')['children']).toEqual([{ _id: '2', _schema: 'child-1', label: 'A' }]);
     });
   });
 

@@ -1,5 +1,3 @@
-import { Timestamp } from '@angular/fire/firestore';
-
 export function sortSchema(a: Schema, b: Schema): number {
   if (a.displayName && b.displayName) {
     return a.displayName.localeCompare(b.displayName);
@@ -39,8 +37,8 @@ export interface SchemaBase {
   description?: string;
   labels?: string[];
 
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SchemaComponent extends SchemaBase {
@@ -296,12 +294,6 @@ export type SchemaCreate = Omit<Schema, 'createdAt' | 'updatedAt'>;
 export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
 
 export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
-
-// Firestore
-export type SchemaCreateFS = Omit<Schema, 'id'>;
-
-export type SchemaComponentUpdateIdFS = Omit<SchemaComponent, 'id'>;
-export type SchemaEnumUpdateIdFS = Omit<SchemaEnum, 'id'>;
 
 // Utils
 export function isSchemaArray(schema: SchemaField): boolean {

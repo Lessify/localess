@@ -40,11 +40,11 @@
       }
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Created At</p>
-        <p class="mt-1 text-sm font-medium">{{ t.createdAt?.toDate() | date: 'medium' }}</p>
+        <p class="mt-1 text-sm font-medium">{{ t.createdAt | date: 'medium' }}</p>
       </div>
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Updated At</p>
-        <p class="mt-1 text-sm font-medium">{{ t.updatedAt?.toDate() | date: 'medium' }}</p>
+        <p class="mt-1 text-sm font-medium">{{ t.updatedAt | date: 'medium' }}</p>
       </div>
       @if (t.message) {
         <div class="rounded-lg border p-3 sm:col-span-2 md:col-span-4">
@@ -102,8 +102,8 @@
         </ng-container>
         <ng-container llColumnDef="createdAt">
           <th llHeaderCell *llHeaderCellDef>Created At</th>
-          <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt?.toDate() | date: 'medium'">
-            {{ element.createdAt?.toDate() | date: 'MMM dd, HH:mm:ss' }}
+          <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
+            {{ element.createdAt | date: 'MMM dd, HH:mm:ss' }}
           </td>
         </ng-container>
         <ng-container llColumnDef="expandedDetail">

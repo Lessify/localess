@@ -99,7 +99,7 @@ describe('UserInviteDialogComponent', () => {
 
     expect(component.form.value.permissions).toEqual(['SPACE_MANAGEMENT']);
   });
-it('closes with the form value when saved', () => {
+  it('closes with the form value when saved', () => {
     const { component, close } = setup();
     component.form.patchValue({ email: 'new@example.com', password: 'secret123' });
 

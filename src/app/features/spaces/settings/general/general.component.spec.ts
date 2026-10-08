@@ -10,7 +10,13 @@ import { vi } from 'vitest';
 import { GeneralComponent } from './general.component';
 
 function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [], localeFallback: { id: 'en', name: 'English' } as Space['localeFallback'], ...overrides } as Space;
+  return {
+    id: 'space-1',
+    name: 'Space 1',
+    locales: [],
+    localeFallback: { id: 'en', name: 'English' } as Space['localeFallback'],
+    ...overrides,
+  } as Space;
 }
 
 describe('GeneralComponent', () => {

@@ -1,269 +1,134 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import {
-  addDoc,
-  collection,
-  collectionCount,
-  collectionData,
-  deleteDoc,
-  deleteField,
-  doc,
-  docData,
-  documentId,
-  DocumentReference,
-  Firestore,
-  limit,
-  orderBy,
-  query,
-  QueryConstraint,
-  serverTimestamp,
-  UpdateData,
-  updateDoc,
-  where,
-} from '@angular/fire/firestore';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { ref, Storage, uploadBytes } from '@angular/fire/storage';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
 import {
   Asset,
   AssetFile,
-  AssetFileCreateFS,
   AssetFileImport,
   AssetFileUpdateForm,
   AssetFolder,
   AssetFolderCreate,
-  AssetFolderCreateFS,
   AssetFolderUpdateForm,
   AssetKind,
 } from '@shared/models/asset.model';
 import { AssetFileType } from '@shared/models/schema.model';
-import { from, Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
+/** MIME type prefixes the server filters files by (folders are always kept). */
+const MIME_PREFIX: Partial<Record<AssetFileType, string>> = {
+  [AssetFileType.AUDIO]: 'audio/',
+  [AssetFileType.TEXT]: 'text/',
+  [AssetFileType.IMAGE]: 'image/',
+  [AssetFileType.VIDEO]: 'video/',
+  [AssetFileType.APPLICATION]: 'application/',
+};
+
+/** Asset library of a space (`/api/app/spaces/:spaceId/assets`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class AssetService {
-  private readonly httpClient = inject(HttpClient);
-  private readonly firestore = inject(Firestore);
-  private readonly storage = inject(Storage);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
 
+  private base(spaceId: string): string {
+    return `/api/app/spaces/${spaceId}/assets`;
+  }
+
+  private list<T extends Asset>(spaceId: string, params: HttpParams): Observable<T[]> {
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.http.get<T[]>(this.base(spaceId), { params }));
+  }
+
+  private byName(name: string, max: number, kind?: AssetKind): HttpParams {
+    let params = new HttpParams().set('name', name);
+    if (kind) params = params.set('kind', kind);
+    return params.set('limit', max);
+  }
+
+  /** Children of `parentPath` (root when empty), folders first then by name; files narrowed by `fileType`. */
   findAll(spaceId: string, parentPath?: string, fileType?: AssetFileType): Observable<Asset[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')];
-    if (parentPath) {
-      queryConstrains.push(where('parentPath', '==', parentPath));
-    } else {
-      queryConstrains.push(where('parentPath', '==', ''));
-    }
-    let filterFileType: string | undefined = undefined;
-    if (fileType || fileType !== AssetFileType.ANY) {
-      switch (fileType) {
-        case AssetFileType.AUDIO: {
-          filterFileType = 'audio/';
-          break;
-        }
-        case AssetFileType.TEXT: {
-          filterFileType = 'text/';
-          break;
-        }
-        case AssetFileType.IMAGE: {
-          filterFileType = 'image/';
-          break;
-        }
-        case AssetFileType.VIDEO: {
-          filterFileType = 'video/';
-          break;
-        }
-        case AssetFileType.APPLICATION: {
-          filterFileType = 'application/';
-          break;
-        }
-      }
-    }
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Assets:findAll'),
-      map(it => it as Asset[]),
-      map(assets => {
-        if (filterFileType) {
-          return assets.filter(it => {
-            if (it.kind === AssetKind.FILE) {
-              return it.type.startsWith(filterFileType!);
-            }
-            return true;
-          });
-        } else {
-          return assets;
-        }
-      }),
-    );
+    let params = new HttpParams().set('parentPath', parentPath ?? '');
+    const prefix = fileType && MIME_PREFIX[fileType];
+    if (prefix) params = params.set('fileType', prefix);
+    return this.list(spaceId, params);
   }
 
   countAll(spaceId: string, kind?: AssetKind): Observable<number> {
-    const queryConstrains: QueryConstraint[] = [];
-    if (kind) {
-      queryConstrains.push(where('kind', '==', kind));
-    }
-    return collectionCount(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains)).pipe(
-      traceUntilFirst('Firestore:Assets:countAll'),
-    );
+    const params = kind ? new HttpParams().set('kind', kind) : undefined;
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
+      this.http.get<{ count: number }>(`${this.base(spaceId)}/count`, { params }),
+    ).pipe(map(it => it.count));
   }
 
   findAllByName(spaceId: string, name: string, max = 20): Observable<Asset[]> {
-    const queryConstrains: QueryConstraint[] = [where('name', '>=', name), where('name', '<=', `${name}~`), limit(max)];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Assets:findAllByName'),
-      map(it => it as Asset[]),
-    );
+    return this.list(spaceId, this.byName(name, max));
   }
 
   findById(spaceId: string, id: string): Observable<Asset> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Assets:findById'),
-      map(it => it as Asset),
-    );
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'], id }, () => this.http.get<Asset>(`${this.base(spaceId)}/${id}`));
   }
 
   findByIds(spaceId: string, ids: string[]): Observable<Asset[]> {
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), where(documentId(), 'in', ids)), {
-      idField: 'id',
-    }).pipe(
-      traceUntilFirst('Firestore:Assets:findByIds'),
-      map(it => it as Asset[]),
-    );
+    if (ids.length === 0) return of([]);
+    return this.list(spaceId, new HttpParams().set('ids', ids.join(',')));
   }
 
   findAllFilesByName(spaceId: string, name: string, max = 20): Observable<AssetFile[]> {
-    const queryConstrains: QueryConstraint[] = [
-      where('kind', '==', AssetKind.FILE),
-      where('name', '>=', name),
-      where('name', '<=', `${name}~`),
-      limit(max),
-    ];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Assets:findAllFilesByName'),
-      map(it => it as AssetFile[]),
-    );
+    return this.list(spaceId, this.byName(name, max, AssetKind.FILE));
   }
 
   findAllFoldersByName(spaceId: string, name: string, max = 20): Observable<AssetFolder[]> {
-    const queryConstrains: QueryConstraint[] = [
-      where('kind', '==', AssetKind.FOLDER),
-      where('name', '>=', name),
-      where('name', '<=', `${name}~`),
-      limit(max),
-    ];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/assets`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Assets:findAllFoldersByName'),
-      map(it => it as AssetFolder[]),
-    );
+    return this.list(spaceId, this.byName(name, max, AssetKind.FOLDER));
   }
 
-  importFile(spaceId: string, parentPath: string, entity: AssetFileImport): Observable<DocumentReference> {
-    // 1. Download file
-    // 2. Add Entity
-    // 3. Upload File
-    return this.httpClient.get(entity.url, { responseType: 'blob' }).pipe(
-      switchMap(fileBlob => {
-        const addEntity: AssetFileCreateFS = {
-          kind: AssetKind.FILE,
-          inProgress: true,
-          name: entity.name,
-          extension: entity.extension,
-          type: fileBlob.type,
-          size: fileBlob.size,
-          parentPath: parentPath,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-        if (entity.alt) {
-          addEntity.alt = entity.alt;
-        }
-        if (entity.source) {
-          addEntity.source = entity.source;
-        }
-        return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity)).pipe(
-          switchMap(it =>
-            from(uploadBytes(ref(this.storage, `spaces/${spaceId}/assets/${it.id}/original`), fileBlob)).pipe(
-              //tap(console.log),
-              map(() => it),
-            ),
-          ),
-          traceUntilFirst('Firestore:Assets:import'),
-        );
+  /** Downloads `entity.url` in the browser and uploads it as a new file. */
+  importFile(spaceId: string, parentPath: string, entity: AssetFileImport): Observable<AssetFile> {
+    return this.http.get(entity.url, { responseType: 'blob' }).pipe(
+      switchMap(blob => {
+        const form = new FormData();
+        form.append('parentPath', parentPath);
+        form.append('name', entity.name);
+        form.append('extension', entity.extension);
+        if (entity.alt) form.append('alt', entity.alt);
+        if (entity.source) form.append('source', entity.source);
+        // A File (not a Blob plus filename): some FormData implementations drop the filename argument.
+        form.append('file', new File([blob], `${entity.name}${entity.extension}`, { type: blob.type }));
+        return this.upload(spaceId, form);
       }),
     );
   }
 
-  createFile(spaceId: string, parentPath: string, entity: File): Observable<DocumentReference> {
-    const extIdx = entity.name.lastIndexOf('.');
-    const addEntity: AssetFileCreateFS = {
-      kind: AssetKind.FILE,
-      inProgress: true,
-      name: extIdx > 0 ? entity.name.substring(0, extIdx) : entity.name,
-      extension: extIdx > 0 ? entity.name.substring(extIdx) : '',
-      type: entity.type,
-      size: entity.size,
-      parentPath: parentPath,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity)).pipe(
-      switchMap(it =>
-        from(uploadBytes(ref(this.storage, `spaces/${spaceId}/assets/${it.id}/original`), entity)).pipe(
-          //tap(console.log),
-          map(() => it),
-        ),
-      ),
-      traceUntilFirst('Firestore:Assets:create'),
-    );
+  /** Name and extension are taken from the file name server-side. */
+  createFile(spaceId: string, parentPath: string, entity: File): Observable<AssetFile> {
+    const form = new FormData();
+    // Fields must precede the file part.
+    form.append('parentPath', parentPath);
+    form.append('file', entity, entity.name);
+    return this.upload(spaceId, form);
   }
 
-  createFolder(spaceId: string, parentPath: string, entity: AssetFolderCreate): Observable<DocumentReference> {
-    const addEntity: AssetFolderCreateFS = {
-      kind: AssetKind.FOLDER,
-      name: entity.name,
-      parentPath: parentPath,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+  private upload(spaceId: string, form: FormData): Observable<AssetFile> {
+    return this.http.post<AssetFile>(`${this.base(spaceId)}/files`, form);
+  }
 
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/assets`), addEntity)).pipe(traceUntilFirst('Firestore:Assets:create'));
+  createFolder(spaceId: string, parentPath: string, entity: AssetFolderCreate): Observable<AssetFolder> {
+    return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentPath, name: entity.name });
   }
 
   updateFolder(spaceId: string, id: string, entity: AssetFolderUpdateForm): Observable<void> {
-    const update: UpdateData<AssetFolder> = {
-      name: entity.name,
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Assets:updateFolder'),
-    );
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name });
   }
 
   updateFile(spaceId: string, id: string, entity: AssetFileUpdateForm): Observable<void> {
-    const update: UpdateData<AssetFile> = {
-      name: entity.name,
-      alt: entity.alt ? entity.alt : deleteField(),
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Assets:updateFile'),
-    );
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, alt: entity.alt || '' });
   }
 
+  /** `parentPath` '~' is the root. */
   move(spaceId: string, id: string, parentPath: string): Observable<void> {
-    if (parentPath === '~') {
-      parentPath = '';
-    }
-    const update: UpdateData<Asset> = {
-      parentPath: parentPath,
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`), update)).pipe(traceUntilFirst('Firestore:Assets:move'));
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/parent`, { parentPath: parentPath === '~' ? '' : parentPath });
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/assets/${id}`))).pipe(traceUntilFirst('Firestore:Assets:delete'));
+    return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }
 }

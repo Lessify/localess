@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Auth, sendPasswordResetEmail } from '@angular/fire/auth';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
+import { AppConfigService } from '@core/api/app-config.service';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AuthApiService } from '@shared/services/auth-api.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
@@ -15,20 +16,25 @@ import { HlmInputImports } from '@spartan-ng/helm/input';
   imports: [ReactiveFormsModule, RouterModule, HlmButtonImports, HlmFieldImports, HlmInputImports],
 })
 export class ResetComponent {
-  private readonly auth = inject(Auth);
-  private readonly router = inject(Router);
+  private readonly authApi = inject(AuthApiService);
   private readonly fb = inject(FormBuilder);
+  private readonly appConfig = inject(AppConfigService);
   readonly fe = inject(FormErrorHandlerService);
-
-  redirect = ['auth', 'login'];
+  /** Without SMTP the server can't email links; an administrator creates one instead. */
+  readonly byEmail = computed(() => this.appConfig.config().auth.passwordResetByEmail);
+  readonly sent = signal(false);
 
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.minLength(3), Validators.email]),
   });
 
-  async passwordReset(): Promise<void> {
-    await sendPasswordResetEmail(this.auth, this.form.value.email);
-    this.form.reset();
-    await this.router.navigate(this.redirect);
+  passwordReset(): void {
+    this.authApi.requestPasswordReset(this.form.value.email).subscribe({
+      next: () => {
+        this.form.reset();
+        this.sent.set(true);
+      },
+      error: () => this.sent.set(true),
+    });
   }
 }

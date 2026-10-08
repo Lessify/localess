@@ -1,4 +1,3 @@
-import { Timestamp } from '@angular/fire/firestore';
 import { TestBed } from '@angular/core/testing';
 import { Space } from '@shared/models/space.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -48,28 +47,22 @@ describe('DashboardComponent', () => {
   });
 
   it('recalculates automatically when the overview is more than a day stale', () => {
-    const staleTimestamp = { seconds: Timestamp.now().seconds - 90000, nanoseconds: 0 } as unknown as Timestamp;
-    const { calculateOverview } = setup(
-      space({ updatedAt: staleTimestamp } as unknown as Space['overview']),
-    );
+    const staleTimestamp = new Date(Date.now() - 90_000_000).toISOString();
+    const { calculateOverview } = setup(space({ updatedAt: staleTimestamp } as unknown as Space['overview']));
 
     expect(calculateOverview).toHaveBeenCalledWith('space-1');
   });
 
   it('does not recalculate automatically when the overview is fresh', () => {
-    const freshTimestamp = Timestamp.now();
-    const { calculateOverview } = setup(
-      space({ updatedAt: freshTimestamp } as unknown as Space['overview']),
-    );
+    const freshTimestamp = new Date().toISOString();
+    const { calculateOverview } = setup(space({ updatedAt: freshTimestamp } as unknown as Space['overview']));
 
     expect(calculateOverview).not.toHaveBeenCalled();
   });
 
   it('calculateOverview() notifies success', () => {
-    const freshTimestamp = Timestamp.now();
-    const { component, calculateOverview, success } = setup(
-      space({ updatedAt: freshTimestamp } as unknown as Space['overview']),
-    );
+    const freshTimestamp = new Date().toISOString();
+    const { component, calculateOverview, success } = setup(space({ updatedAt: freshTimestamp } as unknown as Space['overview']));
     calculateOverview.mockClear();
 
     component.calculateOverview();
@@ -79,10 +72,8 @@ describe('DashboardComponent', () => {
   });
 
   it('calculateOverview() notifies an error on failure', () => {
-    const freshTimestamp = Timestamp.now();
-    const { component, calculateOverview, error } = setup(
-      space({ updatedAt: freshTimestamp } as unknown as Space['overview']),
-    );
+    const freshTimestamp = new Date().toISOString();
+    const { component, calculateOverview, error } = setup(space({ updatedAt: freshTimestamp } as unknown as Space['overview']));
     calculateOverview.mockReturnValue(throwError(() => new Error('boom')));
 
     component.calculateOverview();

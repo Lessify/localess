@@ -1,10 +1,8 @@
-import { Timestamp } from '@angular/fire/firestore';
-
 export interface AppSettings {
   // UI
   ui?: AppUi;
 
-  updatedAt: Timestamp;
+  updatedAt: string;
 }
 
 export interface AppUi {

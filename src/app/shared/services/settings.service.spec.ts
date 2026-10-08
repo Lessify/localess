@@ -1,61 +1,58 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { AppSettings } from '@shared/models/settings.model';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore, @angular/fire/functions, and @angular/fire/remote-config are mocked
-// globally in src/test-setup.ts.
-import { doc, docData, Firestore, setDoc } from '@angular/fire/firestore';
-import { Functions } from '@angular/fire/functions';
-import { getAllChanges, RemoteConfig } from '@angular/fire/remote-config';
-import { firstValueFrom, of } from 'rxjs';
-
-import { AppSettings, AppSettingsUiUpdate } from '../models/settings.model';
 import { SettingsService } from './settings.service';
 
 describe('SettingsService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
 
   function setup() {
+    events = new Subject<ChangeEvent>();
     TestBed.configureTestingModule({
-      providers: [
-        { provide: Firestore, useValue: {} },
-        { provide: Functions, useValue: {} },
-        { provide: RemoteConfig, useValue: {} },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
     });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(SettingsService);
   }
 
-  it('find() reads the settings doc at the expected path', async () => {
-    const service = setup();
-    const settings: AppSettings = { updatedAt: {} } as unknown as AppSettings;
-    vi.mocked(docData).mockReturnValue(of(settings));
-
-    const result = await firstValueFrom(service.find());
-
-    expect(doc).toHaveBeenCalledWith({}, 'configs/settings');
-    expect(result).toEqual(settings);
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('config() streams remote-config changes', async () => {
+  it('find() reads the settings', async () => {
     const service = setup();
-    vi.mocked(getAllChanges).mockReturnValue(of({ key: 'value' }) as never);
-
-    const result = await firstValueFrom(service.config());
-
-    expect(result).toEqual({ key: 'value' });
+    const result = firstValueFrom(service.find());
+    http.expectOne({ method: 'GET', url: '/api/app/settings' }).flush({ ui: { text: 'Staging' } });
+    expect(await result).toEqual({ ui: { text: 'Staging' } });
   });
 
-  it('updateUi() merges a clone of the ui update onto the settings doc', async () => {
+  it('find() refetches when the settings change', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const update: AppSettingsUiUpdate = { text: 'Welcome', color: 'primary' };
+    const results: AppSettings[] = [];
+    const subscription = service.find().subscribe(it => results.push(it));
+    http.expectOne('/api/app/settings').flush({});
 
-    await firstValueFrom(service.updateUi(update));
+    events.next({ spaceId: null, entity: 'settings', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne('/api/app/settings').flush({ ui: { color: 'primary' } });
+    expect(results).toEqual([{}, { ui: { color: 'primary' } }]);
+    subscription.unsubscribe();
+  });
 
-    expect(doc).toHaveBeenCalledWith({}, 'configs/settings');
-    const [, setEntity, options] = vi.mocked(setDoc).mock.calls[0];
-    expect(setEntity).toMatchObject({ ui: update });
-    expect(options).toEqual({ merge: true });
+  it('updateUi() patches the ui settings', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateUi({ text: 'Staging', color: 'destructive' }));
+    const request = http.expectOne({ method: 'PATCH', url: '/api/app/settings/ui' });
+    expect(request.request.body).toEqual({ text: 'Staging', color: 'destructive' });
+    request.flush({});
+    await done;
   });
 });

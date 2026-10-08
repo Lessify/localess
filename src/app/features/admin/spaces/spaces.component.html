@@ -23,8 +23,8 @@
       </ng-container>
       <ng-container llColumnDef="updatedAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
+          {{ element.updatedAt | date: 'mediumDate' }}
         </td>
       </ng-container>
       <ng-container llColumnDef="actions">

@@ -5,6 +5,7 @@ import { PASSWORD_MIN_LENGTH } from '../auth/password.js';
 import { CurrentSessionId, CurrentUser } from '../auth/request-context.js';
 import { SessionService } from '../auth/session.service.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { EventsService } from '../events/events.service.js';
 import { UserDto, UserRow, UsersService } from './users.service.js';
 
 const profileSchema = z.object({
@@ -29,6 +30,7 @@ export class MeController {
     private readonly users: UsersService,
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
+    private readonly events: EventsService,
   ) {}
 
   @Get()
@@ -41,7 +43,9 @@ export class MeController {
     @CurrentUser() user: UserRow,
     @Body(new ZodValidationPipe(profileSchema)) body: z.infer<typeof profileSchema>,
   ): Promise<UserDto> {
-    return this.users.toDto(await this.users.updateProfile(user.id, body));
+    const updated = await this.users.updateProfile(user.id, body);
+    await this.events.publish({ spaceId: null, entity: 'users', id: user.id, op: 'updated' });
+    return this.users.toDto(updated);
   }
 
   @Put('email')
@@ -50,7 +54,9 @@ export class MeController {
     @Body(new ZodValidationPipe(emailSchema)) body: z.infer<typeof emailSchema>,
   ): Promise<UserDto> {
     await this.auth.confirmCurrentPassword(user, body.currentPassword);
-    return this.users.toDto(await this.users.updateEmail(user.id, body.email));
+    const updated = await this.users.updateEmail(user.id, body.email);
+    await this.events.publish({ spaceId: null, entity: 'users', id: user.id, op: 'updated' });
+    return this.users.toDto(updated);
   }
 
   /** Changing the password signs out every other session. */

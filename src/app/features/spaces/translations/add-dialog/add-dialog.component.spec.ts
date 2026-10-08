@@ -70,7 +70,7 @@ describe('AddDialogComponent', () => {
 
     expect(component.form.value.labels).toEqual(['marketing']);
   });
-it('closes with the form value when saved', () => {
+  it('closes with the form value when saved', () => {
     const { component, close } = setup({ reservedIds: [] });
     component.form.patchValue({ id: 'greeting', value: 'Hello' });
 

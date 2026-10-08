@@ -1,5 +1,3 @@
-import { FieldValue, Timestamp } from '@angular/fire/firestore';
-
 import { Locale } from './locale.model';
 
 export interface Space {
@@ -14,8 +12,8 @@ export interface Space {
   overview?: SpaceOverview;
   progress?: ProgressOverview;
 
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SpaceEnvironment {
@@ -25,14 +23,6 @@ export interface SpaceEnvironment {
 
 export interface SpaceCreate {
   name: string;
-}
-
-export interface SpaceCreateFS {
-  name: string;
-  locales: Locale[];
-  localeFallback: Locale;
-  createdAt: FieldValue;
-  updatedAt: FieldValue;
 }
 
 export interface SpaceUpdate {
@@ -50,7 +40,7 @@ export interface SpaceOverview {
   tasksCount: number;
   tasksSize: number;
   totalSize: number;
-  updatedAt: Timestamp;
+  updatedAt: string;
 }
 
 export interface ProgressOverview {

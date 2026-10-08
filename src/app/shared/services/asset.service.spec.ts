@@ -1,267 +1,193 @@
-import { HttpClient } from '@angular/common/http';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore and @angular/fire/storage are mocked globally in src/test-setup.ts.
-import { addDoc, collectionCount, collectionData, deleteDoc, deleteField, docData, Firestore, updateDoc } from '@angular/fire/firestore';
-import { Storage, uploadBytes } from '@angular/fire/storage';
-import { firstValueFrom, of } from 'rxjs';
-
-import {
-  Asset,
-  AssetFile,
-  AssetFileImport,
-  AssetFileUpdateForm,
-  AssetFolder,
-  AssetFolderCreate,
-  AssetFolderUpdateForm,
-  AssetKind,
-} from '../models/asset.model';
+import { Asset, AssetKind } from '../models/asset.model';
 import { AssetFileType } from '../models/schema.model';
 import { AssetService } from './asset.service';
 
+const BASE = '/api/app/spaces/space-1/assets';
+
 describe('AssetService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
 
   function setup() {
-    const httpGet = vi.fn();
+    events = new Subject<ChangeEvent>();
     TestBed.configureTestingModule({
-      providers: [
-        { provide: Firestore, useValue: {} },
-        { provide: Storage, useValue: {} },
-        { provide: HttpClient, useValue: { get: httpGet } },
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
     });
-    return { service: TestBed.inject(AssetService), httpGet };
+    http = TestBed.inject(HttpTestingController);
+    return TestBed.inject(AssetService);
   }
 
-  it('findAll() filters root assets by an empty parentPath when none given', async () => {
-    const { service } = setup();
-    const assets: Asset[] = [{ id: 'a1', kind: AssetKind.FOLDER, name: 'Folder' } as unknown as Asset];
-    vi.mocked(collectionData).mockReturnValue(of(assets));
+  function formEntries(body: unknown): [string, FormDataEntryValue][] {
+    const entries: [string, FormDataEntryValue][] = [];
+    (body as FormData).forEach((value, key) => entries.push([key, value]));
+    return entries;
+  }
 
-    const result = await firstValueFrom(service.findAll('space-1'));
-
-    expect(result).toEqual(assets);
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({ constraints: expect.arrayContaining([{ type: 'where', field: 'parentPath', op: '==', value: '' }]) });
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('findAll() filters by the given parentPath', async () => {
-    const { service } = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
+  it('findAll() lists the children of a parent path, the root by default', async () => {
+    const service = setup();
+    const root = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(`${BASE}?parentPath=`).flush([{ id: 'a1' }]);
+    expect(await root).toEqual([{ id: 'a1' }]);
 
-    await firstValueFrom(service.findAll('space-1', 'folder'));
-
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({
-      constraints: expect.arrayContaining([{ type: 'where', field: 'parentPath', op: '==', value: 'folder' }]),
-    });
+    const nested = firstValueFrom(service.findAll('space-1', 'f1/f2'));
+    http.expectOne(`${BASE}?parentPath=f1/f2`).flush([]);
+    expect(await nested).toEqual([]);
   });
 
-  it('findAll() filters out files whose type does not match the requested fileType', async () => {
-    const { service } = setup();
-    const folder: AssetFolder = { id: 'f1', kind: AssetKind.FOLDER, name: 'Folder' } as unknown as AssetFolder;
-    const image: AssetFile = { id: 'i1', kind: AssetKind.FILE, name: 'pic', type: 'image/png' } as unknown as AssetFile;
-    const audio: AssetFile = { id: 'a1', kind: AssetKind.FILE, name: 'song', type: 'audio/mpeg' } as unknown as AssetFile;
-    vi.mocked(collectionData).mockReturnValue(of([folder, image, audio]));
+  it('findAll() narrows files by MIME prefix, except for ANY', async () => {
+    const service = setup();
+    const images = firstValueFrom(service.findAll('space-1', '', AssetFileType.IMAGE));
+    http.expectOne(`${BASE}?parentPath=&fileType=image/`).flush([]);
+    await images;
 
-    const result = await firstValueFrom(service.findAll('space-1', undefined, AssetFileType.IMAGE));
-
-    expect(result).toEqual([folder, image]);
+    const any = firstValueFrom(service.findAll('space-1', '', AssetFileType.ANY));
+    http.expectOne(`${BASE}?parentPath=`).flush([]);
+    await any;
   });
 
-  it('countAll() counts all assets when no kind is given', async () => {
-    const { service } = setup();
-    vi.mocked(collectionCount).mockReturnValue(of(4) as never);
+  it('findAll() refetches when an asset of the space changes, ignoring other entities', async () => {
+    vi.useFakeTimers();
+    const service = setup();
+    const results: Asset[][] = [];
+    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}?parentPath=`).flush([]);
 
-    const result = await firstValueFrom(service.countAll('space-1'));
+    events.next({ spaceId: 'space-1', entity: 'contents', id: 'c', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(`${BASE}?parentPath=`);
 
-    expect(result).toBe(4);
+    events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}?parentPath=`).flush([{ id: 'a1' } as Asset]);
+    expect(results).toEqual([[], [{ id: 'a1' }]]);
+    subscription.unsubscribe();
   });
 
-  it('countAll() filters by kind when given', async () => {
-    const { service } = setup();
-    vi.mocked(collectionCount).mockReturnValue(of(2) as never);
+  it('countAll() reads the count, filtered by kind when given', async () => {
+    const service = setup();
+    const all = firstValueFrom(service.countAll('space-1'));
+    http.expectOne(`${BASE}/count`).flush({ count: 4 });
+    expect(await all).toBe(4);
 
-    await firstValueFrom(service.countAll('space-1', AssetKind.FILE));
-
-    const [queryArg] = vi.mocked(collectionCount).mock.calls[0];
-    expect(queryArg).toMatchObject({ constraints: [{ type: 'where', field: 'kind', op: '==', value: AssetKind.FILE }] });
+    const files = firstValueFrom(service.countAll('space-1', AssetKind.FILE));
+    http.expectOne(`${BASE}/count?kind=FILE`).flush({ count: 2 });
+    expect(await files).toBe(2);
   });
 
-  it('findAllByName() bounds the name range query and applies the limit', async () => {
-    const { service } = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
+  it('find*ByName() search by name prefix with kind and limit', async () => {
+    const service = setup();
+    const any = firstValueFrom(service.findAllByName('space-1', 'lo'));
+    http.expectOne(`${BASE}?name=lo&limit=20`).flush([]);
+    await any;
 
-    await firstValueFrom(service.findAllByName('space-1', 'logo'));
+    const files = firstValueFrom(service.findAllFilesByName('space-1', 'lo', 5));
+    http.expectOne(`${BASE}?name=lo&kind=FILE&limit=5`).flush([]);
+    await files;
 
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({
-      constraints: [
-        { type: 'where', field: 'name', op: '>=', value: 'logo' },
-        { type: 'where', field: 'name', op: '<=', value: 'logo~' },
-        { type: 'limit', n: 20 },
-      ],
-    });
+    const folders = firstValueFrom(service.findAllFoldersByName('space-1', 'lo'));
+    http.expectOne(`${BASE}?name=lo&kind=FOLDER&limit=20`).flush([{ id: 'f1' }]);
+    expect(await folders).toEqual([{ id: 'f1' }]);
   });
 
-  it('findById() reads the asset doc at the expected path', async () => {
-    const { service } = setup();
-    const asset: Asset = { id: 'a1' } as unknown as Asset;
-    vi.mocked(docData).mockReturnValue(of(asset));
-
-    const result = await firstValueFrom(service.findById('space-1', 'a1'));
-
-    expect(result).toEqual(asset);
+  it('findById() reads one asset', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findById('space-1', 'a1'));
+    http.expectOne(`${BASE}/a1`).flush({ id: 'a1' });
+    expect(await result).toEqual({ id: 'a1' });
   });
 
-  it('findByIds() queries by document id "in" the given ids', async () => {
-    const { service } = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
+  it('findByIds() lists the given ids, without a request when there are none', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findByIds('space-1', ['a', 'b']));
+    http.expectOne(`${BASE}?ids=a,b`).flush([{ id: 'a' }]);
+    expect(await result).toEqual([{ id: 'a' }]);
 
-    await firstValueFrom(service.findByIds('space-1', ['a1', 'a2']));
-
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({ constraints: [{ type: 'where', field: '__name__', op: 'in', value: ['a1', 'a2'] }] });
+    expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);
   });
 
-  it('findAllFilesByName() restricts the kind filter to files', async () => {
-    const { service } = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
-
-    await firstValueFrom(service.findAllFilesByName('space-1', 'logo'));
-
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({
-      constraints: expect.arrayContaining([{ type: 'where', field: 'kind', op: '==', value: AssetKind.FILE }]),
-    });
+  it('createFile() uploads the file as multipart with the parent path first', async () => {
+    const service = setup();
+    const file = new File(['hello'], 'logo.png', { type: 'image/png' });
+    const result = firstValueFrom(service.createFile('space-1', 'f1', file));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/files` });
+    const entries = formEntries(request.request.body);
+    expect(entries.map(([key]) => key)).toEqual(['parentPath', 'file']);
+    expect(entries[0][1]).toBe('f1');
+    expect((entries[1][1] as File).name).toBe('logo.png');
+    request.flush({ id: 'a1' });
+    expect((await result).id).toBe('a1');
   });
 
-  it('findAllFoldersByName() restricts the kind filter to folders', async () => {
-    const { service } = setup();
-    vi.mocked(collectionData).mockReturnValue(of([]));
-
-    await firstValueFrom(service.findAllFoldersByName('space-1', 'logo'));
-
-    const [queryArg] = vi.mocked(collectionData).mock.calls[0];
-    expect(queryArg).toMatchObject({
-      constraints: expect.arrayContaining([{ type: 'where', field: 'kind', op: '==', value: AssetKind.FOLDER }]),
-    });
+  it('importFile() downloads the URL and uploads it with its metadata', async () => {
+    const service = setup();
+    const result = firstValueFrom(
+      service.importFile('space-1', '', { url: 'https://images.example/x', name: 'photo', extension: '.jpg', source: 'unsplash' }),
+    );
+    http.expectOne('https://images.example/x').flush(new Blob(['img'], { type: 'image/jpeg' }));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/files` });
+    const entries = formEntries(request.request.body);
+    expect(entries.map(([key]) => key)).toEqual(['parentPath', 'name', 'extension', 'source', 'file']);
+    expect(entries.slice(0, 4).map(([, value]) => value)).toEqual(['', 'photo', '.jpg', 'unsplash']);
+    expect((entries[4][1] as File).name).toBe('photo.jpg');
+    request.flush({ id: 'a2' });
+    expect((await result).id).toBe('a2');
   });
 
-  it('importFile() downloads the url, adds the doc, then uploads the blob', async () => {
-    const { service, httpGet } = setup();
-    const fileBlob = new Blob(['data'], { type: 'image/png' });
-    httpGet.mockReturnValue(of(fileBlob));
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-asset' } as never);
-    const entity: AssetFileImport = { url: 'https://x/file.png', name: 'file', extension: '.png', alt: 'Alt text' };
-
-    await firstValueFrom(service.importFile('space-1', 'folder', entity));
-
-    expect(httpGet).toHaveBeenCalledWith('https://x/file.png', { responseType: 'blob' });
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({
-      kind: AssetKind.FILE,
-      inProgress: true,
-      name: 'file',
-      extension: '.png',
-      type: 'image/png',
-      parentPath: 'folder',
-      alt: 'Alt text',
-    });
-    expect(uploadBytes).toHaveBeenCalledWith({ path: 'mock-storage-ref' }, fileBlob);
+  it('createFolder() posts the folder and returns it', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.createFolder('space-1', 'f1', { name: 'Images' }));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/folders` });
+    expect(request.request.body).toEqual({ parentPath: 'f1', name: 'Images' });
+    request.flush({ id: 'f2' });
+    expect((await result).id).toBe('f2');
   });
 
-  it('createFile() splits the file name/extension and uploads the bytes', async () => {
-    const { service } = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-asset' } as never);
-    const file = new File(['data'], 'photo.png', { type: 'image/png' });
+  it('updateFolder() and updateFile() patch the editable fields, an empty alt removing it', async () => {
+    const service = setup();
+    const folder = firstValueFrom(service.updateFolder('space-1', 'f1', { name: 'Pics' }));
+    const folderRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/f1` });
+    expect(folderRequest.request.body).toEqual({ name: 'Pics' });
+    folderRequest.flush({});
+    await folder;
 
-    await firstValueFrom(service.createFile('space-1', 'folder', file));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: AssetKind.FILE, name: 'photo', extension: '.png', type: 'image/png', parentPath: 'folder' });
-    expect(uploadBytes).toHaveBeenCalledWith({ path: 'mock-storage-ref' }, file);
+    const file = firstValueFrom(service.updateFile('space-1', 'a1', { name: 'logo', alt: undefined }));
+    const fileRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/a1` });
+    expect(fileRequest.request.body).toEqual({ name: 'logo', alt: '' });
+    fileRequest.flush({});
+    await file;
   });
 
-  it('createFile() keeps the whole name and an empty extension when the file has none', async () => {
-    const { service } = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-asset' } as never);
-    const file = new File(['data'], 'noext', { type: 'application/octet-stream' });
+  it('move() puts the new parent path, mapping "~" to the root', async () => {
+    const service = setup();
+    const toRoot = firstValueFrom(service.move('space-1', 'a1', '~'));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/a1/parent` });
+    expect(request.request.body).toEqual({ parentPath: '' });
+    request.flush({});
+    await toRoot;
 
-    await firstValueFrom(service.createFile('space-1', 'folder', file));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ name: 'noext', extension: '' });
+    const toFolder = firstValueFrom(service.move('space-1', 'a1', 'f1'));
+    const folderRequest = http.expectOne({ method: 'PUT', url: `${BASE}/a1/parent` });
+    expect(folderRequest.request.body).toEqual({ parentPath: 'f1' });
+    folderRequest.flush({});
+    await toFolder;
   });
 
-  it('createFolder() adds a folder entity', async () => {
-    const { service } = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-folder' } as never);
-    const entity: AssetFolderCreate = { name: 'Folder' };
-
-    await firstValueFrom(service.createFolder('space-1', 'parent', entity));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: AssetKind.FOLDER, name: 'Folder', parentPath: 'parent' });
-  });
-
-  it('updateFolder() sets the folder name', async () => {
-    const { service } = setup();
-    const entity: AssetFolderUpdateForm = { name: 'Renamed' };
-
-    await firstValueFrom(service.updateFolder('space-1', 'a1', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ name: 'Renamed' });
-  });
-
-  it('updateFile() deletes the alt field when not provided', async () => {
-    const { service } = setup();
-    const entity: AssetFileUpdateForm = { name: 'Renamed', alt: '' };
-
-    await firstValueFrom(service.updateFile('space-1', 'a1', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ name: 'Renamed', alt: deleteField() });
-  });
-
-  it('updateFile() sets the alt field when provided', async () => {
-    const { service } = setup();
-    const entity: AssetFileUpdateForm = { name: 'Renamed', alt: 'New alt' };
-
-    await firstValueFrom(service.updateFile('space-1', 'a1', entity));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ alt: 'New alt' });
-  });
-
-  it('move() clears parentPath when moved to the root sentinel "~"', async () => {
-    const { service } = setup();
-
-    await firstValueFrom(service.move('space-1', 'a1', '~'));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ parentPath: '' });
-  });
-
-  it('move() sets a real parentPath as given', async () => {
-    const { service } = setup();
-
-    await firstValueFrom(service.move('space-1', 'a1', 'folder'));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ parentPath: 'folder' });
-  });
-
-  it('delete() deletes the asset doc at the expected path', async () => {
-    const { service } = setup();
-
-    await firstValueFrom(service.delete('space-1', 'a1'));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
+  it('delete() deletes the asset', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.delete('space-1', 'a1'));
+    http.expectOne({ method: 'DELETE', url: `${BASE}/a1` }).flush(null);
+    await done;
   });
 });

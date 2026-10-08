@@ -8,10 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Development
-npm start              # Dev server with proxy (http://localhost:4200)
-npm run emulator       # Firebase emulator with persistence
-npm run emulator:debug # Firebase emulator with debug output
+# Development (two terminals)
+npm run server:dev     # NestJS API on :3000 (embedded Postgres in server/.data; LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin)
+npm start              # Angular dev server on http://localhost:4200, proxying /api to :3000
 
 # Build
 npm run build          # Default build
@@ -150,7 +149,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `src/app/shared/components/`; read before adding or changing one |
 | **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [server/README.md](server/README.md) | Anything in `server/`, or replacing a Firebase dependency |
-| Frontend testing — Vitest setup (`test.isolate: true`), centralized Firebase mocking pattern and why it stays centralized | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
+| Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
 | **Deployment & self-hosting** | | |
 | Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Phase 1 — Firebase provisioning (`npm run localess:setup`) | [docs/deployment/firebase-setup.md](docs/deployment/firebase-setup.md) | `scripts/localess.mjs`, `scripts/localess/`, `firebase.json` `auth` block |

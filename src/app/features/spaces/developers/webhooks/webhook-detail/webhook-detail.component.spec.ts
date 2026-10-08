@@ -12,7 +12,14 @@ import { vi } from 'vitest';
 import { WebhookDetailComponent } from './webhook-detail.component';
 
 function webhook(overrides: Partial<WebHook> = {}): WebHook {
-  return { id: 'w1', name: 'Slack', url: 'https://example.com', enabled: true, events: [WebHookEvent.CONTENT_PUBLISHED], ...overrides } as WebHook;
+  return {
+    id: 'w1',
+    name: 'Slack',
+    url: 'https://example.com',
+    enabled: true,
+    events: [WebHookEvent.CONTENT_PUBLISHED],
+    ...overrides,
+  } as WebHook;
 }
 
 describe('WebhookDetailComponent', () => {
@@ -44,12 +51,25 @@ describe('WebhookDetailComponent', () => {
     const fixture = TestBed.createComponent(WebhookDetailComponent);
     fixture.componentRef.setInput('webhookId', 'w1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findById, findLogs, update, updateStatus, deleteWebhook, navigate, success, error, open };
+    return {
+      component: fixture.componentInstance,
+      findById,
+      findLogs,
+      update,
+      updateStatus,
+      deleteWebhook,
+      navigate,
+      success,
+      error,
+      open,
+    };
   }
 
   it('loads the webhook and its logs on init', () => {
     const found = webhook();
-    const logs: WebHookLog[] = [{ id: 'l1', event: WebHookEvent.CONTENT_PUBLISHED, status: WebHookStatus.SUCCESS } as unknown as WebHookLog];
+    const logs: WebHookLog[] = [
+      { id: 'l1', event: WebHookEvent.CONTENT_PUBLISHED, status: WebHookStatus.SUCCESS } as unknown as WebHookLog,
+    ];
     const { component, findById, findLogs } = setup(found, logs);
 
     expect(findById).toHaveBeenCalledWith('space-1', 'w1');

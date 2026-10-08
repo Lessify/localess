@@ -72,7 +72,12 @@ describe('VisualEditorComponent', () => {
   });
 
   it('removeEnvironment() removes the group at the given index', () => {
-    const { component } = setup(space([{ name: 'a', url: 'https://a' }, { name: 'b', url: 'https://b' }]));
+    const { component } = setup(
+      space([
+        { name: 'a', url: 'https://a' },
+        { name: 'b', url: 'https://b' },
+      ]),
+    );
 
     component.removeEnvironment(0);
 
@@ -81,7 +86,12 @@ describe('VisualEditorComponent', () => {
   });
 
   it('environmentDropDrop() moves an environment from one index to another', () => {
-    const { component } = setup(space([{ name: 'a', url: 'https://a' }, { name: 'b', url: 'https://b' }]));
+    const { component } = setup(
+      space([
+        { name: 'a', url: 'https://a' },
+        { name: 'b', url: 'https://b' },
+      ]),
+    );
 
     component.environmentDropDrop({ previousIndex: 0, currentIndex: 1 } as never);
 

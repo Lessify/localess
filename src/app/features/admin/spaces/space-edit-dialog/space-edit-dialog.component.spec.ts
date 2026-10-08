@@ -39,7 +39,7 @@ describe('SpaceEditDialogComponent', () => {
     const fixture = await setup({ name: 'Existing' });
     expect(Object.keys(fixture.componentInstance.form.value)).toEqual(['name']);
   });
-it('closes with the form value when saved', async () => {
+  it('closes with the form value when saved', async () => {
     const fixture = await setup({ name: 'Existing' });
     fixture.componentInstance.form.patchValue({ name: 'Renamed' });
 

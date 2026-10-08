@@ -1,5 +1,3 @@
-import { Timestamp } from '@angular/fire/firestore';
-
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
@@ -30,10 +28,8 @@ export interface TaskLog {
   level: TaskLogLevel;
   message: string;
   trace?: string;
-  createdAt: Timestamp;
+  createdAt: string;
 }
-
-export type TaskLogFS = Omit<TaskLog, 'id'>;
 
 export interface TaskFile {
   name: string;
@@ -49,8 +45,8 @@ export interface TaskBase {
   message?: string;
   trace?: string;
   // Dates
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface TaskAssetExport extends TaskBase {
@@ -132,14 +128,3 @@ export type Task =
 export type TaskExport = TaskAssetExport | TaskContentExport | TaskSchemaExport | TaskTranslationExport;
 
 export type TaskImport = TaskAssetImport | TaskContentImport | TaskSchemaImport | TaskTranslationImport;
-
-// Firestore Models (Without ID)
-export type TaskAssetExportFS = Omit<TaskAssetExport, 'id'>;
-export type TaskAssetImportFS = Omit<TaskAssetImport, 'id'>;
-export type TaskAssetRegenerateMetadataFS = Omit<TaskAssetRegenMetadata, 'id'>;
-export type TaskContentExportFS = Omit<TaskContentExport, 'id'>;
-export type TaskContentImportFS = Omit<TaskContentImport, 'id'>;
-export type TaskSchemaExportFS = Omit<TaskSchemaExport, 'id'>;
-export type TaskSchemaImportFS = Omit<TaskSchemaImport, 'id'>;
-export type TaskTranslationExportFS = Omit<TaskTranslationExport, 'id'>;
-export type TaskTranslationImportFS = Omit<TaskTranslationImport, 'id'>;

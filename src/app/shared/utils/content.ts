@@ -133,7 +133,11 @@ export function extractContent(content: ContentData, schemas: Map<string, Schema
  * @param {string} locale
  * @return {[Set<string>, Set<string>, Set<string>]} [inUseAssets, inUseLinks, inUseReferences]
  */
-export function extractReferences(data: ContentData | undefined, schemas: Schema[], locale: string): [Set<string>, Set<string>, Set<string>] {
+export function extractReferences(
+  data: ContentData | undefined,
+  schemas: Schema[],
+  locale: string,
+): [Set<string>, Set<string>, Set<string>] {
   //console.group('extractReferences', locale);
   const inUseAssets = new Set<string>();
   const inUseLinks = new Set<string>();

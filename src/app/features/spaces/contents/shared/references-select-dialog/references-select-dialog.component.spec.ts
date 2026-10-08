@@ -75,6 +75,9 @@ describe('ReferencesSelectDialogComponent', () => {
 
     component.navigateToSlug({ name: 'A', fullSlug: 'a' });
 
-    expect(component.contentPath).toEqual([{ name: 'Root', fullSlug: '' }, { name: 'A', fullSlug: 'a' }]);
+    expect(component.contentPath).toEqual([
+      { name: 'Root', fullSlug: '' },
+      { name: 'A', fullSlug: 'a' },
+    ]);
   });
 });

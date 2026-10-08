@@ -1,6 +1,7 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
-import { Auth } from '@angular/fire/auth';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
 import { NotificationService } from '@shared/services/notification.service';
@@ -71,7 +72,10 @@ describe('AssetsSelectDialogComponent', () => {
     component.onAssetSelect(folder({ id: 'f1', name: 'Images', parentPath: '' }));
 
     expect(findAll).toHaveBeenCalledWith('space-1', 'f1', undefined);
-    expect(component.assetPath).toEqual([{ name: 'Root', fullSlug: '' }, { name: 'Images', fullSlug: 'f1' }]);
+    expect(component.assetPath).toEqual([
+      { name: 'Root', fullSlug: '' },
+      { name: 'Images', fullSlug: 'f1' },
+    ]);
   });
 
   it('navigateToSlug() truncates the path after the target segment', () => {
@@ -81,7 +85,10 @@ describe('AssetsSelectDialogComponent', () => {
 
     component.navigateToSlug({ name: 'A', fullSlug: 'a' });
 
-    expect(component.assetPath).toEqual([{ name: 'Root', fullSlug: '' }, { name: 'A', fullSlug: 'a' }]);
+    expect(component.assetPath).toEqual([
+      { name: 'Root', fullSlug: '' },
+      { name: 'A', fullSlug: 'a' },
+    ]);
   });
 
   it('fileIcon()/filePreview() classify by mime type', () => {
@@ -117,7 +124,7 @@ describe('AssetsSelectDialogComponent', () => {
 
     expect(error).toHaveBeenCalledWith('Asset can not be uploaded.');
   });
-/**
+  /**
    * Renders the real template, unlike `setup` above, which stubs it out.
    *
    * `strictTemplates` is off in this project, so a template binding to a member that does not
@@ -132,7 +139,8 @@ describe('AssetsSelectDialogComponent', () => {
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
         { provide: AssetService, useValue: { findAll: vi.fn().mockReturnValue(of([asset])), createFile: vi.fn() } },
         { provide: NotificationService, useValue: { error: vi.fn() } },
-        { provide: Auth, useValue: { currentUser: null } },
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     }).compileComponents();
     const fixture = TestBed.createComponent(AssetsSelectDialogComponent);

@@ -47,7 +47,7 @@
         <td llCell *llCellDef="let element">
           @switch (element.kind) {
             @case ('DOCUMENT') {
-              <ll-document-status [updatedAt]="element.updatedAt.seconds" [publishedAt]="element.publishedAt?.seconds" />
+              <ll-document-status [updatedAt]="element.updatedAt" [publishedAt]="element.publishedAt" />
             }
             @case ('FOLDER') {
               <ng-icon hlm name="lucideFolder" />
@@ -78,8 +78,8 @@
       </ng-container>
       <ng-container llColumnDef="updatedAt">
         <th llHeaderCell *llHeaderCellDef>Updated At</th>
-        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt?.toDate() | date: 'medium'">
-          {{ element.updatedAt?.toDate() | date: 'mediumDate' }}
+        <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
+          {{ element.updatedAt | date: 'mediumDate' }}
         </td>
       </ng-container>
 

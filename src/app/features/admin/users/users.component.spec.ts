@@ -37,7 +37,9 @@ describe('UsersComponent', () => {
     const invite = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteUser = vi.fn().mockReturnValue(of(undefined));
-    const sync = vi.fn().mockReturnValue(of(undefined));
+    const passwordResetLink = vi
+      .fn()
+      .mockReturnValue(of({ url: 'https://cms.example.com/reset?token=t', expiresAt: '2026-01-01T00:00:00.000Z' }));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -47,7 +49,7 @@ describe('UsersComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, sync } },
+        { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, passwordResetLink } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         userStoreOf(currentUser),
@@ -55,7 +57,7 @@ describe('UsersComponent', () => {
     });
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, sync, success, error, open };
+    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, passwordResetLink, success, error, open };
   }
 
   it('loads users on init', () => {
@@ -161,27 +163,25 @@ describe('UsersComponent', () => {
     expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be deleted.");
   });
 
-  it('sync() notifies success and resets the loading flag after a delay', async () => {
-    vi.useFakeTimers();
-    const { component, success } = setup();
+  it('copyPasswordResetLink() copies the link to the clipboard and notifies success', async () => {
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
+    const { component, passwordResetLink, success } = setup();
 
-    component.sync();
+    component.copyPasswordResetLink(user({ id: 'u1', email: 'user@example.com' }));
+    await vi.waitFor(() => expect(success).toHaveBeenCalled());
 
-    expect(component.isSyncLoading()).toBe(true);
-    expect(success).toHaveBeenCalledWith('Sync is in progress, it may take upt to few minutes.');
-
-    await vi.advanceTimersByTimeAsync(1000);
-
-    expect(component.isSyncLoading()).toBe(false);
+    expect(passwordResetLink).toHaveBeenCalledWith('u1');
+    expect(writeText).toHaveBeenCalledWith('https://cms.example.com/reset?token=t');
+    writeText.mockRestore();
   });
 
-  it('sync() notifies an error on failure', () => {
-    const { component, sync, error } = setup();
-    sync.mockReturnValue(throwError(() => new Error('boom')));
+  it('copyPasswordResetLink() notifies an error on failure', () => {
+    const { component, passwordResetLink, error } = setup();
+    passwordResetLink.mockReturnValue(throwError(() => new Error('boom')));
 
-    component.sync();
+    component.copyPasswordResetLink(user({ id: 'u1', email: 'user@example.com' }));
 
-    expect(error).toHaveBeenCalledWith('Users can not be synced.');
+    expect(error).toHaveBeenCalledWith("Password reset link for 'user@example.com' can not be created.");
   });
 
   describe('canManage()', () => {

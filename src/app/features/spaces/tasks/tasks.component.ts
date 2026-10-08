@@ -34,7 +34,7 @@ import { LlPaginatorImports, Paginator } from '@shared/components/paginator/pagi
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { TimeBetweenPipe, TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -78,6 +78,7 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
     FormatFileSizePipe,
     CommonModule,
     TimeDurationPipe,
+    TimeBetweenPipe,
     HlmProgressImports,
     HlmButtonImports,
     HlmTooltipImports,

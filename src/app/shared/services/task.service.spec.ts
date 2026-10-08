@@ -1,195 +1,120 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Observable, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore and @angular/fire/storage are mocked globally in src/test-setup.ts.
-import { addDoc, collectionData, deleteDoc, docData, Firestore } from '@angular/fire/firestore';
-import { getDownloadURL, ref, Storage, uploadBytesResumable } from '@angular/fire/storage';
-import { firstValueFrom, of } from 'rxjs';
-
-import { Task, TaskKind, TaskLog, TaskStatus } from '../models/task.model';
+import { Task, TaskLog } from '../models/task.model';
 import { TaskService } from './task.service';
 
+const BASE = '/api/app/spaces/space-1/tasks';
+
 describe('TaskService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
 
   function setup() {
-    TestBed.configureTestingModule({ providers: [{ provide: Firestore, useValue: {} }, { provide: Storage, useValue: {} }] });
+    events = new Subject<ChangeEvent>();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
+    });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(TaskService);
   }
 
-  it('findAll() reads the space tasks collection ordered by createdAt desc', async () => {
-    const service = setup();
-    const tasks: Task[] = [{ id: 't1' } as unknown as Task];
-    vi.mocked(collectionData).mockReturnValue(of(tasks));
-
-    const result = await firstValueFrom(service.findAll('space-1'));
-
-    expect(result).toEqual(tasks);
-    expect(collectionData).toHaveBeenCalledWith(
-      { ref: { path: 'mock-collection-ref' }, constraints: [{ type: 'orderBy', field: 'createdAt', direction: 'desc' }] },
-      { idField: 'id' },
-    );
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('findById() reads the task doc at the expected path', async () => {
+  it('findAll() reads the space tasks', async () => {
     const service = setup();
-    const task: Task = { id: 't1' } as unknown as Task;
-    vi.mocked(docData).mockReturnValue(of(task));
-
-    const result = await firstValueFrom(service.findById('space-1', 't1'));
-
-    expect(result).toEqual(task);
+    const result = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(BASE).flush([{ id: 't1' }]);
+    expect(await result).toEqual([{ id: 't1' }]);
   });
 
-  it('createAssetExportTask() adds a task without a path when not given', async () => {
+  it('findById() reads one task', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-
-    await firstValueFrom(service.createAssetExportTask('space-1'));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.ASSET_EXPORT, status: TaskStatus.INITIATED });
-    expect(addedEntity).not.toHaveProperty('path');
+    const result = firstValueFrom(service.findById('space-1', 't1'));
+    http.expectOne(`${BASE}/t1`).flush({ id: 't1' });
+    expect(await result).toEqual({ id: 't1' });
   });
 
-  it('createAssetExportTask() includes the path when given', async () => {
+  it('findLogs() reads the task logs and refetches on log events of that task only', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
+    const results: TaskLog[][] = [];
+    const subscription = service.findLogs('space-1', 't1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}/t1/logs`).flush([]);
 
-    await firstValueFrom(service.createAssetExportTask('space-1', 'folder/sub'));
+    events.next({ spaceId: 'space-1', entity: 'task_logs', id: 't2', op: 'created' });
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(`${BASE}/t1/logs`);
 
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ path: 'folder/sub' });
+    events.next({ spaceId: 'space-1', entity: 'task_logs', id: 't1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}/t1/logs`).flush([{ id: '1' } as TaskLog]);
+    expect(results).toEqual([[], [{ id: '1' }]]);
+    subscription.unsubscribe();
   });
 
-  it('createAssetImportTask() uploads the file then adds a task referencing it', async () => {
+  async function expectExport(call: Observable<Task>, body: object) {
+    const done = firstValueFrom(call);
+    const request = http.expectOne({ method: 'POST', url: BASE });
+    expect(request.request.body).toEqual(body);
+    request.flush({ id: 'new-task' });
+    expect((await done).id).toBe('new-task');
+  }
+
+  it('export creators post the kind with optional path or locale', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-    const file = new File(['content'], 'assets.zip', { type: 'application/zip' });
-
-    await firstValueFrom(service.createAssetImportTask('space-1', file));
-
-    expect(uploadBytesResumable).toHaveBeenCalledWith({ path: 'mock-storage-ref' }, file);
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.ASSET_IMPORT, status: TaskStatus.INITIATED, file: { name: 'assets.zip', size: file.size } });
+    await expectExport(service.createAssetExportTask('space-1'), { kind: 'ASSET_EXPORT' });
+    await expectExport(service.createAssetExportTask('space-1', '/a'), { kind: 'ASSET_EXPORT', path: '/a' });
+    await expectExport(service.createContentExportTask('space-1', '/c'), { kind: 'CONTENT_EXPORT', path: '/c' });
+    await expectExport(service.createSchemaExportTask('space-1'), { kind: 'SCHEMA_EXPORT' });
+    await expectExport(service.createTranslationExportTask('space-1'), { kind: 'TRANSLATION_EXPORT' });
+    await expectExport(service.createTranslationExportTask('space-1', 'de'), { kind: 'TRANSLATION_EXPORT', locale: 'de' });
+    await expectExport(service.createAssetRegenerateMetadataTask('space-1'), { kind: 'ASSET_REGEN_METADATA' });
   });
 
-  it('createAssetRegenerateMetadataTask() adds a task', async () => {
+  async function expectImport(call: Observable<Task>, fields: [string, string][]) {
+    const done = firstValueFrom(call);
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/import` });
+    const form = request.request.body as FormData;
+    const entries: [string, FormDataEntryValue][] = [];
+    form.forEach((value, key) => entries.push([key, value]));
+    expect(entries.slice(0, -1)).toEqual(fields);
+    expect(entries.at(-1)?.[0]).toBe('file');
+    expect((entries.at(-1)?.[1] as File).name).toBe('data.json');
+    request.flush({ id: 'new-task' });
+    expect((await done).id).toBe('new-task');
+  }
+
+  it('import creators post multipart with the fields before the file', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-
-    await firstValueFrom(service.createAssetRegenerateMetadataTask('space-1'));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.ASSET_REGEN_METADATA, status: TaskStatus.INITIATED });
+    const file = new File(['{}'], 'data.json', { type: 'application/json' });
+    await expectImport(service.createAssetImportTask('space-1', file), [['kind', 'ASSET_IMPORT']]);
+    await expectImport(service.createContentImportTask('space-1', file), [['kind', 'CONTENT_IMPORT']]);
+    await expectImport(service.createSchemaImportTask('space-1', file), [['kind', 'SCHEMA_IMPORT']]);
+    await expectImport(service.createTranslationImportTask('space-1', file), [['kind', 'TRANSLATION_IMPORT']]);
+    await expectImport(service.createTranslationImportTask('space-1', file, 'de'), [
+      ['kind', 'TRANSLATION_IMPORT'],
+      ['locale', 'de'],
+    ]);
   });
 
-  it('createContentExportTask() includes the path when given', async () => {
+  it('downloadUrl() resolves to the same-origin download endpoint', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-
-    await firstValueFrom(service.createContentExportTask('space-1', 'folder'));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.CONTENT_EXPORT, path: 'folder' });
+    expect(await firstValueFrom(service.downloadUrl('space-1', 't1'))).toBe(`${BASE}/t1/download`);
   });
 
-  it('createContentImportTask() uploads the file then adds a task', async () => {
+  it('delete() deletes the task', async () => {
     const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-    const file = new File(['content'], 'content.zip');
-
-    await firstValueFrom(service.createContentImportTask('space-1', file));
-
-    expect(uploadBytesResumable).toHaveBeenCalled();
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.CONTENT_IMPORT });
-  });
-
-  it('createSchemaExportTask() adds a task', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-
-    await firstValueFrom(service.createSchemaExportTask('space-1'));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.SCHEMA_EXPORT });
-  });
-
-  it('createSchemaImportTask() uploads the file then adds a task', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-    const file = new File(['content'], 'schema.zip');
-
-    await firstValueFrom(service.createSchemaImportTask('space-1', file));
-
-    expect(uploadBytesResumable).toHaveBeenCalled();
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.SCHEMA_IMPORT });
-  });
-
-  it('createTranslationExportTask() includes the locale when given', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-
-    await firstValueFrom(service.createTranslationExportTask('space-1', 'de'));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.TRANSLATION_EXPORT, locale: 'de' });
-  });
-
-  it('createTranslationImportTask() defaults to a full import when no locale is given', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-    const file = new File(['content'], 'translations.zip');
-
-    await firstValueFrom(service.createTranslationImportTask('space-1', file));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.TRANSLATION_IMPORT, type: 'full' });
-    expect(addedEntity).not.toHaveProperty('locale');
-  });
-
-  it('createTranslationImportTask() switches to flat-json with the given locale', async () => {
-    const service = setup();
-    vi.mocked(addDoc).mockResolvedValue({ id: 'new-task' } as never);
-    const file = new File(['content'], 'de.json');
-
-    await firstValueFrom(service.createTranslationImportTask('space-1', file, 'de'));
-
-    const [, addedEntity] = vi.mocked(addDoc).mock.calls[0];
-    expect(addedEntity).toMatchObject({ kind: TaskKind.TRANSLATION_IMPORT, type: 'flat-json', locale: 'de' });
-  });
-
-  it('downloadUrl() resolves the download URL for the task original file', async () => {
-    const service = setup();
-    vi.mocked(getDownloadURL).mockResolvedValue('https://download-url');
-
-    const result = await firstValueFrom(service.downloadUrl('space-1', 't1'));
-
-    expect(result).toBe('https://download-url');
-    expect(ref).toHaveBeenCalledWith({}, 'spaces/space-1/tasks/t1/original');
-  });
-
-  it('delete() deletes the task doc at the expected path', async () => {
-    const service = setup();
-
-    await firstValueFrom(service.delete('space-1', 't1'));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
-  });
-
-  it('findLogs() orders logs by createdAt asc', async () => {
-    const service = setup();
-    vi.mocked(collectionData).mockReturnValue(of([] as TaskLog[]));
-
-    await firstValueFrom(service.findLogs('space-1', 't1'));
-
-    expect(collectionData).toHaveBeenCalledWith(
-      { ref: { path: 'mock-collection-ref' }, constraints: [{ type: 'orderBy', field: 'createdAt', direction: 'asc' }] },
-      { idField: 'id' },
-    );
+    const done = firstValueFrom(service.delete('space-1', 't1'));
+    http.expectOne({ method: 'DELETE', url: `${BASE}/t1` }).flush(null);
+    await done;
   });
 });

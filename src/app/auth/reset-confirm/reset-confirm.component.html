@@ -1,0 +1,33 @@
+<h2 class="mt-8 text-2xl font-bold tracking-tight">Choose a new password</h2>
+
+<div class="mt-10">
+  @if (done()) {
+    <p class="text-sm" role="status">Your password has been changed. Sign in with the new password.</p>
+    <div class="mt-6">
+      <button hlmBtn class="w-full" routerLink="/auth/login">Sign in</button>
+    </div>
+  } @else if (!token()) {
+    <p class="text-destructive text-sm">This link is incomplete. Open the link from the email (or the one you were given) again.</p>
+  } @else {
+    <form class="space-y-6" [formGroup]="form">
+      <div hlmField>
+        <label hlmFieldLabel for="password">New password</label>
+        <input hlmInput id="password" type="password" formControlName="password" class="w-full" autocomplete="new-password" required />
+        @if (form.controls.password.errors; as errors) {
+          <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+        }
+      </div>
+      <div hlmField>
+        <label hlmFieldLabel for="confirm">Repeat new password</label>
+        <input hlmInput id="confirm" type="password" formControlName="confirm" class="w-full" autocomplete="new-password" required />
+        @if (form.controls.confirm.hasError('mismatch')) {
+          <hlm-field-error>The passwords do not match.</hlm-field-error>
+        }
+      </div>
+      @if (error(); as message) {
+        <div class="text-destructive text-sm" role="alert">{{ message }}</div>
+      }
+      <button hlmBtn class="w-full" type="submit" [disabled]="!form.valid" (click)="submit()">Change password</button>
+    </form>
+  }
+</div>

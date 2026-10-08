@@ -15,12 +15,13 @@ const configurations = workspace.projects.localess.architect.build.configuration
 
 const asPairs = replacements => (replacements ?? []).map(({ replace, with: to }) => `${replace} -> ${to}`);
 
-test('the deploy configuration replaces the Firebase config with the per-project build file', () => {
-  assert.ok(
-    asPairs(configurations.deploy.fileReplacements).includes(
-      'src/environments/firebase-config.json -> src/environments/firebase-config.build.json',
-    ),
-  );
+test('no configuration swaps in a Firebase SDK config or bakes in LOCALESS_* constants', () => {
+  // The app talks to its own server now and reads runtime settings from GET /api/config, so the
+  // same build serves every install (server/README.md). Firebase-era build wiring must not return.
+  for (const [name, configuration] of Object.entries(configurations)) {
+    assert.ok(!asPairs(configuration.fileReplacements).some(pair => pair.includes('firebase-config')), `${name} replaces a Firebase config`);
+    assert.equal(configuration.define, undefined, `${name} defines build-time constants`);
+  }
 });
 
 test('the deploy configuration carries every replacement production has', () => {
@@ -42,18 +43,4 @@ test('production still swaps in environment.prod.ts', () => {
       'src/environments/environment.ts -> src/environments/environment.prod.ts',
     ),
   );
-});
-
-test('the tracked Firebase config is a demo placeholder, not a real project', () => {
-  // A `demo-` prefixed project id is what makes the Firebase emulators run fully offline,
-  // and it is the guard against someone committing a client's SDK config over this file.
-  const placeholder = JSON.parse(readFileSync(join(ROOT, 'src/environments/firebase-config.json'), 'utf8'));
-  assert.match(placeholder.projectId, /^demo-/);
-});
-
-test('the tracked placeholder has the same shape as `firebase apps:sdkconfig` output', () => {
-  const placeholder = JSON.parse(readFileSync(join(ROOT, 'src/environments/firebase-config.json'), 'utf8'));
-  for (const key of ['projectId', 'appId', 'storageBucket', 'locationId', 'apiKey', 'authDomain', 'messagingSenderId']) {
-    assert.ok(key in placeholder, `missing ${key}`);
-  }
 });

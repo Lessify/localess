@@ -1,113 +1,103 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-// @angular/fire/firestore and @angular/fire/functions are mocked globally in src/test-setup.ts.
-import { collectionData, deleteDoc, deleteField, docData, Firestore, updateDoc } from '@angular/fire/firestore';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { firstValueFrom, of } from 'rxjs';
-
-import { User, UserInvite, UserUpdate } from '../models/user.model';
+import { User, UserPermission } from '../models/user.model';
 import { UserService } from './user.service';
 
 describe('UserService', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  let http: HttpTestingController;
+  let events: Subject<ChangeEvent>;
 
   function setup() {
-    TestBed.configureTestingModule({ providers: [{ provide: Firestore, useValue: {} }, { provide: Functions, useValue: {} }] });
+    events = new Subject<ChangeEvent>();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
+    });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(UserService);
   }
 
-  it('findAll() reads the users collection', async () => {
-    const service = setup();
-    const users: User[] = [{ id: 'u1' } as unknown as User];
-    vi.mocked(collectionData).mockReturnValue(of(users));
-
-    const result = await firstValueFrom(service.findAll());
-
-    expect(result).toEqual(users);
-    expect(collectionData).toHaveBeenCalledWith({ path: 'mock-collection-ref' }, { idField: 'id' });
+  afterEach(() => {
+    http.verify();
+    vi.useRealTimers();
   });
 
-  it('findById() reads the user doc at the expected path', async () => {
+  it('findAll() reads the users', async () => {
     const service = setup();
-    const user: User = { id: 'u1' } as unknown as User;
-    vi.mocked(docData).mockReturnValue(of(user));
-
-    const result = await firstValueFrom(service.findById('u1'));
-
-    expect(result).toEqual(user);
+    const result = firstValueFrom(service.findAll());
+    http.expectOne({ method: 'GET', url: '/api/app/users' }).flush([{ id: 'u1' }]);
+    expect(await result).toEqual([{ id: 'u1' }]);
   });
 
-  it('update() sets role/permissions/lock for a custom role', async () => {
+  it('findAll() refetches when a user changes', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const model: UserUpdate = { role: 'custom', permissions: [], lock: true };
+    const results: User[][] = [];
+    const subscription = service.findAll().subscribe(it => results.push(it));
+    http.expectOne('/api/app/users').flush([]);
 
-    await firstValueFrom(service.update('u1', model));
+    events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone('/api/app/users');
 
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ role: 'custom', permissions: [], lock: true });
+    events.next({ spaceId: null, entity: 'users', id: 'u1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne('/api/app/users').flush([{ id: 'u1' } as User]);
+    expect(results).toEqual([[], [{ id: 'u1' }]]);
+    subscription.unsubscribe();
   });
 
-  it('update() defaults lock to false for a custom role when not provided', async () => {
+  it('findById() reads one user', async () => {
     const service = setup();
-    const model: UserUpdate = { role: 'custom', permissions: [] };
-
-    await firstValueFrom(service.update('u1', model));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ lock: false });
+    const result = firstValueFrom(service.findById('u1'));
+    http.expectOne({ method: 'GET', url: '/api/app/users/u1' }).flush({ id: 'u1' });
+    expect(await result).toEqual({ id: 'u1' });
   });
 
-  it('update() clears permissions/lock for an admin role', async () => {
+  it('update() patches role, permissions and lock', async () => {
     const service = setup();
-    const model: UserUpdate = { role: 'admin' };
-
-    await firstValueFrom(service.update('u1', model));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ role: 'admin', permissions: deleteField(), lock: deleteField() });
+    const done = firstValueFrom(service.update('u1', { role: 'custom', permissions: [UserPermission.CONTENT_READ], lock: true }));
+    const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
+    expect(request.request.body).toEqual({ role: 'custom', permissions: ['CONTENT_READ'], lock: true });
+    request.flush({});
+    await done;
   });
 
-  it('update() clears role/permissions/lock when role is undefined', async () => {
+  it('update() sends a null role to clear the access', async () => {
     const service = setup();
-    const model: UserUpdate = { role: undefined };
-
-    await firstValueFrom(service.update('u1', model));
-
-    const [, updatedFields] = vi.mocked(updateDoc).mock.calls[0];
-    expect(updatedFields).toMatchObject({ role: deleteField(), permissions: deleteField(), lock: deleteField() });
+    const done = firstValueFrom(service.update('u1', {}));
+    const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
+    expect(request.request.body).toEqual({ role: null, permissions: undefined, lock: undefined });
+    request.flush({});
+    await done;
   });
 
-  it('delete() deletes the user doc at the expected path', async () => {
+  it('delete() deletes the user', async () => {
     const service = setup();
-
-    await firstValueFrom(service.delete('u1'));
-
-    expect(deleteDoc).toHaveBeenCalledWith({ path: 'mock-doc-ref' });
+    const done = firstValueFrom(service.delete('u1'));
+    http.expectOne({ method: 'DELETE', url: '/api/app/users/u1' }).flush(null);
+    await done;
   });
 
-  it('invite() calls the user-invite callable with the model', async () => {
+  it('invite() posts the invite', async () => {
     const service = setup();
-    const callable = vi.fn().mockReturnValue(of(undefined));
-    vi.mocked(httpsCallableData).mockReturnValue(callable);
-    const model: UserInvite = { email: 'a@b.com', password: 'secret' };
-
-    await firstValueFrom(service.invite(model));
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'user-invite');
-    expect(callable).toHaveBeenCalledWith(model);
+    const invite = { email: 'new@example.com', password: 'secret1', role: 'admin' as const };
+    const done = firstValueFrom(service.invite(invite));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/users' });
+    expect(request.request.body).toEqual(invite);
+    request.flush({ id: 'u2' });
+    await done;
   });
 
-  it('sync() calls the user-sync callable', async () => {
+  it('passwordResetLink() creates a reset link', async () => {
     const service = setup();
-    const callable = vi.fn().mockReturnValue(of(undefined));
-    vi.mocked(httpsCallableData).mockReturnValue(callable);
-
-    await firstValueFrom(service.sync());
-
-    expect(httpsCallableData).toHaveBeenCalledWith(expect.anything(), 'user-sync');
-    expect(callable).toHaveBeenCalledWith();
+    const result = firstValueFrom(service.passwordResetLink('u1'));
+    const link = { url: 'https://cms.example.com/auth/reset?token=t', expiresAt: '2026-01-01T00:00:00.000Z' };
+    http.expectOne({ method: 'POST', url: '/api/app/users/u1/password-reset-link' }).flush(link);
+    expect(await result).toEqual(link);
   });
 });

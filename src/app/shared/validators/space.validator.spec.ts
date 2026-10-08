@@ -91,7 +91,15 @@ describe('isSafePreviewUrl', () => {
   });
 
   it('rejects script, data, blob and relative URLs', () => {
-    for (const url of ['javascript:alert(1)', 'JAVASCRIPT:alert(1)', ' javascript:alert(1)', 'data:text/html,x', 'blob:https://x/1', '/x', '']) {
+    for (const url of [
+      'javascript:alert(1)',
+      'JAVASCRIPT:alert(1)',
+      ' javascript:alert(1)',
+      'data:text/html,x',
+      'blob:https://x/1',
+      '/x',
+      '',
+    ]) {
       expect(isSafePreviewUrl(url, 'https://app.example')).toBe(false);
     }
   });

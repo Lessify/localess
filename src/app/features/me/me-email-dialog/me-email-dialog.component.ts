@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { UserStore } from '@shared/stores/user.store';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -17,10 +18,15 @@ import { MeEmailDialogResult } from './me-email-dialog.model';
 })
 export class MeEmailDialogComponent {
   private readonly fb = inject(FormBuilder);
+  private readonly userStore = inject(UserStore);
   private readonly dialogRef = inject<BrnDialogRef<MeEmailDialogResult>>(BrnDialogRef);
+
+  /** The server asks for the current password when the account has one. */
+  readonly askCurrentPassword = this.userStore.isPasswordProvider();
 
   /** No context: the dialog asks for a new address rather than editing the current one. */
   form: FormGroup = this.fb.group({
+    ...(this.askCurrentPassword ? { currentPassword: this.fb.control('', [Validators.required]) } : {}),
     newEmail: this.fb.control('', [Validators.required, Validators.minLength(3)]),
   });
 

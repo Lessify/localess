@@ -1,25 +1,47 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
-
-// @angular/fire/functions is mocked globally in src/test-setup.ts (registered via the test
-// builder's setupFiles option) — see that file for why this isn't a local vi.mock here.
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { firstValueFrom, of } from 'rxjs';
-import { TranslateData } from '@shared/models/translate.model';
+import { firstValueFrom } from 'rxjs';
 
 import { TranslateService } from './translate.service';
 
 describe('TranslateService', () => {
-  it('calls the translate callable with the given data and returns its result', async () => {
-    const callable = vi.fn().mockReturnValue(of('translated text'));
-    vi.mocked(httpsCallableData).mockReturnValue(callable);
-    TestBed.configureTestingModule({ providers: [{ provide: Functions, useValue: {} }] });
-    const service = TestBed.inject(TranslateService);
-    const data: TranslateData = { content: 'Hello', sourceLocale: 'en', targetLocale: 'de' };
+  let http: HttpTestingController;
 
-    const result = await firstValueFrom(service.translate(data));
+  function setup() {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    http = TestBed.inject(HttpTestingController);
+    return TestBed.inject(TranslateService);
+  }
 
-    expect(result).toBe('translated text');
-    expect(callable).toHaveBeenCalledWith(data);
+  afterEach(() => http.verify());
+
+  it('translate() posts one string and resolves to the translated content', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.translate({ content: '<p>Hello</p>', sourceLocale: 'en', targetLocale: 'de', format: 'html' }));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/translate' });
+    expect(request.request.body).toEqual({ sourceLocale: 'en', targetLocale: 'de', content: '<p>Hello</p>', format: 'html' });
+    request.flush({ content: '<p>Hallo</p>' });
+    expect(await result).toBe('<p>Hallo</p>');
+  });
+
+  it('translate() omits the format when not given', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.translate({ content: 'Hello', sourceLocale: 'en', targetLocale: 'de' }));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/translate' });
+    expect(request.request.body).toEqual({ sourceLocale: 'en', targetLocale: 'de', content: 'Hello' });
+    request.flush({ content: 'Hallo' });
+    expect(await result).toBe('Hallo');
+  });
+
+  it('translateBatch() posts the items and returns the batch result', async () => {
+    const service = setup();
+    const items = [{ id: 'a', content: 'Hello', format: 'text' as const }];
+    const result = firstValueFrom(service.translateBatch({ sourceLocale: 'en', targetLocale: 'de', items }));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/translate' });
+    expect(request.request.body).toEqual({ sourceLocale: 'en', targetLocale: 'de', items });
+    const response = { items: [{ id: 'a', content: 'Hallo' }], failed: [] };
+    request.flush(response);
+    expect(await result).toEqual(response);
   });
 });

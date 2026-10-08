@@ -1,5 +1,3 @@
-import { Timestamp } from '@angular/fire/firestore';
-
 export enum TokenPermission {
   TRANSLATION_PUBLIC = 'TRANSLATION_PUBLIC',
   TRANSLATION_DRAFT = 'TRANSLATION_DRAFT',
@@ -21,15 +19,12 @@ export interface TokenBase {
   id: string;
   version?: number;
   name: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Form Edit model
 export type TokenForm = Pick<TokenV2, 'name' | 'permissions' | 'cacheTtl'>;
-
-// Firestore create model
-export type TokenFS = Omit<TokenV2, 'id'>;
 
 export function isTokenV1(token: Token): token is TokenV1 {
   return token.version === undefined;

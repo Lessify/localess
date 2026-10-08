@@ -2,7 +2,12 @@ import { canGrantAdmin, canGrantPermission, canManageUser, ManagedUser, UserMana
 
 const admin: UserManager = { id: 'adm', role: 'admin', permissions: undefined };
 const manager: UserManager = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
-const target = (overrides: Partial<ManagedUser>): ManagedUser => ({ id: 'other', role: 'custom', permissions: ['CONTENT_READ'], ...overrides });
+const target = (overrides: Partial<ManagedUser>): ManagedUser => ({
+  id: 'other',
+  role: 'custom',
+  permissions: ['CONTENT_READ'],
+  ...overrides,
+});
 
 describe('user-management', () => {
   describe('canManageUser', () => {

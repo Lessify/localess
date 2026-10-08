@@ -1,141 +1,96 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Auth, signInWithEmailAndPassword, signInWithPopup, signOut } from '@angular/fire/auth';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { AppConfigService, DEFAULT_APP_CONFIG, PublicAppConfig } from '@core/api/app-config.service';
 import { UserStore } from '@shared/stores/user.store';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { environment } from '../../../environments/environment';
 import { LoginComponent } from './login.component';
 
-// @angular/fire/auth is mocked globally in src/test-setup.ts.
 describe('LoginComponent', () => {
-  let originalReload: typeof window.location.reload;
+  let http: HttpTestingController;
 
-  beforeEach(() => {
-    localStorage.clear();
-    originalReload = window.location.reload;
-    window.location.reload = vi.fn();
-  });
-
-  afterEach(() => {
-    window.location.reload = originalReload;
-    vi.clearAllMocks();
-  });
-
-  function setup() {
-    const navigate = vi.fn().mockResolvedValue(true);
-    const setAuthenticated = vi.fn();
-    const isAuthenticated = signal(false);
-
+  function setup(config: Partial<PublicAppConfig['auth']> = {}, query: Record<string, string> = {}) {
+    const signedIn = vi.fn();
     TestBed.configureTestingModule({
       providers: [
-        { provide: Auth, useValue: {} },
-        { provide: Router, useValue: { navigate } },
-        { provide: UserStore, useValue: { isAuthenticated, setAuthenticated } },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AppConfigService,
+          useValue: { config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config } }) },
+        },
+        { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap(query)) } },
+        { provide: UserStore, useValue: { signedIn, isAuthenticated: signal(false), email: signal(undefined) } },
       ],
     });
     TestBed.overrideComponent(LoginComponent, { set: { template: '<div></div>' } });
     const fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();
-    return { fixture, component: fixture.componentInstance, navigate, setAuthenticated, isAuthenticated };
+    http = TestBed.inject(HttpTestingController);
+    const component = fixture.componentInstance;
+    const redirect = vi.spyOn(component, 'redirect').mockImplementation(() => undefined);
+    return { component, signedIn, redirect };
   }
 
-  it('reflects the real environment auth-provider configuration', () => {
-    const { component } = setup();
-    expect(component.isGoogleAuthEnabled).toBe(environment.auth.providers.includes('GOOGLE'));
-    expect(component.isMicrosoftAuthEnabled).toBe(environment.auth.providers.includes('MICROSOFT'));
+  afterEach(() => http.verify());
+
+  it('offers the providers and message the server reports', () => {
+    const { component } = setup({ providers: ['GOOGLE'], loginMessage: 'Maintenance tonight' });
+    expect(component.isGoogleAuthEnabled()).toBe(true);
+    expect(component.isMicrosoftAuthEnabled()).toBe(false);
+    expect(component.message()).toBe('Maintenance tonight');
   });
 
   it('form is invalid when empty; valid once both fields have at least 2 characters', () => {
     const { component } = setup();
     expect(component.form.invalid).toBe(true);
-
     component.form.setValue({ email: 'ab', password: 'cd' });
     expect(component.form.valid).toBe(true);
   });
 
-  it('loginWithEmailAndPassword no-ops when the form has no email/password', async () => {
-    const { component, setAuthenticated } = setup();
-
-    await expect(component.loginWithEmailAndPassword()).resolves.toBeUndefined();
-
-    expect(signInWithEmailAndPassword).not.toHaveBeenCalled();
-    expect(setAuthenticated).not.toHaveBeenCalled();
-    expect(component.hasAuthError()).toBe(false);
+  it('signs in with email and password, stores the user and reloads into the app', () => {
+    const { component, signedIn, redirect } = setup();
+    component.form.setValue({ email: 'me@example.com', password: 'secret' });
+    component.loginWithEmailAndPassword();
+    const request = http.expectOne({ method: 'POST', url: '/api/auth/login' });
+    expect(request.request.body).toEqual({ email: 'me@example.com', password: 'secret' });
+    request.flush({ user: { id: 'u1', email: 'me@example.com', providers: ['password'] } });
+    expect(signedIn).toHaveBeenCalledWith({ id: 'u1', email: 'me@example.com', providers: ['password'] });
+    expect(redirect).toHaveBeenCalledWith('/features');
   });
 
-  it('loginWithEmailAndPassword signs in and marks the user authenticated on success', async () => {
-    const { component, setAuthenticated } = setup();
-    component.form.setValue({ email: 'user@example.com', password: 'secret' });
-    vi.mocked(signInWithEmailAndPassword).mockResolvedValue({} as never);
-
-    await component.loginWithEmailAndPassword();
-
-    expect(signInWithEmailAndPassword).toHaveBeenCalledWith(component.auth, 'user@example.com', 'secret');
-    expect(setAuthenticated).toHaveBeenCalledWith(true);
-    expect(component.hasAuthError()).toBe(false);
-  });
-
-  it('loginWithEmailAndPassword sets hasAuthError on a Firebase auth error', async () => {
-    const { component, setAuthenticated } = setup();
-    component.form.setValue({ email: 'user@example.com', password: 'wrong' });
-    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({ code: 'auth/wrong-password' });
-
-    await component.loginWithEmailAndPassword();
-
-    expect(setAuthenticated).not.toHaveBeenCalled();
+  it('shows an error when the credentials are wrong', () => {
+    const { component, signedIn, redirect } = setup();
+    component.form.setValue({ email: 'me@example.com', password: 'nope' });
+    component.loginWithEmailAndPassword();
+    http.expectOne('/api/auth/login').flush({ message: 'Invalid email or password' }, { status: 401, statusText: 'Unauthorized' });
     expect(component.hasAuthError()).toBe(true);
+    expect(component.pending()).toBe(false);
+    expect(signedIn).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
   });
 
-  it('loginWithEmailAndPassword swallows non-Firebase errors without setting hasAuthError', async () => {
-    const { component, setAuthenticated } = setup();
-    component.form.setValue({ email: 'user@example.com', password: 'wrong' });
-    vi.mocked(signInWithEmailAndPassword).mockRejectedValue(new Error('network down'));
-
-    await component.loginWithEmailAndPassword();
-
-    expect(setAuthenticated).not.toHaveBeenCalled();
-    expect(component.hasAuthError()).toBe(false);
+  it('does nothing when the form is empty', () => {
+    const { component } = setup();
+    component.loginWithEmailAndPassword();
+    http.expectNone('/api/auth/login');
   });
 
-  it('loginWithGoogle signs in via popup and marks the user authenticated', async () => {
-    const { component, setAuthenticated } = setup();
-    vi.mocked(signInWithPopup).mockResolvedValue({} as never);
-
-    await component.loginWithGoogle();
-
-    expect(signInWithPopup).toHaveBeenCalledWith(component.auth, expect.anything());
-    expect(setAuthenticated).toHaveBeenCalledWith(true);
+  it('redirects to the provider sign-in', () => {
+    const { component, redirect } = setup({ providers: ['GOOGLE', 'MICROSOFT'] });
+    component.loginWith('microsoft');
+    expect(redirect).toHaveBeenCalledWith('/api/auth/oauth/microsoft?returnTo=%2Ffeatures');
   });
 
-  it('loginWithMicrosoft signs in via popup and marks the user authenticated', async () => {
-    const { component, setAuthenticated } = setup();
-    vi.mocked(signInWithPopup).mockResolvedValue({} as never);
-
-    await component.loginWithMicrosoft();
-
-    expect(signInWithPopup).toHaveBeenCalledWith(component.auth, expect.anything());
-    expect(setAuthenticated).toHaveBeenCalledWith(true);
+  it('explains provider sign-in errors passed back as ?error=', () => {
+    expect(setup({}, { error: 'no-account' }).component.oauthError()).toMatch(/no Localess account/);
   });
 
-  it('logout marks the user unauthenticated and signs out', async () => {
-    const { component, setAuthenticated } = setup();
-
-    await component.logout();
-
-    expect(setAuthenticated).toHaveBeenCalledWith(false);
-    expect(signOut).toHaveBeenCalledWith(component.auth);
-  });
-
-  it('redirects and reloads when the user becomes authenticated', async () => {
-    const { fixture, isAuthenticated, navigate } = setup();
-
-    isAuthenticated.set(true);
-    fixture.detectChanges();
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    expect(navigate).toHaveBeenCalledWith(['features']);
-    expect(window.location.reload).toHaveBeenCalled();
+  it('falls back to a generic message for unknown error codes', () => {
+    expect(setup({}, { error: 'weird' }).component.oauthError()).toMatch(/failed/);
   });
 });

@@ -1,43 +1,56 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
+import { AppConfigService, DEFAULT_APP_CONFIG } from '@core/api/app-config.service';
+import { firstValueFrom } from 'rxjs';
 
-// @angular/fire/functions is mocked globally in src/test-setup.ts.
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { firstValueFrom, of } from 'rxjs';
-
-import { environment } from '../../../environments/environment';
 import { UnsplashPluginService } from './unsplash-plugin.service';
 
 describe('UnsplashPluginService', () => {
+  let http: HttpTestingController;
+
   function setup() {
-    TestBed.configureTestingModule({ providers: [{ provide: Functions, useValue: {} }] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    http = TestBed.inject(HttpTestingController);
     return TestBed.inject(UnsplashPluginService);
   }
 
-  it('enabled() reflects the environment flag', () => {
-    const service = setup();
-    expect(service.enabled()).toBe(environment.plugins.unsplash);
+  afterEach(() => {
+    http.verify();
   });
 
-  it('search() calls the unsplash-search callable with the given params', async () => {
-    const callable = vi.fn().mockReturnValue(of({ total: 0, total_pages: 0, results: [] }));
-    (httpsCallableData as unknown as ReturnType<typeof vi.fn>).mockReturnValue(callable);
+  it('enabled() reflects the runtime app config', () => {
     const service = setup();
+    expect(service.enabled()).toBe(false);
 
-    const result = await firstValueFrom(service.search({ query: 'cats', page: 1 }));
-
-    expect(result).toEqual({ total: 0, total_pages: 0, results: [] });
-    expect(callable).toHaveBeenCalledWith({ query: 'cats', page: 1 });
+    TestBed.inject(AppConfigService).config.set({ ...DEFAULT_APP_CONFIG, plugins: { unsplash: true } });
+    expect(service.enabled()).toBe(true);
   });
 
-  it('random() calls the unsplash-random callable with no arguments', async () => {
-    const callable = vi.fn().mockReturnValue(of({ url: 'https://example.com/photo.jpg' }));
-    (httpsCallableData as unknown as ReturnType<typeof vi.fn>).mockReturnValue(callable);
+  it('search() sends the given params as query params', async () => {
     const service = setup();
+    const result = firstValueFrom(service.search({ query: 'cats', page: 2, perPage: 30, orientation: 'portrait' }));
+    const request = http.expectOne(req => req.url === '/api/app/plugins/unsplash/search');
+    expect(request.request.method).toBe('GET');
+    expect(request.request.params.get('query')).toBe('cats');
+    expect(request.request.params.get('page')).toBe('2');
+    expect(request.request.params.get('perPage')).toBe('30');
+    expect(request.request.params.get('orientation')).toBe('portrait');
+    request.flush({ total: 0, total_pages: 0, results: [] });
+    expect(await result).toEqual({ total: 0, total_pages: 0, results: [] });
+  });
 
-    const result = await firstValueFrom(service.random());
+  it('search() leaves out params that are not set', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.search({ query: 'cats' }));
+    http.expectOne({ method: 'GET', url: '/api/app/plugins/unsplash/search?query=cats' }).flush({ total: 0, total_pages: 0, results: [] });
+    await result;
+  });
 
-    expect(result).toEqual({ url: 'https://example.com/photo.jpg' });
-    expect(callable).toHaveBeenCalledWith();
+  it('random() reads random photos', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.random());
+    http.expectOne({ method: 'GET', url: '/api/app/plugins/unsplash/random' }).flush({ results: [] });
+    expect(await result).toEqual({ results: [] });
   });
 });

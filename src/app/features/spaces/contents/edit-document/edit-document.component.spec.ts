@@ -529,7 +529,8 @@ describe('EditDocumentComponent', () => {
       const result = setup(documentOf({ _id: 'root-id', _schema: 'root1', children: children() }), { schemas: [listSchema, childSchema] });
       const sendEvent = vi.fn();
       vi.spyOn(result.component, 'previewComponent').mockReturnValue({ sendEvent } as unknown as ContentPreviewComponent);
-      const select = (id: string) => result.component.navigateToSchemaForwards({ contentId: id, schemaName: 'child1', fieldName: 'children' });
+      const select = (id: string) =>
+        result.component.navigateToSchemaForwards({ contentId: id, schemaName: 'child1', fieldName: 'children' });
       const ids = () => (result.component.documentData['children'] as { _id: string }[] | undefined)?.map(it => it._id);
       return { ...result, sendEvent, select, ids };
     }

@@ -1,10 +1,10 @@
+import { HttpClient } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
-import { Auth, user } from '@angular/fire/auth';
 import { tapResponse } from '@ngrx/operators';
-import { getState, patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { UserRole } from '@shared/models/user.model';
-import { EMPTY, from, pipe, switchMap } from 'rxjs';
+import { User, UserRole } from '@shared/models/user.model';
+import { pipe, switchMap } from 'rxjs';
 
 const LS_KEY = 'LL-USER-STATE';
 
@@ -25,6 +25,8 @@ export interface UserState {
   numberProviders: number;
   // Authenticated
   isAuthenticated: boolean;
+  /** The session check (`GET /api/auth/me`) has answered at least once. */
+  loaded: boolean;
 }
 
 export const initialState: UserState = {
@@ -42,79 +44,70 @@ export const initialState: UserState = {
   isMicrosoftProvider: false,
   numberProviders: 0,
   isAuthenticated: false,
+  loaded: false,
 };
 
 const initialStateFactory = (): UserState => {
   const state = localStorage.getItem(LS_KEY);
   if (state) {
-    return { ...initialState, ...JSON.parse(state) };
+    return { ...initialState, ...JSON.parse(state), loaded: false };
   }
   return { ...initialState };
 };
+
+/** The signed-in user as state: identity, providers, role and permissions (from the session, not token claims). */
+export function userToState(user: User): Partial<UserState> {
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    initials: user.displayName
+      ? user.displayName
+          .split(' ')
+          .map(n => n[0])
+          .join('')
+          .toUpperCase()
+      : undefined,
+    email: user.email,
+    emailVerified: user.emailVerified,
+    photoURL: user.photoURL || undefined,
+    role: user.role,
+    permissions: user.permissions,
+    lock: user.lock,
+    numberProviders: user.providers.length,
+    isPasswordProvider: user.providers.includes('password'),
+    isGoogleProvider: user.providers.includes('google.com'),
+    isMicrosoftProvider: user.providers.includes('microsoft.com'),
+    isAuthenticated: true,
+    loaded: true,
+  };
+}
 
 export const UserStore = signalStore(
   { providedIn: 'root' },
   withState<UserState>(initialStateFactory),
   withMethods(state => {
-    const auth = inject(Auth);
+    const http = inject(HttpClient);
+    const signedIn = (user: User) => {
+      patchState(state, userToState(user));
+      localStorage.setItem(LS_KEY, JSON.stringify({ isAuthenticated: true }));
+    };
+    const signedOut = () => {
+      patchState(state, { ...initialState, loaded: true });
+      localStorage.setItem(LS_KEY, JSON.stringify({ isAuthenticated: false }));
+    };
     return {
+      /** Reads the session. A 401 means signed out. */
       load: rxMethod<void>(
         pipe(
-          switchMap(() => user(auth)),
+          switchMap(() => http.get<{ user: User }>('/api/auth/me')),
           tapResponse({
-            next: user => {
-              console.log('Loaded user', user);
-              if (user) {
-                patchState(state, {
-                  id: user.uid,
-                  displayName: user.displayName,
-                  initials: user.displayName
-                    ? user.displayName
-                        .split(' ')
-                        .map(n => n[0])
-                        .join('')
-                        .toUpperCase()
-                    : undefined,
-                  email: user.email,
-                  emailVerified: user.emailVerified,
-                  photoURL: user.photoURL || undefined,
-                  numberProviders: user.providerData.length || 0,
-                  isPasswordProvider: user.providerData.some(it => it.providerId === 'password') || false,
-                  isGoogleProvider: user.providerData.some(it => it.providerId === 'google.com') || false,
-                  isMicrosoftProvider: user.providerData.some(it => it.providerId === 'microsoft.com') || false,
-                  isAuthenticated: true,
-                });
-                localStorage.setItem(LS_KEY, JSON.stringify({ isAuthenticated: true }));
-              } else {
-                patchState(state, { isAuthenticated: false });
-                localStorage.setItem(LS_KEY, JSON.stringify({ isAuthenticated: false }));
-              }
-            },
-            error: error => {
-              console.error('Error loading user', error);
-            },
-          }),
-          switchMap(user => from(user?.getIdTokenResult() || EMPTY)),
-          tapResponse({
-            next: token => {
-              console.log('Loaded user token', token);
-              if (token.claims['role'] || token.claims['permissions']) {
-                const role = token.claims['role'] as UserRole | undefined;
-                const permissions = token.claims['permissions'] as string[] | undefined;
-                const lock = token.claims['lock'] as boolean | undefined;
-                patchState(state, { role, permissions, lock });
-              }
-            },
-            error: error => {
-              console.error('Error loading token', error);
-            },
+            next: ({ user }) => signedIn(user),
+            error: () => signedOut(),
           }),
         ),
       ),
-      setAuthenticated: (isAuthenticated: boolean) => {
-        patchState(state, { isAuthenticated });
-        localStorage.setItem(LS_KEY, JSON.stringify({ isAuthenticated }));
-      },
+      signedIn,
+      signedOut,
     };
   }),
   withComputed(state => {
@@ -125,11 +118,7 @@ export const UserStore = signalStore(
   }),
   withHooks({
     onInit: store => {
-      console.log('onInit', getState(store));
       store.load();
-    },
-    onDestroy: store => {
-      console.log('onDestroy', getState(store));
     },
   }),
 );

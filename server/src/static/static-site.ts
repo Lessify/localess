@@ -14,7 +14,8 @@ const CONTENT_SECURITY_POLICY = [
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
-  "connect-src 'self'",
+  // The SPA checks GitHub for new releases.
+  "connect-src 'self' https://api.github.com",
   "frame-src 'self' https: http://localhost:* http://127.0.0.1:*",
   "worker-src 'self' blob:",
   "manifest-src 'self'",

@@ -1,108 +1,56 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import {
-  addDoc,
-  collection,
-  collectionData,
-  deleteDoc,
-  deleteField,
-  doc,
-  docData,
-  DocumentReference,
-  Firestore,
-  limit,
-  orderBy,
-  query,
-  QueryConstraint,
-  serverTimestamp,
-  updateDoc,
-  where,
-  WithFieldValue,
-} from '@angular/fire/firestore';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { UpdateData } from '@firebase/firestore';
-import { isTokenV2, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenForm, TokenFS, TokenPermission } from '@shared/models/token.model';
-import { from, Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
+import { Token, TokenForm, TokenPermission } from '@shared/models/token.model';
+import { Observable } from 'rxjs';
 
+/** API tokens of a space (`/api/app/spaces/:spaceId/tokens`); reads are live, newest first. */
 @Injectable({ providedIn: 'root' })
 export class TokenService {
-  private firestore = inject(Firestore);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
+
+  private base(spaceId: string): string {
+    return `/api/app/spaces/${spaceId}/tokens`;
+  }
 
   findAll(spaceId: string): Observable<Token[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('createdAt', 'desc')];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Tokens:findAll'),
-      map(it => it as Token[]),
-    );
+    return liveQueryWith(this.events, { spaceId, entities: ['tokens'] }, () => this.http.get<Token[]>(this.base(spaceId)));
   }
 
   findFirst(spaceId: string): Observable<Token[]> {
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), limit(1)), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Tokens:findFirst'),
-      map(it => it as Token[]),
-    );
+    const params = new HttpParams().set('limit', 1);
+    return liveQueryWith(this.events, { spaceId, entities: ['tokens'] }, () => this.http.get<Token[]>(this.base(spaceId), { params }));
   }
 
   findFirstByPermission(spaceId: string, permission: TokenPermission): Observable<Token[]> {
-    const queryConstrains: QueryConstraint[] = [where('permissions', 'array-contains', permission), limit(1)];
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/tokens`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Tokens:findFirstByPermission'),
-      map(it => it as Token[]),
-    );
+    const params = new HttpParams().set('permission', permission).set('limit', 1);
+    return liveQueryWith(this.events, { spaceId, entities: ['tokens'] }, () => this.http.get<Token[]>(this.base(spaceId), { params }));
   }
 
   findById(spaceId: string, id: string): Observable<Token> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Tokens:findById'),
-      map(it => it as Token),
-    );
+    return liveQueryWith(this.events, { spaceId, entities: ['tokens'], id }, () => this.http.get<Token>(`${this.base(spaceId)}/${id}`));
   }
 
-  create(spaceId: string, model: TokenForm): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TokenFS> = {
-      version: 2,
-      name: model.name,
-      permissions: model.permissions,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (model.cacheTtl != null) {
-      addEntity.cacheTtl = model.cacheTtl;
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tokens`), addEntity)).pipe(traceUntilFirst('Firestore:Tokens:create'));
+  create(spaceId: string, model: TokenForm): Observable<Token> {
+    return this.http.post<Token>(this.base(spaceId), this.body(model));
   }
 
   update(spaceId: string, id: string, model: TokenForm): Observable<void> {
-    const update: UpdateData<TokenFS> = {
-      version: 2,
-      name: model.name,
-      permissions: model.permissions,
-      cacheTtl: model.cacheTtl != null ? model.cacheTtl : deleteField(),
-      updatedAt: serverTimestamp(),
-    };
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`), update)).pipe(traceUntilFirst('Firestore:Tokens:update'));
+    return this.http.put<void>(`${this.base(spaceId)}/${id}`, this.body(model));
   }
 
-  regenerate(spaceId: string, token: Token): Observable<DocumentReference> {
-    const addEntity: WithFieldValue<TokenFS> = {
-      version: 2,
-      name: token.name,
-      // A v1 token has no stored permissions but implicitly grants these — keep them explicitly.
-      permissions: isTokenV2(token) ? token.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
-      createdAt: token.createdAt,
-      updatedAt: serverTimestamp(),
-    };
-    if (isTokenV2(token) && token.cacheTtl != null) {
-      addEntity.cacheTtl = token.cacheTtl;
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/tokens`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Tokens:regenerate'),
-      switchMap(ref => from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${token.id}`))).pipe(map(() => ref))),
-    );
+  /** Same token under a new secret; resolves to the new token. */
+  regenerate(spaceId: string, token: Token): Observable<Token> {
+    return this.http.post<Token>(`${this.base(spaceId)}/${token.id}/regenerate`, {});
   }
 
   delete(spaceId: string, id: string): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/tokens/${id}`))).pipe(traceUntilFirst('Firestore:Tokens:delete'));
+    return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
+  }
+
+  private body(model: TokenForm) {
+    return { name: model.name, permissions: model.permissions, cacheTtl: model.cacheTtl ?? null };
   }
 }

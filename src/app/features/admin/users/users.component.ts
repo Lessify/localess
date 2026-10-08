@@ -18,10 +18,10 @@ import {
   lucideCheck,
   lucideEllipsisVertical,
   lucideInfo,
+  lucideKeyRound,
   lucideLock,
   lucideMail,
   lucidePencil,
-  lucideRefreshCcw,
   lucideShieldCheck,
   lucideTrash,
   lucideUserPlus,
@@ -46,7 +46,6 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
@@ -70,13 +69,11 @@ import { canManageUser } from './user-management';
     HlmIconImports,
     HlmTooltipImports,
     HlmProgressImports,
-    HlmSpinnerImports,
     HlmDropdownMenuImports,
   ],
   providers: [
     provideIcons({
       lucideUserPlus,
-      lucideRefreshCcw,
       lucidePencil,
       lucideTrash,
       lucideCheck,
@@ -86,6 +83,7 @@ import { canManageUser } from './user-management';
       lucideInfo,
       lucideLock,
       lucideShieldCheck,
+      lucideKeyRound,
     }),
   ],
 })
@@ -101,7 +99,6 @@ export class UsersComponent implements OnInit, AfterViewInit {
   paginator = viewChild.required(Paginator);
 
   isLoading = signal(true);
-  isSyncLoading = signal(false);
   private readonly users = signal<User[]>([]);
   readonly dataSource = new TableDataSource<User>(this.users, this.injector);
   displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
@@ -231,21 +228,17 @@ export class UsersComponent implements OnInit, AfterViewInit {
       });
   }
 
-  sync(): void {
-    this.isSyncLoading.set(true);
-    this.userService.sync().subscribe({
-      next: () => {
-        this.notificationService.success(`Sync is in progress, it may take upt to few minutes.`);
-      },
-      error: () => {
-        this.notificationService.error(`Users can not be synced.`);
-      },
-      complete: () => {
-        setTimeout(() => {
-          this.isSyncLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
-    });
+  copyPasswordResetLink(element: User): void {
+    this.userService
+      .passwordResetLink(element.id)
+      .pipe(switchMap(({ url }) => navigator.clipboard.writeText(url)))
+      .subscribe({
+        next: () => {
+          this.notificationService.success(`Password reset link for '${element.email}' copied to clipboard. It is valid for one hour.`);
+        },
+        error: () => {
+          this.notificationService.error(`Password reset link for '${element.email}' can not be created.`);
+        },
+      });
   }
 }

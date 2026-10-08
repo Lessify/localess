@@ -8,6 +8,7 @@ import { publicOrigin } from '../auth/public-url.js';
 import { canGrant, canManageUser, USER_PERMISSIONS, UserPermission } from '../auth/permissions.js';
 import { CurrentUser } from '../auth/request-context.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { EventsService } from '../events/events.service.js';
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { toPrincipal, UserDto, UserRow, UsersService } from './users.service.js';
 
@@ -41,7 +42,12 @@ export class UsersController {
     private readonly users: UsersService,
     private readonly passwordReset: PasswordResetService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly events: EventsService,
   ) {}
+
+  private changed(id: string, op: 'created' | 'updated' | 'deleted'): Promise<void> {
+    return this.events.publish({ spaceId: null, entity: 'users', id, op });
+  }
 
   @Get()
   list(): Promise<UserDto[]> {
@@ -59,7 +65,9 @@ export class UsersController {
     @Body(new ZodValidationPipe(inviteSchema)) body: z.infer<typeof inviteSchema>,
   ): Promise<UserDto> {
     if (!canGrant(toPrincipal(caller), body.role, body.permissions)) throw new ForbiddenException();
-    return this.users.toDto(await this.users.create(body));
+    const user = await this.users.create(body);
+    await this.changed(user.id, 'created');
+    return this.users.toDto(user);
   }
 
   @Patch(':id')
@@ -73,7 +81,9 @@ export class UsersController {
     if (!canManageUser(principal, toPrincipal(target)) || !canGrant(principal, body.role, body.permissions)) {
       throw new ForbiddenException();
     }
-    return this.users.toDto(await this.users.updateAccess(id, body));
+    const user = await this.users.updateAccess(id, body);
+    await this.changed(id, 'updated');
+    return this.users.toDto(user);
   }
 
   /** A one-hour reset link to hand to the user — the way to reset passwords when SMTP isn't configured. */
@@ -96,5 +106,6 @@ export class UsersController {
     if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     // Sessions, credentials and identities cascade.
     await this.users.delete(id);
+    await this.changed(id, 'deleted');
   }
 }

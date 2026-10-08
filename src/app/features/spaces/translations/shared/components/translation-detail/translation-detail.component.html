@@ -193,7 +193,7 @@
               <div class="text-sm leading-6 font-semibold break-all"> Created At</div>
             </div>
             <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ translation.createdAt?.toMillis() | date: 'medium' }}
+              {{ translation.createdAt | date: 'medium' }}
             </div>
           </div>
         </li>
@@ -203,7 +203,7 @@
               <div class="text-sm leading-6 font-semibold break-all"> Updated At</div>
             </div>
             <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ translation.updatedAt?.toMillis() | date: 'medium' }}
+              {{ translation.updatedAt | date: 'medium' }}
             </div>
           </div>
         </li>

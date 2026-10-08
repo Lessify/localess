@@ -1,292 +1,138 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
-import {
-  addDoc,
-  collection,
-  collectionCount,
-  collectionData,
-  deleteDoc,
-  doc,
-  docData,
-  documentId,
-  DocumentReference,
-  Firestore,
-  limit,
-  orderBy,
-  query,
-  QueryConstraint,
-  serverTimestamp,
-  UpdateData,
-  updateDoc,
-  where,
-} from '@angular/fire/firestore';
-import { Functions, httpsCallableData } from '@angular/fire/functions';
-import { traceUntilFirst } from '@angular/fire/performance';
-import { NameUtils } from '@core/utils/name-utils.service';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
 import {
   Content,
   ContentData,
   ContentDocument,
   ContentDocumentCreate,
-  ContentDocumentCreateFS,
   ContentFolder,
   ContentFolderCreate,
-  ContentFolderCreateFS,
   ContentKind,
   ContentUpdate,
 } from '@shared/models/content.model';
 import { normalizeContent } from '@shared/utils/content';
-import { from, Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+/** Contents of a space (`/api/app/spaces/:spaceId/contents`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class ContentService {
-  private readonly firestore = inject(Firestore);
-  private readonly functions = inject(Functions);
-  private readonly auth = inject(Auth);
+  private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
 
+  private base(spaceId: string): string {
+    return `/api/app/spaces/${spaceId}/contents`;
+  }
+
+  private list<T extends Content>(spaceId: string, params: HttpParams): Observable<T[]> {
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () => this.http.get<T[]>(this.base(spaceId), { params }));
+  }
+
+  private byName(name: string, max: number, kind?: ContentKind): HttpParams {
+    let params = new HttpParams().set('name', name);
+    if (kind) params = params.set('kind', kind);
+    return params.set('limit', max);
+  }
+
+  /** Children of `parentSlug` (root when empty), folders first then by name. */
   findAll(spaceId: string, parentSlug?: string): Observable<Content[]> {
-    const queryConstrains: QueryConstraint[] = [orderBy('kind', 'desc'), orderBy('name', 'asc')];
-    if (parentSlug) {
-      queryConstrains.push(where('parentSlug', '==', parentSlug));
-    } else {
-      queryConstrains.push(where('parentSlug', '==', ''));
-    }
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findAll'),
-      map(it => it as Content[]),
-    );
+    return this.list(spaceId, new HttpParams().set('parentSlug', parentSlug ?? ''));
   }
 
   countAll(spaceId: string, kind?: ContentKind): Observable<number> {
-    const queryConstrains: QueryConstraint[] = [];
-    if (kind) {
-      queryConstrains.push(where('kind', '==', kind));
-    }
-    return collectionCount(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains)).pipe(
-      traceUntilFirst('Firestore:Contents:countAll'),
-    );
+    const params = kind ? new HttpParams().set('kind', kind) : undefined;
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
+      this.http.get<{ count: number }>(`${this.base(spaceId)}/count`, { params }),
+    ).pipe(map(it => it.count));
   }
 
   findAllDocuments(spaceId: string): Observable<ContentDocument[]> {
-    const queryConstrains: QueryConstraint[] = [where('kind', '==', ContentKind.DOCUMENT)];
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findAllDocuments'),
-      map(it => it as ContentDocument[]),
-    );
+    return this.list(spaceId, new HttpParams().set('kind', ContentKind.DOCUMENT));
   }
 
   findAllByName(spaceId: string, name: string, max = 20): Observable<Content[]> {
-    const queryConstrains: QueryConstraint[] = [where('name', '>=', name), where('name', '<=', `${name}~`), limit(max)];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findAllByName'),
-      map(it => it as Content[]),
-    );
+    return this.list(spaceId, this.byName(name, max));
   }
 
   findAllDocumentsByName(spaceId: string, name: string, max = 20): Observable<ContentDocument[]> {
-    const queryConstrains: QueryConstraint[] = [
-      where('kind', '==', ContentKind.DOCUMENT),
-      where('name', '>=', name),
-      where('name', '<=', `${name}~`),
-      limit(max),
-    ];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findAllDocumentsByName'),
-      map(it => it as ContentDocument[]),
-    );
+    return this.list(spaceId, this.byName(name, max, ContentKind.DOCUMENT));
   }
 
   findAllFoldersByName(spaceId: string, name: string, max = 20): Observable<ContentFolder[]> {
-    const queryConstrains: QueryConstraint[] = [
-      where('kind', '==', ContentKind.FOLDER),
-      where('name', '>=', name),
-      where('name', '<=', `${name}~`),
-      limit(max),
-    ];
-
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), ...queryConstrains), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findAllFoldersByName'),
-      map(it => it as ContentFolder[]),
-    );
+    return this.list(spaceId, this.byName(name, max, ContentKind.FOLDER));
   }
 
   findById(spaceId: string, id: string): Observable<Content> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findById'),
-      map(it => it as Content),
-    );
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'], id }, () => this.http.get<Content>(`${this.base(spaceId)}/${id}`));
   }
 
   findDocumentById(spaceId: string, id: string): Observable<ContentDocument> {
-    return docData(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), { idField: 'id' }).pipe(
-      traceUntilFirst('Firestore:Contents:findDocumentById'),
-      map(it => it as ContentDocument),
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'], id }, () =>
+      this.http.get<ContentDocument>(`${this.base(spaceId)}/${id}`),
     );
   }
 
   findByIds(spaceId: string, ids: string[]): Observable<Content[]> {
-    return collectionData(query(collection(this.firestore, `spaces/${spaceId}/contents`), where(documentId(), 'in', ids)), {
-      idField: 'id',
-    }).pipe(
-      traceUntilFirst('Firestore:Contents:findByIds'),
-      map(it => it as Content[]),
-    );
+    if (ids.length === 0) return of([]);
+    return this.list(spaceId, new HttpParams().set('ids', ids.join(',')));
   }
 
-  createDocument(spaceId: string, parentSlug: string, entity: ContentDocumentCreate): Observable<DocumentReference> {
-    const addEntity: ContentDocumentCreateFS = {
+  createDocument(spaceId: string, parentSlug: string, entity: ContentDocumentCreate): Observable<ContentDocument> {
+    return this.http.post<ContentDocument>(this.base(spaceId), {
       kind: ContentKind.DOCUMENT,
+      parentSlug,
       name: entity.name,
       slug: entity.slug,
-      parentSlug: parentSlug,
-      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
       schema: entity.schema,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      addEntity.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Contents:create'),
-    );
+    });
   }
 
-  createFolder(spaceId: string, parentSlug: string, entity: ContentFolderCreate): Observable<DocumentReference> {
-    const addEntity: ContentFolderCreateFS = {
+  createFolder(spaceId: string, parentSlug: string, entity: ContentFolderCreate): Observable<ContentFolder> {
+    return this.http.post<ContentFolder>(this.base(spaceId), {
       kind: ContentKind.FOLDER,
+      parentSlug,
       name: entity.name,
       slug: entity.slug,
-      parentSlug: parentSlug,
-      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      addEntity.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Contents:create'),
-    );
+    });
   }
 
   update(spaceId: string, id: string, parentSlug: string, entity: ContentUpdate): Observable<void> {
-    const update: UpdateData<Content> = {
-      name: entity.name,
-      slug: entity.slug,
-      parentSlug: parentSlug,
-      fullSlug: parentSlug ? `${parentSlug}/${entity.slug}` : entity.slug,
-      updatedAt: serverTimestamp(),
-    };
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      update.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:update'),
-    );
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, slug: entity.slug, parentSlug });
   }
 
+  /** `parentSlug` '~' is the root. */
   move(spaceId: string, id: string, parentSlug: string, slug: string): Observable<void> {
-    if (parentSlug === '~') {
-      parentSlug = '';
-    }
-    const update: UpdateData<Content> = {
-      parentSlug: parentSlug,
-      fullSlug: parentSlug ? `${parentSlug}/${slug}` : slug,
-      updatedAt: serverTimestamp(),
-    };
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      update.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:move'),
-    );
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { parentSlug: parentSlug === '~' ? '' : parentSlug, slug });
   }
 
   /**
    * Update Document Data
-   * @param spaceId
-   * @param id
-   * @param data
    * @param refs Tuple of Sets: [assets, links, references]
    */
   updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
-    console.log('updateDocumentData:refs', refs);
-    console.log('updateDocumentData:data', data);
-    const update: UpdateData<ContentDocument> = {
-      data: JSON.stringify(normalizeContent(data)),
-      updatedAt: serverTimestamp(),
-      assets: Array.from(refs[0]),
-      links: Array.from(refs[1]),
-      references: Array.from(refs[2]),
-    };
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      update.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(updateDoc(doc(this.firestore, `spaces/${spaceId}/contents/${id}`), update)).pipe(
-      traceUntilFirst('Firestore:Contents:update'),
-    );
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/data`, {
+      data: normalizeContent(data),
+      assets: [...refs[0]],
+      links: [...refs[1]],
+      references: [...refs[2]],
+    });
   }
 
-  cloneDocument(spaceId: string, entity: ContentDocument): Observable<DocumentReference> {
-    const nameSuffix = NameUtils.random(5);
-    const addEntity: ContentDocumentCreateFS = {
-      kind: ContentKind.DOCUMENT,
-      name: `${entity.name} ${nameSuffix}`,
-      slug: `${entity.slug}-${nameSuffix}`,
-      parentSlug: entity.parentSlug,
-      fullSlug: entity.parentSlug ? `${entity.parentSlug}/${entity.slug}-${nameSuffix}` : `${entity.slug}-${nameSuffix}`,
-      schema: entity.schema,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
-
-    if (entity.data) {
-      addEntity.data = entity.data;
-    }
-    if (this.auth.currentUser?.email && this.auth.currentUser?.displayName) {
-      addEntity.updatedBy = {
-        name: this.auth.currentUser.displayName,
-        email: this.auth.currentUser.email,
-      };
-    }
-    return from(addDoc(collection(this.firestore, `spaces/${spaceId}/contents`), addEntity)).pipe(
-      traceUntilFirst('Firestore:Contents:clone'),
-    );
+  cloneDocument(spaceId: string, entity: ContentDocument): Observable<ContentDocument> {
+    return this.http.post<ContentDocument>(`${this.base(spaceId)}/${entity.id}/clone`, {});
   }
 
   delete(spaceId: string, element: Content): Observable<void> {
-    return from(deleteDoc(doc(this.firestore, `spaces/${spaceId}/contents/${element.id}`))).pipe(
-      traceUntilFirst('Firestore:Contents:delete'),
-    );
+    return this.http.delete<void>(`${this.base(spaceId)}/${element.id}`);
   }
 
   publish(spaceId: string, id: string): Observable<void> {
-    const contentPublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-publish');
-    return contentPublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:publish'));
+    return this.http.post<void>(`${this.base(spaceId)}/${id}/publish`, {});
   }
 
   unpublish(spaceId: string, id: string): Observable<void> {
-    const contentUnpublish = httpsCallableData<{ spaceId: string; contentId: string }, void>(this.functions, 'content-unpublish');
-    return contentUnpublish({ spaceId, contentId: id }).pipe(traceUntilFirst('Functions:Contents:unpublish'));
+    return this.http.post<void>(`${this.base(spaceId)}/${id}/unpublish`, {});
   }
 }

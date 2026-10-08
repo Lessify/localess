@@ -52,7 +52,18 @@ describe('TranslationDetailComponent', () => {
     fixture.componentRef.setInput('availableLocales', [en, de]);
     fixture.componentRef.setInput('localeFallback', en);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, update, updateId, deleteTranslation, translate, success, error, open, isLocaleTranslatableFrom, isLocaleTranslatableTo };
+    return {
+      component: fixture.componentInstance,
+      update,
+      updateId,
+      deleteTranslation,
+      translate,
+      success,
+      error,
+      open,
+      isLocaleTranslatableFrom,
+      isLocaleTranslatableTo,
+    };
   }
 
   it('identifyTranslationStatus() delegates to the shared util using availableLocales', () => {

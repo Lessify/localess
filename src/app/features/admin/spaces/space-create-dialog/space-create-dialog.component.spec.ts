@@ -63,7 +63,7 @@ describe('SpaceCreateDialogComponent', () => {
     const fixture = await setup(userStoreStub('custom', ['SPACE_MANAGEMENT']));
     expect(fixture.componentInstance.form.value.template).toBe('EMPTY');
   });
-it('closes with the form value when saved', async () => {
+  it('closes with the form value when saved', async () => {
     const fixture = await setup(userStoreStub('admin'));
     fixture.componentInstance.form.patchValue({ name: 'New Space' });
 

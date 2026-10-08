@@ -76,7 +76,11 @@ describe('OAuth sign-in', () => {
 
     it('advertises the configured providers', async () => {
       const response = await t.request({ method: 'GET', url: '/api/config' });
-      expect(response.json()).toEqual({ auth: { providers: ['GOOGLE', 'MICROSOFT'], loginMessage: '', passwordResetByEmail: false } });
+      expect(response.json()).toEqual({
+        auth: { providers: ['GOOGLE', 'MICROSOFT'], loginMessage: '', passwordResetByEmail: false },
+        plugins: { unsplash: false },
+        translate: { enabled: false },
+      });
     });
 
     it('signs an existing user in by verified email, links the identity, and returns to the app', async () => {
