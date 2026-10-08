@@ -29,3 +29,36 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ DATABASE_URL: 'not a url' })).toThrow();
   });
 });
+
+describe('loadConfig: OAuth providers', () => {
+  const google = { LOCALESS_GOOGLE_CLIENT_ID: 'gid', LOCALESS_GOOGLE_CLIENT_SECRET: 'gsecret' };
+  const microsoft = { LOCALESS_MICROSOFT_CLIENT_ID: 'mid', LOCALESS_MICROSOFT_CLIENT_SECRET: 'msecret' };
+
+  it('enables only listed providers that have credentials', () => {
+    const config = loadConfig({ LOCALESS_AUTH_PROVIDERS: 'google', ...google, ...microsoft, LOCALESS_AUTH_CUSTOM_DOMAIN: 'example.com' });
+    expect(Object.keys(config.auth.providers)).toEqual(['google']);
+    expect(config.auth.providers.google).toEqual({ issuer: 'https://accounts.google.com', clientId: 'gid', clientSecret: 'gsecret' });
+  });
+
+  it('reports listed providers that are missing credentials', () => {
+    const config = loadConfig({ LOCALESS_AUTH_PROVIDERS: 'GOOGLE,MICROSOFT' });
+    expect(config.auth.providers).toEqual({});
+    expect(config.auth.misconfigured).toHaveLength(2);
+  });
+
+  it('derives the Microsoft issuer from the tenant and refuses multi-tenant', () => {
+    const tenant = loadConfig({ LOCALESS_AUTH_PROVIDERS: 'MICROSOFT', ...microsoft, LOCALESS_AUTH_CUSTOM_DOMAIN: 'contoso.com' });
+    expect(tenant.auth.providers.microsoft?.issuer).toBe('https://login.microsoftonline.com/contoso.com/v2.0');
+
+    const anyTenant = loadConfig({ LOCALESS_AUTH_PROVIDERS: 'MICROSOFT', ...microsoft, LOCALESS_AUTH_CUSTOM_DOMAIN: '*' });
+    expect(anyTenant.auth.providers.microsoft).toBeUndefined();
+    expect(anyTenant.auth.misconfigured[0]).toMatch(/tenant/);
+    expect(anyTenant.auth.customDomain).toBe('');
+  });
+
+  it('normalises the public URL and reads SMTP settings', () => {
+    const config = loadConfig({ LOCALESS_PUBLIC_URL: 'https://cms.example.com/', LOCALESS_SMTP_URL: 'smtp://mail:25' });
+    expect(config.publicUrl).toBe('https://cms.example.com');
+    expect(config.smtp).toEqual({ url: 'smtp://mail:25', from: 'Localess <no-reply@localhost>' });
+  });
+});

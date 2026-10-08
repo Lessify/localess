@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phase 0 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** In progress — Phases 0–1 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -346,6 +346,18 @@ phases 3–5 land together.
   embedded cluster per run, one database per test file). Deferred: `libs/contracts` moves in with the
   first domain module that needs shared DTOs (Phase 3). `contents.full_slug` is indexed but not unique,
   so imported Firestore data with duplicate slugs can't block the migration.
+
+- **Phase 1 — done.** Session auth (`src/auth/`): argon2id passwords, hashed session tokens, CSRF
+  header rule, login rate limit, global `AuthGuard` + `@Public`/`@Require*` decorators, permission
+  model ported from firestore.rules (`permissions.ts`). Users (`/api/app/users`, invite / access /
+  delete with `canGrant` + outrank), own profile (`/api/app/me`), password reset (email via SMTP, or
+  admin-created links), Google / Microsoft OIDC (`openid-client`, PKCE + state + nonce),
+  `GET /api/config`, first admin via `admin:create` CLI or `LOCALESS_ADMIN_*` on boot. Tests run the
+  OAuth flow against a real local OIDC issuer (`oauth2-mock-server`).
+  Decisions taken: Microsoft sign-in requires a tenant (`LOCALESS_AUTH_CUSTOM_DOMAIN`); multi-tenant
+  would mean linking accounts by emails no tenant admin vouches for. OAuth never creates accounts
+  unless `LOCALESS_AUTH_AUTO_REGISTER=true`. Importing Firebase password hashes (`firebase-scrypt`)
+  lands with the Firebase import (Phase 6).
 
 ## Open decisions
 

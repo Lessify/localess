@@ -35,6 +35,11 @@ npm run localess:sync           # Regenerate local project files from remote sta
 npm run localess:deploy         # Build and deploy to a Localess-managed project
 npm run localess:check          # Report what a project is still missing (--fix repairs the safe ones)
 
+# Self-hosted server (server/, replacing Firebase — see server/README.md)
+npm run server:dev     # Build + run NestJS server (embedded Postgres when DATABASE_URL is unset)
+npm run server:test    # Server vitest suite (real embedded Postgres)
+npm run server:build   # Compile server
+
 # Firebase Functions (from /functions directory)
 cd functions && npm run build   # Compile TypeScript functions
 cd functions && npm run serve   # Run functions locally
@@ -144,6 +149,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `src/app/shared/components/`; read before adding or changing one |
+| **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [server/README.md](server/README.md) | Anything in `server/`, or replacing a Firebase dependency |
 | Frontend testing — Vitest setup (`test.isolate: true`), centralized Firebase mocking pattern and why it stays centralized | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
 | **Deployment & self-hosting** | | |
 | Deployment overview, prerequisites, automated vs manual | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
