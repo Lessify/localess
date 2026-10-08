@@ -78,8 +78,6 @@ export interface ContentFolderCreate {
   slug: string;
 }
 
-// Firestore
-
 // Special Types
 
 export interface ContentAsset {

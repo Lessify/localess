@@ -168,7 +168,7 @@ export class SpacesComponent implements OnInit, AfterViewInit {
   private applyTemplate(spaceId: string, templateId: SpaceTemplateId): Observable<{ templateFailed: boolean }> {
     const template = SPACE_TEMPLATES.find(it => it.id === templateId);
     // EMPTY resolves to a template whose schemas array is empty, and apply() short-circuits on that
-    // without touching Firestore. An unknown id means nothing to apply either.
+    // without calling the server. An unknown id means nothing to apply either.
     if (!template) return of({ templateFailed: false });
 
     return this.spaceTemplateService.apply(spaceId, template).pipe(

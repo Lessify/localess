@@ -7,13 +7,15 @@
 A **Space** is the top-level workspace and the root of all data in Localess. Every resource (content, translation, schema, asset, task, token) belongs to exactly one Space.
 
 ```
-Firestore: spaces/{spaceId}
+Postgres: spaces (id)
 ```
 
 Key properties:
 - `locales` — list of supported locales (e.g. `[{ id: 'en' }, { id: 'de' }]`)
 - `localeFallback` — the default locale used when a requested locale has no data
 - `overview` — aggregated counts and sizes (denormalized for dashboard display)
+- `content_version` / `translation_version` — counters bumped on every change; the public API's [`cv`](cdn-caching.md)
+- `progress.translations` — per-locale translated counts, written on translation publish
 
 ---
 
@@ -22,7 +24,7 @@ Key properties:
 A **Schema** defines the structure of a Content document — it is the content type definition.
 
 ```
-Firestore: spaces/{spaceId}/schemas/{schemaId}
+Postgres: schemas (space_id, id)          ← id is the user-chosen schema name
 ```
 
 Three schema types:
@@ -43,10 +45,9 @@ New spaces can be created from a template that seeds a ready-made set of schemas
 A **Content** is either a `FOLDER` (organisational) or a `DOCUMENT` (actual page/entry).
 
 ```
-Firestore: spaces/{spaceId}/contents/{contentId}
-Storage:   spaces/{spaceId}/contents/{contentId}/{locale}.json        ← published
-           spaces/{spaceId}/contents/{contentId}/draft/{locale}.json  ← draft
-           spaces/{spaceId}/contents/cache.json                        ← cv pointer
+Postgres: contents (space_id, id)                       ← draft source; drafts are built on read
+          content_published (space_id, content_id, locale) ← published snapshot, one per locale
+          spaces.content_version                           ← cv
 ```
 
 Key properties on a `ContentDocument`:
@@ -79,7 +80,7 @@ Three consequences follow, and all of them are load-bearing:
 
 **The default locale is the fallback value.** It sits in the bare key precisely so a reader can ask
 for `_i18n_<locale>` and fall back to it when the translation is missing. `extractContent()` — the
-publish/serve path, in both `shared/utils/content.ts` and `functions/src/services/content.service.ts` —
+publish/serve path, in both `shared/utils/content.ts` and `server/src/domain/lib/content-extract.ts` —
 does exactly that, which is why an untranslated field still serves content rather than a blank.
 
 **The editor deliberately does *not* fall back.** `extractSchemaContent()` returns the locale's own
@@ -94,7 +95,7 @@ talking to a translation provider must resolve it first — see `toProviderLocal
 
 **`_i18n_` is reserved.** Schema field names are rejected if they contain it, on both sides:
 `CommonValidator.SCHEMA_FIELD_NAME_TRANSLATION` in the UI and a `refine` in
-`functions/src/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
+`server/src/domain/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
 from a German translation of `title`.
 
 **Not every field kind can be translatable.** `translatable` lives on `SchemaFieldTranslatable`,
@@ -109,7 +110,7 @@ asset pickers keep their controls enabled to show the shared value but take `[lo
 **Only `_`-prefixed keys are internal.** A block's identity lives in `_id` and `_schema`, and those
 two are the only reserved field names, so `schema` is an ordinary field name. Blocks stored before
 `_schema` existed carry the schema id under a legacy `schema` key instead. It is never served:
-`extractContent()` in `functions/` reads it only as a fallback (`contentSchemaId()`), and the
+`extractContent()` on the server reads it only as a fallback (`contentSchemaId()`), and the
 editor's `normalizeContent()` moves it to `_schema` on load, so the next save migrates the block.
 
 > Any code that reads or writes a localised value applies the table above — writing the default to
@@ -121,16 +122,16 @@ than reaching the API:
 
 | site | guarded by |
 |---|---|
-| serve/publish (functions) | `services/content.service.test.ts` |
+| serve/publish (server) | `server/src/domain/lib/content-extract.test.ts` |
 | serve/publish (frontend) | `shared/utils/content.spec.ts` → `extractContent` |
 | editor form ← data | `shared/utils/content.spec.ts` → `extractSchemaContent` |
 | editor form → data | `edit-document-schema.component.spec.ts` → `writing form values back to data` |
 | whole-document translation | `shared/utils/content.spec.ts` → `collectTranslatableFields` |
 | per-field translation | `markdown-editor` / `rich-text-editor` specs |
 | `previewField` | `edit-document-schema.component.spec.ts` → `previewText` |
-| reserved `_i18n_` in field names | `schema.validator.spec.ts` (UI), `schema.zod.test.ts` (functions) |
+| reserved `_i18n_` in field names | `schema.validator.spec.ts` (UI), `schema.zod.test.ts` (server) |
 
-> See [Publish Flow](publish-flow.md) for how drafts become published JSON files.
+> See [Publish Flow](publish-flow.md) for how drafts become published snapshots.
 
 ---
 
@@ -139,10 +140,9 @@ than reaching the API:
 A **Translation** is a key/value localisation entry. It is **not** tied to a Schema — it is a flat key store for UI strings.
 
 ```
-Firestore: spaces/{spaceId}/translations/{translationId}
-Storage:   spaces/{spaceId}/translations/{locale}.json        ← published
-           spaces/{spaceId}/translations/draft/{locale}.json  ← draft
-           spaces/{spaceId}/translations/cache.json            ← cv pointer
+Postgres: translations (space_id, id)          ← id is the translation key; locales jsonb; drafts built on read
+          translation_published (space_id, locale) ← published flat key/value map
+          spaces.translation_version             ← cv
 ```
 
 Three translation types:
@@ -156,11 +156,12 @@ Three translation types:
 
 ## Asset
 
-An **Asset** is either a `FOLDER` or a `FILE` stored in Firebase Storage.
+An **Asset** is either a `FOLDER` or a `FILE`. Metadata is a Postgres row; the file lives in the server's storage directory (`LOCALESS_STORAGE_DIR`, default `$LOCALESS_DATA_DIR/storage`).
 
 ```
-Firestore: spaces/{spaceId}/assets/{assetId}
-Storage:   spaces/{spaceId}/assets/{assetId}/original   ← raw file
+Postgres: assets (space_id, id)                                   ← parent_path = slash-joined ancestor folder ids
+Storage:  spaces/{spaceId}/assets/{assetId}/original               ← raw file
+          spaces/{spaceId}/assets/{assetId}/renditions/…           ← cached image transforms
 ```
 
 The CDN endpoint (`/api/v1/spaces/:spaceId/assets/:assetId`) supports:
@@ -174,44 +175,52 @@ The CDN endpoint (`/api/v1/spaces/:spaceId/assets/:assetId`) supports:
 
 ## Task
 
-A **Task** is a background job (e.g. bulk publish, import, export). Tasks are queued in Firestore and executed by Firebase Functions.
+A **Task** is a background job (import, export, asset metadata regeneration). The `tasks` table is the queue: the server's `TaskWorker` claims the oldest `INITIATED` task and runs it (see [Tasks](features/spaces/tasks.md)).
 
 ```
-Firestore: spaces/{spaceId}/tasks/{taskId}
+Postgres: tasks (id), task_logs (task_id)
+Storage:  spaces/{spaceId}/tasks/{taskId}/original   ← import upload / export archive
 ```
 
 ---
 
 ## Token
 
-An API token grants programmatic access to the public CDN API. See [Auth Tokens](auth-tokens.md) for the full permission model.
+An API token (`tokens` table; the id is the secret) grants programmatic access to the public CDN API. See [Auth Tokens](auth-tokens.md) for the full permission model.
 
 ---
 
-## Firestore Collection Map
+## Data Model Map
+
+All tables are defined in `server/src/database/schema.ts` (Drizzle; migrations in `server/drizzle/`). Ids are `text`: rows imported from Firestore keep their document ids, because content, asset and token ids appear in public URLs and customer code, and new rows use the same 20-character alphanumeric format (`newId()`). Content and asset ids are unique only **within a space** — export/import upserts by id, so importing one space's export into another repeats them — so their primary key is `(space_id, id)`. Schemas and translations are keyed `(space_id, id)` too, with user-chosen ids. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
 
 ```
-spaces/
-  {spaceId}/
-    contents/
-      {contentId}
-    translations/
-      {translationId}
-    schemas/
-      {schemaId}
-    assets/
-      {assetId}
-    tasks/
-      {taskId}
-        logs/
-          {logId}
-    tokens/
-      {tokenId}
-    webhooks/
-      {webhookId}
-        logs/
-          {logId}
+settings                          single row: global UI settings
+users                             role, permissions, lock, disabled
+  user_credentials                password hash (argon2id, or imported firebase-scrypt)
+  user_identities                 Google / Microsoft sign-in links
+  sessions, password_reset_tokens
+spaces                            locales, fallback, overview, progress, content/translation_version
+  contents          (space_id, id)
+    content_published (space_id, content_id, locale)
+  translations      (space_id, id)
+  translation_published (space_id, locale)
+  schemas           (space_id, id)
+  assets            (space_id, id)
+  tasks             (id)
+    task_logs
+  tokens            (id)
+  webhooks          (id)
+    webhook_logs
 ```
 
-> When a Space is deleted, `firestoreService.recursiveDelete()` removes the space document and all nested subcollections in one call.
-> When a Content document is deleted, `firestoreService.recursiveDelete()` removes the content document and any nested subcollections. Child folder contents (sibling documents referencing the folder via `parentSlug`) are cascade-deleted via the `onContentDelete` trigger.
+Storage (`LOCALESS_STORAGE_DIR`) holds only binaries:
+
+```
+spaces/{spaceId}/assets/{assetId}/original
+spaces/{spaceId}/assets/{assetId}/renditions/…
+spaces/{spaceId}/tasks/{taskId}/original
+```
+
+> Every space-owned table references `spaces` with `on delete cascade`, so deleting a Space removes all its rows in one statement; the server then deletes the `spaces/{spaceId}/` storage prefix.
+> Deleting a content FOLDER deletes its whole subtree (`parent_slug` equal to or under the folder's `full_slug`) in the same transaction, and `content_published` rows cascade. Renaming or moving a folder rewrites its descendants' slugs in one statement.

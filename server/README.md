@@ -30,7 +30,7 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 |---|---|---|
 | `PORT` / `HOST` | `3000` / `0.0.0.0` | Listen address |
 | `DATABASE_URL` | – | External Postgres. Unset → embedded Postgres |
-| `LOCALESS_DATA_DIR` | `.data` | Embedded Postgres data (and, later, file storage) |
+| `LOCALESS_DATA_DIR` | `.data` | Root of local state: embedded Postgres (`pgdata`) and default file storage (`storage`) |
 | `LOCALESS_EMBEDDED_PG_PORT` | `5433` | Port of the embedded Postgres (127.0.0.1 only) |
 | `LOCALESS_STORAGE_DIR` | `$LOCALESS_DATA_DIR/storage` | Uploaded files and generated image renditions |
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |
@@ -77,7 +77,7 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 
 Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` values as the former
 `publicv1` function (see [docs/cdn-caching.md](../docs/cdn-caching.md),
-[docs/v1-functions-api.md](../docs/v1-functions-api.md)). Code: `src/public-api/` (controllers) and
+[docs/v1-api.md](../docs/v1-api.md)). Code: `src/public-api/` (controllers) and
 `src/public-api/lib/` + `src/domain/` (pure logic moved from `functions/src` with its tests).
 
 - `cv` is the space's `content_version` / `translation_version`, bumped on every change.

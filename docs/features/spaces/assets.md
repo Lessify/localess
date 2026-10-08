@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Browse, upload, organise, and manage binary assets (images, videos, documents, fonts) stored in Firebase Storage. Supports folder hierarchy, drag-and-drop upload, clipboard paste upload, image resizing preview, and Unsplash integration.
+Browse, upload, organise, and manage binary assets (images, videos, documents, fonts) stored by the server under `$LOCALESS_STORAGE_DIR` (`spaces/{spaceId}/assets/{assetId}/original`), with their metadata in the `assets` table. Supports folder hierarchy, drag-and-drop upload, clipboard paste upload, image resizing preview, and Unsplash integration.
 
 ## Route
 
@@ -32,23 +32,23 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 **Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
-- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetPath)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method)
+- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetPath)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
 - `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is appended to `SpaceStore.assetPath`
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
 - `onFileUpload(event)` — handles the `<input type="file">` change event and queues each selected file
-- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → Firebase Storage upload
+- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentPath`/`name`/… fields must precede the file). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset (there is no `inProgress` phase). Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
 - `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
 - `openAddFolderDialog()` — creates a new folder
 - `openEditDialog(asset)` — dispatches to `openEditFileDialog()` or `openEditFolderDialog()` by `kind`
 - `openEditFileDialog(asset)` — edit metadata: display name, alt text
 - `openEditFolderDialog(asset)` — rename folder
-- `openDeleteDialog(asset)` — delete file or folder (with cascade for folders)
-- `openMoveDialog(asset)` — move to a different folder path
+- `openDeleteDialog(asset)` — delete file or folder (with cascade for folders, done by the server, which deletes the stored files and renditions after the transaction commits)
+- `openMoveDialog(asset)` — move a file to a different folder path (`PUT /api/app/spaces/:s/assets/:id/parent`). Only files can be moved: the action is shown for files only, and the server refuses to move folders (their descendants carry the folder path)
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (i.e. the build-time `environment.plugins.unsplash` flag, not Remote Config) — opens `UnsplashAssetsSelectDialogComponent`. The `unsplash-search` / `unsplash-random` callables it uses require sign-in and `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`functions/src/plugins/unsplash/paging.ts`)
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`server/src/app-api/plugins/unsplash-paging.ts`)
 
 ## CDN Asset Endpoint
 
@@ -72,7 +72,7 @@ a transform parameter on either is rejected with `400` rather than ignored. They
 
 **Which types are served inline.** Assets are served from the same origin as the admin app, and
 their MIME type comes from the uploader. So every asset route passes the type through
-`assetResponsePolicy` (`functions/src/utils/asset-headers.ts`), which decides how the response is
+`assetResponsePolicy` (`server/src/public-api/lib/asset-headers.ts`), which decides how the response is
 delivered:
 
 | Type | Delivery |
@@ -119,9 +119,9 @@ test clip, `?w=240&f=webp` produced **4% of the source GIF size**.
 Resizing an animation decodes *every* frame at once, so the memory cost is
 `width x pageHeight x frames` rather than the single-frame cost `w`/`h` are bounded by. An
 animation above **12 megapixels in total** is rejected with `400`; ask for `?thumbnail` to get a
-still first frame instead. The API runs at 1 GiB with concurrency 20, so an unbounded animation
-would not merely fail its own request — it would exhaust the container for every other request
-sharing it.
+still first frame instead. The public API runs in the same server process as everything else, so an
+unbounded animation would not merely fail its own request — it would exhaust the memory of the
+process for every other request it serves.
 
 ### Colour profiles and orientation
 
@@ -136,7 +136,7 @@ sharing it.
 
 Every parameter is validated before any work happens. A rejection returns `400` with the offending
 parameter and value, and is **cached for an hour** (`CACHE_BAD_REQUEST_MAX_AGE`) — so a malformed
-URL fails consistently rather than re-entering the function on every request.
+URL fails consistently rather than re-entering the server on every request.
 
 `w`, `h` and `q` accept only a **canonical decimal integer** — no fractions, no leading zeros, no
 exponent or hex notation, no surrounding whitespace, no `+` sign.
@@ -159,8 +159,8 @@ quality 50 and return **byte-identical** responses — but they are three differ
 cache entries, and three runs of Sharp to produce the same bytes. `w=400`, `w=0400` and `w=4e2` do
 the same for resizing.
 
-Normalising them server-side would not help: the CDN keys on the URL it was given, so the duplicate
-entries exist whether or not the function collapses them. Only refusing the alias keeps one value to
+Normalising them server-side would not help: a CDN or caching proxy in front keys on the URL it was
+given, so the duplicate entries exist whether or not the server collapses them. Only refusing the alias keeps one value to
 one URL.
 
 **Nothing is silently adjusted.** Every value that would have been rewritten is either rejected
@@ -281,13 +281,13 @@ point at yet another URL for the same bytes. An explicit `q` is preserved; an ab
 back-filled with the default, for the same reason.
 
 **Assets with no recorded dimensions are served as requested.** `metadata.width`/`height` is
-optional, and when absent the function cannot know the source size, so it honours the request
+optional, and when absent the server cannot know the source size, so it honours the request
 rather than guessing — older assets keep their previous behaviour until metadata is regenerated.
 
 Separately, `MAX_OUTPUT_DIMENSION` (8192 px) bounds the request itself and is a **rejection**:
 `?w=9000` returns `400` before any redirect is considered. That ceiling exists for memory rather
 than bandwidth — Sharp holds the full decoded bitmap, so an 8192 px edge is roughly 200 MB of raw
-pixels. Raising it means revisiting `memory` and `concurrency` in `functions/src/v1.ts` too.
+pixels. Raising it means revisiting the memory available to the server process too.
 
 Omitting `w`/`h` does **not** return the untouched original — a still raster is still re-encoded (see [Output Format](#output-format--nothing-is-converted-implicitly)). Use `/original` for the stored bytes.
 
@@ -298,7 +298,9 @@ Omitting `w`/`h` does **not** return the untouched original — a still raster i
 - **Animated WebP or GIF with `thumbnail`** — first frame extracted, then `w`/`h`/`f` apply normally.
 - **Video with `w` + `thumbnail`** — frame extracted via FFmpeg, then resized with Sharp; output defaults to `image/webp`.
 
-> See [V1 Functions API — Asset resize combinations](../../v1-functions-api.md) for the full implementation detail.
+> See [V1 API — Asset resize combinations](../../v1-api.md) for the full implementation detail.
+
+Generated renditions are cached in storage under `spaces/{spaceId}/assets/{assetId}/renditions/` and deleted with the asset. There is no CDN in front by default; the `Cache-Control` headers above take effect once a CDN or caching reverse proxy is put in front.
 
 ## Image Preview
 
@@ -324,8 +326,8 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 
 | Service | Purpose |
 |---------|---------|
-| `AssetService` | CRUD, upload to Firebase Storage |
+| `AssetService` | `/api/app/spaces/:s/assets`: live reads, folder create, multipart file upload, rename/edit, move, delete |
 | `TaskService` | Create import/export tasks |
-| `UnsplashPluginService` | Unsplash API integration |
+| `UnsplashPluginService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
 | `NotificationService` | Snackbar feedback |
 | `SpaceStore` | Current space + `assetPath` breadcrumb |

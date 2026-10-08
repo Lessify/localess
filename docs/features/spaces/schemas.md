@@ -85,4 +85,4 @@ Schemas can also be managed code-first with `@localess/schema` + `@localess/cli`
 - `localess schema pull` — generates TypeScript definition files from the space (`GET /api/v1/spaces/:spaceId/schemas`).
 - `localess schema push` — writes code-defined schemas back (`POST /api/v1/spaces/:spaceId/schemas`, `DEV_TOOLS` token). Upsert by default; `--delete` enables full sync.
 
-See [V1 Functions API](../../v1-functions-api.md) for the endpoint contract.
+See [V1 API](../../v1-api.md) for the endpoint contract.

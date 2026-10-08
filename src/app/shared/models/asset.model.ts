@@ -101,8 +101,6 @@ export interface AssetFileCreate {
   name: string;
 }
 
-// Firestore
-
 export type AssetFileImport = {
   url: string;
   name: string;

@@ -6,7 +6,7 @@ import { map } from 'rxjs/operators';
 
 export type OAuthProvider = 'google' | 'microsoft';
 
-/** Session sign-in, sign-out and password reset (`/api/auth`, replacing Firebase Auth). */
+/** Session sign-in, sign-out and password reset (`/api/auth`). */
 @Injectable({ providedIn: 'root' })
 export class AuthApiService {
   private readonly http = inject(HttpClient);

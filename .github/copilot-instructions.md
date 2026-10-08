@@ -120,12 +120,11 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Topic | File | Read when working on |
 |-------|------|----------------------|
 | Domain concepts (Space, Content, Schema, Translation, Asset) | [docs/concepts.md](../docs/concepts.md) | Any new feature, onboarding |
-| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](../docs/cdn-caching.md) | `functions/src/v1/cdn.ts`, public API |
-| V1 API — all endpoints, routers, middleware, token permissions | [docs/v1-functions-api.md](../docs/v1-functions-api.md) | Any work in `functions/src/v1/` |
+| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](../docs/cdn-caching.md) | `server/src/public-api/cdn.controller.ts`, public API |
+| V1 API — all endpoints, controllers, token auth, token permissions | [docs/v1-api.md](../docs/v1-api.md) | Any work in `server/src/public-api/` |
 | Publish flow & cache invalidation | [docs/publish-flow.md](../docs/publish-flow.md) | Content/translation publish, tasks |
-| Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](../docs/webhooks.md) | `functions/src/webhooks.ts`, `webhook-utils.ts`, webhook UI |
+| Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](../docs/webhooks.md) | `server/src/webhooks/`, `server/src/app-api/webhooks/`, webhook UI |
 | API token auth & permissions | [docs/auth-tokens.md](../docs/auth-tokens.md) | Middleware, token management, public API |
-| Firebase billing & cost optimization | [docs/billing.md](../docs/billing.md) | Functions, Storage, cost analysis |
 | Frontend architecture, routing, libs/ui | [docs/frontend-architecture.md](../docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](../docs/frontend-state.md) | Adding/editing stores or components |
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](../docs/frontend-permissions.md) | Auth, guards, user management |

@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phases 0–6 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** Done — Phases 0–7 complete (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -31,7 +31,7 @@ Boot sequence (`server/src/main.ts`):
    `drizzle-kit generate` and committed (`server/drizzle/*.sql`); no `push` in production.
 4. Optional seed: if `users` is empty and `LOCALESS_ADMIN_EMAIL`/`LOCALESS_ADMIN_PASSWORD` are set, create
    the first admin + the "Hello World" space (today's `check --fix` / `admin-user.mjs`). Never an
-   unauthenticated HTTP endpoint (see `docs/deployment/check.md` for why the old `setup` callable went).
+   unauthenticated HTTP endpoint (the old Firebase `setup` callable was removed for exactly that reason).
 5. Start `JobWorker`, then `app.listen()`.
 
 Repository layout: new `server/` (Nest app) replaces `functions/`. Pure logic in `functions/src` is moved,
@@ -429,6 +429,22 @@ phases 3–5 land together.
   snapshots, phone-only and clashing users): import → sign in with the Firebase password → public API
   serves the imported content with the original asset ETags → re-run is idempotent. Not testable
   here: the firebase-admin adapter against a real project (no emulator tooling in this environment).
+
+- **Phase 7 — done.** Firebase removed from the repository: `functions/`, `firebase.json`, the rules
+  and index files, `.firebaserc`, `cloudbuild.yaml`, the `scripts/localess` deploy CLI and the
+  emulator scripts. New `Dockerfile` (two-stage, `node:24-slim`, apt `ffmpeg` + `perl` for
+  exiftool, non-root, `/data` volume, health check on `/api/health`), `.dockerignore` and a
+  `docker-compose.yml` with Postgres 18. CI builds and tests `server/` instead of `functions/`.
+  Deployment docs rewritten (overview, Docker, configuration, production, updates, check, migrating
+  from Firebase); architecture and feature docs, README and CLAUDE.md describe the new stack.
+  Fixes on the way: preview URLs of space environments only accept http(s) (zod `.url()` let
+  `javascript:` through); the CLI attaches to an embedded cluster the running server already
+  started instead of failing to start it a second time; the `admin_shutdown` error that
+  embedded-postgres' exit hook causes on `SIGTERM` is logged as a warning, not a stack trace.
+  The image recipe was verified by replaying both stages without Docker (clean `npm ci`, builds,
+  `--omit=dev` runtime install, boot from the image layout: health, SPA deep links, login, CLI
+  next to the server, clean `SIGTERM`). Not run here: `docker build` itself (no Docker in this
+  environment).
 
 ## Open decisions
 

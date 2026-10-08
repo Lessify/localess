@@ -19,14 +19,14 @@ All routes are scoped to a specific space via `:spaceId` in the URL. The active 
 | Contents | `/features/spaces/:spaceId/contents` | `CONTENT_READ` | [contents.md](contents.md) |
 | Assets | `/features/spaces/:spaceId/assets` | `ASSET_READ` | [assets.md](assets.md) |
 | Schemas | `/features/spaces/:spaceId/schemas` | `SCHEMA_READ` | [schemas.md](schemas.md) |
-| Tasks | `/features/spaces/:spaceId/tasks` | `TRANSLATION_READ`† | [tasks.md](tasks.md) |
+| Tasks | `/features/spaces/:spaceId/tasks` | any import/export permission† | [tasks.md](tasks.md) |
 | Developers → Webhooks | `/features/spaces/:spaceId/developers/webhooks` | `DEV_WEBHOOK`* | [webhooks.md](../../webhooks.md) |
 | Developers → Open API | `/features/spaces/:spaceId/developers/open-api` | `DEV_OPEN_API`* | [open-api.md](open-api.md) |
 | Settings | `/features/spaces/:spaceId/settings` | `SPACE_MANAGEMENT` | [settings.md](settings.md) |
 
 \* Unlike the other rows, `DEV_WEBHOOK`/`DEV_OPEN_API` are **not** enforced via a route `canActivate` guard — the `developers` route has none (`features-routing.module.ts`). They only control whether the Developers menu items are shown in the sidebar (`features.component.ts`).
 
-† The Tasks route guard checks `TRANSLATION_READ` (`hasPermissionTranslationRead` in `features-routing.module.ts`), but the sidebar item is shown based on `USER_PERMISSIONS_IMPORT_EXPORT` (any import/export permission, `features.component.ts`). A user can therefore reach the route without seeing the menu item, or vice versa.
+† The Tasks route guard is `permissionGuard(...)` with all eight `*_IMPORT` / `*_EXPORT` permissions (any one passes, `features-routing.module.ts`), the same set the sidebar item checks (`USER_PERMISSIONS_IMPORT_EXPORT`, `features.component.ts`) and the server requires to read tasks.
 
 Webhooks (under Developers) has no page in this folder — it is documented in [webhooks.md](../../webhooks.md).
 
@@ -36,6 +36,7 @@ Webhooks (under Developers) has no page in this folder — it is documented in [
 
 - `SpaceStore` is injected in most modules to access the current `selectedSpace` and `selectedSpaceId`
 - Import/export operations create a **Task** — they don't run inline. The user monitors progress in the [Tasks module](tasks.md)
-- Publishing content/translations writes JSON to Firebase Storage and is tracked in the [Publish Flow](../../publish-flow.md)
+- Publishing content/translations writes snapshot rows to Postgres (`content_published` / `translation_published`) and bumps the space's cache version; see the [Publish Flow](../../publish-flow.md)
+- Lists stay current without manual refresh: services return `liveQuery` Observables that refetch when a matching change event arrives on the space's SSE stream (`GET /api/app/events`, `ChangeEventsService`)
 - `isFormDirtyGuard` is applied to routed editor components (contents, schemas) to warn on unsaved changes
 - Dialogs follow the pattern: open via `HlmDialogService.open(Component, { context, contentClass })` → pipe `.closed$` (`take(1)`, filter out `undefined`) → run the service call on confirm. `src/app/features/spaces` imports nothing from `@angular/material` (e.g. `schemas/schemas.component.ts` `openAddDialog()`)

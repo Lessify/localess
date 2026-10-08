@@ -56,7 +56,7 @@ describe('WelcomeComponent', () => {
   });
 
   it('explains itself to a user who has no spaces and may not create one', async () => {
-    // firestore.rules requires SPACE_MANAGEMENT, so the button would fail. Hiding it without
+    // The server requires SPACE_MANAGEMENT, so the button would fail. Hiding it without
     // saying anything would leave this user on a blank page with no reason given.
     const { fixture } = await setup(true, 'custom', [UserPermission.TRANSLATION_READ]);
 

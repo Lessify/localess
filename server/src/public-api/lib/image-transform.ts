@@ -145,9 +145,8 @@ export function applySharpTransforms(
  *
  * Resizing an animation decodes **all** frames at once, so the memory cost is
  * `width * pageHeight * pages`, not the single-frame cost {@link MAX_OUTPUT_DIMENSION} bounds.
- * `functions/src/v1.ts` runs the API at `memory: '1GiB'` with `concurrency: 20`, so one request
- * that decodes 400 MB does not merely fail itself — it takes the container down for the other
- * nineteen tenants.
+ * The server handles every public request in one process, so one request that decodes 400 MB
+ * does not merely fail itself — it can take the process down for every concurrent request.
  *
  * 12 megapixels is roughly 48 MB of RGBA, and sharp needs working space on top of that. It clears
  * the common cases comfortably — a 480x270 clip stays under the cap until about 90 frames — while
@@ -236,12 +235,10 @@ export type AssetTransformQueryResult = { ok: true; query: AssetTransformQuery }
  * keeps one URL to one output.
  *
  * The ceiling exists for memory, not for bandwidth: sharp holds the full decoded bitmap, so
- * an 8192px edge is roughly 200MB of raw pixels. Raising it further needs the instance
- * `memory`/`concurrency` in `functions/src/v1.ts` revisited with it.
+ * an 8192px edge is roughly 200MB of raw pixels. Raising it further needs the server's memory
+ * budget revisited with it.
  *
- * Kept here rather than in `config.ts` deliberately: `config.ts` calls `initializeApp()`
- * at module scope, and importing it would drag Firebase Admin initialisation into this
- * module's unit tests. This file must stay side-effect free.
+ * This file must stay side-effect free, so it can be unit-tested without the Nest app.
  */
 export const MAX_OUTPUT_DIMENSION = 8192;
 

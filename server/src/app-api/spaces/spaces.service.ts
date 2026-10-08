@@ -13,13 +13,11 @@ import {
   translationPublished,
   translations,
 } from '../../database/schema.js';
+import { DEFAULT_LOCALE } from '../../domain/models/space.model.js';
 import { EventsService } from '../../events/events.service.js';
 import { STORAGE_DRIVER, StorageDriver } from '../../storage/storage.driver.js';
 import { toDto } from '../common/dto.js';
 import { requireSpace, SpaceRow } from '../common/space-access.js';
-
-/** The space's default locale on creation (same as the UI used to write). */
-export const DEFAULT_LOCALE: Locale = { id: 'en', name: 'English' };
 
 /** `Space` as the SPA reads it; the cache versions are an API-internal detail. */
 export const spaceDto = (space: SpaceRow) => toDto(space, ['contentVersion', 'translationVersion']);

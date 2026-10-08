@@ -30,11 +30,11 @@ The UI is built with Spartan/Helm components: `HlmCard` for each stat tile, `Hlm
 **Key behaviour:**
 - Reads `SpaceStore.selectedSpace()` to display current overview stats
 - Uses `effect()` in the constructor to watch the selected space; when `overview` is `undefined` or stale (> 24h since `overview.updatedAt`) it calls `calculateOverview()` automatically
-- `calculateOverview()` — also bound to the manual refresh button; calls `SpaceService` to trigger a server-side recalculation of all counts and sizes, updates the `SpaceOverview` sub-document in Firestore. The `space-calculateoverview` callable accepts any signed-in user with role `admin` or `custom`, the same audience that can read the space document, because the automatic refresh runs for everyone who opens the dashboard. Unauthenticated calls are rejected
+- `calculateOverview()` — also bound to the manual refresh button; calls `SpaceService.calculateOverview()` (`POST /api/app/spaces/:id/overview`), which recalculates all counts and sizes with SQL and stores them in the space's `overview` column. The space's change event then refreshes `SpaceStore`. The endpoint accepts any signed-in user with role `admin` or `custom` (`@RequireAnyRole()`), the same audience that can read the space, because the automatic refresh runs for everyone who opens the dashboard
 
 ## Data Displayed
 
-Locales count comes from `space.locales.length` (not part of `SpaceOverview`). The rest comes from `SpaceOverview`:
+Locales count comes from `space.locales.length` (not part of `SpaceOverview`). The rest comes from `SpaceOverview` (`updatedAt` is an ISO string). Translation and content sizes are the size of the published JSON in Postgres (`translation_published` / `content_published`); asset and task sizes are the bytes under `spaces/{spaceId}/assets/` and `spaces/{spaceId}/tasks/` in storage:
 ```typescript
 {
   translationsCount, translationsSize,

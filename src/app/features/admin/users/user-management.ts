@@ -15,7 +15,7 @@ export interface ManagedUser {
 }
 
 /**
- * Mirrors the `users/{userId}` rule in firestore.rules, so the UI only offers what the server
+ * Mirrors `canGrant` / `canManageUser` in server/src/auth/permissions.ts, so the UI only offers what the server
  * allows. Admins may manage anyone. A custom user with USER_MANAGEMENT may manage a user only when
  * they fully outrank them: not themselves, not an admin, and not someone holding a permission the
  * manager lacks.

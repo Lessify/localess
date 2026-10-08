@@ -47,18 +47,18 @@ locales of the selected space.
 
 **Key behaviour:**
 
-- `ngOnInit()` — loads all translation documents for the space via `translationService.findAll(spaceId)`
+- `ngOnInit()` — loads all translations for the space via `translationService.findAll(spaceId)` (a live query over `GET /api/app/spaces/:s/translations`, refetched on `translations` change events)
 - Inline editing — clicking a row opens `TranslationDetailComponent` (see below) for the key
-- `publish()` — publishes all translations to Firebase Storage (see [Publish Flow](../../publish-flow.md))
+- `publish()` — publishes all translations (`POST /api/app/spaces/:s/translations/publish`), which writes one `translation_published` row per locale (see [Publish Flow](../../publish-flow.md))
 - `openImportDialog()` — opens import dialog → creates a **Task** for background processing
 - `openExportDialog()` — opens export dialog → creates a **Task** for background processing
-- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` to bulk-translate one locale into another
+- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` (`POST /api/app/spaces/:s/translations/translate-locale`) to bulk-translate one locale into another with the configured machine-translation provider, in a single transaction
 - Layout toggle: **list** (flat) ↔ **tree** (hierarchical), persisted in `LocalSettingsStore.translationLayout`
 
 `TranslationDetailComponent` (`shared/components/translation-detail/`) owns per-key editing: it injects `PlatformService`, `LocaleService`,
 `TranslateService`, `TranslationService`, `NotificationService`, `HlmDialogService`, handles keyboard shortcuts via a `(window:keydown)` host listener
-(`captureKeyboard()`), and runs AI-assisted translation in `translate()`, which goes through `TranslateService.translate()` → the `translate`
-Firebase callable (the provider is chosen server-side). It also opens the per-key dialogs: `openEditDialog()`, `openEditIdDialog()` and
+(`captureKeyboard()`), and runs AI-assisted translation in `translate()`, which goes through `TranslateService.translate()` → `POST /api/app/translate`
+(the provider — DeepL, Google Cloud Translation, or a development stub — is chosen server-side from env). It also opens the per-key dialogs: `openEditDialog()`, `openEditIdDialog()` and
 `openDeleteDialog()` (`EditDialogComponent`, `EditIdDialogComponent`, `ConfirmationDialogComponent`).
 
 **Only the translate button is gated by provider support here**, not the two selects. Those selects also choose which locale is displayed
@@ -99,30 +99,29 @@ locale, see [Space Settings → Translation support](settings.md#translation-sup
 
 | Service               | Purpose                                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
-| `TranslationService`  | CRUD + publish + publishDraft (called automatically after every write)                                   |
+| `TranslationService`  | CRUD + publish + translate-locale via `/api/app/spaces/:s/translations` (reads are live)                 |
 | `TaskService`         | Create import/export tasks                                                                               |
 | `TokenService`        | Retrieve API token for CDN preview links                                                                 |
-| `TranslateService`    | AI translation via the `translate` callable (`translate()` single, `translateBatch()` batch)             |
+| `TranslateService`    | AI translation via `POST /api/app/translate` (`translate()` single, `translateBatch()` batch)            |
 | `NotificationService` | Snackbar feedback                                                                                        |
 | `LocaleService`       | Load space locales (used by `TranslationDetailComponent`, not the main component)                        |
 | `PlatformService`     | Platform detection for keyboard shortcuts (used by `TranslationDetailComponent`, not the main component) |
 
 ## Draft Generation
 
-Every write operation in `TranslationService` (create, update, updateId, updateLocale, delete) automatically chains a call to
-`translation-publishdraft` onCall after the Firestore write succeeds. This keeps the draft Storage files (`draft/{locale}.json`) in sync
-without a Firestore trigger.
+There is no separate draft publish. Draft translations (`?version=draft` on the public API) are computed on read from the
+`translations` table, and every translation write bumps the space's `translation_version` and emits a change event in the same
+transaction. `updatedBy` is set by the server from the session, not sent by the client.
 
 ## Auto-Translate on Create
 
-`AddDialogComponent` has an "auto-translate" switch for `STRING` keys. Rather than a dedicated `onDocumentCreated` Firestore trigger
-(removed to reduce deployed function count), `TranslationsComponent.openAddDialog()` resolves every locale value client-side **before**
-writing anything:
+`AddDialogComponent` has an "auto-translate" switch for `STRING` keys. Rather than a server-side hook on create,
+`TranslationsComponent.openAddDialog()` resolves every locale value client-side **before** writing anything:
 
-1. If auto-translate is checked, it calls the existing generic `translate` callable (`TranslateService.translate()`, also used for
+1. If auto-translate is checked, it calls the generic `POST /api/app/translate` endpoint (`TranslateService.translate()`, also used for
    single-cell AI translation) in parallel (`forkJoin`) for each of `space.locales` other than the fallback.
 2. All resulting values (fallback + translated locales) are merged into a single `locales` map.
-3. `TranslationService.create()` performs **one** Firestore `setDoc` with the full `locales` map already populated — no follow-up per-locale
+3. `TranslationService.create()` sends **one** `POST /api/app/spaces/:s/translations` with the full `locales` map already populated — no follow-up per-locale
    writes.
 
 Per-locale translation failures are caught and logged so one bad translation doesn't block the others or the create itself; that locale is

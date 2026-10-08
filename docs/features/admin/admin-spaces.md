@@ -52,8 +52,9 @@ The in-page button calls the method — it is already on this component, so a na
 ceremony. The param exists for the two entry points that are not.
 
 No new route was added: `admin/spaces` already exists and is already guarded by
-`hasPermissionSpaceManagement` (`features-routing.module.ts`). That guard is what keeps the flow
-honest — `firestore.rules` requires `admin` or `SPACE_MANAGEMENT` to write a space, so an
+`permissionGuard(UserPermission.SPACE_MANAGEMENT)` (`features-routing.module.ts`). That guard is what keeps the flow
+honest — the server requires `admin` or `SPACE_MANAGEMENT` to write a space (`@RequirePermission` on
+`POST /api/app/spaces`), so an
 unpermitted user must not reach the dialog at all. The CTAs carry the same check so they don't link
 somewhere the guard will bounce.
 
@@ -104,8 +105,9 @@ normally, because the input passes through `undefined` on the way.
 
 ### After creation
 
-No manual refresh. `SpaceService.findAll()` is `collectionData`, so the new space reaches the admin
-table and `SpaceStore` through the live snapshot — and since the store selects `response[0]` when
+No manual refresh. `SpaceService.findAll()` is a `liveQuery` over `GET /api/app/spaces`, so the
+`spaces` change event the create emits over SSE makes it refetch, and the new space reaches the admin
+table and `SpaceStore` — and since the store selects `response[0]` when
 nothing is selected, a user's first space also becomes their current one, filling the sidebar behind
 the dialog. The user stays on the spaces list.
 
@@ -128,11 +130,11 @@ inverted.
 
 | Service | Purpose |
 |---------|---------|
-| `SpaceService` | Fetch, create, update, delete spaces |
-| `SpaceTemplateService` | Batch-write a template's schemas into a newly created space |
+| `SpaceService` | Fetch (live), create, update, delete spaces via `/api/app/spaces` |
+| `SpaceTemplateService` | Apply a template's schemas to a newly created space (`POST /api/app/spaces/:s/schemas/template`) |
 | `NotificationService` | Snackbar feedback |
 
-> **Warning:** Deleting a space is irreversible and removes all content, translations, schemas, assets, and tokens under it.
+> **Warning:** Deleting a space is irreversible and removes all content, translations, schemas, assets, and tokens under it. The `spaces` row delete cascades to every child table, and the server then deletes the space's storage prefix (`spaces/{spaceId}/` under `$LOCALESS_STORAGE_DIR`).
 
 ## Space templates
 
@@ -170,13 +172,13 @@ enforces.
 ### Permissions
 
 The template choice appears only when **creating** a space, and only for users who may create
-schemas — role `admin`, or `custom` with `SCHEMA_CREATE`. The browser performs the writes, so
-`firestore.rules` would reject them otherwise. A user without it sees no template control and
+schemas — role `admin`, or `custom` with `SCHEMA_CREATE`. `POST /api/app/spaces/:s/schemas/template`
+requires that permission, so the server would reject the template otherwise. A user without it sees no template control and
 creates empty spaces normally.
 
 ### Failure
 
-A template is applied in one atomic batch, after the space document is created. If that batch
-fails, the space still exists and is usable, and the notification says so rather than reporting a
+A template is applied in one server transaction (`POST …/schemas/template`), after the space is
+created by its own request. If that transaction fails, the space still exists and is usable, and the notification says so rather than reporting a
 failed creation. There is no rollback — deleting a space the user just watched appear would be
 worse than leaving an empty one.

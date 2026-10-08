@@ -27,7 +27,12 @@ const EMBEDDED_POSTGRES = Symbol('EMBEDDED_POSTGRES');
       useFactory: async (config: AppConfig, embedded: EmbeddedPostgresHandle | null): Promise<pg.Pool> => {
         const connectionString = embedded?.connectionString ?? ('url' in config.database ? config.database.url : undefined);
         const pool = new pg.Pool({ connectionString });
-        pool.on('error', error => new Logger('Database').error(error));
+        pool.on('error', error => {
+          const logger = new Logger('Database');
+          // 57P01 admin_shutdown: Postgres is stopping, e.g. embedded-postgres' own exit hook on SIGTERM.
+          if ((error as { code?: string }).code === '57P01') logger.warn(`Idle connection closed: ${error.message}`);
+          else logger.error(error);
+        });
         // Every boot brings the schema up to date before anything else touches the database.
         await migrateDatabase(pool);
         return pool;

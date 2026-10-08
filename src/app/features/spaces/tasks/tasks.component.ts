@@ -34,7 +34,7 @@ import { LlPaginatorImports, Paginator } from '@shared/components/paginator/pagi
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { TimeBetweenPipe, TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
+import { TimeBetweenPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -77,7 +77,6 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
     LlFilterToolbarImports,
     FormatFileSizePipe,
     CommonModule,
-    TimeDurationPipe,
     TimeBetweenPipe,
     HlmProgressImports,
     HlmButtonImports,
@@ -111,7 +110,6 @@ export class TasksComponent implements OnInit, AfterViewInit {
   // Input
   spaceId = input.required<string>();
 
-  now = Date.now();
   isLoading = signal(true);
   displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'actions'];
 

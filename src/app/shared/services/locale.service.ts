@@ -56,8 +56,8 @@ export class LocaleService {
 /**
  * Locales Google Cloud Translation accepts, split by direction.
  *
- * Mirrors `GCP_BIDIRECTIONAL_LOCALES` and friends in `functions/src/config.ts` - that copy is what
- * actually validates a request, this one is what the UI offers, and `functions/src/gcp-locales-parity.test.ts`
+ * Mirrors `GCP_BIDIRECTIONAL_LOCALES` and friends in `server/src/domain/lib/translate-locales.ts` - that copy is what
+ * actually validates a request, this one is what the UI offers, and `server/src/domain/lib/translate-locales-parity.test.ts`
  * fails if the two drift. Both one-way lists are empty today: Google documents its set as any-to-any,
  * but the v3 API models `supportSource`/`supportTarget` separately and they are allowed to differ.
  */

@@ -210,7 +210,7 @@ export class TranslationsComponent implements OnInit {
         take(1),
         filter(it => it !== undefined),
         // Resolve every locale value client-side (fallback + optional auto-translated locales)
-        // BEFORE writing anything, so `create()` performs a single Firestore write with all
+        // BEFORE writing anything, so `create()` performs a single request with all
         // required locale fields already populated — no follow-up per-locale saves.
         switchMap(it => {
           const locales: Record<string, string> = { [space.localeFallback.id]: it!.value };

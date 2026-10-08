@@ -1,99 +1,129 @@
 # Deployment Overview
 
-> Related: [Firebase Setup](firebase-setup.md) · [First Deploy](first-deploy.md) · [Updates](updates.md) · [Health Check](check.md) · [Billing & Cost](../billing.md)
+> Related: [Docker](docker.md) · [Configuration](configuration.md) · [Production](production.md) · [Updates & Backups](updates.md) · [Health Check](check.md) · [Migrating from Firebase](migrate-from-firebase.md)
 
-## Overview
+## What you deploy
 
-Self-hosting Localess has three distinct phases. They are separated because they have different
-frequencies, different prerequisites, and different failure modes:
+Localess is **one Node.js process** (the NestJS server in `server/`). On a single port (`PORT`,
+default `3000`) it serves:
 
-| Phase | How often | Command |
-|-------|-----------|---------|
-| [1. Provision Firebase](firebase-setup.md) | Once per environment | `npm run localess:setup` |
-| [2. First deploy](first-deploy.md) | Once per environment | `npm run localess:deploy` |
-| [3. Push updates](updates.md) | Every change | `npm run localess:deploy -- --only ...` |
+| Path | What |
+|------|------|
+| `/` | The Angular admin UI (the production build in `dist/localess/browser`, with SPA fallback) |
+| `/api/v1/**` | The public REST API used by your apps and SDKs |
+| `/api/auth/**`, `/api/app/**` | Session login and the API the admin UI uses |
+| `/api/health` | Liveness probe — `{"status":"ok"}` when the database answers |
 
-Phase 1 creates cloud *resources*. Phases 2 and 3 push *code and configuration* into those
-resources. Phase 1 never has to be repeated, but it is safe to re-run — every step detects
-existing state and skips.
+The process also runs the background task worker (exports, imports, asset metadata regeneration).
 
-### The four commands
+It needs two kinds of state:
 
-All four are subcommands of one CLI (`scripts/localess.mjs`); the npm scripts are aliases.
+| State | Where |
+|-------|-------|
+| **Postgres** | `DATABASE_URL`, or — when unset — an embedded Postgres cluster the server starts itself in `$LOCALESS_DATA_DIR/pgdata` |
+| **Files** (asset originals, image renditions, task archives) | The filesystem, in `$LOCALESS_DATA_DIR/storage` (override with `LOCALESS_STORAGE_DIR`) |
 
-| Command | Owns |
-|---------|------|
-| `npm run localess:setup` | Provisioning infrastructure and recording the project markers |
-| `npm run localess:sync` | Regenerating the local project files from remote state |
-| `npm run localess:deploy` | Building and shipping the application |
-| `npm run localess:check` | Reporting what a project is still missing |
-
-**Setup never deploys.** It enables services and records what it did; applying configuration
-and pushing code is deploy's job. Setup offers to run a deploy when it finishes, but only if
-you say yes.
-
-**Deploy only touches projects Localess manages.** It refuses any project that does not carry
-the `localess-managed` label, so a mistyped project id cannot install a CMS over something
-unrelated. See [how a project is recognised](firebase-setup.md#how-a-project-is-recognised).
-
-**Check is the one that does not refuse.** A missing `localess-managed` label is one of the
-things it reports, so gating on it would hide the finding you came for. See
-[Checking an installation](check.md).
+Database migrations run automatically on every boot. There is no separate provisioning step, no
+cloud account, and no build-time configuration: everything is read from environment variables at
+start-up (see [Configuration](configuration.md)), so one build serves every install.
 
 ---
 
-## Prerequisites
+## Requirements
 
 | Requirement | Notes |
 |-------------|-------|
-| Node.js 24 | `package.json` pins `engines.node: 24` |
-| `firebase-tools` >= 15.29.0 | Global install: `npm install -g firebase-tools@latest` |
-| A logged-in CLI | `npx firebase login` (once per machine) |
-| A Google Cloud **billing account** | Blaze is mandatory — see below |
-
-`firebase-tools` is deliberately **not** a project dependency. `@angular/fire` declares
-`peerOptional firebase-tools@^14.0.0`, so adding v15 would force every `npm install` to run with
-`--legacy-peer-deps`. The setup script locates the global install and version-gates it instead.
-
-### Why Blaze is mandatory
-
-Localess cannot run on the Spark (free) plan:
-
-- **Cloud Functions** — the whole backend (`functions/src`) is Cloud Functions.
-- **Identity Platform** — `functions/src/users.ts` uses `beforeUserCreated` / `beforeUserSignedIn`
-  blocking functions, which only exist on Identity Platform.
-- **Cloud Storage** — new projects require Blaze to create a default bucket.
-- **Cloud Translation** — `translate.googleapis.com` cannot be enabled on Spark.
-
-Blaze still has a generous free tier; see [Billing & Cost](../billing.md).
+| Docker (with Compose) | For the Docker paths — the image contains everything else |
+| — or Node.js 24 | For a bare-Node install (`engines.node: 24`) |
+| `ffmpeg` | Video thumbnails. Without it, video assets upload but get no thumbnail |
+| `perl` | Used by ExifTool for asset metadata extraction on Linux |
+| Postgres | Optional. Any reachable Postgres via `DATABASE_URL`; otherwise the embedded one is used (the Compose file ships Postgres 18) |
+| Persistent disk | For `$LOCALESS_DATA_DIR` (files, and the embedded database if used) |
 
 ---
 
-## What is automated vs manual
+## Three ways to run it
 
-The setup script removes almost all console clicking. What remains:
+| Way | Database | Good for |
+|-----|----------|----------|
+| [Docker Compose](docker.md#docker-compose) | Separate `postgres` container | The recommended production setup |
+| [Single container](docker.md#single-container) | Embedded Postgres in the `/data` volume | Small installs, trials, one-box setups |
+| [Bare Node](#bare-node) | Embedded, or any Postgres via `DATABASE_URL` | Hosts without Docker, local development |
 
-| Task | Automated? |
-|------|-----------|
-| Create project, link billing, enable APIs | Yes |
-| Firestore database, Storage bucket, Hosting site, web app | Yes |
-| Identity Platform + Email/Password | Yes — the API at setup, the provider at first deploy |
-| **Google sign-in** | No — console only |
-| **Create a billing account** (card entry) | No — console only |
-| **Raise the billing project quota** | No — requires a request to Google |
-| **Microsoft sign-in** | No — needs an Azure app registration |
-| **Custom Hosting domain** | No — console + DNS verification |
+Whichever you pick, put a TLS-terminating reverse proxy in front of it for anything public, and
+ideally a CDN in front of `/api/v1` — see [Production](production.md).
 
-In practice: **zero** console visits if you already have a billing account with room, **one** if
-you do not.
+### Bare Node
+
+From a checkout:
+
+```bash
+npm ci
+npm --prefix server ci
+npm run version:generate  # writes src/assets/version.json (build version info)
+npm run build:prod        # Angular → dist/localess/browser
+npm run server:build      # server → server/dist
+
+export LOCALESS_DATA_DIR=/var/lib/localess      # files (+ embedded Postgres when DATABASE_URL is unset)
+export DATABASE_URL=postgres://user:pass@db:5432/localess   # optional
+export LOCALESS_PUBLIC_URL=https://cms.example.com
+export LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD='…'  # first boot only
+node server/dist/main.js
+```
+
+The server finds the Angular build relative to its own location; set `LOCALESS_STATIC_DIR` if you
+put it elsewhere. `LOCALESS_DATA_DIR` defaults to `.data` relative to the working directory, so set
+it explicitly to an absolute path (the CLI runs from `server/` and must find the same directory). Run the process under a supervisor (systemd or similar) that restarts it and sends
+`SIGTERM` to stop it — the server shuts the embedded Postgres down cleanly on exit.
 
 ---
 
-## Two deployment models
+## The first administrator
 
-This documentation covers **local deploy**: an operator runs the commands from a checkout on their
-own machine. That is the supported path for self-hosting.
+There is no sign-up page and no setup wizard. Create the first admin one of two ways:
 
-`cloudbuild.yaml` describes the alternative — a Cloud Build trigger wired to a Git repository,
-which performs the same steps in CI. It duplicates phases 2 and 3, plus its own API enablement
-step. If you use Cloud Build, phase 1 is still required; only the push phases move into CI.
+- **On first boot:** set `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` (at least 6
+  characters). While the database has no users, the server creates that admin and a "Hello World"
+  space. Once any user exists the variables are ignored, so you can remove them after the first start.
+- **With the CLI:** `npm run localess -- admin:create --email <email> [--name <name>]`. The
+  password comes from `LOCALESS_ADMIN_PASSWORD` or an interactive prompt — never a flag. See
+  [The CLI](#the-cli).
+
+Everyone else is invited from **Admin → Users**.
+
+---
+
+## The CLI
+
+One command-line tool ships with the server:
+
+```bash
+npm run localess -- <command>              # from a checkout (runs server/dist/cli.js)
+docker compose exec localess node server/dist/cli.js <command>   # in Docker
+```
+
+| Command | Does |
+|---------|------|
+| `db:migrate` | Apply pending migrations and exit (the server also does this on boot) |
+| `check` | Report what the install has and lacks — see [Health Check](check.md) |
+| `admin:create --email <e> [--name <n>]` | Create an administrator and the "Hello World" space |
+| `import:firebase --project <id> [--bucket <b>] [--no-files]` | Copy a Firebase-era install in — see [Migrating from Firebase](migrate-from-firebase.md) |
+
+Shortcuts: `npm run localess:check` and `npm run localess:import -- --project <id>`.
+
+The CLI reads the same environment variables as the server, so run it with the same
+`DATABASE_URL` / `LOCALESS_DATA_DIR`. With the **embedded** database, see
+[Running the CLI against an embedded database](docker.md#running-the-cli-against-an-embedded-database).
+
+---
+
+## Local development
+
+```bash
+npm run server:dev   # API on :3000, embedded Postgres in server/.data
+npm start            # Angular dev server on :4200, proxying /api to :3000
+```
+
+Set `LOCALESS_ADMIN_EMAIL` / `LOCALESS_ADMIN_PASSWORD` for the first `server:dev` run to get an
+admin account. `LOCALESS_TRANSLATE_PROVIDER=stub` gives a fake machine translator and
+`LOCALESS_WEBHOOK_ALLOW_INTERNAL=true` lets webhooks hit `localhost`.

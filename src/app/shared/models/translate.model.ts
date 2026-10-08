@@ -39,7 +39,7 @@ export interface TranslateBatchData extends TranslateLocales {
  * {@link TranslateSingleData} with `items` along for the ride. The `?: never` members exist to
  * close that, and to keep a top-level `format` out of batch mode, where each item carries its own.
  *
- * Mirrors `functions/src/models/translate.model.ts`; the two are hand-kept in step, as the other
+ * Mirrors `server/src/domain/models/translate.model.ts`; the two are hand-kept in step, as the other
  * models across this boundary are.
  */
 export type TranslateData = TranslateSingleData | TranslateBatchData;

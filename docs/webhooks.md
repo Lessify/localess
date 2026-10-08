@@ -6,14 +6,26 @@ Webhooks deliver HTTP POST notifications to external URLs when content or transl
 
 ---
 
-## Firestore Structure
+## Storage
 
 ```
-spaces/{spaceId}/webhooks/{webhookId}          — webhook config
-spaces/{spaceId}/webhooks/{webhookId}/logs/{logId}  — execution history (not capped or pruned; one doc per dispatch)
+webhooks       (id, space_id, name, url, enabled, events text[], headers jsonb, secret, created_at, updated_at)
+webhook_logs   (id bigserial, webhook_id → webhooks on delete cascade, delivery fields, created_at)
+                — execution history (not capped or pruned; one row per delivery)
 ```
 
-**Access control:** `SPACE_MANAGEMENT` (or `admin`) required to read/write webhook configs and to read logs. Logs are client read-only; they are written by Functions via the Admin SDK.
+Postgres tables defined in `server/src/database/schema.ts`. Enabled webhooks for an event are found with a GIN index on `events` (`events @> array[event]`).
+
+**Access control:** `SPACE_MANAGEMENT` (or `admin`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhooksController`). Logs are read-only through the API; only the server's dispatcher writes them.
+
+App API (`server/src/app-api/webhooks/webhooks.controller.ts`):
+
+| Method | Path | |
+|---|---|---|
+| `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | list (by name) / create |
+| `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:id` | read / update / delete |
+| `PATCH` | `/api/app/spaces/:spaceId/webhooks/:id/status` | `{ enabled }` |
+| `GET` | `/api/app/spaces/:spaceId/webhooks/:id/logs[?limit=]` | newest first; all rows, or `limit` clamped to 1–1000 |
 
 ---
 
@@ -27,8 +39,8 @@ interface WebHook {
   events: WebHookEvent[];
   headers?: Record<string, string>;  // custom request headers
   secret?: string;                   // HMAC-SHA256 signing key
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;  // ISO 8601
+  updatedAt: string;
 }
 ```
 
@@ -36,12 +48,13 @@ interface WebHook {
 
 | Event                   | Value                   | Triggered by                                      |
 |-------------------------|-------------------------|---------------------------------------------------|
-| `CONTENT_PUBLISHED`     | `content.published`     | `publish` callable                                |
-| `CONTENT_UNPUBLISHED`   | `content.unpublished`   | `unpublish` callable                              |
-| `CONTENT_CHANGED`       | `content.changed`       | `onContentUpdate` / `onContentDelete` (Firestore `onDocumentUpdated`/`onDocumentDeleted` triggers) |
-| `TRANSLATION_PUBLISHED` | `translation.published` | `publish` callable                                |
-| `TRANSLATION_CHANGED`   | `translation.changed`   | `generateTranslationsDraft()`                     |
+| `CONTENT_PUBLISHED`     | `content.published`     | `ContentsService.publish()` (`POST …/contents/:id/publish`) |
+| `CONTENT_UNPUBLISHED`   | `content.unpublished`   | `ContentsService.unpublish()` (`POST …/contents/:id/unpublish`) |
+| `CONTENT_CHANGED`       | `content.changed`       | Document data save, document metadata edit that keeps its slug (a slug change or move fires nothing), delete (one per deleted item, folders and their subtrees included), content import |
+| `TRANSLATION_PUBLISHED` | `translation.published` | `TranslationsService.publish()` (`POST …/translations/publish`) |
+| `TRANSLATION_CHANGED`   | `translation.changed`   | Every translation write through the app API (`TranslationsService.write()`), translation import with changes |
 
+Events are dispatched only **after** the transaction that caused them commits, and the request does not wait for delivery (`WebhookDispatcher.dispatch()` is fire-and-forget; shutdown waits for deliveries in flight).
 ---
 
 ## Payload
@@ -84,12 +97,12 @@ Body: JSON-serialised WebHookPayload (without `signature`)
 
 ### Destination restrictions (SSRF protection)
 
-Delivery runs inside the project with the Functions service account, and the URL and headers are chosen by a space manager. So `functions/src/utils/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach the GCP metadata server (`169.254.169.254`, which issues the service account's OAuth token) and the reply would show up in the webhook log.
+Delivery runs from the Localess server, inside your network, and the URL and headers are chosen by a space manager. So `server/src/domain/lib/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach internal services or a cloud metadata server (`169.254.169.254`, which on most clouds issues instance credentials) and the reply would show up in the webhook log.
 
 - **URL** (`checkWebhookUrl`): `https:` only, on the default port, with no credentials in the URL. `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal` and private IP literals are refused. The WHATWG URL parser normalises shorthand forms such as `0x7f.1` and `2130706433` before the check.
 - **Resolved address** (`isBlockedAddress`, applied in the socket's DNS `lookup`): the connection is refused if the host resolves to any loopback, private, link-local, CGNAT, multicast, reserved or documentation range, IPv4 or IPv6, including IPv4-mapped IPv6. The check runs on the exact address being connected to, so DNS rebinding can't get around it.
 - **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` header. Those are dropped.
-- **Emulator** (`FUNCTIONS_EMULATOR=true`): `http:` and local or private targets are allowed, so a local receiver can be used.
+- **Local development** (`LOCALESS_WEBHOOK_ALLOW_INTERNAL=true`, default `false`): `http:` and local or private targets are allowed, and the resolved-address check is skipped, so a local receiver can be used. Never enable it in production.
 
 A refused delivery sends nothing. It is logged as a `network` failure with `errorMessage` "Webhook URL is not allowed: …".
 
@@ -111,7 +124,7 @@ The signature is delivered **only** in the `X-Webhook-Signature` header. Receive
 
 ## Execution Logging
 
-Every dispatch — success or failure — writes a log entry to the `logs` subcollection. `WebHookLog` is a discriminated union on `status`:
+Every delivery — success or failure — inserts a `webhook_logs` row and emits a `webhook_logs` change event, so an open log view refreshes over SSE. `WebHookLog` is a discriminated union on `status`:
 
 ```typescript
 enum WebHookStatus {
@@ -132,7 +145,7 @@ interface WebHookLogBase {
   data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
   deliveryId: string;
   duration: number;       // milliseconds
-  createdAt: Timestamp;
+  createdAt: string;      // ISO 8601
 }
 
 interface WebHookLogSuccess extends WebHookLogBase {
@@ -156,27 +169,30 @@ interface WebHookLogFailure extends WebHookLogBase {
 type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Logs are **not capped on write** — every dispatch adds a document and nothing prunes them (they are only removed with the webhook, see [Cleanup](#cleanup)). Limits apply only on read: the backend `findWebHookLogs()` query returns the latest 100 by `createdAt` descending, and the frontend `WebHookService.findLogs()` takes an optional `max`. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
+Logs are **not capped on write** — every delivery adds a row and nothing prunes them (they are only removed with the webhook, see [Cleanup](#cleanup)). Limits apply only on read: `GET …/webhooks/:id/logs` returns rows newest first, all of them or `?limit=` (clamped to 1–1000), and the frontend `WebHookService.findLogs()` takes an optional `max`. The API returns log ids as strings. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
 
 ---
 
-## Trigger Call Sites
+## Dispatch Call Sites
 
-| File                                                                                                              | Event                   |
-|-------------------------------------------------------------------------------------------------------------------|-------------------------|
-| `functions/src/contents.ts` — `publish` callable                                                                  | `CONTENT_PUBLISHED`     |
-| `functions/src/contents.ts` — `unpublish` callable                                                                | `CONTENT_UNPUBLISHED`   |
-| `functions/src/contents.ts` — `onContentUpdate` / `onContentDelete`                                               | `CONTENT_CHANGED`       |
-| `functions/src/translations.ts` — `publish` callable                                                              | `TRANSLATION_PUBLISHED` |
-| `functions/src/translations.ts` / `functions/src/services/translation.service.ts` — `generateTranslationsDraft()` | `TRANSLATION_CHANGED`   |
+| File                                                                         | Event                   |
+|------------------------------------------------------------------------------|-------------------------|
+| `server/src/app-api/contents/contents.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
+| `server/src/app-api/contents/contents.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
+| `server/src/app-api/contents/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
+| `server/src/app-api/translations/translations.service.ts` — `publish()`      | `TRANSLATION_PUBLISHED` |
+| `server/src/app-api/translations/translations.service.ts` — `write()`        | `TRANSLATION_CHANGED`   |
+| `server/src/tasks/task-runner.service.ts` — content / translation imports    | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
 
-All call `triggerWebHooksForEvent(spaceId, payload)` from `functions/src/utils/webhook-utils.ts`.
+All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `server/src/webhooks/webhook-dispatcher.service.ts`.
+
+> Translation pushes through the public MANAGE API (`POST /api/v1/.../translations/:locale`) do not dispatch webhooks.
 
 ---
 
 ## Cleanup
 
-A Firestore `onDocumentDeleted` trigger in `functions/src/webhooks.ts` recursively deletes the `logs` subcollection when a webhook document is deleted.
+`webhook_logs.webhook_id` references `webhooks` with `on delete cascade`, so deleting a webhook (or its space) removes its logs in the same statement.
 
 ---
 
@@ -191,7 +207,7 @@ A Firestore `onDocumentDeleted` trigger in `functions/src/webhooks.ts` recursive
 
 **Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
-- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. `firestore.rules` enforces the same shape on create and update. Delivery re-checks it and blocks private addresses, see [Destination restrictions](#destination-restrictions-ssrf-protection).
+- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. The server's zod DTO (`webhooks.controller.ts`) enforces the same shape on create and update. Delivery re-checks it and blocks private addresses, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 
@@ -205,12 +221,12 @@ Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list 
 
 | File                                             | Purpose                                                                   |
 |--------------------------------------------------|---------------------------------------------------------------------------|
-| `functions/src/models/webhook.model.ts`          | Backend types — `WebHook`, `WebHookEvent`, `WebHookPayload`, `WebHookLog` |
-| `functions/src/services/webhook.service.ts`      | Backend Firestore queries                                                 |
-| `functions/src/utils/webhook-utils.ts`           | HTTP dispatch, HMAC signing, execution logging                            |
-| `functions/src/utils/webhook-request.ts`         | Destination checks (URL, resolved address, headers), guarded POST         |
-| `functions/src/webhooks.ts`                      | `onDocumentDeleted` cleanup trigger                                       |
+| `server/src/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
+| `server/src/domain/models/`                      | Backend types — `WebHookEvent` and friends                                |
+| `server/src/app-api/webhooks/webhooks.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
+| `server/src/webhooks/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
+| `server/src/domain/lib/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
 | `src/app/shared/models/webhook.model.ts`         | Frontend types                                                            |
-| `src/app/shared/services/webhook.service.ts`     | Frontend Firestore CRUD + log queries                                     |
+| `src/app/shared/services/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |
 | `src/app/shared/validators/webhook.validator.ts` | Form validators                                                           |
 | `src/app/features/spaces/developers/webhooks/`   | UI — list (`webhooks.component`), create/edit (`webhook-dialog/`), detail + log history (`webhook-detail/`) |

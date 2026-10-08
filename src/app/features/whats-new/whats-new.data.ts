@@ -2,7 +2,7 @@ import { WhatsNewRelease } from './whats-new.model';
 
 /**
  * Release notes shown by the What's New dialog, newest first. Ships with the build rather than
- * living in Firestore: these describe the code the user is running, so they must move with it.
+ * living in the database: these describe the code the user is running, so they must move with it.
  *
  * Items summarise a release rather than reproducing its change log - the full notes live at
  * https://github.com/Lessify/localess/releases.

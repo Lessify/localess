@@ -1,5 +1,5 @@
 // Applies the saved dark theme before first paint. An external file rather than an inline
-// <script> so the Content-Security-Policy in firebase.json does not need 'unsafe-inline'.
+// <script> so the Content-Security-Policy (server/src/static/static-site.ts) does not need 'unsafe-inline'.
 (function () {
   try {
     var state = JSON.parse(localStorage.getItem('LL-SETTINGS-STATE') || '{}');

@@ -56,8 +56,8 @@ Add and remove locales from the space (there is no reordering). Set the **fallba
 published data. The table is filtered through an `<ll-filter-toolbar>` (`onFilterChange()`).
 
 - `openAddDialog()` — opens `LocaleDialogComponent`, passing the space's existing locales so they are excluded
-- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale
-- `markAsFallback(element)` — makes the locale the space's fallback
+- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`). The action is disabled for the fallback locale, and the server refuses to delete it too
+- `markAsFallback(element)` — makes the locale the space's fallback (`PUT /api/app/spaces/:s/locale-fallback`)
 
 **Services:** `LocaleService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
@@ -76,9 +76,11 @@ and they are allowed to differ. Every locale we list is bidirectional today (`GC
 and `GCP_TARGET_ONLY_LOCALES` standing empty next to it; a language later observed to be one-way is a one-line move rather than a
 restructure.
 
-The same lists live twice - in `functions/src/config.ts`, which validates the request, and in `src/app/shared/services/locale.service.ts`,
-which decides what the UI offers and enables the translate button. `functions/src/gcp-locales-parity.test.ts` reads both files and fails if
-they drift, because a locale the UI offers and the backend rejects only surfaces after the user pays for the round-trip.
+The same lists live twice - in `server/src/domain/lib/translate-locales.ts`, which validates the request when the server's provider is
+Google, and in `src/app/shared/services/locale.service.ts`, which decides what the UI offers and enables the translate button.
+`server/src/domain/lib/translate-locales-parity.test.ts` reads both files and fails if they drift, because a locale the UI offers and the
+backend rejects only surfaces after the user pays for the round-trip. When the server is configured for DeepL it validates against its own
+DeepL lists (same file), which the UI does not mirror.
 
 ### Locale icons
 
@@ -133,7 +135,7 @@ flag like Japan's, or the white band of Italy's, has no visible edge against a l
 **Where the data comes from.** Flags are the `circle-flags` package (MIT), copied into `assets/flags` by an `angular.json` asset glob — all
 633 files, since restricting the glob would have to be regenerated whenever a locale is added. The component cannot stat that folder at
 runtime, so the available codes are baked into `locale-flags.ts` by `scripts/generate-locale-flags.mjs`; a wrong constant would point an
-`<img>` at a missing asset, which behind the Hosting SPA rewrite serves `index.html` instead of a 404.
+`<img>` at a missing asset, which the server's SPA fallback (`SpaFallbackFilter`) answers with `index.html` instead of a 404.
 `scripts/generate-locale-flags.test.mjs` (part of `npm run test:scripts`) fails when the constants and the installed package disagree —
 re-run the generator after upgrading it. The collapse list is computed by **comparing file contents**, not by mapping a language to "its"
 country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en-GB` wrong.

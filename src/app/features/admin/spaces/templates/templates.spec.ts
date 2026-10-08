@@ -3,10 +3,6 @@ import { SpaceTemplateComponent, SpaceTemplateEnum } from '@shared/models/space-
 
 import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index';
 
-// Firestore commits at most 500 writes in one batch. Templates are far below this today;
-// the assertion exists so a contributor adding schemas gets a failing test, not a runtime error.
-const FIRESTORE_BATCH_LIMIT = 500;
-
 describe('SPACE_TEMPLATES', () => {
   it('offers every template, with EMPTY first', () => {
     expect(SPACE_TEMPLATES.map(t => t.id)).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING']);
@@ -44,7 +40,7 @@ describe('SPACE_TEMPLATES', () => {
     });
 
     it('uses schema ids the import path would accept', () => {
-      // Mirrors functions/src/models/schema.zod.test.ts: >= 2 chars, starts with a letter,
+      // Mirrors server/src/domain/models/schema.zod.test.ts: >= 2 chars, starts with a letter,
       // and `contentdata` is reserved.
       for (const schema of template.schemas) {
         expect(schema.id.length).toBeGreaterThanOrEqual(2);
@@ -94,10 +90,6 @@ describe('SPACE_TEMPLATES', () => {
           }
         }
       }
-    });
-
-    it('stays below the Firestore batch write limit', () => {
-      expect(template.schemas.length).toBeLessThan(FIRESTORE_BATCH_LIMIT);
     });
   });
 });

@@ -7,7 +7,8 @@ import { CommonValidator } from './common.validator';
  * Whether `url` may be loaded as a visual-editor preview iframe.
  *
  * The preview iframe is trusted with `bypassSecurityTrustResourceUrl`, and the URL comes from the
- * space document, which a space manager can write directly to Firestore. So only an absolute
+ * space, which a space manager can also write through the API (the server applies the same scheme
+ * check, `zPreviewUrl`, but cannot check the app origin). So only an absolute
  * `http:`/`https:` URL on another origin is accepted: a `javascript:` URL would run inside the app,
  * and a same-origin page could lift the iframe sandbox and reach the app's session.
  *

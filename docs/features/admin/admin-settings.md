@@ -37,11 +37,11 @@ Reactive form for editing global UI settings — two fields only: `text` and `co
 
 **Key behaviour:**
 - Loads current settings in the constructor via `SettingsService.find()` and patches `settings.ui` into the form
-- `save()` — calls `SettingsService.updateUi()`, which writes `ui` + `updatedAt` to `configs/settings` with `setDoc(..., { merge: true })`
+- `save()` — calls `SettingsService.updateUi()`, which sends `PATCH /api/app/settings/ui`; the server writes `ui` + `updated_at` on the single `settings` row (requires `SETTINGS_MANAGEMENT`; reading is open to every signed-in user, because `AppSettingsStore` loads the settings for everyone)
 
 ## Services Used
 
 | Service | Purpose |
 |---------|---------|
-| `SettingsService` | Read and write global app settings from Firestore |
+| `SettingsService` | Read (`GET /api/app/settings`, live via SSE `settings` events) and write (`PATCH /api/app/settings/ui`) global app settings |
 | `NotificationService` | Toast feedback |

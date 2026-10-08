@@ -8,8 +8,8 @@ Localess has **two separate permission systems** that should not be confused:
 
 | System | Used by | Stored in | Enforced by |
 |--------|---------|-----------|-------------|
-| **User permissions** | CMS users (editors, admins) | Firebase custom claims | Route guards + UI |
-| **API token permissions** | Programmatic API consumers | Firestore `tokens` collection | CDN middleware |
+| **User permissions** | CMS users (editors, admins) | `users` table (`role`, `permissions`) | Server guards on `/api/app/**` + route guards + UI |
+| **API token permissions** | Programmatic API consumers | `tokens` table | `TokenAuthService` on `/api/v1/**` |
 
 This document covers **user permissions**. See [Auth Tokens](auth-tokens.md) for API token permissions.
 
@@ -17,14 +17,16 @@ This document covers **user permissions**. See [Auth Tokens](auth-tokens.md) for
 
 ## User Roles
 
-Two roles exist, set via Firebase custom claim `role`:
+Two roles exist, stored in the `users.role` column (`null` = no access):
 
 | Role | Access |
 |------|--------|
 | `admin` | Full access to everything — bypasses all permission checks |
-| `custom` | Granular access — only what's listed in the `permissions` claim |
+| `custom` | Granular access — only what's listed in `users.permissions` |
 
-A `lock: true` claim does **not** block login. Its only consumer is `UserStore.isLocked`, which `me.component.html` uses to hide the Update Profile / Email / Password actions on the user's own profile page. It is UI-only — nothing server-side enforces it. (Blocking sign-in is the separate Firebase Auth `disabled` flag.)
+Role and permissions are read from the `users` row on **every request** (the session resolves to the current row), so a change applies immediately on the server — there are no token claims to refresh.
+
+A `lock: true` flag (`users.lock`) does **not** block login. Its only consumer is `UserStore.isLocked`, which `me.component.html` uses to hide the Update Profile / Email / Password actions on the user's own profile page. It is UI-only — nothing server-side enforces it (`/api/app/me` does not check it). Blocking sign-in is the separate `users.disabled` flag: a disabled user can't log in, and their existing sessions stop resolving.
 
 ---
 
@@ -83,25 +85,39 @@ enum UserPermission {
 
 ## How Guards Work
 
-Route-level guards use AngularFire's `AuthGuard` + custom `authGuardPipe` functions defined in `features-routing.module.ts`:
+### Server (the real enforcement)
+
+Every `/api/app/**` and `/api/auth/**` route goes through the global `AuthGuard` (`server/src/auth/auth.guard.ts`): it requires a valid session unless the route is `@Public()`, then checks the route's access metadata from `server/src/auth/decorators.ts` against the user's current row:
+
+| Decorator | Passes when |
+|---|---|
+| `@Public()` | always (login, OAuth, `/api/config`, the public `/api/v1` API, health) |
+| `@RequireAnyRole()` | role is `admin` or `custom` (e.g. reading spaces) |
+| `@RequirePermission(a, b, …)` | admin, or holds **any** of the permissions (e.g. `SCHEMA_READ` or `CONTENT_READ` for schemas) |
+| `@RequireAllPermissions(a, b, …)` | admin, or holds **all** of them (e.g. machine translation needs `TRANSLATION_UPDATE` + `CONTENT_UPDATE`) |
+| *(none)* | any signed-in session, even without a role (e.g. `/api/app/me`) |
+
+No session → `401`; insufficient access → `403`. Checks that depend on the request body or target live in the controller or service: task create/delete require the permission named by the task `kind` (`ASSET_REGEN_METADATA` is admin-only), and user management uses `canGrant` / `canManageUser` (below). The helpers are in `server/src/auth/permissions.ts` (`canPerform`, `canGrant`, `canManageUser`). CSRF: every non-GET request authenticated by the session cookie must carry `X-Requested-With` (added by the Angular `apiInterceptor`).
+
+### Frontend (navigation only)
+
+`authGuard()` in `src/app/app-routing.ts` sends signed-out users to `/auth/login`. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`src/app/shared/guards/permission.guard.ts`):
 
 ```typescript
 // a child of the `spaces/:spaceId` parent route (see frontend-state.md → SpaceStore)
 {
   path: 'translations',
-  canActivate: [AuthGuard],
-  data: {
-    authGuardPipe: hasPermissionTranslationRead  // reads Firebase customClaims
-  }
+  canActivate: [permissionGuard(UserPermission.TRANSLATION_READ)],
 }
 ```
 
-Each pipe reads `customClaims` from the Firebase ID token:
+The guard waits until `UserStore.loaded()` (the `GET /api/auth/me` check has answered), so a deep link opened in a new tab is decided on the real permissions. Admins pass; `custom` users need **any** of the listed permissions; otherwise it redirects to `/features`.
+
 ```typescript
-// admin → always true
-// custom → check permissions array includes the required permission
-claims['role'] === 'admin' || claims['permissions']?.includes(UserPermission.TRANSLATION_READ)
+role === 'admin' || (role === 'custom' && permissions.some(it => userStore.permissions()?.includes(it)))
 ```
+
+The `tasks` route requires any `*_EXPORT` / `*_IMPORT` permission (the Firebase-era guard checked `TRANSLATION_READ` by mistake).
 
 ---
 
@@ -134,19 +150,19 @@ this.userStore.permissions()?.includes(UserPermission.CONTENT_PUBLISH)
 
 ---
 
-## Claims Lifecycle
+## Access Lifecycle
 
-1. Admin invites a user → Firebase Auth account created with initial `role` + `permissions` via Admin SDK
-2. User logs in → ID token issued with claims baked in
-3. Admin changes user's role/permissions → claims updated via Admin SDK
-4. **Claims only refresh on next ID token refresh** (every ~1 hour, or on next sign-in)
-5. `UserStore` reads claims from `getIdTokenResult()` on every app init
+1. Admin invites a user → `POST /api/app/users` creates the `users` row with its `role` + `permissions` (after a `canGrant` check)
+2. User signs in (password, or Google/Microsoft OAuth) → a session row is created; the cookie holds only a random value whose hash is stored
+3. Admin changes the user's role/permissions → `PATCH /api/app/users/:id` updates the row
+4. **The server applies the change on the user's next request** — every request re-reads the row through the session
+5. `UserStore` reads role and permissions from `GET /api/auth/me` on app init, so the UI (sidebar, guards, buttons) reflects a change after the next reload
 
 ---
 
 ## Who Can Manage Users
 
-Writing a `users/{userId}` document grants access: the `user.onUpdate` trigger copies its `role`, `permissions` and `lock` into custom claims. So `USER_MANAGEMENT` alone is not enough to manage every user.
+Writing a user's `role` and `permissions` grants access. So `USER_MANAGEMENT` alone is not enough to manage every user.
 
 | Caller | May manage |
 |---|---|
@@ -155,19 +171,21 @@ Writing a `users/{userId}` document grants access: the `user.onUpdate` trigger c
 
 Two managers holding the same permissions can manage each other. A manager can never make anyone, including themselves, an admin. Only admins can.
 
-These limits are enforced in three places:
+These limits are enforced in two places:
 
-- **`firestore.rules`** (`users/{userId}`): enforces update and delete. `create` is admin-only; profiles are created by the Auth trigger and `user.sync`.
-- **`user.invite` callable**: `canGrant()` in `functions/src/utils/user-grant.ts` enforces the same limits, because the callable writes custom claims directly.
-- **UI**: `features/admin/users/user-management.ts` mirrors the rule. The users list disables actions on users the caller can't manage. The edit and invite dialogs hide the Admin role and disable permissions the caller can't grant.
+- **Server** (`server/src/users/users.controller.ts`, `@RequirePermission(USER_MANAGEMENT)`): `POST /api/app/users` (invite) requires `canGrant()`; `PATCH /api/app/users/:id` requires `canManageUser()` and `canGrant()`; `DELETE /api/app/users/:id` and `POST /api/app/users/:id/password-reset-link` require `canManageUser()`. Both helpers are in `server/src/auth/permissions.ts`.
+- **UI**: `features/admin/users/user-management.ts` mirrors the server rule. The users list disables actions on users the caller can't manage. The edit and invite dialogs hide the Admin role and disable permissions the caller can't grant.
 
 ## Implementation Files
 
 - `src/app/shared/models/user.model.ts` — `User`, `UserRole`, `UserPermission` types
-- `src/app/shared/stores/user.store.ts` — reads claims, exposes `isRoleAdmin`, `isLocked`
-- `src/app/features/admin/users/user-management.ts` — who may manage which user (mirrors `firestore.rules`)
-- `functions/src/utils/user-grant.ts` — `canGrant()` for the `user.invite` callable
+- `src/app/shared/stores/user.store.ts` — loads `GET /api/auth/me`, exposes `isRoleAdmin`, `isLocked`, `loaded`
+- `src/app/features/admin/users/user-management.ts` — who may manage which user (mirrors `canManageUser`/`canGrant`)
+- `src/app/shared/guards/permission.guard.ts` — `permissionGuard(...permissions)`
+- `server/src/auth/permissions.ts` — `UserPermission`, `canPerform`, `canGrant`, `canManageUser`
+- `server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireAnyRole`, `@RequirePermission`, `@RequireAllPermissions`, global guard + CSRF check
+- `server/src/users/users.controller.ts` — user management API
 - `src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
-- `src/app/features/features-routing.module.ts` — all route guards with permission pipes
+- `src/app/features/features-routing.module.ts` — all route guards (`permissionGuard`)
 - `src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)
-- `src/app/shared/services/user.service.ts` — Firestore user CRUD (admin operations)
+- `src/app/shared/services/user.service.ts` — HttpClient user CRUD (`/api/app/users`, admin operations)

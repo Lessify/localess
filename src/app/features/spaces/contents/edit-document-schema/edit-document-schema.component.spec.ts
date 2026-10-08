@@ -243,7 +243,7 @@ describe('EditDocumentSchemaComponent', () => {
 
     // Reference and asset pickers keep their controls enabled on every locale so the shared value
     // stays visible; the write-back is what keeps another locale from overwriting it. Called directly:
-    // a REFERENCE value makes the picker load the document from Firestore, which isn't under test here.
+    // a REFERENCE value makes the picker load the document from the API, which isn't under test here.
     function writeBack(component: EditDocumentSchemaComponent, root: SchemaComponent, value: Record<string, unknown>) {
       (component as unknown as { writeFormValue(root: SchemaComponent, value: Record<string, unknown>): void }).writeFormValue(root, value);
     }

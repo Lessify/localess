@@ -43,17 +43,17 @@ Displays the current user's profile card — avatar, name, email, email-verified
 Form: `displayName`, `photoURL` (plain URL text field — no upload).
 
 ### MeEmailDialogComponent
-Form: `newEmail` only. Calls `MeService.updateEmail()` (Firebase Auth `updateEmail`), then reloads the current user.
+Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.isPasswordProvider()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`), then reloads the current user. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
 
 ### MePasswordDialogComponent
-Form: `newPassword` only (min length 6). Calls `MeService.updatePassword()` (Firebase Auth `updatePassword`).
+Form: `newPassword` (min length 6), plus `currentPassword` for accounts that have a password. Calls `MeService.updatePassword()` (`PUT /api/app/me/password`). Changing the password signs out every other session of the user.
 
-> There is no current-password field, confirm field, or explicit re-authentication step, and no verification email is sent. Firebase Auth may reject these calls with `auth/requires-recent-login` if the session is old.
+> There is no confirm field and no verification email is sent. A wrong current password is answered with 403 (not 401, which would sign the user out); `MeComponent` shows the server's message in the error toast.
 
 ## Services Used
 
 | Service | Purpose |
 |---------|---------|
-| `MeService` | Update display name, email, password via Firebase Auth |
+| `MeService` | Update display name / photo (`PATCH /api/app/me`), email (`PUT /api/app/me/email`), password (`PUT /api/app/me/password`); reloads `UserStore` afterwards |
 | `NotificationService` | Toast feedback |
 | `UserStore` | Read current user state (email, providers, displayName) |

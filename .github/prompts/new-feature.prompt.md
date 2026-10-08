@@ -7,6 +7,6 @@ Read these docs for full context:
 
 Architecture:
 - Angular 21 frontend in `src/app/features/`
-- Firebase Functions backend in `functions/src/`
-- Public API in `functions/src/v1/`
-- Shared models in `functions/src/models/`
+- NestJS + Postgres server in `server/src/` (app API in `server/src/app-api/`, schema in `server/src/database/schema.ts`)
+- Public API in `server/src/public-api/`
+- Server models in `server/src/domain/models/`

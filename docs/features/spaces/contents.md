@@ -56,16 +56,16 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 **Key behaviour:**
 
 - Loads schemas from `SchemaService` (needed for the Add Document dialog's schema picker)
-- Loads content at the current `contentPath` level from Firestore
+- Loads content at the current `contentPath` level from `GET /api/app/spaces/:s/contents` (a live query, refetched on `contents` change events)
 - `onRowSelect(item)` — opens folder (updates `SpaceStore.contentPath`) or navigates to the document editor
 - `navigateToSlug(slug)` — path breadcrumb navigation
 - `openAddDocumentDialog()` — pick schema → creates `ContentDocument` with `kind: DOCUMENT`
 - `openAddFolderDialog()` — creates `ContentFolder` with `kind: FOLDER`
-- `openEditDialog(element)` — edit document/folder name and slug
+- `openEditDialog(element)` — edit document/folder name and slug. Full slugs must be unique per space (the server answers a clash with an error), and renaming a folder rewrites the full slug of every descendant in the same transaction
 - `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
-- `openPublishDialog()` — publishes selected document to Storage (see [Publish Flow](../../publish-flow.md))
-- `openUnpublishDialog()` — removes published JSON from Storage
-- `openMoveDialog()` — moves document/folder to a new parent slug
+- `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:id/publish`), which writes one `content_published` row per locale (see [Publish Flow](../../publish-flow.md))
+- `openUnpublishDialog()` — removes the published snapshot (`POST …/:id/unpublish` deletes the `content_published` rows)
+- `openMoveDialog()` — moves document/folder to a new parent slug (`PATCH …/:id`); the new parent must be an existing folder
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
 - `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export
@@ -118,8 +118,9 @@ blocks found on this page". An `unload` clears the reported blocks.
 `ContentPreviewComponent.sendEvent()` only dispatches when `iframeStatus() === 'connected'` — events sent before the handshake completes are
 dropped. `EditDocumentComponent` triggers it via `this.previewComponent()?.sendEvent(...)`.
 
-**Preview security.** The iframe `src` is trusted with `bypassSecurityTrustResourceUrl`, and the environment URL comes from the space document,
-which a space manager can write directly to Firestore. So `ContentPreviewComponent` checks it at render time with `isSafePreviewUrl()`
+**Preview security.** The iframe `src` is trusted with `bypassSecurityTrustResourceUrl`, and the environment URL comes from the space,
+which a space manager writes through `PATCH /api/app/spaces/:id`. The server only checks that it is an absolute `http(s)` URL (`zPreviewUrl`), not
+the different-origin rule. So `ContentPreviewComponent` checks it at render time with `isSafePreviewUrl()`
 (`shared/validators/space.validator.ts`). The URL must be an absolute `http:`/`https:` URL on a different origin from the app. A value that fails
 the check is never loaded; `invalidEnvironmentUrl()` shows an "Invalid preview URL" message instead. Together these rules keep a
 `javascript:` URL from running inside the app.
@@ -256,7 +257,7 @@ default `start` alignment opens the menu rightward into the viewport edge; CDK t
 ("Translate from English (Default) to German") wraps, needing 293px against 292px available. Anchoring the menu's right edge to the trigger
 lets it grow leftwards instead.
 
-`TranslateData` carries a `format?: 'text' | 'html'` (default `text`) which the `translate` function threads to the provider:
+`TranslateData` carries a `format?: 'text' | 'html'` (default `text`) which `POST /api/app/translate` threads to the provider (`server/src/translate/translate.service.ts`):
 
 |        | `format: 'text'`         | `format: 'html'`          |
 | ------ | ------------------------ | ------------------------- |
@@ -278,14 +279,14 @@ Two things to know when touching this:
 - **`generateHTML` must be given the same extension list as the editor.** A mismatch does not error — it silently drops whichever nodes the
   shorter list lacks. Hence `rich-text-extensions.ts`, read by both the `Editor` and the translate path, with `rich-text-extensions.spec.ts`
   asserting a JSON → HTML → JSON round trip per node and mark.
-- **The emulator stub is format-aware.** `translate.ts` returns a canned string when emulated; for `html` it appends a `<p>` so the result
-  still parses, instead of feeding the editor a stray text node.
+- **The development stub is format-aware.** With `LOCALESS_TRANSLATE_PROVIDER=stub` the server returns a canned string; for `html` it
+  appends a `<p>` so the result still parses, instead of feeding the editor a stray text node.
 
 #### Whole-document translation
 
 Driven from the browser, not the server. `collectTranslatableFields()` (`shared/utils/content.ts`) walks `documentData`, serializing RICH_TEXT with
 `generateHTML(json, createRichTextExtensions())` and everything else as plain text, and returns entries carrying an `apply` closure. Those
-go to the `translate` callable's batch mode as `{id, content, format}`; `translateItems` (`functions/src/utils/translate-batch.ts`) groups
+go to `POST /api/app/translate` in batch mode (`items`) as `{id, content, format}`; `translateItems` (`server/src/domain/lib/translate-batch.ts`) groups
 by format, chunks to 27,000 code points and translates each chunk in **one** provider round-trip — both Google and DeepL accept arrays.
 
 **Locale ids are not language codes.** `default` is a storage sentinel, not a language — see
@@ -318,16 +319,17 @@ own — `EditDocumentComponent.formRefresh` is a counter the parent bumps, read 
 
 Three things worth knowing:
 
-- It requires the editor to be open; there is no headless whole-document translate. The per-field `translate` endpoint remains available
+- It requires the editor to be open; there is no headless whole-document translate. The per-field `POST /api/app/translate` endpoint remains available
   programmatically.
 - A single RICH_TEXT field whose HTML exceeds 27,000 code points cannot be sent (Google caps a request at 30,000) and is reported in
   `failed[]`. It is not split — splitting HTML at safe boundaries is its own problem.
-- This is why `functions/` carries no `@tiptap` dependency. Doing the conversion server-side needs `@tiptap/html`, whose `happy-dom` peer
-  measured **365 ms** to load — more than all seven packages in `LAZY_ONLY_PACKAGES` combined — and would require the extension list to be
+- This is why `server/` carries no `@tiptap` dependency. Doing the conversion server-side needs `@tiptap/html`, whose `happy-dom` peer
+  measured **365 ms** to load, and would require the extension list to be
   duplicated across both npm projects, where a mismatch silently drops nodes rather than erroring.
 
-`translations.ts` keeps its own server-side `translateLocale` for translation keys. It is a different feature that shares the name, and it
-still bypasses DeepL and fans out with an unbounded `Promise.all`.
+`TranslationsService.translateLocale` (`server/src/app-api/translations/translations.service.ts`) is the server-side translate-locale for
+translation keys. It is a different feature that shares the name; it uses the configured provider and the same `translateItems` batching,
+and writes the results in one transaction.
 
 ### Styling
 
@@ -415,7 +417,7 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 
 | Service               | Purpose                                                |
 | --------------------- | ------------------------------------------------------ |
-| `ContentService`      | CRUD, publish, unpublish, move, clone                  |
+| `ContentService`      | CRUD, publish, unpublish, move, clone via `/api/app/spaces/:s/contents` (reads are live) |
 | `SchemaService`       | Load schemas for picker + editor field rendering       |
 | `TokenService`        | API token for CDN preview links                        |
 | `TaskService`         | Create import/export tasks                             |

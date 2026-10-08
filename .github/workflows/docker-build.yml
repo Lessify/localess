@@ -17,14 +17,13 @@ on:
     # Only build when files in these directories have been changed
     paths:
       - src/**
-      - functions/**
+      - libs/**
+      - server/**
       - angular.json
       - Dockerfile
-      - firebase.json
-      - firestore.indexes.json
-      - firestore.rules
+      - .dockerignore
       - package.json
-      - storage.rules
+      - package-lock.json
 
 jobs:
   build:

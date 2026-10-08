@@ -3,11 +3,10 @@ import { hashPassword, PASSWORD_MIN_LENGTH } from '../auth/password.js';
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { newId } from '../database/id.js';
-import { Locale, spaces, userCredentials, users } from '../database/schema.js';
+import { DEFAULT_LOCALE } from '../domain/models/space.model.js';
+import { spaces, userCredentials, users } from '../database/schema.js';
 import { UsersService } from '../users/users.service.js';
 
-/** Mirrors DEFAULT_LOCALE in functions/src/models/space.model.ts. */
-export const DEFAULT_LOCALE: Locale = { id: 'en', name: 'English' };
 export const DEFAULT_ADMIN_NAME = 'Admin';
 
 export interface FirstAdmin {

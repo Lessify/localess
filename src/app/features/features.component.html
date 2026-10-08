@@ -31,7 +31,7 @@
         } @else if (spaceStore.hasNoSpaces() && ('SPACE_MANAGEMENT' | canUserPerform | async)) {
           <!--
             Fills the slot the space switcher leaves empty, so the shell is never a dead end.
-            Gated on SPACE_MANAGEMENT because that is what firestore.rules requires to create a
+            Gated on SPACE_MANAGEMENT because that is what the server requires to create a
             space, and what guards the route this links to.
           -->
           <li hlmSidebarMenuItem>

@@ -624,7 +624,7 @@ describe('EditDocumentComponent', () => {
   /**
    * Whole-document translation runs against the in-memory document, so these assert the round
    * trip: collect from `documentData`, send one batch, write the results back. Nothing here
-   * touches Firestore - that only happens when the author presses Save.
+   * reaches the server - that only happens when the author presses Save.
    */
   describe('openTranslateLocaleDialog', () => {
     const translatableSchema = {

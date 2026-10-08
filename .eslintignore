@@ -52,12 +52,10 @@ yarn.lock
 # Generated
 libs/
 src/app/shared/generated/
-firebase-export*
 
 .github
 api-docs
 
-functions
 
 # Tests
 /**/*.spec.ts

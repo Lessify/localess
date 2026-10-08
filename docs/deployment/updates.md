@@ -1,161 +1,113 @@
-# Phase 3 — Pushing Updates
+# Updates, Backups and Rollback
 
-> Related: [Deployment Overview](overview.md) · [First Deploy](first-deploy.md) · [Publish Flow](../publish-flow.md)
+> Related: [Deployment Overview](overview.md) · [Docker](docker.md) · [Production](production.md) · [Health Check](check.md)
 
-## Overview
+## Upgrading
 
-Routine redeploys after the environment already exists. The full cycle:
+An upgrade is: new code, restart. Pending database migrations apply automatically on boot.
+
+**Docker Compose**
 
 ```bash
 git pull
-npm install
-npm run localess:deploy
+docker compose up -d --build
+docker compose logs -f localess
+docker compose exec localess node server/dist/cli.js check
 ```
 
-`LOCALESS_*` variables are baked in at build time, but you no longer have to re-supply them on
-every build — `npm run localess:deploy` loads them from `.env.<project-id>`. Change a value there and
-redeploy. See [Build-time configuration](first-deploy.md#build-time-configuration).
-
----
-
-## Targeted deploys
-
-A full deploy rebuilds every function image, which is the slow part. Narrow it to what changed:
-
-| Changed | Command |
-|---------|---------|
-| Angular app only | `npm run localess:deploy -- --only hosting` |
-| Cloud Functions only | `npm run localess:deploy -- --only functions` |
-| A single function | `npm run localess:deploy -- --only functions:publicv1` |
-| Security rules only | `npm run localess:deploy -- --only firestore:rules,storage` |
-| Firestore indexes only | `npm run localess:deploy -- --only firestore:indexes` |
-| Remote Config only | `npm run localess:deploy -- --only remoteconfig` |
-| Everything except auth | `npm run localess:deploy -- --only hosting,functions,firestore,storage` |
-| Everything (the default) | `npm run localess:deploy` |
-
-`npm run localess:deploy` always rebuilds before uploading, so `--only hosting` is safe. Pass
-`--skip-build` only when you deliberately want to upload whatever is already in
-`dist/localess/browser`.
-
-### About the `auth` target
-
-`auth` is part of every deploy by default. It sends the `auth` block from `firebase.json` to
-Google's provisioning API, which initializes Identity Platform and enables Email/Password.
-
-This is deliberate: `npm run localess:setup` provisions infrastructure but never deploys, so
-the provider would otherwise never be applied. It is idempotent — you will see "Enabling auth
-providers" on every deploy, which is harmless. Skip it with `--only` if you want a faster push.
-
-Localess provisions **email/password only**. Google and Microsoft sign-in are configured in the
-Firebase console, and the login page will only show their buttons if `LOCALESS_AUTH_PROVIDERS`
-in `.env.<project-id>` lists them at build time.
-
----
-
-## Keeping local files in sync
-
-The remote project is the source of truth; the local project files are a cache of it.
-When they drift — someone changed something in the console, or you are on a fresh clone —
-regenerate them without re-running provisioning:
+**Single container** — rebuild (or pull) the image, then replace the container on the same volume:
 
 ```bash
-npm run localess:sync
+git pull && docker build -t localess .
+docker stop localess && docker rm localess
+docker run -d --name localess -p 3000:3000 -v localess-data:/data … localess
 ```
 
-It picks a project from the same annotated list `deploy` uses, checks the `localess-managed`
-label, and rewrites `.env.<project-id>`, `functions/.env.<project-id>`,
-`firebase.<project-id>.json` and `src/environments/firebase-config.<project-id>.json` from the
-live project, then copies the last of those to `firebase-config.build.json`, which is what the
-production build swaps in.
-It also corrects the `localess-region` label if the immutable Firestore location has drifted
-from it.
-
-**It preserves your hand-edited settings.** `LOCALESS_AUTH_CUSTOM_DOMAIN`,
-`LOCALESS_AUTH_PROVIDERS`, `LOCALESS_LOGIN_MESSAGE` and `LOCALESS_UNSPLASH_ENABLE` cannot be
-read back from the project, so an existing `.env.<project-id>` keeps whatever it already has.
-Only when there is no local config at all do they start empty — and then sync says so, naming
-the keys it defaulted.
-
-`npm run localess:deploy` runs the same step before it builds, so a deploy can never quietly reset a
-setting either.
-
----
-
-## Choosing what to redeploy
-
-| You changed | Redeploy |
-|-------------|----------|
-| `src/**` (Angular) | `hosting` |
-| `functions/src/**` | `functions` |
-| `firestore.rules`, `storage.rules` | `firestore:rules`, `storage` |
-| `firestore.indexes.json` | `firestore:indexes` |
-| `remoteconfig.template.json` | `remoteconfig` |
-| `firebase.json` `auth` block | `auth` |
-| `LOCALESS_*` values | rebuild, then `hosting` |
-
-`LOCALESS_REGION` is not in the table because it cannot be changed by editing
-`.env.<project-id>`: sync and deploy rewrite it from the live Firestore location on every run,
-and that location is permanent. A different region means a new project.
-
----
-
-## After upgrading Localess
-
-When a new Localess version introduces a new Firebase product or API, re-run phase 1 first:
+**Bare Node**
 
 ```bash
-npm run localess:setup -- --project my-localess
+git pull
+npm ci && npm --prefix server ci
+npm run version:generate && npm run build:prod && npm run server:build
+# restart the process (systemctl restart localess, …)
 ```
 
-It is idempotent — it detects everything already provisioned and adds only what is missing. This is
-the intended way to pick up new API requirements without hand-editing anything in the console.
+**Take a backup before every upgrade** (below). Migrations are forward-only: there is no
+"migrate down", so the backup is your way back.
 
-Then deploy as usual. Check the release notes for migration steps; Firestore schema changes are not
-handled by either phase.
+### How migrations behave
+
+- They run before the server starts listening, inside a Postgres advisory lock. With several
+  instances, the first one migrates and the rest wait, then find nothing to do.
+- If a migration fails, the server exits and does not serve requests. Fix the cause (see the log),
+  or roll back.
+- `db:migrate` runs them on demand without starting the server — useful as a separate deploy step.
 
 ---
 
-## Deploying vs publishing
+## Backups
 
-Two different things that are easy to confuse:
+All state lives in two places. Back up both, at the same time, so the files match the rows that
+reference them.
 
-- **Deploying** (this document) ships *code, rules and configuration* to Firebase.
-- **Publishing** converts *content and translations* in Firestore into static JSON in Storage so
-  the public API can serve them. It happens from inside the running app.
+| What | Where | How |
+|------|-------|-----|
+| Database | External Postgres, or the embedded cluster in `$LOCALESS_DATA_DIR/pgdata` | `pg_dump` (or your provider's snapshots / point-in-time recovery) |
+| Files | `$LOCALESS_DATA_DIR/storage` (`/data/storage` in Docker) | Any file-level copy: `rsync`, `tar`, volume snapshots |
 
-A deploy never publishes content, and publishing never requires a deploy. See
-[Publish Flow](../publish-flow.md) and [CDN & Caching](../cdn-caching.md).
+**Docker Compose:**
+
+```bash
+docker compose exec -T postgres pg_dump -U localess -Fc localess > localess-$(date +%F).dump
+docker compose exec -T localess tar czf - -C /data storage > storage-$(date +%F).tgz
+```
+
+**Single container with the embedded database:** the image has no `pg_dump`, and the embedded
+cluster only listens on `127.0.0.1` inside the container. Either borrow `pg_dump` from a Postgres
+image that joins the container's network namespace while it runs:
+
+```bash
+docker run --rm --network container:localess postgres:18 \
+  pg_dump -Fc postgres://localess:localess@127.0.0.1:5433/localess > localess-$(date +%F).dump
+```
+
+…and copy the files with `docker exec localess tar czf - -C /data storage > storage-$(date +%F).tgz`. Or stop the container and copy the whole `/data`
+volume, which then contains both the database and the files:
+
+```bash
+docker stop localess
+docker run --rm -v localess-data:/data -v "$PWD":/backup busybox \
+  tar czf /backup/localess-data-$(date +%F).tgz -C /data .
+docker start localess
+```
+
+Never copy `pgdata` while the server is running — a file copy of a live Postgres cluster is not a
+consistent backup.
+
+Generated image renditions (`spaces/*/assets/*/renditions/`) are a cache and are rebuilt on demand;
+excluding them makes backups smaller. Task archives under `tasks/` are temporary export/import files.
+
+### Restoring
+
+1. Stop Localess.
+2. Restore the database (`pg_restore --clean --if-exists -d <db> localess.dump`, or put the
+   `pgdata` copy back) and the storage directory from the **same** backup.
+3. Start the image version that the backup was taken with, or a newer one (a newer one migrates
+   forward on boot).
 
 ---
 
 ## Rollback
 
-Firebase Hosting keeps previous releases. Roll back the frontend from the console
-(Hosting → Release history → Rollback), or preview a change before it goes live:
+Because migrations only go forward, a newer schema may not work with older code. To roll back an
+upgrade:
 
-```bash
-npx firebase hosting:channel:deploy preview --project <id>
-```
+1. Stop Localess.
+2. Restore the database backup taken before the upgrade (files too, if anything was uploaded since).
+3. Start the previous image / checkout.
 
-Functions have no built-in rollback — redeploy from a previous commit:
+If the upgrade contained no migrations (nothing new in `server/drizzle/`), starting the previous
+version is enough.
 
-```bash
-git checkout <previous-tag>
-npm run localess:deploy -- --only functions,hosting
-```
-
-Firestore rules and indexes are versioned in the console and can be reverted there, but the source
-of truth is this repository — prefer redeploying from a known-good commit.
-
----
-
-## Cost awareness
-
-Every functions deploy runs Cloud Build and stores images in Artifact Registry, both of which are
-billable. Frequent full deploys are the most common source of surprise cost in a self-hosted
-Localess. Prefer targeted deploys, and see [Billing & Cost](../billing.md) for the wider picture.
-
-Old function images are cleaned up automatically: every deploy that includes `functions` first
-sets an Artifact Registry cleanup policy for the region (`functions:artifacts:setpolicy`, with
-firebase-tools' default of deleting images after one day). This is best-effort — if it cannot be
-set, the deploy continues and says so.
+Changes made between the upgrade and the rollback are lost with the restore — keep the window short,
+or export the affected spaces first (Tasks → Export) and re-import after.

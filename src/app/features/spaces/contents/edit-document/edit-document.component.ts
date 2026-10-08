@@ -671,7 +671,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
    *
    * Runs against the in-memory document rather than the server's copy, so unsaved edits are
    * included rather than overwritten, and the result is applied to the form for review - nothing
-   * reaches Firestore until the author presses Save.
+   * reaches the server until the author presses Save.
    */
   openTranslateLocaleDialog(): void {
     this.dialog

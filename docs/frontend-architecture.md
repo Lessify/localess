@@ -10,7 +10,7 @@
 | State | NgRx Signals (`@ngrx/signals`) |
 | UI Components | Spartan/Helm (`libs/ui/`); Angular Material only as residue in `app.config.ts` (see below) |
 | Styling | Tailwind CSS 4 + SCSS |
-| Backend SDK | AngularFire (Firestore, Auth, Storage, Functions, Remote Config) |
+| Backend access | `HttpClient` against the NestJS server (`/api/auth`, `/api/app`, `/api/config`); live updates over SSE (`/api/app/events`) |
 | Rich Text | TipTap editor |
 | Change Detection | `ChangeDetectionStrategy.OnPush` everywhere + `provideZonelessChangeDetection()` |
 
@@ -21,14 +21,14 @@
 ```
 src/
   app/
-    app.config.ts          ← root providers (Firebase, router, paginator defaults, image loader)
+    app.config.ts          ← root providers (HttpClient + apiInterceptor, runtime config, router, paginator defaults, image loader)
     app-routing.ts         ← root routes + authGuard
     app.component.*        ← root shell
-    core/                  ← singleton: error handlers, HTTP interceptors, title strategy, utils
+    core/                  ← singleton: api/ (runtime config, SSE, liveQuery, apiInterceptor), error handlers, HTTP interceptors, title strategy, utils
     features/              ← all authenticated feature routes (lazy-loaded)
-    auth/                  ← AuthModule: login/, reset/, shared/ (email / Google / Microsoft sign-in, password reset)
+    auth/                  ← AuthModule: login/ (email + Google / Microsoft redirect), reset/ (request link), reset-confirm/ (set new password)
     shared/                ← cross-feature: models, services, stores, guards, pipes
-  environments/            ← firebase-config per environment
+  environments/            ← build-time constants only (appName, production, version)
   assets/                  ← static files (version.json, icons)
 libs/
   ui/                      ← 44+ reusable Spartan/Helm components
@@ -43,6 +43,7 @@ All authenticated routes live under `/features` and are protected by `authGuard(
 ```
 /auth/login                         → LoginComponent (lazy, AuthModule)
 /auth/reset                         → ResetComponent (lazy, AuthModule)
+/auth/reset/confirm?token=          → ResetConfirmComponent (from the reset email or an admin-issued link)
 /features/                          → redirects to welcome
   welcome                           → WelcomeComponent
   me/                               → profile, account settings
@@ -52,7 +53,7 @@ All authenticated routes live under `/features` and are protected by `authGuard(
     contents                        → ContentsModule      [CONTENT_READ]
     assets                          → AssetsModule        [ASSET_READ]
     schemas                         → SchemasModule       [SCHEMA_READ]
-    tasks                           → TasksModule         [TRANSLATION_READ]
+    tasks                           → TasksModule         [any *_EXPORT / *_IMPORT]
     developers/                     → DevelopersModule (no route guard — see note below)
       webhooks, webhooks/:webhookId → WebhooksComponent / WebhookDetailComponent
       open-api                      → OpenApiComponent (nested under developers, not a standalone route)
@@ -63,23 +64,22 @@ All authenticated routes live under `/features` and are protected by `authGuard(
     settings                        → SettingsModule      [SETTINGS_MANAGEMENT]
 ```
 
-Guards in brackets are Firebase `customClaims`-based (`AuthGuard` + `authGuardPipe`). `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).
+Guards in brackets are `permissionGuard(...)` (`shared/guards/permission.guard.ts`), reading role and permissions from `UserStore`; the server enforces the same permissions on every `/api/app` call. `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).
 
 `features/whats-new/` holds the What's New dialog (`WhatsNewDialogComponent` + `whats-new.data.ts`). It is opened from the sidebar in `features.component`, which shows an "unseen" marker while the newest entry's version is newer than `LocalSettingsStore.lastSeenWhatsNewVersion`.
 
 ---
 
-## Firebase Integration
+## Server Integration
 
-All Firebase services are configured in `app.config.ts`:
+The SPA is served by the NestJS server on the same origin as the API, so every call is a relative `/api/...` URL and the session cookie travels automatically. In development `npm start` proxies `/api` to the server (`proxy.conf.cjs`).
 
-- **Auth** — `indexedDBLocalPersistence` + `browserPopupRedirectResolver`; emulator on port 9099
-- **Firestore** — `memory` local cache; emulator on port 8080
-- **Storage** — emulator on port 9199
-- **Functions** — region from `environment.functions.region` (`europe-west6` in dev/docker; production injects `LOCALESS_REGION` at build time); emulator on port 5001
-- **Analytics** — screen tracking + user tracking
-- **Performance** — automatic web vitals
-- **Remote Config** — feature flags (e.g. `unsplash_ui_enable`)
+- **`apiInterceptor`** (`core/api/api.interceptor.ts`) — adds `X-Requested-With: XMLHttpRequest` to every `/api/` request (the server's CSRF rule for cookie-authenticated writes), and treats a `401` from `/api/app/**` or `/api/auth/me` as signed out: `UserStore.signedOut()` and a redirect to `/auth/login`.
+- **`AppConfigService`** (`core/api/app-config.service.ts`) — loads `GET /api/config` in `provideAppInitializer` before the first render: login providers, login message, whether password reset by email is available, Unsplash plugin, machine translation enabled. This replaced the build-time `LOCALESS_*` defines, `firebase-config*.json` and Remote Config, so one build serves every install. Falls back to defaults (everything off) if the call fails.
+- **`ChangeEventsService`** (`core/api/change-events.service.ts`) — one shared `EventSource` on `GET /api/app/events[?spaceId=]` per space (or one global), closed with its last subscriber. Events are `{ spaceId, entity, id?, op }`; after a reconnect it emits a resync event (`entity: '*'`) because events sent while disconnected are lost.
+- **`liveQuery(scope, fetch)`** (`core/api/live-query.ts`) — the replacement for Firestore's `collectionData`/`docData`: fetches once, then refetches (debounced 100 ms) whenever a matching change event arrives. Services return these long-lived Observables, so components did not change.
+- **Auth** — email/password via `POST /api/auth/login`; Google / Microsoft are full-page redirects to `/api/auth/oauth/{google,microsoft}` (no popups); sign-out is `POST /api/auth/logout`. `UserStore` reads the session from `GET /api/auth/me`.
+- **Uploads** — multipart `HttpClient` requests with progress (`reportProgress`); the server streams them to storage and returns the finished asset.
 
 Angular Material residue: `app.config.ts` still registers `provideNativeDateAdapter()` and `MAT_PAGINATOR_DEFAULT_OPTIONS` (the latter has no remaining consumer — `ll-paginator` reads `PAGINATOR_DEFAULT_OPTIONS`). No `MatDialog` usage remains; dialogs use `HlmDialogService`.
 
@@ -114,7 +114,8 @@ Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json`
 Singleton services initialized once at app startup:
 - **`AppErrorHandler`** (`error-handler/app-error-handler.service.ts`) — global Angular error handler. Shows an error toast via `NotificationService`, then delegates to the default handler (console). Chunk-load failures (a stale tab after a deploy) instead show a persistent "A new version is available" toast with a Reload action.
 - **`FormErrorHandlerService`** (`error-handler/form-error-handler.service.ts`) — maps reactive-form control errors to display messages
-- **HTTP Interceptors** — request/response lifecycle hooks
+- **HTTP Interceptors** — `apiInterceptor` (`api/`, see above) and `HttpErrorInterceptor` (`http-interceptors/`), which reports HTTP errors to `AppErrorHandler` except `401`s from the API, which are left to the auth flow
+- **`api/`** — `AppConfigService`, `ChangeEventsService`, `liveQuery`, `apiInterceptor` (see [Server Integration](#server-integration))
 - **`PageTitleStrategy`** (`title/page-title.strategy.ts`) — a `TitleStrategy` that sets `<title>` to `<appName> - <route title>`
 - **`utils/`** — stateless helpers: `filter-predicate-utils`, `name-utils`, `object-utils`
 
@@ -124,10 +125,10 @@ Singleton services initialized once at app startup:
 
 ```
 shared/
-  models/        ← TypeScript interfaces mirroring Firestore documents (frontend version)
-  services/      ← 20+ AngularFire-backed CRUD services, one per domain entity
+  models/        ← TypeScript interfaces for the API's JSON shapes (timestamps are ISO strings)
+  services/      ← ~20 HttpClient services, one per domain entity; reads are `liveQuery`s
   stores/        ← 4 NgRx Signal stores (see frontend-state.md)
-  guards/        ← dirty-form.guard (unsaved changes warning)
+  guards/        ← permission.guard (`permissionGuard`), dirty-form.guard (unsaved changes warning)
   components/    ← tree, table, paginator, filter-toolbar (see components/README.md), locale-icon, asset-card, background, logo,
                    confirmation-dialog, image-preview-dialog, translate-locale-dialog, unsplash-assets-select-dialog, dialog (width constants)
   directives/    ← custom Angular directives
@@ -141,9 +142,9 @@ shared/
 
 ---
 
-## Security Headers (Hosting)
+## Security Headers
 
-`firebase.json` sets browser security headers on every app path. The header block uses an RE2 `regex` that matches everything except `/api/**`. That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`functions/src/utils/asset-headers.ts`). A glob like `!(api)/**` doesn't work here, because the Hosting glob matcher (minimatch) reads a leading `!` as negating the whole pattern.
+The server sets browser security headers on every non-API response (`server/src/static/static-site.ts`, an `onSend` hook skipped for `/api/**`). That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`server/src/public-api/lib/asset-headers.ts`). The same file gives hashed bundles `public,max-age=31536000,immutable` and `index.html` / `ngsw*` `no-cache`; `SpaFallbackFilter` serves `index.html` for unknown non-API GETs.
 
 | Header | Value |
 |---|---|
@@ -155,17 +156,20 @@ shared/
 
 How the CSP is built:
 
-- **Scripts** allow only `'self'`, Google sign-in (`apis.google.com`) and Tag Manager, with no `'unsafe-inline'`. That is why the theme bootstrap lives in `src/scripts/theme-init.js` rather than an inline `<script>` in `index.html`.
+- **Scripts** allow only `'self'`, with no `'unsafe-inline'`. That is why the theme bootstrap lives in `src/scripts/theme-init.js` rather than an inline `<script>` in `index.html`. OAuth sign-in is a full-page redirect, so no identity-provider scripts are needed.
 - **The one inline handler** in the production `index.html` is `onload="this.media='all'"`, which Angular's critical-CSS inlining adds. It is allowed by its hash through `'unsafe-hashes'`. If Angular changes that handler, the hash must be updated. A production build plus `grep onload dist/localess/browser/index.html` shows the current one.
-- **Styles** need `'unsafe-inline'`: Angular component styles, Spartan and the inlined critical CSS all depend on it.
-- **Frames** allow `https:` plus `http://localhost` / `http://127.0.0.1`. Visual-editor preview environments can be any site, and Firebase sign-in uses an iframe on the auth domain.
-- **Adding a new external origin** (a script CDN, an API the browser calls directly, a font host) means adding it to the matching directive, or the browser reports it, and after the switch blocks it.
+- **Styles** need `'unsafe-inline'`: Angular component styles, Spartan and the inlined critical CSS all depend on it. Google Fonts are allowed for styles and fonts.
+- **Connections** allow `'self'` plus `https://api.github.com` (the release check).
+- **Frames** allow `https:` plus `http://localhost` / `http://127.0.0.1`, because visual-editor preview environments can be any site.
+- **Adding a new external origin** (a script CDN, an API the browser calls directly, a font host) means adding it to the matching directive in `static-site.ts`, or the browser reports it, and after the switch blocks it.
 
-**Switching to enforcing.** Watch the browser console in production for `[Report Only]` CSP messages, especially on login with Google or Microsoft, the Open API page (Stoplight Elements), the contents editor with preview, assets with Unsplash, and Analytics. Once it stays clean, rename the header key `Content-Security-Policy-Report-Only` to `Content-Security-Policy` and redeploy hosting.
+**Switching to enforcing.** Watch the browser console in production for `[Report Only]` CSP messages, especially on login with Google or Microsoft, the Open API page (Stoplight Elements), the contents editor with preview, and assets with Unsplash. Once it stays clean, rename the header key `content-security-policy-report-only` to `content-security-policy` in `static-site.ts` and redeploy the server.
 
 ## Implementation Files
 
 - `src/app/app.config.ts` — root provider configuration
+- `src/app/core/api/` — runtime config, change events (SSE), `liveQuery`, `apiInterceptor`
 - `src/app/app-routing.ts` — root routes and `authGuard`
 - `src/app/features/features-routing.module.ts` — all feature routes and permission guards
+- `server/src/static/static-site.ts` — static serving, cache and security headers
 - `libs/ui/` — shared component library

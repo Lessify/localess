@@ -5,11 +5,10 @@
  *
  * Bumps the version in:
  *   - package.json
- *   - functions/package.json
+ *   - server/package.json
  *   - src/environments/environment.ts
  *   - src/environments/environment.prod.ts
- *   - src/environments/environment.docker.ts
- *   - functions/src/services/open-api.service.ts
+ *   - server/src/domain/lib/open-api.service.ts
  */
 
 import { readFileSync, writeFileSync } from 'fs';
@@ -56,12 +55,12 @@ pkg.version = newVersion;
 writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
 console.log(`  Updated package.json`);
 
-// functions/package.json
-const fnPkgPath = resolve(ROOT, 'functions/package.json');
-const fnPkg = JSON.parse(readFileSync(fnPkgPath, 'utf8'));
-fnPkg.version = newVersion;
-writeFileSync(fnPkgPath, JSON.stringify(fnPkg, null, 2) + '\n', 'utf8');
-console.log(`  Updated functions/package.json`);
+// server/package.json
+const serverPkgPath = resolve(ROOT, 'server/package.json');
+const serverPkg = JSON.parse(readFileSync(serverPkgPath, 'utf8'));
+serverPkg.version = newVersion;
+writeFileSync(serverPkgPath, JSON.stringify(serverPkg, null, 2) + '\n', 'utf8');
+console.log(`  Updated server/package.json`);
 
 // Angular environment files — match:  version: '3.1.0',
 const versionLinePattern = new RegExp(`(version:\\s*')[^']+(')`, 'g');
@@ -70,14 +69,13 @@ const versionLineReplacement = `$1${newVersion}$2`;
 for (const rel of [
   'src/environments/environment.ts',
   'src/environments/environment.prod.ts',
-  'src/environments/environment.docker.ts',
 ]) {
   replaceInFile(resolve(ROOT, rel), versionLinePattern, versionLineReplacement);
 }
 
-// open-api.service.ts — match the single `version: '3.1.0'` app-version line (line 366)
+// open-api.service.ts — match the single `version: '4.1.0'` app-version line
 replaceInFile(
-  resolve(ROOT, 'functions/src/services/open-api.service.ts'),
+  resolve(ROOT, 'server/src/domain/lib/open-api.service.ts'),
   versionLinePattern,
   versionLineReplacement
 );

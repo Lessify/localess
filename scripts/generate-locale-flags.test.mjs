@@ -11,8 +11,8 @@ const LOCALE_SERVICE = join('src', 'app', 'shared', 'services', 'locale.service.
 
 /**
  * The locale icon decides from these constants whether a flag exists, so a stale constant is not a
- * cosmetic problem: it points an `<img>` at an asset that was never copied, and behind the Firebase
- * Hosting SPA rewrite that serves `index.html` rather than a 404. These tests are what makes the
+ * cosmetic problem: it points an `<img>` at an asset that was never copied, and behind the server's
+ * SPA fallback that serves `index.html` rather than a 404. These tests are what makes the
  * generated file trustworthy - re-run `node scripts/generate-locale-flags.mjs` when they fail.
  */
 describe('locale flag data', () => {

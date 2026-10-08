@@ -35,7 +35,7 @@ describe('SpacesComponent', () => {
         { provide: SpaceService, useValue: { findAll, create, update, delete: deleteSpace } },
         { provide: NotificationService, useValue: { success, error, warning } },
         { provide: HlmDialogService, useValue: { open } },
-        // Stubbed rather than real: the real one injects Firestore, which this spec has no use for.
+        // Stubbed rather than real: the real one talks to the API, which this spec has no use for.
         { provide: SpaceTemplateService, useValue: { apply } },
       ],
     });

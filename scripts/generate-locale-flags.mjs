@@ -5,7 +5,7 @@
  *
  * The locale icon has to decide *before* rendering whether a flag exists for a language or a
  * region - a browser cannot stat the assets folder, and a missing `<img>` would either flash a
- * broken icon or, behind the Firebase Hosting SPA rewrite, quietly download `index.html`. So the
+ * broken icon or, behind the SPA fallback, quietly download `index.html`. So the
  * available codes are baked into a constant here and the drift is caught by
  * `scripts/generate-locale-flags.test.mjs` instead.
  *

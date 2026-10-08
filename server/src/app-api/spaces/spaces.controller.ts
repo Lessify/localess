@@ -3,14 +3,14 @@ import { z } from 'zod';
 import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
 import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
-import { zLocale } from '../common/zod.js';
+import { zLocale, zPreviewUrl } from '../common/zod.js';
 import { spaceDto, SpacesService } from './spaces.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(200) });
 const updateSchema = z
   .object({
     name: z.string().trim().min(1).max(200).optional(),
-    environments: z.array(z.object({ name: z.string().trim().min(1).max(200), url: z.string().url().max(2048) })).optional(),
+    environments: z.array(z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl })).optional(),
   })
   .refine(it => it.name !== undefined || it.environments !== undefined, 'Nothing to update');
 const fallbackSchema = z.object({ id: z.string().min(1) });

@@ -6,7 +6,7 @@
 
 The `admin/` umbrella contains all features for administering the Localess platform itself — across all spaces and users. These are **platform-level** operations, not space-level.
 
-All admin routes are guarded by Firebase `customClaims`. Only users with `role: 'admin'` or a `custom` role with the relevant permission can access them.
+All admin routes are guarded by `permissionGuard(...)`, which reads the role and permissions that `UserStore` loads from `GET /api/auth/me`. Only users with `role: 'admin'` or a `custom` role with the relevant permission can access them. The server enforces the same rule on every `/api/app/**` request (`@RequirePermission(...)`), reading role and permissions from the `users` table, so changes apply immediately.
 
 ---
 

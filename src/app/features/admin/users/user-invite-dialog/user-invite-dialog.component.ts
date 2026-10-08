@@ -57,7 +57,7 @@ export class UserInviteDialogComponent {
   protected readonly permissionGroups = USER_PERMISSION_GROUPS;
 
   // The admin role and each permission are offered only when the signed-in user may grant them;
-  // firestore.rules and the user.invite callable enforce the same limits.
+  // The server enforces the same limits (canGrant in server/src/auth/permissions.ts).
   private readonly userStore = inject(UserStore);
   private manager(): UserManager {
     return { id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() };

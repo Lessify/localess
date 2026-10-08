@@ -13,9 +13,9 @@
 [![Twitter URL](https://img.shields.io/twitter/url?label=Share%20on%20Twitter&style=for-the-badge&url=https%3A%2F%2Fgithub.com%2FLessify%2Flocaless)](https://twitter.com/intent/tweet?text=Easy%20way%20to%20manage%20your%20app%20localisation&url=https://github.com/Lessify/localess&hashtags=i18n,internationalization,localization)
 ![Twitter Follow](https://img.shields.io/twitter/follow/Lessifyio?style=for-the-badge)
 
-**Localess** is a powerful translation management tool and content management system built using **Angular** and **Firebase**.
-With **Localess**, you can easily manage and translate your website or app content into multiple languages, and it uses Artificial Intelligence to translate faster.
-The user-friendly interface makes it easy to navigate and the Firebase integration ensures that your translations are stored securely and can be easily accessed from anywhere.
+**Localess** is a powerful translation management tool and content management system built with **Angular** and **NestJS**, backed by **PostgreSQL**.
+With **Localess**, you can easily manage and translate your website or app content into multiple languages, and it uses machine translation (DeepL or Google Cloud Translation) to translate faster.
+The user-friendly interface makes it easy to navigate, and because it is a single self-hosted service, your content stays on infrastructure you control.
 Whether you're a developer looking to expand your app's reach or a business owner looking to expand your online presence in new markets,
 **Localess** is the perfect solution for your localization needs.
 
@@ -23,7 +23,7 @@ Whether you're a developer looking to expand your app's reach or a business owne
 
 - It is **Free** forever, you or your company doesn't need to pay.
 - It is **Open Source** Software, you also can contribute with code and feedback.
-- You pay only for infrastructure where you deploy the **Localess**.
+- It is **self-hosted**: one Docker container (plus Postgres, if you want one) — you pay only for the server you run it on.
 
 ## Translations
 ![Localess Translation](https://github.com/Lessify/localess/wiki/img/translation-animation.webp)
@@ -48,7 +48,7 @@ Thank you for considering sponsoring us on GitHub!
 
 - Translation Management Tool :
   - Edit your localisation content in real time.
-  - Translate with help of Artificial Intelligence (Google Translate).
+  - Translate with machine translation (DeepL or Google Cloud Translation).
   - No application build required anymore.
 - Content Management System :
   - Define shape of your content data with Schematics.
@@ -56,35 +56,79 @@ Thank you for considering sponsoring us on GitHub!
   - Create hierarchical content.
 - Low code platform.
 - Publish your changes with instant application.
-- Google CDN Integration (very fast response time, about 20ms for 5000 translations).
+- CDN-ready public API (versioned URLs and `Cache-Control` headers, so any CDN or caching proxy can serve it).
 - Easy way to migrate or back data with Import / Export feature.
-- User Management with granular permissions.
+- User Management with granular permissions; email + password, Google and Microsoft sign-in.
 - Integration via API with any kind of application and language.
+
+## Getting Started
+
+Run Localess with Docker Compose (Localess + Postgres):
+
+```bash
+git clone https://github.com/Lessify/localess.git && cd localess
+# set LOCALESS_PUBLIC_URL, LOCALESS_ADMIN_EMAIL and LOCALESS_ADMIN_PASSWORD in docker-compose.yml
+docker compose up -d --build
+```
+
+Or as a single container with an embedded database:
+
+```bash
+docker build -t localess .
+docker run -d -p 3000:3000 -v localess-data:/data \
+  -e LOCALESS_ADMIN_EMAIL=admin@example.com -e LOCALESS_ADMIN_PASSWORD='change-me' \
+  localess
+```
+
+Then open http://localhost:3000 and sign in with the admin account.
+
+### Local development
+
+Requires Node.js 24.
+
+```bash
+npm install && npm --prefix server install
+LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD=change-me npm run server:dev   # API on :3000, embedded Postgres
+npm start                                                                                       # UI on :4200, proxies /api
+```
 
 ## Documentation
 
 1. [Overview](https://github.com/Lessify/localess/wiki)
-2. [Setup](https://github.com/Lessify/localess/wiki/Setup)
-3. [Integration](https://github.com/Lessify/localess/wiki/Integration)
+2. [Integration](https://github.com/Lessify/localess/wiki/Integration)
+3. Self-hosting:
+   - [Deployment overview](docs/deployment/overview.md)
+   - [Docker & Docker Compose](docs/deployment/docker.md)
+   - [Configuration](docs/deployment/configuration.md) (all environment variables)
+   - [Running in production](docs/deployment/production.md) (TLS, CDN, scaling)
+   - [Updates, backups and rollback](docs/deployment/updates.md)
+   - [Health check](docs/deployment/check.md)
+   - [Migrating from a Firebase install](docs/deployment/migrate-from-firebase.md)
 
 ## How it works
 
-**Localess** is using Firebase products to run the application.
+**Localess** is one Node.js service: it serves the admin UI, the public API and runs background tasks.
+Data lives in PostgreSQL (external, or embedded in the container) and uploaded files on disk.
 
 ```mermaid
 flowchart LR
-  subgraph Google Cloud Platform
+  subgraph Your infrastructure
     direction LR
-    cdn["Content Delivery Network (CDN) <br/> Cache Requests"]
-    subgraph Firebase
+    cdn["CDN / caching proxy<br/>(optional, recommended)"]
+    proxy["Reverse proxy<br/>(TLS)"]
+    subgraph Localess["Localess server (Node.js)"]
       direction LR
-      auth["Authentication"]
-      storage["Storage"]
-      firestore["Firestore"]
-      functions["Functions"]
-      host["Host"]
+      ui["Admin UI"]
+      api["Public API<br/>/api/v1"]
+      app["App API + Auth<br/>/api/app, /api/auth"]
+      worker["Task worker<br/>(exports, imports)"]
     end
-    cdn -->|API| Firebase
+    postgres[("PostgreSQL")]
+    files[("File storage")]
+    cdn --> proxy
+    proxy --> Localess
+    Localess --> postgres
+    Localess --> files
   end
   subgraph Global Internet
     adminUI["Localess Admin UI<br/>(Browser)"]
@@ -92,14 +136,15 @@ flowchart LR
     webApp["Web App<br/>(Browser)"]
     serverApp["Server App<br/>(NodeJS, Java/Kotlin, <br/>Python, Rust, Go)"]
   end
-  adminUI -->|Manage Data| Firebase
+  adminUI -->|Manage Data| proxy
   mobileApp -->|Access Data via API| cdn
   webApp -->|Access Data via API| cdn
   serverApp -->|Access Data via API| cdn
 ```
 
-Lessify UI is design to manage data in firestore, authentication and storage via Firebase SDK.
-Generated data used by exposed API's is store in Storage to make it even faster to access and GCP CDN will cache it for even faster response.
+The admin UI talks to the server over a session-authenticated API and receives live updates via Server-Sent Events.
+Published content and translations are served by the public API with versioned URLs and `Cache-Control` headers,
+so a CDN in front of it answers most requests without reaching the server.
 
 [//]: # 'netstat -aon | findstr 4000'
 [//]: # 'taskkill /PID <PID> /F'

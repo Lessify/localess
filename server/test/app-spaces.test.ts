@@ -64,6 +64,13 @@ describe('app API: spaces, locales, settings', () => {
         environments: [{ name: 'Preview', url: 'https://preview.example.com' }],
       });
       expect((await manager.patch(`/api/app/spaces/${spaceId}`, {})).statusCode).toBe(400);
+      // Loaded into a trusted preview iframe: only absolute http(s), placeholders allowed anywhere.
+      const env = (url: string) => manager.patch(`/api/app/spaces/${spaceId}`, { environments: [{ name: 'Preview', url }] });
+      expect((await env('https://{locale}.example.com/{fullSlug}')).statusCode).toBe(200);
+      for (const url of ['javascript:alert(1)', 'data:text/html,<script>x</script>', '/relative/{slug}', 'ftp://example.com']) {
+        expect((await env(url)).statusCode, url).toBe(400);
+      }
+      await env('https://preview.example.com');
       expect((await reader.patch(`/api/app/spaces/${spaceId}`, { name: 'x' })).statusCode).toBe(403);
     });
 

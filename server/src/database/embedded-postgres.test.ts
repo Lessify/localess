@@ -37,4 +37,24 @@ describe('startEmbeddedPostgres', () => {
       await second.stop();
     }
   });
+
+  it('attaches to a cluster that is already running and leaves it running', async () => {
+    const attachDir = await mkdtemp(join(tmpdir(), 'localess-embedded-'));
+    const dataDir = join(attachDir, 'pgdata');
+    const port = await freePort();
+    const owner = await startEmbeddedPostgres(dataDir, port);
+    try {
+      const attached = await startEmbeddedPostgres(dataDir, port);
+      expect(attached.connectionString).toBe(owner.connectionString);
+      await attached.stop();
+
+      const client = new pg.Client({ connectionString: owner.connectionString });
+      await client.connect();
+      expect((await client.query('select 1 as ok')).rows).toEqual([{ ok: 1 }]);
+      await client.end();
+    } finally {
+      await owner.stop();
+      await rm(attachDir, { recursive: true, force: true });
+    }
+  });
 });

@@ -130,7 +130,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
     this.dataSource.paginator = this.paginator();
   }
 
-  /** Whether the signed-in user may edit or delete `element` - the same limits firestore.rules enforces. */
+  /** Whether the signed-in user may edit or delete `element` - the same limits the server enforces. */
   canManage(element: User): boolean {
     return canManageUser({ id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() }, element);
   }

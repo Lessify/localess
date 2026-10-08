@@ -1,0 +1,12 @@
+.git
+.angular
+.agents
+.claude
+**/node_modules
+dist
+server/dist
+server/.data
+.data
+docs
+api-docs
+*.log
