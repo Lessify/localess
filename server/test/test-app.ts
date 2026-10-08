@@ -63,3 +63,27 @@ export async function login(t: TestApp, email: string, password: string): Promis
   const response = await t.request({ method: 'POST', url: '/api/auth/login', headers: XHR, payload: { email, password } });
   return sessionCookie(response);
 }
+
+/** Creates a user with the given access and returns a signed-in session cookie. */
+export async function userWithAccess(
+  t: TestApp,
+  email: string,
+  access: { role: 'admin' | 'custom' | null; permissions?: string[] },
+): Promise<string> {
+  const { UsersService } = await import('../src/users/users.service.js');
+  await t.app.get(UsersService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });
+  return login(t, email, 'secret1');
+}
+
+/** JSON request as the SPA sends it (cookie + X-Requested-With). */
+export function api(t: TestApp, cookie: string) {
+  const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>
+    t.request({ method, url, headers: { ...XHR, cookie }, ...(payload !== undefined ? { payload: payload as object } : {}) });
+  return {
+    get: (url: string) => call('GET', url),
+    post: (url: string, payload?: unknown) => call('POST', url, payload ?? {}),
+    put: (url: string, payload?: unknown) => call('PUT', url, payload ?? {}),
+    patch: (url: string, payload?: unknown) => call('PATCH', url, payload ?? {}),
+    delete: (url: string) => call('DELETE', url),
+  };
+}
