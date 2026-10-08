@@ -35,5 +35,6 @@ import { SpacesService } from './spaces/spaces.service.js';
     OpenApiController,
   ],
   providers: [SpacesService, SchemasService, ContentsService, TranslationsService, TranslateService, AssetsService, AssetMetadataService],
+  exports: [AssetMetadataService],
 })
 export class AppApiModule {}

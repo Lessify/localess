@@ -38,6 +38,7 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 | `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes inputs (development) |
 | `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker |
 | `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks reach private/loopback addresses (local development only) |
+| `LOCALESS_TASK_WORKER` | `true` | Run export/import tasks on this instance |
 | `LOCALESS_STATIC_DIR` | `../dist/localess/browser` | Angular build to serve; empty → API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`…`verbose`; `debug` includes the embedded Postgres log |
 | `LOCALESS_PUBLIC_URL` | request origin | Public origin for OAuth callbacks and reset links |
@@ -107,3 +108,13 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 
 Writes are transactional; change events and the space's cache version are part of the same
 transaction, and webhooks are sent only after it commits.
+
+## Background tasks
+
+`src/tasks/`: exports and imports (assets, contents, schemas, translations) and asset metadata
+regeneration, with the same archive layouts and file names as the Firebase era, so old exports import.
+The `tasks` row is the queue: `TaskWorker` claims the oldest INITIATED task with
+`FOR UPDATE SKIP LOCKED` (safe with several instances), is woken by `tasks` change events and polls
+every 30 s, and runs one task at a time. Exports stream the zip into storage; imports read only the
+expected entries from the stored zip, each size-capped, never extracting to disk. A task still
+IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: imports may be half applied).

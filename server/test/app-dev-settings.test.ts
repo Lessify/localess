@@ -42,7 +42,8 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   let nobody: ReturnType<typeof api>;
 
   beforeAll(async () => {
-    t = await createTestApp();
+    // These pin the API; task processing has its own tests (test/tasks.test.ts).
+    t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
     await t.db
       .insert(spaces)
       .values({ id: 's1', name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });

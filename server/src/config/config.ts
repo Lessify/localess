@@ -60,6 +60,11 @@ const envSchema = z.object({
   LOCALESS_UNSPLASH_API_URL: z.string().url().default('https://api.unsplash.com'),
   // Largest accepted asset/import upload, in megabytes.
   LOCALESS_UPLOAD_MAX_MB: z.coerce.number().int().positive().default(1024),
+  // Run export/import tasks on this instance (turn off on API-only replicas).
+  LOCALESS_TASK_WORKER: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform(v => v === 'true'),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../dist/localess/browser')),
 });
 
@@ -78,6 +83,7 @@ export interface AppConfig {
     | { provider: 'none' };
   unsplash: { apiKey: string; apiUrl: string } | undefined;
   uploadMaxBytes: number;
+  taskWorker: boolean;
   staticDir: string | undefined;
   logLevels: LogLevel[];
   firstAdmin: { email: string; password: string } | undefined;
@@ -162,6 +168,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
           ? { provider: 'google', projectId: parsed.GOOGLE_CLOUD_PROJECT, location: parsed.LOCALESS_GOOGLE_TRANSLATE_LOCATION }
           : { provider: 'none' },
     uploadMaxBytes: parsed.LOCALESS_UPLOAD_MAX_MB * 1024 * 1024,
+    taskWorker: parsed.LOCALESS_TASK_WORKER,
     unsplash: parsed.UNSPLASH_API_KEY ? { apiKey: parsed.UNSPLASH_API_KEY, apiUrl: parsed.LOCALESS_UNSPLASH_API_URL } : undefined,
     storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),
     staticDir: parsed.LOCALESS_STATIC_DIR ? resolve(parsed.LOCALESS_STATIC_DIR) : undefined,

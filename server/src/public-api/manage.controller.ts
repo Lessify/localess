@@ -4,12 +4,12 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Public } from '../auth/decorators.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { schemas, spaces, translations } from '../database/schema.js';
-import { planSchemaPush, SchemaPushPlan } from '../domain/lib/schema.utils.js';
+import { planSchemaPush } from '../domain/lib/schema.utils.js';
+import { applySchemaPushPlan } from '../domain/schema-push.js';
 import { planTranslationUpdate } from '../domain/lib/translation.utils.js';
 import {
   Schema,
   SchemaExport,
-  SchemaType,
   TokenPermission,
   Translation,
   TranslationType,
@@ -24,7 +24,6 @@ import { TokenAuthService } from './token-auth.service.js';
 import { sendV1Error } from './v1-response.js';
 
 type Params = Record<string, string>;
-type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /** Per-type verb labels used for response messages. */
 const TRANSLATION_UPDATE_VERBS: Record<
@@ -38,35 +37,6 @@ const TRANSLATION_UPDATE_VERBS: Record<
   // Removes only the pushed locale's value; other locales keep theirs.
   'delete-missing-value': { verb: 'remove', past: 'Removed', noun: ['locale value', 'locale values'] },
 };
-
-/** Columns written for a pushed schema; absent fields are cleared, like `FieldValue.delete()` did. */
-function schemaColumns(schema: SchemaExport) {
-  const component = schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE;
-  return {
-    type: schema.type,
-    displayName: schema.displayName || null,
-    description: schema.description || null,
-    labels: schema.labels || null,
-    previewField: component ? (schema as { previewField?: string }).previewField || null : null,
-    fields: component ? ((schema as { fields?: unknown[] }).fields ?? null) : null,
-    values: !component ? ((schema as { values?: { name: string; value: string }[] }).values ?? null) : null,
-  };
-}
-
-async function applySchemaPushPlan(tx: Transaction, spaceId: string, plan: SchemaPushPlan): Promise<void> {
-  if (plan.creates.length) {
-    await tx.insert(schemas).values(plan.creates.map(schema => ({ spaceId, id: schema.id, ...schemaColumns(schema) })));
-  }
-  for (const schema of plan.updates) {
-    await tx
-      .update(schemas)
-      .set({ ...schemaColumns(schema), updatedAt: new Date() })
-      .where(and(eq(schemas.spaceId, spaceId), eq(schemas.id, schema.id)));
-  }
-  if (plan.deletes.length) {
-    await tx.delete(schemas).where(and(eq(schemas.spaceId, spaceId), inArray(schemas.id, plan.deletes)));
-  }
-}
 
 /**
  * Write endpoints for the CLI (`X-API-KEY` with DEV_TOOLS), ported from functions/src/v1/manage.ts.

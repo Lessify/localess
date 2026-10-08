@@ -1,6 +1,6 @@
 # Firebase → NestJS (Fastify) + Postgres (Drizzle) migration
 
-**Status:** In progress — Phases 0–3 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
+**Status:** In progress — Phases 0–4 done (branch `feat/self-hosted-nestjs-postgres`) · **Recorded:** 2026-10-08
 **Scope:** replace every Firebase dependency (Functions, Firestore, Storage, Auth, Hosting, Remote Config,
 Analytics, Performance) with one self-hosted Node process.
 
@@ -392,6 +392,18 @@ phases 3–5 land together.
   and their parent must be a folder; `updatedBy` comes from the session; translate-locale uses the
   configured provider (was Google only); publishing translations of an empty space is allowed;
   settings are readable by every role (the store loads them for everyone).
+
+- **Phase 4 — done.** Task worker (`src/tasks/`): all nine task kinds, archive layouts and file names
+  unchanged (a hand-built Firebase-era archive with string `data` imports in the tests), queue claimed
+  with `FOR UPDATE SKIP LOCKED`, stale IN_PROGRESS tasks failed rather than re-run, exports streamed
+  into storage, imports read entry by entry from the stored zip with size caps (no extraction to disk,
+  so no zip-slip; caps stop zip bombs). Imports are transactional and bump versions / emit events /
+  fire webhooks like the triggers did. Round-trip tests export each kind from one space and import it
+  into another (the case that needed space-scoped ids).
+  Bug caught by the round-trip test: validated imports must write the raw items, not zod's parsed
+  output, because the export schemas strip document data fields (the old code did the same).
+  Changes: asset export no longer fails when an asset's file is missing (logged and skipped); new
+  imported files get md5 and, when the export lacks it, extracted metadata.
 
 ## Open decisions
 
