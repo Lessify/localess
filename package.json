@@ -32,7 +32,10 @@
     "localess:setup": "node scripts/localess.mjs setup",
     "localess:deploy": "node scripts/localess.mjs deploy",
     "localess:sync": "node scripts/localess.mjs sync",
-    "localess:check": "node scripts/localess.mjs check"
+    "localess:check": "node scripts/localess.mjs check",
+    "server:dev": "npm --prefix server run dev",
+    "server:test": "npm --prefix server test",
+    "server:build": "npm --prefix server run build"
   },
   "license": "MIT",
   "private": true,
