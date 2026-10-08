@@ -1,0 +1,252 @@
+import { createServer, IncomingMessage, Server } from 'node:http';
+import { AddressInfo } from 'node:net';
+import { and, eq } from 'drizzle-orm';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { spaces, tokens, translations, webhooks } from '../src/database/schema.js';
+import { WebhookDispatcher } from '../src/webhooks/webhook-dispatcher.service.js';
+import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+
+/** A local HTTP server recording requests and answering with `respond`. */
+async function fakeServer(respond: (request: IncomingMessage) => { status: number; body: unknown; headers?: Record<string, string> }) {
+  const requests: { url: string; headers: IncomingMessage['headers']; body: string }[] = [];
+  const server: Server = createServer((request, response) => {
+    let body = '';
+    request.on('data', chunk => (body += chunk));
+    request.on('end', () => {
+      requests.push({ url: request.url ?? '', headers: request.headers, body });
+      const answer = respond(request);
+      response.writeHead(answer.status, { 'content-type': 'application/json', ...answer.headers }).end(JSON.stringify(answer.body));
+    });
+  });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  return {
+    url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+    requests,
+    close: () => new Promise(resolve => server.close(resolve)),
+  };
+}
+
+describe('app API: translations, machine translation, Unsplash', () => {
+  let t: TestApp;
+  let editor: ReturnType<typeof api>;
+  let reader: ReturnType<typeof api>;
+  let hooks: Awaited<ReturnType<typeof fakeServer>>;
+  let unsplash: Awaited<ReturnType<typeof fakeServer>>;
+  const base = '/api/app/spaces/s1/translations';
+  const TOKEN = 'TTTTTTTTTTTTTTTTTTTT';
+
+  beforeAll(async () => {
+    hooks = await fakeServer(() => ({ status: 204, body: '' }));
+    unsplash = await fakeServer(request => ({
+      status: 200,
+      body: request.url?.startsWith('/search') ? { total: 1, results: [{ id: 'p1' }] } : [{ id: 'r1' }],
+      headers: { 'X-RateLimit-Limit': '50', 'X-RateLimit-Remaining': '49' },
+    }));
+    t = await createTestApp({
+      LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
+      LOCALESS_TRANSLATE_PROVIDER: 'stub',
+      UNSPLASH_API_KEY: 'unsplash-key',
+      LOCALESS_UNSPLASH_API_URL: unsplash.url,
+    });
+    await t.db.insert(spaces).values({
+      id: 's1',
+      name: 'S',
+      locales: [
+        { id: 'en', name: 'English' },
+        { id: 'de', name: 'German' },
+      ],
+      localeFallback: { id: 'en', name: 'English' },
+    });
+    await t.db
+      .insert(tokens)
+      .values({ id: TOKEN, spaceId: 's1', name: 't', version: 2, permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
+    await t.db
+      .insert(webhooks)
+      .values({ id: 'h', spaceId: 's1', name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'] });
+    editor = api(
+      t,
+      await userWithAccess(t, 'editor@example.com', {
+        role: 'custom',
+        permissions: [
+          'TRANSLATION_READ',
+          'TRANSLATION_CREATE',
+          'TRANSLATION_UPDATE',
+          'TRANSLATION_DELETE',
+          'TRANSLATION_PUBLISH',
+          'CONTENT_UPDATE',
+          'ASSET_CREATE',
+        ],
+      }),
+    );
+    reader = api(
+      t,
+      await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'] }),
+    );
+  });
+
+  afterAll(async () => {
+    await t?.close();
+    await hooks?.close();
+    await unsplash?.close();
+  });
+
+  beforeEach(async () => {
+    await t.app.get(WebhookDispatcher).whenIdle();
+    hooks.requests.length = 0;
+  });
+
+  const events = async () => {
+    await t.app.get(WebhookDispatcher).whenIdle();
+    return hooks.requests.map(it => JSON.parse(it.body).event);
+  };
+  const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, 's1')))[0];
+  const stored = async (id: string) =>
+    (
+      await t.db
+        .select()
+        .from(translations)
+        .where(and(eq(translations.spaceId, 's1'), eq(translations.id, id)))
+    )[0];
+
+  describe('keys', () => {
+    it('creates keys, refusing duplicates, with translation.changed and a version bump', async () => {
+      const before = (await space()).translationVersion;
+      const response = await editor.post(base, { id: 'home.title', type: 'STRING', locales: { en: 'Welcome' }, labels: ['home'] });
+      expect(response.statusCode).toBe(201);
+      expect(response.json()).toMatchObject({
+        id: 'home.title',
+        locales: { en: 'Welcome' },
+        labels: ['home'],
+        updatedBy: { email: 'editor@example.com' },
+      });
+      expect((await space()).translationVersion).toBe(before + 1);
+      expect(await events()).toEqual(['translation.changed']);
+      expect((await editor.post(base, { id: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);
+      expect((await reader.post(base, { id: 'x', type: 'STRING', locales: {} })).statusCode).toBe(403);
+    });
+
+    it('sets and removes one locale value without touching the others', async () => {
+      await editor.put(`${base}/home.title/locales/de`, { value: 'Willkommen' });
+      expect((await stored('home.title')).locales).toEqual({ en: 'Welcome', de: 'Willkommen' });
+      await editor.put(`${base}/home.title/locales/de`, { value: '' });
+      expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
+    });
+
+    it('updates labels and description, clearing them when empty', async () => {
+      expect((await editor.patch(`${base}/home.title`, { description: 'Hero heading' })).json()).toMatchObject({
+        description: 'Hero heading',
+      });
+      expect((await editor.patch(`${base}/home.title`, {})).json()).not.toHaveProperty('labels');
+    });
+
+    it('renames atomically', async () => {
+      await editor.post(base, { id: 'taken', type: 'STRING', locales: { en: 'x' } });
+      expect((await editor.put(`${base}/home.title/id`, { id: 'taken' })).statusCode).toBe(409);
+      expect((await editor.put(`${base}/home.title/id`, { id: 'hero.title' })).json().id).toBe('hero.title');
+      expect((await editor.get(`${base}/home.title`)).statusCode).toBe(404);
+    });
+
+    it('lists by id and counts', async () => {
+      expect((await reader.get(base)).json().map((it: { id: string }) => it.id)).toEqual(['hero.title', 'taken']);
+      expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 2 });
+    });
+  });
+
+  describe('publishing', () => {
+    it('publishes every locale with fallback filling, records progress, and the public API serves it', async () => {
+      await editor.put(`${base}/taken/locales/de`, { value: 'genommen' });
+      await t.app.get(WebhookDispatcher).whenIdle();
+      hooks.requests.length = 0;
+      expect((await editor.post(`${base}/publish`)).statusCode).toBe(204);
+      expect((await space()).progress).toEqual({ translations: { en: 2, de: 1 } });
+      expect(await events()).toEqual(['translation.published']);
+
+      const redirect = await t.request({ method: 'GET', url: `/api/v1/spaces/s1/translations/de?token=${TOKEN}` });
+      const published = await t.request({ method: 'GET', url: redirect.headers.location as string });
+      expect(published.json()).toEqual({ 'hero.title': 'Welcome', taken: 'genommen' });
+    });
+
+    it('requires TRANSLATION_PUBLISH', async () => {
+      expect((await reader.post(`${base}/publish`)).statusCode).toBe(403);
+    });
+  });
+
+  describe('machine translation (stub provider)', () => {
+    it('translates a locale: only keys missing the target, unless overwrite', async () => {
+      const response = await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de' });
+      expect(response.json()).toEqual({ translated: 1, failed: 0 });
+      expect((await stored('hero.title')).locales.de).toBe('Welcome : en -> de');
+      expect((await stored('taken')).locales.de).toBe('genommen');
+
+      expect(
+        (await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de', overwrite: true })).json(),
+      ).toEqual({
+        translated: 2,
+        failed: 0,
+      });
+      expect((await stored('taken')).locales.de).toBe('x : en -> de');
+    });
+
+    it('translates single strings and batches for editors with both permissions', async () => {
+      expect(
+        (await editor.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: '<p>Hi</p>', format: 'html' })).json(),
+      ).toEqual({
+        content: '<p>Hi</p><p><em>en -&gt; de</em></p>',
+      });
+      expect(
+        (await editor.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', items: [{ id: 'a', content: 'One' }] })).json(),
+      ).toEqual({
+        items: [{ id: 'a', content: 'One : en -> de' }],
+        failed: [],
+      });
+      // TRANSLATION_UPDATE alone is not enough: the callable required CONTENT_UPDATE too.
+      expect((await reader.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(403);
+    });
+  });
+
+  describe('Unsplash', () => {
+    it('proxies search and random with the server-side key, passing rate limits through', async () => {
+      const search = await editor.get('/api/app/plugins/unsplash/search?query=cats&perPage=5&orientation=landscape');
+      expect(search.json()).toEqual({ limit: '50', remaining: '49', total: 1, results: [{ id: 'p1' }] });
+      const request = unsplash.requests.at(-1)!;
+      expect(request.headers.authorization).toBe('Client-ID unsplash-key');
+      expect(new URL(request.url, unsplash.url).searchParams.get('orientation')).toBe('landscape');
+      expect((await editor.get('/api/app/plugins/unsplash/random')).json()).toEqual({
+        limit: '50',
+        remaining: '49',
+        results: [{ id: 'r1' }],
+      });
+      expect((await reader.get('/api/app/plugins/unsplash/random')).statusCode).toBe(403);
+    });
+  });
+
+  describe('deleting', () => {
+    it('deletes one key, or all keys with SPACE_MANAGEMENT', async () => {
+      expect((await editor.delete(`${base}/taken`)).statusCode).toBe(204);
+      expect((await editor.delete(base)).statusCode).toBe(403);
+      const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
+      expect((await admin.delete(base)).statusCode).toBe(204);
+      expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 0 });
+    });
+  });
+});
+
+describe('app API: without a translation provider or Unsplash key', () => {
+  let t: TestApp;
+
+  beforeAll(async () => {
+    t = await createTestApp();
+    await t.db
+      .insert(spaces)
+      .values({ id: 's1', name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+  });
+
+  afterAll(() => t?.close());
+
+  it('answers 501 so the UI can hide the actions', async () => {
+    const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
+    expect((await admin.get('/api/app/translate/status')).json()).toEqual({ enabled: false, provider: 'none' });
+    expect((await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(501);
+    expect((await admin.get('/api/app/plugins/unsplash/random')).statusCode).toBe(501);
+  });
+});

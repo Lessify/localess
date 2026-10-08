@@ -48,6 +48,16 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform(v => v === 'true'),
+  // Machine translation. DeepL when DEEPL_API_KEY is set, else Google Cloud Translation when
+  // GOOGLE_CLOUD_PROJECT is set (credentials via GOOGLE_APPLICATION_CREDENTIALS / ADC).
+  // LOCALESS_TRANSLATE_PROVIDER=stub echoes inputs (development and tests).
+  DEEPL_API_KEY: z.string().optional(),
+  GOOGLE_CLOUD_PROJECT: z.string().optional(),
+  LOCALESS_GOOGLE_TRANSLATE_LOCATION: z.string().default('global'),
+  LOCALESS_TRANSLATE_PROVIDER: z.enum(['stub']).optional(),
+  // Unsplash plugin (asset picker); disabled without a key.
+  UNSPLASH_API_KEY: z.string().optional(),
+  LOCALESS_UNSPLASH_API_URL: z.string().url().default('https://api.unsplash.com'),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../dist/localess/browser')),
 });
 
@@ -59,6 +69,12 @@ export interface AppConfig {
   storageDir: string;
   ffmpegPath: string | undefined;
   webhookAllowInternal: boolean;
+  translate:
+    | { provider: 'deepl'; apiKey: string }
+    | { provider: 'google'; projectId: string; location: string }
+    | { provider: 'stub' }
+    | { provider: 'none' };
+  unsplash: { apiKey: string; apiUrl: string } | undefined;
   staticDir: string | undefined;
   logLevels: LogLevel[];
   firstAdmin: { email: string; password: string } | undefined;
@@ -135,6 +151,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dataDir,
     ffmpegPath: parsed.LOCALESS_FFMPEG_PATH,
     webhookAllowInternal: parsed.LOCALESS_WEBHOOK_ALLOW_INTERNAL,
+    translate: parsed.LOCALESS_TRANSLATE_PROVIDER
+      ? { provider: 'stub' }
+      : parsed.DEEPL_API_KEY
+        ? { provider: 'deepl', apiKey: parsed.DEEPL_API_KEY }
+        : parsed.GOOGLE_CLOUD_PROJECT
+          ? { provider: 'google', projectId: parsed.GOOGLE_CLOUD_PROJECT, location: parsed.LOCALESS_GOOGLE_TRANSLATE_LOCATION }
+          : { provider: 'none' },
+    unsplash: parsed.UNSPLASH_API_KEY ? { apiKey: parsed.UNSPLASH_API_KEY, apiUrl: parsed.LOCALESS_UNSPLASH_API_URL } : undefined,
     storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),
     staticDir: parsed.LOCALESS_STATIC_DIR ? resolve(parsed.LOCALESS_STATIC_DIR) : undefined,
     firstAdmin:
