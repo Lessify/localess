@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from '@nestj
 import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { Principal, UserRole } from '@localess/shared';
 import { hashPassword } from '../password.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newId } from '../../infra/database/id.js';
 import { userCredentials, userIdentities, users } from '../../infra/database/schema.js';
 

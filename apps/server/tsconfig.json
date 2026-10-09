@@ -14,6 +14,7 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "isolatedModules": true,
     "useDefineForClassFields": false,
     "skipLibCheck": true,
     "types": ["node"]

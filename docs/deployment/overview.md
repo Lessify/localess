@@ -119,10 +119,10 @@ The CLI reads the same environment variables as the server, so run it with the s
 ## Local development
 
 ```bash
-pnpm server:dev   # API on :3000, embedded Postgres in apps/server/.data
-pnpm start            # Angular dev server on :4200, proxying /api to :3000
+pnpm dev   # API on :3000 (embedded Postgres in apps/server/.data) + Angular dev server on :4200, proxying /api to :3000
 ```
 
-Set `LOCALESS_ADMIN_EMAIL` / `LOCALESS_ADMIN_PASSWORD` for the first `server:dev` run to get an
-admin account. `LOCALESS_TRANSLATE_PROVIDER=stub` gives a fake machine translator and
+The server restarts on every change (compiled with SWC); type errors are printed by a `tsc` watcher next to it.
+Environment variables can go in `apps/server/.env` (gitignored, loaded by `pnpm dev` only). Set
+`LOCALESS_ADMIN_EMAIL` / `LOCALESS_ADMIN_PASSWORD` for the first run to get an admin account. `LOCALESS_TRANSLATE_PROVIDER=stub` gives a fake machine translator and
 `LOCALESS_WEBHOOK_ALLOW_INTERNAL=true` lets webhooks hit `localhost`.

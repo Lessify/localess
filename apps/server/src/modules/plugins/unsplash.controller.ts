@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { APP_CONFIG, AppConfig } from '../../infra/config/config.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { normalizePaging } from './unsplash-paging.js';
 
 const searchSchema = z.object({

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newId } from '../../infra/database/id.js';
 import { tokens } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';

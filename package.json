@@ -8,6 +8,7 @@
     "node": "24"
   },
   "scripts": {
+    "dev": "pnpm --filter @localess/visual-editor-sync build && pnpm --parallel --filter @localess/server --filter @localess/web run dev",
     "start": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web start",
     "build": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web build",
     "build:prod": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web build:prod",

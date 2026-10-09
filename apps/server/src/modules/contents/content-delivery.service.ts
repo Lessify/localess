@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, inArray, or, sql, SQL } from 'drizzle-orm';
 import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata, Schema } from '@localess/shared';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contentPublished, contents, schemas } from '../../infra/database/schema.js';
 import { SpaceRow } from '../../infra/http/space-access.js';
 import { isDraft } from '../../infra/http/v1/v1-request.js';

@@ -10,7 +10,7 @@ import { pickEmbeddedAlt } from './embedded-alt.js';
 import { normaliseDuration } from './media-duration.js';
 import { resolveOrientedDimensions, resolveRotatedDimensions } from './media-orientation.js';
 import { isAnimatedPages } from './image-transform.js';
-import { STORAGE_DRIVER, StorageDriver } from '../../infra/storage/storage.driver.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 
 export interface ExtractedMetadata {
   metadata?: Record<string, unknown>;

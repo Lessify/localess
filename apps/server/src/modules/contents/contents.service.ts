@@ -2,7 +2,7 @@ import { randomInt } from 'node:crypto';
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
 import { Schema, WebHookEvent } from '@localess/shared';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newId } from '../../infra/database/id.js';
 import { contentPublished, contents, schemas, UpdatedBy } from '../../infra/database/schema.js';
 import { buildDocumentStorage } from './content-extract.js';

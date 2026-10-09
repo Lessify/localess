@@ -2,7 +2,7 @@ import { Controller, HttpCode, Inject, Param, Post } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { Schema, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { schemas } from '../../infra/database/schema.js';
 import { generateOpenApi } from './open-api.service.js';
 import { schemaFromRow } from './schema-row.js';

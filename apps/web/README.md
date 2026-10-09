@@ -8,7 +8,8 @@ Tailwind 4. The production build (`dist/browser`) is served by [`apps/server`](.
 From the repo root:
 
 ```bash
-pnpm start        # ng serve on :4200, proxies /api to the server on :3000 (proxy.conf.cjs)
+pnpm dev          # server + ng serve together (see the root README)
+pnpm start        # ng serve on :4200 alone, proxies /api to the server on :3000 (proxy.conf.cjs)
 pnpm build        # development build
 pnpm build:prod   # production build → apps/web/dist/browser
 pnpm test         # Vitest + happy-dom via @angular/build:unit-test

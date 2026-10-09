@@ -5,7 +5,7 @@ import { TokenPermission, Translation, TranslationType, TranslationUpdateRespons
 import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { spaces, translations } from '../../infra/database/schema.js';
 import {
   isDraft,

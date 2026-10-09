@@ -3,7 +3,7 @@ import { filter, Subscription } from 'rxjs';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { tokens } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { Params, Query, validIdParams } from '../../infra/http/v1/v1-request.js';

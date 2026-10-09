@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, gt, isNull } from 'drizzle-orm';
-import { DATABASE, Database } from '../infra/database/database.module.js';
+import { DATABASE, type Database } from '../infra/database/database.module.js';
 import { passwordResetTokens } from '../infra/database/schema.js';
 import { MailService } from '../infra/mail/mail.service.js';
 import { UserRow, UsersService } from './users/users.service.js';

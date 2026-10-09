@@ -8,10 +8,10 @@ import { and, eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import ffmpeg from 'fluent-ffmpeg';
 import sharp, { type Sharp } from 'sharp';
-import { APP_CONFIG, AppConfig } from '../../infra/config/config.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets } from '../../infra/database/schema.js';
-import { STORAGE_DRIVER, StorageDriver } from '../../infra/storage/storage.driver.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import {
   CACHE_ASSET_MAX_AGE,
   CACHE_ASSET_NOT_FOUND_MAX_AGE,

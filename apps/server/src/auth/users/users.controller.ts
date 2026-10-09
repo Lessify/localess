@@ -9,8 +9,8 @@ import { publicOrigin } from '../public-url.js';
 import { CurrentUser } from '../request-context.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { EventsService } from '../../infra/events/events.service.js';
-import { APP_CONFIG, AppConfig } from '../../infra/config/config.js';
-import { toPrincipal, UserDto, UserRow, UsersService } from './users.service.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { toPrincipal, UserDto, type UserRow, UsersService } from './users.service.js';
 
 const roleSchema = z.enum(['admin', 'custom']).nullish();
 const permissionsSchema = z.array(z.enum(USER_PERMISSIONS as [UserPermission, ...UserPermission[]])).optional();

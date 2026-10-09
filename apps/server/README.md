@@ -11,7 +11,7 @@ Run inside `apps/server` (or from the root with `pnpm --filter @localess/server 
 ```bash
 pnpm build        # tsc → dist/
 pnpm start        # node dist/main.js
-pnpm dev          # build + start
+pnpm dev          # watch: SWC → dist-dev/, node --watch restarts, tsc --noEmit --watch type-checks; loads .env
 pnpm test         # vitest (starts a throwaway embedded Postgres)
 pnpm db:generate  # drizzle-kit: SQL migration from src/infra/database/schema.ts changes (commit the output)
 pnpm cli db:migrate
@@ -20,7 +20,11 @@ pnpm cli import:firebase --project <firebase-project-id>
 LOCALESS_ADMIN_PASSWORD=… pnpm cli admin:create --email admin@example.com [--name "Admin"]
 ```
 
-From the repo root: `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`.
+From the repo root: `pnpm dev` (server + web), `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`.
+
+`dev` compiles with SWC for fast restarts, so every type referenced in a decorated signature (constructor
+injection, `@Body()` parameters) must be imported with `type` (`import { DATABASE, type Database }`);
+`isolatedModules` makes `tsc` report the ones that aren't (TS1272).
 
 On every boot the server applies pending migrations (under a Postgres advisory lock, so several
 instances can start at once). Without `DATABASE_URL` it starts an embedded Postgres in

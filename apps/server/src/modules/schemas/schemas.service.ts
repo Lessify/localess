@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { schemas } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';

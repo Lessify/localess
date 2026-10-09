@@ -1,11 +1,11 @@
 import type { Readable } from 'node:stream';
 import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, like, or, sql, SQL } from 'drizzle-orm';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newId } from '../../infra/database/id.js';
 import { assets } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
-import { STORAGE_DRIVER, StorageDriver } from '../../infra/storage/storage.driver.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
 import { AssetMetadataService } from './asset-metadata.service.js';
 

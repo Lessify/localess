@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import * as client from 'openid-client';
-import { APP_CONFIG, AppConfig, OAuthProviderId } from '../infra/config/config.js';
-import { DATABASE, Database } from '../infra/database/database.module.js';
+import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../infra/config/config.js';
+import { DATABASE, type Database } from '../infra/database/database.module.js';
 import { userIdentities } from '../infra/database/schema.js';
 import { UserRow, UsersService } from './users/users.service.js';
 

@@ -10,7 +10,7 @@ import {
   TranslateFormat,
   TranslateItem,
 } from '@localess/shared';
-import { APP_CONFIG, AppConfig } from '../../../infra/config/config.js';
+import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { translateItems } from './translate-batch.js';
 import { deeplTranslateOptions, googleMimeType } from './translate-format.utils.js';
 

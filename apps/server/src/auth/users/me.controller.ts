@@ -6,7 +6,7 @@ import { CurrentSessionId, CurrentUser } from '../request-context.js';
 import { SessionService } from '../session.service.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { EventsService } from '../../infra/events/events.service.js';
-import { UserDto, UserRow, UsersService } from './users.service.js';
+import { UserDto, type UserRow, UsersService } from './users.service.js';
 
 const profileSchema = z.object({
   displayName: z.string().trim().max(200).nullish(),

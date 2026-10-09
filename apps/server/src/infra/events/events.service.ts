@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nest
 import { sql, SQL } from 'drizzle-orm';
 import pg from 'pg';
 import { filter, Observable, Subject } from 'rxjs';
-import { DATABASE, Database, PG_POOL } from '../database/database.module.js';
+import { DATABASE, type Database, PG_POOL } from '../database/database.module.js';
 
 export const EVENTS_CHANNEL = 'localess_events';
 

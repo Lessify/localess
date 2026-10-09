@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { translationPublished, translations } from '../../infra/database/schema.js';
 
 /** Translation reads for the public v1 API: the snapshots published per locale, or drafts built from the rows. */

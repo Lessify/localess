@@ -1,8 +1,8 @@
 import { ConflictException, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DEFAULT_LOCALE } from '@localess/shared';
 import { hashPassword, PASSWORD_MIN_LENGTH } from '../password.js';
-import { APP_CONFIG, AppConfig } from '../../infra/config/config.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newId } from '../../infra/database/id.js';
 import { spaces, userCredentials, users } from '../../infra/database/schema.js';
 import { UsersService } from './users.service.js';

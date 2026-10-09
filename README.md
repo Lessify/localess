@@ -89,9 +89,13 @@ Requires Node.js 24 and pnpm 12 (pnpm switches itself to the version pinned by `
 ```bash
 npm install -g pnpm                                                                       # once
 pnpm install                                                                              # every workspace (apps/*, packages/*)
-LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD=change-me pnpm server:dev  # API on :3000, embedded Postgres
-pnpm start                                                                                # UI on :4200, proxies /api
+pnpm dev                                                                                  # API on :3000 (embedded Postgres) + UI on http://localhost:4200
 ```
+
+`pnpm dev` runs the server and the Angular dev server in one terminal. The UI reloads on change; the server restarts
+on change (SWC, about 3 s) while `tsc` type-checks alongside and prints errors under `dev:types`. Put local settings
+in `apps/server/.env` (gitignored), e.g. `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` to create the first
+admin on the first run.
 
 ### Repository layout
 

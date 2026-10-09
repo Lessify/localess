@@ -5,7 +5,7 @@ import { Schema, SchemaExport } from '@localess/shared';
 import { zSchemaPushSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { schemas, spaces } from '../../infra/database/schema.js';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from '../../infra/http/v1/cache-control.js';
 import { Params } from '../../infra/http/v1/v1-request.js';

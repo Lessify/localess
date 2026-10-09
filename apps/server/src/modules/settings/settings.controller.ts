@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { settings } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { toDto } from '../../infra/http/dto.js';

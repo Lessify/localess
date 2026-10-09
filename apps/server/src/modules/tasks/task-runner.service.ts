@@ -22,8 +22,8 @@ import {
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { folderPath } from '../assets/assets.service.js';
 import { bumpVersion } from '../../infra/http/space-access.js';
-import { APP_CONFIG, AppConfig } from '../../infra/config/config.js';
-import { DATABASE, Database } from '../../infra/database/database.module.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
 import { isAssetChanged, isContentChanged, isTranslationChanged } from './import-diff.js';
 import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
@@ -32,7 +32,7 @@ import { translationFromRow } from '../translations/translation-row.js';
 import { applySchemaPushPlan } from '../schemas/schema-push.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
-import { STORAGE_DRIVER, StorageDriver } from '../../infra/storage/storage.driver.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
 import { openZip, writeZip, ZipReader } from './zip.js';
 

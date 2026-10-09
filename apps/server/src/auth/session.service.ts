@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gt, lt, ne } from 'drizzle-orm';
-import { DATABASE, Database } from '../infra/database/database.module.js';
+import { DATABASE, type Database } from '../infra/database/database.module.js';
 import { sessions, users } from '../infra/database/schema.js';
 import type { UserRow } from './users/users.service.js';
 

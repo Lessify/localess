@@ -4,6 +4,7 @@
 .claude
 **/node_modules
 **/dist
+**/dist-dev
 **/.data
 **/.angular
 **/*.tsbuildinfo

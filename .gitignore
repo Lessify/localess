@@ -2,6 +2,7 @@
 
 # Compiled output
 dist
+dist-dev
 /tmp
 /out-tsc
 /bazel-out
@@ -53,3 +54,6 @@ Thumbs.db
 
 # TypeScript incremental build state (tsc -b)
 *.tsbuildinfo
+
+# Local environment for pnpm dev (apps/server/.env)
+.env
