@@ -4,9 +4,9 @@ import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import unzipper from 'unzipper';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, schemas, spaces, tasks, tokens, translations } from '../src/database/schema.js';
-import { STORAGE_DRIVER, StorageDriver } from '../src/storage/storage.driver.js';
-import { STALE_AFTER_MS, TaskWorker } from '../src/tasks/task-worker.service.js';
+import { assets, contents, schemas, spaces, tasks, tokens, translations } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
 import { createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
 
 const en = { id: 'en', name: 'English' };

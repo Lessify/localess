@@ -6,13 +6,13 @@
 
 API tokens grant programmatic, scoped access to the public CDN API. On the CDN read endpoints (`CDN`, `DEV_TOOLS` controllers) they are passed as a `?token=<tokenId>` query parameter; there is no cookie-based auth (the app's session cookie is not accepted on `/api/v1`). The `MANAGE` controller (bulk translation writes and schema push) is the one exception — it authenticates via an `X-API-KEY` header instead of the query param (see [V1 Public API](v1-api.md#middleware) for that flow). Both `MANAGE` endpoints — `POST /translations/:locale` and `POST /schemas` (schema push) — require the `DEV_TOOLS` permission, which only a TokenV2 with `DEV_TOOLS` in its `permissions` array can satisfy; a legacy TokenV1 is always rejected with `403`. This doc covers the query-param auth path used by the CDN/DEV_TOOLS controllers.
 
-Tokens are rows of the Postgres `tokens` table (`apps/server/src/database/schema.ts`):
+Tokens are rows of the Postgres `tokens` table (`apps/server/src/infra/database/schema.ts`):
 ```
 tokens (id, space_id, name, version, permissions text[], cache_ttl, created_at, updated_at)
 ```
 The 20-character alphanumeric `id` **is** the secret. Ids imported from Firebase are unchanged, so existing tokens keep working.
 
-Tokens are managed in the app (Space Settings → Tokens) through `/api/app/spaces/:spaceId/tokens` (`apps/server/src/app-api/tokens/tokens.controller.ts`, `SPACE_MANAGEMENT`): list, get, create, update, delete, and `POST …/:id/regenerate`, which atomically replaces the id (a V1 token comes back as V2 with its implicit permissions spelled out). New and updated tokens are always V2.
+Tokens are managed in the app (Space Settings → Tokens) through `/api/app/spaces/:spaceId/tokens` (`apps/server/src/modules/tokens/tokens.controller.ts`, `SPACE_MANAGEMENT`): list, get, create, update, delete, and `POST …/:id/regenerate`, which atomically replaces the id (a V1 token comes back as V2 with its implicit permissions spelled out). New and updated tokens are always V2.
 
 ---
 
@@ -61,7 +61,7 @@ Same pattern applies to translation endpoints with `TRANSLATION_*` permissions.
 To avoid a database read per request during traffic spikes, query-param tokens are cached in memory inside each server instance (header tokens on `MANAGE` are always read fresh):
 
 ```typescript
-// apps/server/src/public-api/token-auth.service.ts
+// apps/server/src/auth/api-tokens/token-auth.service.ts
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 ```
 
@@ -73,13 +73,13 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 
 > The cache is per instance: with several server instances a token may be read once per instance.
 
-> **Never log a raw query object.** The token arrives as the `?token=` query param, so `JSON.stringify(req.query)` would persist a usable credential into your logs for their full retention period. Use `redactQuery()` (`apps/server/src/public-api/lib/log-redact.ts`) when a V1 code path needs to log a query.
+> **Never log a raw query object.** The token arrives as the `?token=` query param, so `JSON.stringify(req.query)` would persist a usable credential into your logs for their full retention period. Use `redactQuery()` (`apps/server/src/infra/http/v1/log-redact.ts`) when a V1 code path needs to log a query.
 
 ---
 
 ## Implementation Files
 
 - `packages/shared/src/models/token.model.ts` — `TokenPermission`, token types and `TOKEN_V1_IMPLICIT_PERMISSIONS` (shared by server and web)
-- `apps/server/src/public-api/token-auth.service.ts` — `validateToken`, `canPerform` / `canPerformAny`, `authorize()`, the token cache and its invalidation
-- `apps/server/src/app-api/tokens/tokens.controller.ts` — token management for the app
-- `apps/server/src/events/events.service.ts` — change events (`LISTEN/NOTIFY`)
+- `apps/server/src/auth/api-tokens/token-auth.service.ts` — `validateToken`, `canPerform` / `canPerformAny`, `authorize()`, the token cache and its invalidation
+- `apps/server/src/modules/tokens/tokens.controller.ts` — token management for the app
+- `apps/server/src/infra/events/events.service.ts` — change events (`LISTEN/NOTIFY`)

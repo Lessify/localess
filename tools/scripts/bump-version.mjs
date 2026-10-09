@@ -7,7 +7,7 @@
  *   - package.json and every workspace package.json (apps/*, packages/*)
  *   - apps/web/src/environments/environment.ts
  *   - apps/web/src/environments/environment.prod.ts
- *   - apps/server/src/domain/lib/open-api.service.ts
+ *   - apps/server/src/modules/schemas/open-api.service.ts
  */
 
 import { readdirSync, readFileSync, writeFileSync } from 'fs';
@@ -83,7 +83,7 @@ for (const rel of [
 
 // open-api.service.ts — match the single `version: '4.1.0'` app-version line
 replaceInFile(
-  resolve(ROOT, 'apps/server/src/domain/lib/open-api.service.ts'),
+  resolve(ROOT, 'apps/server/src/modules/schemas/open-api.service.ts'),
   versionLinePattern,
   versionLineReplacement
 );

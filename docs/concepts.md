@@ -80,7 +80,7 @@ Three consequences follow, and all of them are load-bearing:
 
 **The default locale is the fallback value.** It sits in the bare key precisely so a reader can ask
 for `_i18n_<locale>` and fall back to it when the translation is missing. `extractContent()` — the
-publish/serve path, in both `shared/utils/content.ts` and `apps/server/src/domain/lib/content-extract.ts` —
+publish/serve path, in both `shared/utils/content.ts` and `apps/server/src/modules/contents/content-extract.ts` —
 does exactly that, which is why an untranslated field still serves content rather than a blank.
 
 **The editor deliberately does *not* fall back.** `extractSchemaContent()` returns the locale's own
@@ -122,7 +122,7 @@ than reaching the API:
 
 | site | guarded by |
 |---|---|
-| serve/publish (server) | `apps/server/src/domain/lib/content-extract.test.ts` |
+| serve/publish (server) | `apps/server/src/modules/contents/content-extract.test.ts` |
 | serve/publish (frontend) | `shared/utils/content.spec.ts` → `extractContent` |
 | editor form ← data | `shared/utils/content.spec.ts` → `extractSchemaContent` |
 | editor form → data | `edit-document-schema.component.spec.ts` → `writing form values back to data` |
@@ -192,7 +192,7 @@ An API token (`tokens` table; the id is the secret) grants programmatic access t
 
 ## Data Model Map
 
-All tables are defined in `apps/server/src/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Ids are `text`: rows imported from Firestore keep their document ids, because content, asset and token ids appear in public URLs and customer code, and new rows use the same 20-character alphanumeric format (`newId()`). Content and asset ids are unique only **within a space** — export/import upserts by id, so importing one space's export into another repeats them — so their primary key is `(space_id, id)`. Schemas and translations are keyed `(space_id, id)` too, with user-chosen ids. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
+All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Ids are `text`: rows imported from Firestore keep their document ids, because content, asset and token ids appear in public URLs and customer code, and new rows use the same 20-character alphanumeric format (`newId()`). Content and asset ids are unique only **within a space** — export/import upserts by id, so importing one space's export into another repeats them — so their primary key is `(space_id, id)`. Schemas and translations are keyed `(space_id, id)` too, with user-chosen ids. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
 
 ```
 settings                          single row: global UI settings

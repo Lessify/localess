@@ -29,10 +29,10 @@ localess/
 │   └── server/                 # @localess/server — NestJS
 │       ├── drizzle/
 │       └── src/
-│           ├── infra/          # config, database, storage, mail, events, static, health
-│           ├── auth/           # sessions, OAuth, guards, permissions, users
-│           ├── modules/<feature>/   # service + app controller + public controller + feature logic
-│           └── cli/            # commands, check, firebase-import, bootstrap
+│           ├── infra/          # config, database, storage, mail, events, static, health, http (+ v1 plumbing)
+│           ├── auth/           # sessions, OAuth, guards, users, api-tokens
+│           ├── modules/<feature>/   # module + service + /api/app controller + /api/v1 controller + feature logic
+│           └── cli/            # commands, check, firebase-import
 ├── packages/
 │   ├── shared/                 # @localess/shared — types, zod schemas, enums, permissions, locales
 │   ├── ui/                     # @localess/ui — Spartan/Helm, imported as @spartan-ng/helm/*
@@ -58,7 +58,7 @@ Rules:
 | A | npm workspaces; move `src` → `apps/web`, `server` → `apps/server`, `libs/ui` → `packages/ui`, sync-v1 → `packages/visual-editor-sync`, scripts → `tools/`; one lockfile; Dockerfile, CI, docs paths | Done |
 | B | `packages/shared`: one definition of domain models, zod schemas, permissions and locales; server and web import it | Done |
 | B2 | npm → pnpm: strict dependencies, catalog, `angular.json` back in `apps/web`, `pnpm deploy` in the Dockerfile, CI | Done |
-| C | Server: `infra/`, `auth/`, `modules/<feature>/`, `cli/` | |
+| C | Server: `infra/`, `auth/`, `modules/<feature>/`, `cli/` | Done |
 | D | Web: `core/` (state, API, guards) vs `shared/` (reusable UI); single-use services move into their feature | |
 | E | Repository map in README and CLAUDE.md; docs paths | |
 
@@ -157,4 +157,25 @@ Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size
   stops. Not caused by pnpm; release is now idempotent (`events.service.test.ts`); 6 of 6 stops clean afterwards.
 - CLAUDE.md listed CLI commands that don't exist (`user:create`, `user:reset-password`, `migrate`); now
   `db:migrate`, `check`, `admin:create`, `import:firebase`.
+
+### Phase C — server by feature (2026-10-09)
+
+- Three passes, each green: (1) moved 113 files with a script that rewrote every relative import (tests moved with
+  their sources); (2) split the public API by feature; (3) one Nest module per feature.
+- `infra/`: config, database, storage, mail, events, static, health, and `http/` (App API helpers `dto`,
+  `space-access`, `zod`, the zod pipe; `v1/` with the public API plumbing). `auth/` gained `users/` (users, me,
+  first admin), `api-tokens/` (the v1 token check, its own `ApiTokensModule`) and the `/api/config` controller.
+  `cli/` holds the Firebase importer.
+- Public API: `cdn`, `dev-tools` and `manage` controllers became `spaces`, `schemas`, `contents`, `translations`
+  and `assets` `*.public.controller.ts`, route methods moved verbatim. Shared plumbing (`validIdParams`, `cv`
+  redirect, `sendJson`, `isDraft`, `identifySpaceLocale`, `requireV1Space`) is in `infra/http/v1/v1-request.ts`;
+  the two DEV_TOOLS checks (`?token=` and `X-API-KEY`) are `TokenAuthService.authorizeDevTools/authorizeApiKey`
+  instead of a private copy per controller. `PublicContentService` split into `ContentDeliveryService`,
+  `TranslationDeliveryService` and `SpacesService.findSpace`. `domain/` is gone: its helpers live with the feature
+  that uses them; `row-mappers` became `schema-row.ts` / `translation-row.ts` over `infra/database/without-nulls.ts`.
+- Nest: `AppApiModule` and `PublicApiModule` replaced by `SpacesModule`, `SettingsModule`, `SchemasModule`,
+  `ContentsModule`, `TranslationsModule`, `AssetsModule`, `TokensModule`, `TasksModule` (now with its controller,
+  importing `AssetsModule` for metadata), `PluginsModule`; `WebhooksModule` (global) gained its controller.
+- Verified: the registered route table is identical to the previous commit (105 routes, diffed from boot logs);
+  server type-check, 52 files / 815 tests, Drizzle schema check; docs and the version-bump script follow the paths.
 

@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { UserPermission } from '@localess/shared';
-import { passwordResetTokens } from '../src/database/schema.js';
-import { MailMessage, MailService } from '../src/mail/mail.service.js';
-import { UserRow, UsersService } from '../src/users/users.service.js';
+import { passwordResetTokens } from '../src/infra/database/schema.js';
+import { MailMessage, MailService } from '../src/infra/mail/mail.service.js';
+import { UserRow, UsersService } from '../src/auth/users/users.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 const tokenFrom = (url: string) => new URL(url).searchParams.get('token') as string;

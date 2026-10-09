@@ -13,7 +13,7 @@ pnpm build        # tsc → dist/
 pnpm start        # node dist/main.js
 pnpm dev          # build + start
 pnpm test         # vitest (starts a throwaway embedded Postgres)
-pnpm db:generate  # drizzle-kit: SQL migration from src/database/schema.ts changes (commit the output)
+pnpm db:generate  # drizzle-kit: SQL migration from src/infra/database/schema.ts changes (commit the output)
 pnpm cli db:migrate
 pnpm cli check
 pnpm cli import:firebase --project <firebase-project-id>
@@ -25,6 +25,25 @@ From the repo root: `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`.
 On every boot the server applies pending migrations (under a Postgres advisory lock, so several
 instances can start at once). Without `DATABASE_URL` it starts an embedded Postgres in
 `$LOCALESS_DATA_DIR/pgdata`.
+
+## Layout
+
+```
+src/
+  main.ts · cli.ts · app.module.ts · app.factory.ts
+  infra/        config, database (Drizzle schema, migrations, embedded Postgres), storage, mail,
+                events (pg_notify → SSE), static (SPA), health, http (App API helpers; v1/ public API plumbing)
+  auth/         sessions, OAuth, guard and decorators; users/ (users, me, first admin); api-tokens/ (v1 token check)
+  modules/      one folder per feature: <feature>.module.ts, <feature>.service.ts,
+                <feature>.controller.ts (/api/app) and <feature>.public.controller.ts (/api/v1), plus its logic
+                — spaces, settings, schemas (+ OpenAPI), contents, translations (+ translate/), assets,
+                tokens, webhooks, tasks, plugins
+  cli/          commands, check, firebase-import/
+```
+
+Domain types, permission rules and validators come from `@localess/shared` (`packages/shared`). A feature
+module imports `ApiTokensModule` when it has a public controller and `SpacesModule` when it needs
+`SpacesService.findSpace`; infrastructure modules (database, storage, events, webhooks) are global.
 
 ## Environment
 
@@ -79,8 +98,8 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 
 Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` values as the former
 `publicv1` function (see [docs/cdn-caching.md](../../docs/cdn-caching.md),
-[docs/v1-api.md](../../docs/v1-api.md)). Code: `src/public-api/` (controllers) and
-`src/public-api/lib/` + `src/domain/` (pure logic moved from `functions/src` with its tests).
+[docs/v1-api.md](../../docs/v1-api.md)). Code: each feature's
+`src/modules/<feature>/<feature>.public.controller.ts`, with shared plumbing in `src/infra/http/v1/`.
 
 - `cv` is the space's `content_version` / `translation_version`, bumped on every change.
 - Published documents and translations are read from `content_published` / `translation_published`;
@@ -93,7 +112,7 @@ Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` val
 ## App API (`/api/app`)
 
 What the SPA used Firestore, Storage and the callables for. Session cookie + `X-Requested-With` on
-writes; permissions as in firestore.rules (see `src/app-api/*/*.controller.ts`). Responses keep the
+writes; permissions as in firestore.rules (see `src/modules/*/*.controller.ts`). Responses keep the
 Firestore document shapes plus `id`, with ISO timestamps and absent (not null) optional fields.
 
 | Area | Endpoints |
@@ -115,7 +134,7 @@ transaction, and webhooks are sent only after it commits.
 
 ## Background tasks
 
-`src/tasks/`: exports and imports (assets, contents, schemas, translations) and asset metadata
+`src/modules/tasks/`: exports and imports (assets, contents, schemas, translations) and asset metadata
 regeneration, with the same archive layouts and file names as the Firebase era, so old exports import.
 The `tasks` row is the queue: `TaskWorker` claims the oldest INITIATED task with
 `FOR UPDATE SKIP LOCKED` (safe with several instances), is woken by `tasks` change events and polls

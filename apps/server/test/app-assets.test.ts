@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces } from '../src/database/schema.js';
+import { spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
 
 /** A multipart body with the fields first, then the file — the order the endpoint expects. */

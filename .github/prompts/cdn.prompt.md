@@ -6,7 +6,7 @@ Read these docs before making changes:
 - [V1 Public API](../../docs/v1-api.md) — endpoints, token auth, asset transforms
 
 Key files:
-- `apps/server/src/public-api/cdn.controller.ts` — all CDN route handlers
-- `apps/server/src/public-api/cache-control.ts` — cache TTL constants
-- `apps/server/src/public-api/token-auth.service.ts` — token auth
-- `apps/server/src/public-api/asset-delivery.service.ts` — asset delivery and rendition cache
+- `apps/server/src/modules/{contents,translations,assets}/*.public.controller.ts` — the CDN route handlers; shared plumbing in `apps/server/src/infra/http/v1/`
+- `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
+- `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth
+- `apps/server/src/modules/assets/asset-delivery.service.ts` — asset delivery and rendition cache

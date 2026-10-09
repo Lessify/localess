@@ -2,8 +2,8 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contents, spaces, translations } from '../src/database/schema.js';
-import { STORAGE_DRIVER, StorageDriver } from '../src/storage/storage.driver.js';
+import { contents, spaces, translations } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: spaces, locales, settings', () => {

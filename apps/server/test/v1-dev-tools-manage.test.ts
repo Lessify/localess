@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { schemas, spaces, translations } from '../src/database/schema.js';
+import { schemas, spaces, translations } from '../src/infra/database/schema.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 

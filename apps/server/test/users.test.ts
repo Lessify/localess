@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { UserPermission } from '@localess/shared';
-import { UsersService } from '../src/users/users.service.js';
+import { UsersService } from '../src/auth/users/users.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 const { USER_MANAGEMENT, CONTENT_READ, CONTENT_UPDATE, SETTINGS_MANAGEMENT } = UserPermission;

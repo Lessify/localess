@@ -10,9 +10,9 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.factory.js';
 import { runCli } from '../src/cli/commands.js';
-import { loadConfig } from '../src/config/config.js';
-import * as schema from '../src/database/schema.js';
-import type { FirebaseSource, SourceAuthUser, SourceDocument } from '../src/firebase-import/firebase-source.js';
+import { loadConfig } from '../src/infra/config/config.js';
+import * as schema from '../src/infra/database/schema.js';
+import type { FirebaseSource, SourceAuthUser, SourceDocument } from '../src/cli/firebase-import/firebase-source.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 import { XHR } from './test-app.js';
 

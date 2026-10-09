@@ -4,7 +4,7 @@
 
 ## Overview
 
-The public API (`/api/v1/**`) is served by the NestJS server (`apps/server/src/public-api/`). All CDN endpoints use a **cache-version redirect pattern** so that browsers and shared caches can keep responses long-term while still supporting instant invalidation after publish.
+The public API (`/api/v1/**`) is served by the NestJS server (each feature's `*.public.controller.ts` under `apps/server/src/modules/`, shared plumbing in `apps/server/src/infra/http/v1/`). All CDN endpoints use a **cache-version redirect pattern** so that browsers and shared caches can keep responses long-term while still supporting instant invalidation after publish.
 
 **There is no CDN in front of Localess by default.** The Firebase era got Firebase Hosting's edge CDN for free; a self-hosted server answers every request itself. For production, put a CDN or a caching reverse proxy (Cloudflare, Fastly, CloudFront, nginx/Varnish `proxy_cache`, …) in front of at least `/api/v1/**`. The responses are already CDN-ready: every cacheable response carries `public, max-age, s-maxage`, URLs are versioned by `cv`, and asset responses carry ETags. The proxy should key on the full URL including the query string, and honour `Vary: Accept-Encoding`. Without one, browsers still cache per client, and image transforms are still cached on disk (see [Rendition cache](#rendition-cache)), but every redirect and JSON response is served by the Node process.
 
@@ -26,7 +26,7 @@ The `cv` value is a **version counter on the space row** (`spaces` table):
 - Content:     `spaces.content_version`
 - Translation: `spaces.translation_version`
 
-The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpVersion()` in `apps/server/src/app-api/common/space-access.ts`):
+The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpVersion()` in `apps/server/src/infra/http/space-access.ts`):
 
 - `content_version` — every content create/update/move/delete/publish/unpublish, every schema write (drafts are rendered through schemas), asset updates and deletes, content/schema/asset imports, and `POST /api/v1/.../schemas` (schema push).
 - `translation_version` — every translation write (drafts are built from the live rows), translation publish, translation imports, and `POST /api/v1/.../translations/:locale`.
@@ -54,7 +54,7 @@ So content and translation drafts never go stale, and all existing `cv` values b
 >
 > "404 responses" is not a single behavior — it depends on which lookup fails (see rows above); some 404s carry no `Cache-Control` header at all.
 
-Constants are defined in `apps/server/src/public-api/cache-control.ts` (`publicCache(seconds)` renders `public, max-age=…, s-maxage=…`):
+Constants are defined in `apps/server/src/infra/http/v1/cache-control.ts` (`publicCache(seconds)` renders `public, max-age=…, s-maxage=…`):
 ```typescript
 CACHE_MAX_AGE                   = DAY * 7       // 604800s
 CACHE_SHARE_MAX_AGE             = DAY * 7       // 604800s
@@ -129,7 +129,7 @@ $LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/{etagSuffix|o
 The key is the ETag suffix, i.e. the effective encode, so two spellings producing identical bytes
 share one file. Renditions are deleted with the asset. Cache writes are best-effort (a failed write
 is logged, the response still goes out). `AssetDeliveryService` in
-`apps/server/src/public-api/asset-delivery.service.ts` owns this.
+`apps/server/src/modules/assets/asset-delivery.service.ts` owns this.
 
 Passthrough routes (`/original`, `/download`) and untransformed files stream from storage with
 `Accept-Ranges: bytes` and honour a single `Range` request (`206`, or `416` when unsatisfiable), which
@@ -181,8 +181,9 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 
 ## Implementation Files
 
-- `apps/server/src/public-api/cdn.controller.ts` — all CDN route handlers, `cv` redirects
-- `apps/server/src/public-api/cache-control.ts` — cache TTL constants
-- `apps/server/src/public-api/token-auth.service.ts` — token auth per request
-- `apps/server/src/public-api/asset-delivery.service.ts` — asset streaming, Range, rendition cache
-- `apps/server/src/app-api/common/space-access.ts` — `bumpVersion()`
+- `apps/server/src/modules/{contents,translations,assets}/*.public.controller.ts` — the CDN route handlers
+- `apps/server/src/infra/http/v1/v1-request.ts` — `cv` redirects (`needsRedirect`, `redirectToVersion`), `validIdParams`, `isDraft`
+- `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
+- `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth per request
+- `apps/server/src/modules/assets/asset-delivery.service.ts` — asset streaming, Range, rendition cache
+- `apps/server/src/infra/http/space-access.ts` — `bumpVersion()`

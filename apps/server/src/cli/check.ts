@@ -1,10 +1,10 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { count, eq } from 'drizzle-orm';
-import type { AppConfig } from '../config/config.js';
-import type { Database } from '../database/database.module.js';
-import { users } from '../database/schema.js';
-import type { StorageDriver } from '../storage/storage.driver.js';
+import type { AppConfig } from '../infra/config/config.js';
+import type { Database } from '../infra/database/database.module.js';
+import { users } from '../infra/database/schema.js';
+import type { StorageDriver } from '../infra/storage/storage.driver.js';
 
 export type CheckStatus = 'ok' | 'warn' | 'fail';
 export interface CheckResult {

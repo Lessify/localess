@@ -6,8 +6,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
 import { createApp } from '../src/app.factory.js';
-import { loadConfig } from '../src/config/config.js';
-import * as schema from '../src/database/schema.js';
+import { loadConfig } from '../src/infra/config/config.js';
+import * as schema from '../src/infra/database/schema.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {
@@ -70,7 +70,7 @@ export async function userWithAccess(
   email: string,
   access: { role: 'admin' | 'custom' | null; permissions?: string[] },
 ): Promise<string> {
-  const { UsersService } = await import('../src/users/users.service.js');
+  const { UsersService } = await import('../src/auth/users/users.service.js');
   await t.app.get(UsersService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });
   return login(t, email, 'secret1');
 }

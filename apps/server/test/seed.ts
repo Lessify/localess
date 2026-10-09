@@ -1,6 +1,15 @@
 import { createHash } from 'node:crypto';
-import { assets, contentPublished, contents, schemas, spaces, tokens, translationPublished, translations } from '../src/database/schema.js';
-import { STORAGE_DRIVER, StorageDriver } from '../src/storage/storage.driver.js';
+import {
+  assets,
+  contentPublished,
+  contents,
+  schemas,
+  spaces,
+  tokens,
+  translationPublished,
+  translations,
+} from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import type { TestApp } from './test-app.js';
 
 export const TOKEN_V1 = 'AAAAAAAAAAAAAAAAAAAA';

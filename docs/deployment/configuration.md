@@ -5,7 +5,7 @@
 Localess is configured entirely by environment variables, read when the server (or CLI) starts.
 There is no build-time configuration: change a value and restart. Invalid values (a malformed URL,
 an unknown log level) stop the server at boot with an error naming the variable. The source of
-truth is `apps/server/src/config/config.ts`.
+truth is `apps/server/src/infra/config/config.ts`.
 
 Run [`check`](check.md) after changing configuration to see what is enabled.
 

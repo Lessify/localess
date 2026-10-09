@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import * as client from 'openid-client';
-import { APP_CONFIG, AppConfig, OAuthProviderId } from '../config/config.js';
-import { DATABASE, Database } from '../database/database.module.js';
-import { userIdentities } from '../database/schema.js';
-import { UserRow, UsersService } from '../users/users.service.js';
+import { APP_CONFIG, AppConfig, OAuthProviderId } from '../infra/config/config.js';
+import { DATABASE, Database } from '../infra/database/database.module.js';
+import { userIdentities } from '../infra/database/schema.js';
+import { UserRow, UsersService } from './users/users.service.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {

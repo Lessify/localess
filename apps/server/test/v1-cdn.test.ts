@@ -1,7 +1,7 @@
 import { gunzipSync } from 'node:zlib';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces, tokens } from '../src/database/schema.js';
+import { spaces, tokens } from '../src/infra/database/schema.js';
 import {
   seedContent,
   seedSpace,

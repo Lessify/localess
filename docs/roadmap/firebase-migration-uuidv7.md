@@ -3,7 +3,7 @@
 **Status:** Proposed, not started · **Recorded:** 2026-10-09
 **Starts after:** the application migration ([firebase-to-nestjs-postgres.md](firebase-to-nestjs-postgres.md))
 is stable and tested. Until then the schema and the public API may still move, so nothing here is built.
-**Replaces:** the current `import:firebase` CLI (`apps/server/src/firebase-import/`), which copies Firestore ids
+**Replaces:** the current `import:firebase` CLI (`apps/server/src/cli/firebase-import/`), which copies Firestore ids
 verbatim into `text` columns.
 
 ## Goal
@@ -44,7 +44,7 @@ Derived requirements (needed for R1–R6 to be safe):
 
 ### Generation
 
-- `newId()` in `apps/server/src/database/id.ts` returns a UUIDv7 (RFC 9562). It's generated in Node, not with
+- `newId()` in `apps/server/src/infra/database/id.ts` returns a UUIDv7 (RFC 9562). It's generated in Node, not with
   Postgres 18's `uuidv7()`, because `DATABASE_URL` may point at Postgres < 18.
 - `newId(at?: Date)` takes an optional timestamp. The migration passes the Firestore `createdAt`, so migrated
   rows sort by their real creation time instead of by migration time. The 74 random bits still make it unique.
@@ -171,7 +171,7 @@ Other visible changes to call out in the release notes:
 
 ## Migration process
 
-Reuses the Firebase connection that exists today (`apps/server/src/firebase-import/firebase-source.ts`,
+Reuses the Firebase connection that exists today (`apps/server/src/cli/firebase-import/firebase-source.ts`,
 `firebase-admin` with a service-account key from env, never argv).
 
 ```
@@ -222,7 +222,7 @@ Each step is a commit with tests; nothing starts before the application migratio
    Drizzle migrations can be squashed into a fresh initial migration instead of converting data in SQL.
 3. **Services and APIs**: token lookup by `token`; translation/schema rename as value updates; publish and
    draft output map `_schema` to name; DEV_TOOLS / MANAGE / OpenAPI by name; frontend models updated.
-4. **Reference rewriter** (`apps/server/src/domain/lib/id-rewrite.ts`): pure function `(json, idMap) → json`,
+4. **Reference rewriter** (`apps/server/src/modules/contents/id-rewrite.ts`): pure function `(json, idMap) → json`,
    shape-based, with unit tests per field kind including nested `SCHEMA(S)` nodes and locale variants.
 5. **Space Export/Import tasks** use the rewriter (foreign ids → new UUIDs).
 6. **Legacy id resolution** in the public API (`spaceId`, assets with 301, contents) + flag; e2e tests with a

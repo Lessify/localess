@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { assets } from '../src/database/schema.js';
-import { STORAGE_DRIVER, StorageDriver } from '../src/storage/storage.driver.js';
+import { assets } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { seedAsset, seedSpace, SeededAsset } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 
@@ -300,8 +300,8 @@ describe('v1 asset routes', () => {
         extension: '.jpg',
         metadata: { width: 400, height: 300, format: 'jpeg' },
       });
-      const { PublicContentService } = await import('../src/public-api/public-content.service.js');
-      const resolved = await t.app.get(PublicContentService).resolveAssets('s1', [id, 'missing']);
+      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      const resolved = await t.app.get(ContentDeliveryService).resolveAssets('s1', [id, 'missing']);
       expect(resolved).toEqual({
         [id]: {
           id,
@@ -318,8 +318,8 @@ describe('v1 asset routes', () => {
 
     it('skips folders', async () => {
       await t.db.insert(assets).values({ id: 'folder1', spaceId: 's1', kind: 'FOLDER', name: 'Folder' });
-      const { PublicContentService } = await import('../src/public-api/public-content.service.js');
-      expect(await t.app.get(PublicContentService).resolveAssets('s1', ['folder1'])).toEqual({});
+      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      expect(await t.app.get(ContentDeliveryService).resolveAssets('s1', ['folder1'])).toEqual({});
     });
   });
 

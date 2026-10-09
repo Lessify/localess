@@ -1,9 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gt, lt, ne } from 'drizzle-orm';
-import { DATABASE, Database } from '../database/database.module.js';
-import { sessions, users } from '../database/schema.js';
-import type { UserRow } from '../users/users.service.js';
+import { DATABASE, Database } from '../infra/database/database.module.js';
+import { sessions, users } from '../infra/database/schema.js';
+import type { UserRow } from './users/users.service.js';
 
 export const SESSION_COOKIE = 'localess_session';
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;

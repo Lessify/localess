@@ -1,10 +1,10 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, gt, isNull } from 'drizzle-orm';
-import { DATABASE, Database } from '../database/database.module.js';
-import { passwordResetTokens } from '../database/schema.js';
-import { MailService } from '../mail/mail.service.js';
-import { UserRow, UsersService } from '../users/users.service.js';
+import { DATABASE, Database } from '../infra/database/database.module.js';
+import { passwordResetTokens } from '../infra/database/schema.js';
+import { MailService } from '../infra/mail/mail.service.js';
+import { UserRow, UsersService } from './users/users.service.js';
 import { SessionService } from './session.service.js';
 
 export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;

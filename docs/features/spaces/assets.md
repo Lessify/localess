@@ -48,7 +48,7 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/app-api/plugins/unsplash-paging.ts`)
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
 
 ## CDN Asset Endpoint
 
@@ -72,7 +72,7 @@ a transform parameter on either is rejected with `400` rather than ignored. They
 
 **Which types are served inline.** Assets are served from the same origin as the admin app, and
 their MIME type comes from the uploader. So every asset route passes the type through
-`assetResponsePolicy` (`apps/server/src/public-api/lib/asset-headers.ts`), which decides how the response is
+`assetResponsePolicy` (`apps/server/src/modules/assets/asset-headers.ts`), which decides how the response is
 delivered:
 
 | Type | Delivery |

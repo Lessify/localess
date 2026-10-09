@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Unauthor
 import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
 import { canPerform, hasAnyRole } from '@localess/shared';
-import { toPrincipal } from '../users/users.service.js';
+import { toPrincipal } from './users/users.service.js';
 import { IS_PUBLIC, REQUIRED_ACCESS, RequiredAccess } from './decorators.js';
 import { SESSION_COOKIE, SessionService } from './session.service.js';
 

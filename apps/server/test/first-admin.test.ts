@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { FirstAdminService } from '../src/bootstrap/first-admin.service.js';
-import { spaces, users } from '../src/database/schema.js';
+import { FirstAdminService } from '../src/auth/users/first-admin.service.js';
+import { spaces, users } from '../src/infra/database/schema.js';
 import { createTestApp, login, TestApp } from './test-app.js';
 
 describe('first admin', () => {

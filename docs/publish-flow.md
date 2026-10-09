@@ -69,7 +69,7 @@ Publishing a space with no translations is allowed and serves `{}`.
 
 ## Translation Drafts
 
-Draft translations are built on read from the `translations` rows (`buildTranslationMap()` in `apps/server/src/public-api/public-content.service.ts`), so there is nothing to keep in sync. The Firebase-era `translation-publishdraft` callable that the UI fired after every edit is gone.
+Draft translations are built on read from the `translations` rows (`buildTranslationMap()` in `apps/server/src/modules/translations/translation-delivery.service.ts`), so there is nothing to keep in sync. The Firebase-era `translation-publishdraft` callable that the UI fired after every edit is gone.
 
 ### Frontend saves (add / edit / rename / delete)
 
@@ -82,7 +82,7 @@ Draft translations are built on read from the `translations` rows (`buildTransla
 
 ### Import Task (TRANSLATION_IMPORT)
 
-A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set; without `task.locale` it is a full import. Both run in the task worker (`apps/server/src/tasks/task-runner.service.ts`), write all rows in one transaction and bump `translation_version`.
+A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set; without `task.locale` it is a full import. Both run in the task worker (`apps/server/src/modules/tasks/task-runner.service.ts`), write all rows in one transaction and bump `translation_version`.
 
 ### CLI Manage API (POST /api/v1/spaces/:spaceId/translations/:locale)
 
@@ -133,7 +133,7 @@ Resolution is done at request time with batched `where id = any(...)` queries: l
 `links`/`references`/`assets` exist on the **stored** document but are never returned to a consumer:
 
 - **Top level** — the CDN handlers destructure them out and replace them with resolved maps, or omit the keys entirely when the corresponding `resolve*` flag is absent.
-- **Inside a `references` map** — `stripStorageIds()` (`apps/server/src/public-api/lib/strip-storage-ids.ts`) removes them, so a resolved reference carries only its metadata, `locale` and `data`.
+- **Inside a `references` map** — `stripStorageIds()` (`apps/server/src/modules/contents/strip-storage-ids.ts`) removes them, so a resolved reference carries only its metadata, `locale` and `data`.
 
 They are redundant on the wire: each one is a denormalized index of edges that already exist in `data`, since a `REFERENCE` field value is `{ kind: 'REFERENCE', uri }`. A consumer follows a further reference by reading that `uri` and looking it up in the same map — which is also why reference resolution can stay one level deep without losing information.
 
@@ -143,10 +143,11 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 
 ## Implementation Files
 
-- `apps/server/src/app-api/contents/contents.service.ts` — content `publish`/`unpublish`, `write()` (version bump, change events, webhooks after commit)
-- `apps/server/src/app-api/translations/translations.service.ts` — translation `publish`, `write()`
-- `apps/server/src/app-api/common/space-access.ts` — `bumpVersion()`
-- `apps/server/src/domain/lib/content-extract.ts` — locale extraction (`buildDocumentStorage`)
-- `apps/server/src/public-api/public-content.service.ts` — published/draft reads, `buildTranslationMap`, link/reference/asset resolution
-- `apps/server/src/tasks/task-runner.service.ts` — imports (bump versions at the end of their transaction)
-- `apps/server/src/public-api/manage.controller.ts` — CLI push endpoint
+- `apps/server/src/modules/contents/contents.service.ts` — content `publish`/`unpublish`, `write()` (version bump, change events, webhooks after commit)
+- `apps/server/src/modules/translations/translations.service.ts` — translation `publish`, `write()`
+- `apps/server/src/infra/http/space-access.ts` — `bumpVersion()`
+- `apps/server/src/modules/contents/content-extract.ts` — locale extraction (`buildDocumentStorage`)
+- `apps/server/src/modules/contents/content-delivery.service.ts` — published/draft document reads, link/reference/asset resolution
+- `apps/server/src/modules/translations/translation-delivery.service.ts` — published/draft translation reads, `buildTranslationMap`
+- `apps/server/src/modules/tasks/task-runner.service.ts` — imports (bump versions at the end of their transaction)
+- `apps/server/src/modules/translations/translations.public.controller.ts` — CLI translation push endpoint

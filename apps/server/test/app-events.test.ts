@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces } from '../src/database/schema.js';
-import { EventsService } from '../src/events/events.service.js';
+import { spaces } from '../src/infra/database/schema.js';
+import { EventsService } from '../src/infra/events/events.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 /** Reads SSE `change` events from a live stream until `count` arrived (or the timeout). */

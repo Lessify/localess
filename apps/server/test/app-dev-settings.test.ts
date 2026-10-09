@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { schemas, spaces, taskLogs, tokens, webhookLogs } from '../src/database/schema.js';
+import { schemas, spaces, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
 
 function multipart(fields: Record<string, string>, file: { filename: string; bytes: Buffer }) {

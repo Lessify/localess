@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { UserRow, UsersService } from '../users/users.service.js';
+import { UserRow, UsersService } from './users/users.service.js';
 import { verifyPassword } from './password.js';
 
 @Injectable()

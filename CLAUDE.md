@@ -54,7 +54,7 @@ pnpm --filter @localess/web add <pkg>         # add to one workspace; versions u
 - **Backend**: NestJS 12 on Fastify (`apps/server/`, ESM), serving the API and the built SPA from one port
 - **Database**: Postgres via Drizzle ORM; migrations in `apps/server/drizzle` run on every boot; `embedded-postgres` starts a local one when `DATABASE_URL` is unset
 - **Auth**: Session cookies + argon2id passwords, Google/Microsoft via OIDC (`apps/server/src/auth`)
-- **Storage**: Local disk or S3-compatible driver (`apps/server/src/storage`)
+- **Storage**: Local disk or S3-compatible driver (`apps/server/src/infra/storage`)
 - **UI**: Spartan/Helm component library (`packages/ui/`); Angular Material remains only as residual providers in `app.config.ts`
 - **Styling**: Tailwind CSS 4 + SCSS
 - **Rich Text**: TipTap editor
@@ -96,7 +96,7 @@ apps/web/src/app/
 ├── auth/          # Auth: login (Email, Google, Microsoft), reset
 └── app.config.ts  # Root provider configuration (HTTP, interceptors, runtime config)
 
-apps/server/src/   # NestJS server: auth, app-api (/api/app), public-api (/api/v1), events (SSE), tasks, webhooks, cli
+apps/server/src/   # NestJS server: infra/ (config, database, storage, events, http), auth/, modules/<feature>/ (service + /api/app and /api/v1 controllers), cli/ — see apps/server/README.md
 ```
 
 ### State Management
@@ -158,10 +158,10 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Topic | File | Read when working on |
 |-------|------|----------------------|
 | Domain concepts (Space, Content, Schema, Translation, Asset), **how localised values are stored** | [docs/concepts.md](docs/concepts.md) | Any new feature, onboarding, anything reading/writing a localised field |
-| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `apps/server/src/public-api/`, public API |
-| V1 API — all endpoints, controllers, token permissions | [docs/v1-api.md](docs/v1-api.md) | Any work in `apps/server/src/public-api/` |
+| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `apps/server/src/modules/*/*.public.controller.ts`, `apps/server/src/infra/http/v1/` |
+| V1 API — all endpoints, controllers, token permissions | [docs/v1-api.md](docs/v1-api.md) | Any `*.public.controller.ts` or `apps/server/src/infra/http/v1/` |
 | Publish flow & cache invalidation | [docs/publish-flow.md](docs/publish-flow.md) | Content/translation publish, tasks |
-| Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](docs/webhooks.md) | `apps/server/src/webhooks/`, webhook UI |
+| Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](docs/webhooks.md) | `apps/server/src/modules/webhooks/`, webhook UI |
 | API token auth & permissions | [docs/auth-tokens.md](docs/auth-tokens.md) | Middleware, token management, public API |
 | Frontend architecture, routing, packages/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
@@ -171,15 +171,15 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [apps/server/README.md](apps/server/README.md) | Anything in `apps/server/`, or replacing a Firebase dependency |
 | Repository layout, workspaces, structure refactoring phases | [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md) | Moving files between apps/packages, workspace scripts, Dockerfile |
 | Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `apps/web/src/test-setup.ts` |
-| Firebase data migration with UUIDv7 ids, reference rewrite, legacy ids (planned) | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | `apps/server/src/firebase-import/`, id generation, schema/translation/token keys |
+| Firebase data migration with UUIDv7 ids, reference rewrite, legacy ids (planned) | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | `apps/server/src/cli/firebase-import/`, id generation, schema/translation/token keys |
 | **Deployment & self-hosting** | | |
 | Deployment overview, requirements, ways to run, first admin, CLI | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Docker image & Compose | [docs/deployment/docker.md](docs/deployment/docker.md) | `Dockerfile`, `docker-compose.yml` |
-| Every environment variable, OAuth provider setup | [docs/deployment/configuration.md](docs/deployment/configuration.md) | `apps/server/src/config/`, login providers, storage |
+| Every environment variable, OAuth provider setup | [docs/deployment/configuration.md](docs/deployment/configuration.md) | `apps/server/src/infra/config/`, login providers, storage |
 | Reverse proxy, CDN, backups, multiple instances | [docs/deployment/production.md](docs/deployment/production.md) | Production hardening, scaling |
 | Upgrades, migrations on boot, backup/restore, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Releases, `apps/server/drizzle/` |
-| Health check CLI (`pnpm localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `apps/server/src/cli/check.ts`, `apps/server/src/health/`, diagnosing a broken install |
-| Importing a Firebase install (`import:firebase`) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md) | `apps/server/src/firebase-import/` |
+| Health check CLI (`pnpm localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `apps/server/src/cli/check.ts`, `apps/server/src/infra/health/`, diagnosing a broken install |
+| Importing a Firebase install (`import:firebase`) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md) | `apps/server/src/cli/firebase-import/` |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |

@@ -1,13 +1,13 @@
 import { parseArgs } from 'node:util';
 import { NestFactory } from '@nestjs/core';
-import { FirstAdminService } from '../bootstrap/first-admin.service.js';
+import { FirstAdminService } from '../auth/users/first-admin.service.js';
 import type { FirebaseScryptParams } from '../auth/firebase-scrypt.js';
-import { DATABASE, Database } from '../database/database.module.js';
-import { FirebaseImporter } from '../firebase-import/firebase-importer.js';
-import { FirebaseAdminSource, FirebaseSource } from '../firebase-import/firebase-source.js';
-import { STORAGE_DRIVER, StorageDriver } from '../storage/storage.driver.js';
+import { DATABASE, Database } from '../infra/database/database.module.js';
+import { FirebaseImporter } from './firebase-import/firebase-importer.js';
+import { FirebaseAdminSource, FirebaseSource } from './firebase-import/firebase-source.js';
+import { STORAGE_DRIVER, StorageDriver } from '../infra/storage/storage.driver.js';
 import { runChecks } from './check.js';
-import { loadConfig } from '../config/config.js';
+import { loadConfig } from '../infra/config/config.js';
 import { CliModule } from './cli.module.js';
 
 export const PASSWORD_ENV = 'LOCALESS_ADMIN_PASSWORD';

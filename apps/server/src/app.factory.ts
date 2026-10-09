@@ -7,9 +7,9 @@ import { HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
-import { AppConfig } from './config/config.js';
-import { SpaFallbackFilter } from './static/spa-fallback.filter.js';
-import { registerStaticSite } from './static/static-site.js';
+import { AppConfig } from './infra/config/config.js';
+import { SpaFallbackFilter } from './infra/static/spa-fallback.filter.js';
+import { registerStaticSite } from './infra/static/static-site.js';
 
 export async function createApp(config: AppConfig): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(

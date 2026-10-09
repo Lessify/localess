@@ -2,9 +2,9 @@ import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs
 import { RouteConfig } from '@nestjs/platform-fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
-import { APP_CONFIG, AppConfig } from '../config/config.js';
-import { UserDto, UserRow, UsersService } from '../users/users.service.js';
+import { ZodValidationPipe } from '../infra/http/zod-validation.pipe.js';
+import { APP_CONFIG, AppConfig } from '../infra/config/config.js';
+import { UserDto, UserRow, UsersService } from './users/users.service.js';
 import { AuthService } from './auth.service.js';
 import { Public } from './decorators.js';
 import { PASSWORD_MIN_LENGTH } from './password.js';

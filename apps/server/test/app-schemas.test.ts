@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces } from '../src/database/schema.js';
+import { spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: schemas', () => {

@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { UserPermission } from '@localess/shared';
-import { sessions, users } from '../src/database/schema.js';
-import { UsersService } from '../src/users/users.service.js';
+import { sessions, users } from '../src/infra/database/schema.js';
+import { UsersService } from '../src/auth/users/users.service.js';
 import { createTestApp, login, sessionCookie, TestApp, XHR } from './test-app.js';
 
 describe('authentication', () => {
@@ -185,7 +185,7 @@ describe('authentication: accounts imported from Firebase', () => {
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_LOGIN_RATE_LIMIT: '1000' });
-    const { userCredentials } = await import('../src/database/schema.js');
+    const { userCredentials } = await import('../src/infra/database/schema.js');
     const { encodeFirebaseHash } = await import('../src/auth/firebase-scrypt.js');
     const user = await t.app.get(UsersService).create({ email: 'imported@example.com', role: 'custom' });
     await t.db.insert(userCredentials).values({
@@ -207,7 +207,7 @@ describe('authentication: accounts imported from Firebase', () => {
   afterAll(() => t?.close());
 
   it('signs in with the Firebase password, then re-hashes it to argon2id', async () => {
-    const { userCredentials } = await import('../src/database/schema.js');
+    const { userCredentials } = await import('../src/infra/database/schema.js');
     const wrong = await t.request({
       method: 'POST',
       url: '/api/auth/login',
