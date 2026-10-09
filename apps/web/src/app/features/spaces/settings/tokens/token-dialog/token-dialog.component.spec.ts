@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
-import { TokenForm, TokenPermission } from '@shared/models/token.model';
+import { TokenPermission } from '@localess/shared';
+import { TokenForm } from '@shared/models/token.model';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 

@@ -76,11 +76,9 @@ and they are allowed to differ. Every locale we list is bidirectional today (`GC
 and `GCP_TARGET_ONLY_LOCALES` standing empty next to it; a language later observed to be one-way is a one-line move rather than a
 restructure.
 
-The same lists live twice - in `apps/server/src/domain/lib/translate-locales.ts`, which validates the request when the server's provider is
-Google, and in `apps/web/src/app/shared/services/locale.service.ts`, which decides what the UI offers and enables the translate button.
-`apps/server/src/domain/lib/translate-locales-parity.test.ts` reads both files and fails if they drift, because a locale the UI offers and the
-backend rejects only surfaces after the user pays for the round-trip. When the server is configured for DeepL it validates against its own
-DeepL lists (same file), which the UI does not mirror.
+The lists are defined once, in `packages/shared/src/locales.ts`: the server validates requests against them when its provider is Google,
+and `LocaleService` uses the same sets to decide what the UI offers and when to enable the translate button. The DeepL lists live in the
+same file; the server validates against them when configured for DeepL, but the UI still offers the Google set.
 
 ### Locale icons
 

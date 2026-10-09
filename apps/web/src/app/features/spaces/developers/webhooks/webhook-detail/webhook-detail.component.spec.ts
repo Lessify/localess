@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@shared/models/webhook.model';
+import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { WebHookService } from '@shared/services/webhook.service';
 import { SpaceStore } from '@shared/stores/space.store';

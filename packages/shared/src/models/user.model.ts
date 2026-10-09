@@ -1,32 +1,31 @@
+import type { Timestamp } from './timestamp.js';
+
 export interface User {
-  /**
-   * The user's `uid`.
-   */
   readonly id: string;
   /**
    * The user's primary email, if set.
    */
-  email?: string;
+  readonly email?: string;
   /**
    * Whether or not the user's primary email is verified.
    */
-  emailVerified: boolean;
+  readonly emailVerified: boolean;
   /**
    * The user's display name.
    */
-  displayName?: string;
+  readonly displayName?: string;
   /**
    * The user's photo URL.
    */
-  photoURL?: string;
+  readonly photoURL?: string;
   /**
    * The user's primary phone number, if set.
    */
-  phoneNumber?: string;
+  readonly phoneNumber?: string;
   /**
    * Whether or not the user is disabled: true for disabled; false for enabled.
    */
-  disabled: boolean;
+  readonly disabled: boolean;
 
   // Custom Claims
   role?: UserRole;
@@ -35,8 +34,8 @@ export interface User {
   // Providers
   providers: string[];
   // Metadata
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface UserInvite {
@@ -48,6 +47,7 @@ export interface UserInvite {
   lock?: boolean;
 }
 
+/** App API `PUT /api/app/users/{id}` body. */
 export interface UserUpdate {
   role?: UserRole;
   permissions?: UserPermission[];

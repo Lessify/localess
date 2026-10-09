@@ -1,6 +1,7 @@
 import type { Timestamp } from './timestamp.js';
 
 export interface WebHook {
+  id: string;
   name: string;
   url: string;
   enabled: boolean;
@@ -34,7 +35,7 @@ export interface WebHookPayload {
   event: WebHookEvent;
   spaceId: string;
   timestamp: string;
-  data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
+  data: WebHookPayloadData;
   signature?: string;
 }
 
@@ -47,11 +48,14 @@ export interface TranslationWebHookPayloadData {
   translationId?: string;
 }
 
+export type WebHookPayloadData = ContentWebHookPayloadData | TranslationWebHookPayloadData;
+
 export interface WebHookLogBase {
+  id: string;
   event: WebHookEvent;
   url: string;
   requestSize: number;
-  data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
+  data: WebHookPayloadData;
   deliveryId: string;
   duration: number;
   createdAt: Timestamp;
@@ -76,3 +80,14 @@ export interface WebHookLogFailure extends WebHookLogBase {
 }
 
 export type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
+
+// App API requests
+export interface WebHookCreate {
+  name: string;
+  url: string;
+  events: WebHookEvent[];
+  headers?: Record<string, string>;
+  secret?: string;
+}
+
+export type WebHookUpdate = WebHookCreate;

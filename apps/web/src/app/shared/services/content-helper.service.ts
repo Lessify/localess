@@ -1,8 +1,18 @@
 import { inject, Injectable } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, FormRecord, ValidatorFn, Validators } from '@angular/forms';
-import { ContentAsset, ContentData, ContentError, ContentReference } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { isFieldTranslatable, Schema, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentAsset,
+  ContentData,
+  ContentReference,
+  isFieldTranslatable,
+  Schema,
+  SchemaComponent,
+  SchemaField,
+  SchemaFieldKind,
+  SchemaType,
+} from '@localess/shared';
+import { ContentError } from '@shared/models/content.model';
 import { extractSchemaContent } from '@shared/utils/content';
 import { CommonValidator } from '@shared/validators/common.validator';
 

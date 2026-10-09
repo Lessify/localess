@@ -11,7 +11,7 @@ import {
   ContentFolderCreate,
   ContentKind,
   ContentUpdate,
-} from '@shared/models/content.model';
+} from '@localess/shared';
 import { normalizeContent } from '@shared/utils/content';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';

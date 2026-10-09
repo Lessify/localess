@@ -12,7 +12,7 @@ import {
   ContentKind,
   Translation,
   TranslationExport,
-} from '../models/index.js';
+} from '@localess/shared';
 import { isLabelsEqual } from './import-utils.js';
 
 /*

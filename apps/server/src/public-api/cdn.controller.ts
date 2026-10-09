@@ -1,7 +1,7 @@
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { ContentDocumentApi, ContentKind, TokenPermission } from '@localess/shared';
 import { Public } from '../auth/decorators.js';
-import { ContentDocumentApi, ContentKind, TokenPermission } from '../domain/models/index.js';
 import { AssetDeliveryService } from './asset-delivery.service.js';
 import { CACHE_MAX_AGE, CACHE_REDIRECT_MAX_AGE_DEFAULT, CACHE_SHARE_MAX_AGE, publicCache, TEN_MINUTES } from './cache-control.js';
 import { isValidId } from './lib/id-param.js';

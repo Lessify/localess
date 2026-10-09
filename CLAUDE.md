@@ -27,6 +27,7 @@ npm run prettier:fix   # Format code
 npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
 npm run test:scripts   # node:test suites for tools/scripts and packages/visual-editor-sync
 npm run server:test    # Server vitest suite (real embedded Postgres, one database per file)
+npm run shared:test    # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
 
 # Server CLI (apps/server/src/cli; needs `npm run server:build` first)
 npm run localess -- <command>   # e.g. user:create, user:reset-password, migrate
@@ -57,12 +58,15 @@ npm workspaces monorepo (one root `package.json` + lockfile; run everything from
 ```
 apps/web/                  # @localess/web — Angular app (angular.json at the repo root, project root apps/web)
 apps/server/               # @localess/server — NestJS server, Drizzle migrations in apps/server/drizzle
+packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, permissions, locales, extractContent; zod validators in @localess/shared/zod
 packages/ui/               # @localess/ui — Spartan/Helm components (source only), imported as @spartan-ng/helm/*
 packages/visual-editor-sync/ # sync-v1.js for customer sites in the Visual Editor, built into the web assets
 tools/scripts/             # repo tooling: version bump, version.json, locale flags generator
 tools/openapi/             # third-party OpenAPI specs for code generation
 docs/                      # project knowledge base (see table below)
 ```
+
+Domain types are defined once in `packages/shared`: import them from `@localess/shared` in both apps (never redeclare a model on one side). The server compiles against its `dist` (`tsc -b` builds it first); the web app and the server tests read its source.
 
 Workspace-specific commands: `npm run <script> -w @localess/server` (e.g. `db:generate`).
 Structure refactoring plan: [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md).
@@ -73,7 +77,7 @@ Structure refactoring plan: [docs/roadmap/monorepo-structure.md](docs/roadmap/mo
 apps/web/src/app/
 ├── core/          # Singleton services: error handler, HTTP interceptors, title service
 ├── shared/        # Cross-feature code
-│   ├── models/    # TypeScript interfaces for all domain types
+│   ├── models/    # UI-only model helpers (labels, icons, sorting, form shapes); domain types come from @localess/shared
 │   ├── services/  # Domain services calling the server's App API over HttpClient
 │   ├── stores/    # 4 NgRx Signal stores (UserStore, SpaceStore, AppSettingsStore, LocalSettingsStore)
 │   ├── guards/    # dirty-form.guard.ts (unsaved-changes guard); permission guards live in features-routing.module.ts

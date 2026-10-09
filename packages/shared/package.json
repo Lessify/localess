@@ -1,0 +1,28 @@
+{
+  "name": "@localess/shared",
+  "version": "4.1.0",
+  "private": true,
+  "description": "Domain contract shared by apps/server and apps/web: models, enums, permissions, locales, zod validators.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./zod": {
+      "types": "./dist/zod.d.ts",
+      "default": "./dist/zod.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "tsc -p tsconfig.test.json && vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

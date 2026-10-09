@@ -2,9 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
+import { Space, SpaceCreate, SpaceEnvironment, SpaceUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
-
-import { Space, SpaceCreate, SpaceEnvironment, SpaceUpdate } from '../models/space.model';
 
 const BASE = '/api/app/spaces';
 

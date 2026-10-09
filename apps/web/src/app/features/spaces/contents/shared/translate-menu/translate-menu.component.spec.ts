@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@localess/shared';
 import { UserStore } from '@shared/stores/user.store';
 
 import { TranslateMenuComponent } from './translate-menu.component';

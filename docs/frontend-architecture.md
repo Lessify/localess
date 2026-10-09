@@ -27,7 +27,7 @@ apps/web/src/
     core/                  ← singleton: api/ (runtime config, SSE, liveQuery, apiInterceptor), error handlers, HTTP interceptors, title strategy, utils
     features/              ← all authenticated feature routes (lazy-loaded)
     auth/                  ← AuthModule: login/ (email + Google / Microsoft redirect), reset/ (request link), reset-confirm/ (set new password)
-    shared/                ← cross-feature: models, services, stores, guards, pipes
+    shared/                ← cross-feature: UI model helpers, services, stores, guards, pipes
   environments/            ← build-time constants only (appName, production, version)
   assets/                  ← static files (version.json, icons)
 packages/ui/               ← 44+ reusable Spartan/Helm components (imported as @spartan-ng/helm/*)
@@ -124,7 +124,8 @@ Singleton services initialized once at app startup:
 
 ```
 shared/
-  models/        ← TypeScript interfaces for the API's JSON shapes (timestamps are ISO strings)
+  models/        ← UI-only model helpers (labels, icons, sorting, form shapes). The API's JSON shapes themselves
+                   (timestamps are ISO strings), enums and permission rules come from `@localess/shared` (packages/shared)
   services/      ← ~20 HttpClient services, one per domain entity; reads are `liveQuery`s
   stores/        ← 4 NgRx Signal stores (see frontend-state.md)
   guards/        ← permission.guard (`permissionGuard`), dirty-form.guard (unsaved changes warning)

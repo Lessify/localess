@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn, Router } from '@angular/router';
-import { UserPermission } from '@shared/models/user.model';
+import { UserPermission } from '@localess/shared';
 import { UserStore } from '@shared/stores/user.store';
 import { filter, map, take } from 'rxjs';
 

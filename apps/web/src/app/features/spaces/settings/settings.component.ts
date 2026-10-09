@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFingerprintPattern, lucideGlobe, lucideLayoutDashboard, lucideShredder, lucideVectorSquare } from '@ng-icons/lucide';
-import { Space } from '@shared/models/space.model';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 

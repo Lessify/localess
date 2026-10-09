@@ -1,43 +1,30 @@
-import { UserRole } from '@shared/models/user.model';
+import { canGrant, canManageUser as sharedCanManageUser, Principal } from '@localess/shared';
+
+/*
+ * UI wording of the user-management rules. The rules themselves are `canGrant` / `canManageUser` in
+ * @localess/shared — the same functions the server enforces — so the UI only offers what the server allows.
+ */
 
 /** The signed-in user, as far as managing other users is concerned. */
-export interface UserManager {
-  id: string;
-  role: UserRole | undefined;
-  permissions: readonly string[] | undefined;
-}
+export type UserManager = Principal;
 
 /** The user being managed. */
-export interface ManagedUser {
-  id: string;
-  role?: UserRole;
-  permissions?: readonly string[];
-}
+export type ManagedUser = Principal;
 
 /**
- * Mirrors `canGrant` / `canManageUser` in apps/server/src/auth/permissions.ts, so the UI only offers what the server
- * allows. Admins may manage anyone. A custom user with USER_MANAGEMENT may manage a user only when
- * they fully outrank them: not themselves, not an admin, and not someone holding a permission the
- * manager lacks.
+ * Admins may manage anyone. A custom user with USER_MANAGEMENT may manage a user only when they fully
+ * outrank them: not themselves, not an admin, and not someone holding a permission the manager lacks.
  */
 export function canManageUser(manager: UserManager, target: ManagedUser): boolean {
-  if (manager.role === 'admin') return true;
-  if (!isUserManager(manager)) return false;
-  if (target.id === manager.id || target.role === 'admin') return false;
-  return (target.permissions ?? []).every(permission => canGrantPermission(manager, permission));
+  return sharedCanManageUser(manager, target);
 }
 
-/** Only admins may grant the admin role. */
+/** Only admins may make someone an admin. */
 export function canGrantAdmin(manager: UserManager): boolean {
-  return manager.role === 'admin';
+  return canGrant(manager, 'admin', []);
 }
 
-/** A user manager may grant only permissions they hold themselves. */
+/** Admins may grant anything; a user manager only permissions they hold themselves. */
 export function canGrantPermission(manager: UserManager, permission: string): boolean {
-  if (manager.role === 'admin') return true;
-  return isUserManager(manager) && (manager.permissions ?? []).includes(permission);
-}
-
-function isUserManager(manager: UserManager): boolean {
-  return manager.role === 'custom' && (manager.permissions ?? []).includes('USER_MANAGEMENT');
+  return canGrant(manager, undefined, [permission]);
 }

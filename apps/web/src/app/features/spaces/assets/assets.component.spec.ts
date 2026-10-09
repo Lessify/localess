@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
+import { AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { AssetService } from '@shared/services/asset.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';

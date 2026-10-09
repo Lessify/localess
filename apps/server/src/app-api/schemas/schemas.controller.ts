@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
+import { UserPermission } from '@localess/shared';
+import { zSchemaTemplateSchema } from '@localess/shared/zod';
 import { RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
-import { zSchemaExportArraySchema } from '../../domain/models/index.js';
 import { toDto } from '../common/dto.js';
 import { zLabels } from '../common/zod.js';
 import { SchemaRow, SchemasService } from './schemas.service.js';
@@ -20,7 +20,6 @@ const updateSchema = z.object({
   fields: z.array(z.record(z.string(), z.unknown())).optional(),
   values: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
 });
-const templateSchema = z.object({ schemas: zSchemaExportArraySchema });
 
 const dto = (row: SchemaRow) => toDto(row);
 
@@ -52,7 +51,7 @@ export class SchemasController {
   @RequirePermission(UserPermission.SCHEMA_CREATE)
   async applyTemplate(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(templateSchema)) body: z.infer<typeof templateSchema>,
+    @Body(new ZodValidationPipe(zSchemaTemplateSchema)) body: z.infer<typeof zSchemaTemplateSchema>,
   ) {
     const rows = await this.schemas.createMany(
       spaceId,

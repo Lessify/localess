@@ -1,7 +1,7 @@
 import { Controller, Get, HttpException, HttpStatus, Inject, NotImplementedException, Query } from '@nestjs/common';
 import { z } from 'zod';
+import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { APP_CONFIG, AppConfig } from '../../config/config.js';
 import { normalizePaging } from './unsplash-paging.js';

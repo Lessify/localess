@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
+import { Principal, UserRole } from '@localess/shared';
 import { hashPassword } from '../auth/password.js';
-import { Principal, UserRole } from '../auth/permissions.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { newId } from '../database/id.js';
 import { userCredentials, userIdentities, users } from '../database/schema.js';

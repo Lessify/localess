@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
-import { UserPermission } from '../src/auth/permissions.js';
+import { UserPermission } from '@localess/shared';
 import { passwordResetTokens } from '../src/database/schema.js';
 import { MailMessage, MailService } from '../src/mail/mail.service.js';
 import { UserRow, UsersService } from '../src/users/users.service.js';

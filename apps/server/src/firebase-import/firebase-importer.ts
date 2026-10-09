@@ -210,7 +210,9 @@ export class FirebaseImporter {
       }
     }
     if (!this.options.scrypt && this.report.users) {
-      this.warn('no password hash parameters given: password users must reset their password (see FIREBASE_SCRYPT_* in apps/server/README.md)');
+      this.warn(
+        'no password hash parameters given: password users must reset their password (see FIREBASE_SCRYPT_* in apps/server/README.md)',
+      );
     }
   }
 

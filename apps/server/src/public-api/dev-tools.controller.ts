@@ -1,13 +1,13 @@
 import { Controller, Get, Inject, Req, Res } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Schema, TokenPermission } from '@localess/shared';
 import { Public } from '../auth/decorators.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { schemas } from '../database/schema.js';
 import { generateOpenApi } from '../domain/lib/open-api.service.js';
 import { docSchemaToExport } from '../domain/lib/schema.utils.js';
 import { storedLocaleValues } from '../domain/lib/translation.utils.js';
-import { Schema, TokenPermission } from '../domain/models/index.js';
 import { schemaFromRow, translationFromRow } from '../domain/row-mappers.js';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from './cache-control.js';
 import { validIdParams } from './cdn.controller.js';

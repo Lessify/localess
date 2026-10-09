@@ -1,14 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, asc, eq, inArray, like, or, sql } from 'drizzle-orm';
 import type { ZodError } from 'zod';
-import { AssetMetadataService } from '../app-api/assets/asset-metadata.service.js';
-import { folderPath } from '../app-api/assets/assets.service.js';
-import { bumpVersion } from '../app-api/common/space-access.js';
-import { APP_CONFIG, AppConfig } from '../config/config.js';
-import { DATABASE, Database } from '../database/database.module.js';
-import { assets, contents, schemas, taskLogs, tasks, translations } from '../database/schema.js';
-import { isAssetChanged, isContentChanged, isTranslationChanged } from '../domain/lib/import-diff.js';
-import { docSchemaToExport, planSchemaPush } from '../domain/lib/schema.utils.js';
 import {
   Asset,
   AssetExport,
@@ -19,12 +11,22 @@ import {
   Translation,
   TranslationExport,
   WebHookEvent,
+} from '@localess/shared';
+import {
   zAssetExportArraySchema,
   zContentExportArraySchema,
   zSchemaExportArraySchema,
   zTranslationExportArraySchema,
   zTranslationFlatExportSchema,
-} from '../domain/models/index.js';
+} from '@localess/shared/zod';
+import { AssetMetadataService } from '../app-api/assets/asset-metadata.service.js';
+import { folderPath } from '../app-api/assets/assets.service.js';
+import { bumpVersion } from '../app-api/common/space-access.js';
+import { APP_CONFIG, AppConfig } from '../config/config.js';
+import { DATABASE, Database } from '../database/database.module.js';
+import { assets, contents, schemas, taskLogs, tasks, translations } from '../database/schema.js';
+import { isAssetChanged, isContentChanged, isTranslationChanged } from '../domain/lib/import-diff.js';
+import { docSchemaToExport, planSchemaPush } from '../domain/lib/schema.utils.js';
 import { schemaFromRow, translationFromRow } from '../domain/row-mappers.js';
 import { applySchemaPushPlan } from '../domain/schema-push.js';
 import { EventsService } from '../events/events.service.js';

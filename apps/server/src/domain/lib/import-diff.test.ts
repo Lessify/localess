@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Asset, AssetExport, Content, ContentExport, Translation, TranslationExport } from '../models/index.js';
+import { Asset, AssetExport, Content, ContentExport, Translation, TranslationExport } from '@localess/shared';
 import { isAssetChanged, isContentChanged, isLocalesEqual, isTranslationChanged } from './import-diff.js';
 
 describe('isAssetChanged', () => {

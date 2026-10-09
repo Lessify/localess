@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@localess/shared';
 
 import { TranslateLocaleDialogContext } from './translate-locale-dialog.model';
 import { TranslateLocaleDialogComponent } from './translate-locale-dialog.component';

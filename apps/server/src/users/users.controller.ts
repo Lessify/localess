@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { canGrant, canManageUser, USER_PERMISSIONS, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../auth/decorators.js';
 import { PASSWORD_MIN_LENGTH } from '../auth/password.js';
 import { PasswordResetService } from '../auth/password-reset.service.js';
 import { publicOrigin } from '../auth/public-url.js';
-import { canGrant, canManageUser, USER_PERMISSIONS, UserPermission } from '../auth/permissions.js';
 import { CurrentUser } from '../auth/request-context.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { EventsService } from '../events/events.service.js';

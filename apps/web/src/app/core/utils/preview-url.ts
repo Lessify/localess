@@ -1,4 +1,4 @@
-import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
+import { CONTENT_DEFAULT_LOCALE } from '@localess/shared';
 
 /** Values a preview environment URL can be filled with, see {@link resolvePreviewUrl}. */
 export interface PreviewUrlContext {

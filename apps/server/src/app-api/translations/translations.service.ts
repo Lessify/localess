@@ -1,8 +1,8 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
+import { WebHookEvent } from '@localess/shared';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { spaces, translationPublished, translations } from '../../database/schema.js';
-import { WebHookEvent } from '../../domain/models/index.js';
 import { EventsService } from '../../events/events.service.js';
 import { buildTranslationMap } from '../../public-api/public-content.service.js';
 import { TranslateService } from '../../translate/translate.service.js';

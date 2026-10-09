@@ -2,6 +2,7 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { DEFAULT_LOCALE, Locale, Translation, TranslationUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowRight, lucideCopy, lucideLanguages, lucidePencil, lucideReplace, lucideSave, lucideTrash } from '@ng-icons/lucide';
 import {
@@ -12,8 +13,7 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { Locale, TRANSLATION_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { Translation, TranslationStatus, TranslationUpdate } from '@shared/models/translation.model';
+import { TranslationStatus } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
@@ -96,8 +96,8 @@ export class TranslationDetailComponent {
   // Outputs
   readonly save = output<{ translation: Translation; locale: Locale; value: string }>();
 
-  selectedSourceLocale = linkedSignal(() => this.localeFallback() ?? TRANSLATION_DEFAULT_LOCALE);
-  selectedTargetLocale = linkedSignal(() => this.localeFallback() ?? TRANSLATION_DEFAULT_LOCALE);
+  selectedSourceLocale = linkedSignal(() => this.localeFallback() ?? DEFAULT_LOCALE);
+  selectedTargetLocale = linkedSignal(() => this.localeFallback() ?? DEFAULT_LOCALE);
   selectedTranslationLocaleValue = linkedSignal(() => {
     return this.translation()?.locales[this.selectedTargetLocale().id] || '';
   });

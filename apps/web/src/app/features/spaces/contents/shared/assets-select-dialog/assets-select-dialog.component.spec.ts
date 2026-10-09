@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { Asset, AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
+import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { AssetService } from '@shared/services/asset.service';
 import { of, throwError } from 'rxjs';

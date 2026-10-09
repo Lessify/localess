@@ -1,23 +1,16 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, NotFoundException, Param, Post, Put, Query } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { newId } from '../../database/id.js';
 import { tokens } from '../../database/schema.js';
-import { TokenPermission } from '../../domain/models/index.js';
 import { EventsService } from '../../events/events.service.js';
 import { toDto } from '../common/dto.js';
 import { requireSpace } from '../common/space-access.js';
 
-const V1_IMPLICIT = [
-  TokenPermission.TRANSLATION_PUBLIC,
-  TokenPermission.TRANSLATION_DRAFT,
-  TokenPermission.CONTENT_PUBLIC,
-  TokenPermission.CONTENT_DRAFT,
-];
 const tokenSchema = z.object({
   name: z.string().trim().min(1).max(200),
   permissions: z.array(z.enum(Object.values(TokenPermission) as [TokenPermission, ...TokenPermission[]])).max(10),
@@ -114,7 +107,7 @@ export class TokensController {
           spaceId,
           version: 2,
           name: old.name,
-          permissions: old.version === 2 ? old.permissions : V1_IMPLICIT,
+          permissions: old.version === 2 ? old.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
           cacheTtl: old.version === 2 ? old.cacheTtl : null,
           createdAt: old.createdAt,
         })

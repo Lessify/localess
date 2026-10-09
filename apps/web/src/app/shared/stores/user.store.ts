@@ -1,9 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
+import { User, UserRole } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { User, UserRole } from '@shared/models/user.model';
 import { pipe, switchMap } from 'rxjs';
 
 const LS_KEY = 'LL-USER-STATE';

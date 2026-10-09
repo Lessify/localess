@@ -50,3 +50,6 @@ Thumbs.db
 # Local data of the self-hosted server (embedded Postgres, storage)
 .data
 
+
+# TypeScript incremental build state (tsc -b)
+*.tsbuildinfo

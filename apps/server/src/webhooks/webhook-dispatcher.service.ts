@@ -1,11 +1,11 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { and, arrayContains, eq } from 'drizzle-orm';
+import { WebHookEvent } from '@localess/shared';
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { webhookLogs, webhooks } from '../database/schema.js';
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../domain/lib/webhook-request.js';
-import { WebHookEvent } from '../domain/models/index.js';
 import { EventsService } from '../events/events.service.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;

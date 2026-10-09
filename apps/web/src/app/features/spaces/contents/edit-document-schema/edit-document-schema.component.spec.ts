@@ -3,9 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { ContentData } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { CONTENT_DEFAULT_LOCALE, ContentData, Locale, Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserStore } from '@shared/stores/user.store';
 

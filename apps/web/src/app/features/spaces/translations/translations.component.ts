@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CONTENT_DEFAULT_LOCALE, Locale, TokenPermission, Translation, TranslationCreate, TranslationType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -22,9 +23,6 @@ import {
   TranslateLocaleDialogContext,
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { TokenPermission } from '@shared/models/token.model';
-import { Translation, TranslationCreate, TranslationType } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';

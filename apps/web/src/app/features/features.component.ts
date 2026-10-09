@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
+import { Space, USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@localess/shared';
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
@@ -53,8 +54,6 @@ import { LogoComponent } from '@shared/components/logo';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
-import { Space } from '@shared/models/space.model';
-import { USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@shared/models/user.model';
 import { Version } from '@shared/models/version.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { AuthApiService } from '@shared/services/auth-api.service';

@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { Schema, SchemaComponentUpdate, SchemaCreate, SchemaEnumUpdate, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaComponentUpdate, SchemaCreate, SchemaEnumUpdate, SchemaType } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 

@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { User } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -37,7 +38,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { User } from '@shared/models/user.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { UserService } from '@shared/services/user.service';
 import { UserStore } from '@shared/stores/user.store';

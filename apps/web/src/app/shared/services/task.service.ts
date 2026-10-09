@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Task, TaskKind, TaskLog } from '@shared/models/task.model';
+import { Task, TaskKind, TaskLog } from '@localess/shared';
 import { Observable, of } from 'rxjs';
 
 /** Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`); reads are live. */

@@ -1,18 +1,33 @@
+import type { Locale } from './locale.model.js';
 import type { Timestamp } from './timestamp.js';
-import { Locale } from './locale.model.js';
-
-export const DEFAULT_LOCALE: Locale = { id: 'en', name: 'English' };
 
 export interface Space {
+  id: string;
   name: string;
   locales: Locale[];
   localeFallback: Locale;
+  /** Preview environments for the Visual Editor (http(s) URLs only). */
+  environments?: SpaceEnvironment[];
   // overview
   overview?: SpaceOverview;
   progress?: ProgressOverview;
   // timestamp
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface SpaceEnvironment {
+  name: string;
+  url: string;
+}
+
+// App API requests
+export interface SpaceCreate {
+  name: string;
+}
+
+export interface SpaceUpdate {
+  name: string;
 }
 
 export interface SpaceOverviewData {

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { WebHook, WebHookCreate, WebHookLog, WebHookUpdate } from '@shared/models/webhook.model';
+import { WebHook, WebHookCreate, WebHookLog, WebHookUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 

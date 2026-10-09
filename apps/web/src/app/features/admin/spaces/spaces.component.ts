@@ -17,6 +17,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
 import {
@@ -29,7 +30,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { Space } from '@shared/models/space.model';
 import { SpaceTemplateId } from '@shared/models/space-template.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';

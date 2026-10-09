@@ -1,3 +1,5 @@
+import type { Timestamp } from './timestamp.js';
+
 export enum TaskKind {
   ASSET_EXPORT = 'ASSET_EXPORT',
   ASSET_IMPORT = 'ASSET_IMPORT',
@@ -28,7 +30,7 @@ export interface TaskLog {
   level: TaskLogLevel;
   message: string;
   trace?: string;
-  createdAt: string;
+  createdAt: Timestamp;
 }
 
 export interface TaskFile {
@@ -45,8 +47,8 @@ export interface TaskBase {
   message?: string;
   trace?: string;
   // Dates
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface TaskAssetExport extends TaskBase {
@@ -98,6 +100,7 @@ export interface TaskSchemaImport extends TaskBase {
 
 export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
+  type: 'full' | 'flat-json' | 'nested-json';
   // Export locale
   locale?: string;
   // Exported file
@@ -128,3 +131,93 @@ export type Task =
 export type TaskExport = TaskAssetExport | TaskContentExport | TaskSchemaExport | TaskTranslationExport;
 
 export type TaskImport = TaskAssetImport | TaskContentImport | TaskSchemaImport | TaskTranslationImport;
+
+// FireStore
+export interface TaskExportMetadata {
+  kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION';
+  path?: string;
+}
+
+/**
+ * Type Guard for Asset Export Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskAssetExport(task: Task): task is TaskAssetExport {
+  return task.kind === TaskKind.ASSET_EXPORT;
+}
+
+/**
+ * Type Guard for Asset Import Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskAssetImport(task: Task): task is TaskAssetImport {
+  return task.kind === TaskKind.ASSET_IMPORT;
+}
+
+/**
+ * Type Guard for Asset Regenerate Metadata Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskAssetRegenMetadata(task: Task): task is TaskAssetRegenMetadata {
+  return task.kind === TaskKind.ASSET_REGEN_METADATA;
+}
+/**
+ * Type Guard for Content Export Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskContentExport(task: Task): task is TaskContentExport {
+  return task.kind === TaskKind.CONTENT_EXPORT;
+}
+/**
+ * Type Guard for Content Import Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskContentImport(task: Task): task is TaskContentImport {
+  return task.kind === TaskKind.CONTENT_IMPORT;
+}
+/**
+ * Type Guard for Schema Export Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskSchemaExport(task: Task): task is TaskSchemaExport {
+  return task.kind === TaskKind.SCHEMA_EXPORT;
+}
+/**
+ * Type Guard for Schema Import Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskSchemaImport(task: Task): task is TaskSchemaImport {
+  return task.kind === TaskKind.SCHEMA_IMPORT;
+}
+/**
+ * Type Guard for Translation Export Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskTranslationExport(task: Task): task is TaskTranslationExport {
+  return task.kind === TaskKind.TRANSLATION_EXPORT;
+}
+/**
+ * Type Guard for Translation Import Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskTranslationImport(task: Task): task is TaskTranslationImport {
+  return task.kind === TaskKind.TRANSLATION_IMPORT;
+}
+
+/**
+ * Type Guard for Export Task
+ * @param {Task}task
+ * @return {boolean}
+ */
+export function isTaskExport(task: Task): task is TaskAssetExport | TaskContentExport | TaskSchemaExport | TaskTranslationExport {
+  return [TaskKind.ASSET_EXPORT, TaskKind.CONTENT_EXPORT, TaskKind.SCHEMA_EXPORT, TaskKind.TRANSLATION_EXPORT].includes(task.kind);
+}

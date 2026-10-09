@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { UserPermission } from '@shared/models/user.model';
+import { UserPermission } from '@localess/shared';
 import { UserStore } from '@shared/stores/user.store';
 import { firstValueFrom, Observable } from 'rxjs';
 

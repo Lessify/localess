@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Locale } from '@shared/models/locale.model';
-import { Space } from '@shared/models/space.model';
-import { Token, TokenPermission } from '@shared/models/token.model';
-import { Translation, TranslationType } from '@shared/models/translation.model';
+import { Locale, Space, Token, TokenPermission, Translation, TranslationType } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { TaskService } from '@shared/services/task.service';
 import { TokenService } from '@shared/services/token.service';

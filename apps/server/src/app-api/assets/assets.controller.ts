@@ -16,8 +16,8 @@ import {
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
+import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { toDto } from '../common/dto.js';
 import { AssetRow, AssetsService } from './assets.service.js';

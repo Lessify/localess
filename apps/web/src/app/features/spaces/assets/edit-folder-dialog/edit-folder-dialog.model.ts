@@ -1,4 +1,4 @@
-import { AssetFolder } from '@shared/models/asset.model';
+import { AssetFolder } from '@localess/shared';
 
 export interface EditFolderDialogContext {
   asset: AssetFolder;

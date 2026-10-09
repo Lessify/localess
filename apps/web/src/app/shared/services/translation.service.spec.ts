@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Translation, TranslationType } from '../models/translation.model';
+import { Translation, TranslationType } from '@localess/shared';
 import { TranslationService } from './translation.service';
 
 const BASE = '/api/app/spaces/space-1/translations';

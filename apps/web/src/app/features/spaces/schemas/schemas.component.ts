@@ -16,6 +16,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -43,7 +44,7 @@ import {
 } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
+import { schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';

@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -32,7 +33,6 @@ import {
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeBetweenPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';

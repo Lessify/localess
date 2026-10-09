@@ -1,13 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, NotFoundException, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { and, asc, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { UserPermission, WebHookEvent } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { newId } from '../../database/id.js';
 import { webhookLogs, webhooks } from '../../database/schema.js';
-import { WebHookEvent } from '../../domain/models/index.js';
 import { EventsService } from '../../events/events.service.js';
 import { toDto } from '../common/dto.js';
 import { requireSpace } from '../common/space-access.js';

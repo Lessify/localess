@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideChevronRight, lucideInfo, lucidePencil, lucideWebhook, lucideWebhookOff } from '@ng-icons/lucide';
 import {
@@ -26,7 +27,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
-import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@shared/models/webhook.model';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { WebHookService } from '@shared/services/webhook.service';

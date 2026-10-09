@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { User, UserPermission } from '../models/user.model';
+import { User, UserPermission } from '@localess/shared';
 import { UserService } from './user.service';
 
 describe('UserService', () => {

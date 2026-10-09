@@ -1,9 +1,9 @@
 import { ConflictException, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { DEFAULT_LOCALE } from '@localess/shared';
 import { hashPassword, PASSWORD_MIN_LENGTH } from '../auth/password.js';
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { newId } from '../database/id.js';
-import { DEFAULT_LOCALE } from '../domain/models/space.model.js';
 import { spaces, userCredentials, users } from '../database/schema.js';
 import { UsersService } from '../users/users.service.js';
 

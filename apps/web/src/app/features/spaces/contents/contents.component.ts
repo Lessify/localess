@@ -4,6 +4,17 @@ import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, 
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import {
+  Content,
+  ContentDocument,
+  ContentDocumentCreate,
+  ContentFolderCreate,
+  ContentKind,
+  ContentUpdate,
+  Schema,
+  SchemaType,
+  TokenPermission,
+} from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideBookCopy,
@@ -33,17 +44,8 @@ import {
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import {
-  Content,
-  ContentDocument,
-  ContentDocumentCreate,
-  ContentFolderCreate,
-  ContentKind,
-  ContentUpdate,
-  sortContent,
-} from '@shared/models/content.model';
-import { Schema, SchemaType, sortSchema } from '@shared/models/schema.model';
-import { TokenPermission } from '@shared/models/token.model';
+import { sortContent } from '@shared/models/content.model';
+import { sortSchema } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';

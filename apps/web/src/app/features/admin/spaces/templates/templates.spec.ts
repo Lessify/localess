@@ -1,4 +1,4 @@
-import { SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { SpaceTemplateComponent, SpaceTemplateEnum } from '@shared/models/space-template.model';
 
 import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index';
@@ -40,7 +40,7 @@ describe('SPACE_TEMPLATES', () => {
     });
 
     it('uses schema ids the import path would accept', () => {
-      // Mirrors apps/server/src/domain/models/schema.zod.test.ts: >= 2 chars, starts with a letter,
+      // Mirrors packages/shared/src/models/schema.zod.test.ts: >= 2 chars, starts with a letter,
       // and `contentdata` is reserved.
       for (const schema of template.schemas) {
         expect(schema.id.length).toBeGreaterThanOrEqual(2);

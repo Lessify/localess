@@ -1,4 +1,4 @@
-import { SchemaComponent, SchemaEnum } from './schema.model';
+import { SchemaComponent, SchemaEnum } from '@localess/shared';
 
 export type SpaceTemplateId = 'EMPTY' | 'ECOMMERCE' | 'BLOG' | 'MARKETING';
 

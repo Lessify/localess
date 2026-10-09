@@ -61,8 +61,8 @@ instances can start at once). Without `DATABASE_URL` it starts an embedded Postg
 - Every non-GET request authenticated by the cookie must send `X-Requested-With` (CSRF).
 - Routes need a session unless `@Public()`; access rules use `@RequireAnyRole()`,
   `@RequirePermission(...)` (any of) and `@RequireAllPermissions(...)` from `src/auth/decorators.ts`.
-- `src/auth/permissions.ts` holds `canPerform`, `canGrant` and `canManageUser`, ported from
-  firestore.rules and functions/src/utils.
+- `canPerform`, `canGrant` and `canManageUser` (ported from firestore.rules and functions/src/utils) live in
+  `packages/shared/src/permissions.ts`, so the UI applies the same rules.
 
 | Endpoint | |
 |---|---|

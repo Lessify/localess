@@ -15,6 +15,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { Asset, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -32,7 +33,7 @@ import {
 import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { Asset, AssetKind, fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } from '@shared/models/asset.model';
+import { fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } from '@shared/models/asset.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';

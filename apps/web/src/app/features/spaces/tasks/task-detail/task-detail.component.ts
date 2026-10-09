@@ -14,12 +14,12 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { Task, TaskLog, TaskLogLevel } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideChevronRight, lucideDownload } from '@ng-icons/lucide';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
-import { Task, TaskLog, TaskLogLevel } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TaskService } from '@shared/services/task.service';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';

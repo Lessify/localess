@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, sql, sum } from 'drizzle-orm';
+import { DEFAULT_LOCALE } from '@localess/shared';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { newId } from '../../database/id.js';
 import {
@@ -13,7 +14,6 @@ import {
   translationPublished,
   translations,
 } from '../../database/schema.js';
-import { DEFAULT_LOCALE } from '../../domain/models/space.model.js';
 import { EventsService } from '../../events/events.service.js';
 import { STORAGE_DRIVER, StorageDriver } from '../../storage/storage.driver.js';
 import { toDto } from '../common/dto.js';

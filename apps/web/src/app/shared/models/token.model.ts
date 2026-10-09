@@ -1,38 +1,8 @@
-export enum TokenPermission {
-  TRANSLATION_PUBLIC = 'TRANSLATION_PUBLIC',
-  TRANSLATION_DRAFT = 'TRANSLATION_DRAFT',
-  CONTENT_PUBLIC = 'CONTENT_PUBLIC',
-  CONTENT_DRAFT = 'CONTENT_DRAFT',
-  DEV_TOOLS = 'DEV_TOOLS',
-}
+import { TokenPermission, TokenV2 } from '@localess/shared';
 
-export type Token = TokenV1 | TokenV2;
+// UI-only token helpers (labels, usage hints, form shape); the token model itself is in @localess/shared.
 
-export type TokenV1 = TokenBase & { version: undefined };
-
-export interface TokenV2 extends TokenBase {
-  version: 2;
-  permissions: TokenPermission[];
-  cacheTtl?: number;
-}
-export interface TokenBase {
-  id: string;
-  version?: number;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Form Edit model
 export type TokenForm = Pick<TokenV2, 'name' | 'permissions' | 'cacheTtl'>;
-
-export function isTokenV1(token: Token): token is TokenV1 {
-  return token.version === undefined;
-}
-
-export function isTokenV2(token: Token): token is TokenV2 {
-  return token.version === 2;
-}
 
 export const PERMISSION_TEXT: Record<TokenPermission, string> = {
   [TokenPermission.TRANSLATION_PUBLIC]: 'Translation Public',
@@ -51,16 +21,9 @@ export interface TokenUsageInfo {
   variant: 'default' | 'warning';
 }
 
-export const TOKEN_V1_IMPLICIT_PERMISSIONS: TokenPermission[] = [
-  TokenPermission.TRANSLATION_PUBLIC,
-  TokenPermission.TRANSLATION_DRAFT,
-  TokenPermission.CONTENT_PUBLIC,
-  TokenPermission.CONTENT_DRAFT,
-];
-
 const DRAFT_PERMISSIONS: readonly TokenPermission[] = [TokenPermission.TRANSLATION_DRAFT, TokenPermission.CONTENT_DRAFT];
 
-export function getTokenUsageInfo(permissions: TokenPermission[] | undefined): TokenUsageInfo {
+export function getTokenUsageInfo(permissions: readonly TokenPermission[] | undefined): TokenUsageInfo {
   if (permissions?.includes(TokenPermission.DEV_TOOLS)) {
     return {
       category: 'DEV_TOOLS',

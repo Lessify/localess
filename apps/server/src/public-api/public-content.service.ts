@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, or, sql, SQL } from 'drizzle-orm';
+import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata, Schema } from '@localess/shared';
 import { DATABASE, Database } from '../database/database.module.js';
 import { assets, contentPublished, contents, schemas, spaces, translationPublished, translations } from '../database/schema.js';
 import { buildDocumentStorage } from '../domain/lib/content-extract.js';
-import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata, Schema } from '../domain/models/index.js';
 import { isValidId } from './lib/id-param.js';
 import { stripStorageIds } from './lib/strip-storage-ids.js';
 

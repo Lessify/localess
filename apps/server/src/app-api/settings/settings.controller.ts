@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Inject, Patch } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { settings } from '../../database/schema.js';

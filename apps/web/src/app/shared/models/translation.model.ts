@@ -1,8 +1,4 @@
-export enum TranslationType {
-  STRING = 'STRING',
-  PLURAL = 'PLURAL',
-  ARRAY = 'ARRAY',
-}
+// UI-only translation filters; the translation model itself is in @localess/shared.
 
 export enum TranslationStatus {
   TRANSLATED = 'TRANSLATION_TRANSLATED',
@@ -21,39 +17,4 @@ export enum LocaleStatus {
 
 export function isLocaleStatus(value: string): value is LocaleStatus {
   return Object.values(LocaleStatus).includes(value as LocaleStatus);
-}
-
-export interface Translation {
-  id: string;
-  type: TranslationType;
-  locales: Record<string, string>;
-  labels?: string[];
-  description?: string;
-  updatedBy?: {
-    name: string;
-    email: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface TranslationCreate {
-  id: string;
-  type: TranslationType;
-  labels?: string[];
-  description?: string;
-  locales: Record<string, string>;
-}
-
-export interface TranslationUpdate {
-  labels: string[];
-  description: string;
-}
-
-export interface TranslateLocaleData {
-  spaceId: string;
-  sourceLocaleId: string;
-  targetLocaleId: string;
-  /** Replace target values that already exist instead of filling only the empty ones. */
-  overwrite?: boolean;
 }

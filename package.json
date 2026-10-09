@@ -33,7 +33,9 @@
     "server:build": "npm run build -w @localess/server",
     "localess": "npm run cli -w @localess/server --",
     "localess:check": "npm run cli -w @localess/server -- check",
-    "localess:import": "npm run cli -w @localess/server -- import:firebase"
+    "localess:import": "npm run cli -w @localess/server -- import:firebase",
+    "shared:build": "npm run build -w @localess/shared",
+    "shared:test": "npm test -w @localess/shared"
   },
   "overrides": {
     "@stoplight/elements": {

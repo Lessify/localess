@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Schema, SchemaType } from '../models/schema.model';
+import { Schema, SchemaType } from '@localess/shared';
 import { SchemaService } from './schema.service';
 
 describe('SchemaService', () => {

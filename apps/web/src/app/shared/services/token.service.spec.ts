@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Token, TokenPermission } from '../models/token.model';
+import { Token, TokenPermission } from '@localess/shared';
 import { TokenService } from './token.service';
 
 const BASE = '/api/app/spaces/space-1/tokens';

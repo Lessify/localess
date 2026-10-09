@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Space } from '@shared/models/space.model';
+import { Space } from '@localess/shared';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';

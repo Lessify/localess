@@ -2,17 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import {
-  Asset,
-  AssetFile,
-  AssetFileImport,
-  AssetFileUpdateForm,
-  AssetFolder,
-  AssetFolderCreate,
-  AssetFolderUpdateForm,
-  AssetKind,
-} from '@shared/models/asset.model';
-import { AssetFileType } from '@shared/models/schema.model';
+import { Asset, AssetFile, AssetFileType, AssetFolder, AssetKind } from '@localess/shared';
+import { AssetFileImport, AssetFileUpdateForm, AssetFolderCreate, AssetFolderUpdateForm } from '@shared/models/asset.model';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 

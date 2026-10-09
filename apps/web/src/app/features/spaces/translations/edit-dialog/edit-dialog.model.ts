@@ -1,4 +1,4 @@
-import { Translation } from '@shared/models/translation.model';
+import { Translation } from '@localess/shared';
 
 /** The translation being edited; only its description and labels are shown. */
 export type EditDialogContext = Translation;

@@ -5,8 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Asset, AssetKind } from '../models/asset.model';
-import { AssetFileType } from '../models/schema.model';
+import { Asset, AssetFileType, AssetKind } from '@localess/shared';
 import { AssetService } from './asset.service';
 
 const BASE = '/api/app/spaces/space-1/assets';

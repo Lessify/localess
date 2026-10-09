@@ -1,4 +1,4 @@
-import { TranslateFormat } from '../models/index.js';
+import { TranslateFormat } from '@localess/shared';
 
 /**
  * Maps a {@link TranslateFormat} onto each provider's tag-handling switch.

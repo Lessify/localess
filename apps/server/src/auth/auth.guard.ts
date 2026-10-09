@@ -1,9 +1,9 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
+import { canPerform, hasAnyRole } from '@localess/shared';
 import { toPrincipal } from '../users/users.service.js';
 import { IS_PUBLIC, REQUIRED_ACCESS, RequiredAccess } from './decorators.js';
-import { canPerform, hasAnyRole } from './permissions.js';
 import { SESSION_COOKIE, SessionService } from './session.service.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

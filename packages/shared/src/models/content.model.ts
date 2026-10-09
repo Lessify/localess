@@ -3,6 +3,7 @@ import type { Timestamp } from './timestamp.js';
 export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
+  id: string;
   kind: ContentKind;
   name: string;
 
@@ -37,6 +38,40 @@ export interface ContentFolder extends ContentBase {
 export enum ContentKind {
   FOLDER = 'FOLDER',
   DOCUMENT = 'DOCUMENT',
+}
+
+// App API requests
+
+export interface ContentDocumentCreate {
+  name: string;
+  slug: string;
+  schema: string;
+}
+
+export interface ContentFolderCreate {
+  name: string;
+  slug: string;
+}
+
+export interface ContentUpdate {
+  name: string;
+  slug: string;
+}
+
+function hasKind(arg: unknown, kind: string): boolean {
+  return typeof arg === 'object' && arg !== null && (arg as { kind?: unknown }).kind === kind;
+}
+
+export function isContentAsset(arg: unknown): arg is ContentAsset {
+  return hasKind(arg, 'ASSET');
+}
+
+export function isContentLink(arg: unknown): arg is ContentLink {
+  return hasKind(arg, 'LINK');
+}
+
+export function isContentReference(arg: unknown): arg is ContentReference {
+  return hasKind(arg, 'REFERENCE');
 }
 
 export interface PublishContentData {
@@ -140,9 +175,11 @@ export interface ContentAsset {
   uri: string;
 }
 
+export type LinkContentType = 'url' | 'content';
+
 export interface ContentLink {
   kind: 'LINK';
-  type: 'url' | 'content';
+  type: LinkContentType;
   target: '_blank' | '_self';
   uri: string;
 }
@@ -158,12 +195,8 @@ export interface ContentRichText {
 }
 
 // Import and Export
-export interface ContentFolderExport extends Omit<ContentFolder, 'createdAt' | 'updatedAt'> {
-  id: string;
-}
+export type ContentFolderExport = Omit<ContentFolder, 'createdAt' | 'updatedAt'>;
 
-export interface ContentDocumentExport extends Omit<ContentDocument, 'createdAt' | 'updatedAt' | 'publishedAt'> {
-  id: string;
-}
+export type ContentDocumentExport = Omit<ContentDocument, 'createdAt' | 'updatedAt' | 'publishedAt'>;
 
 export type ContentExport = ContentDocumentExport | ContentFolderExport;

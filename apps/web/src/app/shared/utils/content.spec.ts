@@ -1,9 +1,7 @@
-import { ContentAsset, ContentData, ContentReference } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { CONTENT_DEFAULT_LOCALE, ContentAsset, ContentData, ContentReference, extractContent, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
-import { collectTranslatableFields, copyBlock, extractContent, extractReferences, extractSchemaContent, normalizeContent } from './content';
+import { collectTranslatableFields, copyBlock, extractReferences, extractSchemaContent, normalizeContent } from './content';
 
 function field(partial: Partial<SchemaField> & Pick<SchemaField, 'name' | 'kind'>): SchemaField {
   return partial as SchemaField;

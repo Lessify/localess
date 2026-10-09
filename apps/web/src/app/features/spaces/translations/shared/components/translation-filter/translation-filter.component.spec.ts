@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Locale } from '@shared/models/locale.model';
+import { Locale } from '@localess/shared';
 import { TranslationStatus } from '@shared/models/translation.model';
 import { vi } from 'vitest';
 

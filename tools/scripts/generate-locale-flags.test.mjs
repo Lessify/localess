@@ -7,7 +7,7 @@ import { collectFlags, FIXED_FLAGS, readLocaleIds, render, subtagsOf } from './g
 
 const FLAGS_DIR = join('node_modules', 'circle-flags', 'flags');
 const GENERATED = join('apps', 'web', 'src', 'app', 'shared', 'components', 'locale-icon', 'locale-flags.ts');
-const LOCALE_SERVICE = join('apps', 'web', 'src', 'app', 'shared', 'services', 'locale.service.ts');
+const LOCALE_LIST = join('packages', 'shared', 'src', 'locales.ts');
 
 /**
  * The locale icon decides from these constants whether a flag exists, so a stale constant is not a
@@ -17,7 +17,7 @@ const LOCALE_SERVICE = join('apps', 'web', 'src', 'app', 'shared', 'services', '
  */
 describe('locale flag data', () => {
   const version = JSON.parse(readFileSync(join('node_modules', 'circle-flags', 'package.json'), 'utf8')).version;
-  const localeIds = readLocaleIds(readFileSync(LOCALE_SERVICE, 'utf8'));
+  const localeIds = readLocaleIds(readFileSync(LOCALE_LIST, 'utf8'));
 
   /**
    * Compared by content rather than byte-for-byte: `npm run lint:fix` reformats the generated file,

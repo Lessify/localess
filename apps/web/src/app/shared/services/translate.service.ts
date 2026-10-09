@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { TranslateBatchData, TranslateBatchResult, TranslateSingleData } from '@shared/models/translate.model';
+import { TranslateBatchData, TranslateBatchResult, TranslateSingleData } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 

@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Space } from '@shared/models/space.model';
-import { Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@shared/models/token.model';
+import { Space, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';

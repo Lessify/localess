@@ -1,4 +1,6 @@
-import { getTokenUsageInfo, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from './token.model';
+import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
+
+import { getTokenUsageInfo } from './token.model';
 
 describe('getTokenUsageInfo()', () => {
   it('classifies no permissions as NO_ACCESS', () => {

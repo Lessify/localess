@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { Schema, SchemaType } from '@localess/shared';
 import { generateOpenApi } from './open-api.service.js';
-import { Schema, SchemaType } from '../models/index.js';
 
 /** Minimal ROOT schema so the generator has something to derive ContentData from. */
 const schemas = new Map<string, Schema>([['page', { id: 'page', name: 'Page', type: SchemaType.ROOT, fields: [] } as unknown as Schema]]);

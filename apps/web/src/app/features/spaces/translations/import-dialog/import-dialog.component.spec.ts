@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { Locale } from '@shared/models/locale.model';
+import { Locale } from '@localess/shared';
 
 import { ImportDialogContext } from './import-dialog.model';
 import { ImportDialogComponent } from './import-dialog.component';

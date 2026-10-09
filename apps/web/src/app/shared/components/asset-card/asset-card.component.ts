@@ -1,5 +1,6 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Asset } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -10,7 +11,7 @@ import {
   lucideFileVideoCamera,
   lucideFolder,
 } from '@ng-icons/lucide';
-import { Asset, fileIcon, filePreview } from '@shared/models/asset.model';
+import { fileIcon, filePreview } from '@shared/models/asset.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';

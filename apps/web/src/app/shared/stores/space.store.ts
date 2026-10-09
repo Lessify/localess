@@ -1,11 +1,9 @@
 import { computed, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { ContentDocument, Schema, Space, SpaceEnvironment } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { ContentDocument } from '@shared/models/content.model';
-import { Schema } from '@shared/models/schema.model';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';

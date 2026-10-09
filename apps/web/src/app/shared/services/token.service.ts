@@ -2,7 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Token, TokenForm, TokenPermission } from '@shared/models/token.model';
+import { Token, TokenPermission } from '@localess/shared';
+import { TokenForm } from '@shared/models/token.model';
 import { Observable } from 'rxjs';
 
 /** API tokens of a space (`/api/app/spaces/:spaceId/tokens`); reads are live, newest first. */

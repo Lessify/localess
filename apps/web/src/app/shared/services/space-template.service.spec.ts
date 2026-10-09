@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { SchemaFieldKind, SchemaType } from '@localess/shared';
 import { SpaceTemplate } from '@shared/models/space-template.model';
 import { firstValueFrom } from 'rxjs';
 

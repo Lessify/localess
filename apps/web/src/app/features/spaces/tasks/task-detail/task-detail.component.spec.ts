@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { TaskLogLevel } from '@shared/models/task.model';
+import { TaskLogLevel } from '@localess/shared';
 import { TaskService } from '@shared/services/task.service';
 
 import { TaskDetailComponent } from './task-detail.component';

@@ -1,4 +1,4 @@
-import { TranslationType } from '@shared/models/translation.model';
+import { TranslationType } from '@localess/shared';
 
 export interface AddDialogContext {
   reservedIds: string[];

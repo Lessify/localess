@@ -1,62 +1,9 @@
-import { AssetFileType, assetFileTypeDescriptions } from './schema.model';
+import { AssetFile, AssetFileType, AssetFolder } from '@localess/shared';
 
-export type Asset = AssetFile | AssetFolder;
+import { assetFileTypeDescriptions } from './schema.model';
 
-export enum AssetKind {
-  FOLDER = 'FOLDER',
-  FILE = 'FILE',
-}
+// UI-only asset helpers; the asset model itself is in @localess/shared.
 
-export interface AssetBase {
-  id: string;
-  kind: AssetKind;
-  name: string;
-  parentPath: string;
-
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AssetFolder extends AssetBase {
-  kind: AssetKind.FOLDER;
-}
-
-export interface AssetFile extends AssetBase {
-  kind: AssetKind.FILE;
-  inProgress?: boolean;
-  extension: string;
-  type: string;
-  size: number;
-  alt?: string;
-  metadata?: AssetFileMetadata;
-  source?: string;
-}
-
-export type AssetFileMetadata =
-  | {
-      format?: string;
-      width?: number;
-      height?: number;
-      orientation?: 'landscape' | 'portrait' | 'squarish';
-    }
-  | {
-      type: 'image';
-      format?: string;
-      width?: number;
-      height?: number;
-      orientation?: 'landscape' | 'portrait' | 'squarish';
-      duration?: number;
-    }
-  | {
-      type: 'video';
-      format?: string;
-      width?: number;
-      height?: number;
-      orientation?: 'landscape' | 'portrait' | 'squarish';
-      duration?: number;
-    };
-
-// Common image file types
 export const webImages: Record<string, string> = {
   // Suggested one
   '.apng':
@@ -108,14 +55,6 @@ export type AssetFileImport = {
   alt?: string;
   source?: string;
 };
-
-export function isFolder(asset: Asset): asset is AssetFolder {
-  return asset.kind === AssetKind.FOLDER;
-}
-
-export function isFile(asset: Asset): asset is AssetFile {
-  return asset.kind === AssetKind.FILE;
-}
 
 export function fileIcon(type: string): string {
   if (type.startsWith('audio/')) return assetFileTypeDescriptions[AssetFileType.AUDIO].icon;

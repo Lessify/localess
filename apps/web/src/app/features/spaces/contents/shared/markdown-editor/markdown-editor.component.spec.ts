@@ -1,8 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
-import { ContentData } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { SchemaFieldMarkdown } from '@shared/models/schema.model';
+import { CONTENT_DEFAULT_LOCALE, ContentData, Locale, SchemaFieldMarkdown } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore, MarkdownMode } from '@shared/stores/local-settings.store';

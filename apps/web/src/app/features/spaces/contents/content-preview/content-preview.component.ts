@@ -13,12 +13,10 @@ import {
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { resolvePreviewUrl } from '@core/utils/preview-url';
+import { CONTENT_DEFAULT_LOCALE, ContentDocument, Locale, SpaceEnvironment } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideCircleCheck, lucideFullscreen, lucideInfo, lucideRefreshCcw, lucideX } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
-import { ContentDocument } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { SpaceEnvironment } from '@shared/models/space.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
 import { isSafePreviewUrl } from '@shared/validators/space.validator';

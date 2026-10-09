@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { canGrant, canManageUser, canPerform, hasAnyRole, Principal, UserPermission } from './permissions.js';
+import { UserPermission } from './models/user.model.js';
+import { canGrant, canManageUser, canPerform, hasAnyRole, Principal } from './permissions.js';
 
 const admin: Principal = { id: 'admin', role: 'admin', permissions: [] };
 const manager: Principal = {

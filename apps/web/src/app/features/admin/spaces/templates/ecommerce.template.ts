@@ -1,4 +1,4 @@
-import { AssetFileType, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { AssetFileType, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { SpaceTemplate } from '@shared/models/space-template.model';
 
 /**

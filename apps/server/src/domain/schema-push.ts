@@ -1,8 +1,8 @@
 import { and, eq, inArray } from 'drizzle-orm';
+import { SchemaExport, SchemaType } from '@localess/shared';
 import type { Database } from '../database/database.module.js';
 import { schemas } from '../database/schema.js';
 import type { SchemaPushPlan } from './lib/schema.utils.js';
-import { SchemaExport, SchemaType } from './models/index.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 

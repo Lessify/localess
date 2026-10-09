@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -56,14 +57,10 @@ import { LlTableImports, TableDataSource, TableSort } from '@shared/components/t
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
-  Asset,
-  AssetFile,
   AssetFileImport,
   AssetFileUpdateForm,
-  AssetFolder,
   AssetFolderCreate,
   AssetFolderUpdateForm,
-  AssetKind,
   fileIcon as resolveFileIcon,
   filePreview as isPreviewableFileType,
 } from '@shared/models/asset.model';

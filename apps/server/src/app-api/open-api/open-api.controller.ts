@@ -1,11 +1,10 @@
 import { Controller, HttpCode, Inject, Param, Post } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { Schema, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { schemas } from '../../database/schema.js';
 import { generateOpenApi } from '../../domain/lib/open-api.service.js';
-import { Schema } from '../../domain/models/index.js';
 import { schemaFromRow } from '../../domain/row-mappers.js';
 import { requireSpace } from '../common/space-access.js';
 

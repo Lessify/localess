@@ -26,6 +26,7 @@ jobs:
       - run: npm ci
       - run: npm test -- --watch=false
       # Starts a throwaway embedded Postgres per run
+      - run: npm run shared:test
       - run: npm run server:test
       - run: npm run test:scripts
 

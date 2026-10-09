@@ -1,4 +1,6 @@
-import { CONTENT_DEFAULT_LOCALE, toProviderLocale } from './locale.model';
+import { CONTENT_DEFAULT_LOCALE } from '@localess/shared';
+
+import { toProviderLocale } from './locale.model';
 
 describe('toProviderLocale', () => {
   // `default` is a storage sentinel, not a language. It stands for the space's fallback locale,

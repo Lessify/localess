@@ -1,4 +1,4 @@
-import { AssetFile } from '@shared/models/asset.model';
+import { AssetFile } from '@localess/shared';
 
 export interface ImagePreviewDialogContext {
   spaceId: string;

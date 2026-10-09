@@ -79,7 +79,7 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 
 ## Implementation Files
 
-- `apps/server/src/domain/models/` — `TokenPermission` and token types
+- `packages/shared/src/models/token.model.ts` — `TokenPermission`, token types and `TOKEN_V1_IMPLICIT_PERMISSIONS` (shared by server and web)
 - `apps/server/src/public-api/token-auth.service.ts` — `validateToken`, `canPerform` / `canPerformAny`, `authorize()`, the token cache and its invalidation
 - `apps/server/src/app-api/tokens/tokens.controller.ts` — token management for the app
 - `apps/server/src/events/events.service.ts` — change events (`LISTEN/NOTIFY`)

@@ -1,22 +1,14 @@
 import { Controller, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Schema, SchemaExport, TokenPermission, Translation, TranslationType, TranslationUpdateResponse } from '@localess/shared';
+import { zSchemaPushSchema, zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { Public } from '../auth/decorators.js';
 import { DATABASE, Database } from '../database/database.module.js';
 import { schemas, spaces, translations } from '../database/schema.js';
 import { planSchemaPush } from '../domain/lib/schema.utils.js';
 import { applySchemaPushPlan } from '../domain/schema-push.js';
 import { planTranslationUpdate } from '../domain/lib/translation.utils.js';
-import {
-  Schema,
-  SchemaExport,
-  TokenPermission,
-  Translation,
-  TranslationType,
-  TranslationUpdateResponse,
-  zSchemaPushSchema,
-  zTranslationUpdateSchema,
-} from '../domain/models/index.js';
 import { schemaFromRow, translationFromRow } from '../domain/row-mappers.js';
 import { validIdParams } from './cdn.controller.js';
 import { PublicContentService } from './public-content.service.js';
@@ -65,7 +57,7 @@ export class ManageController {
   async updateTranslations(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (!(await this.authorize(request, reply))) return;
     const { spaceId, locale } = request.params as Params;
-    const body = zTranslationUpdateSchema.safeParse(request.body);
+    const body = zTranslationManageUpdateSchema.safeParse(request.body);
     if (!body.success) {
       sendV1Error(reply, 400, 'invalid-argument', 'Bad request body', { details: body.error });
       return;

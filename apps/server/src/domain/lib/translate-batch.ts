@@ -1,4 +1,4 @@
-import { TranslateBatchResult, TranslateFormat, TranslateItem } from '../models/index.js';
+import { TranslateBatchResult, TranslateFormat, TranslateItem } from '@localess/shared';
 import { chunkBySize } from './chunk-by-size.js';
 
 /** Google Cloud Translation caps a request at 30,000 code points; the margin covers the envelope. */

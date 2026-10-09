@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Space } from '../models/space.model';
+import { Space } from '@localess/shared';
 import { SpaceService } from './space.service';
 
 describe('SpaceService', () => {

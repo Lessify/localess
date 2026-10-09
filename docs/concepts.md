@@ -95,7 +95,7 @@ talking to a translation provider must resolve it first — see `toProviderLocal
 
 **`_i18n_` is reserved.** Schema field names are rejected if they contain it, on both sides:
 `CommonValidator.SCHEMA_FIELD_NAME_TRANSLATION` in the UI and a `refine` in
-`apps/server/src/domain/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
+`packages/shared/src/models/schema.zod.ts`. A field called `title_i18n_de` would be indistinguishable
 from a German translation of `title`.
 
 **Not every field kind can be translatable.** `translatable` lives on `SchemaFieldTranslatable`,

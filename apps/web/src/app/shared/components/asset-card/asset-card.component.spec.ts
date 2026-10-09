@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Asset, AssetFile, AssetFolder, AssetKind } from '@shared/models/asset.model';
+import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { vi } from 'vitest';
 
 import { AssetCardComponent } from './asset-card.component';

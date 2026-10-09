@@ -18,5 +18,10 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src", "test", "vitest.config.mts", "drizzle.config.ts"]
+  "include": ["src", "test", "vitest.config.mts", "drizzle.config.ts"],
+  "references": [
+    {
+      "path": "../../packages/shared"
+    }
+  ]
 }

@@ -22,7 +22,7 @@ import { pathToFileURL } from 'node:url';
 import prettier from 'prettier';
 
 const FLAGS_DIR = join('node_modules', 'circle-flags', 'flags');
-const LOCALE_SERVICE = join('apps', 'web', 'src', 'app', 'shared', 'services', 'locale.service.ts');
+const LOCALE_LIST = join('packages', 'shared', 'src', 'locales.ts');
 const OUTPUT = join('apps', 'web', 'src', 'app', 'shared', 'components', 'locale-icon', 'locale-flags.ts');
 
 /** The locale ids the app offers, read as text so the generator needs no TypeScript toolchain. */
@@ -117,7 +117,7 @@ export function render({ languages, countries, identicalLocales }, version) {
 
 export async function generate() {
   const version = JSON.parse(readFileSync(join('node_modules', 'circle-flags', 'package.json'), 'utf8')).version;
-  const flags = collectFlags(readLocaleIds(readFileSync(LOCALE_SERVICE, 'utf8')));
+  const flags = collectFlags(readLocaleIds(readFileSync(LOCALE_LIST, 'utf8')));
   // Formatted with the project config so the next 'npm run lint:fix' leaves it alone - an
   // unformatted generator output would show up as a spurious diff after every run.
   const source = render(flags, version);

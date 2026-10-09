@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetFileType, Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCalendar,
@@ -27,15 +28,7 @@ import {
   lucideType,
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
-import {
-  AssetFileType,
-  assetFileTypeDescriptions,
-  Schema,
-  SchemaFieldKind,
-  schemaFieldKindDescriptions,
-  SchemaType,
-  sortSchema,
-} from '@shared/models/schema.model';
+import { assetFileTypeDescriptions, schemaFieldKindDescriptions, sortSchema } from '@shared/models/schema.model';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SchemaValidator } from '@shared/validators/schema.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';

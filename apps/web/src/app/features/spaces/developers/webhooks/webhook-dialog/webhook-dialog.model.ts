@@ -1,4 +1,4 @@
-import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
+import { WebHook, WebHookEvent } from '@localess/shared';
 
 /** The webhook being edited. Absent when adding a new one. */
 export type WebhookDialogContext = WebHook;

@@ -2,9 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { TokenPermission } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideX } from '@ng-icons/lucide';
-import { getTokenUsageInfo, TokenForm, TokenPermission } from '@shared/models/token.model';
+import { getTokenUsageInfo, TokenForm } from '@shared/models/token.model';
 import { TokenValidator } from '@shared/validators/token.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';

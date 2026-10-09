@@ -1,9 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { AssetFile, AssetKind } from '@shared/models/asset.model';
-import { SchemaFieldAsset, SchemaFieldKind } from '@shared/models/schema.model';
-import { Space } from '@shared/models/space.model';
+import { AssetFile, AssetKind, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
 import { AssetService } from '@shared/services/asset.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';

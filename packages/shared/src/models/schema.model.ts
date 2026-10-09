@@ -9,6 +9,7 @@ export enum SchemaType {
 export type Schema = SchemaComponent | SchemaEnum;
 
 export interface SchemaBase {
+  id: string;
   type: SchemaType;
   displayName?: string;
   description?: string;
@@ -215,10 +216,23 @@ export enum AssetFileType {
 
 // Export and Import
 export type SchemaExport = SchemaComponentExport | SchemaEnumExport;
-export interface SchemaComponentExport extends Omit<SchemaComponent, 'createdAt' | 'updatedAt'> {
-  id: string;
-}
+export type SchemaComponentExport = Omit<SchemaComponent, 'createdAt' | 'updatedAt'>;
 
-export interface SchemaEnumExport extends Omit<SchemaEnum, 'createdAt' | 'updatedAt'> {
-  id: string;
+export type SchemaEnumExport = Omit<SchemaEnum, 'createdAt' | 'updatedAt'>;
+
+// App API requests
+export type SchemaCreate = Omit<Schema, 'createdAt' | 'updatedAt'>;
+
+export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
+
+export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
+
+/** Field kinds whose value is an array. */
+export function isSchemaArray(schema: SchemaField): boolean {
+  return (
+    schema.kind === SchemaFieldKind.SCHEMAS ||
+    schema.kind === SchemaFieldKind.REFERENCES ||
+    schema.kind === SchemaFieldKind.OPTIONS ||
+    schema.kind === SchemaFieldKind.ASSETS
+  );
 }

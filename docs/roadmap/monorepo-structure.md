@@ -54,7 +54,7 @@ Rules:
 | # | Phase | Status |
 |---|---|---|
 | A | npm workspaces; move `src` → `apps/web`, `server` → `apps/server`, `libs/ui` → `packages/ui`, sync-v1 → `packages/visual-editor-sync`, scripts → `tools/`; one lockfile; Dockerfile, CI, docs paths | Done |
-| B | `packages/shared`: one definition of domain models, zod schemas, permissions and locales; server and web import it | |
+| B | `packages/shared`: one definition of domain models, zod schemas, permissions and locales; server and web import it | Done |
 | C | Server: `infra/`, `auth/`, `modules/<feature>/`, `cli/` | |
 | D | Web: `core/` (state, API, guards) vs `shared/` (reusable UI); single-use services move into their feature | |
 | E | Repository map in README and CLAUDE.md; docs paths | |
@@ -84,4 +84,33 @@ Every phase ends green: web build + lint + tests, server build + tests, `test:sc
   image layout): health, SPA deep links, `/scripts/sync-v1.js`, admin login and `check` pass.
 - npm 11 warns that install scripts aren't covered by `allowScripts`; they still run (embedded Postgres
   symlinks and the ffmpeg binary are present). No allowlist added.
+
+### Phase B — `packages/shared` (2026-10-09)
+
+- `@localess/shared` holds the domain contract: every model (asset, content, schema, space, task, token, translate,
+  translation, user, webhook, locale, open-api), `permissions.ts` (`canPerform`, `canGrant`, `canManageUser`),
+  `locales.ts` (Google/DeepL allow-lists and `AVAILABLE_LOCALES`) and `extractContent`. Zod validators are a separate
+  entry point, `@localess/shared/zod`, so the web bundle never pulls in zod (verified: no zod in `dist`).
+- The models describe the JSON wire format: every entity has `id`, timestamps are ISO strings
+  (`Timestamp = string`). The server's Firestore-era copies had no `id` and `Date` timestamps; its row mappers now
+  keep `id`, and the `Date` → string difference is only a cast (rows serialise to the same JSON).
+- Drift resolved while merging: webhook `TranslationWebHookPayloadData` (server shape kept), task import `type`,
+  asset metadata `pages`/`hasAlpha`, `UserUpdate` (no `id`: it's in the URL). Two names meant different things:
+  the MANAGE API body is now `TranslationManageUpdate` / `zTranslationManageUpdateSchema`; `TranslationUpdate`
+  is the App API's label/description edit. The web's `TRANSLATION_DEFAULT_LOCALE` is `DEFAULT_LOCALE`.
+- Removed duplicates: the server's second `UserPermission` enum (in `auth/permissions.ts`), three copies of the V1
+  token permission list, the web's copy of the Google locale lists (and the parity test that compared them),
+  the web's `extractContent` (it now gets the server's legacy `schema` fallback too).
+- The web's `shared/models/*.model.ts` keep only UI helpers (icons, labels, sort functions, form shapes);
+  `space`, `task`, `user` and `webhook` model files are gone. Imports of contract types go straight to
+  `@localess/shared` (161 web files, 45 server files).
+- Build wiring: the server references the package (`tsc -b` builds `packages/shared/dist` first) and depends on it
+  as a workspace package; its vitest config aliases it to source. The web app maps it to source with tsconfig
+  `paths`. CI runs `npm run shared:test`; the Docker runtime stage copies `packages/shared/dist`.
+- zod: the server and the shared package each get zod 4.6.5 (the root has 4.3.6 from the Angular CLI), so there
+  are two zod instances at runtime. Harmless as long as the server only calls `.safeParse` on shared schemas —
+  the one place that wrapped a shared schema in a server `z.object` (space templates) moved into shared as
+  `zSchemaTemplateSchema`.
+- Verified: shared 32 tests; server type-check, 51 files / 811 tests (4 files moved to shared); web build, lint,
+  178 files / 1571 tests; `test:scripts` 48; simulated image boot (health, login, v1 token check).
 

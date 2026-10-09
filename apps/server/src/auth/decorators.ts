@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import type { UserPermission } from './permissions.js';
+import type { UserPermission } from '@localess/shared';
 
 export const IS_PUBLIC = 'localess:isPublic';
 export const REQUIRED_ACCESS = 'localess:requiredAccess';

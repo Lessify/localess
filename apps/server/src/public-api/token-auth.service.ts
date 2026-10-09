@@ -2,9 +2,9 @@ import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { filter, Subscription } from 'rxjs';
 import { and, eq } from 'drizzle-orm';
 import type { FastifyReply } from 'fastify';
+import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
 import { DATABASE, Database } from '../database/database.module.js';
 import { tokens } from '../database/schema.js';
-import { TokenPermission } from '../domain/models/index.js';
 import { EventsService } from '../events/events.service.js';
 import { sendV1Error } from './v1-response.js';
 
@@ -16,12 +16,6 @@ export interface ApiToken {
   cacheTtl: number | null;
 }
 
-const V1_IMPLICIT = [
-  TokenPermission.TRANSLATION_PUBLIC,
-  TokenPermission.TRANSLATION_DRAFT,
-  TokenPermission.CONTENT_PUBLIC,
-  TokenPermission.CONTENT_DRAFT,
-];
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /** Alphanumeric only: the token is the row id, so `/` must never reach the lookup. */
@@ -30,7 +24,7 @@ export function validateToken(token?: unknown): token is string {
 }
 
 export function canPerform(permission: TokenPermission, token: ApiToken): boolean {
-  if (token.version === null) return V1_IMPLICIT.includes(permission);
+  if (token.version === null) return TOKEN_V1_IMPLICIT_PERMISSIONS.includes(permission);
   if (token.version === 2) return token.permissions.includes(permission);
   return false;
 }

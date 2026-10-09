@@ -7,15 +7,16 @@
   },
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -b tsconfig.build.json",
     "start": "node dist/main.js",
-    "dev": "tsc -p tsconfig.build.json && node --enable-source-maps dist/main.js",
+    "dev": "tsc -b tsconfig.build.json && node --enable-source-maps dist/main.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "cli": "node dist/cli.js"
   },
   "dependencies": {
+    "@localess/shared": "*",
     "@fastify/compress": "^9.2.1",
     "@fastify/cookie": "^11.1.3",
     "@fastify/cors": "^11.3.1",

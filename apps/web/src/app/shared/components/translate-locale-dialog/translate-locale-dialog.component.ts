@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { CONTENT_DEFAULT_LOCALE, Locale } from '@localess/shared';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

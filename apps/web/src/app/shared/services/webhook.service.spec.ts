@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
-import { WebHookEvent, WebHookLog } from '@shared/models/webhook.model';
+import { WebHookEvent, WebHookLog } from '@localess/shared';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 

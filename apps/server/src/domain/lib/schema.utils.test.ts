@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { Schema, SchemaExport, SchemaField, SchemaFieldKind, SchemaType } from '../models/index.js';
+import { Schema, SchemaExport, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { docSchemaToExport, isSchemaChanged, planSchemaPush } from './schema.utils.js';
 
-const timestamps = { createdAt: {} as never, updatedAt: {} as never };
+// What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.
+const stored = { id: 'stored', createdAt: {} as never, updatedAt: {} as never };
 
 describe('isSchemaChanged', () => {
   it('returns false for an identical component', () => {
@@ -10,7 +11,7 @@ describe('isSchemaChanged', () => {
       type: SchemaType.NODE,
       displayName: 'Button',
       fields: [{ name: 'label', kind: SchemaFieldKind.TEXT, required: true }],
-      ...timestamps,
+      ...stored,
     };
     expect(
       isSchemaChanged(existing, {
@@ -23,7 +24,7 @@ describe('isSchemaChanged', () => {
   });
 
   it('returns true when a field changes', () => {
-    const existing: Schema = { type: SchemaType.NODE, fields: [], ...timestamps };
+    const existing: Schema = { type: SchemaType.NODE, fields: [], ...stored };
     expect(isSchemaChanged(existing, { id: 'Button', type: SchemaType.NODE, fields: [{ name: 'x', kind: SchemaFieldKind.TEXT }] })).toBe(
       true,
     );
@@ -33,7 +34,7 @@ describe('isSchemaChanged', () => {
     const existing: Schema = {
       type: SchemaType.NODE,
       fields: [{ name: 'label', kind: SchemaFieldKind.TEXT, required: true }],
-      ...timestamps,
+      ...stored,
     };
     // same field, keys in a different order
     const imported = { id: 'Button', type: SchemaType.NODE, fields: [{ kind: SchemaFieldKind.TEXT, required: true, name: 'label' }] };
@@ -41,35 +42,35 @@ describe('isSchemaChanged', () => {
   });
 
   it('returns true when the schema type itself changes', () => {
-    const existing: Schema = { type: SchemaType.NODE, fields: [], ...timestamps };
+    const existing: Schema = { type: SchemaType.NODE, fields: [], ...stored };
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.ROOT, fields: [] })).toBe(true);
-    const existingEnum: Schema = { type: SchemaType.ENUM, values: [], ...timestamps };
+    const existingEnum: Schema = { type: SchemaType.ENUM, values: [], ...stored };
     expect(isSchemaChanged(existingEnum, { id: 'X', type: SchemaType.NODE, fields: [] })).toBe(true);
   });
 
   it('returns true when displayName changes, including undefined vs set', () => {
-    const existing: Schema = { type: SchemaType.NODE, displayName: 'Button', fields: [], ...timestamps };
+    const existing: Schema = { type: SchemaType.NODE, displayName: 'Button', fields: [], ...stored };
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, displayName: 'Buttons', fields: [] })).toBe(true);
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, fields: [] })).toBe(true);
-    const existingBare: Schema = { type: SchemaType.NODE, fields: [], ...timestamps };
+    const existingBare: Schema = { type: SchemaType.NODE, fields: [], ...stored };
     expect(isSchemaChanged(existingBare, { id: 'X', type: SchemaType.NODE, displayName: 'Button', fields: [] })).toBe(true);
   });
 
   it('returns true when description changes', () => {
-    const existing: Schema = { type: SchemaType.NODE, description: 'Old', fields: [], ...timestamps };
+    const existing: Schema = { type: SchemaType.NODE, description: 'Old', fields: [], ...stored };
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, description: 'New', fields: [] })).toBe(true);
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, fields: [] })).toBe(true);
   });
 
   it('returns true when labels change (order-insensitive via isLabelsEqual)', () => {
-    const existing: Schema = { type: SchemaType.NODE, labels: ['a', 'b'], fields: [], ...timestamps };
+    const existing: Schema = { type: SchemaType.NODE, labels: ['a', 'b'], fields: [], ...stored };
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, labels: ['b', 'a'], fields: [] })).toBe(false);
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, labels: ['a', 'c'], fields: [] })).toBe(true);
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.NODE, fields: [] })).toBe(true);
   });
 
   it('returns true when previewField changes on ROOT/NODE schemas', () => {
-    const existing: Schema = { type: SchemaType.ROOT, previewField: 'title', fields: [], ...timestamps };
+    const existing: Schema = { type: SchemaType.ROOT, previewField: 'title', fields: [], ...stored };
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.ROOT, previewField: 'title', fields: [] })).toBe(false);
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.ROOT, previewField: 'subtitle', fields: [] })).toBe(true);
     expect(isSchemaChanged(existing, { id: 'X', type: SchemaType.ROOT, fields: [] })).toBe(true);
@@ -79,7 +80,7 @@ describe('isSchemaChanged', () => {
     const existing: Schema = {
       type: SchemaType.ROOT,
       fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, required: true }],
-      ...timestamps,
+      ...stored,
     };
     expect(
       isSchemaChanged(existing, {
@@ -91,7 +92,7 @@ describe('isSchemaChanged', () => {
   });
 
   it('returns true when ENUM values change, false when identical modulo key order', () => {
-    const existing: Schema = { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...timestamps };
+    const existing: Schema = { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...stored };
     expect(isSchemaChanged(existing, { id: 'Kind', type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }] })).toBe(false);
     expect(isSchemaChanged(existing, { id: 'Kind', type: SchemaType.ENUM, values: [{ value: 'a', name: 'A' }] })).toBe(false);
     expect(isSchemaChanged(existing, { id: 'Kind', type: SchemaType.ENUM, values: [{ name: 'A', value: 'b' }] })).toBe(true);
@@ -99,12 +100,12 @@ describe('isSchemaChanged', () => {
   });
 
   it('returns false when both sides omit fields on a ROOT/NODE schema', () => {
-    const existing: Schema = { type: SchemaType.NODE, ...timestamps };
+    const existing: Schema = { type: SchemaType.NODE, ...stored };
     expect(isSchemaChanged(existing, { id: 'Button', type: SchemaType.NODE })).toBe(false);
   });
 
   it('returns false when both sides omit values on an ENUM schema', () => {
-    const existing: Schema = { type: SchemaType.ENUM, ...timestamps };
+    const existing: Schema = { type: SchemaType.ENUM, ...stored };
     expect(isSchemaChanged(existing, { id: 'Kind', type: SchemaType.ENUM })).toBe(false);
   });
 });
@@ -116,7 +117,7 @@ describe('docSchemaToExport', () => {
       displayName: 'Page',
       previewField: 'title',
       fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, required: true }],
-      ...timestamps,
+      ...stored,
     };
     expect(docSchemaToExport('Page', schema)).toEqual({
       id: 'Page',
@@ -128,7 +129,7 @@ describe('docSchemaToExport', () => {
   });
 
   it('maps an enum', () => {
-    const schema: Schema = { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...timestamps };
+    const schema: Schema = { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...stored };
     expect(docSchemaToExport('Kind', schema)).toEqual({ id: 'Kind', type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }] });
   });
 
@@ -137,7 +138,7 @@ describe('docSchemaToExport', () => {
       type: SchemaType.NODE,
       description: 'A reusable button',
       labels: ['ui', 'button'],
-      ...timestamps,
+      ...stored,
     };
     expect(docSchemaToExport('Button', schema)).toEqual({
       id: 'Button',
@@ -153,7 +154,7 @@ describe('docSchemaToExport', () => {
       displayName: 'Button Type',
       description: 'Visual style options',
       labels: ['ui'],
-      ...timestamps,
+      ...stored,
     };
     expect(docSchemaToExport('ButtonType', schema)).toEqual({
       id: 'ButtonType',
@@ -165,18 +166,18 @@ describe('docSchemaToExport', () => {
   });
 
   it('omits every absent optional on a bare component', () => {
-    const schema: Schema = { type: SchemaType.NODE, ...timestamps };
+    const schema: Schema = { type: SchemaType.NODE, ...stored };
     expect(docSchemaToExport('Bare', schema)).toEqual({ id: 'Bare', type: SchemaType.NODE });
   });
 
   it('omits every absent optional on a bare enum', () => {
-    const schema: Schema = { type: SchemaType.ENUM, ...timestamps };
+    const schema: Schema = { type: SchemaType.ENUM, ...stored };
     expect(docSchemaToExport('BareEnum', schema)).toEqual({ id: 'BareEnum', type: SchemaType.ENUM });
   });
 });
 
 function componentDoc(fields: SchemaField[] = []): Schema {
-  return { type: SchemaType.NODE, fields, ...timestamps };
+  return { type: SchemaType.NODE, fields, ...stored };
 }
 
 describe('planSchemaPush', () => {
@@ -217,7 +218,7 @@ describe('planSchemaPush', () => {
   });
 
   it('sync refuses deleting an enum still referenced by a surviving OPTION/OPTIONS source', () => {
-    const existing = new Map<string, Schema>([['ButtonType', { type: SchemaType.ENUM, values: [], ...timestamps }]]);
+    const existing = new Map<string, Schema>([['ButtonType', { type: SchemaType.ENUM, values: [], ...stored }]]);
     const incoming: SchemaExport[] = [
       { id: 'Button', type: SchemaType.NODE, fields: [{ name: 'kind', kind: SchemaFieldKind.OPTION, source: 'ButtonType' }] },
     ];
@@ -228,8 +229,8 @@ describe('planSchemaPush', () => {
 
   it('classifies ENUM creates, updates and unchanged, same as components', () => {
     const existing = new Map<string, Schema>([
-      ['SameEnum', { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...timestamps }],
-      ['ChangedEnum', { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...timestamps }],
+      ['SameEnum', { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...stored }],
+      ['ChangedEnum', { type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }], ...stored }],
     ]);
     const incoming: SchemaExport[] = [
       { id: 'SameEnum', type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }] },
@@ -263,7 +264,7 @@ describe('planSchemaPush', () => {
   });
 
   it('sync detects a plural OPTIONS field referencing a to-be-deleted enum', () => {
-    const existing = new Map<string, Schema>([['ButtonType', { type: SchemaType.ENUM, values: [], ...timestamps }]]);
+    const existing = new Map<string, Schema>([['ButtonType', { type: SchemaType.ENUM, values: [], ...stored }]]);
     const incoming: SchemaExport[] = [
       {
         id: 'Button',
@@ -279,7 +280,7 @@ describe('planSchemaPush', () => {
   it('does not error when a reference points at a schema that is not being deleted', () => {
     const existing = new Map<string, Schema>([
       ['Button', componentDoc()],
-      ['ButtonType', { type: SchemaType.ENUM, values: [], ...timestamps }],
+      ['ButtonType', { type: SchemaType.ENUM, values: [], ...stored }],
     ]);
     const incoming: SchemaExport[] = [
       { id: 'Button', type: SchemaType.NODE },
@@ -316,7 +317,7 @@ describe('planSchemaPush', () => {
   });
 
   it('skips ENUM entries in the incoming payload when scanning for reference violations during sync', () => {
-    const existing = new Map<string, Schema>([['Stale', { type: SchemaType.ENUM, values: [], ...timestamps }]]);
+    const existing = new Map<string, Schema>([['Stale', { type: SchemaType.ENUM, values: [], ...stored }]]);
     const incoming: SchemaExport[] = [{ id: 'JustAnEnum', type: SchemaType.ENUM, values: [{ name: 'A', value: 'a' }] }];
     const plan = planSchemaPush(existing, incoming, 'sync');
     expect(plan.deletes).toEqual(['Stale']);
@@ -326,7 +327,7 @@ describe('planSchemaPush', () => {
   it('reports one error per distinct violation when multiple references block a sync', () => {
     const existing = new Map<string, Schema>([
       ['Button', componentDoc()],
-      ['ButtonType', { type: SchemaType.ENUM, values: [], ...timestamps }],
+      ['ButtonType', { type: SchemaType.ENUM, values: [], ...stored }],
     ]);
     const incoming: SchemaExport[] = [
       {

@@ -2,9 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
+import { User, UserInvite, UserUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
-
-import { User, UserInvite, UserUpdate } from '../models/user.model';
 
 const BASE = '/api/app/users';
 

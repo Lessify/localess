@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Content, ContentDocument, ContentKind } from '../models/content.model';
+import { Content, ContentDocument, ContentKind } from '@localess/shared';
 import { ContentService } from './content.service';
 
 const BASE = '/api/app/spaces/space-1/contents';

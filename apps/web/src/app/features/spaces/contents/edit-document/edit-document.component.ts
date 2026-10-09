@@ -15,6 +15,18 @@ import {
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentData,
+  ContentDocument,
+  ContentKind,
+  extractContent,
+  Locale,
+  Schema,
+  SchemaFieldKind,
+  SchemaType,
+  TokenPermission,
+} from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideAlertCircle,
@@ -44,10 +56,8 @@ import {
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import { ContentData, ContentDocument, ContentError, ContentKind } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale, toProviderLocale } from '@shared/models/locale.model';
-import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { TokenPermission } from '@shared/models/token.model';
+import { ContentError } from '@shared/models/content.model';
+import { toProviderLocale } from '@shared/models/locale.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { ContentService } from '@shared/services/content.service';
 import { ContentHelperService } from '@shared/services/content-helper.service';
@@ -57,7 +67,7 @@ import { TokenService } from '@shared/services/token.service';
 import { TranslateService } from '@shared/services/translate.service';
 import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { SpaceStore } from '@shared/stores/space.store';
-import { collectTranslatableFields, extractContent, extractReferences, normalizeContent } from '@shared/utils/content';
+import { collectTranslatableFields, extractReferences, normalizeContent } from '@shared/utils/content';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

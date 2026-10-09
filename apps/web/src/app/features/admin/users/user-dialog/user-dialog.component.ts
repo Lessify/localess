@@ -62,7 +62,7 @@ export class UserDialogComponent implements OnInit {
   protected readonly permissionGroups = USER_PERMISSION_GROUPS;
 
   // The admin role and each permission are offered only when the signed-in user may grant them;
-  // The server enforces the same limits (canGrant / canManageUser in apps/server/src/auth/permissions.ts).
+  // The server enforces the same limits (canGrant / canManageUser in @localess/shared).
   private readonly userStore = inject(UserStore);
   private manager(): UserManager {
     return { id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() };

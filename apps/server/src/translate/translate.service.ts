@@ -1,16 +1,18 @@
 import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotImplementedException } from '@nestjs/common';
 import type { TranslationServiceClient } from '@google-cloud/translate';
 import type { Translator } from 'deepl-node';
-import { APP_CONFIG, AppConfig } from '../config/config.js';
-import { translateItems } from '../domain/lib/translate-batch.js';
-import { deeplTranslateOptions, googleMimeType } from '../domain/lib/translate-format.utils.js';
 import {
   DEEPL_SOURCE_SUPPORT_LOCALES,
   DEEPL_TARGET_SUPPORT_LOCALES,
   GCP_SOURCE_SUPPORT_LOCALES,
   GCP_TARGET_SUPPORT_LOCALES,
-} from '../domain/lib/translate-locales.js';
-import { TranslateBatchResult, TranslateFormat, TranslateItem } from '../domain/models/index.js';
+  TranslateBatchResult,
+  TranslateFormat,
+  TranslateItem,
+} from '@localess/shared';
+import { APP_CONFIG, AppConfig } from '../config/config.js';
+import { translateItems } from '../domain/lib/translate-batch.js';
+import { deeplTranslateOptions, googleMimeType } from '../domain/lib/translate-format.utils.js';
 
 /** 424 like the callable's `failed-precondition`: the provider rejected the request (key, quota, API off). */
 class ProviderError extends HttpException {

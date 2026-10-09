@@ -222,11 +222,10 @@ Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list 
 | File                                             | Purpose                                                                   |
 |--------------------------------------------------|---------------------------------------------------------------------------|
 | `apps/server/src/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
-| `apps/server/src/domain/models/`                      | Backend types — `WebHookEvent` and friends                                |
+| `packages/shared/src/models/webhook.model.ts`         | Types — `WebHookEvent` and friends (server and web)                       |
 | `apps/server/src/app-api/webhooks/webhooks.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
 | `apps/server/src/webhooks/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
 | `apps/server/src/domain/lib/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
-| `apps/web/src/app/shared/models/webhook.model.ts`         | Frontend types                                                            |
 | `apps/web/src/app/shared/services/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |
 | `apps/web/src/app/shared/validators/webhook.validator.ts` | Form validators                                                           |
 | `apps/web/src/app/features/spaces/developers/webhooks/`   | UI — list (`webhooks.component`), create/edit (`webhook-dialog/`), detail + log history (`webhook-detail/`) |

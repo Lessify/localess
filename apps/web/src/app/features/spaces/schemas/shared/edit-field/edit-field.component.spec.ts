@@ -1,7 +1,7 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 import { EditFieldComponent } from './edit-field.component';
 

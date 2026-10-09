@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Observable, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Task, TaskLog } from '../models/task.model';
+import { Task, TaskLog } from '@localess/shared';
 import { TaskService } from './task.service';
 
 const BASE = '/api/app/spaces/space-1/tasks';

@@ -18,22 +18,27 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { provideIcons } from '@ng-icons/core';
-import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash, lucideX } from '@ng-icons/lucide';
-import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
-import { ContentAsset, ContentData, ContentDocument, ContentReference } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale, toProviderLocale } from '@shared/models/locale.model';
 import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentAsset,
+  ContentData,
+  ContentDocument,
+  ContentReference,
   isFieldTranslatable,
+  Locale,
   Schema,
   SchemaComponent,
   SchemaEnum,
   SchemaField,
   SchemaFieldKind,
   SchemaType,
-  sortSchemaEnumValue,
-} from '@shared/models/schema.model';
-import { Space } from '@shared/models/space.model';
+  Space,
+} from '@localess/shared';
+import { provideIcons } from '@ng-icons/core';
+import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucideLanguages, lucideTrash, lucideX } from '@ng-icons/lucide';
+import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
+import { toProviderLocale } from '@shared/models/locale.model';
+import { sortSchemaEnumValue } from '@shared/models/schema.model';
 import { ContentHelperService } from '@shared/services/content-helper.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { TranslateService } from '@shared/services/translate.service';

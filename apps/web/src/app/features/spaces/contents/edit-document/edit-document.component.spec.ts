@@ -1,11 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { ContentDocument, ContentKind } from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@shared/models/locale.model';
-import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
-import { Space } from '@shared/models/space.model';
-import { Token, TokenPermission } from '@shared/models/token.model';
+import { CONTENT_DEFAULT_LOCALE, ContentDocument, ContentKind, Locale, Schema, SchemaFieldKind, SchemaType, Space, Token, TokenPermission } from '@localess/shared';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';

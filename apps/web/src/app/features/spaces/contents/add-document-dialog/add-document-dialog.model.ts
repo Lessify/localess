@@ -1,4 +1,4 @@
-import { Schema } from '@shared/models/schema.model';
+import { Schema } from '@localess/shared';
 
 export interface AddDocumentDialogContext {
   schemas: Schema[];

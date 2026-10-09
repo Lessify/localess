@@ -9,4 +9,4 @@ Architecture:
 - Angular 21 frontend in `apps/web/src/app/features/`
 - NestJS + Postgres server in `apps/server/src/` (app API in `apps/server/src/app-api/`, schema in `apps/server/src/database/schema.ts`)
 - Public API in `apps/server/src/public-api/`
-- Server models in `apps/server/src/domain/models/`
+- Domain models, zod validators and permission rules in `packages/shared/src/` (`@localess/shared`), used by both server and web

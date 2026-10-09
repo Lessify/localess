@@ -5,6 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetFileType, Schema, SchemaComponentUpdate, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -33,16 +34,7 @@ import {
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
 import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
-import {
-  AssetFileType,
-  assetFileTypeDescriptions,
-  Schema,
-  SchemaComponentUpdate,
-  SchemaField,
-  SchemaFieldKind,
-  schemaFieldKindDescriptions,
-  SchemaType,
-} from '@shared/models/schema.model';
+import { assetFileTypeDescriptions, schemaFieldKindDescriptions } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';

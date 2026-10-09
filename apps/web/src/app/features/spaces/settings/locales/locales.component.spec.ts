@@ -1,6 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Locale } from '@shared/models/locale.model';
-import { Space } from '@shared/models/space.model';
+import { Locale, Space } from '@localess/shared';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceStore } from '@shared/stores/space.store';

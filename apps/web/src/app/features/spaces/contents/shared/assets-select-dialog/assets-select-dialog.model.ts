@@ -1,5 +1,4 @@
-import { Asset } from '@shared/models/asset.model';
-import { AssetFileType } from '@shared/models/schema.model';
+import { Asset, AssetFileType } from '@localess/shared';
 
 export interface AssetsSelectDialogContext {
   spaceId: string;

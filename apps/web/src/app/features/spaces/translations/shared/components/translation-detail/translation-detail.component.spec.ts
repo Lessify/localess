@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Locale } from '@shared/models/locale.model';
-import { Translation, TranslationStatus, TranslationType } from '@shared/models/translation.model';
+import { Locale, Translation, TranslationType } from '@localess/shared';
+import { TranslationStatus } from '@shared/models/translation.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';

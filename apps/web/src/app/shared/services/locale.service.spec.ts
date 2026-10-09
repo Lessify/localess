@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
 
-import { Locale } from '../models/locale.model';
+import { Locale } from '@localess/shared';
 import { LocaleService } from './locale.service';
 
 describe('LocaleService', () => {

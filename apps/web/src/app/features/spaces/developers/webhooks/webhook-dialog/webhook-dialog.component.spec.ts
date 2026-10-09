@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
-import { WebHook, WebHookEvent } from '@shared/models/webhook.model';
+import { WebHook, WebHookEvent } from '@localess/shared';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 

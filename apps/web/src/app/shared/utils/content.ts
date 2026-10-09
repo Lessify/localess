@@ -1,13 +1,4 @@
-import {
-  ContentAsset,
-  ContentData,
-  ContentReference,
-  isContentAsset,
-  isContentLink,
-  isContentReference,
-} from '@shared/models/content.model';
-import { CONTENT_DEFAULT_LOCALE } from '@shared/models/locale.model';
-import { isFieldTranslatable, isSchemaArray, Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { CONTENT_DEFAULT_LOCALE, ContentAsset, ContentData, ContentReference, isContentAsset, isContentLink, isContentReference, isFieldTranslatable, isSchemaArray, Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { TranslatableField } from '@shared/models/translate.model';
 import { generateHTML, generateJSON, JSONContent } from '@tiptap/core';
 import { v4 } from 'uuid';
@@ -83,47 +74,6 @@ export function extractSchemaContent(data: ContentData, schema: SchemaComponent,
   //console.log('result',result)
   //console.groupEnd()
   return result;
-}
-
-/**
- * extract Locale Content
- * @param {ContentData} content content
- * @param {Schema[]} schemas schema
- * @param {string} locale locale
- * @return {ContentData} content
- */
-export function extractContent(content: ContentData, schemas: Map<string, Schema>, locale: string): ContentData {
-  const extractedContentData: ContentData = {
-    _id: content._id,
-    _schema: content._schema,
-  };
-  const schema = schemas.get(content._schema);
-  if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
-    for (const field of schema?.fields || []) {
-      if (field.kind === SchemaFieldKind.SCHEMA) {
-        const fieldContent: ContentData | undefined = content[field.name];
-        if (fieldContent) {
-          extractedContentData[field.name] = extractContent(fieldContent, schemas, locale);
-        }
-      } else if (field.kind === SchemaFieldKind.SCHEMAS) {
-        const fieldContent: ContentData[] | undefined = content[field.name];
-        if (fieldContent && Array.isArray(fieldContent)) {
-          extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
-        }
-      } else {
-        if (isFieldTranslatable(field)) {
-          let value = content[`${field.name}_i18n_${locale}`];
-          if (value === undefined) {
-            value = content[field.name];
-          }
-          extractedContentData[field.name] = value;
-        } else {
-          extractedContentData[field.name] = content[field.name];
-        }
-      }
-    }
-  }
-  return extractedContentData;
 }
 
 /**

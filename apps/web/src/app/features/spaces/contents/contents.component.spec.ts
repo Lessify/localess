@@ -1,9 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { Content, ContentDocument, ContentFolder, ContentKind } from '@shared/models/content.model';
-import { Schema, SchemaType } from '@shared/models/schema.model';
-import { Token, TokenPermission } from '@shared/models/token.model';
+import { Content, ContentDocument, ContentFolder, ContentKind, Schema, SchemaType, Token, TokenPermission } from '@localess/shared';
 import { ContentService } from '@shared/services/content.service';
 import { NotificationService } from '@shared/services/notification.service';
 import { SchemaService } from '@shared/services/schema.service';

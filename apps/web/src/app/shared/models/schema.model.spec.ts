@@ -1,4 +1,4 @@
-import { isFieldTranslatable, SchemaField, SchemaFieldKind } from './schema.model';
+import { isFieldTranslatable, SchemaField, SchemaFieldKind } from '@localess/shared';
 
 describe('isFieldTranslatable', () => {
   it('follows the flag on kinds that can be translatable', () => {

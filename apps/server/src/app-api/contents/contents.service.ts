@@ -1,11 +1,11 @@
 import { randomInt } from 'node:crypto';
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
+import { Schema, WebHookEvent } from '@localess/shared';
 import { DATABASE, Database } from '../../database/database.module.js';
 import { newId } from '../../database/id.js';
 import { contentPublished, contents, schemas, UpdatedBy } from '../../database/schema.js';
 import { buildDocumentStorage } from '../../domain/lib/content-extract.js';
-import { Schema, WebHookEvent } from '../../domain/models/index.js';
 import { EventsService } from '../../events/events.service.js';
 import type { UserRow } from '../../users/users.service.js';
 import { WebhookDispatcher } from '../../webhooks/webhook-dispatcher.service.js';

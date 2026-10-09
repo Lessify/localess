@@ -15,7 +15,7 @@ export const zTranslationExportArraySchema = z.array(translationSchema);
 
 export const zTranslationFlatExportSchema = z.record(z.string(), z.string());
 
-export const zTranslationUpdateSchema = z.object({
+export const zTranslationManageUpdateSchema = z.object({
   dryRun: z.boolean().optional(),
   type: z.enum(['add-missing', 'update-existing', 'delete-missing-key', 'delete-missing-value']),
   values: z.record(z.string(), z.string()),

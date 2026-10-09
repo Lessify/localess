@@ -1,4 +1,4 @@
-import { Content } from '@shared/models/content.model';
+import { Content } from '@localess/shared';
 
 export interface EditDialogContext {
   content: Content;

@@ -1,7 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ContentDocument, ContentKind } from '@shared/models/content.model';
-import { Locale } from '@shared/models/locale.model';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { ContentDocument, ContentKind, Locale, Space, SpaceEnvironment } from '@localess/shared';
 import { SpaceStore } from '@shared/stores/space.store';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';

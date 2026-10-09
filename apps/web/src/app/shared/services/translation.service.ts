@@ -2,10 +2,9 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
+import { Translation, TranslationCreate, TranslationType, TranslationUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-
-import { Translation, TranslationCreate, TranslationType, TranslationUpdate } from '../models/translation.model';
 
 /**
  * Translations of a space (`/api/app/spaces/:spaceId/translations`); reads are live.

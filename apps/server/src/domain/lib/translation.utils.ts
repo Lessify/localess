@@ -1,4 +1,4 @@
-import { Translation } from '../models/index.js';
+import { Translation } from '@localess/shared';
 
 /**
  * Result of planTranslationUpdate: the classified changes a translation update would apply.

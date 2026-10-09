@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Asset } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCloudDownload, lucideFolder, lucidePaperclip } from '@ng-icons/lucide';
-import { Asset } from '@shared/models/asset.model';
 import { AssetService } from '@shared/services/asset.service';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

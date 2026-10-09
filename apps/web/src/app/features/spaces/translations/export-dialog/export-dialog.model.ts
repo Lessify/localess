@@ -1,4 +1,4 @@
-import { Locale } from '@shared/models/locale.model';
+import { Locale } from '@localess/shared';
 
 export interface ExportDialogContext {
   locales: Locale[];

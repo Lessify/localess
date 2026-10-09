@@ -1,9 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { ContentDocument, ContentKind } from '@shared/models/content.model';
-import { SchemaFieldKind, SchemaFieldReferences } from '@shared/models/schema.model';
-import { Space } from '@shared/models/space.model';
+import { ContentDocument, ContentKind, SchemaFieldKind, SchemaFieldReferences, Space } from '@localess/shared';
 import { ContentService } from '@shared/services/content.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';

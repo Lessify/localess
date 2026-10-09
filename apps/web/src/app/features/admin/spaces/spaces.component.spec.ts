@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
-import { Space } from '@shared/models/space.model';
+import { Space } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceService } from '@shared/services/space.service';
 import { SpaceTemplateService } from '@shared/services/space-template.service';

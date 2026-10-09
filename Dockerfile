@@ -10,6 +10,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
+COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 COPY packages/visual-editor-sync/package.json packages/visual-editor-sync/
 RUN npm ci
@@ -29,13 +30,16 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
+COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 COPY packages/visual-editor-sync/package.json packages/visual-editor-sync/
-# Production dependencies of the server workspace only (hoisted into /app/node_modules).
+# Production dependencies of the server workspace only (hoisted into /app/node_modules); its
+# @localess/shared dependency is linked to packages/shared, whose build is copied below.
 RUN npm ci --omit=dev --workspace @localess/server && npm cache clean --force
 
 COPY --from=build /app/apps/server/dist apps/server/dist
 COPY --from=build /app/apps/server/drizzle apps/server/drizzle
+COPY --from=build /app/packages/shared/dist packages/shared/dist
 COPY --from=build /app/apps/web/dist/browser apps/web/dist/browser
 
 # Postgres refuses to run as root, so the whole server runs as the image's `node` user.

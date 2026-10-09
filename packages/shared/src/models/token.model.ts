@@ -10,6 +10,14 @@ export enum TokenPermission {
 
 export type Token = TokenV1 | TokenV2;
 
+/** What a V1 token (no `version`, no stored permissions) may do: read translations and content, published and draft. */
+export const TOKEN_V1_IMPLICIT_PERMISSIONS: readonly TokenPermission[] = [
+  TokenPermission.TRANSLATION_PUBLIC,
+  TokenPermission.TRANSLATION_DRAFT,
+  TokenPermission.CONTENT_PUBLIC,
+  TokenPermission.CONTENT_DRAFT,
+];
+
 export type TokenV1 = TokenBase & { version: undefined };
 
 export interface TokenV2 extends TokenBase {
@@ -18,6 +26,7 @@ export interface TokenV2 extends TokenBase {
   cacheTtl?: number;
 }
 export interface TokenBase {
+  id: string;
   version?: number;
   name: string;
   createdAt: Timestamp;

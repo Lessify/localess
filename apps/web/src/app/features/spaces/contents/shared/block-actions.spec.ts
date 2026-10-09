@@ -1,5 +1,4 @@
-import { ContentData } from '@shared/models/content.model';
-import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { ContentData, Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
 import { blockActions, duplicateBlock, findBlock, moveBlockDown, moveBlockUp, removeBlock } from './block-actions';

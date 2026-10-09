@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
+import { UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
-import { UserPermission } from '../../auth/permissions.js';
 import { ZodValidationPipe } from '../../common/zod-validation.pipe.js';
 import { zLocale, zPreviewUrl } from '../common/zod.js';
 import { spaceDto, SpacesService } from './spaces.service.js';

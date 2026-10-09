@@ -1,4 +1,4 @@
-import { ContentDocument } from '@shared/models/content.model';
+import { ContentDocument } from '@localess/shared';
 
 export interface ReferencesSelectDialogContext {
   spaceId: string;

@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { Locale } from '@localess/shared';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { Locale } from '@shared/models/locale.model';
 import { LocaleService } from '@shared/services/locale.service';
 import { LocaleValidator } from '@shared/validators/locale.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';

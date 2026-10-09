@@ -2,7 +2,7 @@ import { signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, convertToParamMap, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { Space } from '@shared/models/space.model';
+import { Space } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { SpaceStore } from '@shared/stores/space.store';
 import { firstValueFrom, Observable } from 'rxjs';

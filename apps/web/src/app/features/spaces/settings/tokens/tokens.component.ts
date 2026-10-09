@@ -3,6 +3,7 @@ import { DatePipe, DOCUMENT } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { isTokenV2, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideSquareTerminal, lucideTrash } from '@ng-icons/lucide';
 import {
@@ -15,16 +16,7 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import {
-  getTokenUsageInfo,
-  isTokenV2,
-  PERMISSION_TEXT,
-  Token,
-  TOKEN_V1_IMPLICIT_PERMISSIONS,
-  TokenForm,
-  TokenPermission,
-  TokenUsageInfo,
-} from '@shared/models/token.model';
+import { getTokenUsageInfo, PERMISSION_TEXT, TokenForm, TokenUsageInfo } from '@shared/models/token.model';
 import { NotificationService } from '@shared/services/notification.service';
 import { TokenService } from '@shared/services/token.service';
 import { SpaceStore } from '@shared/stores/space.store';

@@ -1,4 +1,4 @@
-import { UserPermission, UserRole } from '@shared/models/user.model';
+import { UserPermission, UserRole } from '@localess/shared';
 
 /** The dialog takes no context: an invite starts from a blank form. */
 export interface UserInviteDialogResult {

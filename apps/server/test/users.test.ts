@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { UserPermission } from '../src/auth/permissions.js';
+import { UserPermission } from '@localess/shared';
 import { UsersService } from '../src/users/users.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 

@@ -23,6 +23,8 @@
     "paths": {
       "@shared/*": ["src/app/shared/*"],
       "@core/*": ["src/app/core/*"],
+      "@localess/shared": ["../../packages/shared/src/index.ts"],
+      "@localess/shared/zod": ["../../packages/shared/src/zod.ts"],
       "@spartan-ng/helm/form-field": ["../../packages/ui/form-field/src/index.ts"],
       "@spartan-ng/helm/icon": ["../../packages/ui/icon/src/index.ts"],
       "@spartan-ng/helm/accordion": ["../../packages/ui/accordion/src/index.ts"],

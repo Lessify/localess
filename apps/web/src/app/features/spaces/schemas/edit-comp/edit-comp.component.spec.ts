@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Schema, SchemaFieldKind, SchemaType } from '@shared/models/schema.model';
+import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';
 import { SchemaService } from '@shared/services/schema.service';

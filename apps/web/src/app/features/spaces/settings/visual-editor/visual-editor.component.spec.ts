@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Space, SpaceEnvironment } from '@shared/models/space.model';
+import { Space, SpaceEnvironment } from '@localess/shared';
 import { NotificationService } from '@shared/services/notification.service';
 import { PlatformService } from '@shared/services/platform.service';
 import { SpaceService } from '@shared/services/space.service';

@@ -84,10 +84,10 @@ Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header
 
 | Method | Path                                           | Auth                                     | Body                       |
 |--------|------------------------------------------------|------------------------------------------|----------------------------|
-| `POST` | `/api/v1/spaces/:spaceId/translations/:locale` | `DEV_TOOLS` (header)                     | `zTranslationUpdateSchema` |
+| `POST` | `/api/v1/spaces/:spaceId/translations/:locale` | `DEV_TOOLS` (header)                     | `zTranslationManageUpdateSchema` |
 | `POST` | `/api/v1/spaces/:spaceId/schemas`              | `DEV_TOOLS` (header)                      | `zSchemaPushSchema`        |
 
-**Request body (`zTranslationUpdateSchema`):**
+**Request body (`zTranslationManageUpdateSchema`):**
 
 ```typescript
 {
@@ -256,6 +256,6 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 | `apps/server/src/public-api/cache-control.ts`                 | Cache TTL constants                                                                       |
 | `apps/server/src/public-api/v1-response.ts`                   | `sendV1Error()` error bodies                                                              |
 | `apps/server/src/public-api/lib/`                             | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing, ID checks |
-| `apps/server/src/domain/models/`                              | `TokenPermission` enum, token and zod request models                                      |
+| `packages/shared/src/` (`@localess/shared`, `@localess/shared/zod`) | `TokenPermission` enum, token types and zod request models                                |
 
 Acceptance tests (ported from the functions-era route tests): `apps/server/test/v1-*.test.ts`.

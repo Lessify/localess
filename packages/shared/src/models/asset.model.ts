@@ -8,6 +8,7 @@ export enum AssetKind {
 }
 
 export interface AssetBase {
+  id: string;
   kind: AssetKind;
   name: string;
   parentPath: string;
@@ -77,13 +78,17 @@ export type AssetFileMetadata =
       duration?: number;
     };
 
-// Import and Export
-export interface AssetFolderExport extends Omit<AssetFolder, 'createdAt' | 'updatedAt'> {
-  id: string;
+export function isFolder(asset: Asset): asset is AssetFolder {
+  return asset.kind === AssetKind.FOLDER;
 }
 
-export interface AssetFileExport extends Omit<AssetFile, 'createdAt' | 'updatedAt' | 'inProgress'> {
-  id: string;
+export function isFile(asset: Asset): asset is AssetFile {
+  return asset.kind === AssetKind.FILE;
 }
+
+// Import and Export
+export type AssetFolderExport = Omit<AssetFolder, 'createdAt' | 'updatedAt'>;
+
+export type AssetFileExport = Omit<AssetFile, 'createdAt' | 'updatedAt' | 'inProgress'>;
 
 export type AssetExport = AssetFileExport | AssetFolderExport;

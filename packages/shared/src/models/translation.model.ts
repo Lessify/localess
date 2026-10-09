@@ -1,6 +1,7 @@
+import type { z } from 'zod';
+
 import type { Timestamp } from './timestamp.js';
-import { zTranslationUpdateSchema } from './translation.zod.js';
-import { z } from 'zod';
+import type { zTranslationManageUpdateSchema } from './translation.zod.js';
 
 export enum TranslationType {
   STRING = 'STRING',
@@ -9,6 +10,7 @@ export enum TranslationType {
 }
 
 export interface Translation {
+  id: string;
   type: TranslationType;
   locales: Record<string, string>;
   labels?: string[];
@@ -26,11 +28,24 @@ export interface PublishTranslationsData {
 }
 
 // Import and Export
-export interface TranslationExport extends Omit<Translation, 'createdAt' | 'updatedAt'> {
+export type TranslationExport = Omit<Translation, 'createdAt' | 'updatedAt'>;
+
+// App API requests
+export interface TranslationCreate {
   id: string;
+  type: TranslationType;
+  labels?: string[];
+  description?: string;
+  locales: Record<string, string>;
 }
 
-export type TranslationUpdate = z.infer<typeof zTranslationUpdateSchema>;
+export interface TranslationUpdate {
+  labels: string[];
+  description: string;
+}
+
+/** Body of the public MANAGE API `POST /api/v1/spaces/{spaceId}/translations/{locale}`. */
+export type TranslationManageUpdate = z.infer<typeof zTranslationManageUpdateSchema>;
 
 export interface TranslationUpdateResponse {
   message: string;
