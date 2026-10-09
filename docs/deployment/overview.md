@@ -34,7 +34,7 @@ start-up (see [Configuration](configuration.md)), so one build serves every inst
 | Requirement | Notes |
 |-------------|-------|
 | Docker (with Compose) | For the Docker paths — the image contains everything else |
-| — or Node.js 24 | For a bare-Node install (`engines.node: 24`) |
+| — or Node.js 24 + pnpm | For a bare-Node install (`engines.node: 24`; `corepack enable` provides pnpm) |
 | `ffmpeg` | Video thumbnails. Without it, video assets upload but get no thumbnail |
 | `perl` | Used by ExifTool for asset metadata extraction on Linux |
 | Postgres | Optional. Any reachable Postgres via `DATABASE_URL`; otherwise the embedded one is used (the Compose file ships Postgres 18) |
@@ -58,13 +58,13 @@ ideally a CDN in front of `/api/v1` — see [Production](production.md).
 From a checkout:
 
 ```bash
-npm ci                    # every workspace, one lockfile
-npm run version:generate  # writes apps/web/src/assets/version.json (build version info)
-npm run build:prod        # Angular → apps/web/dist/browser
-npm run server:build      # server → apps/server/dist
+pnpm install --frozen-lockfile                                             # every workspace, one lockfile
+pnpm version:generate                                                      # writes apps/web/src/assets/version.json (build version info)
+pnpm build:prod                                                            # Angular → apps/web/dist/browser
+pnpm server:build                                                          # server → apps/server/dist
 
-export LOCALESS_DATA_DIR=/var/lib/localess      # files (+ embedded Postgres when DATABASE_URL is unset)
-export DATABASE_URL=postgres://user:pass@db:5432/localess   # optional
+export LOCALESS_DATA_DIR=/var/lib/localess                                 # files (+ embedded Postgres when DATABASE_URL is unset)
+export DATABASE_URL=postgres://user:pass@db:5432/localess                  # optional
 export LOCALESS_PUBLIC_URL=https://cms.example.com
 export LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD='…'  # first boot only
 node apps/server/dist/main.js
@@ -84,7 +84,7 @@ There is no sign-up page and no setup wizard. Create the first admin one of two 
 - **On first boot:** set `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` (at least 6
   characters). While the database has no users, the server creates that admin and a "Hello World"
   space. Once any user exists the variables are ignored, so you can remove them after the first start.
-- **With the CLI:** `npm run localess -- admin:create --email <email> [--name <name>]`. The
+- **With the CLI:** `pnpm localess admin:create --email <email> [--name <name>]`. The
   password comes from `LOCALESS_ADMIN_PASSWORD` or an interactive prompt — never a flag. See
   [The CLI](#the-cli).
 
@@ -97,8 +97,8 @@ Everyone else is invited from **Admin → Users**.
 One command-line tool ships with the server:
 
 ```bash
-npm run localess -- <command>              # from a checkout (runs apps/server/dist/cli.js)
-docker compose exec localess node apps/server/dist/cli.js <command>   # in Docker
+pnpm localess <command>              # from a checkout (runs apps/server/dist/cli.js)
+docker compose exec localess node server/dist/cli.js <command>   # in Docker
 ```
 
 | Command | Does |
@@ -108,7 +108,7 @@ docker compose exec localess node apps/server/dist/cli.js <command>   # in Docke
 | `admin:create --email <e> [--name <n>]` | Create an administrator and the "Hello World" space |
 | `import:firebase --project <id> [--bucket <b>] [--no-files]` | Copy a Firebase-era install in — see [Migrating from Firebase](migrate-from-firebase.md) |
 
-Shortcuts: `npm run localess:check` and `npm run localess:import -- --project <id>`.
+Shortcuts: `pnpm localess:check` and `pnpm localess:import --project <id>`.
 
 The CLI reads the same environment variables as the server, so run it with the same
 `DATABASE_URL` / `LOCALESS_DATA_DIR`. With the **embedded** database, see
@@ -119,8 +119,8 @@ The CLI reads the same environment variables as the server, so run it with the s
 ## Local development
 
 ```bash
-npm run server:dev   # API on :3000, embedded Postgres in apps/server/.data
-npm start            # Angular dev server on :4200, proxying /api to :3000
+pnpm server:dev   # API on :3000, embedded Postgres in apps/server/.data
+pnpm start            # Angular dev server on :4200, proxying /api to :3000
 ```
 
 Set `LOCALESS_ADMIN_EMAIL` / `LOCALESS_ADMIN_PASSWORD` for the first `server:dev` run to get an

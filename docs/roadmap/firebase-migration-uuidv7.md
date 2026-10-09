@@ -175,7 +175,7 @@ Reuses the Firebase connection that exists today (`apps/server/src/firebase-impo
 `firebase-admin` with a service-account key from env, never argv).
 
 ```
-npm run localess -- import:firebase --project <id> [--dry-run] [--no-files]
+pnpm localess import:firebase --project <id> [--dry-run] [--no-files]
 ```
 
 1. **Preflight** — connect to Firestore, Storage and Auth; check the target database is empty or was filled

@@ -4,16 +4,16 @@
 
 ## Overview
 
-Tests run with **Vitest** + `happy-dom`, via Angular's `@angular/build:unit-test` builder (`npm test`). Specs use Jasmine-style `describe`/`it` (globals enabled), but mocking is Vitest's (`vi.fn()`, `vi.mock()`, `vi.mocked()`), not Jasmine spies.
+Tests run with **Vitest** + `happy-dom`, via Angular's `@angular/build:unit-test` builder (`pnpm test`). Specs use Jasmine-style `describe`/`it` (globals enabled), but mocking is Vitest's (`vi.fn()`, `vi.mock()`, `vi.mocked()`), not Jasmine spies.
 
 ```bash
-npm test                                              # full suite
-npx ng test --watch=false --include="path/to/*.spec.ts"  # a subset
+pnpm test                                                                                     # full suite
+pnpm --filter @localess/web exec ng test --watch=false --include="src/app/path/to/*.spec.ts"  # a subset
 ```
 
 A root `vitest-base.config.ts` sets **`test.isolate: true`**. The Angular builder auto-discovers this file (`angular.json`'s unit-test `runnerConfig: true` triggers `@angular/build`'s `findVitestBaseConfig` lookup) and merges it on top of its own internal default of `isolate: false`, so the external file wins — each spec file gets its own fresh module registry.
 
-The server (`server/`) has its own suite: `npm run server:test` (Vitest against a real embedded Postgres; see [apps/server/README.md](../apps/server/README.md)).
+The server (`apps/server/`) has its own suite: `pnpm server:test` (Vitest against a real embedded Postgres; see [apps/server/README.md](../apps/server/README.md)).
 
 ## Test scope
 
@@ -59,4 +59,4 @@ expect(await result).toEqual([{ id: 's1' }]);
 1. Copy the setup above (`provideHttpClient`, `provideHttpClientTesting`, `ChangeEventsService` stub).
 2. One test per public method: URL, method, body, and how the response is mapped.
 3. One live-refetch test if the service has live reads.
-4. `npx ng test --watch=false --include="apps/web/src/app/shared/services/<name>.service.spec.ts"`.
+4. `pnpm --filter @localess/web exec ng test --watch=false --include="src/app/shared/services/<name>.service.spec.ts"`.

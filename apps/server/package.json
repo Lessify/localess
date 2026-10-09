@@ -16,7 +16,7 @@
     "cli": "node dist/cli.js"
   },
   "dependencies": {
-    "@localess/shared": "*",
+    "@localess/shared": "workspace:*",
     "@fastify/compress": "^9.2.1",
     "@fastify/cookie": "^11.1.3",
     "@fastify/cors": "^11.3.1",
@@ -40,17 +40,17 @@
     "openid-client": "^6.8.8",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
+    "rxjs": "catalog:",
     "sharp": "^0.35.5",
     "unzipper": "^0.12.5",
-    "zod": "^4.6.5"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@nestjs/testing": "^12.1.2",
     "@swc/core": "^1.16.13",
     "@types/archiver": "^7.0.0",
     "@types/fluent-ffmpeg": "^2.1.28",
-    "@types/node": "^24.19.1",
+    "@types/node": "catalog:",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "@types/unzipper": "^0.10.11",
@@ -58,9 +58,9 @@
     "ffmpeg-static": "^5.3.0",
     "oauth2-mock-server": "^9.2.0",
     "openapi3-ts": "^4.6.1",
-    "typescript": "^5.9.3",
+    "typescript": "catalog:",
     "unplugin-swc": "^2.0.0",
-    "vitest": "^4.1.11"
+    "vitest": "catalog:"
   },
   "allowScripts": {
     "@embedded-postgres/linux-x64": true,
@@ -71,5 +71,10 @@
     "esbuild": true,
     "ffmpeg-static": true
   },
-  "type": "module"
+  "type": "module",
+  "files": [
+    "dist",
+    "drizzle",
+    "!dist/*.tsbuildinfo"
+  ]
 }

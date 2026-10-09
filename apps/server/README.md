@@ -6,19 +6,21 @@ It also serves the Angular build, so the whole app runs on one port. Migration p
 
 ## Commands
 
+Run inside `apps/server` (or from the root with `pnpm --filter @localess/server <script>`):
+
 ```bash
-npm run build          # tsc → dist/
-npm start              # node dist/main.js
-npm run dev            # build + start
-npm test               # vitest (starts a throwaway embedded Postgres)
-npm run db:generate    # drizzle-kit: SQL migration from src/database/schema.ts changes (commit the output)
-npm run cli -- db:migrate
-npm run cli -- check
-npm run cli -- import:firebase --project <firebase-project-id>
-LOCALESS_ADMIN_PASSWORD=… npm run cli -- admin:create --email admin@example.com [--name "Admin"]
+pnpm build        # tsc → dist/
+pnpm start        # node dist/main.js
+pnpm dev          # build + start
+pnpm test         # vitest (starts a throwaway embedded Postgres)
+pnpm db:generate  # drizzle-kit: SQL migration from src/database/schema.ts changes (commit the output)
+pnpm cli db:migrate
+pnpm cli check
+pnpm cli import:firebase --project <firebase-project-id>
+LOCALESS_ADMIN_PASSWORD=… pnpm cli admin:create --email admin@example.com [--name "Admin"]
 ```
 
-From the repo root: `npm run server:dev`, `npm run server:test`, `npm run server:build`.
+From the repo root: `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`.
 
 On every boot the server applies pending migrations (under a Postgres advisory lock, so several
 instances can start at once). Without `DATABASE_URL` it starts an embedded Postgres in
@@ -137,7 +139,7 @@ again right before switching DNS to pick up the delta.
    `FIREBASE_SCRYPT_ROUNDS`, `FIREBASE_SCRYPT_MEM_COST`. Users then keep their passwords: the
    Firebase hash is accepted once and replaced by argon2id on their first sign-in. Without the
    parameters, password users must reset their password.
-3. `npm run cli -- import:firebase --project <id> [--bucket <name>]` (`--no-files` skips Storage for
+3. `pnpm cli import:firebase --project <id> [--bucket <name>]` (`--no-files` skips Storage for
    a quick data-only rehearsal). The report lists counts and every item that was skipped.
 4. Freeze edits in the old install, run the import again, switch DNS, keep the Firebase project
    read-only for a while as a rollback.

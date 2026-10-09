@@ -71,7 +71,7 @@ Guards in brackets are `permissionGuard(...)` (`shared/guards/permission.guard.t
 
 ## Server Integration
 
-The SPA is served by the NestJS server on the same origin as the API, so every call is a relative `/api/...` URL and the session cookie travels automatically. In development `npm start` proxies `/api` to the server (`proxy.conf.cjs`).
+The SPA is served by the NestJS server on the same origin as the API, so every call is a relative `/api/...` URL and the session cookie travels automatically. In development `pnpm start` proxies `/api` to the server (`proxy.conf.cjs`).
 
 - **`apiInterceptor`** (`core/api/api.interceptor.ts`) — adds `X-Requested-With: XMLHttpRequest` to every `/api/` request (the server's CSRF rule for cookie-authenticated writes), and treats a `401` from `/api/app/**` or `/api/auth/me` as signed out: `UserStore.signedOut()` and a redirect to `/auth/login`.
 - **`AppConfigService`** (`core/api/app-config.service.ts`) — loads `GET /api/config` in `provideAppInitializer` before the first render: login providers, login message, whether password reset by email is available, Unsplash plugin, machine translation enabled. This replaced the build-time `LOCALESS_*` defines, `firebase-config*.json` and Remote Config, so one build serves every install. Falls back to defaults (everything off) if the call fails.

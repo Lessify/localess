@@ -12,7 +12,7 @@ An upgrade is: new code, restart. Pending database migrations apply automaticall
 git pull
 docker compose up -d --build
 docker compose logs -f localess
-docker compose exec localess node apps/server/dist/cli.js check
+docker compose exec localess node server/dist/cli.js check
 ```
 
 **Single container** — rebuild (or pull) the image, then replace the container on the same volume:
@@ -27,8 +27,8 @@ docker run -d --name localess -p 3000:3000 -v localess-data:/data … localess
 
 ```bash
 git pull
-npm ci && npm ci
-npm run version:generate && npm run build:prod && npm run server:build
+pnpm install --frozen-lockfile
+pnpm version:generate && pnpm build:prod && pnpm server:build
 # restart the process (systemctl restart localess, …)
 ```
 

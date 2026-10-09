@@ -1187,4 +1187,4 @@ Place it inside the scrolling element (in a dialog, the scrolling middle `div` �
     directly to `<p>` tags — no `hlmCardTitle`/`hlmCardSubtitle` directives needed.
 22. **Paginator sticky at bottom of dialog?** → `<ll-paginator [sticky]="true">` inside the scrolling element
 23. **Dead code blocks (`@if (false)`)** → remove them
-24. Run `npm run build && npm run lint:fix`
+24. Run `pnpm build && pnpm lint:fix`

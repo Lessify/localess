@@ -4,6 +4,10 @@
   "private": true,
   "description": "Domain contract shared by apps/server and apps/web: models, enums, permissions, locales, zod validators.",
   "type": "module",
+  "files": [
+    "dist",
+    "!dist/*.tsbuildinfo"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -19,10 +23,11 @@
     "test": "tsc -p tsconfig.test.json && vitest run"
   },
   "dependencies": {
-    "zod": "^4.6.5"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

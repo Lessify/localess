@@ -5,7 +5,7 @@ import test, { describe } from 'node:test';
 
 import { collectFlags, FIXED_FLAGS, readLocaleIds, render, subtagsOf } from './generate-locale-flags.mjs';
 
-const FLAGS_DIR = join('node_modules', 'circle-flags', 'flags');
+const FLAGS_DIR = join('apps', 'web', 'node_modules', 'circle-flags', 'flags');
 const GENERATED = join('apps', 'web', 'src', 'app', 'shared', 'components', 'locale-icon', 'locale-flags.ts');
 const LOCALE_LIST = join('packages', 'shared', 'src', 'locales.ts');
 
@@ -16,7 +16,7 @@ const LOCALE_LIST = join('packages', 'shared', 'src', 'locales.ts');
  * generated file trustworthy - re-run `node tools/scripts/generate-locale-flags.mjs` when they fail.
  */
 describe('locale flag data', () => {
-  const version = JSON.parse(readFileSync(join('node_modules', 'circle-flags', 'package.json'), 'utf8')).version;
+  const version = JSON.parse(readFileSync(join('apps', 'web', 'node_modules', 'circle-flags', 'package.json'), 'utf8')).version;
   const localeIds = readLocaleIds(readFileSync(LOCALE_LIST, 'utf8'));
 
   /**

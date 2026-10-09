@@ -58,7 +58,7 @@ These are read by the CLI only; the server does not need them.
 ### 3. Rehearse
 
 ```bash
-npm run localess -- import:firebase --project <firebase-project-id> [--bucket <bucket>] [--no-files]
+pnpm localess import:firebase --project <firebase-project-id> [--bucket <bucket>] [--no-files]
 ```
 
 - `--bucket` — only if the project's Storage bucket is not the default one.
@@ -72,7 +72,7 @@ docker compose run --rm \
   -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/key.json \
   -e FIREBASE_SCRYPT_SIGNER_KEY=… -e FIREBASE_SCRYPT_SALT_SEPARATOR=… \
   -e FIREBASE_SCRYPT_ROUNDS=… -e FIREBASE_SCRYPT_MEM_COST=… \
-  localess node apps/server/dist/cli.js import:firebase --project <firebase-project-id>
+  localess node server/dist/cli.js import:firebase --project <firebase-project-id>
 ```
 
 The report lists counts per kind and every item that was skipped, with the reason. Then check the

@@ -2,5 +2,23 @@
   "name": "@localess/ui",
   "version": "4.1.0",
   "private": true,
-  "description": "Spartan/Helm UI components (source only), imported by the web app as @spartan-ng/helm/*."
+  "description": "Spartan/Helm UI components (source only), imported by the web app as @spartan-ng/helm/*.",
+  "dependencies": {
+    "@angular/cdk": "catalog:",
+    "@angular/common": "catalog:",
+    "@angular/core": "catalog:",
+    "@angular/forms": "catalog:",
+    "@angular/router": "catalog:",
+    "@ng-icons/core": "catalog:",
+    "@ng-icons/lucide": "catalog:",
+    "@spartan-ng/brain": "catalog:",
+    "class-variance-authority": "catalog:",
+    "clsx": "catalog:",
+    "embla-carousel": "catalog:",
+    "embla-carousel-angular": "catalog:",
+    "ngx-scrollbar": "catalog:",
+    "rxjs": "catalog:",
+    "tailwind-merge": "catalog:",
+    "tslib": "catalog:"
+  }
 }

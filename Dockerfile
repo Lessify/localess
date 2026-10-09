@@ -4,19 +4,21 @@
 
 # --- Build: Angular app + server -------------------------------------------------------------------
 FROM node:24-slim AS build
+# pnpm comes from Corepack, pinned by `packageManager` in package.json.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 WORKDIR /app
 
-# Every workspace manifest has to be present for `npm ci` to accept the lockfile.
-COPY package.json package-lock.json ./
-COPY apps/web/package.json apps/web/
-COPY apps/server/package.json apps/server/
-COPY packages/shared/package.json packages/shared/
-COPY packages/ui/package.json packages/ui/
-COPY packages/visual-editor-sync/package.json packages/visual-editor-sync/
-RUN npm ci
+# Dependencies first, from the lockfile alone, so this layer survives source changes.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch
 
 COPY . .
-RUN npm run version:generate && npm run build:prod && npm run server:build
+# Builds the app and the server, then `pnpm deploy` writes a self-contained copy of the server to
+# /deploy/server: its build, migrations, @localess/shared and production dependencies only.
+RUN pnpm install --offline --frozen-lockfile \
+  && pnpm version:generate && pnpm build:prod && pnpm server:build \
+  && pnpm --filter @localess/server deploy --prod /deploy/server
 
 # --- Runtime ---------------------------------------------------------------------------------------
 FROM node:24-slim
@@ -27,20 +29,9 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-COPY apps/web/package.json apps/web/
-COPY apps/server/package.json apps/server/
-COPY packages/shared/package.json packages/shared/
-COPY packages/ui/package.json packages/ui/
-COPY packages/visual-editor-sync/package.json packages/visual-editor-sync/
-# Production dependencies of the server workspace only (hoisted into /app/node_modules); its
-# @localess/shared dependency is linked to packages/shared, whose build is copied below.
-RUN npm ci --omit=dev --workspace @localess/server && npm cache clean --force
-
-COPY --from=build /app/apps/server/dist apps/server/dist
-COPY --from=build /app/apps/server/drizzle apps/server/drizzle
-COPY --from=build /app/packages/shared/dist packages/shared/dist
-COPY --from=build /app/apps/web/dist/browser apps/web/dist/browser
+COPY --from=build /deploy/server server
+# The server looks for the Angular build at ../web/dist/browser relative to itself.
+COPY --from=build /app/apps/web/dist/browser web/dist/browser
 
 # Postgres refuses to run as root, so the whole server runs as the image's `node` user.
 RUN mkdir -p /data && chown node:node /data
@@ -55,4 +46,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s \
   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
 
-CMD ["node", "apps/server/dist/main.js"]
+CMD ["node", "server/dist/main.js"]

@@ -33,7 +33,7 @@ export interface SqlExecutor {
 export class EventsService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventsService.name);
   private readonly events = new Subject<ChangeEvent>();
-  private listener: pg.PoolClient | undefined;
+  private listener: { client: pg.PoolClient; release: (destroy?: boolean) => void } | undefined;
   private closing = false;
 
   constructor(
@@ -47,6 +47,15 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
 
   private async listen(): Promise<void> {
     const client = await this.pool.connect();
+    // A connection must go back to the pool exactly once: pg-pool throws on a second release, and inside the
+    // 'error' handler that throw would crash the process. On shutdown, Postgres closing the connection and
+    // onModuleDestroy releasing it race each other.
+    let released = false;
+    const release = (destroy?: boolean) => {
+      if (released) return;
+      released = true;
+      client.release(destroy);
+    };
     client.on('notification', message => {
       if (message.channel !== EVENTS_CHANNEL || !message.payload) return;
       try {
@@ -56,22 +65,30 @@ export class EventsService implements OnModuleInit, OnModuleDestroy {
       }
     });
     client.on('error', error => {
+      if (this.listener?.client === client) this.listener = undefined;
+      release(true);
+      if (this.closing) return;
       this.logger.error(`Event listener connection lost: ${error.message}`);
-      client.release(true);
-      this.listener = undefined;
       // Reconnect; events published meanwhile are lost, clients recover on their next refetch.
-      if (!this.closing) setTimeout(() => void this.listen().catch(e => this.logger.error(e)), 1000);
+      setTimeout(() => void this.listen().catch(e => this.logger.error(e)), 1000);
     });
-    await client.query(`LISTEN ${EVENTS_CHANNEL}`);
-    this.listener = client;
+    try {
+      await client.query(`LISTEN ${EVENTS_CHANNEL}`);
+    } catch (error) {
+      release(true);
+      throw error;
+    }
+    this.listener = { client, release };
   }
 
   async onModuleDestroy(): Promise<void> {
     this.closing = true;
     this.events.complete();
-    if (this.listener) {
-      await this.listener.query(`UNLISTEN ${EVENTS_CHANNEL}`).catch(() => undefined);
-      this.listener.release();
+    const listener = this.listener;
+    this.listener = undefined;
+    if (listener) {
+      await listener.client.query(`UNLISTEN ${EVENTS_CHANNEL}`).catch(() => undefined);
+      listener.release();
     }
   }
 

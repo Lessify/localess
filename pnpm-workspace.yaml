@@ -1,0 +1,63 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Versions used by more than one workspace, defined once ("catalog:" in package.json).
+catalog:
+  '@angular/cdk': '^21.2.14'
+  '@angular/common': '^21.2.24'
+  '@angular/core': '^21.2.24'
+  '@angular/forms': '^21.2.24'
+  '@angular/router': '^21.2.24'
+  '@ng-icons/core': '^33.2.2'
+  '@ng-icons/lucide': '^33.2.2'
+  '@spartan-ng/brain': '^1.4.1'
+  '@types/node': '^24.19.1'
+  'class-variance-authority': '^0.7.1'
+  'clsx': '^2.1.1'
+  'embla-carousel': '>=8.0.0 <9.0.0'
+  'embla-carousel-angular': '21.0.0'
+  'happy-dom': '^20.9.0'
+  'ngx-scrollbar': '^19.1.5'
+  'prettier': '^3.8.3'
+  'prettier-plugin-tailwindcss': '^0.8.0'
+  'rxjs': '^7.8.2'
+  'tailwind-merge': '^3.7.0'
+  'tslib': '^2.3.0'
+  'typescript': '~5.9.3'
+  'vitest': '^4.1.11'
+  'zod': '^4.6.5'
+
+# pnpm holds back versions published less than a day ago (minimumReleaseAge); these were already locked.
+minimumReleaseAgeExclude:
+  - '@fastify/compress@9.2.1'
+
+# Ported from npm `overrides`. React is only used by @stoplight/elements (the OpenAPI viewer), which needs 18;
+# lodash is pinned for a security fix.
+overrides:
+  react: 18.3.1
+  react-dom: 18.3.1
+  lodash: ^4.18.1
+
+# Dependency install scripts pnpm may run (it refuses to install while any is undecided).
+allowBuilds:
+  # Embedded Postgres: restores the symlinks of its bundled libraries (one package per platform).
+  '@embedded-postgres/darwin-arm64': true
+  '@embedded-postgres/darwin-x64': true
+  '@embedded-postgres/linux-arm64': true
+  '@embedded-postgres/linux-x64': true
+  '@embedded-postgres/windows-x64': true
+  # Downloads the ffmpeg binary used for video thumbnails in development and tests.
+  ffmpeg-static: true
+  # Native binaries: pick or verify the prebuilt binary for this platform.
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  # Not needed: telemetry, install-time notices and Nx daemon setup.
+  '@firebase/util': false
+  '@scarf/scarf': false
+  less: false
+  nx: false
+  protobufjs: false

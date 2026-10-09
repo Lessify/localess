@@ -16,19 +16,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Installs the pnpm version pinned by `packageManager`; must run before setup-node so it can cache the store.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
+          cache: pnpm
 
-      - run: npm ci
-      - run: npm test -- --watch=false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test --watch=false
       # Starts a throwaway embedded Postgres per run
-      - run: npm run shared:test
-      - run: npm run server:test
-      - run: npm run test:scripts
+      - run: pnpm shared:test
+      - run: pnpm server:test
+      - run: pnpm test:scripts
 
   build:
     name: Lint and Build
@@ -39,15 +42,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Installs the pnpm version pinned by `packageManager`; must run before setup-node so it can cache the store.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
+          cache: pnpm
 
-      - run: npm ci
-      - run: npm run lint
-      # - run: npm run prettier
-      - run: npm run build
-      - run: npm run server:build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      # - run: pnpm prettier
+      - run: pnpm build
+      - run: pnpm server:build

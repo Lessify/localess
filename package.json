@@ -7,41 +7,35 @@
   "engines": {
     "node": "24"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
-    "start": "npm run build -w @localess/visual-editor-sync && npm start -w @localess/web",
-    "build": "npm run build -w @localess/visual-editor-sync && npm run build -w @localess/web",
-    "build:prod": "npm run build -w @localess/visual-editor-sync && npm run build:prod -w @localess/web",
-    "build:stats": "npm run build -w @localess/visual-editor-sync && npm run build:stats -w @localess/web",
-    "watch": "npm run watch -w @localess/web",
-    "test": "npm run build -w @localess/visual-editor-sync && npm test -w @localess/web --",
-    "test:scripts": "node --test \"tools/scripts/**/*.test.mjs\" && npm test -w @localess/visual-editor-sync",
-    "lint": "npm run lint -w @localess/web",
-    "lint:fix": "npm run lint:fix -w @localess/web",
-    "prettier": "npm run prettier -w @localess/web",
-    "prettier:fix": "npm run prettier:fix -w @localess/web",
-    "generate:github": "npm run generate:github -w @localess/web",
+    "start": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web start",
+    "build": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web build",
+    "build:prod": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web build:prod",
+    "build:stats": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web build:stats",
+    "watch": "pnpm --filter @localess/web watch",
+    "test": "pnpm --filter @localess/visual-editor-sync build && pnpm --filter @localess/web test",
+    "test:scripts": "node --test \"tools/scripts/**/*.test.mjs\" && pnpm --filter @localess/visual-editor-sync test",
+    "lint": "pnpm --filter @localess/web lint",
+    "lint:fix": "pnpm --filter @localess/web lint:fix",
+    "prettier": "pnpm --filter @localess/web prettier",
+    "prettier:fix": "pnpm --filter @localess/web prettier:fix",
+    "generate:github": "pnpm --filter @localess/web generate:github",
     "version:generate": "node tools/scripts/generate-version.js",
     "version:major": "node tools/scripts/bump-version.mjs major",
     "version:minor": "node tools/scripts/bump-version.mjs minor",
     "version:patch": "node tools/scripts/bump-version.mjs patch",
-    "server:dev": "npm run dev -w @localess/server",
-    "server:test": "npm test -w @localess/server",
-    "server:build": "npm run build -w @localess/server",
-    "localess": "npm run cli -w @localess/server --",
-    "localess:check": "npm run cli -w @localess/server -- check",
-    "localess:import": "npm run cli -w @localess/server -- import:firebase",
-    "shared:build": "npm run build -w @localess/shared",
-    "shared:test": "npm test -w @localess/shared"
+    "server:dev": "pnpm --filter @localess/server dev",
+    "server:test": "pnpm --filter @localess/server test",
+    "server:build": "pnpm --filter @localess/server build",
+    "shared:build": "pnpm --filter @localess/shared build",
+    "shared:test": "pnpm --filter @localess/shared test",
+    "localess": "pnpm --filter @localess/server cli",
+    "localess:check": "pnpm --filter @localess/server cli check",
+    "localess:import": "pnpm --filter @localess/server cli import:firebase"
   },
-  "overrides": {
-    "@stoplight/elements": {
-      "react": "18.3.1",
-      "react-dom": "18.3.1"
-    },
-    "lodash": "^4.18.1"
+  "packageManager": "pnpm@12.10.1",
+  "devDependencies": {
+    "prettier": "catalog:",
+    "prettier-plugin-tailwindcss": "catalog:"
   }
 }

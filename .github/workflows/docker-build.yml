@@ -22,7 +22,8 @@ on:
       - Dockerfile
       - .dockerignore
       - package.json
-      - package-lock.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
 
 jobs:
   build:

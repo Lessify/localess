@@ -7,33 +7,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+pnpm workspace (pnpm via `corepack enable`, version pinned by `packageManager`). Run everything from the root.
+
 ```bash
+# Setup
+pnpm install           # every workspace; install scripts are allow-listed in pnpm-workspace.yaml (allowBuilds)
+
 # Development (two terminals)
-npm run server:dev     # NestJS API on :3000 (embedded Postgres in apps/server/.data; LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin)
-npm start              # Angular dev server on http://localhost:4200, proxying /api to :3000
+pnpm server:dev        # NestJS API on :3000 (embedded Postgres in apps/server/.data; LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin)
+pnpm start             # Angular dev server on http://localhost:4200, proxying /api to :3000
 
 # Build
-npm run build          # Default build
-npm run build:prod     # Production build (apps/web/dist/browser, served by the server)
-npm run server:build   # Compile the server (apps/server/dist)
+pnpm build             # Default build
+pnpm build:prod        # Production build (apps/web/dist/browser, served by the server)
+pnpm server:build      # Compile the server (apps/server/dist; builds packages/shared first)
 docker compose up      # Server + Postgres 18 from the Dockerfile
 
 # Code quality
-npm run lint           # ESLint check
-npm run lint:fix       # Auto-fix lint issues
-npm run prettier:fix   # Format code
+pnpm lint              # ESLint check
+pnpm lint:fix          # Auto-fix lint issues
+pnpm prettier:fix      # Format code
 
 # Testing
-npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
-npm run test:scripts   # node:test suites for tools/scripts and packages/visual-editor-sync
-npm run server:test    # Server vitest suite (real embedded Postgres, one database per file)
-npm run shared:test    # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
+pnpm test              # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
+pnpm test:scripts      # node:test suites for tools/scripts and packages/visual-editor-sync
+pnpm server:test       # Server vitest suite (real embedded Postgres, one database per file)
+pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
 
-# Server CLI (apps/server/src/cli; needs `npm run server:build` first)
-npm run localess -- <command>   # e.g. user:create, user:reset-password, migrate
-npm run localess:check          # Health check of an installation
-npm run localess:import         # One-off import from a Firebase install (import:firebase)
-npm run db:generate -w @localess/server # Generate a Drizzle migration after editing the schema
+# Server CLI (apps/server/src/cli; needs `pnpm server:build` first)
+pnpm localess <command>                       # db:migrate, check, admin:create --email <email>, import:firebase --project <id>
+pnpm localess:check                           # Health check of an installation
+pnpm localess:import --project <id>           # One-off import from a Firebase install (import:firebase)
+pnpm --filter @localess/server db:generate    # Generate a Drizzle migration after editing the schema
+
+# Dependencies
+pnpm --filter @localess/web add <pkg>         # add to one workspace; versions used by several workspaces go in the pnpm-workspace.yaml catalog ("catalog:")
 ```
 
 ## Architecture Overview
@@ -53,10 +61,10 @@ npm run db:generate -w @localess/server # Generate a Drizzle migration after edi
 
 ### Repository Layout
 
-npm workspaces monorepo (one root `package.json` + lockfile; run everything from the root):
+pnpm workspace monorepo (one root `package.json`, `pnpm-workspace.yaml` and `pnpm-lock.yaml`; run everything from the root):
 
 ```
-apps/web/                  # @localess/web — Angular app (angular.json at the repo root, project root apps/web)
+apps/web/                  # @localess/web — Angular app (its own angular.json)
 apps/server/               # @localess/server — NestJS server, Drizzle migrations in apps/server/drizzle
 packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, permissions, locales, extractContent; zod validators in @localess/shared/zod
 packages/ui/               # @localess/ui — Spartan/Helm components (source only), imported as @spartan-ng/helm/*
@@ -68,7 +76,7 @@ docs/                      # project knowledge base (see table below)
 
 Domain types are defined once in `packages/shared`: import them from `@localess/shared` in both apps (never redeclare a model on one side). The server compiles against its `dist` (`tsc -b` builds it first); the web app and the server tests read its source.
 
-Workspace-specific commands: `npm run <script> -w @localess/server` (e.g. `db:generate`).
+Workspace-specific commands: `pnpm --filter @localess/server <script>` (e.g. `db:generate`). pnpm is strict: a workspace can only import packages it declares in its own `package.json`.
 Structure refactoring plan: [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md).
 
 ### Application Structure
@@ -134,14 +142,14 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 
 After every code change, always run the following in order:
 
-1. `npm run build` — verify the project compiles without errors
-2. `npm run lint:fix` — auto-fix lint and prettier issues
+1. `pnpm build` — verify the project compiles without errors
+2. `pnpm lint:fix` — auto-fix lint and prettier issues
 
 ## Environment & Local Setup
 
-Two Angular build configurations: `development` and `production`. In development, `npm start` proxies `/api` to the server on :3000 (`apps/web/proxy.conf.cjs`). Server configuration is environment variables only — see [apps/server/README.md](apps/server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
+Two Angular build configurations: `development` and `production`. In development, `pnpm start` proxies `/api` to the server on :3000 (`apps/web/proxy.conf.cjs`). Server configuration is environment variables only — see [apps/server/README.md](apps/server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
 
-There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `npm run localess -- user:create`. Local data (embedded Postgres, uploaded files) lives in `apps/server/.data` and persists across restarts.
+There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `pnpm localess admin:create --email <email>`. Local data (embedded Postgres, uploaded files) lives in `apps/server/.data` and persists across restarts.
 
 ## Project Knowledge Base
 
@@ -170,7 +178,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Every environment variable, OAuth provider setup | [docs/deployment/configuration.md](docs/deployment/configuration.md) | `apps/server/src/config/`, login providers, storage |
 | Reverse proxy, CDN, backups, multiple instances | [docs/deployment/production.md](docs/deployment/production.md) | Production hardening, scaling |
 | Upgrades, migrations on boot, backup/restore, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Releases, `apps/server/drizzle/` |
-| Health check CLI (`npm run localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `apps/server/src/cli/check.ts`, `apps/server/src/health/`, diagnosing a broken install |
+| Health check CLI (`pnpm localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `apps/server/src/cli/check.ts`, `apps/server/src/health/`, diagnosing a broken install |
 | Importing a Firebase install (`import:firebase`) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md) | `apps/server/src/firebase-import/` |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |

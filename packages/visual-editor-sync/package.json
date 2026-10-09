@@ -6,10 +6,10 @@
   "scripts": {
     "build": "tsup src/sync-v1.ts --format cjs --minify --outDir dist --legacy-output",
     "build:watch": "tsc --watch --project tsconfig.json",
-    "test": "npm run build && node --test \"src/**/*.test.mjs\""
+    "test": "pnpm build && node --test \"src/**/*.test.mjs\""
   },
   "devDependencies": {
     "tsup": "^8.5.1",
-    "happy-dom": "^20.9.0"
+    "happy-dom": "catalog:"
   }
 }

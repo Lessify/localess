@@ -37,6 +37,11 @@ describe('CLI', () => {
     expect(await query(`select count(*)::int as n from drizzle.__drizzle_migrations`)).toEqual([{ n: 2 }]);
   });
 
+  it('accepts a leading -- (pnpm forwards it to the script)', async () => {
+    expect(await run(['--', 'db:migrate'])).toBe(0);
+    expect(output).toEqual(['Database schema is up to date.']);
+  });
+
   it('admin:create takes the password from LOCALESS_ADMIN_PASSWORD', async () => {
     expect(await run(['admin:create', '--email', 'root@example.com', '--name', 'Root'], { LOCALESS_ADMIN_PASSWORD: 'env-pass' })).toBe(0);
     expect(output.join('\n')).toMatch(/Created admin root@example.com/);

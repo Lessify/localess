@@ -13,30 +13,30 @@
           "strict": true
         }
       },
-      "root": "apps/web",
-      "sourceRoot": "apps/web/src",
+      "root": "",
+      "sourceRoot": "src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular/build:application",
           "options": {
             "outputPath": {
-              "base": "apps/web/dist"
+              "base": "dist"
             },
-            "index": "apps/web/src/index.html",
+            "index": "src/index.html",
             "polyfills": [],
-            "tsConfig": "apps/web/tsconfig.app.json",
+            "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              "apps/web/src/android-chrome-192x192.png",
-              "apps/web/src/android-chrome-512x512.png",
-              "apps/web/src/apple-touch-icon.png",
-              "apps/web/src/favicon.ico",
-              "apps/web/src/favicon-16x16.png",
-              "apps/web/src/favicon-32x32.png",
-              "apps/web/src/site.webmanifest",
-              "apps/web/src/assets",
-              "apps/web/src/scripts",
+              "src/android-chrome-192x192.png",
+              "src/android-chrome-512x512.png",
+              "src/apple-touch-icon.png",
+              "src/favicon.ico",
+              "src/favicon-16x16.png",
+              "src/favicon-32x32.png",
+              "src/site.webmanifest",
+              "src/assets",
+              "src/scripts",
               {
                 "glob": "**/*.svg",
                 "input": "node_modules/circle-flags/flags",
@@ -44,19 +44,19 @@
               },
               {
                 "glob": "sync-v1.js",
-                "input": "packages/visual-editor-sync/dist",
+                "input": "node_modules/@localess/visual-editor-sync/dist",
                 "output": "scripts"
               }
             ],
             "styles": [
-              "apps/web/src/styles.css",
-              "apps/web/src/styles.scss"
+              "src/styles.css",
+              "src/styles.scss"
             ],
             "scripts": [],
             "allowedCommonJsDependencies": [
               "@stoplight/elements/web-components.min.js"
             ],
-            "browser": "apps/web/src/main.ts",
+            "browser": "src/main.ts",
             "stylePreprocessorOptions": {
               "sass": {
                 "silenceDeprecations": [
@@ -83,8 +83,8 @@
               ],
               "fileReplacements": [
                 {
-                  "replace": "apps/web/src/environments/environment.ts",
-                  "with": "apps/web/src/environments/environment.prod.ts"
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
                 }
               ],
               "outputHashing": "all"
@@ -111,7 +111,7 @@
           },
           "defaultConfiguration": "development",
           "options": {
-            "proxyConfig": "apps/web/proxy.conf.cjs"
+            "proxyConfig": "proxy.conf.cjs"
           }
         },
         "extract-i18n": {
@@ -123,10 +123,10 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "tsConfig": "apps/web/tsconfig.spec.json",
+            "tsConfig": "tsconfig.spec.json",
             "buildTarget": "localess:build:development",
             "setupFiles": [
-              "apps/web/src/test-setup.ts"
+              "src/test-setup.ts"
             ],
             "runnerConfig": true
           }
@@ -135,8 +135,8 @@
           "builder": "@angular-eslint/builder:lint",
           "options": {
             "lintFilePatterns": [
-              "apps/web/src/**/*.ts",
-              "apps/web/src/**/*.html"
+              "src/**/*.ts",
+              "src/**/*.html"
             ]
           }
         }

@@ -4,7 +4,9 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "ES2022",
-    "lib": ["ES2023"],
+    "lib": [
+      "ES2023"
+    ],
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
@@ -14,8 +16,13 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "skipLibCheck": true,
-    "types": []
+    "types": [],
+    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts"
+  ]
 }

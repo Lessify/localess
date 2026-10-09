@@ -6,6 +6,7 @@
 **/dist
 **/.data
 **/.angular
+**/*.tsbuildinfo
 docs
 tools/openapi
 *.log

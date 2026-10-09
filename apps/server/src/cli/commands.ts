@@ -65,7 +65,8 @@ async function withContext<T>(
 
 /** Returns the process exit code. */
 export async function runCli(argv: string[], io: CliIo): Promise<number> {
-  const [command, ...rest] = argv;
+  // `pnpm localess -- <command>` forwards the `--` itself (npm swallows it); accept both forms.
+  const [command, ...rest] = argv[0] === '--' ? argv.slice(1) : argv;
   switch (command) {
     case 'db:migrate':
       await withContext(io.env, async () => io.out('Database schema is up to date.'));

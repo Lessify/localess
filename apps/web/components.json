@@ -1,12 +1,12 @@
 {
   "style": "nova",
-  "packageManager": "npm",
+  "packageManager": "pnpm",
   "tailwind": {
-    "css": "apps/web/src/styles.css",
+    "css": "src/styles.css",
     "baseColor": "neutral",
     "cssVariables": true
   },
-  "componentsPath": "packages/ui",
+  "componentsPath": "../../packages/ui",
   "buildable": true,
   "generateAs": "library",
   "importAlias": "@spartan-ng/helm"

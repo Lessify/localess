@@ -134,7 +134,7 @@ flag like Japan's, or the white band of Italy's, has no visible edge against a l
 633 files, since restricting the glob would have to be regenerated whenever a locale is added. The component cannot stat that folder at
 runtime, so the available codes are baked into `locale-flags.ts` by `tools/scripts/generate-locale-flags.mjs`; a wrong constant would point an
 `<img>` at a missing asset, which the server's SPA fallback (`SpaFallbackFilter`) answers with `index.html` instead of a 404.
-`tools/scripts/generate-locale-flags.test.mjs` (part of `npm run test:scripts`) fails when the constants and the installed package disagree —
+`tools/scripts/generate-locale-flags.test.mjs` (part of `pnpm test:scripts`) fails when the constants and the installed package disagree —
 re-run the generator after upgrading it. The collapse list is computed by **comparing file contents**, not by mapping a language to "its"
 country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en-GB` wrong.
 

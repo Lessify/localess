@@ -1,4 +1,4 @@
-# Repository structure: npm workspaces monorepo
+# Repository structure: pnpm workspace monorepo
 
 **Status:** In progress (branch `refactor/monorepo-structure`, stacked on `feat/self-hosted-nestjs-postgres`)
 · **Recorded:** 2026-10-09
@@ -39,15 +39,17 @@ localess/
 │   └── visual-editor-sync/     # @localess/visual-editor-sync — sync-v1 source, built into web assets
 ├── tools/                      # repo tooling: version bump, locale flags, OpenAPI specs
 ├── docs/
-└── package.json                # workspaces: apps/*, packages/*
+├── package.json                # scripts only; packageManager pins pnpm
+└── pnpm-workspace.yaml         # workspaces (apps/*, packages/*), catalog, overrides, allowBuilds
 ```
 
 Rules:
 
 - **"What does feature X do?"** → `apps/server/src/modules/X/` and `apps/web/src/app/features/**/X/`.
 - **"What is X?"** (type, enum, validation rule, permission) → `packages/shared`, defined once.
-- Root `package.json` has no runtime dependencies; each workspace declares its own.
-- Root scripts keep working (`npm start`, `npm run build`, `npm test`, `npm run server:*`, `npm run localess`).
+- Root `package.json` has no runtime dependencies; each workspace declares everything it imports (pnpm enforces it).
+- Versions used by more than one workspace live once, in the `pnpm-workspace.yaml` catalog.
+- Root scripts run everything (`pnpm start`, `pnpm build`, `pnpm test`, `pnpm server:*`, `pnpm localess`).
 
 ## Phases
 
@@ -55,11 +57,15 @@ Rules:
 |---|---|---|
 | A | npm workspaces; move `src` → `apps/web`, `server` → `apps/server`, `libs/ui` → `packages/ui`, sync-v1 → `packages/visual-editor-sync`, scripts → `tools/`; one lockfile; Dockerfile, CI, docs paths | Done |
 | B | `packages/shared`: one definition of domain models, zod schemas, permissions and locales; server and web import it | Done |
+| B2 | npm → pnpm: strict dependencies, catalog, `angular.json` back in `apps/web`, `pnpm deploy` in the Dockerfile, CI | Done |
 | C | Server: `infra/`, `auth/`, `modules/<feature>/`, `cli/` | |
 | D | Web: `core/` (state, API, guards) vs `shared/` (reusable UI); single-use services move into their feature | |
 | E | Repository map in README and CLAUDE.md; docs paths | |
 
-Every phase ends green: web build + lint + tests, server build + tests, `test:scripts`.
+Every phase ends green: web build + lint + tests, server build + tests, shared tests, `test:scripts`.
+
+Task runner: Turborepo was evaluated (with Nx) and deferred — add it when CI time matters; it sits on top of the
+pnpm workspace without changes to it. Nx was judged too heavy for two deployables.
 
 ## Progress log
 
@@ -113,4 +119,42 @@ Every phase ends green: web build + lint + tests, server build + tests, `test:sc
   `zSchemaTemplateSchema`.
 - Verified: shared 32 tests; server type-check, 51 files / 811 tests (4 files moved to shared); web build, lint,
   178 files / 1571 tests; `test:scripts` 48; simulated image boot (health, login, v1 token check).
+
+### Phase B2 — npm → pnpm (2026-10-09)
+
+Decision: pnpm fixes the structural problems npm workspaces left (assets outside the Angular workspace root,
+undeclared dependencies working through hoisting, two zod copies, a Dockerfile that copied every manifest).
+Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size.
+
+- pnpm 12.10.1, pinned by `packageManager` and provided by Corepack. `pnpm import` converted `package-lock.json`,
+  so resolved versions did not change; the npm `overrides` moved to `pnpm-workspace.yaml` (React 18 for
+  @stoplight/elements, lodash).
+- Internal dependencies use `workspace:*`. Versions shared by several workspaces (Angular, Spartan, rxjs, zod,
+  typescript, vitest, …) are defined once in the catalog (`"catalog:"`), which also unified four ranges that had
+  drifted (rxjs, @types/node, typescript, vitest).
+- Strictness found what only worked through hoisting: `highlight.js` (imported by the rich-text editor, installed
+  only as a dependency of lowlight), `packages/ui`'s whole dependency list (Angular, Spartan, ng-icons, clsx, …,
+  `tslib`), `@types/node` in packages/shared, and the root tooling's `prettier`. `ngx-pagination`, imported by one
+  unused Spartan component, was never installed and still isn't. Web and UI resolve to the same physical Angular
+  copies (checked by realpath), so DI is unaffected.
+- `allowBuilds` in `pnpm-workspace.yaml` lists which install scripts run (pnpm refuses to install while one is
+  undecided): embedded Postgres, ffmpeg-static, esbuild, @swc/core, @parcel/watcher, lmdb, msgpackr-extract.
+  Denied: @scarf/scarf (telemetry), nx (daemon setup), protobufjs, @firebase/util, less (notices).
+  `minimumReleaseAgeExclude` lists one already-locked package newer than pnpm's default release-age window.
+- One zod 4.6.5 instance now (server and shared share the store copy); the Angular CLI keeps its own 4.3.6.
+- `angular.json` and `components.json` moved back into `apps/web`: with per-workspace `node_modules`, the flag icons
+  come from `apps/web/node_modules/circle-flags`, and the sync script from the web app's new devDependency on
+  `@localess/visual-editor-sync` (`node_modules/@localess/visual-editor-sync/dist`).
+- Dockerfile: `pnpm fetch` (lockfile-only layer) → `pnpm install --offline --frozen-lockfile` → builds →
+  `pnpm --filter @localess/server deploy --prod /deploy/server`. The runtime image holds `/app/server` (deploy
+  output: dist, drizzle, @localess/shared, production dependencies; 285 MB) and `/app/web/dist/browser`; the
+  in-container CLI is `node server/dist/cli.js`. `files` fields on the server and shared packages define what
+  `pnpm deploy` copies. Simulated from a clean copy of the tree (fetch, offline install, builds, deploy, boot).
+- CI: `pnpm/action-setup` (reads `packageManager`) before `setup-node` with `cache: pnpm`.
+- The CLI ignores a leading `--`: `pnpm localess -- <command>` forwards it, npm used to swallow it.
+- Found while testing shutdown: the SSE event listener released its pooled connection twice when Postgres closed
+  it during shutdown (`Release called on client which has already been released`), an uncaught error in 3 of 5
+  stops. Not caused by pnpm; release is now idempotent (`events.service.test.ts`); 6 of 6 stops clean afterwards.
+- CLAUDE.md listed CLI commands that don't exist (`user:create`, `user:reset-password`, `migrate`); now
+  `db:migrate`, `check`, `admin:create`, `import:firebase`.
 
