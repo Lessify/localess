@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-pnpm workspace (pnpm via `corepack enable`, version pinned by `packageManager`). Run everything from the root.
+pnpm workspace (pnpm via `npm install -g pnpm`, not Corepack, which can't launch pnpm 12; version pinned by `packageManager`). Run everything from the root.
 
 ```bash
 # Setup

@@ -34,7 +34,7 @@ start-up (see [Configuration](configuration.md)), so one build serves every inst
 | Requirement | Notes |
 |-------------|-------|
 | Docker (with Compose) | For the Docker paths — the image contains everything else |
-| — or Node.js 24 + pnpm | For a bare-Node install (`engines.node: 24`; `corepack enable` provides pnpm) |
+| — or Node.js 24 + pnpm | For a bare-Node install (`engines.node: 24`; install pnpm with `npm install -g pnpm`; Corepack can't launch pnpm 12) |
 | `ffmpeg` | Video thumbnails. Without it, video assets upload but get no thumbnail |
 | `perl` | Used by ExifTool for asset metadata extraction on Linux |
 | Postgres | Optional. Any reachable Postgres via `DATABASE_URL`; otherwise the embedded one is used (the Compose file ships Postgres 18) |

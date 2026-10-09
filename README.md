@@ -84,10 +84,10 @@ Then open http://localhost:3000 and sign in with the admin account.
 
 ### Local development
 
-Requires Node.js 24 and pnpm (Corepack provides the version pinned in `package.json`).
+Requires Node.js 24 and pnpm 12 (pnpm switches itself to the version pinned by `packageManager`; Corepack can't launch pnpm 12).
 
 ```bash
-corepack enable                                                                           # provides pnpm
+npm install -g pnpm                                                                       # once
 pnpm install                                                                              # every workspace (apps/*, packages/*)
 LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD=change-me pnpm server:dev  # API on :3000, embedded Postgres
 pnpm start                                                                                # UI on :4200, proxies /api

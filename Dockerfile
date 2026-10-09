@@ -4,13 +4,12 @@
 
 # --- Build: Angular app + server -------------------------------------------------------------------
 FROM node:24-slim AS build
-# pnpm comes from Corepack, pinned by `packageManager` in package.json.
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
 WORKDIR /app
 
 # Dependencies first, from the lockfile alone, so this layer survives source changes.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# pnpm at the version pinned by `packageManager`. Not Corepack: it can't launch pnpm 12 (no bin/pnpm.cjs).
+RUN npm install -g "$(node -p "require('./package.json').packageManager")"
 RUN pnpm fetch
 
 COPY . .

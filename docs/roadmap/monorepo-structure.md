@@ -126,7 +126,7 @@ Decision: pnpm fixes the structural problems npm workspaces left (assets outside
 undeclared dependencies working through hoisting, two zod copies, a Dockerfile that copied every manifest).
 Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size.
 
-- pnpm 12.10.1, pinned by `packageManager` and provided by Corepack. `pnpm import` converted `package-lock.json`,
+- pnpm 12.10.1, pinned by `packageManager` and installed with `npm install -g pnpm` (Corepack can't launch pnpm 12). `pnpm import` converted `package-lock.json`,
   so resolved versions did not change; the npm `overrides` moved to `pnpm-workspace.yaml` (React 18 for
   @stoplight/elements, lodash).
 - Internal dependencies use `workspace:*`. Versions shared by several workspaces (Angular, Spartan, rxjs, zod,
