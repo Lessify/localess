@@ -55,7 +55,7 @@ module imports `ApiTokensModule` when it has a public controller and `SpacesModu
 |---|---|---|
 | `PORT` / `HOST` | `3000` / `0.0.0.0` | Listen address |
 | `DATABASE_URL` | – | External Postgres. Unset → embedded Postgres |
-| `LOCALESS_DATA_DIR` | `.data` | Root of local state: embedded Postgres (`pgdata`) and default file storage (`storage`) |
+| `LOCALESS_DATA_DIR` | `.data` in the repo root | Root of local state: embedded Postgres (`pgdata`) and default file storage (`storage`) |
 | `LOCALESS_EMBEDDED_PG_PORT` | `5433` | Port of the embedded Postgres (127.0.0.1 only) |
 | `LOCALESS_STORAGE_DIR` | `$LOCALESS_DATA_DIR/storage` | Uploaded files and generated image renditions |
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |

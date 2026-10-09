@@ -26,7 +26,7 @@ Run [`check`](check.md) after changing configuration to see what is enabled.
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `DATABASE_URL` | – | External Postgres, e.g. `postgres://user:pass@host:5432/localess`. Unset → embedded Postgres |
-| `LOCALESS_DATA_DIR` | `.data` (`/data` in the image) | Root of local state. The embedded cluster lives in `$LOCALESS_DATA_DIR/pgdata` |
+| `LOCALESS_DATA_DIR` | `.data` in the repo root (`/data` in the image) | Root of local state. The embedded cluster lives in `$LOCALESS_DATA_DIR/pgdata` |
 | `LOCALESS_EMBEDDED_PG_PORT` | `5433` | Port of the embedded Postgres; it binds to `127.0.0.1` only |
 
 Migrations run on every boot under a Postgres advisory lock, so several instances may start at the

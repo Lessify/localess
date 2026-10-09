@@ -93,7 +93,8 @@ pnpm dev                                                                        
 ```
 
 `pnpm dev` runs the server and the Angular dev server in one terminal. The UI reloads on change; the server restarts
-on change (SWC, about 3 s) while `tsc` type-checks alongside and prints errors under `dev:types`. Put local settings
+on change (SWC, about 3 s) while `tsc` type-checks alongside and prints errors under `dev:types`. Local data
+(database and uploaded files) goes to `.data` in the repo root; delete it to start from scratch. Put local settings
 in `apps/server/.env` (gitignored), e.g. `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` to create the first
 admin on the first run.
 

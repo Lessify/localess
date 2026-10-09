@@ -16,7 +16,7 @@ pnpm install           # every workspace; install scripts are allow-listed in pn
 # Development
 pnpm dev               # one terminal: NestJS API on :3000 + Angular dev server on http://localhost:4200 (proxies /api to :3000)
                        # server: SWC → apps/server/dist-dev, restarts on change; `tsc --noEmit --watch` prints type errors (dev:types)
-                       # env from apps/server/.env (gitignored); LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin; embedded Postgres in apps/server/.data
+                       # env from apps/server/.env (gitignored); LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin; embedded Postgres in .data at the repo root
 pnpm server:dev        # the server part alone; `pnpm start` the Angular part alone
 
 # Build
@@ -154,7 +154,7 @@ After every code change, always run the following in order:
 
 Two Angular build configurations: `development` and `production`. In development, `pnpm dev` (or `pnpm start` alone) proxies `/api` to the server on :3000 (`apps/web/proxy.conf.cjs`). Server configuration is environment variables only — see [apps/server/README.md](apps/server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
 
-There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `pnpm localess admin:create --email <email>`. Local data (embedded Postgres, uploaded files) lives in `apps/server/.data` and persists across restarts.
+There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `pnpm localess admin:create --email <email>`. Local data (embedded Postgres, uploaded files) lives in `.data` at the repo root (unless `LOCALESS_DATA_DIR` is set) and persists across restarts; delete it to start from scratch.
 
 ## Project Knowledge Base
 

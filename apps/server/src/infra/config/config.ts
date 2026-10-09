@@ -9,7 +9,9 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   // When unset, an embedded Postgres is started inside LOCALESS_DATA_DIR.
   DATABASE_URL: z.string().url().optional(),
-  LOCALESS_DATA_DIR: z.string().default('.data'),
+  // Defaults to `.data` in the repository root, resolved from this file (src/, dist/ and dist-dev/ are equally
+  // deep), so the server, `pnpm dev` and the CLI share one directory whatever the working directory.
+  LOCALESS_DATA_DIR: z.string().default(resolve(import.meta.dirname, '../../../../../.data')),
   // Uploaded files and generated renditions. Defaults to `$LOCALESS_DATA_DIR/storage`.
   LOCALESS_STORAGE_DIR: z.string().optional(),
   LOCALESS_EMBEDDED_PG_PORT: z.coerce.number().int().positive().default(5433),

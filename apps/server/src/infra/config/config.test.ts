@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from './config.js';
@@ -7,6 +8,13 @@ describe('loadConfig', () => {
     const config = loadConfig({ LOCALESS_DATA_DIR: '/var/localess' });
     expect(config.database).toEqual({ embedded: { dataDir: '/var/localess/pgdata', port: 5433 } });
     expect(config.port).toBe(3000);
+  });
+
+  it('defaults the data dir to .data in the repository root', () => {
+    const root = resolve(import.meta.dirname, '../../../../..');
+    expect(existsSync(resolve(root, 'pnpm-workspace.yaml'))).toBe(true);
+    expect(loadConfig({}).dataDir).toBe(resolve(root, '.data'));
+    expect(loadConfig({}).storageDir).toBe(resolve(root, '.data/storage'));
   });
 
   it('uses DATABASE_URL when set', () => {

@@ -71,8 +71,8 @@ node apps/server/dist/main.js
 ```
 
 The server finds the Angular build relative to its own location; set `LOCALESS_STATIC_DIR` if you
-put it elsewhere. `LOCALESS_DATA_DIR` defaults to `.data` relative to the working directory, so set
-it explicitly to an absolute path (the CLI runs from `apps/server/` and must find the same directory). Run the process under a supervisor (systemd or similar) that restarts it and sends
+put it elsewhere. `LOCALESS_DATA_DIR` defaults to `.data` in the repository root (resolved from the server's own
+location, so the server and the CLI always agree); set it to an absolute path to keep data elsewhere. Run the process under a supervisor (systemd or similar) that restarts it and sends
 `SIGTERM` to stop it — the server shuts the embedded Postgres down cleanly on exit.
 
 ---
@@ -119,7 +119,7 @@ The CLI reads the same environment variables as the server, so run it with the s
 ## Local development
 
 ```bash
-pnpm dev   # API on :3000 (embedded Postgres in apps/server/.data) + Angular dev server on :4200, proxying /api to :3000
+pnpm dev   # API on :3000 (embedded Postgres in .data at the repo root) + Angular dev server on :4200, proxying /api to :3000
 ```
 
 The server restarts on every change (compiled with SWC); type errors are printed by a `tsc` watcher next to it.
