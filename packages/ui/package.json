@@ -1,0 +1,6 @@
+{
+  "name": "@localess/ui",
+  "version": "4.1.0",
+  "private": true,
+  "description": "Spartan/Helm UI components (source only), imported by the web app as @spartan-ng/helm/*."
+}

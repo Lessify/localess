@@ -15,7 +15,7 @@ Allows the currently logged-in user to view and manage their own profile — dis
 ## Key Files
 
 ```
-src/app/features/me/
+apps/web/src/app/features/me/
   me.component.ts/html/scss      ← profile page
   me-dialog/                     ← edit display name + photo URL
   me-email-dialog/               ← update email address

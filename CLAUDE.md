@@ -9,13 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Development (two terminals)
-npm run server:dev     # NestJS API on :3000 (embedded Postgres in server/.data; LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin)
+npm run server:dev     # NestJS API on :3000 (embedded Postgres in apps/server/.data; LOCALESS_ADMIN_EMAIL/PASSWORD seed an admin)
 npm start              # Angular dev server on http://localhost:4200, proxying /api to :3000
 
 # Build
 npm run build          # Default build
-npm run build:prod     # Production build (dist/localess/browser, served by the server)
-npm run server:build   # Compile the server (server/dist)
+npm run build:prod     # Production build (apps/web/dist/browser, served by the server)
+npm run server:build   # Compile the server (apps/server/dist)
 docker compose up      # Server + Postgres 18 from the Dockerfile
 
 # Code quality
@@ -25,14 +25,14 @@ npm run prettier:fix   # Format code
 
 # Testing
 npm test               # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
-npm run test:scripts   # node:test suite for scripts/ (*.test.mjs)
+npm run test:scripts   # node:test suites for tools/scripts and packages/visual-editor-sync
 npm run server:test    # Server vitest suite (real embedded Postgres, one database per file)
 
-# Server CLI (server/src/cli; needs `npm run server:build` first)
+# Server CLI (apps/server/src/cli; needs `npm run server:build` first)
 npm run localess -- <command>   # e.g. user:create, user:reset-password, migrate
 npm run localess:check          # Health check of an installation
 npm run localess:import         # One-off import from a Firebase install (import:firebase)
-cd server && npm run db:generate # Generate a Drizzle migration after editing the schema
+npm run db:generate -w @localess/server # Generate a Drizzle migration after editing the schema
 ```
 
 ## Architecture Overview
@@ -42,18 +42,35 @@ cd server && npm run db:generate # Generate a Drizzle migration after editing th
 ### Tech Stack
 - **Frontend**: Angular 21 (standalone components, signals, OnPush)
 - **State**: NgRx Signals (`@ngrx/signals`)
-- **Backend**: NestJS 12 on Fastify (`server/`, ESM), serving the API and the built SPA from one port
-- **Database**: Postgres via Drizzle ORM; migrations in `server/drizzle` run on every boot; `embedded-postgres` starts a local one when `DATABASE_URL` is unset
-- **Auth**: Session cookies + argon2id passwords, Google/Microsoft via OIDC (`server/src/auth`)
-- **Storage**: Local disk or S3-compatible driver (`server/src/storage`)
-- **UI**: Spartan/Helm component library (`libs/ui/`); Angular Material remains only as residual providers in `app.config.ts`
+- **Backend**: NestJS 12 on Fastify (`apps/server/`, ESM), serving the API and the built SPA from one port
+- **Database**: Postgres via Drizzle ORM; migrations in `apps/server/drizzle` run on every boot; `embedded-postgres` starts a local one when `DATABASE_URL` is unset
+- **Auth**: Session cookies + argon2id passwords, Google/Microsoft via OIDC (`apps/server/src/auth`)
+- **Storage**: Local disk or S3-compatible driver (`apps/server/src/storage`)
+- **UI**: Spartan/Helm component library (`packages/ui/`); Angular Material remains only as residual providers in `app.config.ts`
 - **Styling**: Tailwind CSS 4 + SCSS
 - **Rich Text**: TipTap editor
+
+### Repository Layout
+
+npm workspaces monorepo (one root `package.json` + lockfile; run everything from the root):
+
+```
+apps/web/                  # @localess/web — Angular app (angular.json at the repo root, project root apps/web)
+apps/server/               # @localess/server — NestJS server, Drizzle migrations in apps/server/drizzle
+packages/ui/               # @localess/ui — Spartan/Helm components (source only), imported as @spartan-ng/helm/*
+packages/visual-editor-sync/ # sync-v1.js for customer sites in the Visual Editor, built into the web assets
+tools/scripts/             # repo tooling: version bump, version.json, locale flags generator
+tools/openapi/             # third-party OpenAPI specs for code generation
+docs/                      # project knowledge base (see table below)
+```
+
+Workspace-specific commands: `npm run <script> -w @localess/server` (e.g. `db:generate`).
+Structure refactoring plan: [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md).
 
 ### Application Structure
 
 ```
-src/app/
+apps/web/src/app/
 ├── core/          # Singleton services: error handler, HTTP interceptors, title service
 ├── shared/        # Cross-feature code
 │   ├── models/    # TypeScript interfaces for all domain types
@@ -67,9 +84,7 @@ src/app/
 ├── auth/          # Auth: login (Email, Google, Microsoft), reset
 └── app.config.ts  # Root provider configuration (HTTP, interceptors, runtime config)
 
-server/src/        # NestJS server: auth, app-api (/api/app), public-api (/api/v1), events (SSE), tasks, webhooks, cli
-server/drizzle/    # Drizzle SQL migrations
-libs/ui/           # 44+ reusable Spartan/Helm UI components
+apps/server/src/   # NestJS server: auth, app-api (/api/app), public-api (/api/v1), events (SSE), tasks, webhooks, cli
 ```
 
 ### State Management
@@ -120,9 +135,9 @@ After every code change, always run the following in order:
 
 ## Environment & Local Setup
 
-Two Angular build configurations: `development` and `production`. In development, `npm start` proxies `/api` to the server on :3000 (`proxy.conf.cjs`). Server configuration is environment variables only — see [server/README.md](server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
+Two Angular build configurations: `development` and `production`. In development, `npm start` proxies `/api` to the server on :3000 (`apps/web/proxy.conf.cjs`). Server configuration is environment variables only — see [apps/server/README.md](apps/server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
 
-There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `npm run localess -- user:create`. Local data (embedded Postgres, uploaded files) lives in `server/.data` and persists across restarts.
+There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `npm run localess -- user:create`. Local data (embedded Postgres, uploaded files) lives in `apps/server/.data` and persists across restarts.
 
 ## Project Knowledge Base
 
@@ -131,27 +146,28 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Topic | File | Read when working on |
 |-------|------|----------------------|
 | Domain concepts (Space, Content, Schema, Translation, Asset), **how localised values are stored** | [docs/concepts.md](docs/concepts.md) | Any new feature, onboarding, anything reading/writing a localised field |
-| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `server/src/public-api/`, public API |
-| V1 API — all endpoints, controllers, token permissions | [docs/v1-api.md](docs/v1-api.md) | Any work in `server/src/public-api/` |
+| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `apps/server/src/public-api/`, public API |
+| V1 API — all endpoints, controllers, token permissions | [docs/v1-api.md](docs/v1-api.md) | Any work in `apps/server/src/public-api/` |
 | Publish flow & cache invalidation | [docs/publish-flow.md](docs/publish-flow.md) | Content/translation publish, tasks |
-| Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](docs/webhooks.md) | `server/src/webhooks/`, webhook UI |
+| Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](docs/webhooks.md) | `apps/server/src/webhooks/`, webhook UI |
 | API token auth & permissions | [docs/auth-tokens.md](docs/auth-tokens.md) | Middleware, token management, public API |
-| Frontend architecture, routing, libs/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
+| Frontend architecture, routing, packages/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
-| **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `src/app/shared/components/`; read before adding or changing one |
-| **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [server/README.md](server/README.md) | Anything in `server/`, or replacing a Firebase dependency |
-| Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
-| Firebase data migration with UUIDv7 ids, reference rewrite, legacy ids (planned) | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | `server/src/firebase-import/`, id generation, schema/translation/token keys |
+| **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `apps/web/src/app/shared/components/`; read before adding or changing one |
+| **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [apps/server/README.md](apps/server/README.md) | Anything in `apps/server/`, or replacing a Firebase dependency |
+| Repository layout, workspaces, structure refactoring phases | [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md) | Moving files between apps/packages, workspace scripts, Dockerfile |
+| Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `apps/web/src/test-setup.ts` |
+| Firebase data migration with UUIDv7 ids, reference rewrite, legacy ids (planned) | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | `apps/server/src/firebase-import/`, id generation, schema/translation/token keys |
 | **Deployment & self-hosting** | | |
 | Deployment overview, requirements, ways to run, first admin, CLI | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Docker image & Compose | [docs/deployment/docker.md](docs/deployment/docker.md) | `Dockerfile`, `docker-compose.yml` |
-| Every environment variable, OAuth provider setup | [docs/deployment/configuration.md](docs/deployment/configuration.md) | `server/src/config/`, login providers, storage |
+| Every environment variable, OAuth provider setup | [docs/deployment/configuration.md](docs/deployment/configuration.md) | `apps/server/src/config/`, login providers, storage |
 | Reverse proxy, CDN, backups, multiple instances | [docs/deployment/production.md](docs/deployment/production.md) | Production hardening, scaling |
-| Upgrades, migrations on boot, backup/restore, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Releases, `server/drizzle/` |
-| Health check CLI (`npm run localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `server/src/cli/check.ts`, `server/src/health/`, diagnosing a broken install |
-| Importing a Firebase install (`import:firebase`) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md) | `server/src/firebase-import/` |
+| Upgrades, migrations on boot, backup/restore, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Releases, `apps/server/drizzle/` |
+| Health check CLI (`npm run localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `apps/server/src/cli/check.ts`, `apps/server/src/health/`, diagnosing a broken install |
+| Importing a Firebase install (`import:firebase`) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md) | `apps/server/src/firebase-import/` |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |

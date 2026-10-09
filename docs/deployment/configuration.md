@@ -5,7 +5,7 @@
 Localess is configured entirely by environment variables, read when the server (or CLI) starts.
 There is no build-time configuration: change a value and restart. Invalid values (a malformed URL,
 an unknown log level) stop the server at boot with an error naming the variable. The source of
-truth is `server/src/config/config.ts`.
+truth is `apps/server/src/config/config.ts`.
 
 Run [`check`](check.md) after changing configuration to see what is enabled.
 
@@ -18,7 +18,7 @@ Run [`check`](check.md) after changing configuration to see what is enabled.
 | `PORT` | `3000` | Listen port |
 | `HOST` | `0.0.0.0` | Listen address |
 | `LOCALESS_PUBLIC_URL` | the request's origin | Public origin, e.g. `https://cms.example.com`. Used for OAuth callback URLs and password reset links. Set it whenever a proxy sits in front |
-| `LOCALESS_STATIC_DIR` | `dist/localess/browser` in the checkout | Angular build to serve. Empty string → serve the API only |
+| `LOCALESS_STATIC_DIR` | `apps/web/dist/browser` in the checkout | Angular build to serve. Empty string → serve the API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`, `error`, `warn`, `log`, `debug`, `verbose`. `debug` and up include the embedded Postgres log |
 
 ## Database

@@ -1,9 +1,9 @@
 # Shared components
 
-Project-owned, reusable components in `src/app/shared/components/`. These are the pieces consumers
+Project-owned, reusable components in `apps/web/src/app/shared/components/`. These are the pieces consumers
 **compose**, so they carry invariants that are easy to break silently — each one documented here.
 
-> Not to be confused with `libs/ui/`, which is the vendored Spartan Helm layer
+> Not to be confused with `packages/ui/`, which is the vendored Spartan Helm layer
 > (`components.json` → `componentsPath`, aliased `@spartan-ng/helm/*`). Components here are
 > project-owned and *use* `Hlm*` primitives; they are not part of that library and are not managed
 > by the Spartan CLI. See [Spartan UI Migration](../spartan-ui-migration.md).
@@ -21,7 +21,7 @@ Project-owned, reusable components in `src/app/shared/components/`. These are th
 
 Add a doc when **all three** hold. Otherwise the code speaks for itself and a doc would just rot:
 
-1. It lives in `src/app/shared/components/`.
+1. It lives in `apps/web/src/app/shared/components/`.
 2. Consumers **compose** it — passing templates, directives or config — rather than just dropping a
    tag in and walking away.
 3. It has at least one invariant you could break without anything failing loudly.
@@ -37,12 +37,12 @@ should be able to jump to "Working on this component" in any of them without hun
 
 | Section | Contains |
 |---|---|
-| **Overview** | What it is, where it lives, and *why it's here rather than in `libs/ui`*. |
+| **Overview** | What it is, where it lives, and *why it's here rather than in `packages/ui`*. |
 | **Usage** | One copy-pasteable block: the `imports`, the TypeScript wiring, the template. |
 | **API** | Inputs, outputs, models — as tables. Include defaults. |
 | **Behaviour** | What it does at runtime: state, events, edge cases a consumer would otherwise discover by accident. |
 | **Working on this component** | The invariants. One `###` per rule, each stating **why**, not just what. |
-| **Reference consumer** | A real file in `src/app/` to copy from. |
+| **Reference consumer** | A real file in `apps/web/src/app/` to copy from. |
 
 ### On "Working on this component"
 

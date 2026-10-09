@@ -6,7 +6,7 @@
 
 ```bash
 npm run localess -- check                                  # from a checkout
-docker compose exec localess node server/dist/cli.js check # Docker Compose
+docker compose exec localess node apps/server/dist/cli.js check # Docker Compose
 ```
 
 For a single container with the embedded database, see

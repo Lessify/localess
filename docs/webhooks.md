@@ -14,11 +14,11 @@ webhook_logs   (id bigserial, webhook_id → webhooks on delete cascade, deliver
                 — execution history (not capped or pruned; one row per delivery)
 ```
 
-Postgres tables defined in `server/src/database/schema.ts`. Enabled webhooks for an event are found with a GIN index on `events` (`events @> array[event]`).
+Postgres tables defined in `apps/server/src/database/schema.ts`. Enabled webhooks for an event are found with a GIN index on `events` (`events @> array[event]`).
 
 **Access control:** `SPACE_MANAGEMENT` (or `admin`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhooksController`). Logs are read-only through the API; only the server's dispatcher writes them.
 
-App API (`server/src/app-api/webhooks/webhooks.controller.ts`):
+App API (`apps/server/src/app-api/webhooks/webhooks.controller.ts`):
 
 | Method | Path | |
 |---|---|---|
@@ -97,7 +97,7 @@ Body: JSON-serialised WebHookPayload (without `signature`)
 
 ### Destination restrictions (SSRF protection)
 
-Delivery runs from the Localess server, inside your network, and the URL and headers are chosen by a space manager. So `server/src/domain/lib/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach internal services or a cloud metadata server (`169.254.169.254`, which on most clouds issues instance credentials) and the reply would show up in the webhook log.
+Delivery runs from the Localess server, inside your network, and the URL and headers are chosen by a space manager. So `apps/server/src/domain/lib/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach internal services or a cloud metadata server (`169.254.169.254`, which on most clouds issues instance credentials) and the reply would show up in the webhook log.
 
 - **URL** (`checkWebhookUrl`): `https:` only, on the default port, with no credentials in the URL. `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal` and private IP literals are refused. The WHATWG URL parser normalises shorthand forms such as `0x7f.1` and `2130706433` before the check.
 - **Resolved address** (`isBlockedAddress`, applied in the socket's DNS `lookup`): the connection is refused if the host resolves to any loopback, private, link-local, CGNAT, multicast, reserved or documentation range, IPv4 or IPv6, including IPv4-mapped IPv6. The check runs on the exact address being connected to, so DNS rebinding can't get around it.
@@ -177,14 +177,14 @@ Logs are **not capped on write** — every delivery adds a row and nothing prune
 
 | File                                                                         | Event                   |
 |------------------------------------------------------------------------------|-------------------------|
-| `server/src/app-api/contents/contents.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
-| `server/src/app-api/contents/contents.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
-| `server/src/app-api/contents/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
-| `server/src/app-api/translations/translations.service.ts` — `publish()`      | `TRANSLATION_PUBLISHED` |
-| `server/src/app-api/translations/translations.service.ts` — `write()`        | `TRANSLATION_CHANGED`   |
-| `server/src/tasks/task-runner.service.ts` — content / translation imports    | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
+| `apps/server/src/app-api/contents/contents.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
+| `apps/server/src/app-api/contents/contents.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
+| `apps/server/src/app-api/contents/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
+| `apps/server/src/app-api/translations/translations.service.ts` — `publish()`      | `TRANSLATION_PUBLISHED` |
+| `apps/server/src/app-api/translations/translations.service.ts` — `write()`        | `TRANSLATION_CHANGED`   |
+| `apps/server/src/tasks/task-runner.service.ts` — content / translation imports    | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
 
-All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `server/src/webhooks/webhook-dispatcher.service.ts`.
+All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/src/webhooks/webhook-dispatcher.service.ts`.
 
 > Translation pushes through the public MANAGE API (`POST /api/v1/.../translations/:locale`) do not dispatch webhooks.
 
@@ -221,12 +221,12 @@ Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list 
 
 | File                                             | Purpose                                                                   |
 |--------------------------------------------------|---------------------------------------------------------------------------|
-| `server/src/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
-| `server/src/domain/models/`                      | Backend types — `WebHookEvent` and friends                                |
-| `server/src/app-api/webhooks/webhooks.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
-| `server/src/webhooks/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
-| `server/src/domain/lib/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
-| `src/app/shared/models/webhook.model.ts`         | Frontend types                                                            |
-| `src/app/shared/services/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |
-| `src/app/shared/validators/webhook.validator.ts` | Form validators                                                           |
-| `src/app/features/spaces/developers/webhooks/`   | UI — list (`webhooks.component`), create/edit (`webhook-dialog/`), detail + log history (`webhook-detail/`) |
+| `apps/server/src/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
+| `apps/server/src/domain/models/`                      | Backend types — `WebHookEvent` and friends                                |
+| `apps/server/src/app-api/webhooks/webhooks.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
+| `apps/server/src/webhooks/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
+| `apps/server/src/domain/lib/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
+| `apps/web/src/app/shared/models/webhook.model.ts`         | Frontend types                                                            |
+| `apps/web/src/app/shared/services/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |
+| `apps/web/src/app/shared/validators/webhook.validator.ts` | Form validators                                                           |
+| `apps/web/src/app/features/spaces/developers/webhooks/`   | UI — list (`webhooks.component`), create/edit (`webhook-dialog/`), detail + log history (`webhook-detail/`) |

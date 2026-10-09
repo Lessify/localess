@@ -19,7 +19,7 @@ publishing, unpublishing, moving, cloning, and importing/exporting content docum
 ## Key Files
 
 ```
-src/app/features/spaces/contents/
+apps/web/src/app/features/spaces/contents/
   contents.component.ts/html/scss        ← folder/document browser
   edit-document/                         ← full document editor (routed)
   content-preview/                       ← visual editor iframe + postMessage bridge (used by edit-document)
@@ -257,7 +257,7 @@ default `start` alignment opens the menu rightward into the viewport edge; CDK t
 ("Translate from English (Default) to German") wraps, needing 293px against 292px available. Anchoring the menu's right edge to the trigger
 lets it grow leftwards instead.
 
-`TranslateData` carries a `format?: 'text' | 'html'` (default `text`) which `POST /api/app/translate` threads to the provider (`server/src/translate/translate.service.ts`):
+`TranslateData` carries a `format?: 'text' | 'html'` (default `text`) which `POST /api/app/translate` threads to the provider (`apps/server/src/translate/translate.service.ts`):
 
 |        | `format: 'text'`         | `format: 'html'`          |
 | ------ | ------------------------ | ------------------------- |
@@ -286,7 +286,7 @@ Two things to know when touching this:
 
 Driven from the browser, not the server. `collectTranslatableFields()` (`shared/utils/content.ts`) walks `documentData`, serializing RICH_TEXT with
 `generateHTML(json, createRichTextExtensions())` and everything else as plain text, and returns entries carrying an `apply` closure. Those
-go to `POST /api/app/translate` in batch mode (`items`) as `{id, content, format}`; `translateItems` (`server/src/domain/lib/translate-batch.ts`) groups
+go to `POST /api/app/translate` in batch mode (`items`) as `{id, content, format}`; `translateItems` (`apps/server/src/domain/lib/translate-batch.ts`) groups
 by format, chunks to 27,000 code points and translates each chunk in **one** provider round-trip — both Google and DeepL accept arrays.
 
 **Locale ids are not language codes.** `default` is a storage sentinel, not a language — see
@@ -323,17 +323,17 @@ Three things worth knowing:
   programmatically.
 - A single RICH_TEXT field whose HTML exceeds 27,000 code points cannot be sent (Google caps a request at 30,000) and is reported in
   `failed[]`. It is not split — splitting HTML at safe boundaries is its own problem.
-- This is why `server/` carries no `@tiptap` dependency. Doing the conversion server-side needs `@tiptap/html`, whose `happy-dom` peer
+- This is why `apps/server/` carries no `@tiptap` dependency. Doing the conversion server-side needs `@tiptap/html`, whose `happy-dom` peer
   measured **365 ms** to load, and would require the extension list to be
   duplicated across both npm projects, where a mismatch silently drops nodes rather than erroring.
 
-`TranslationsService.translateLocale` (`server/src/app-api/translations/translations.service.ts`) is the server-side translate-locale for
+`TranslationsService.translateLocale` (`apps/server/src/app-api/translations/translations.service.ts`) is the server-side translate-locale for
 translation keys. It is a different feature that shares the name; it uses the configured provider and the same `translateItems` batching,
 and writes the results in one transaction.
 
 ### Styling
 
-`src/styles/_content-editor.scss` is scoped to **both** hosts (`ll-rich-text-editor, ll-markdown-editor`), because the markdown editor's
+`apps/web/src/styles/_content-editor.scss` is scoped to **both** hosts (`ll-rich-text-editor, ll-markdown-editor`), because the markdown editor's
 WYSIWYG mode renders the same ProseMirror tree. Tailwind's preflight strips browser defaults from headings, blockquotes and lists, so
 **every block node needs an explicit rule** — an unstyled node renders as plain body text, which is not obviously a CSS bug when you hit it.
 

@@ -79,7 +79,7 @@ enum UserPermission {
 }
 ```
 
-> **Note:** Unlike every other permission above, `DEV_OPEN_API` and `DEV_WEBHOOK` are **not** enforced by a route guard — the `spaces/:spaceId/developers` route (which hosts both Open API and Webhooks) has no `canActivate` in `features-routing.module.ts`. They only control sidebar link visibility, checked client-side via the `DEV_OPEN_API` / `DEV_WEBHOOK` `permission` entries on the Developers sidebar items in `src/app/features/features.component.ts`. A user who guesses the URL can still reach `/features/spaces/:spaceId/developers/...` without holding either permission.
+> **Note:** Unlike every other permission above, `DEV_OPEN_API` and `DEV_WEBHOOK` are **not** enforced by a route guard — the `spaces/:spaceId/developers` route (which hosts both Open API and Webhooks) has no `canActivate` in `features-routing.module.ts`. They only control sidebar link visibility, checked client-side via the `DEV_OPEN_API` / `DEV_WEBHOOK` `permission` entries on the Developers sidebar items in `apps/web/src/app/features/features.component.ts`. A user who guesses the URL can still reach `/features/spaces/:spaceId/developers/...` without holding either permission.
 
 ---
 
@@ -87,7 +87,7 @@ enum UserPermission {
 
 ### Server (the real enforcement)
 
-Every `/api/app/**` and `/api/auth/**` route goes through the global `AuthGuard` (`server/src/auth/auth.guard.ts`): it requires a valid session unless the route is `@Public()`, then checks the route's access metadata from `server/src/auth/decorators.ts` against the user's current row:
+Every `/api/app/**` and `/api/auth/**` route goes through the global `AuthGuard` (`apps/server/src/auth/auth.guard.ts`): it requires a valid session unless the route is `@Public()`, then checks the route's access metadata from `apps/server/src/auth/decorators.ts` against the user's current row:
 
 | Decorator | Passes when |
 |---|---|
@@ -97,11 +97,11 @@ Every `/api/app/**` and `/api/auth/**` route goes through the global `AuthGuard`
 | `@RequireAllPermissions(a, b, …)` | admin, or holds **all** of them (e.g. machine translation needs `TRANSLATION_UPDATE` + `CONTENT_UPDATE`) |
 | *(none)* | any signed-in session, even without a role (e.g. `/api/app/me`) |
 
-No session → `401`; insufficient access → `403`. Checks that depend on the request body or target live in the controller or service: task create/delete require the permission named by the task `kind` (`ASSET_REGEN_METADATA` is admin-only), and user management uses `canGrant` / `canManageUser` (below). The helpers are in `server/src/auth/permissions.ts` (`canPerform`, `canGrant`, `canManageUser`). CSRF: every non-GET request authenticated by the session cookie must carry `X-Requested-With` (added by the Angular `apiInterceptor`).
+No session → `401`; insufficient access → `403`. Checks that depend on the request body or target live in the controller or service: task create/delete require the permission named by the task `kind` (`ASSET_REGEN_METADATA` is admin-only), and user management uses `canGrant` / `canManageUser` (below). The helpers are in `apps/server/src/auth/permissions.ts` (`canPerform`, `canGrant`, `canManageUser`). CSRF: every non-GET request authenticated by the session cookie must carry `X-Requested-With` (added by the Angular `apiInterceptor`).
 
 ### Frontend (navigation only)
 
-`authGuard()` in `src/app/app-routing.ts` sends signed-out users to `/auth/login`. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`src/app/shared/guards/permission.guard.ts`):
+`authGuard()` in `apps/web/src/app/app-routing.ts` sends signed-out users to `/auth/login`. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`apps/web/src/app/shared/guards/permission.guard.ts`):
 
 ```typescript
 // a child of the `spaces/:spaceId` parent route (see frontend-state.md → SpaceStore)
@@ -125,7 +125,7 @@ The `tasks` route requires any `*_EXPORT` / `*_IMPORT` permission (the Firebase-
 
 ### `canUserPerform` pipe (templates)
 
-The main template gating mechanism is `CanUserPerformPipe` (`src/app/shared/pipes/can-user-perform.pipe.ts`). It takes a single permission or an array (any-of match) and returns an `Observable<boolean>`, so pair it with `async`:
+The main template gating mechanism is `CanUserPerformPipe` (`apps/web/src/app/shared/pipes/can-user-perform.pipe.ts`). It takes a single permission or an array (any-of match) and returns an `Observable<boolean>`, so pair it with `async`:
 
 ```html
 @if ('SPACE_MANAGEMENT' | canUserPerform | async) { ... }
@@ -173,19 +173,19 @@ Two managers holding the same permissions can manage each other. A manager can n
 
 These limits are enforced in two places:
 
-- **Server** (`server/src/users/users.controller.ts`, `@RequirePermission(USER_MANAGEMENT)`): `POST /api/app/users` (invite) requires `canGrant()`; `PATCH /api/app/users/:id` requires `canManageUser()` and `canGrant()`; `DELETE /api/app/users/:id` and `POST /api/app/users/:id/password-reset-link` require `canManageUser()`. Both helpers are in `server/src/auth/permissions.ts`.
+- **Server** (`apps/server/src/users/users.controller.ts`, `@RequirePermission(USER_MANAGEMENT)`): `POST /api/app/users` (invite) requires `canGrant()`; `PATCH /api/app/users/:id` requires `canManageUser()` and `canGrant()`; `DELETE /api/app/users/:id` and `POST /api/app/users/:id/password-reset-link` require `canManageUser()`. Both helpers are in `apps/server/src/auth/permissions.ts`.
 - **UI**: `features/admin/users/user-management.ts` mirrors the server rule. The users list disables actions on users the caller can't manage. The edit and invite dialogs hide the Admin role and disable permissions the caller can't grant.
 
 ## Implementation Files
 
-- `src/app/shared/models/user.model.ts` — `User`, `UserRole`, `UserPermission` types
-- `src/app/shared/stores/user.store.ts` — loads `GET /api/auth/me`, exposes `isRoleAdmin`, `isLocked`, `loaded`
-- `src/app/features/admin/users/user-management.ts` — who may manage which user (mirrors `canManageUser`/`canGrant`)
-- `src/app/shared/guards/permission.guard.ts` — `permissionGuard(...permissions)`
-- `server/src/auth/permissions.ts` — `UserPermission`, `canPerform`, `canGrant`, `canManageUser`
-- `server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireAnyRole`, `@RequirePermission`, `@RequireAllPermissions`, global guard + CSRF check
-- `server/src/users/users.controller.ts` — user management API
-- `src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
-- `src/app/features/features-routing.module.ts` — all route guards (`permissionGuard`)
-- `src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)
-- `src/app/shared/services/user.service.ts` — HttpClient user CRUD (`/api/app/users`, admin operations)
+- `apps/web/src/app/shared/models/user.model.ts` — `User`, `UserRole`, `UserPermission` types
+- `apps/web/src/app/shared/stores/user.store.ts` — loads `GET /api/auth/me`, exposes `isRoleAdmin`, `isLocked`, `loaded`
+- `apps/web/src/app/features/admin/users/user-management.ts` — who may manage which user (mirrors `canManageUser`/`canGrant`)
+- `apps/web/src/app/shared/guards/permission.guard.ts` — `permissionGuard(...permissions)`
+- `apps/server/src/auth/permissions.ts` — `UserPermission`, `canPerform`, `canGrant`, `canManageUser`
+- `apps/server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireAnyRole`, `@RequirePermission`, `@RequireAllPermissions`, global guard + CSRF check
+- `apps/server/src/users/users.controller.ts` — user management API
+- `apps/web/src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
+- `apps/web/src/app/features/features-routing.module.ts` — all route guards (`permissionGuard`)
+- `apps/web/src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)
+- `apps/web/src/app/shared/services/user.service.ts` — HttpClient user CRUD (`/api/app/users`, admin operations)

@@ -4,7 +4,7 @@
 
 Localess used to run on Firebase (Firestore, Storage, Auth, Functions, Hosting). The self-hosted
 server can copy a Firebase-era install with `import:firebase`. The authoritative description is
-[server/README.md → Migrating from a Firebase install](../../server/README.md#migrating-from-a-firebase-install);
+[apps/server/README.md → Migrating from a Firebase install](../../apps/server/README.md#migrating-from-a-firebase-install);
 this page is the operator's procedure.
 
 ## What is copied
@@ -72,7 +72,7 @@ docker compose run --rm \
   -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/key.json \
   -e FIREBASE_SCRYPT_SIGNER_KEY=… -e FIREBASE_SCRYPT_SALT_SEPARATOR=… \
   -e FIREBASE_SCRYPT_ROUNDS=… -e FIREBASE_SCRYPT_MEM_COST=… \
-  localess node server/dist/cli.js import:firebase --project <firebase-project-id>
+  localess node apps/server/dist/cli.js import:firebase --project <firebase-project-id>
 ```
 
 The report lists counts per kind and every item that was skipped, with the reason. Then check the

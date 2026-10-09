@@ -4,7 +4,7 @@
 
 ## Overview
 
-`src/app/shared/components/paginator/` — a signal-based replacement for `MatPaginator`, built from
+`apps/web/src/app/shared/components/paginator/` — a signal-based replacement for `MatPaginator`, built from
 Spartan Helm primitives (`HlmButton`, `HlmSelect`, `HlmIcon`, `HlmTooltip`). It deliberately mirrors
 `MatPaginator`'s public surface and its subtler behaviours, so migrating a page was find-and-replace
 and so existing expectations still hold.
@@ -90,7 +90,7 @@ These are the `MatPaginator` behaviours it reproduces on purpose. Each is covere
 
 ### `sticky` needs a height-bounded scroll ancestor
 
-`[sticky]="true"` only adds the `ll-paginator-sticky` class (`src/styles/_ll-paginator.scss`), which
+`[sticky]="true"` only adds the `ll-paginator-sticky` class (`apps/web/src/styles/_ll-paginator.scss`), which
 is plain CSS `position: sticky`. It therefore requires the nearest scrolling ancestor to have a
 **definite height** *and* `overflow-y-auto`. For feature pages that ancestor is
 `<main hlmSidebarInset>` (`h-svh overflow-y-auto`); in a Spartan dialog it is the scrolling middle
@@ -105,6 +105,6 @@ both facts; silently emitting on no-ops would cause redundant refetches.
 
 ## Reference consumer
 
-`src/app/features/spaces/tasks/tasks.component.html:149` — `<ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />`
-bound to a `TableDataSource`. `src/app/features/spaces/contents/shared/assets-select-dialog/` shows
+`apps/web/src/app/features/spaces/tasks/tasks.component.html:149` — `<ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />`
+bound to a `TableDataSource`. `apps/web/src/app/features/spaces/contents/shared/assets-select-dialog/` shows
 the in-dialog variant.

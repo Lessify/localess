@@ -1,0 +1,15 @@
+{
+  "name": "@localess/visual-editor-sync",
+  "version": "4.1.0",
+  "private": true,
+  "description": "Script loaded by customer sites inside the Visual Editor iframe (served as /scripts/sync-v1.js).",
+  "scripts": {
+    "build": "tsup src/sync-v1.ts --format cjs --minify --outDir dist --legacy-output",
+    "build:watch": "tsc --watch --project tsconfig.json",
+    "test": "npm run build && node --test \"src/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "happy-dom": "^20.9.0"
+  }
+}

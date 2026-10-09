@@ -16,7 +16,7 @@ Monitor and manage background jobs (Tasks) triggered by import and export operat
 ## Key Files
 
 ```
-src/app/features/spaces/tasks/
+apps/web/src/app/features/spaces/tasks/
   tasks.component.ts/html/scss
   task-detail/                       ← per-task detail view: status, file info, and paginated/filterable logs (routed)
 ```
@@ -46,7 +46,7 @@ Shows a single task's status/file info plus its paginated log entries (`TaskLog`
 
 ## Task Types
 
-Most tasks are created by other modules' import/export actions and processed by the server's task worker (`server/src/tasks/`). Exports are created with `POST /api/app/spaces/:s/tasks` (`{ kind, path? | locale? }`); imports upload the file in the same request as `multipart/form-data` to `POST /api/app/spaces/:s/tasks/import` (the `kind`/`locale` fields must precede the file). The `tasks` row is the queue: the worker claims the oldest `INITIATED` task with `FOR UPDATE SKIP LOCKED`, and task files live in storage at `spaces/{spaceId}/tasks/{taskId}/original`:
+Most tasks are created by other modules' import/export actions and processed by the server's task worker (`apps/server/src/tasks/`). Exports are created with `POST /api/app/spaces/:s/tasks` (`{ kind, path? | locale? }`); imports upload the file in the same request as `multipart/form-data` to `POST /api/app/spaces/:s/tasks/import` (the `kind`/`locale` fields must precede the file). The `tasks` row is the queue: the worker claims the oldest `INITIATED` task with `FOR UPDATE SKIP LOCKED`, and task files live in storage at `spaces/{spaceId}/tasks/{taskId}/original`:
 
 | Created by | Task type |
 |-----------|-----------|
@@ -62,7 +62,7 @@ Most tasks are created by other modules' import/export actions and processed by 
 
 ### Who can create a task
 
-The server (`assertCanManage` in `server/src/app-api/tasks/tasks.controller.ts`) treats the task type as the permission required to create or delete it: a `CONTENT_IMPORT` task needs `CONTENT_IMPORT`, and so on. `ASSET_REGEN_METADATA` is not a permission, so only admins can create it. Request bodies are validated per kind (zod), and the server always creates the task as `INITIATED`. There is no update endpoint; only the task worker writes status, results and errors. A task still `IN_PROGRESS` after an hour is treated as interrupted and marked `ERROR` (not re-run, because an import may be half applied).
+The server (`assertCanManage` in `apps/server/src/app-api/tasks/tasks.controller.ts`) treats the task type as the permission required to create or delete it: a `CONTENT_IMPORT` task needs `CONTENT_IMPORT`, and so on. `ASSET_REGEN_METADATA` is not a permission, so only admins can create it. Request bodies are validated per kind (zod), and the server always creates the task as `INITIATED`. There is no update endpoint; only the task worker writes status, results and errors. A task still `IN_PROGRESS` after an hour is treated as interrupted and marked `ERROR` (not re-run, because an import may be half applied).
 
 Reading tasks, their logs and their files requires any one of the eight import/export permissions. The task list is not filtered per kind.
 

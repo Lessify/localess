@@ -4,19 +4,19 @@
 
 ## Overview
 
-A from-scratch, Material-free table stack in `src/app/shared/components/table/`, paired with
+A from-scratch, Material-free table stack in `apps/web/src/app/shared/components/table/`, paired with
 [`ll-paginator`](paginator.md). It mirrors the CDK/Material APIs (`MatTable`, `MatTableDataSource`,
 `MatSort`) closely enough that migrating a `mat-table` is mostly find-and-replace, but is built on
 signals throughout — no `BehaviorSubject`/`Subject` plumbing.
 
-It lives in `src/app/shared/components/` rather than `libs/ui` because that directory is the vendored
+It lives in `apps/web/src/app/shared/components/` rather than `packages/ui` because that directory is the vendored
 Spartan Helm layer (`components.json` `componentsPath`); `ll-table` is project-owned and composes
 `Hlm*` directives rather than being one of them.
 
 **The `MatTable` migration is complete.** `LlTableImports`/`ll-table` is used by 13 components —
 `locales`, `tokens`, `contents`, `references-select-dialog`, `assets-select-dialog`, `tasks`,
 `task-detail`, `schemas`, `assets`, `webhooks`, `webhook-detail`, `admin/spaces` and `admin/users`.
-A full-codebase search finds zero remaining `mat-table` or `mat-paginator` usages under `src/app/`.
+A full-codebase search finds zero remaining `mat-table` or `mat-paginator` usages under `apps/web/src/app/`.
 
 ## Usage
 
@@ -119,7 +119,7 @@ height-bounded scroll container**.
 as a CSS scroll container and silently swallow the sticky calculation without ever scrolling.
 
 The real scrolling ancestor for every feature page is `<main hlmSidebarInset>` in
-`src/app/features/features.component.html`, which must carry both a **definite height** (`h-svh`)
+`apps/web/src/app/features/features.component.html`, which must carry both a **definite height** (`h-svh`)
 *and* `overflow-y-auto`. `min-h-svh` on the sidebar wrapper is only a floor, not a fixed height, so
 `main` needs its own explicit height for `overflow-y-auto` to bound and scroll its content. **If sticky
 rows or paginators stop sticking anywhere in the app, check that pair of classes on `main` first**,
@@ -133,6 +133,6 @@ For a `<ll-paginator>` inside a dialog, see
 
 ## Reference consumer
 
-`src/app/features/spaces/tasks/tasks.component.*` — the first component migrated off `MatTable`, and
+`apps/web/src/app/features/spaces/tasks/tasks.component.*` — the first component migrated off `MatTable`, and
 still the clearest end-to-end example: sorting, pagination, a responsive `id` column, and clickable
 rows that navigate to a detail page.

@@ -8,7 +8,7 @@
 |-------|-----------|
 | Framework | Angular 21 (standalone, zoneless, signals) |
 | State | NgRx Signals (`@ngrx/signals`) |
-| UI Components | Spartan/Helm (`libs/ui/`); Angular Material only as residue in `app.config.ts` (see below) |
+| UI Components | Spartan/Helm (`packages/ui/`); Angular Material only as residue in `app.config.ts` (see below) |
 | Styling | Tailwind CSS 4 + SCSS |
 | Backend access | `HttpClient` against the NestJS server (`/api/auth`, `/api/app`, `/api/config`); live updates over SSE (`/api/app/events`) |
 | Rich Text | TipTap editor |
@@ -19,7 +19,7 @@
 ## Application Entry Points
 
 ```
-src/
+apps/web/src/
   app/
     app.config.ts          ← root providers (HttpClient + apiInterceptor, runtime config, router, paginator defaults, image loader)
     app-routing.ts         ← root routes + authGuard
@@ -30,8 +30,7 @@ src/
     shared/                ← cross-feature: models, services, stores, guards, pipes
   environments/            ← build-time constants only (appName, production, version)
   assets/                  ← static files (version.json, icons)
-libs/
-  ui/                      ← 44+ reusable Spartan/Helm components
+packages/ui/               ← 44+ reusable Spartan/Helm components (imported as @spartan-ng/helm/*)
 ```
 
 ---
@@ -101,11 +100,11 @@ A custom `IMAGE_LOADER` is registered in `app.config.ts` that automatically appe
 
 ---
 
-## `libs/ui/` Component Library
+## `packages/ui/` Component Library
 
 44+ headless components built on Radix-style primitives (Spartan/Helm pattern). Components include: `accordion`, `avatar`, `badge`, `breadcrumb`, `button`, `card`, `checkbox`, `combobox`, `command`, `dialog`, `dropdown-menu`, `field`, `input`, `popover`, `progress`, `radio-group`, `resizable`, `scroll-area`, `select`, `sheet`, `sidebar`, `skeleton`, `sonner`, `spinner`, `switch`, `tabs`, `textarea`, `toggle`, `tooltip`, `typography` and more.
 
-Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json` map these to `libs/ui/<component-name>/src/index.ts`).
+Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json` map these to `packages/ui/<component-name>/src/index.ts`).
 
 ---
 
@@ -144,7 +143,7 @@ shared/
 
 ## Security Headers
 
-The server sets browser security headers on every non-API response (`server/src/static/static-site.ts`, an `onSend` hook skipped for `/api/**`). That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`server/src/public-api/lib/asset-headers.ts`). The same file gives hashed bundles `public,max-age=31536000,immutable` and `index.html` / `ngsw*` `no-cache`; `SpaFallbackFilter` serves `index.html` for unknown non-API GETs.
+The server sets browser security headers on every non-API response (`apps/server/src/static/static-site.ts`, an `onSend` hook skipped for `/api/**`). That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`apps/server/src/public-api/lib/asset-headers.ts`). The same file gives hashed bundles `public,max-age=31536000,immutable` and `index.html` / `ngsw*` `no-cache`; `SpaFallbackFilter` serves `index.html` for unknown non-API GETs.
 
 | Header | Value |
 |---|---|
@@ -156,8 +155,8 @@ The server sets browser security headers on every non-API response (`server/src/
 
 How the CSP is built:
 
-- **Scripts** allow only `'self'`, with no `'unsafe-inline'`. That is why the theme bootstrap lives in `src/scripts/theme-init.js` rather than an inline `<script>` in `index.html`. OAuth sign-in is a full-page redirect, so no identity-provider scripts are needed.
-- **The one inline handler** in the production `index.html` is `onload="this.media='all'"`, which Angular's critical-CSS inlining adds. It is allowed by its hash through `'unsafe-hashes'`. If Angular changes that handler, the hash must be updated. A production build plus `grep onload dist/localess/browser/index.html` shows the current one.
+- **Scripts** allow only `'self'`, with no `'unsafe-inline'`. That is why the theme bootstrap lives in `apps/web/src/scripts/theme-init.js` rather than an inline `<script>` in `index.html`. OAuth sign-in is a full-page redirect, so no identity-provider scripts are needed.
+- **The one inline handler** in the production `index.html` is `onload="this.media='all'"`, which Angular's critical-CSS inlining adds. It is allowed by its hash through `'unsafe-hashes'`. If Angular changes that handler, the hash must be updated. A production build plus `grep onload apps/web/dist/browser/index.html` shows the current one.
 - **Styles** need `'unsafe-inline'`: Angular component styles, Spartan and the inlined critical CSS all depend on it. Google Fonts are allowed for styles and fonts.
 - **Connections** allow `'self'` plus `https://api.github.com` (the release check).
 - **Frames** allow `https:` plus `http://localhost` / `http://127.0.0.1`, because visual-editor preview environments can be any site.
@@ -167,9 +166,9 @@ How the CSP is built:
 
 ## Implementation Files
 
-- `src/app/app.config.ts` — root provider configuration
-- `src/app/core/api/` — runtime config, change events (SSE), `liveQuery`, `apiInterceptor`
-- `src/app/app-routing.ts` — root routes and `authGuard`
-- `src/app/features/features-routing.module.ts` — all feature routes and permission guards
-- `server/src/static/static-site.ts` — static serving, cache and security headers
-- `libs/ui/` — shared component library
+- `apps/web/src/app/app.config.ts` — root provider configuration
+- `apps/web/src/app/core/api/` — runtime config, change events (SSE), `liveQuery`, `apiInterceptor`
+- `apps/web/src/app/app-routing.ts` — root routes and `authGuard`
+- `apps/web/src/app/features/features-routing.module.ts` — all feature routes and permission guards
+- `apps/server/src/static/static-site.ts` — static serving, cache and security headers
+- `packages/ui/` — shared component library

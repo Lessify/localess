@@ -21,7 +21,7 @@ State is managed with **NgRx Signals** (`@ngrx/signals`). Four global signal sto
 
 ## UserStore
 
-**File:** `src/app/shared/stores/user.store.ts`
+**File:** `apps/web/src/app/shared/stores/user.store.ts`
 
 Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The response carries the user's identity, linked sign-in providers, `role`, `permissions` and `lock`, read from the `users` row — there are no token claims.
 
@@ -55,7 +55,7 @@ Auth providers supported: **Email/Password**, **Google**, **Microsoft**.
 
 ## SpaceStore
 
-**File:** `src/app/shared/stores/space.store.ts`
+**File:** `apps/web/src/app/shared/stores/space.store.ts`
 
 Loads all spaces the user has access to (a `liveQuery` over `GET /api/app/spaces`, refetched on `spaces` change events). Tracks the currently selected space and environment.
 
@@ -86,7 +86,7 @@ Key methods:
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
 - `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the `schemas`/`documents` live queries (HTTP fetch + refetch on the space's SSE change events): on every id change it clears both, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
 
-**The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`src/app/shared/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
+**The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`apps/web/src/app/shared/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
 - `:spaceId` is in `spaces` → `changeSpace()` if it differs from the stored selection, allow.
 - otherwise (deleted, mistyped, another install) → warning toast, redirect to the stored space's dashboard, or the first space if that one is gone too (never back to an id that would fail again), or `/features/welcome` when there are none.
 
@@ -98,7 +98,7 @@ This is what makes shared links work: the persisted `selectedSpaceId` is only a 
 
 ## AppSettingsStore
 
-**File:** `src/app/shared/stores/app-settings.store.ts`
+**File:** `apps/web/src/app/shared/stores/app-settings.store.ts`
 
 Loads global application settings through `SettingsService.find()` — a live query on `GET /api/app/settings` (the single `settings` row), refetched on `settings` change events. Contains UI configuration set by admins (e.g. custom branding). Readable by every role.
 
@@ -114,7 +114,7 @@ Runtime server configuration (login providers, plugins, machine translation) is 
 
 ## LocalSettingsStore
 
-**File:** `src/app/shared/stores/local-settings.store.ts`
+**File:** `apps/web/src/app/shared/stores/local-settings.store.ts`
 
 Fully client-side user preferences, persisted to `localStorage`. No server interaction.
 
@@ -163,7 +163,7 @@ Never call `patchState` from outside the store — use the store's exposed metho
 
 ## Adding a New Store
 
-1. Create `src/app/shared/stores/<name>.store.ts`
+1. Create `apps/web/src/app/shared/stores/<name>.store.ts`
 2. Use `signalStore({ providedIn: 'root' }, withState<T>(...), withMethods(...), withComputed(...), withHooks(...))`
 3. Initialize in `withHooks.onInit` if it needs to load data
 4. Persist to `localStorage` only what's needed for app shell restore (not server data — that comes from live queries)

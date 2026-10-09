@@ -19,7 +19,7 @@ Define and manage content type schemas that structure `ContentDocument` data. Sc
 ## Key Files
 
 ```
-src/app/features/spaces/schemas/
+apps/web/src/app/features/spaces/schemas/
   schemas.component.ts/html/scss     ← schema list
   edit-comp/                         ← component/root schema field editor (routed)
   edit-enum/                         ← enum values editor (routed)

@@ -4,8 +4,8 @@
 
 ## Overview
 
-A reusable search + popover-filter toolbar in `src/app/shared/components/filter-toolbar/`, paired
-with a `FilterPredicateUtils.create()` helper in `src/app/core/utils/`. Together they replace the
+A reusable search + popover-filter toolbar in `apps/web/src/app/shared/components/filter-toolbar/`, paired
+with a `FilterPredicateUtils.create()` helper in `apps/web/src/app/core/utils/`. Together they replace the
 hand-rolled `filterForm` / `schemaFilterPredicate` code that used to be duplicated per page — search
 input, a `FormGroup`, `debounceTime`, and a bespoke `JSON.parse(filter)` matcher.
 
@@ -81,7 +81,7 @@ type FilterToolbarValue = Record<string, string | string[]> & { search: string }
 
 ### `FilterPredicateUtils.create()`
 
-A static-class helper in `src/app/core/utils/filter-predicate-utils.service.ts` (matching the
+A static-class helper in `apps/web/src/app/core/utils/filter-predicate-utils.service.ts` (matching the
 existing `ObjectUtils` / `NameUtils` convention) that builds a `(row, filter) => boolean` predicate
 assignable to `TableDataSource.filterPredicate`:
 
@@ -150,8 +150,8 @@ dependency on `shared/components/table`.
 
 ## Reference consumer
 
-`src/app/features/spaces/schemas/schemas.component.*` — the first migrated consumer and the clearest
+`apps/web/src/app/features/spaces/schemas/schemas.component.*` — the first migrated consumer and the clearest
 example. Other consumers (`LlFilterToolbarImports` / `FilterDef` in the `.ts`, `<ll-filter-toolbar>`
 in the `.html`): `spaces/settings/locales`, `spaces/settings/tokens`, `spaces/tasks`,
 `spaces/tasks/task-detail`, `spaces/developers/webhooks`, `spaces/developers/webhooks/webhook-detail`,
-`admin/spaces` and `admin/users` (all under `src/app/features/`).
+`admin/spaces` and `admin/users` (all under `apps/web/src/app/features/`).

@@ -4,12 +4,12 @@
 
 ## What you deploy
 
-Localess is **one Node.js process** (the NestJS server in `server/`). On a single port (`PORT`,
+Localess is **one Node.js process** (the NestJS server in `apps/server/`). On a single port (`PORT`,
 default `3000`) it serves:
 
 | Path | What |
 |------|------|
-| `/` | The Angular admin UI (the production build in `dist/localess/browser`, with SPA fallback) |
+| `/` | The Angular admin UI (the production build in `apps/web/dist/browser`, with SPA fallback) |
 | `/api/v1/**` | The public REST API used by your apps and SDKs |
 | `/api/auth/**`, `/api/app/**` | Session login and the API the admin UI uses |
 | `/api/health` | Liveness probe — `{"status":"ok"}` when the database answers |
@@ -58,22 +58,21 @@ ideally a CDN in front of `/api/v1` — see [Production](production.md).
 From a checkout:
 
 ```bash
-npm ci
-npm --prefix server ci
-npm run version:generate  # writes src/assets/version.json (build version info)
-npm run build:prod        # Angular → dist/localess/browser
-npm run server:build      # server → server/dist
+npm ci                    # every workspace, one lockfile
+npm run version:generate  # writes apps/web/src/assets/version.json (build version info)
+npm run build:prod        # Angular → apps/web/dist/browser
+npm run server:build      # server → apps/server/dist
 
 export LOCALESS_DATA_DIR=/var/lib/localess      # files (+ embedded Postgres when DATABASE_URL is unset)
 export DATABASE_URL=postgres://user:pass@db:5432/localess   # optional
 export LOCALESS_PUBLIC_URL=https://cms.example.com
 export LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD='…'  # first boot only
-node server/dist/main.js
+node apps/server/dist/main.js
 ```
 
 The server finds the Angular build relative to its own location; set `LOCALESS_STATIC_DIR` if you
 put it elsewhere. `LOCALESS_DATA_DIR` defaults to `.data` relative to the working directory, so set
-it explicitly to an absolute path (the CLI runs from `server/` and must find the same directory). Run the process under a supervisor (systemd or similar) that restarts it and sends
+it explicitly to an absolute path (the CLI runs from `apps/server/` and must find the same directory). Run the process under a supervisor (systemd or similar) that restarts it and sends
 `SIGTERM` to stop it — the server shuts the embedded Postgres down cleanly on exit.
 
 ---
@@ -98,8 +97,8 @@ Everyone else is invited from **Admin → Users**.
 One command-line tool ships with the server:
 
 ```bash
-npm run localess -- <command>              # from a checkout (runs server/dist/cli.js)
-docker compose exec localess node server/dist/cli.js <command>   # in Docker
+npm run localess -- <command>              # from a checkout (runs apps/server/dist/cli.js)
+docker compose exec localess node apps/server/dist/cli.js <command>   # in Docker
 ```
 
 | Command | Does |
@@ -120,7 +119,7 @@ The CLI reads the same environment variables as the server, so run it with the s
 ## Local development
 
 ```bash
-npm run server:dev   # API on :3000, embedded Postgres in server/.data
+npm run server:dev   # API on :3000, embedded Postgres in apps/server/.data
 npm start            # Angular dev server on :4200, proxying /api to :3000
 ```
 

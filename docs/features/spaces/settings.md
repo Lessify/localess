@@ -24,7 +24,7 @@ operations.
 ## Key Files
 
 ```
-src/app/features/spaces/settings/
+apps/web/src/app/features/spaces/settings/
   settings.component.ts/html/scss     ← tab container
   general/
   locales/
@@ -76,15 +76,15 @@ and they are allowed to differ. Every locale we list is bidirectional today (`GC
 and `GCP_TARGET_ONLY_LOCALES` standing empty next to it; a language later observed to be one-way is a one-line move rather than a
 restructure.
 
-The same lists live twice - in `server/src/domain/lib/translate-locales.ts`, which validates the request when the server's provider is
-Google, and in `src/app/shared/services/locale.service.ts`, which decides what the UI offers and enables the translate button.
-`server/src/domain/lib/translate-locales-parity.test.ts` reads both files and fails if they drift, because a locale the UI offers and the
+The same lists live twice - in `apps/server/src/domain/lib/translate-locales.ts`, which validates the request when the server's provider is
+Google, and in `apps/web/src/app/shared/services/locale.service.ts`, which decides what the UI offers and enables the translate button.
+`apps/server/src/domain/lib/translate-locales-parity.test.ts` reads both files and fails if they drift, because a locale the UI offers and the
 backend rejects only surfaces after the user pays for the round-trip. When the server is configured for DeepL it validates against its own
 DeepL lists (same file), which the UI does not mirror.
 
 ### Locale icons
 
-`ll-locale-icon` (`src/app/shared/components/locale-icon/`) renders the badge shown in the locales table and in the add-locale dropdown.
+`ll-locale-icon` (`apps/web/src/app/shared/components/locale-icon/`) renders the badge shown in the locales table and in the add-locale dropdown.
 It is also used in Contents (`edit-document`), Translations (`translations.component`, export and import dialogs, `translation-filter`,
 `translation-detail`) and the shared `translate-locale-dialog`.
 
@@ -134,9 +134,9 @@ flag like Japan's, or the white band of Italy's, has no visible edge against a l
 
 **Where the data comes from.** Flags are the `circle-flags` package (MIT), copied into `assets/flags` by an `angular.json` asset glob — all
 633 files, since restricting the glob would have to be regenerated whenever a locale is added. The component cannot stat that folder at
-runtime, so the available codes are baked into `locale-flags.ts` by `scripts/generate-locale-flags.mjs`; a wrong constant would point an
+runtime, so the available codes are baked into `locale-flags.ts` by `tools/scripts/generate-locale-flags.mjs`; a wrong constant would point an
 `<img>` at a missing asset, which the server's SPA fallback (`SpaFallbackFilter`) answers with `index.html` instead of a 404.
-`scripts/generate-locale-flags.test.mjs` (part of `npm run test:scripts`) fails when the constants and the installed package disagree —
+`tools/scripts/generate-locale-flags.test.mjs` (part of `npm run test:scripts`) fails when the constants and the installed package disagree —
 re-run the generator after upgrading it. The collapse list is computed by **comparing file contents**, not by mapping a language to "its"
 country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en-GB` wrong.
 

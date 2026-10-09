@@ -5,12 +5,12 @@
 ## Overview
 
 `ll-tree` renders a hierarchical, keyboard-accessible tree. It lives in
-`src/app/shared/components/tree/` and is built on the headless
+`apps/web/src/app/shared/components/tree/` and is built on the headless
 [`@angular/aria/tree`](https://angular.dev/guide/aria/tree) primitives, styled with
 Tailwind against the app's theme tokens so it reads as a sibling of the
-Spartan/Helm components in `libs/ui`.
+Spartan/Helm components in `packages/ui`.
 
-**It is deliberately not in `libs/ui`.** That directory is the vendored Spartan Helm
+**It is deliberately not in `packages/ui`.** That directory is the vendored Spartan Helm
 layer — `components.json` points `componentsPath` there and every folder is aliased
 `@spartan-ng/helm/*` in `tsconfig.json`. Spartan ships no tree primitive today; if it
 ever does, `spartan-ng add tree` must not collide with this component.
@@ -193,7 +193,7 @@ Two more things worth knowing before writing tests, both learned the hard way:
 ## Reference consumer
 
 The translations tree layout
-(`src/app/features/spaces/translations/shared/components/translation-list/`) is the
+(`apps/web/src/app/features/spaces/translations/shared/components/translation-list/`) is the
 reference usage. It demonstrates the controlled-expansion pattern: while a filter is
 active the tree opens fully — via `collectGroupKeys` — so no match hides behind a
 collapsed parent, and the user's manual expansion is restored when the filter clears.

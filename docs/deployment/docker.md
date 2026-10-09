@@ -12,7 +12,7 @@ both into a `node:24-slim` runtime with `ffmpeg` (video thumbnails) and `perl` (
 | User | `node` (not root) |
 | Port | `3000` (`EXPOSE 3000`) |
 | Data | `VOLUME /data`, `LOCALESS_DATA_DIR=/data` — files in `/data/storage`, embedded Postgres in `/data/pgdata` |
-| Command | `node server/dist/main.js` |
+| Command | `node apps/server/dist/main.js` |
 | Health check | Built in: `GET /api/health` every 30 s (60 s start period) |
 
 Build it from the repository root:
@@ -53,7 +53,7 @@ Then:
 ```bash
 docker compose up -d --build
 docker compose logs -f localess              # migrations, first-admin creation, "listening"
-docker compose exec localess node server/dist/cli.js check
+docker compose exec localess node apps/server/dist/cli.js check
 ```
 
 Open `http://localhost:3000` (or your `LOCALESS_PUBLIC_URL`) and sign in.
@@ -92,7 +92,7 @@ You can move from the embedded database to an external one later: `pg_dump` the 
 The CLI connects to the database itself, so run it next to the server:
 
 ```bash
-docker exec localess node server/dist/cli.js check
+docker exec localess node apps/server/dist/cli.js check
 ```
 
 With the embedded database, the CLI finds the cluster the running server already started in

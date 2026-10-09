@@ -21,15 +21,12 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
-      - run: npm --prefix server ci
       - run: npm test -- --watch=false
       # Starts a throwaway embedded Postgres per run
-      - run: npm --prefix server test
+      - run: npm run server:test
       - run: npm run test:scripts
 
   build:
@@ -46,13 +43,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - run: npm ci
-      - run: npm --prefix server ci
       - run: npm run lint
       # - run: npm run prettier
       - run: npm run build
-      - run: npm --prefix server run build
+      - run: npm run server:build

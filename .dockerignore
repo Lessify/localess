@@ -3,10 +3,9 @@
 .agents
 .claude
 **/node_modules
-dist
-server/dist
-server/.data
-.data
+**/dist
+**/.data
+**/.angular
 docs
-api-docs
+tools/openapi
 *.log

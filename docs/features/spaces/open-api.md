@@ -20,7 +20,7 @@ There is no route guard: neither the `developers` route in `features-routing.mod
 ## Key Files
 
 ```
-src/app/features/spaces/developers/
+apps/web/src/app/features/spaces/developers/
   developers.component.ts/html/scss        ← shell, router-outlet only
   developers-routing.module.ts             ← redirects '' to 'webhooks'; children: webhooks, webhooks/:webhookId, open-api
   open-api/

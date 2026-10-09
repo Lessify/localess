@@ -9,7 +9,7 @@ Analytics, Performance) with one self-hosted Node process.
 ```
                  ┌──────────────────── one Node process, one port ─────────────────────┐
 browser ───────► │ NestJS + @nestjs/platform-fastify                                    │
-                 │  ├─ @fastify/static      dist/localess/browser  (+ SPA fallback)      │
+                 │  ├─ @fastify/static      apps/web/dist/browser  (+ SPA fallback)      │
                  │  ├─ /api/v1/**           public CDN + DEV_TOOLS + MANAGE (unchanged)  │
                  │  ├─ /api/auth/**         session login, OAuth (Google / Microsoft)    │
                  │  ├─ /api/app/**          what the Firestore SDK + callables did today │
@@ -20,7 +20,7 @@ browser ───────► │ NestJS + @nestjs/platform-fastify          
                      Postgres (external, or embedded-postgres) local FS (default) | S3 (optional)
 ```
 
-Boot sequence (`server/src/main.ts`):
+Boot sequence (`apps/server/src/main.ts`):
 
 1. Load config from env (`DATABASE_URL`, `LOCALESS_DATA_DIR`, `SESSION_SECRET`, `DEEPL_API_KEY`, …).
 2. If `DATABASE_URL` is unset (or `LOCALESS_DB=embedded`): start `embedded-postgres` with
@@ -28,7 +28,7 @@ Boot sequence (`server/src/main.ts`):
    if missing, and register a shutdown hook that calls `stop()`.
 3. Take `pg_advisory_lock(<const>)`, run Drizzle `migrate(db, { migrationsFolder })`, release the lock.
    The lock makes it safe when several instances boot at once. Migrations are generated at dev time with
-   `drizzle-kit generate` and committed (`server/drizzle/*.sql`); no `push` in production.
+   `drizzle-kit generate` and committed (`apps/server/drizzle/*.sql`); no `push` in production.
 4. Optional seed: if `users` is empty and `LOCALESS_ADMIN_EMAIL`/`LOCALESS_ADMIN_PASSWORD` are set, create
    the first admin + the "Hello World" space (today's `check --fix` / `admin-user.mjs`). Never an
    unauthenticated HTTP endpoint (the old Firebase `setup` callable was removed for exactly that reason).
@@ -270,14 +270,14 @@ binaries (verify musl support before considering Alpine).
 | Login / reset / me | `signInWithEmailAndPassword` → `POST /api/auth/login`; Google/Microsoft buttons → `location.href = '/api/auth/oauth/google'`; reset → `POST /api/auth/password-reset/request`; `MeService` → `PATCH /api/app/me`, `/me/email`, `/me/password`; `signOut` → `POST /api/auth/logout`. |
 | Uploads | `uploadBytes(Resumable)` → `HttpClient` multipart with `reportProgress: true`. |
 | Stores | `SpaceStore`: same shape, sources become live queries + owns the space `EventSource`. `AppSettingsStore`: drop Remote Config, `settings` via `GET/PATCH /api/app/settings`. `LocalSettingsStore`: unchanged. |
-| Tests | `src/test-setup.ts` global `vi.mock` of `@angular/fire/*` → `provideHttpClientTesting()` + `HttpTestingController` per service spec (update `docs/testing.md`). |
+| Tests | `apps/web/src/test-setup.ts` global `vi.mock` of `@angular/fire/*` → `provideHttpClientTesting()` + `HttpTestingController` per service spec (update `docs/testing.md`). |
 | Dev | `proxy.conf.cjs` `/api` → Nest port. `npm start` = `ng serve` + `nest start --watch` (embedded Postgres auto-starts). Delete `proxy.conf.js` duplicate. |
 
 ---
 
 ## 7. Hosting, deploy, tooling
 
-- `@fastify/static` on `dist/localess/browser` with `wildcard: false` + `setNotFoundHandler` returning
+- `@fastify/static` on `apps/web/dist/browser` with `wildcard: false` + `setNotFoundHandler` returning
   `index.html` for non-`/api` GETs. Reproduce `firebase.json` headers in an `onSend` hook (or
   `@fastify/helmet`): CSP-Report-Only (drop the googleapis / cloudfunctions / run.app / analytics origins),
   `X-Frame-Options`, nosniff, Referrer-Policy, Permissions-Policy; `immutable` for hashed
@@ -290,7 +290,7 @@ binaries (verify musl support before considering Alpine).
   `storage.rules`, `remoteconfig.template.json`, `cloudbuild.yaml`, `firebase-export/`, and the GCP parts
   of `scripts/localess/` (projects, billing, APIs, labels/markers, regions, bucket CORS, web app, hosting,
   invoker IAM, Artifact Registry, `firebase-*.mjs`).
-- **`localess` CLI is re-pointed at the server** (`node server/dist/cli.js` / `npm run localess --`):
+- **`localess` CLI is re-pointed at the server** (`node apps/server/dist/cli.js` / `npm run localess --`):
   - `db:migrate` (same code as boot), `admin:create --email` (old `check --fix` admin bootstrap),
   - `check` (DB reachable, migrations current, admin exists, storage writable, optional keys present),
   - `import:firebase --project <id>` (§8).

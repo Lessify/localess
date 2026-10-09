@@ -2,12 +2,12 @@
 
 > Related: [CDN & Caching](cdn-caching.md) · [Auth Tokens](auth-tokens.md) · [Publish Flow](publish-flow.md)
 
-The public REST API is served under `/api/v1/**` by the NestJS server's `PublicApiModule` (`server/src/public-api/`), on the same port as the app and the app API. It replaced the `publicv1` Firebase Function with the same URLs, query parameters, token rules, status codes, bodies and `Cache-Control` values; the former Express routers are now three Fastify controllers: `CdnController`, `ManageController` and `DevToolsController`. All routes are `@Public()` (no session) and authenticate with API tokens instead. JSON request bodies are limited to 5 MB (Fastify `bodyLimit` in `server/src/app.factory.ts`), so a whole space's schemas fit in one push. CORS reflects any origin on `/api/v1/**` only; the cookie-authenticated app API gets no CORS headers. Responses are gzip/deflate-compressed above 1 KB (`@fastify/compress`).
+The public REST API is served under `/api/v1/**` by the NestJS server's `PublicApiModule` (`apps/server/src/public-api/`), on the same port as the app and the app API. It replaced the `publicv1` Firebase Function with the same URLs, query parameters, token rules, status codes, bodies and `Cache-Control` values; the former Express routers are now three Fastify controllers: `CdnController`, `ManageController` and `DevToolsController`. All routes are `@Public()` (no session) and authenticate with API tokens instead. JSON request bodies are limited to 5 MB (Fastify `bodyLimit` in `apps/server/src/app.factory.ts`), so a whole space's schemas fit in one push. CORS reflects any origin on `/api/v1/**` only; the cookie-authenticated app API gets no CORS headers. Responses are gzip/deflate-compressed above 1 KB (`@fastify/compress`).
 ---
 
 ## Routers
 
-### CDN (`server/src/public-api/cdn.controller.ts`)
+### CDN (`apps/server/src/public-api/cdn.controller.ts`)
 
 Content delivery with cache-busting and asset transformation. All content/translation endpoints follow the [`cv` redirect pattern](cdn-caching.md).
 
@@ -27,7 +27,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to `space.localeFallback`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
-- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `PublicContentService.resolveAssets()` (`server/src/public-api/public-content.service.ts`).
+- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `PublicContentService.resolveAssets()` (`apps/server/src/public-api/public-content.service.ts`).
 - **Asset transforms** — Uses Sharp for images (`w`/`h`/`q`/`f`/`fit` params). Supported output formats (`f`): `webp`, `jpeg`, `png`, `avif`. SVG is passed through unsized; animated GIF/WebP are resized with all frames preserved. Video + `w` + `thumbnail` extracts a frame with FFmpeg then resizes with Sharp.
 - **No implicit format conversion, but quality is normalised** — `f` is the only thing that changes an image format. A bare request keeps the stored format yet still re-encodes a still raster at that format default quality: a q95 upload measured 587KB and returned 219KB. GIF, SVG, video and animations are served as stored. Passing `f=webp` or `f=avif` is the recommended way to cut transfer size further.
 - **JPEG uses the mozjpeg encoder** — trellis quantisation, overshoot deringing and optimised scans, which produce a measurably smaller file at the *same* quality value (~20% on a test source) for roughly 5x the encode time. Worth it here because encoding happens once per URL — the result is kept in the on-disk rendition cache and served under a 365-day TTL, while the saved bytes are paid on every hit.
@@ -78,7 +78,7 @@ ignored and the untransformed image was returned; it now returns `400 invalid-ar
 
 ---
 
-### MANAGE (`server/src/public-api/manage.controller.ts`)
+### MANAGE (`apps/server/src/public-api/manage.controller.ts`)
 
 Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header auth (not query param).
 
@@ -151,11 +151,11 @@ Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMA
 }
 ```
 
-Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations bump the space's `translation_version`; schema push writes through `applySchemaPushPlan()` (`server/src/domain/schema-push.ts`) and bumps `content_version`, because schemas shape the draft output. Drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
+Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations bump the space's `translation_version`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/domain/schema-push.ts`) and bumps `content_version`, because schemas shape the draft output. Drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
 
 ---
 
-### DEV_TOOLS (`server/src/public-api/dev-tools.controller.ts`)
+### DEV_TOOLS (`apps/server/src/public-api/dev-tools.controller.ts`)
 
 Space introspection and OpenAPI generation. Uses `token` query param auth.
 
@@ -174,7 +174,7 @@ Space introspection and OpenAPI generation. Uses `token` query param auth.
 
 ### `validIdParams()` — ID validation (all controllers)
 
-`validIdParams()` (exported from `cdn.controller.ts`, used by all three controllers before anything else runs) checks `spaceId`, `contentId` and `assetId`. A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`server/src/public-api/lib/id-param.ts`) gets `400 invalid-argument`, with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`), so a bad ID never reaches the permission checks, a query or a storage key.
+`validIdParams()` (exported from `cdn.controller.ts`, used by all three controllers before anything else runs) checks `spaceId`, `contentId` and `assetId`. A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`apps/server/src/public-api/lib/id-param.ts`) gets `400 invalid-argument`, with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`), so a bad ID never reaches the permission checks, a query or a storage key.
 
 The check dates from the Firebase era, when IDs were spliced into Firestore and Storage paths and `GET /contents/X%2Fdraft?cv=…` could serve the **unpublished draft** file under a `CONTENT_PUBLIC` token. IDs are now bound SQL parameters, but asset IDs still form storage keys (`spaces/{spaceId}/assets/{assetId}/original`), so the guard stays.
 
@@ -202,7 +202,7 @@ Token passed as `X-API-KEY` header. No caching — a direct `tokens` lookup on e
 
 ## Error Responses
 
-Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details?, message, status }`, now written by `sendV1Error()` (`server/src/public-api/v1-response.ts`).
+Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details?, message, status }`, now written by `sendV1Error()` (`apps/server/src/public-api/v1-response.ts`).
 
 **401 Unauthenticated** — same generic body for a missing/malformed token and for a well-formed token that doesn't exist in the space, so the response never reveals which case occurred:
 
@@ -247,15 +247,15 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 
 | File                                                     | Purpose                                                                                   |
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `server/src/public-api/cdn.controller.ts`                | CDN — all 7 delivery endpoints, `cv` redirects, `validIdParams()`                          |
-| `server/src/public-api/manage.controller.ts`             | MANAGE — translation bulk-write and schema push                                           |
-| `server/src/public-api/dev-tools.controller.ts`          | DEV_TOOLS — space metadata, OpenAPI, schemas, stored translation values                   |
-| `server/src/public-api/token-auth.service.ts`            | Query-param and header token auth, 5-min token cache invalidated by change events         |
-| `server/src/public-api/public-content.service.ts`        | Space/locale lookup, published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links |
-| `server/src/public-api/asset-delivery.service.ts`        | Asset streaming (Range), transforms, rendition cache                                      |
-| `server/src/public-api/cache-control.ts`                 | Cache TTL constants                                                                       |
-| `server/src/public-api/v1-response.ts`                   | `sendV1Error()` error bodies                                                              |
-| `server/src/public-api/lib/`                             | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing, ID checks |
-| `server/src/domain/models/`                              | `TokenPermission` enum, token and zod request models                                      |
+| `apps/server/src/public-api/cdn.controller.ts`                | CDN — all 7 delivery endpoints, `cv` redirects, `validIdParams()`                          |
+| `apps/server/src/public-api/manage.controller.ts`             | MANAGE — translation bulk-write and schema push                                           |
+| `apps/server/src/public-api/dev-tools.controller.ts`          | DEV_TOOLS — space metadata, OpenAPI, schemas, stored translation values                   |
+| `apps/server/src/public-api/token-auth.service.ts`            | Query-param and header token auth, 5-min token cache invalidated by change events         |
+| `apps/server/src/public-api/public-content.service.ts`        | Space/locale lookup, published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links |
+| `apps/server/src/public-api/asset-delivery.service.ts`        | Asset streaming (Range), transforms, rendition cache                                      |
+| `apps/server/src/public-api/cache-control.ts`                 | Cache TTL constants                                                                       |
+| `apps/server/src/public-api/v1-response.ts`                   | `sendV1Error()` error bodies                                                              |
+| `apps/server/src/public-api/lib/`                             | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing, ID checks |
+| `apps/server/src/domain/models/`                              | `TokenPermission` enum, token and zod request models                                      |
 
-Acceptance tests (ported from the functions-era route tests): `server/test/v1-*.test.ts`.
+Acceptance tests (ported from the functions-era route tests): `apps/server/test/v1-*.test.ts`.

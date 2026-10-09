@@ -15,7 +15,7 @@ Displays an overview of the selected space — counts and storage sizes for cont
 ## Key Files
 
 ```
-src/app/features/spaces/dashboard/
+apps/web/src/app/features/spaces/dashboard/
   dashboard.component.ts/html/scss
 ```
 

@@ -12,7 +12,7 @@ An upgrade is: new code, restart. Pending database migrations apply automaticall
 git pull
 docker compose up -d --build
 docker compose logs -f localess
-docker compose exec localess node server/dist/cli.js check
+docker compose exec localess node apps/server/dist/cli.js check
 ```
 
 **Single container** — rebuild (or pull) the image, then replace the container on the same volume:
@@ -27,7 +27,7 @@ docker run -d --name localess -p 3000:3000 -v localess-data:/data … localess
 
 ```bash
 git pull
-npm ci && npm --prefix server ci
+npm ci && npm ci
 npm run version:generate && npm run build:prod && npm run server:build
 # restart the process (systemctl restart localess, …)
 ```
@@ -106,7 +106,7 @@ upgrade:
 2. Restore the database backup taken before the upgrade (files too, if anything was uploaded since).
 3. Start the previous image / checkout.
 
-If the upgrade contained no migrations (nothing new in `server/drizzle/`), starting the previous
+If the upgrade contained no migrations (nothing new in `apps/server/drizzle/`), starting the previous
 version is enough.
 
 Changes made between the upgrade and the rollback are lost with the restore — keep the window short,

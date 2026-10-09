@@ -17,7 +17,7 @@ Platform-wide application settings — currently covers UI branding (theme colou
 ## Key Files
 
 ```
-src/app/features/admin/settings/
+apps/web/src/app/features/admin/settings/
   settings.component.ts/html/scss    ← tab container
   ui/
     ui.component.ts/html/scss        ← UI settings form

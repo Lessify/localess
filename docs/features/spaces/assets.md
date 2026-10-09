@@ -15,7 +15,7 @@ Browse, upload, organise, and manage binary assets (images, videos, documents, f
 ## Key Files
 
 ```
-src/app/features/spaces/assets/
+apps/web/src/app/features/spaces/assets/
   assets.component.ts/html/scss      ← browser + uploader
   add-folder-dialog/
   edit-file-dialog/                  ← edit file metadata (name, alt text)
@@ -48,7 +48,7 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`server/src/app-api/plugins/unsplash-paging.ts`)
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/app-api/plugins/unsplash-paging.ts`)
 
 ## CDN Asset Endpoint
 
@@ -72,7 +72,7 @@ a transform parameter on either is rejected with `400` rather than ignored. They
 
 **Which types are served inline.** Assets are served from the same origin as the admin app, and
 their MIME type comes from the uploader. So every asset route passes the type through
-`assetResponsePolicy` (`server/src/public-api/lib/asset-headers.ts`), which decides how the response is
+`assetResponsePolicy` (`apps/server/src/public-api/lib/asset-headers.ts`), which decides how the response is
 delivered:
 
 | Type | Delivery |
@@ -320,7 +320,7 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | `ImagePreviewDialogComponent`* | Full-size image preview |
 | `ConfirmationDialogComponent` | Delete / regenerate-metadata confirmation |
 
-\* Shared/global components (`src/app/shared/components/unsplash-assets-select-dialog/`, `src/app/shared/components/image-preview-dialog/`) — not local to `assets/`.
+\* Shared/global components (`apps/web/src/app/shared/components/unsplash-assets-select-dialog/`, `apps/web/src/app/shared/components/image-preview-dialog/`) — not local to `assets/`.
 
 ## Services Used
 

@@ -16,10 +16,9 @@ on:
       - 'v*.*.*'
     # Only build when files in these directories have been changed
     paths:
-      - src/**
-      - libs/**
-      - server/**
-      - angular.json
+      - apps/**
+      - packages/**
+      - tools/scripts/generate-version.js
       - Dockerfile
       - .dockerignore
       - package.json

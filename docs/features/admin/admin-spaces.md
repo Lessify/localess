@@ -15,7 +15,7 @@ Platform-level management of Spaces — create new spaces, edit space names, del
 ## Key Files
 
 ```
-src/app/features/admin/spaces/
+apps/web/src/app/features/admin/spaces/
   spaces.component.ts/html/scss      ← space list, and the whole create flow
   space-create-dialog/               ← the form: name + template choice
   space-edit-dialog/                 ← rename
@@ -159,7 +159,7 @@ Templates seed **schemas only**. Seeding example content is deferred until the s
 a content payload is shaped by the schema it references, so authoring it earlier would mean
 rewriting it on every revision.
 
-Definitions live in `src/app/features/admin/spaces/templates/`, typed as `SpaceTemplateSchema[]` so
+Definitions live in `apps/web/src/app/features/admin/spaces/templates/`, typed as `SpaceTemplateSchema[]` so
 the compiler validates every field shape. Note this is **not** `SchemaCreate`: that type is
 `Omit<Schema, …>` over a union, and `Omit` is not distributive — it collapses `SchemaComponent |
 SchemaEnum` into their shared keys, dropping `fields`, `values` and `previewField` along with the

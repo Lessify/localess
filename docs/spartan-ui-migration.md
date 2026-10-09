@@ -3,9 +3,9 @@
 > Related: [`ll-table`](components/table.md)
 
 > **Status: complete.** No `MatDialog` usage remains — every dialog opens through `HlmDialogService`. The only Angular Material residue is
-> in `src/app/app.config.ts` (`provideNativeDateAdapter()` and `MAT_PAGINATOR_DEFAULT_OPTIONS`, the latter with no consumer).
+> in `apps/web/src/app/app.config.ts` (`provideNativeDateAdapter()` and `MAT_PAGINATOR_DEFAULT_OPTIONS`, the latter with no consumer).
 
-> This document is now a reference for the Spartan/Helm patterns (`libs/ui/`) the migration settled on, and the traps found along the way.
+> This document is now a reference for the Spartan/Helm patterns (`packages/ui/`) the migration settled on, and the traps found along the way.
 > Read it before touching any dialog, form, or notification code. The Material → Spartan mappings are kept to explain why the code looks
 > the way it does.
 
@@ -15,7 +15,7 @@
 
 - **Dialogs use `HlmDialogService`** — follow [`MatDialog` → `HlmDialogService`](#matdialog--hlmdialogservice) for the structure, the
   tests and the traps. Add Locale is the reference implementation; widths come from the constants in
-  `src/app/shared/components/dialog/dialog-width.ts`.
+  `apps/web/src/app/shared/components/dialog/dialog-width.ts`.
 - **Spartan components are headless primitives** — they render with `display: contents` or inject host classes. Layout is your
   responsibility.
 - **All components are standalone** — import via `*Imports` barrel constants (e.g. `HlmButtonImports`, `HlmCheckboxImports`).
@@ -608,7 +608,7 @@ for separators:
 } }
 ```
 
-Move the data into a separate shared file to avoid duplication across dialogs. See `src/app/features/admin/users/user-permissions.ts` as a
+Move the data into a separate shared file to avoid duplication across dialogs. See `apps/web/src/app/features/admin/users/user-permissions.ts` as a
 reference:
 
 ```typescript
@@ -729,7 +729,7 @@ imports: [..., HlmToasterImports]
 
 ### `NotificationService` API
 
-All toast calls go through `NotificationService` (`src/app/shared/services/notification.service.ts`). Never call `toast()` directly from
+All toast calls go through `NotificationService` (`apps/web/src/app/shared/services/notification.service.ts`). Never call `toast()` directly from
 feature components.
 
 ```typescript
@@ -1140,8 +1140,8 @@ Key rules:
 
 ## Sticky Paginator
 
-`<ll-paginator>` (`src/app/shared/components/paginator/`) sticks to the bottom of its scroll container via the `sticky` input (default
-`false`) — the component applies the `ll-paginator-sticky` class (defined in `src/styles/_ll-paginator.scss`) to itself:
+`<ll-paginator>` (`apps/web/src/app/shared/components/paginator/`) sticks to the bottom of its scroll container via the `sticky` input (default
+`false`) — the component applies the `ll-paginator-sticky` class (defined in `apps/web/src/styles/_ll-paginator.scss`) to itself:
 
 ```html
 <ll-paginator [sticky]="true" [length]="..." />

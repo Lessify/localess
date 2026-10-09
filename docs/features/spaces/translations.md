@@ -17,7 +17,7 @@ AI-powered translation, import/export, and tree or list view.
 ## Key Files
 
 ```
-src/app/features/spaces/translations/
+apps/web/src/app/features/spaces/translations/
   translations.component.ts/html/scss    ← main list/tree view
   add-dialog/                            ← create new translation key
   edit-dialog/                           ← edit key metadata
@@ -31,10 +31,10 @@ src/app/features/spaces/translations/
     translation-filter/                  ← search/filter bar
     translation-status/                  ← visual status badge
 
-src/app/shared/models/
+apps/web/src/app/shared/models/
   translation.model.ts                   ← Translation, TranslationType, etc.
 
-src/app/shared/components/
+apps/web/src/app/shared/components/
   translate-locale-dialog/               ← shared/global dialog, also used by Contents (bulk AI-translate to a target locale)
 ```
 
@@ -92,7 +92,7 @@ locale, see [Space Settings → Translation support](settings.md#translation-sup
 | `EditIdDialogComponent`          | Rename a translation key ID                                                                                                                                           |
 | `ExportDialogComponent`          | Choose format and locales to export                                                                                                                                   |
 | `ImportDialogComponent`          | Upload a translation file → creates a Task                                                                                                                            |
-| `TranslateLocaleDialogComponent` | Bulk AI-translate to a target locale — shared/global component (`src/app/shared/components/translate-locale-dialog/`), also used by Contents' `EditDocumentComponent` |
+| `TranslateLocaleDialogComponent` | Bulk AI-translate to a target locale — shared/global component (`apps/web/src/app/shared/components/translate-locale-dialog/`), also used by Contents' `EditDocumentComponent` |
 | `ConfirmationDialogComponent`    | Delete confirmation                                                                                                                                                   |
 
 ## Services Used

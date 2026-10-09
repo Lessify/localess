@@ -87,7 +87,7 @@ Then open http://localhost:3000 and sign in with the admin account.
 Requires Node.js 24.
 
 ```bash
-npm install && npm --prefix server install
+npm install   # one install for every workspace (apps/*, packages/*)
 LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD=change-me npm run server:dev   # API on :3000, embedded Postgres
 npm start                                                                                       # UI on :4200, proxies /api
 ```
