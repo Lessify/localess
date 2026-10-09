@@ -58,7 +58,7 @@ docker compose exec localess node server/dist/cli.js check
 
 Open `http://localhost:3000` (or your `LOCALESS_PUBLIC_URL`) and sign in.
 
-Secrets do not have to live in the Compose file: Compose reads an `.env` file next to
+Secrets do not have to live in the Compose file: Compose reads an `../../apps/server/.env` file next to
 `docker-compose.yml` for `${VAR}` substitution, or you can add an `env_file:` entry to the
 `localess` service.
 

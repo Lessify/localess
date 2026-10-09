@@ -24,7 +24,7 @@
 -   **Single Responsibility**: Tools should do one thing well. Complex logic should be broken down.
 
 ## Configuration
--   **Environment Variables**: Store sensitive keys (like API keys) in environment variables or `.env` files. Do not hardcode them.
+- **Environment Variables**: Store sensitive keys (like API keys) in environment variables or `../../../../apps/server/.env` files. Do not hardcode them.
 
 ## Development
 -   **Use Dev Mode**: Run your app with `genkit start -- <start cmd>` to enable the Developer UI.

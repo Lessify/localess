@@ -56,4 +56,4 @@ Thumbs.db
 *.tsbuildinfo
 
 # Local environment for pnpm dev (apps/server/.env)
-.env
+apps/server/.env
