@@ -299,6 +299,10 @@ binaries (verify musl support before considering Alpine).
 
 ## 8. Data migration from an existing Firebase install
 
+> **Superseded (planned):** [firebase-migration-uuidv7.md](firebase-migration-uuidv7.md) replaces the 1:1 id
+> copy below with UUIDv7 ids, rewritten references and legacy id resolution. Built once the application
+> migration is stable; until then the importer below is what ships.
+
 One-shot, idempotent `localess import:firebase` using `firebase-admin` (read-only on the source):
 
 1. **Firestore** → walk `configs`, `users`, `spaces` and each subcollection, map documents 1:1 (same

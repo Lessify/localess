@@ -143,6 +143,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `src/app/shared/components/`; read before adding or changing one |
 | **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [server/README.md](server/README.md) | Anything in `server/`, or replacing a Firebase dependency |
 | Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `src/test-setup.ts` |
+| Firebase data migration with UUIDv7 ids, reference rewrite, legacy ids (planned) | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | `server/src/firebase-import/`, id generation, schema/translation/token keys |
 | **Deployment & self-hosting** | | |
 | Deployment overview, requirements, ways to run, first admin, CLI | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Docker image & Compose | [docs/deployment/docker.md](docs/deployment/docker.md) | `Dockerfile`, `docker-compose.yml` |
