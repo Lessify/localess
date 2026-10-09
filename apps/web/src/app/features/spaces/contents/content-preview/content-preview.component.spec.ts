@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { ContentDocument, ContentKind, Locale, Space, SpaceEnvironment } from '@localess/shared';
-import { SpaceStore } from '@shared/stores/space.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
 

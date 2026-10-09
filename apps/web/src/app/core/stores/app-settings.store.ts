@@ -1,9 +1,9 @@
 import { inject } from '@angular/core';
+import { SettingsService } from '@core/services/settings.service';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { AppUi } from '@shared/models/settings.model';
-import { SettingsService } from '@shared/services/settings.service';
 import { pipe, switchMap } from 'rxjs';
 
 export type AppSettingsState = {

@@ -1,6 +1,11 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { LocaleService } from '@core/services/locale.service';
+import { NotificationService } from '@core/services/notification.service';
+import { PlatformService } from '@core/services/platform.service';
+import { TranslateService } from '@core/services/translate.service';
+import { TranslationService } from '@core/services/translation.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { DEFAULT_LOCALE, Locale, Translation, TranslationUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -13,13 +18,7 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { TranslationStatus } from '@shared/models/translation.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { LocaleService } from '@shared/services/locale.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
-import { TranslateService } from '@shared/services/translate.service';
-import { TranslationService } from '@shared/services/translation.service';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -35,6 +34,7 @@ import { filter, switchMap, take } from 'rxjs/operators';
 import { EditDialogComponent, EditDialogContext, EditDialogResult } from '../../../edit-dialog';
 import { EditIdDialogComponent, EditIdDialogContext, EditIdDialogResult } from '../../../edit-id-dialog';
 import { identifyTranslationStatus } from '../../models/translation.model';
+import { TranslationStatus } from '../../models/translation-status.model';
 import { TranslationStringEditComponent } from '../translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
 

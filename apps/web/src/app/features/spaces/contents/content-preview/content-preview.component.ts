@@ -12,13 +12,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { resolvePreviewUrl } from '@core/utils/preview-url';
 import { CONTENT_DEFAULT_LOCALE, ContentDocument, Locale, SpaceEnvironment } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideCircleCheck, lucideFullscreen, lucideInfo, lucideRefreshCcw, lucideX } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { SpaceStore } from '@shared/stores/space.store';
 import { isSafePreviewUrl } from '@shared/validators/space.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';

@@ -59,4 +59,4 @@ expect(await result).toEqual([{ id: 's1' }]);
 1. Copy the setup above (`provideHttpClient`, `provideHttpClientTesting`, `ChangeEventsService` stub).
 2. One test per public method: URL, method, body, and how the response is mapped.
 3. One live-refetch test if the service has live reads.
-4. `pnpm --filter @localess/web exec ng test --watch=false --include="src/app/shared/services/<name>.service.spec.ts"`.
+4. `pnpm --filter @localess/web exec ng test --watch=false --include="src/app/core/services/<name>.service.spec.ts"`.

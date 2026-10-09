@@ -13,6 +13,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -28,9 +30,6 @@ import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/c
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
-import { NotificationService } from '@shared/services/notification.service';
-import { WebHookService } from '@shared/services/webhook.service';
-import { SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -39,6 +38,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
+import { WebHookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/webhook-dialog.model';
 

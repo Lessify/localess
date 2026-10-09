@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { CONTENT_DEFAULT_LOCALE, ContentData, Locale, SchemaFieldMarkdown } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { TranslateService } from '@shared/services/translate.service';
-import { LocalSettingsStore, MarkdownMode } from '@shared/stores/local-settings.store';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslateService } from '@core/services/translate.service';
+import { LocalSettingsStore, MarkdownMode } from '@core/stores/local-settings.store';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 

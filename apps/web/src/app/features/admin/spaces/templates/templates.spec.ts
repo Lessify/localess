@@ -1,5 +1,5 @@
 import { SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
-import { SpaceTemplateComponent, SpaceTemplateEnum } from '@shared/models/space-template.model';
+import { SpaceTemplateComponent, SpaceTemplateEnum } from '../space-template.model';
 
 import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index';
 

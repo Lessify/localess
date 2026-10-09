@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import { permissionGuard } from '@core/guards/permission.guard';
+import { spaceSelectionGuard } from '@core/guards/space-selection.guard';
 import { UserPermission } from '@localess/shared';
-import { permissionGuard } from '@shared/guards/permission.guard';
-import { spaceSelectionGuard } from '@shared/guards/space-selection.guard';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 
 import { FeaturesComponent } from './features.component';

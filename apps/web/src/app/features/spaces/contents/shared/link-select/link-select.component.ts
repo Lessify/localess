@@ -3,10 +3,10 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, On
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { ContentDocument, ContentLink, LinkContentType, SchemaFieldKind, SchemaFieldLink } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFileSymlink, lucideInfo, lucideLanguages, lucideLink } from '@ng-icons/lucide';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';

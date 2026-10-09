@@ -1,7 +1,7 @@
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { TestBed } from '@angular/core/testing';
 import { Locale } from '@localess/shared';
-import { LocaleService } from '@shared/services/locale.service';
+import { LocaleService } from '@core/services/locale.service';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { of } from 'rxjs';
 import { vi } from 'vitest';

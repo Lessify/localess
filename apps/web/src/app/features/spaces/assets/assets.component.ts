@@ -13,6 +13,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { AssetService } from '@core/services/asset.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TaskService } from '@core/services/task.service';
+import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { PathItem, SpaceStore } from '@core/stores/space.store';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -68,12 +74,6 @@ import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
-import { AssetService } from '@shared/services/asset.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { TaskService } from '@shared/services/task.service';
-import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

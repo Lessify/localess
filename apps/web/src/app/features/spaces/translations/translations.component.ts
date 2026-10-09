@@ -1,6 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NotificationService } from '@core/services/notification.service';
+import { TaskService } from '@core/services/task.service';
+import { TokenService } from '@core/services/token.service';
+import { TranslateService } from '@core/services/translate.service';
+import { TranslationService } from '@core/services/translation.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { CONTENT_DEFAULT_LOCALE, Locale, TokenPermission, Translation, TranslationCreate, TranslationType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -24,13 +31,6 @@ import {
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { NotificationService } from '@shared/services/notification.service';
-import { TaskService } from '@shared/services/task.service';
-import { TokenService } from '@shared/services/token.service';
-import { TranslateService } from '@shared/services/translate.service';
-import { TranslationService } from '@shared/services/translation.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';

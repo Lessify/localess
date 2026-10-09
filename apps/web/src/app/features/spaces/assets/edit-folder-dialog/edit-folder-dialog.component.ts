@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideSave } from '@ng-icons/lucide';
-import { AssetValidator } from '@shared/validators/asset.validator';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -12,6 +11,7 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
+import { AssetValidator } from '../asset.validator';
 import { EditFolderDialogContext, EditFolderDialogResult } from './edit-folder-dialog.model';
 
 @Component({

@@ -6,17 +6,16 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { DirtyFormGuardComponent } from '@core/guards/dirty-form.guard';
+import { NotificationService } from '@core/services/notification.service';
+import { PlatformService } from '@core/services/platform.service';
+import { SchemaService } from '@core/services/schema.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
-import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaValidator } from '@shared/validators/schema.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -34,6 +33,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
+import { SchemaValidator } from '../shared/schema.validator';
 
 @Component({
   selector: 'll-schema-edit-enum',

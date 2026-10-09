@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { AppConfigService, DEFAULT_APP_CONFIG, PublicAppConfig } from '@core/api/app-config.service';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 

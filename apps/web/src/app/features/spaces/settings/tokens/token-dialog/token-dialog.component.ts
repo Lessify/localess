@@ -6,7 +6,6 @@ import { TokenPermission } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideX } from '@ng-icons/lucide';
 import { getTokenUsageInfo, TokenForm } from '@shared/models/token.model';
-import { TokenValidator } from '@shared/validators/token.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -17,6 +16,8 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+
+import { TokenValidator } from '../token.validator';
 
 interface PermissionItem {
   id: string;

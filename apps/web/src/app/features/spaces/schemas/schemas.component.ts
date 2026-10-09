@@ -15,6 +15,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { NotificationService } from '@core/services/notification.service';
+import { SchemaService } from '@core/services/schema.service';
+import { TaskService } from '@core/services/task.service';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -46,9 +49,6 @@ import { LlPaginatorImports, Paginator } from '@shared/components/paginator/pagi
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { TaskService } from '@shared/services/task.service';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';

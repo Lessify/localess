@@ -3,6 +3,12 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { ContentService } from '@core/services/content.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SchemaService } from '@core/services/schema.service';
+import { TaskService } from '@core/services/task.service';
+import { TokenService } from '@core/services/token.service';
+import { PathItem, SpaceStore } from '@core/stores/space.store';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import {
   Content,
@@ -47,12 +53,6 @@ import { LlTableImports, TableDataSource, TableSort } from '@shared/components/t
 import { sortContent } from '@shared/models/content.model';
 import { sortSchema } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { ContentService } from '@shared/services/content.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { TaskService } from '@shared/services/task.service';
-import { TokenService } from '@shared/services/token.service';
-import { PathItem, SpaceStore } from '@shared/stores/space.store';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';

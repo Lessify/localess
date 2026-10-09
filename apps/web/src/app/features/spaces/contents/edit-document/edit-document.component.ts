@@ -14,6 +14,15 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { DirtyFormGuardComponent } from '@core/guards/dirty-form.guard';
+import { ContentService } from '@core/services/content.service';
+import { NotificationService } from '@core/services/notification.service';
+import { PlatformService } from '@core/services/platform.service';
+import { TokenService } from '@core/services/token.service';
+import { TranslateService } from '@core/services/translate.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { SpaceStore } from '@core/stores/space.store';
+import { normalizeContent } from '@core/utils/content-data';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import {
   CONTENT_DEFAULT_LOCALE,
@@ -55,19 +64,9 @@ import {
   TranslateLocaleDialogContext,
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
-import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { ContentError } from '@shared/models/content.model';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { ContentService } from '@shared/services/content.service';
-import { ContentHelperService } from '@shared/services/content-helper.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
-import { TokenService } from '@shared/services/token.service';
-import { TranslateService } from '@shared/services/translate.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { SpaceStore } from '@shared/stores/space.store';
-import { collectTranslatableFields, extractReferences, normalizeContent } from '@shared/utils/content';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -100,6 +99,8 @@ import {
   moveBlockUp,
   removeBlock,
 } from '../shared/block-actions';
+import { collectTranslatableFields, extractReferences } from '../shared/content.utils';
+import { ContentHelperService } from '../shared/content-helper.service';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
 import { SchemaPathItem } from './edit-document.model';
 

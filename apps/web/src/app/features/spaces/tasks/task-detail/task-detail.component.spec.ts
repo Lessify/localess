@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TaskLogLevel } from '@localess/shared';
-import { TaskService } from '@shared/services/task.service';
+import { TaskService } from '@core/services/task.service';
 
 import { TaskDetailComponent } from './task-detail.component';
 

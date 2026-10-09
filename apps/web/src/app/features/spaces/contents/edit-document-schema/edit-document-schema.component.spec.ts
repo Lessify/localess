@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CONTENT_DEFAULT_LOCALE, ContentData, Locale, Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 
 import { EditDocumentSchemaComponent } from './edit-document-schema.component';
 

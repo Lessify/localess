@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCircleDot, lucideCircleDotDashed, lucideCircleSmall } from '@ng-icons/lucide';
-import { TranslationStatus } from '@shared/models/translation.model';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+
+import { TranslationStatus } from '../../models/translation-status.model';
 
 @Component({
   selector: 'll-translation-status',

@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn, Router } from '@angular/router';
+import { UserStore } from '@core/stores/user.store';
 import { UserPermission } from '@localess/shared';
-import { UserStore } from '@shared/stores/user.store';
 import { filter, map, take } from 'rxjs';
 
 /**

@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Content, ContentFolder, ContentKind, Schema, SchemaType } from '@localess/shared';
-import { ContentService } from '@shared/services/content.service';
-import { SchemaService } from '@shared/services/schema.service';
+import { ContentService } from '@core/services/content.service';
+import { SchemaService } from '@core/services/schema.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 

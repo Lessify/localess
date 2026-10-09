@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { AppSettings } from '@shared/models/settings.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { SettingsService } from '@shared/services/settings.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SettingsService } from '@core/services/settings.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 

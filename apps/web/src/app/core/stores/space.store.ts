@@ -1,13 +1,13 @@
 import { computed, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { ContentService } from '@core/services/content.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SchemaService } from '@core/services/schema.service';
+import { SpaceService } from '@core/services/space.service';
 import { ContentDocument, Schema, Space, SpaceEnvironment } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { ContentService } from '@shared/services/content.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { SpaceService } from '@shared/services/space.service';
 import {
   defer,
   distinctUntilChanged,

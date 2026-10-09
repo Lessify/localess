@@ -3,8 +3,8 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, convertToParamMap, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { Space } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { firstValueFrom, Observable } from 'rxjs';
 import { vi } from 'vitest';
 

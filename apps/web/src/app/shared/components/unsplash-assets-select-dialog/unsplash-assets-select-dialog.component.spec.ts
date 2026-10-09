@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
-import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
+import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 

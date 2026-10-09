@@ -14,6 +14,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetService } from '@core/services/asset.service';
+import { NotificationService } from '@core/services/notification.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { PathItem } from '@core/stores/space.store';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Asset, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -37,10 +41,6 @@ import { fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } fro
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
-import { AssetService } from '@shared/services/asset.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { PathItem } from '@shared/stores/space.store';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';

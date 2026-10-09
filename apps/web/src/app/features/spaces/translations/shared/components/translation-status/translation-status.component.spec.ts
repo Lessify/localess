@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { TranslationStatus } from '@shared/models/translation.model';
+import { TranslationStatus } from '../../models/translation-status.model';
 
 import { TranslationStatusComponent } from './translation-status.component';
 

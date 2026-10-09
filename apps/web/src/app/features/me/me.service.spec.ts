@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 import { firstValueFrom } from 'rxjs';
 import { vi } from 'vitest';
 

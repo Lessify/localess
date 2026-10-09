@@ -59,7 +59,7 @@ Rules:
 | B | `packages/shared`: one definition of domain models, zod schemas, permissions and locales; server and web import it | Done |
 | B2 | npm → pnpm: strict dependencies, catalog, `angular.json` back in `apps/web`, `pnpm deploy` in the Dockerfile, CI | Done |
 | C | Server: `infra/`, `auth/`, `modules/<feature>/`, `cli/` | Done |
-| D | Web: `core/` (state, API, guards) vs `shared/` (reusable UI); single-use services move into their feature | |
+| D | Web: `core/` (state, API, guards) vs `shared/` (reusable UI); single-use services move into their feature | Done |
 | E | Repository map in README and CLAUDE.md; docs paths | |
 
 Every phase ends green: web build + lint + tests, server build + tests, shared tests, `test:scripts`.
@@ -178,4 +178,27 @@ Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size
   importing `AssetsModule` for metadata), `PluginsModule`; `WebhooksModule` (global) gained its controller.
 - Verified: the registered route table is identical to the previous commit (105 routes, diffed from boot logs);
   server type-check, 52 files / 815 tests, Drizzle schema check; docs and the version-bump script follow the paths.
+
+### Phase D — web `core/` vs `shared/` (2026-10-09)
+
+Rule: used by more than one feature (or by a store) → `core/` (app-wide) or `shared/` (reusable UI); used by one
+feature → that feature. Decided per file from an import map of the whole app.
+
+- `core/`: gained `services/` (15 App API services: asset, auth-api, content, locale, notification, platform,
+  schema, settings, space, task, token, translate, translation, unsplash-plugin, version), `stores/` (all 4) and
+  `guards/` (permission, space-selection, dirty-form).
+- Into their feature: `me` service + model → `features/me`; `open-api` and `webhook` services (+ webhook
+  validator) → `features/spaces/developers/*`; `space-template` service + model → `features/admin/spaces`; `user`
+  service → `features/admin/users`; `content-helper` service → `features/spaces/contents/shared`; the translation
+  status model → `features/spaces/translations/shared/models/translation-status.model.ts`; single-feature
+  validators (asset, content, locale, schema, settings, token, translation, webhook) next to their dialogs.
+- `shared/utils/content.ts` imported from inside the contents feature (the rich-text extensions), so shared code
+  depended on a feature. Split: `normalizeContent`/`copyBlock` (used by the core `ContentService`) →
+  `core/utils/content-data.ts`; the editor logic → `features/spaces/contents/shared/content.utils.ts` (with its
+  `TranslatableField` model). The file was excluded from ESLint by an `ignorePatterns` entry for `shared/utils/`;
+  that entry is gone and the file now lints clean.
+- `shared/` is now components, directives, pipes, cross-feature validators (`common`, `space`), UI model helpers
+  and the generated GitHub client. Imports keep the convention: `@core/…` / `@shared/…` across areas, relative
+  inside a feature. 77 files moved by script (specs with their sources).
+- Verified: web build (no warnings), lint, 179 files / 1571 tests (one more file: the split spec), docs links.
 

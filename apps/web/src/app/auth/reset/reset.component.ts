@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterModule } from '@angular/router';
 import { AppConfigService } from '@core/api/app-config.service';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AuthApiService } from '@shared/services/auth-api.service';
+import { AuthApiService } from '@core/services/auth-api.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';

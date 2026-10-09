@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { LocaleService } from '@core/services/locale.service';
 import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideLanguages } from '@ng-icons/lucide';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { LocaleService } from '@shared/services/locale.service';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';

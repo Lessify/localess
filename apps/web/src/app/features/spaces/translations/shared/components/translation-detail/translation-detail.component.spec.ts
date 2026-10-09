@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale, Translation, TranslationType } from '@localess/shared';
-import { TranslationStatus } from '@shared/models/translation.model';
-import { LocaleService } from '@shared/services/locale.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
-import { TranslateService } from '@shared/services/translate.service';
-import { TranslationService } from '@shared/services/translation.service';
+import { TranslationStatus } from '../../models/translation-status.model';
+import { LocaleService } from '@core/services/locale.service';
+import { NotificationService } from '@core/services/notification.service';
+import { PlatformService } from '@core/services/platform.service';
+import { TranslateService } from '@core/services/translate.service';
+import { TranslationService } from '@core/services/translation.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 

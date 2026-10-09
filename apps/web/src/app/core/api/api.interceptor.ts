@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject, Injector } from '@angular/core';
 import { Router } from '@angular/router';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 import { catchError, throwError } from 'rxjs';
 
 /**

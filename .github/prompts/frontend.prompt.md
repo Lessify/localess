@@ -7,7 +7,8 @@ Read these docs before making changes:
 
 Key locations:
 - Feature routes: `apps/web/src/app/features/`
-- Shared stores: `apps/web/src/app/shared/stores/`
-- Shared services: `apps/web/src/app/shared/services/`
+- Stores: `apps/web/src/app/core/stores/`
+- App-wide API services: `apps/web/src/app/core/services/` (single-feature services live in their feature)
+- Reusable UI (components, pipes, directives, validators): `apps/web/src/app/shared/`
 - UI components: `packages/ui/`
 - Models: `apps/web/src/app/shared/models/`

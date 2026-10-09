@@ -1,10 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 
-import { MeUpdate } from '../models/me.model';
+import { MeUpdate } from './me.model';
 
 const BASE = '/api/app/me';
 

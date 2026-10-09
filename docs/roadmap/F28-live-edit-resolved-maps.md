@@ -33,7 +33,7 @@ appear in `data`:
      in `data`, from a per-document cache filled by the asset pickers, which already load each asset.
 2. **`references` next.** For every referenced document id in `data`: the document the reference
    pickers already load, with `extractContent` applied for the selected locale (client-side,
-   `shared/utils/content.ts`), shaped like the API's resolved reference (`stripStorageIds`). One level
+   `features/spaces/contents/shared/content.utils.ts`), shaped like the API's resolved reference (`stripStorageIds`). One level
    deep, as the API does.
 
 Keep payloads bounded: only ids present in the current `data`, recomputed per event, with the caches

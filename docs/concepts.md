@@ -80,7 +80,7 @@ Three consequences follow, and all of them are load-bearing:
 
 **The default locale is the fallback value.** It sits in the bare key precisely so a reader can ask
 for `_i18n_<locale>` and fall back to it when the translation is missing. `extractContent()` — the
-publish/serve path, in both `shared/utils/content.ts` and `apps/server/src/modules/contents/content-extract.ts` —
+publish/serve path, in both `features/spaces/contents/shared/content.utils.ts` and `apps/server/src/modules/contents/content-extract.ts` —
 does exactly that, which is why an untranslated field still serves content rather than a blank.
 
 **The editor deliberately does *not* fall back.** `extractSchemaContent()` returns the locale's own
@@ -123,10 +123,10 @@ than reaching the API:
 | site | guarded by |
 |---|---|
 | serve/publish (server) | `apps/server/src/modules/contents/content-extract.test.ts` |
-| serve/publish (frontend) | `shared/utils/content.spec.ts` → `extractContent` |
-| editor form ← data | `shared/utils/content.spec.ts` → `extractSchemaContent` |
+| serve/publish (frontend) | `features/spaces/contents/shared/content.utils.spec.ts` → `extractContent` |
+| editor form ← data | `features/spaces/contents/shared/content.utils.spec.ts` → `extractSchemaContent` |
 | editor form → data | `edit-document-schema.component.spec.ts` → `writing form values back to data` |
-| whole-document translation | `shared/utils/content.spec.ts` → `collectTranslatableFields` |
+| whole-document translation | `features/spaces/contents/shared/content.utils.spec.ts` → `collectTranslatableFields` |
 | per-field translation | `markdown-editor` / `rich-text-editor` specs |
 | `previewField` | `edit-document-schema.component.spec.ts` → `previewText` |
 | reserved `_i18n_` in field names | `schema.validator.spec.ts` (UI), `schema.zod.test.ts` (server) |

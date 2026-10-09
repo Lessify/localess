@@ -18,6 +18,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslateService } from '@core/services/translate.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import {
   CONTENT_DEFAULT_LOCALE,
   ContentAsset,
@@ -39,11 +42,6 @@ import { lucideBookCopy, lucideCirclePlus, lucideGripVertical, lucideInfo, lucid
 import { tablerRowInsertBottom, tablerRowInsertTop } from '@ng-icons/tabler-icons';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { sortSchemaEnumValue } from '@shared/models/schema.model';
-import { ContentHelperService } from '@shared/services/content-helper.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { TranslateService } from '@shared/services/translate.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { extractSchemaContent } from '@shared/utils/content';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -62,6 +60,8 @@ import { v4 } from 'uuid';
 import { AssetSelectComponent } from '../shared/asset-select/asset-select.component';
 import { AssetsSelectComponent } from '../shared/assets-select/assets-select.component';
 import { duplicateBlock, removeBlock } from '../shared/block-actions';
+import { extractSchemaContent } from '../shared/content.utils';
+import { ContentHelperService } from '../shared/content-helper.service';
 import { LinkSelectComponent } from '../shared/link-select/link-select.component';
 import { MarkdownEditorComponent } from '../shared/markdown-editor/markdown-editor.component';
 import { ReferenceSelectComponent } from '../shared/reference-select/reference-select.component';

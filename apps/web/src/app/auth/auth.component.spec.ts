@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 
 import { AuthComponent } from './auth.component';
 

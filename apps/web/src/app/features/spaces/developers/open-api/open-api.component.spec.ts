@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { OpenApiService } from '@shared/services/open-api.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { OpenApiService } from './open-api.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { firstValueFrom, of } from 'rxjs';
 import { vi } from 'vitest';

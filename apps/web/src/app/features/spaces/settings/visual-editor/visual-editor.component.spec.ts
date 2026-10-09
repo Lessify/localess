@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { Space, SpaceEnvironment } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
-import { SpaceService } from '@shared/services/space.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { NotificationService } from '@core/services/notification.service';
+import { PlatformService } from '@core/services/platform.service';
+import { SpaceService } from '@core/services/space.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';

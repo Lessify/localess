@@ -1,9 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { MeService } from '@shared/services/me.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { UserStore } from '@shared/stores/user.store';
+import { MeService } from './me.service';
+import { NotificationService } from '@core/services/notification.service';
+import { UserStore } from '@core/stores/user.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';

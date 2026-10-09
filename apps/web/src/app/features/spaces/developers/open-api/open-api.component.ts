@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, inject, OnInit, signal, ViewEncapsulation } from '@angular/core';
-import { OpenApiService } from '@shared/services/open-api.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { Observable } from 'rxjs';
+
+import { OpenApiService } from './open-api.service';
 
 @Component({
   selector: 'll-open-api',

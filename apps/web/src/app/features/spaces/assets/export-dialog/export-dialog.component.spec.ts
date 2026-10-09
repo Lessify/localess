@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Asset, AssetKind } from '@localess/shared';
-import { AssetService } from '@shared/services/asset.service';
+import { AssetService } from '@core/services/asset.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 

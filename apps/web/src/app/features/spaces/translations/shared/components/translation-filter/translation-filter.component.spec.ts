@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Locale } from '@localess/shared';
-import { TranslationStatus } from '@shared/models/translation.model';
+import { TranslationStatus } from '../../models/translation-status.model';
 import { vi } from 'vitest';
 
 import { TranslationFilterComponent } from './translation-filter.component';

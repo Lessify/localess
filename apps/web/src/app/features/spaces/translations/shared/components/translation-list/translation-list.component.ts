@@ -1,14 +1,14 @@
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { Locale, Translation } from '@localess/shared';
 import { collectGroupKeys, LlTreeImports } from '@shared/components/tree/tree.imports';
-import { isLocaleStatus, isTranslationStatus, LocaleStatus, TranslationStatus } from '@shared/models/translation.model';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 
 import { identifyLocaleStatus, identifyTranslationStatus, TranslationNode } from '../../models/translation.model';
+import { isLocaleStatus, isTranslationStatus, LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
 import { TranslationFilterCriteria } from '../translation-filter/translation-filter.component';
 import { TranslationStatusComponent } from '../translation-status/translation-status.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';

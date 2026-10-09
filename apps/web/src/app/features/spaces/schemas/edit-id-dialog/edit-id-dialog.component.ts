@@ -5,7 +5,6 @@ import { NameUtils } from '@core/utils/name-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideWand2 } from '@ng-icons/lucide';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaValidator } from '@shared/validators/schema.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -13,6 +12,7 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
+import { SchemaValidator } from '../shared/schema.validator';
 import { EditIdDialogContext, EditIdDialogResult } from './edit-id-dialog.model';
 
 @Component({

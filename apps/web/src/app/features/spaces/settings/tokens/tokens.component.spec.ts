@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Space, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { TokenService } from '@shared/services/token.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { NotificationService } from '@core/services/notification.service';
+import { TokenService } from '@core/services/token.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';

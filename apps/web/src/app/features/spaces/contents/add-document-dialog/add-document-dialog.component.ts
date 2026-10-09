@@ -6,7 +6,6 @@ import { NameUtils } from '@core/utils/name-utils.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideWandSparkles } from '@ng-icons/lucide';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { ContentValidator } from '@shared/validators/content.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -15,6 +14,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 
+import { ContentValidator } from '../shared/content.validator';
 import { AddDocumentDialogContext, AddDocumentDialogResult } from './add-document-dialog.model';
 
 @Component({

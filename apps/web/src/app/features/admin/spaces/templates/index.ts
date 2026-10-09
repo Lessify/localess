@@ -1,5 +1,4 @@
-import { SpaceTemplate, SpaceTemplateId } from '@shared/models/space-template.model';
-
+import { SpaceTemplate, SpaceTemplateId } from '../space-template.model';
 import { BLOG_TEMPLATE } from './blog.template';
 import { ECOMMERCE_TEMPLATE } from './ecommerce.template';
 import { EMPTY_TEMPLATE } from './empty.template';

@@ -83,14 +83,17 @@ Structure refactoring plan: [docs/roadmap/monorepo-structure.md](docs/roadmap/mo
 
 ```
 apps/web/src/app/
-├── core/          # Singleton services: error handler, HTTP interceptors, title service
-├── shared/        # Cross-feature code
-│   ├── models/    # UI-only model helpers (labels, icons, sorting, form shapes); domain types come from @localess/shared
-│   ├── services/  # Domain services calling the server's App API over HttpClient
+├── core/          # App-wide singletons and state (@core/*)
+│   ├── api/       # Runtime config, SSE change events, liveQuery, apiInterceptor
+│   ├── services/  # App API services used by several features or by a store
 │   ├── stores/    # 4 NgRx Signal stores (UserStore, SpaceStore, AppSettingsStore, LocalSettingsStore)
-│   ├── guards/    # dirty-form.guard.ts (unsaved-changes guard); permission guards live in features-routing.module.ts
-│   └── components/# Shared dialogs, table, paginator, tree, filter-toolbar, locale-icon, logo, etc. (toasts via NotificationService/Sonner)
-├── features/      # Lazy-loaded feature routes
+│   ├── guards/    # permissionGuard, spaceSelectionGuard, dirty-form guard
+│   └── error-handler/, http-interceptors/, title/, utils/
+├── shared/        # Reusable UI only (@shared/*)
+│   ├── components/# Dialogs, table, paginator, tree, filter-toolbar, locale-icon, logo, etc. (toasts via NotificationService/Sonner)
+│   ├── models/    # UI-only model helpers (labels, icons, sorting, form shapes); domain types come from @localess/shared
+│   └── pipes/, directives/, validators/ (cross-feature validators only)
+├── features/      # Lazy-loaded feature routes; each owns the services, validators and models only it uses
 │   ├── admin/     # Space & user administration
 │   └── spaces/    # Main workspace: contents, translations, schemas, assets, tasks, dashboard
 ├── auth/          # Auth: login (Email, Google, Microsoft), reset
@@ -115,7 +118,7 @@ Four NgRx Signal stores initialized at app startup:
 
 ### Services Pattern
 
-Domain services (in `shared/services/`) call the App API (`/api/app/**`, session cookie + `X-Requested-With` header added by `apiInterceptor`). Live data uses `liveQueryWith(events, scope, fetch)`: the server publishes change events (`pg_notify` → SSE at `/api/app/events`) and the client refetches. The public REST API is served at `/api/v1/**` with API tokens. Runtime config (login providers, etc.) comes from `GET /api/config`.
+Domain services (in `core/services/`; services used by one feature live in that feature) call the App API (`/api/app/**`, session cookie + `X-Requested-With` header added by `apiInterceptor`). Live data uses `liveQueryWith(events, scope, fetch)`: the server publishes change events (`pg_notify` → SSE at `/api/app/events`) and the client refetches. The public REST API is served at `/api/v1/**` with API tokens. Runtime config (login providers, etc.) comes from `GET /api/config`.
 
 ## Angular Code Conventions
 

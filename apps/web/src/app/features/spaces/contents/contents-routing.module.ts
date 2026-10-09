@@ -1,9 +1,9 @@
 import { inject, NgModule } from '@angular/core';
 import { ResolveFn, RouterModule, Routes } from '@angular/router';
+import { isFormDirtyGuard } from '@core/guards/dirty-form.guard';
+import { ContentService } from '@core/services/content.service';
 import { ContentDocument } from '@localess/shared';
-import { isFormDirtyGuard } from '@shared/guards/dirty-form.guard';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
-import { ContentService } from '@shared/services/content.service';
 
 import { ContentsComponent } from './contents.component';
 import { EditDocumentComponent } from './edit-document/edit-document.component';

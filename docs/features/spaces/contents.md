@@ -162,7 +162,7 @@ the block is out of view. Delete needs a second click ("Delete?", reset after 3 
 (`shared/block-actions.ts`, the same rules computed from the schemas) still allows it, so stale or forged messages change nothing.
 Each action is its own function in `block-actions.ts`: `moveBlockUp()`, `moveBlockDown()` and `duplicateBlock()` take a block in a list
 (`ListBlockLocation`, checked with `isInList()`), and `removeBlock()` takes any block. The form's delete and duplicate buttons use the
-same functions. `duplicateBlock()` gives the copy new ids with `copyBlock()` from `shared/utils/content.ts`.
+same functions. `duplicateBlock()` gives the copy new ids with `copyBlock()` from `core/utils/content-data.ts`.
 
 Then `onStructureChange()` rebuilds the id tree and sends `change`. For move and duplicate that's all: the block stays selected, and the
 script reads its new position from that `change`, so the page doesn't re-select or scroll. Remove selects the block that held it,
@@ -284,7 +284,7 @@ Two things to know when touching this:
 
 #### Whole-document translation
 
-Driven from the browser, not the server. `collectTranslatableFields()` (`shared/utils/content.ts`) walks `documentData`, serializing RICH_TEXT with
+Driven from the browser, not the server. `collectTranslatableFields()` (`features/spaces/contents/shared/content.utils.ts`) walks `documentData`, serializing RICH_TEXT with
 `generateHTML(json, createRichTextExtensions())` and everything else as plain text, and returns entries carrying an `apply` closure. Those
 go to `POST /api/app/translate` in batch mode (`items`) as `{id, content, format}`; `translateItems` (`apps/server/src/modules/translations/translate/translate-batch.ts`) groups
 by format, chunks to 27,000 code points and translates each chunk in **one** provider round-trip — both Google and DeepL accept arrays.

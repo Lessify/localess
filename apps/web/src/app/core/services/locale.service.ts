@@ -1,9 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { AVAILABLE_LOCALES, GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
+import { toProviderLocale } from '@shared/models/locale.model';
 import { Observable, of } from 'rxjs';
-
-import { toProviderLocale } from '../models/locale.model';
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {

@@ -1,5 +1,5 @@
 import { Locale, Translation, TranslationType } from '@localess/shared';
-import { LocaleStatus, TranslationStatus } from '@shared/models/translation.model';
+import { LocaleStatus, TranslationStatus } from './translation-status.model';
 
 import { identifyLocaleStatus, identifyTranslationStatus } from './translation.model';
 

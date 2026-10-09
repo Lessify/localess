@@ -2,7 +2,7 @@ import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ContentDocument, ContentKind, ContentLink, SchemaFieldKind, SchemaFieldLink } from '@localess/shared';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { LinkSelectComponent } from './link-select.component';
 
 // ── Test helpers ──────────────────────────────────────────────────────────────

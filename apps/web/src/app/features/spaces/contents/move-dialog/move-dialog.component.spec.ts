@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { ContentFolder } from '@localess/shared';
-import { ContentService } from '@shared/services/content.service';
+import { ContentService } from '@core/services/content.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 

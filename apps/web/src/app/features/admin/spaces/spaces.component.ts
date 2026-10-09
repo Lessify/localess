@@ -16,6 +16,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -30,10 +32,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { SpaceTemplateId } from '@shared/models/space-template.model';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceService } from '@shared/services/space.service';
-import { SpaceTemplateService } from '@shared/services/space-template.service';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -46,6 +44,8 @@ import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-d
 import { SpaceCreateDialogResult } from './space-create-dialog/space-create-dialog.model';
 import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
 import { SpaceEditDialogContext, SpaceEditDialogResult } from './space-edit-dialog/space-edit-dialog.model';
+import { SpaceTemplateId } from './space-template.model';
+import { SpaceTemplateService } from './space-template.service';
 import { SPACE_TEMPLATES } from './templates';
 
 /** `?action=create` opens the create dialog. Other values are ignored rather than dispatched. */

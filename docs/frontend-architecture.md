@@ -24,10 +24,10 @@ apps/web/src/
     app.config.ts          ← root providers (HttpClient + apiInterceptor, runtime config, router, paginator defaults, image loader)
     app-routing.ts         ← root routes + authGuard
     app.component.*        ← root shell
-    core/                  ← singleton: api/ (runtime config, SSE, liveQuery, apiInterceptor), error handlers, HTTP interceptors, title strategy, utils
+    core/                  ← app-wide: api/ (runtime config, SSE, liveQuery, apiInterceptor), services/, stores/, guards/, error handlers, HTTP interceptors, title strategy, utils
     features/              ← all authenticated feature routes (lazy-loaded)
     auth/                  ← AuthModule: login/ (email + Google / Microsoft redirect), reset/ (request link), reset-confirm/ (set new password)
-    shared/                ← cross-feature: UI model helpers, services, stores, guards, pipes
+    shared/                ← reusable UI: components, pipes, directives, cross-feature validators, UI model helpers
   environments/            ← build-time constants only (appName, production, version)
   assets/                  ← static files (version.json, icons)
 packages/ui/               ← 44+ reusable Spartan/Helm components (imported as @spartan-ng/helm/*)
@@ -63,7 +63,7 @@ All authenticated routes live under `/features` and are protected by `authGuard(
     settings                        → SettingsModule      [SETTINGS_MANAGEMENT]
 ```
 
-Guards in brackets are `permissionGuard(...)` (`shared/guards/permission.guard.ts`), reading role and permissions from `UserStore`; the server enforces the same permissions on every `/api/app` call. `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).
+Guards in brackets are `permissionGuard(...)` (`core/guards/permission.guard.ts`), reading role and permissions from `UserStore`; the server enforces the same permissions on every `/api/app` call. `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).
 
 `features/whats-new/` holds the What's New dialog (`WhatsNewDialogComponent` + `whats-new.data.ts`). It is opened from the sidebar in `features.component`, which shows an "unseen" marker while the newest entry's version is newer than `LocalSettingsStore.lastSeenWhatsNewVersion`.
 
@@ -110,7 +110,13 @@ Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json`
 
 ## `core/` Module
 
-Singleton services initialized once at app startup:
+App-wide singletons and state (`@core/*`). Rule: if more than one feature (or a store) uses it, it lives here;
+if one feature uses it, it lives in that feature.
+
+- **`services/`** — App API services (`HttpClient`, reads are `liveQuery`s) used by several features or by a store
+- **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))
+- **`guards/`** — `permissionGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard
+- **`utils/content-data.ts`** — `normalizeContent`, `copyBlock`: the shape documents are loaded, compared and saved in
 - **`AppErrorHandler`** (`error-handler/app-error-handler.service.ts`) — global Angular error handler. Shows an error toast via `NotificationService`, then delegates to the default handler (console). Chunk-load failures (a stale tab after a deploy) instead show a persistent "A new version is available" toast with a Reload action.
 - **`FormErrorHandlerService`** (`error-handler/form-error-handler.service.ts`) — maps reactive-form control errors to display messages
 - **HTTP Interceptors** — `apiInterceptor` (`api/`, see above) and `HttpErrorInterceptor` (`http-interceptors/`), which reports HTTP errors to `AppErrorHandler` except `401`s from the API, which are left to the auth flow
@@ -123,20 +129,15 @@ Singleton services initialized once at app startup:
 ## `shared/` Structure
 
 ```
-shared/
+shared/           ← reusable UI only (`@shared/*`)
   models/        ← UI-only model helpers (labels, icons, sorting, form shapes). The API's JSON shapes themselves
                    (timestamps are ISO strings), enums and permission rules come from `@localess/shared` (packages/shared)
-  services/      ← ~20 HttpClient services, one per domain entity; reads are `liveQuery`s
-  stores/        ← 4 NgRx Signal stores (see frontend-state.md)
-  guards/        ← permission.guard (`permissionGuard`), dirty-form.guard (unsaved changes warning)
   components/    ← tree, table, paginator, filter-toolbar (see components/README.md), locale-icon, asset-card, background, logo,
                    confirmation-dialog, image-preview-dialog, translate-locale-dialog, unsplash-assets-select-dialog, dialog (width constants)
   directives/    ← custom Angular directives
   pipes/         ← custom Angular pipes (incl. `canUserPerform`, see frontend-permissions.md)
-  validators/    ← custom reactive form validators
-  utils/         ← pure functions over domain data, e.g. `content.ts`: `extractContent`, `extractSchemaContent`, `extractReferences`,
-                   `collectTranslatableFields`, `normalizeContent`, `copyBlock`. `ContentHelperService` keeps only what builds
-                   forms (`generateSchemaForm`, `validateContent`, `assetContentToForm`, `referenceContentToForm`)
+  validators/    ← reactive form validators used by more than one feature (`common`, `space`); single-feature validators
+                   live in their feature (e.g. `features/spaces/schemas/shared/schema.validator.ts`)
   generated/     ← auto-generated code (do not edit manually)
 ```
 

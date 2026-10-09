@@ -3,7 +3,6 @@
   "ignorePatterns": [
     "src/app/shared/generated/**/*",
     "src/app/shared/components/ui/**/*",
-    "src/app/shared/utils/**/*",
     "src/environments/*",
     "**/*.spec.ts"
   ],

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { UserStore } from '@shared/stores/user.store';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { UserStore } from '@core/stores/user.store';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';

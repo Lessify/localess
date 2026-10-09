@@ -8,7 +8,6 @@ import { provideIcons } from '@ng-icons/core';
 import { lucideFileBox, lucideList, lucideWandSparkles, lucideWorkflow } from '@ng-icons/lucide';
 import { schemaTypeDescriptions } from '@shared/models/schema.model';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaValidator } from '@shared/validators/schema.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -19,6 +18,7 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
+import { SchemaValidator } from '../shared/schema.validator';
 import { AddDialogContext } from './add-dialog.model';
 
 @Component({

@@ -2,9 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { TaskService } from '@shared/services/task.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SchemaService } from '@core/services/schema.service';
+import { TaskService } from '@core/services/task.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 

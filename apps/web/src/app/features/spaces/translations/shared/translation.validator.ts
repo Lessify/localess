@@ -1,6 +1,5 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-
-import { CommonPattern, CommonValidator } from './common.validator';
+import { CommonPattern, CommonValidator } from '@shared/validators/common.validator';
 
 export class TranslationValidator {
   public static ID: ValidatorFn[] = [

@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { SpaceTemplate } from '@shared/models/space-template.model';
 import { Observable, of } from 'rxjs';
+
+import { SpaceTemplate } from './space-template.model';
 
 /**
  * Applies a space template's schemas.

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { SettingsService } from '@shared/services/settings.service';
+import { SettingsService } from '@core/services/settings.service';
 import { of } from 'rxjs';
 
 import { AppSettingsStore } from './app-settings.store';

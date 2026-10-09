@@ -2,10 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { LocaleService } from '@core/services/locale.service';
 import { Locale } from '@localess/shared';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { LocaleService } from '@shared/services/locale.service';
-import { LocaleValidator } from '@shared/validators/locale.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
@@ -13,6 +12,7 @@ import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
+import { LocaleValidator } from '../locale.validator';
 import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog.model';
 
 @Component({

@@ -2,6 +2,8 @@ import { DatePipe } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { WebHook, WebHookEvent } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -24,9 +26,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { NotificationService } from '@shared/services/notification.service';
-import { WebHookService } from '@shared/services/webhook.service';
-import { SpaceStore } from '@shared/stores/space.store';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -36,6 +35,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
+import { WebHookService } from './webhook.service';
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog/webhook-dialog.model';
 

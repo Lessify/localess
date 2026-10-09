@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { Locale, Space } from '@localess/shared';
-import { LocaleService } from '@shared/services/locale.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { LocaleService } from '@core/services/locale.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';

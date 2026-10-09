@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { CONTENT_DEFAULT_LOCALE, Locale } from '@localess/shared';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 
 import { TranslateMenuComponent } from './translate-menu.component';
 

@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Task, TaskKind, TaskStatus } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { TaskService } from '@shared/services/task.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TaskService } from '@core/services/task.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 

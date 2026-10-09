@@ -1,5 +1,6 @@
 import { AssetFileType, SchemaFieldKind, SchemaType } from '@localess/shared';
-import { SpaceTemplate } from '@shared/models/space-template.model';
+
+import { SpaceTemplate } from '../space-template.model';
 
 /**
  * `variant` is a NODE because variants are embedded in a product rather than addressable on their

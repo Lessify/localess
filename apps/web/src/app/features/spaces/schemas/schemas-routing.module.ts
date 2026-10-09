@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { isFormDirtyGuard } from '@shared/guards/dirty-form.guard';
+import { isFormDirtyGuard } from '@core/guards/dirty-form.guard';
 
 import { EditCompComponent } from './edit-comp/edit-comp.component';
 import { EditEnumComponent } from './edit-enum/edit-enum.component';

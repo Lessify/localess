@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Router, Routes, UrlTree } from '@angular/router';
-import { UserStore } from '@shared/stores/user.store';
+import { UserStore } from '@core/stores/user.store';
 import { Observable } from 'rxjs';
 
 export function authGuard(): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {

@@ -4,11 +4,11 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucideSave } from '@ng-icons/lucide';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceService } from '@shared/services/space.service';
-import { SpaceStore } from '@shared/stores/space.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';

@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceStore } from '@shared/stores/space.store';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { filter, map, take } from 'rxjs';
 
 /**

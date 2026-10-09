@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
+import { normalizeContent } from '@core/utils/content-data';
 import {
   Content,
   ContentData,
@@ -12,7 +13,6 @@ import {
   ContentKind,
   ContentUpdate,
 } from '@localess/shared';
-import { normalizeContent } from '@shared/utils/content';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 

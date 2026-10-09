@@ -1,5 +1,5 @@
+import { copyBlock } from '@core/utils/content-data';
 import { ContentData, Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
-import { copyBlock } from '@shared/utils/content';
 
 /** A structure change on one block, offered by the preview toolbar. */
 export type BlockAction = 'moveUp' | 'moveDown' | 'duplicate' | 'remove';

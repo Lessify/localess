@@ -1,5 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslationService } from '@core/services/translation.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { provideIcons } from '@ng-icons/core';
 import { lucideShredder } from '@ng-icons/lucide';
 import {
@@ -8,9 +11,6 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
-import { NotificationService } from '@shared/services/notification.service';
-import { TranslationService } from '@shared/services/translation.service';
-import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';

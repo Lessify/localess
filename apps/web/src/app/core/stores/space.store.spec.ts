@@ -1,10 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Space } from '@localess/shared';
-import { ContentService } from '@shared/services/content.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { SpaceService } from '@shared/services/space.service';
+import { ContentService } from '@core/services/content.service';
+import { NotificationService } from '@core/services/notification.service';
+import { SchemaService } from '@core/services/schema.service';
+import { SpaceService } from '@core/services/space.service';
 import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 

@@ -1,6 +1,5 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-
-import { CommonPattern, CommonValidator } from './common.validator';
+import { CommonPattern, CommonValidator } from '@shared/validators/common.validator';
 
 const SCHEMA_RESERVED_IDS = [
   'Translations',

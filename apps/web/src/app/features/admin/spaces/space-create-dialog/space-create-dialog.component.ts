@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { UserStore } from '@core/stores/user.store';
 import { UserPermission } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFile, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart } from '@ng-icons/lucide';
-import { UserStore } from '@shared/stores/user.store';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

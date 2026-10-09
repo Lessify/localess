@@ -13,8 +13,9 @@ import {
   SchemaType,
 } from '@localess/shared';
 import { ContentError } from '@shared/models/content.model';
-import { extractSchemaContent } from '@shared/utils/content';
 import { CommonValidator } from '@shared/validators/common.validator';
+
+import { extractSchemaContent } from './content.utils';
 
 @Injectable({ providedIn: 'root' })
 export class ContentHelperService {

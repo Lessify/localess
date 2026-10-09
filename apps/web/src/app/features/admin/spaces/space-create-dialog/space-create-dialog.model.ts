@@ -1,4 +1,4 @@
-import { SpaceTemplateId } from '@shared/models/space-template.model';
+import { SpaceTemplateId } from '../space-template.model';
 
 /** The dialog takes no context: creating a space starts from a blank form. */
 export interface SpaceCreateDialogResult {

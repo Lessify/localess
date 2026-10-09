@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { AssetFile, AssetFolder, AssetKind } from '@localess/shared';
-import { AssetService } from '@shared/services/asset.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { TaskService } from '@shared/services/task.service';
-import { UnsplashPluginService } from '@shared/services/unsplash-plugin.service';
-import { PathItem, SpaceStore } from '@shared/stores/space.store';
+import { AssetService } from '@core/services/asset.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TaskService } from '@core/services/task.service';
+import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { PathItem, SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';

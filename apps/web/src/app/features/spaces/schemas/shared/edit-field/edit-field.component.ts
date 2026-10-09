@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { AssetFileType, Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -29,8 +30,6 @@ import {
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
 import { assetFileTypeDescriptions, schemaFieldKindDescriptions, sortSchema } from '@shared/models/schema.model';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { SchemaValidator } from '@shared/validators/schema.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -41,6 +40,8 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+
+import { SchemaValidator } from '../schema.validator';
 
 @Component({
   selector: 'll-schema-field-edit',

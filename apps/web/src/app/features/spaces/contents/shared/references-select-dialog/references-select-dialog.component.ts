@@ -15,15 +15,15 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { ContentService } from '@core/services/content.service';
+import { SchemaService } from '@core/services/schema.service';
+import { PathItem } from '@core/stores/space.store';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { Content, ContentDocument, ContentKind, Schema, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideFolderRoot } from '@ng-icons/lucide';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { ContentService } from '@shared/services/content.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { PathItem } from '@shared/stores/space.store';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

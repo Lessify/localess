@@ -101,7 +101,7 @@ No session → `401`; insufficient access → `403`. Checks that depend on the r
 
 ### Frontend (navigation only)
 
-`authGuard()` in `apps/web/src/app/app-routing.ts` sends signed-out users to `/auth/login`. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`apps/web/src/app/shared/guards/permission.guard.ts`):
+`authGuard()` in `apps/web/src/app/app-routing.ts` sends signed-out users to `/auth/login`. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`apps/web/src/app/core/guards/permission.guard.ts`):
 
 ```typescript
 // a child of the `spaces/:spaceId` parent route (see frontend-state.md → SpaceStore)
@@ -179,13 +179,13 @@ These limits are enforced in two places:
 ## Implementation Files
 
 - `packages/shared/src/models/user.model.ts` — `User`, `UserRole`, `UserPermission` types
-- `apps/web/src/app/shared/stores/user.store.ts` — loads `GET /api/auth/me`, exposes `isRoleAdmin`, `isLocked`, `loaded`
+- `apps/web/src/app/core/stores/user.store.ts` — loads `GET /api/auth/me`, exposes `isRoleAdmin`, `isLocked`, `loaded`
 - `apps/web/src/app/features/admin/users/user-management.ts` — who may manage which user (mirrors `canManageUser`/`canGrant`)
-- `apps/web/src/app/shared/guards/permission.guard.ts` — `permissionGuard(...permissions)`
+- `apps/web/src/app/core/guards/permission.guard.ts` — `permissionGuard(...permissions)`
 - `packages/shared/src/permissions.ts` — `canPerform`, `canGrant`, `canManageUser` (server and UI)
 - `apps/server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireAnyRole`, `@RequirePermission`, `@RequireAllPermissions`, global guard + CSRF check
 - `apps/server/src/auth/users/users.controller.ts` — user management API
 - `apps/web/src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
 - `apps/web/src/app/features/features-routing.module.ts` — all route guards (`permissionGuard`)
 - `apps/web/src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)
-- `apps/web/src/app/shared/services/user.service.ts` — HttpClient user CRUD (`/api/app/users`, admin operations)
+- `apps/web/src/app/features/admin/users/user.service.ts` — HttpClient user CRUD (`/api/app/users`, admin operations)

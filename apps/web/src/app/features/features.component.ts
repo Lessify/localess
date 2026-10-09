@@ -14,6 +14,13 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
+import { AuthApiService } from '@core/services/auth-api.service';
+import { NotificationService } from '@core/services/notification.service';
+import { VersionService } from '@core/services/version.service';
+import { AppSettingsStore } from '@core/stores/app-settings.store';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { SpaceStore } from '@core/stores/space.store';
+import { UserStore } from '@core/stores/user.store';
 import { Space, USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@localess/shared';
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
@@ -56,13 +63,6 @@ import { ReposService } from '@shared/generated/github/services/repos.service';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { Version } from '@shared/models/version.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { AuthApiService } from '@shared/services/auth-api.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { VersionService } from '@shared/services/version.service';
-import { AppSettingsStore } from '@shared/stores/app-settings.store';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
-import { SpaceStore } from '@shared/stores/space.store';
-import { UserStore } from '@shared/stores/user.store';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';

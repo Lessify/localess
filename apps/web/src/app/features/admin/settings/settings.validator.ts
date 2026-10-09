@@ -1,6 +1,5 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-
-import { CommonValidator } from './common.validator';
+import { CommonValidator } from '@shared/validators/common.validator';
 
 export class SettingsValidator {
   public static UI_COLOR: ValidatorFn[] = [];

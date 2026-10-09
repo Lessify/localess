@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { SpaceService } from '@shared/services/space.service';
+import { SpaceService } from '@core/services/space.service';
 
 import { FeaturesRoutingModule } from './features-routing.module';
 

@@ -729,7 +729,7 @@ imports: [..., HlmToasterImports]
 
 ### `NotificationService` API
 
-All toast calls go through `NotificationService` (`apps/web/src/app/shared/services/notification.service.ts`). Never call `toast()` directly from
+All toast calls go through `NotificationService` (`apps/web/src/app/core/services/notification.service.ts`). Never call `toast()` directly from
 feature components.
 
 ```typescript

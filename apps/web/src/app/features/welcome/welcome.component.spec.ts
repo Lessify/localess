@@ -2,8 +2,8 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { UserPermission } from '@localess/shared';
-import { SpaceStore } from '@shared/stores/space.store';
-import { UserStore } from '@shared/stores/user.store';
+import { SpaceStore } from '@core/stores/space.store';
+import { UserStore } from '@core/stores/user.store';
 
 import { WelcomeComponent } from './welcome.component';
 

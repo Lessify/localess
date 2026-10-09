@@ -12,6 +12,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NotificationService } from '@core/services/notification.service';
+import { UserStore } from '@core/stores/user.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { User } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -38,9 +40,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { NotificationService } from '@shared/services/notification.service';
-import { UserService } from '@shared/services/user.service';
-import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -49,6 +48,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
+import { UserService } from './user.service';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogContext, UserDialogResult } from './user-dialog/user-dialog.model';
 import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';

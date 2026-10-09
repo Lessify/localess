@@ -1,6 +1,6 @@
 import { ErrorHandler } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { NotificationService } from '@shared/services/notification.service';
+import { NotificationService } from '@core/services/notification.service';
 import { vi } from 'vitest';
 
 vi.mock('@spartan-ng/brain/sonner', () => {

@@ -6,7 +6,6 @@ import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCheck, lucideCirclePlus, lucideSearch, lucideX } from '@ng-icons/lucide';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { LocaleStatus, TranslationStatus } from '@shared/models/translation.model';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmButtonGroupImports } from '@spartan-ng/helm/button-group';
@@ -17,6 +16,8 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { debounceTime } from 'rxjs';
+
+import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
 
 export interface TranslationFilterCriteria {
   locale: string;

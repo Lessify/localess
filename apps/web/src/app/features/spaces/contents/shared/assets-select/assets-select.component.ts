@@ -3,6 +3,8 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { AssetService } from '@core/services/asset.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { Asset, AssetFile, AssetKind, SchemaFieldAssets, SchemaFieldKind, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
@@ -11,8 +13,6 @@ import { ImagePreviewDialogComponent } from '@shared/components/image-preview-di
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { AssetService } from '@shared/services/asset.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';

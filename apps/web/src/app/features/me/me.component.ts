@@ -1,16 +1,16 @@
 import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { NotificationService } from '@core/services/notification.service';
+import { UserStore } from '@core/stores/user.store';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
-import { MeService } from '@shared/services/me.service';
-import { NotificationService } from '@shared/services/notification.service';
-import { UserStore } from '@shared/stores/user.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { filter, switchMap, take } from 'rxjs/operators';
 
+import { MeService } from './me.service';
 import { MeDialogComponent } from './me-dialog/me-dialog.component';
 import { MeDialogContext, MeDialogResult } from './me-dialog/me-dialog.model';
 import { MeEmailDialogComponent } from './me-email-dialog/me-email-dialog.component';

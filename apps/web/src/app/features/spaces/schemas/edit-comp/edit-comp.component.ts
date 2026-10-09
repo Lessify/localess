@@ -5,6 +5,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { DirtyFormGuardComponent } from '@core/guards/dirty-form.guard';
+import { NotificationService } from '@core/services/notification.service';
+import { PlatformService } from '@core/services/platform.service';
+import { SchemaService } from '@core/services/schema.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { AssetFileType, Schema, SchemaComponentUpdate, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -33,15 +38,9 @@ import {
   lucideType,
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
-import { DirtyFormGuardComponent } from '@shared/guards/dirty-form.guard';
 import { assetFileTypeDescriptions, schemaFieldKindDescriptions } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
-import { NotificationService } from '@shared/services/notification.service';
-import { PlatformService } from '@shared/services/platform.service';
-import { SchemaService } from '@shared/services/schema.service';
-import { LocalSettingsStore } from '@shared/stores/local-settings.store';
 import { CommonValidator } from '@shared/validators/common.validator';
-import { SchemaValidator } from '@shared/validators/schema.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -63,6 +62,7 @@ import { NgScrollbarModule } from 'ngx-scrollbar';
 import { combineLatest } from 'rxjs';
 
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
+import { SchemaValidator } from '../shared/schema.validator';
 
 @Component({
   selector: 'll-schema-edit-comp',

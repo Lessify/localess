@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { provideIcons } from '@ng-icons/core';
 import { lucideRotateCw } from '@ng-icons/lucide';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { NotificationService } from '@shared/services/notification.service';
-import { SpaceService } from '@shared/services/space.service';
-import { SpaceStore } from '@shared/stores/space.store';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmIconImports } from '@spartan-ng/helm/icon';

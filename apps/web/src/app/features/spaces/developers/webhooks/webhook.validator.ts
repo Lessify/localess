@@ -1,6 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
-
-import { CommonValidator } from './common.validator';
+import { CommonValidator } from '@shared/validators/common.validator';
 
 /**
  * Webhooks are delivered only to public https URLs (plain http is accepted for a local receiver,

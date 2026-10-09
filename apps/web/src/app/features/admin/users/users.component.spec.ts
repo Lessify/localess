@@ -2,9 +2,9 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { User } from '@localess/shared';
-import { NotificationService } from '@shared/services/notification.service';
-import { UserService } from '@shared/services/user.service';
-import { UserStore } from '@shared/stores/user.store';
+import { NotificationService } from '@core/services/notification.service';
+import { UserService } from './user.service';
+import { UserStore } from '@core/stores/user.store';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
