@@ -1,7 +1,6 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": "./",
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
@@ -21,8 +20,8 @@
     "module": "es2022",
     "lib": ["es2022", "dom"],
     "paths": {
-      "@shared/*": ["src/app/shared/*"],
-      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["./src/app/shared/*"],
+      "@core/*": ["./src/app/core/*"],
       "@localess/shared": ["../../packages/shared/src/index.ts"],
       "@localess/shared/zod": ["../../packages/shared/src/zod.ts"],
       "@spartan-ng/helm/form-field": ["../../packages/ui/form-field/src/index.ts"],

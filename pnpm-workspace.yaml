@@ -4,19 +4,19 @@ packages:
 
 # Versions used by more than one workspace, defined once ("catalog:" in package.json).
 catalog:
-  '@angular/cdk': '^21.2.14'
-  '@angular/common': '^21.2.24'
-  '@angular/core': '^21.2.24'
-  '@angular/forms': '^21.2.24'
-  '@angular/router': '^21.2.24'
-  '@ng-icons/core': '^33.2.2'
-  '@ng-icons/lucide': '^33.2.2'
+  '@angular/cdk': '^22.2.2'
+  '@angular/common': '^22.2.2'
+  '@angular/core': '^22.2.2'
+  '@angular/forms': '^22.2.2'
+  '@angular/router': '^22.2.2'
+  '@ng-icons/core': '^36.1.0'
+  '@ng-icons/lucide': '^36.1.0'
   '@spartan-ng/brain': '^1.4.1'
   '@types/node': '^24.19.1'
   'class-variance-authority': '^0.7.1'
   'clsx': '^2.1.1'
   'embla-carousel': '>=8.0.0 <9.0.0'
-  'embla-carousel-angular': '21.0.0'
+  'embla-carousel-angular': '22.0.0'
   'happy-dom': '^20.9.0'
   'ngx-scrollbar': '^19.1.5'
   'prettier': '^3.8.3'
@@ -24,7 +24,7 @@ catalog:
   'rxjs': '^7.8.2'
   'tailwind-merge': '^3.7.0'
   'tslib': '^2.3.0'
-  'typescript': '~5.9.3'
+  'typescript': '~6.0.3'
   'vitest': '^4.1.11'
   'zod': '^4.6.5'
 
@@ -38,6 +38,8 @@ overrides:
   react: 18.3.1
   react-dom: 18.3.1
   lodash: ^4.18.1
+  # @angular/compiler-cli 22 imports encodeRangeMappings (sourcemap-codec >= 1.6) but declares ^1.4.14.
+  '@angular/compiler-cli>@jridgewell/sourcemap-codec': ^1.6.0
 
 # Dependency install scripts pnpm may run (it refuses to install while any is undecided).
 allowBuilds:

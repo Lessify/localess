@@ -48,10 +48,10 @@ pnpm --filter @localess/web add <pkg>         # add to one workspace; versions u
 
 ## Architecture Overview
 
-**Localess** is a Translation & Content Management System (CMS) built with Angular 21+, NgRx Signals, and a self-hosted NestJS + Postgres server.
+**Localess** is a Translation & Content Management System (CMS) built with Angular 22, NgRx Signals, and a self-hosted NestJS + Postgres server.
 
 ### Tech Stack
-- **Frontend**: Angular 21 (standalone components, signals, OnPush)
+- **Frontend**: Angular 22 (standalone components, signals, OnPush), TypeScript 6.0 (Angular 22 requires it; the catalog pins it for every workspace)
 - **State**: NgRx Signals (`@ngrx/signals`)
 - **Backend**: NestJS 12 on Fastify (`apps/server/`, ESM), serving the API and the built SPA from one port
 - **Database**: Postgres via Drizzle ORM; migrations in `apps/server/drizzle` run on every boot; `embedded-postgres` starts a local one when `DATABASE_URL` is unset
@@ -127,7 +127,7 @@ Domain services (in `core/services/`; services used by one feature live in that 
 These apply to all Angular code in this project (from `.github/copilot-instructions.md`):
 
 - **Standalone components**: Do NOT add `standalone: true` in `@Component`/`@Directive`/`@Pipe` decorators (it's the default)
-- **Change detection**: Always set `changeDetection: ChangeDetectionStrategy.OnPush`
+- **Change detection**: Always set `changeDetection: ChangeDetectionStrategy.OnPush` (the default since Angular 22, kept explicit); `Eager` only where documented (the CDK-based `ll-table`)
 - **Signals**: Use `signal()` for local state, `computed()` for derived state; use `update()`/`set()`, never `mutate()`
 - **Inputs/Outputs**: Use `input()` and `output()` functions, not `@Input()`/`@Output()` decorators
 - **Injection**: Use `inject()` function, not constructor injection

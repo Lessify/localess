@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { FileDragAndDropDirective } from './file-drag-and-drop.directive';
 
 @Component({
   template: `<div llFileDragDrop (filesChanges)="onFilesChanges($event)"></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FileDragAndDropDirective],
 })
 class HostComponent {

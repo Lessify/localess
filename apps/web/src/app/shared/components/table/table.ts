@@ -43,6 +43,7 @@ import { HlmTable, HlmTBody, HlmTFoot, HlmTHead } from '@spartan-ng/helm/table';
   // CDK's own note (see CdkTable / MatTable source): the table needs Angular's
   // default change-detection timing to reliably catch structural changes —
   // OnPush is deliberately NOT used here, unlike every other component in this app.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection -- deliberate, see above
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [HeaderRowOutlet, DataRowOutlet, NoDataRowOutlet, FooterRowOutlet, HlmTHead, HlmTBody, HlmTFoot],
 })

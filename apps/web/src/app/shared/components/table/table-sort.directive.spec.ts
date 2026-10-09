@@ -1,5 +1,5 @@
 import { CdkColumnDef } from '@angular/cdk/table';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { describe, expect, it } from 'vitest';
@@ -7,6 +7,7 @@ import { TableSort, TableSortHeader, TableSortState } from './table-sort.directi
 
 @Component({
   template: `<div llTableSort></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort],
 })
 class SortHostComponent {}
@@ -55,6 +56,7 @@ describe('TableSort', () => {
 
 @Component({
   template: `<div llTableSort [llTableSortDisabled]="true"></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort],
 })
 class DisabledSortHostComponent {}
@@ -71,6 +73,7 @@ describe('TableSort disabled', () => {
 
 @Component({
   template: `<div llTableSort [llTableSortActive]="'name'" [llTableSortDirection]="'desc'"></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort],
 })
 class SortWithInitialStateHostComponent {}
@@ -87,6 +90,7 @@ describe('TableSort initial state', () => {
 
 @Component({
   template: `<div llTableSort [llTableSortStart]="'desc'" [llTableSortDisableClear]="true"></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort],
 })
 class SortWithOptionsHostComponent {}
@@ -122,6 +126,7 @@ describe('TableSort start/disableClear', () => {
       <button llTableSortHeader="name" #h="llTableSortHeader"></button>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort, TableSortHeader],
 })
 class SortHeaderHostComponent {}
@@ -187,6 +192,7 @@ describe('TableSortHeader', () => {
       <button llTableSortHeader="name" [disabled]="true" #h="llTableSortHeader"></button>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort, TableSortHeader],
 })
 class DisabledSortHeaderHostComponent {}
@@ -213,6 +219,7 @@ describe('TableSortHeader disabled', () => {
       </ng-container>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [TableSort, TableSortHeader, CdkColumnDef],
 })
 class SortHeaderWithoutIdHostComponent {}

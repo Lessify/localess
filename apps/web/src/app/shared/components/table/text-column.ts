@@ -25,6 +25,7 @@ import { LlCell, LlCellDef, LlColumnDef, LlHeaderCell, LlHeaderCellDef } from '.
   // this component's template is provided to the table for insertion into
   // its own view, which runs its change detection after this template's
   // bindings would otherwise be checked under OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection -- deliberate, see above
   changeDetection: ChangeDetectionStrategy.Eager,
   imports: [LlColumnDef, LlHeaderCellDef, LlHeaderCell, LlCellDef, LlCell],
 })

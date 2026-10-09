@@ -68,6 +68,7 @@ export class LlRowDef<T> extends CdkRowDef<T> {}
   host: { role: 'row', class: 'bg-background' },
   hostDirectives: [HlmTr],
   // See table.ts for why this deliberately isn't OnPush.
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection -- deliberate, see table.ts
   changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   exportAs: 'llHeaderRow',
@@ -82,6 +83,7 @@ export class LlHeaderRow extends CdkHeaderRow {}
   template: ROW_TEMPLATE,
   host: { role: 'row' },
   hostDirectives: [HlmTr],
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection -- deliberate, see table.ts
   changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   exportAs: 'llFooterRow',
@@ -96,6 +98,7 @@ export class LlFooterRow extends CdkFooterRow {}
   template: ROW_TEMPLATE,
   host: { role: 'row' },
   hostDirectives: [HlmTr],
+  // eslint-disable-next-line @angular-eslint/prefer-on-push-component-change-detection -- deliberate, see table.ts
   changeDetection: ChangeDetectionStrategy.Eager,
   encapsulation: ViewEncapsulation.None,
   exportAs: 'llRow',

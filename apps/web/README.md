@@ -1,6 +1,6 @@
 # Localess web
 
-The Angular admin UI (`@localess/web`): Angular 21, standalone components, NgRx Signals, Spartan/Helm and
+The Angular admin UI (`@localess/web`): Angular 22, standalone components, NgRx Signals, Spartan/Helm and
 Tailwind 4. The production build (`dist/browser`) is served by [`apps/server`](../server/README.md).
 
 ## Commands

@@ -84,9 +84,9 @@ describe('LlTree', () => {
     return rows(fixture).map(it => it.textContent?.trim());
   }
 
-  /** Aria binds `pointerdown`, not `click` — `HTMLElement.click()` is a no-op for it. */
-  function pointerdown(element: HTMLElement): void {
-    element.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+  /** Aria 22 binds `click` (21 bound `pointerdown`), so a plain DOM click drives it. */
+  function click(element: HTMLElement): void {
+    element.click();
   }
 
   it('renders the root as role="tree"', async () => {
@@ -127,7 +127,7 @@ describe('LlTree', () => {
   it('writes back to expandedKeys when a group row is clicked', async () => {
     const { fixture, host } = await setup();
 
-    pointerdown(rows(fixture)[0]);
+    click(rows(fixture)[0]);
     await settle(fixture);
 
     expect([...host.expandedKeys()]).toEqual(['home']);
@@ -282,7 +282,7 @@ describe('LlTree', () => {
       host.expandedKeys.set(new Set(['home']));
       await settle(fixture);
 
-      pointerdown(rows(fixture)[1]);
+      click(rows(fixture)[1]);
       await settle(fixture);
 
       expect(host.selectedKey()).toBe('home.title');
@@ -292,7 +292,7 @@ describe('LlTree', () => {
     it('does not select a group node', async () => {
       const { fixture, host } = await setup();
 
-      pointerdown(rows(fixture)[0]);
+      click(rows(fixture)[0]);
       await settle(fixture);
 
       expect(host.selectedKey()).toBeUndefined();

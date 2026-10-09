@@ -106,7 +106,7 @@ match the docs:
 
 | Topic | angular.dev says | The package actually does |
 |---|---|---|
-| Selection | `[(value)]`, a single value | `values: V[]` with output `valuesChange` — an array, even in single-select |
+| Selection | `[(value)]`, a single value | `value: V[]` with output `valueChange` (named `values` before Angular 22) — an array, even in single-select |
 | Group markup | `<ul role="group">` is a sibling after `</li>` | Nested *inside* the `<li ngTreeItem>` (verified working) |
 
 ### Never use Tailwind `group-*` variants for per-item state
@@ -174,8 +174,7 @@ guides on *and* off, and child groups are asserted to have no margin.
 
 Two more things worth knowing before writing tests, both learned the hard way:
 
-- **Aria binds `pointerdown`, not `click`.** `HTMLElement.click()` does nothing; dispatch
-  `new MouseEvent('pointerdown', { bubbles: true })`.
+- **Aria binds `click`** (since Angular 22; 21 bound `pointerdown`), so `HTMLElement.click()` drives a row in tests.
 - **Icons in a row must not be hit-testable.** Aria resolves the pressed item with
   `event.target instanceof HTMLElement`. An `<svg>` is an `SVGElement`, so pressing an
   icon — the chevron, or any icon your node template renders — is silently ignored. The

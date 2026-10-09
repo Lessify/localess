@@ -6,7 +6,7 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Angular 21 (standalone, zoneless, signals) |
+| Framework | Angular 22 (standalone, zoneless, signals), TypeScript 6.0 |
 | State | NgRx Signals (`@ngrx/signals`) |
 | UI Components | Spartan/Helm (`packages/ui/`); Angular Material only as residue in `app.config.ts` (see below) |
 | Styling | Tailwind CSS 4 + SCSS |

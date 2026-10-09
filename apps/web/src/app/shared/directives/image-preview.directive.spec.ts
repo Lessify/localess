@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { vi } from 'vitest';
@@ -7,12 +7,14 @@ import { ImagePreviewDirective } from './image-preview.directive';
 
 @Component({
   template: `<div><img llImagePreview /></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ImagePreviewDirective],
 })
 class DefaultScaleHostComponent {}
 
 @Component({
   template: `<div><img [llImagePreview]="scale" /></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ImagePreviewDirective],
 })
 class CustomScaleHostComponent {

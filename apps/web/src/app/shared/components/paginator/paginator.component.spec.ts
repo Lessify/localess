@@ -1,4 +1,4 @@
-import { Component, signal, viewChild } from '@angular/core';
+import { Component, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { PageEvent, Paginator } from './paginator.component';
@@ -10,6 +10,7 @@ import { PageEvent, Paginator } from './paginator.component';
     [hidePageSize]="hidePageSize()"
     [showFirstLastButtons]="showFirstLastButtons()"
     [sticky]="sticky()" />`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [Paginator],
 })
 class PaginatorHostComponent {

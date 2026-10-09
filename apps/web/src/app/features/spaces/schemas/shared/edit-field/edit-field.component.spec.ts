@@ -1,4 +1,4 @@
-import { Component, signal, viewChild } from '@angular/core';
+import { Component, signal, viewChild, ChangeDetectionStrategy } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
@@ -25,6 +25,7 @@ function baseForm(fb: FormBuilder): FormGroup {
 
 @Component({
   template: `<ll-schema-field-edit [form]="form()" [schemas]="schemas()" />`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [EditFieldComponent],
 })
 class EditFieldHostComponent {

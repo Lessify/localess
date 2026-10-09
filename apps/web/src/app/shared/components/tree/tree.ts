@@ -11,7 +11,7 @@ import { LlTreeNodeDef } from './tree-node-def';
  * A tree built on the headless `@angular/aria/tree` primitives, styled to match
  * the Spartan/Helm components in `packages/ui`.
  *
- * Aria is annotated `@developerPreview 21.0`. It is deliberately confined to this
+ * Aria is annotated `@developerPreview` (v22 renamed the tree's `values` to `value`). It is deliberately confined to this
  * file so a breaking change upstream is a one-file repair.
  *
  * Aria's `TreeItemGroup` host-applies `DeferredContent`, so a collapsed subtree is
@@ -29,8 +29,8 @@ import { LlTreeNodeDef } from './tree-node-def';
       #tree="ngTree"
       data-slot="tree"
       selectionMode="explicit"
-      [values]="selectedValues()"
-      (valuesChange)="onValuesChange($event)"
+      [value]="selectedValues()"
+      (valueChange)="onValuesChange($event)"
       class="flex flex-col gap-0.5 outline-none">
       <ng-container [ngTemplateOutlet]="rows" [ngTemplateOutletContext]="{ nodes: nodes(), parent: tree }" />
     </ul>
