@@ -1,4 +1,4 @@
-// `npm start` (ng serve on :4200) forwards the API to the NestJS server (`npm run server:dev`, :3000),
+// `pnpm start` (ng serve on :4200) forwards the API to the NestJS server (`pnpm server:dev`, :3000),
 // so the session cookie stays same-origin. SSE (`/api/app/events`) streams through unchanged.
 const PROXY_CONFIG = [
   {

@@ -2,7 +2,6 @@
   "root": true,
   "ignorePatterns": [
     "src/app/shared/generated/**/*",
-    "src/app/shared/components/ui/**/*",
     "src/environments/*",
     "**/*.spec.ts"
   ],

@@ -6,7 +6,7 @@ import { afterEach, describe, it, mock } from 'node:test';
 import { Window } from 'happy-dom';
 
 // Exercises the built artifact rather than the TypeScript source: `dist/sync-v1.js` is what the server
-// serves to customer sites as /scripts/sync-v1.js. `npm test` in this package builds it first.
+// serves to customer sites as /scripts/sync-v1.js. `pnpm test` in this package builds it first.
 const SCRIPTS_DIRECTORY = fileURLToPath(new URL('../dist', import.meta.url));
 const SYNC_SCRIPT = readFileSync(`${SCRIPTS_DIRECTORY}/sync-v1.js`, 'utf8');
 

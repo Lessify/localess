@@ -20,7 +20,7 @@ describe('locale flag data', () => {
   const localeIds = readLocaleIds(readFileSync(LOCALE_LIST, 'utf8'));
 
   /**
-   * Compared by content rather than byte-for-byte: `npm run lint:fix` reformats the generated file,
+   * Compared by content rather than byte-for-byte: `pnpm lint:fix` reformats the generated file,
    * so an exact text comparison failed on every lint run and said "regenerate" when nothing had
    * actually drifted.
    *

@@ -77,7 +77,7 @@ docs/                      # project knowledge base (see table below)
 Domain types are defined once in `packages/shared`: import them from `@localess/shared` in both apps (never redeclare a model on one side). The server compiles against its `dist` (`tsc -b` builds it first); the web app and the server tests read its source.
 
 Workspace-specific commands: `pnpm --filter @localess/server <script>` (e.g. `db:generate`). pnpm is strict: a workspace can only import packages it declares in its own `package.json`.
-Structure refactoring plan: [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md).
+Each workspace (and `tools/`) has a README with its commands and layout; the root README has the same map for humans. How the structure came about: [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md).
 
 ### Application Structure
 

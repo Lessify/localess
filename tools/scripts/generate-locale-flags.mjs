@@ -118,7 +118,7 @@ export function render({ languages, countries, identicalLocales }, version) {
 export async function generate() {
   const version = JSON.parse(readFileSync(join('apps', 'web', 'node_modules', 'circle-flags', 'package.json'), 'utf8')).version;
   const flags = collectFlags(readLocaleIds(readFileSync(LOCALE_LIST, 'utf8')));
-  // Formatted with the project config so the next 'npm run lint:fix' leaves it alone - an
+  // Formatted with the project config so the next 'pnpm lint:fix' leaves it alone - an
   // unformatted generator output would show up as a spurious diff after every run.
   const source = render(flags, version);
   const options = await prettier.resolveConfig(OUTPUT);

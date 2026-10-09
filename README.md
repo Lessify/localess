@@ -93,6 +93,20 @@ LOCALESS_ADMIN_EMAIL=admin@example.com LOCALESS_ADMIN_PASSWORD=change-me pnpm se
 pnpm start                                                                                # UI on :4200, proxies /api
 ```
 
+### Repository layout
+
+A pnpm workspace; every command runs from the root (see `package.json` scripts).
+
+| Path | Package | What lives there |
+|---|---|---|
+| [`apps/web`](apps/web/README.md) | `@localess/web` | Angular admin UI (`core/` app-wide state and API, `shared/` reusable UI, `features/` lazy routes) |
+| [`apps/server`](apps/server/README.md) | `@localess/server` | NestJS server: App API, public API, auth, tasks, CLI; Drizzle migrations in `apps/server/drizzle` |
+| [`packages/shared`](packages/shared/README.md) | `@localess/shared` | Domain contract used by both apps: models, enums, permissions, locales, zod validators |
+| [`packages/ui`](packages/ui/README.md) | `@localess/ui` | Spartan/Helm UI components (source), imported as `@spartan-ng/helm/*` |
+| [`packages/visual-editor-sync`](packages/visual-editor-sync/README.md) | `@localess/visual-editor-sync` | `sync-v1.js`, loaded by customer sites inside the Visual Editor |
+| [`tools`](tools/README.md) | – | Version scripts, locale flag generator, third-party OpenAPI specs |
+| [`docs`](docs) | – | Architecture, API, deployment and feature documentation |
+
 ## Documentation
 
 1. [Overview](https://github.com/Lessify/localess/wiki)

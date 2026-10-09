@@ -60,7 +60,7 @@ Rules:
 | B2 | npm → pnpm: strict dependencies, catalog, `angular.json` back in `apps/web`, `pnpm deploy` in the Dockerfile, CI | Done |
 | C | Server: `infra/`, `auth/`, `modules/<feature>/`, `cli/` | Done |
 | D | Web: `core/` (state, API, guards) vs `shared/` (reusable UI); single-use services move into their feature | Done |
-| E | Repository map in README and CLAUDE.md; docs paths | |
+| E | Repository map in README and CLAUDE.md; docs paths | Done |
 
 Every phase ends green: web build + lint + tests, server build + tests, shared tests, `test:scripts`.
 
@@ -202,3 +202,15 @@ feature → that feature. Decided per file from an import map of the whole app.
   inside a feature. 77 files moved by script (specs with their sources).
 - Verified: web build (no warnings), lint, 179 files / 1571 tests (one more file: the split spec), docs links.
 
+### Phase E — repository map and docs (2026-10-09)
+
+- Root README: a "Repository layout" table (path, package, contents) linking to a README per workspace.
+- New READMEs: `apps/web`, `packages/shared`, `packages/ui`, `packages/visual-editor-sync`, `tools` (commands,
+  layout, how each is wired into the others). `apps/server/README.md` already had one. CLAUDE.md points to them.
+- Docs sweep: every `apps/…`, `packages/…` and `tools/…` path in the Markdown docs exists (only runtime data,
+  placeholders and the planned UUIDv7 rewriter don't). Leftover `npm` commands in code comments now say `pnpm`;
+  historical release notes in `whats-new.data.ts` are left as written.
+- `apps/web/.eslintrc.json`: dropped the ignore entry for `src/app/shared/components/ui/`, which no longer exists
+  (the components moved to `packages/ui` in Phase A).
+
+The restructuring is complete. Still open: Turborepo (deferred, see above).
