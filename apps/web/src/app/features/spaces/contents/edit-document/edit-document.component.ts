@@ -264,7 +264,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       if (document.data === undefined) {
         this.documentData = {
           _id: v4(),
-          _schema: this.rootSchema()?.id || '',
+          _schema: this.rootSchema()?.name || '',
         };
       } else if (typeof document.data === 'string') {
         this.documentData = normalizeContent(JSON.parse(document.data));

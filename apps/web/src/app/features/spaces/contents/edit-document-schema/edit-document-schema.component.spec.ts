@@ -45,6 +45,19 @@ describe('EditDocumentSchemaComponent', () => {
       expect(component.form.contains('title')).toBe(true);
     });
 
+    it('finds the root schema by its name, which is what _schema holds, not by its row id', () => {
+      const rootSchema = {
+        id: '0190a3b4-0000-7000-8000-000000000001',
+        name: 'page',
+        type: SchemaType.ROOT,
+        fields: [{ name: 'title', kind: SchemaFieldKind.TEXT } as never],
+      } as unknown as SchemaComponent;
+      const { component } = setup({ schemas: [rootSchema], data: { _id: '1', _schema: 'page', title: 'Hello' } });
+
+      expect(component.rootSchema()).toBe(rootSchema);
+      expect(component.form.controls['title'].value).toBe('Hello');
+    });
+
     it('patches the form from data() field values after generating it', () => {
       const rootSchema = schema([{ name: 'title', kind: SchemaFieldKind.TEXT } as never]);
       const { component } = setup({ schemas: [rootSchema], data: { _id: '1', _schema: 'root-1', title: 'Hello' } });

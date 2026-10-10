@@ -113,6 +113,13 @@ describe('EditDocumentComponent', () => {
       expect(component.documentData._id).toBeTruthy();
     });
 
+    it('starts a new document with the schema name in _schema, not the schema row id', () => {
+      const page = { ...rootSchema, id: '0190a3b4-0000-7000-8000-000000000001', name: 'root1' } as Schema;
+      const { component } = setup(documentOf(undefined), { schemas: [page, childSchema] });
+
+      expect(component.documentData._schema).toBe('root1');
+    });
+
     it('parses stringified document data', () => {
       const data = JSON.stringify({ _id: 'd1', _schema: 'root1' });
       const { component } = setup(documentOf(data));
