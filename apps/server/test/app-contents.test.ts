@@ -7,6 +7,7 @@ import { contentPublished, contents, schemas, spaces, tokens, webhookLogs, webho
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 import { S1 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 interface Received {
   headers: IncomingMessage['headers'];
@@ -36,7 +37,7 @@ describe('app API: contents', () => {
     await t.db
       .insert(schemas)
       .values({ spaceId: S1, id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
-    await t.db.insert(tokens).values({ id: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
+    await t.db.insert(tokens).values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
@@ -57,7 +58,7 @@ describe('app API: contents', () => {
     });
     await new Promise<void>(resolve => receiver.listen(0, '127.0.0.1', resolve));
     await t.db.insert(webhooks).values({
-      id: 'hook1',
+      id: newUuid(),
       spaceId: S1,
       name: 'site',
       url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,

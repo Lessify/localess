@@ -1,7 +1,7 @@
 # Firebase → self-hosted data migration with UUIDv7 ids
 
 **Status:** In progress, one feature block at a time (see [Rollout by feature](#rollout-by-feature)) ·
-**Recorded:** 2026-10-09 · **Admin block (users, spaces) done:** 2026-10-10
+**Recorded:** 2026-10-09 · **Done:** admin (users, spaces), space settings (tokens, webhooks, webhook logs), 2026-10-10
 **Replaces:** the `import:firebase` CLI (`apps/server/src/cli/firebase-import/`) copying Firestore ids verbatim into
 `text` columns. Users and spaces already get UUIDv7s; the other entities still keep their Firestore ids until
 their block.
@@ -65,10 +65,11 @@ Derived requirements (needed for R1–R6 to be safe):
 | assets | `id uuid` | `legacy_id`, unique per space | `parent_path` (slash-joined folder ids) rewritten; storage key moves to the new id. |
 | schemas | `id uuid` | **`name text`**, unique `(space_id, name)` | R5. Public API shows `name` where it showed `id`. |
 | translations | `id uuid` | **`key text`**, unique `(space_id, key)` | R4. `translation_published` stays keyed by key. |
-| tokens | `id uuid` | **`token text`**, unique | R3. Token lookup becomes `WHERE token = $1`. |
-| webhooks | `id uuid` | `legacy_id`, unique per space | Webhook secret copied as-is. |
+| tokens | `id uuid` ✅ | **`token text`**, unique | R3. Token lookup is `WHERE space_id = $1 AND token = $2`; the import upserts on `token`. |
+| webhooks | `id uuid` ✅ | `legacy_id`, unique per space | Webhook secret copied as-is. |
 | tasks | `id uuid` | — | Not migrated (history only, files are transient). |
-| task_logs, webhook_logs | `bigserial` | — | Unchanged. Webhook logs: migrate or drop (open question). |
+| webhook_logs | `id uuid` ✅ | — | UUIDv7 for everything (decided 2026-10-10); imported logs dated to their Firebase time. |
+| task_logs | `id uuid` (tasks block) | — | Same rule. |
 | sessions, password reset tokens | hash keys | — | Unchanged, never migrated. |
 | settings | `'settings'` | — | Singleton, unchanged. |
 
@@ -228,7 +229,7 @@ deleted once per block).
 | # | Block | Tables | Status |
 |---|---|---|---|
 | 1 | Admin | `users`, `spaces` (+ `legacy_id`); every `user_id` / `space_id` column becomes `uuid` | ✅ 2026-10-10 |
-| 2 | Space settings | `tokens` (+ `token` value column), `webhooks`, `webhook_logs` | planned |
+| 2 | Space settings | `tokens` (+ `token`, unique; regenerate updates it in place), `webhooks` (+ `legacy_id`, unique per space, not in the DTO), `webhook_logs` (UUIDv7 too) | ✅ 2026-10-10 |
 | 3 | Schemas | `schemas` (+ `name`) | planned |
 | 4 | Translations | `translations` (+ `key`), `translation_published` | planned |
 | 5 | Assets | `assets` (+ `legacy_id`, `parent_path`) | planned |
@@ -265,5 +266,5 @@ The implementation steps below are what the blocks add up to.
 | Q2 | Old content id on `contents/:contentId`: resolve or 301? | 301, same as assets. |
 | Q3 | Rewrite asset URLs found inside RICH_TEXT / MARKDOWN strings? | Yes, if the URL matches this install's `/api/v1/spaces/{space}/assets/{asset}`; with D2 they'd still work anyway. |
 | Q4 | Resolve old UI deep links (`/features/spaces/<old id>`)? | No — decided 2026-10-10: the SPA works only with UUIDs (it shows `legacyId`, never resolves by it); an old link falls back to the first available space. |
-| Q5 | Migrate webhook logs and task history? | Webhook logs no (re-created on delivery), task history no. |
+| Q5 | Migrate webhook logs and task history? | Webhook logs yes (the import copies them, with UUIDv7 ids); task history no. |
 | Q6 | How long to keep legacy id resolution on? | Always: it costs nothing for UUID requests and one indexed query otherwise. |

@@ -9,6 +9,7 @@ import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driv
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
 import { createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
 import { SPACE_A, SPACE_B, SPACE_S } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 const en = { id: 'en', name: 'English' };
 const de = { id: 'de', name: 'German' };
@@ -216,7 +217,7 @@ describe('task worker: exports and imports', () => {
     });
 
     it('is served by the public API of the importing space', async () => {
-      await t.db.insert(tokens).values({ id: 'BBBBBBBBBBBBBBBBBBBB', spaceId: SPACE_B, name: 't', version: 2, permissions: ['CONTENT_DRAFT'] });
+      await t.db.insert(tokens).values({ id: newUuid(), token: 'BBBBBBBBBBBBBBBBBBBB', spaceId: SPACE_B, name: 't', version: 2, permissions: ['CONTENT_DRAFT'] });
       const redirect = await t.request({
         method: 'GET',
         url: `/api/v1/spaces/${SPACE_B}/contents/post?token=BBBBBBBBBBBBBBBBBBBB&version=draft&locale=de`,

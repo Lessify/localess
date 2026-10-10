@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { schemas, spaces, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
-import { S1 } from './ids.js';
+import { S1, UUID_V7 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 function multipart(fields: Record<string, string>, file: { filename: string; bytes: Buffer }) {
   const boundary = `----localess${randomBytes(8).toString('hex')}`;
@@ -64,11 +65,12 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   describe('tokens', () => {
     const base = `/api/app/spaces/${S1}/tokens`;
 
-    it('creates V2 tokens with 20-character secret ids, for SPACE_MANAGEMENT only', async () => {
+    it('creates V2 tokens with a UUIDv7 id and a 20-character secret, for SPACE_MANAGEMENT only', async () => {
       const response = await manager.post(base, { name: 'Website', permissions: ['CONTENT_PUBLIC'], cacheTtl: 120 });
       expect(response.statusCode).toBe(201);
       expect(response.json()).toMatchObject({
-        id: expect.stringMatching(/^[A-Za-z0-9]{20}$/),
+        id: expect.stringMatching(UUID_V7),
+        token: expect.stringMatching(/^[A-Za-z0-9]{20}$/),
         version: 2,
         name: 'Website',
         permissions: ['CONTENT_PUBLIC'],
@@ -84,21 +86,33 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await manager.get(base)).json()).toHaveLength(2);
     });
 
-    it('regenerates a V1 token as V2 with its implicit permissions, under a new secret', async () => {
-      await t.db.insert(tokens).values({ id: 'VVVVVVVVVVVVVVVVVVVV', spaceId: S1, name: 'Legacy' });
-      const response = await manager.post(`${base}/VVVVVVVVVVVVVVVVVVVV/regenerate`);
+    it('regenerates a V1 token as V2 with its implicit permissions, under a new secret but the same id', async () => {
+      const id = newUuid();
+      await t.db.insert(tokens).values({ id, token: 'VVVVVVVVVVVVVVVVVVVV', spaceId: S1, name: 'Legacy' });
+      const read = (secret: string) => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${secret}` });
+      expect((await read('VVVVVVVVVVVVVVVVVVVV')).statusCode).toBe(302); // now cached
+      const response = await manager.post(`${base}/${id}/regenerate`);
       expect(response.json()).toMatchObject({
+        id,
         version: 2,
         name: 'Legacy',
         permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT'],
       });
-      expect(response.json().id).not.toBe('VVVVVVVVVVVVVVVVVVVV');
+      expect(response.json().token).toMatch(/^[A-Za-z0-9]{20}$/);
+      expect(response.json().token).not.toBe('VVVVVVVVVVVVVVVVVVVV');
+      await eventually(async () => expect((await read('VVVVVVVVVVVVVVVVVVVV')).statusCode).toBe(401));
+      expect((await read(response.json().token)).statusCode).toBe(302);
+    });
+
+    it('answers 404 for an id that is not a UUID, such as a token secret', async () => {
       expect((await manager.get(`${base}/VVVVVVVVVVVVVVVVVVVV`)).statusCode).toBe(404);
+      expect((await manager.post(`${base}/VVVVVVVVVVVVVVVVVVVV/regenerate`)).statusCode).toBe(404);
+      expect((await manager.get(`${base}/${newUuid()}`)).statusCode).toBe(404);
     });
 
     it('revokes a token for the public API immediately, despite its 5-minute cache', async () => {
       const token = (await manager.post(base, { name: 'Short-lived', permissions: ['CONTENT_PUBLIC'] })).json();
-      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.id}` });
+      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.token}` });
       expect((await read()).statusCode).toBe(302); // now cached
       expect((await manager.delete(`${base}/${token.id}`)).statusCode).toBe(204);
       await eventually(async () => expect((await read()).statusCode).toBe(401));
@@ -106,7 +120,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
     it('applies permission edits immediately too', async () => {
       const token = (await manager.post(base, { name: 'Editable', permissions: ['CONTENT_PUBLIC'] })).json();
-      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.id}` });
+      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.token}` });
       expect((await read()).statusCode).toBe(302);
       await manager.put(`${base}/${token.id}`, { name: 'Editable', permissions: ['TRANSLATION_PUBLIC'] });
       await eventually(async () => expect((await read()).statusCode).toBe(403));
@@ -168,11 +182,12 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
         duration: 5,
       };
       await t.db.insert(webhookLogs).values([
-        { ...log, deliveryId: 'old', createdAt: new Date('2026-01-01') },
-        { ...log, deliveryId: 'new', createdAt: new Date('2026-02-01') },
+        { ...log, id: newUuid(), deliveryId: 'old', createdAt: new Date('2026-01-01') },
+        { ...log, id: newUuid(), deliveryId: 'new', createdAt: new Date('2026-02-01') },
       ]);
       const logs = (await manager.get(`${base}/${hook.id}/logs?limit=1`)).json();
-      expect(logs).toEqual([expect.objectContaining({ deliveryId: 'new', id: expect.any(String) })]);
+      expect(logs).toEqual([expect.objectContaining({ deliveryId: 'new', id: expect.stringMatching(UUID_V7) })]);
+      expect((await manager.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
       expect(logs[0]).not.toHaveProperty('webhookId');
     });
 

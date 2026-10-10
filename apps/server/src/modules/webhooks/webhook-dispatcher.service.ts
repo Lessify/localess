@@ -4,6 +4,7 @@ import { and, arrayContains, eq } from 'drizzle-orm';
 import { WebHookEvent } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
+import { newUuid } from '../../infra/database/id.js';
 import { webhookLogs, webhooks } from '../../infra/database/schema.js';
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from './webhook-request.js';
 import { EventsService } from '../../infra/events/events.service.js';
@@ -80,7 +81,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       'X-Webhook-Delivery': deliveryId,
     };
     if (webhook.secret) headers['X-Webhook-Signature'] = generateSignature(webhook.secret, payloadJson);
-    const base = { webhookId: webhook.id, event: payload.event, url: webhook.url, requestSize, deliveryId, data: payload.data };
+    const base = { id: newUuid(), webhookId: webhook.id, event: payload.event, url: webhook.url, requestSize, deliveryId, data: payload.data };
 
     let log: typeof webhookLogs.$inferInsert;
     try {

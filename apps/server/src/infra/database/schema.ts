@@ -17,7 +17,7 @@ import {
 
 /*
  * Ids are moving to UUIDv7 (`newUuid()`) one feature at a time, see docs/roadmap/firebase-migration-uuidv7.md.
- * Done: users, spaces. A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
+ * Done: users, spaces, tokens, webhooks, webhook_logs. A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
  * `legacy_id`, so old ids in URLs and customer code still resolve (`byIdOrLegacy()`) and a re-run of the
  * import updates the same rows. The other tables still use `text` ids in the 20-char alphanumeric format
  * of `newId()`; imported rows keep their Firestore document ids there.
@@ -350,9 +350,11 @@ export const taskLogs = pgTable(
 export const tokens = pgTable(
   'tokens',
   {
-    // 20-char alphanumeric; the id *is* the secret passed as `?token=` / `X-API-KEY`.
-    id: text('id').primaryKey(),
+    id: uuid('id').primaryKey(),
     spaceId: spaceId(),
+    // The secret passed as `?token=` / `X-API-KEY`: 20 alphanumerics (`newId()`), never the UUID (74 random bits and
+    // a readable creation time). An imported token keeps its Firestore id here, the value customers already use.
+    token: text('token').notNull().unique(),
     name: text('name').notNull(),
     // null = V1 (implicit permissions), 2 = V2
     version: integer('version'),
@@ -370,8 +372,10 @@ export const tokens = pgTable(
 export const webhooks = pgTable(
   'webhooks',
   {
-    id: text('id').primaryKey(),
+    id: uuid('id').primaryKey(),
     spaceId: spaceId(),
+    // Firestore id of an imported webhook, so a re-run of the import updates it.
+    legacyId: text('legacy_id'),
     name: text('name').notNull(),
     url: text('url').notNull(),
     enabled: boolean('enabled').notNull().default(true),
@@ -380,14 +384,18 @@ export const webhooks = pgTable(
     secret: text('secret'),
     ...timestamps,
   },
-  t => [index('webhooks_space_idx').on(t.spaceId, t.name), index('webhooks_events_idx').using('gin', t.events)],
+  t => [
+    index('webhooks_space_idx').on(t.spaceId, t.name),
+    index('webhooks_events_idx').using('gin', t.events),
+    uniqueIndex('webhooks_legacy_idx').on(t.spaceId, t.legacyId),
+  ],
 );
 
 export const webhookLogs = pgTable(
   'webhook_logs',
   {
-    id: bigserial('id', { mode: 'number' }).primaryKey(),
-    webhookId: text('webhook_id')
+    id: uuid('id').primaryKey(),
+    webhookId: uuid('webhook_id')
       .notNull()
       .references(() => webhooks.id, { onDelete: 'cascade' }),
     event: text('event').notNull(),

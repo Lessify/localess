@@ -276,6 +276,17 @@ describe('import:firebase', () => {
     expect(posts[0].spaceId).toBe(space.id);
     expect(space.overview).toEqual({ contentsCount: 2, updatedAt: '2026-02-01T00:00:00.000Z' });
 
+    // The Firestore token id is the secret customers use: it stays the token value, under a new UUID.
+    const [token] = await db.select().from(schema.tokens);
+    expect(token).toMatchObject({ token: TOKEN, spaceId: space.id });
+    expect(token.id).toMatch(UUID_V7);
+    const [webhook] = await db.select().from(schema.webhooks);
+    expect(webhook).toMatchObject({ legacyId: 'w1', spaceId: space.id });
+    expect(webhook.id).toMatch(UUID_V7);
+    const logs = await db.select().from(schema.webhookLogs);
+    expect(logs.map(it => it.webhookId)).toEqual([webhook.id, webhook.id]);
+    for (const log of logs) expect(log.id).toMatch(UUID_V7);
+
     const a1 = (await db.select().from(schema.assets)).find(it => it.id === 'a1');
     expect(a1).toMatchObject({ parentPath: 'f1', md5: createHash('md5').update(photo).digest('base64'), inProgress: false });
     expect((await db.select().from(schema.settings))[0].ui).toEqual({ text: 'Migrated', color: 'primary' });
@@ -317,6 +328,8 @@ describe('import:firebase', () => {
     const ids = async () => ({
       users: (await db.select({ id: schema.users.id, legacyId: schema.users.legacyId }).from(schema.users)).sort((a, b) => a.id.localeCompare(b.id)),
       spaces: (await db.select({ id: schema.spaces.id, legacyId: schema.spaces.legacyId }).from(schema.spaces)).sort((a, b) => a.id.localeCompare(b.id)),
+      tokens: await db.select({ id: schema.tokens.id, token: schema.tokens.token }).from(schema.tokens),
+      webhooks: await db.select({ id: schema.webhooks.id, legacyId: schema.webhooks.legacyId }).from(schema.webhooks),
     });
     const idsBefore = await ids();
     const [u1] = idsBefore.users.filter(it => it.legacyId === 'u1');

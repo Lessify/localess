@@ -11,6 +11,7 @@ import {
 } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { S1 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 import type { TestApp } from './test-app.js';
 
 export const TOKEN_V1 = 'AAAAAAAAAAAAAAAAAAAA';
@@ -30,12 +31,12 @@ export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
     .insert(spaces)
     .values({ id: spaceId, name: 'Space', locales: [en, de], localeFallback: en, contentVersion: 7, translationVersion: 3 });
   await t.db.insert(tokens).values([
-    { id: TOKEN_V1, spaceId, name: 'legacy v1' },
-    { id: TOKEN_PUBLIC, spaceId, name: 'public', version: 2, permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
-    { id: TOKEN_DRAFT, spaceId, name: 'draft', version: 2, permissions: ['CONTENT_DRAFT', 'TRANSLATION_DRAFT'], cacheTtl: 30 },
-    { id: TOKEN_DEV, spaceId, name: 'dev', version: 2, permissions: ['DEV_TOOLS'] },
-    { id: TOKEN_NO_CACHE, spaceId, name: 'no cache', version: 2, permissions: ['CONTENT_PUBLIC'], cacheTtl: 0 },
-    { id: TOKEN_NONE, spaceId, name: 'none', version: 2, permissions: [] },
+    { id: newUuid(), token: TOKEN_V1, spaceId, name: 'legacy v1' },
+    { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', version: 2, permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
+    { id: newUuid(), token: TOKEN_DRAFT, spaceId, name: 'draft', version: 2, permissions: ['CONTENT_DRAFT', 'TRANSLATION_DRAFT'], cacheTtl: 30 },
+    { id: newUuid(), token: TOKEN_DEV, spaceId, name: 'dev', version: 2, permissions: ['DEV_TOOLS'] },
+    { id: newUuid(), token: TOKEN_NO_CACHE, spaceId, name: 'no cache', version: 2, permissions: ['CONTENT_PUBLIC'], cacheTtl: 0 },
+    { id: newUuid(), token: TOKEN_NONE, spaceId, name: 'none', version: 2, permissions: [] },
   ]);
 }
 

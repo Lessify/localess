@@ -5,11 +5,12 @@ import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission, UserPermission } from '
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { newId, newUuid } from '../../infra/database/id.js';
 import { tokens } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { toDto } from '../../infra/http/dto.js';
 import { requireSpace } from '../../infra/http/space-access.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 
 const tokenSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -21,8 +22,9 @@ type TokenRow = typeof tokens.$inferSelect;
 const dto = (row: TokenRow) => toDto(row);
 
 /**
- * Space API tokens (was `spaces/{s}/tokens`). The id is the secret. Every change publishes a
- * `tokens` event, which also drops the public API's 5-minute token cache on every instance.
+ * Space API tokens (was `spaces/{s}/tokens`). Routes use the UUID `id`; the secret is `token`, which only this
+ * controller returns (to SPACE_MANAGEMENT users). Every change publishes a `tokens` event with the UUID, which
+ * also drops the public API's 5-minute token cache on every instance.
  */
 @Controller('api/app/spaces/:spaceId/tokens')
 @RequirePermission(UserPermission.SPACE_MANAGEMENT)
@@ -47,7 +49,7 @@ export class TokensController {
   }
 
   @Get(':id')
-  async get(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return dto(await this.find(spaceId, id));
   }
 
@@ -66,7 +68,15 @@ export class TokensController {
       await requireSpace(tx, spaceId);
       const [row] = await tx
         .insert(tokens)
-        .values({ id: newId(), spaceId, version: 2, name: body.name, permissions: body.permissions, cacheTtl: body.cacheTtl ?? null })
+        .values({
+          id: newUuid(),
+          spaceId,
+          token: newId(),
+          version: 2,
+          name: body.name,
+          permissions: body.permissions,
+          cacheTtl: body.cacheTtl ?? null,
+        })
         .returning();
       await this.events.publish({ spaceId, entity: 'tokens', id: row.id, op: 'created' }, tx);
       return dto(row);
@@ -76,7 +86,7 @@ export class TokensController {
   @Put(':id')
   async update(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(tokenSchema)) body: z.infer<typeof tokenSchema>,
   ) {
     return this.db.transaction(async tx => {
@@ -91,36 +101,35 @@ export class TokensController {
     });
   }
 
-  /** Same token under a new secret, atomically; a V1 token becomes V2 with its implicit permissions spelled out. */
+  /** Same token (same id) under a new secret; a V1 token becomes V2 with its implicit permissions spelled out. */
   @Post(':id/regenerate')
-  async regenerate(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async regenerate(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.db.transaction(async tx => {
       const [old] = await tx
-        .delete(tokens)
+        .select()
+        .from(tokens)
         .where(and(eq(tokens.spaceId, spaceId), eq(tokens.id, id)))
-        .returning();
+        .for('update');
       if (!old) throw new NotFoundException('Token not found');
       const [row] = await tx
-        .insert(tokens)
-        .values({
-          id: newId(),
-          spaceId,
+        .update(tokens)
+        .set({
+          token: newId(),
           version: 2,
-          name: old.name,
           permissions: old.version === 2 ? old.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
           cacheTtl: old.version === 2 ? old.cacheTtl : null,
-          createdAt: old.createdAt,
+          updatedAt: new Date(),
         })
+        .where(eq(tokens.id, id))
         .returning();
-      await this.events.publish({ spaceId, entity: 'tokens', id, op: 'deleted' }, tx);
-      await this.events.publish({ spaceId, entity: 'tokens', id: row.id, op: 'created' }, tx);
+      await this.events.publish({ spaceId, entity: 'tokens', id, op: 'updated' }, tx);
       return dto(row);
     });
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.db.transaction(async tx => {
       const deleted = await tx
         .delete(tokens)

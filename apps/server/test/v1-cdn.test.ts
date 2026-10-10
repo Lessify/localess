@@ -15,6 +15,7 @@ import {
 } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { EMPTY_SPACE, S1, S2 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 /**
  * The public delivery API against real rows. The cases ported from functions/src/v1/*.test.ts keep
@@ -34,7 +35,7 @@ describe('v1 CDN API', () => {
     await t.db
       .insert(spaces)
       .values({ id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
-    await t.db.insert(tokens).values({ id: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'v1' });
+    await t.db.insert(tokens).values({ id: newUuid(), token: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'v1' });
   });
 
   afterAll(() => t?.close());

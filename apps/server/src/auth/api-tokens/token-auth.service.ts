@@ -11,6 +11,7 @@ import { sendV1Error } from '../../infra/http/v1/v1-response.js';
 
 /** A space API token as the v1 API sees it. V1 tokens (no `version`) carry implicit permissions. */
 export interface ApiToken {
+  /** The row's UUID, not the secret. */
   id: string;
   version: number | null;
   permissions: TokenPermission[];
@@ -19,7 +20,7 @@ export interface ApiToken {
 
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
 
-/** Alphanumeric only: the token is the row id, so `/` must never reach the lookup. */
+/** The shape of every token value: 20 alphanumerics (`newId()`, or a Firestore id for imported tokens). */
 export function validateToken(token?: unknown): token is string {
   return typeof token === 'string' && /^[A-Za-z0-9]{20}$/.test(token);
 }
@@ -47,7 +48,7 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
     private readonly events: EventsService,
   ) {}
 
-  /** Token edits reach every instance as change events, so a revoked token stops working at once. */
+  /** Token edits reach every instance as change events (with the row UUID), so a revoked token stops working at once. */
   onModuleInit(): void {
     this.subscription = this.events
       .stream()
@@ -59,27 +60,30 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
     this.subscription?.unsubscribe();
   }
 
-  async find(spaceId: string, tokenId: string): Promise<ApiToken | undefined> {
+  /** The token whose secret is `token` in this space. */
+  async find(spaceId: string, token: string): Promise<ApiToken | undefined> {
     const [row] = await this.db
       .select({ id: tokens.id, version: tokens.version, permissions: tokens.permissions, cacheTtl: tokens.cacheTtl })
       .from(tokens)
-      .where(and(eq(tokens.spaceId, spaceId), eq(tokens.id, tokenId)));
+      .where(and(eq(tokens.spaceId, spaceId), eq(tokens.token, token)));
     return row ? { ...row, permissions: (row.permissions ?? []) as TokenPermission[] } : undefined;
   }
 
-  async findCached(spaceId: string, tokenId: string): Promise<ApiToken | undefined> {
-    const key = `${spaceId}:${tokenId}`;
+  /** Cached by secret; entries remember the row UUID so change events can drop them. */
+  async findCached(spaceId: string, secret: string): Promise<ApiToken | undefined> {
+    const key = `${spaceId}:${secret}`;
     const cached = this.cache.get(key);
     if (cached && cached.expiresAt > Date.now()) return cached.token;
-    const token = await this.find(spaceId, tokenId);
+    const token = await this.find(spaceId, secret);
     if (token) this.cache.set(key, { token, expiresAt: Date.now() + TOKEN_CACHE_TTL_MS });
     else this.cache.delete(key);
     return token;
   }
 
-  invalidate(spaceId: string, tokenId?: string): void {
-    for (const key of this.cache.keys()) {
-      if (tokenId ? key === `${spaceId}:${tokenId}` : key.startsWith(`${spaceId}:`)) this.cache.delete(key);
+  /** Drops the cached token with this row UUID, or every token of the space. */
+  invalidate(spaceId: string, id?: string): void {
+    for (const [key, entry] of this.cache) {
+      if (key.startsWith(`${spaceId}:`) && (!id || entry.token.id === id)) this.cache.delete(key);
     }
   }
 

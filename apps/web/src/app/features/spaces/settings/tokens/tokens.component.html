@@ -16,7 +16,7 @@
       <ng-container llColumnDef="id">
         <th llHeaderCell *llHeaderCellDef>Token</th>
         <td llCell *llCellDef="let element">
-          <code>{{ element.id.substring(0, 10) }}...</code>
+          <code>{{ element.token.substring(0, 10) }}...</code>
         </td>
       </ng-container>
       <ng-container llColumnDef="name">
@@ -71,7 +71,7 @@
             hlmBtn
             size="icon"
             variant="ghost"
-            [cdkCopyToClipboard]="element.id"
+            [cdkCopyToClipboard]="element.token"
             (cdkCopyToClipboardCopied)="copied()"
             hlmTooltip="Copy Token">
             <ng-icon hlm size="sm" name="lucideCopy" />

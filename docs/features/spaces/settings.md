@@ -173,7 +173,7 @@ computed from `TOKEN_V1_IMPLICIT_PERMISSIONS` (`tokens.component.ts:218-220`).
   access, then calls `TokenService.regenerate()` to issue a new token value while keeping the same name/permissions/cacheTtl
   (`tokens.component.ts:162-186`)
 - `openDeleteDialog(element)` — confirmation dialog then deletes the token
-- `copied()` — snackbar feedback when a token ID is copied to clipboard
+- `copied()` — snackbar feedback when a token value (`token`, not the UUID `id`) is copied to clipboard
 
 **Services:** `TokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 

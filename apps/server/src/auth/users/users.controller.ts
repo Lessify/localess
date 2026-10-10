@@ -10,6 +10,7 @@ import { CurrentUser } from '../request-context.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { toPrincipal, UserDto, type UserRow, UsersService } from './users.service.js';
 
 const roleSchema = z.enum(['admin', 'custom']).nullish();
@@ -55,7 +56,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  async get(@Param('id') id: string): Promise<UserDto> {
+  async get(@Param('id', UuidParamPipe) id: string): Promise<UserDto> {
     return this.users.toDto(await this.users.getById(id));
   }
 
@@ -73,7 +74,7 @@ export class UsersController {
   @Patch(':id')
   async updateAccess(
     @CurrentUser() caller: UserRow,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(accessSchema)) body: z.infer<typeof accessSchema>,
   ): Promise<UserDto> {
     const principal = toPrincipal(caller);
@@ -90,7 +91,7 @@ export class UsersController {
   @Post(':id/password-reset-link')
   async passwordResetLink(
     @CurrentUser() caller: UserRow,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Req() request: FastifyRequest,
   ): Promise<{ url: string; expiresAt: string }> {
     const target = await this.users.getById(id);
@@ -101,7 +102,7 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@CurrentUser() caller: UserRow, @Param('id') id: string): Promise<void> {
+  async delete(@CurrentUser() caller: UserRow, @Param('id', UuidParamPipe) id: string): Promise<void> {
     const target = await this.users.getById(id);
     if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     // Sessions, credentials and identities cascade.

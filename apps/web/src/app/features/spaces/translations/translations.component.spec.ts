@@ -42,7 +42,7 @@ describe('TranslationsComponent', () => {
     const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
-    const findFirstByPermission = vi.fn().mockReturnValue(of([{ id: 'token1' } as Token]));
+    const findFirstByPermission = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -367,7 +367,7 @@ describe('TranslationsComponent', () => {
 
     it('openPublishedV1InNewTab() notifies an error when no single token is available', () => {
       const { component, findFirstByPermission, error } = setup();
-      findFirstByPermission.mockReturnValue(of([{ id: 'a' } as Token, { id: 'b' } as Token]));
+      findFirstByPermission.mockReturnValue(of([{ id: 'uuid-a', token: 'a' } as Token, { id: 'uuid-b', token: 'b' } as Token]));
 
       component.openPublishedV1InNewTab('en');
 

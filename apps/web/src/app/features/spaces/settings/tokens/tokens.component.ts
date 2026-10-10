@@ -79,7 +79,7 @@ export class TokensComponent implements AfterViewInit {
 
   constructor() {
     this.dataSource.filterPredicate = FilterPredicateUtils.create<Token>({
-      searchFields: token => [token.id, token.name],
+      searchFields: token => [token.token, token.name],
     });
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
@@ -227,7 +227,7 @@ export class TokensComponent implements AfterViewInit {
   cliLoginCommand(element: Token): string {
     const origin = this.document.location.origin;
     const spaceId = this.spaceStore.selectedSpaceId();
-    return `localess login --origin ${origin} --space ${spaceId} --token ${element.id}`;
+    return `localess login --origin ${origin} --space ${spaceId} --token ${element.token}`;
   }
 
   cliLoginCopied() {

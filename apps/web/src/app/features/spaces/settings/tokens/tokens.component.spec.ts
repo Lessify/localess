@@ -255,7 +255,7 @@ describe('TokensComponent', () => {
   it('cliLoginCommand() builds the login command for the current origin, space and token', () => {
     const { component } = setup([], space());
 
-    const command = component.cliLoginCommand(token({ id: 'tok-123', permissions: [TokenPermission.DEV_TOOLS] }));
+    const command = component.cliLoginCommand(token({ token: 'tok-123', permissions: [TokenPermission.DEV_TOOLS] }));
 
     expect(command).toBe(`localess login --origin ${window.location.origin} --space space-1 --token tok-123`);
   });

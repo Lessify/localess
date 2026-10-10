@@ -128,14 +128,16 @@ CREATE TABLE "tasks" (
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
+	"token" text NOT NULL,
 	"name" text NOT NULL,
 	"version" integer,
 	"permissions" text[],
 	"cache_ttl" integer,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "tokens_token_unique" UNIQUE("token")
 );
 --> statement-breakpoint
 CREATE TABLE "translation_published" (
@@ -192,8 +194,8 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 CREATE TABLE "webhook_logs" (
-	"id" bigserial PRIMARY KEY NOT NULL,
-	"webhook_id" text NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
+	"webhook_id" uuid NOT NULL,
 	"event" text NOT NULL,
 	"url" text NOT NULL,
 	"status" text NOT NULL,
@@ -211,8 +213,9 @@ CREATE TABLE "webhook_logs" (
 );
 --> statement-breakpoint
 CREATE TABLE "webhooks" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
+	"legacy_id" text,
 	"name" text NOT NULL,
 	"url" text NOT NULL,
 	"enabled" boolean DEFAULT true NOT NULL,
@@ -257,4 +260,5 @@ CREATE INDEX "user_identities_user_idx" ON "user_identities" USING btree ("user_
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint
 CREATE INDEX "webhook_logs_webhook_idx" ON "webhook_logs" USING btree ("webhook_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "webhooks_space_idx" ON "webhooks" USING btree ("space_id","name");--> statement-breakpoint
-CREATE INDEX "webhooks_events_idx" ON "webhooks" USING gin ("events");
+CREATE INDEX "webhooks_events_idx" ON "webhooks" USING gin ("events");--> statement-breakpoint
+CREATE UNIQUE INDEX "webhooks_legacy_idx" ON "webhooks" USING btree ("space_id","legacy_id");

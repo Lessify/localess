@@ -6,6 +6,7 @@ import { spaces, tokens, translations, webhooks } from '../src/infra/database/sc
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 import { S1 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 /** A local HTTP server recording requests and answering with `respond`. */
 async function fakeServer(respond: (request: IncomingMessage) => { status: number; body: unknown; headers?: Record<string, string> }) {
@@ -60,10 +61,10 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
     await t.db
       .insert(tokens)
-      .values({ id: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
+      .values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
     await t.db
       .insert(webhooks)
-      .values({ id: 'h', spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'] });
+      .values({ id: newUuid(), spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'] });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {

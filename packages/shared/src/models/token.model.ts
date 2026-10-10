@@ -27,6 +27,8 @@ export interface TokenV2 extends TokenBase {
 }
 export interface TokenBase {
   id: string;
+  /** The secret used as `?token=` / `X-API-KEY` (20 alphanumerics); `id` is only the row's UUID. */
+  token: string;
   version?: number;
   name: string;
   createdAt: Timestamp;

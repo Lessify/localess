@@ -474,7 +474,8 @@ export class FirebaseImporter {
     for (const doc of await this.source.documents(`spaces/${source}/tokens`)) {
       const d = doc.data;
       const values = {
-        id: doc.id,
+        // The Firestore id is the secret customers use, so it stays the token value.
+        token: doc.id,
         spaceId,
         name: str(d['name']) ?? 'Token',
         version: typeof d['version'] === 'number' ? d['version'] : null,
@@ -482,9 +483,12 @@ export class FirebaseImporter {
         cacheTtl: typeof d['cacheTtl'] === 'number' ? d['cacheTtl'] : null,
         ...timestamps(d),
       };
-      const { id: _i, ...update } = values;
-      void _i;
-      await this.db.insert(tokens).values(values).onConflictDoUpdate({ target: tokens.id, set: update });
+      const { token: _t, ...update } = values;
+      void _t;
+      await this.db
+        .insert(tokens)
+        .values({ id: newUuid(values.createdAt), ...values })
+        .onConflictDoUpdate({ target: tokens.token, set: update });
       this.report.tokens++;
     }
   }
@@ -493,7 +497,7 @@ export class FirebaseImporter {
     for (const doc of await this.source.documents(`spaces/${source}/webhooks`)) {
       const d = doc.data;
       const values = {
-        id: doc.id,
+        legacyId: doc.id,
         spaceId,
         name: str(d['name']) ?? 'Webhook',
         url: str(d['url']) ?? '',
@@ -503,17 +507,25 @@ export class FirebaseImporter {
         secret: str(d['secret']),
         ...timestamps(d),
       };
-      const { id: _i, ...update } = values;
-      void _i;
-      await this.db.insert(webhooks).values(values).onConflictDoUpdate({ target: webhooks.id, set: update });
+      const { legacyId: _l, spaceId: _s, ...update } = values;
+      void _l;
+      void _s;
+      // Keyed by the Firestore id: a re-run updates the webhook it created before, with the same UUID.
+      const [{ id: webhookId }] = await this.db
+        .insert(webhooks)
+        .values({ id: newUuid(values.createdAt), ...values })
+        .onConflictDoUpdate({ target: [webhooks.spaceId, webhooks.legacyId], set: update })
+        .returning({ id: webhooks.id });
       this.report.webhooks++;
 
-      // Logs have generated ids here; re-runs replace the imported history rather than duplicating it.
-      await this.db.delete(webhookLogs).where(eq(webhookLogs.webhookId, doc.id));
+      // Logs get new ids here; re-runs replace the imported history rather than duplicating it.
+      await this.db.delete(webhookLogs).where(eq(webhookLogs.webhookId, webhookId));
       for (const log of await this.source.documents(`spaces/${source}/webhooks/${doc.id}/logs`)) {
         const l = log.data;
+        const createdAt = toDate(l['createdAt']) ?? new Date();
         await this.db.insert(webhookLogs).values({
-          webhookId: doc.id,
+          id: newUuid(createdAt),
+          webhookId,
           event: str(l['event']) ?? '',
           url: str(l['url']) ?? values.url,
           status: str(l['status']) ?? 'failure',
@@ -527,7 +539,7 @@ export class FirebaseImporter {
           duration: typeof l['duration'] === 'number' ? Math.round(l['duration']) : 0,
           responseBody: str(l['responseBody']),
           responseBodyTruncated: typeof l['responseBodyTruncated'] === 'boolean' ? l['responseBodyTruncated'] : null,
-          createdAt: toDate(l['createdAt']) ?? new Date(),
+          createdAt,
         });
         this.report.webhookLogs++;
       }

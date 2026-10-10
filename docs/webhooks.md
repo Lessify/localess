@@ -9,8 +9,8 @@ Webhooks deliver HTTP POST notifications to external URLs when content or transl
 ## Storage
 
 ```
-webhooks       (id, space_id, name, url, enabled, events text[], headers jsonb, secret, created_at, updated_at)
-webhook_logs   (id bigserial, webhook_id → webhooks on delete cascade, delivery fields, created_at)
+webhooks       (id uuid, space_id, legacy_id, name, url, enabled, events text[], headers jsonb, secret, created_at, updated_at)
+webhook_logs   (id uuid, webhook_id → webhooks on delete cascade, delivery fields, created_at)
                 — execution history (not capped or pruned; one row per delivery)
 ```
 
@@ -169,7 +169,7 @@ interface WebHookLogFailure extends WebHookLogBase {
 type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Logs are **not capped on write** — every delivery adds a row and nothing prunes them (they are only removed with the webhook, see [Cleanup](#cleanup)). Limits apply only on read: `GET …/webhooks/:id/logs` returns rows newest first, all of them or `?limit=` (clamped to 1–1000), and the frontend `WebHookService.findLogs()` takes an optional `max`. The API returns log ids as strings. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
+Logs are **not capped on write** — every delivery adds a row and nothing prunes them (they are only removed with the webhook, see [Cleanup](#cleanup)). Limits apply only on read: `GET …/webhooks/:id/logs` returns rows newest first, all of them or `?limit=` (clamped to 1–1000), and the frontend `WebHookService.findLogs()` takes an optional `max`. Webhook and log ids are UUIDv7s; a `:id` that isn't a UUID answers 404. `legacy_id` (the Firestore id of an imported webhook, for import re-runs) is not returned. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
 
 ---
 

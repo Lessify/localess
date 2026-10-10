@@ -5,11 +5,12 @@ import { UserPermission, WebHookEvent } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { newUuid } from '../../infra/database/id.js';
 import { webhookLogs, webhooks } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { toDto } from '../../infra/http/dto.js';
 import { requireSpace } from '../../infra/http/space-access.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 
 /** Same rule firestore.rules applied: https, or plain http to localhost for local testing. */
 const webhookUrl = z
@@ -26,7 +27,8 @@ const webhookSchema = z.object({
 const statusSchema = z.object({ enabled: z.boolean() });
 
 type WebhookRow = typeof webhooks.$inferSelect;
-const dto = (row: WebhookRow) => toDto(row);
+// `legacyId` only serves import re-runs.
+const dto = (row: WebhookRow) => toDto(row, ['spaceId', 'legacyId']);
 
 /** Webhook configuration and delivery logs (was `spaces/{s}/webhooks`). */
 @Controller('api/app/spaces/:spaceId/webhooks')
@@ -43,7 +45,7 @@ export class WebhooksController {
   }
 
   @Get(':id')
-  async get(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     const [row] = await this.db
       .select()
       .from(webhooks)
@@ -53,7 +55,7 @@ export class WebhooksController {
   }
 
   @Get(':id/logs')
-  async logs(@Param('spaceId') spaceId: string, @Param('id') id: string, @Query('limit') limit?: string) {
+  async logs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Query('limit') limit?: string) {
     await this.get(spaceId, id);
     const select = this.db
       .select()
@@ -61,7 +63,7 @@ export class WebhooksController {
       .where(eq(webhookLogs.webhookId, id))
       .orderBy(desc(webhookLogs.createdAt), desc(webhookLogs.id));
     const rows = limit ? await select.limit(Math.max(1, Math.min(1000, Number(limit) || 100))) : await select;
-    return rows.map(row => ({ ...toDto(row, ['webhookId']), id: String(row.id) }));
+    return rows.map(row => toDto(row, ['webhookId']));
   }
 
   private async change(
@@ -89,7 +91,7 @@ export class WebhooksController {
         (
           await tx
             .insert(webhooks)
-            .values({ id: newId(), spaceId, enabled: true, ...body })
+            .values({ id: newUuid(), spaceId, enabled: true, ...body })
             .returning()
         )[0],
     );
@@ -99,7 +101,7 @@ export class WebhooksController {
   @Put(':id')
   update(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(webhookSchema)) body: z.infer<typeof webhookSchema>,
   ) {
     return this.change(spaceId, id, 'updated', async tx => {
@@ -122,7 +124,7 @@ export class WebhooksController {
   @Patch(':id/status')
   setStatus(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(statusSchema)) body: z.infer<typeof statusSchema>,
   ) {
     return this.change(spaceId, id, 'updated', async tx => {
@@ -138,7 +140,7 @@ export class WebhooksController {
   /** Logs cascade. */
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.change(spaceId, id, 'deleted', async tx => {
       const [row] = await tx
         .delete(webhooks)

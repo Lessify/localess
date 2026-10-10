@@ -186,13 +186,13 @@ Storage:  spaces/{spaceId}/tasks/{taskId}/original   ← import upload / export 
 
 ## Token
 
-An API token (`tokens` table; the id is the secret) grants programmatic access to the public CDN API. See [Auth Tokens](auth-tokens.md) for the full permission model.
+An API token (`tokens` table; the `token` column is the secret, `id` a UUIDv7) grants programmatic access to the public CDN API. See [Auth Tokens](auth-tokens.md) for the full permission model.
 
 ---
 
 ## Data Model Map
 
-All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces and users have UUIDv7 ids (`uuid` columns, `newUuid()`); one imported from Firebase keeps its Firestore id / Firebase uid in `legacy_id`, and the public API accepts either in space URLs. The App API and the SPA work only with UUIDs; spaces carry `legacyId` for display. The other ids are moving to UUIDv7 feature by feature ([roadmap](roadmap/firebase-migration-uuidv7.md)); until then they're `text`: rows imported from Firestore keep their document ids, because content, asset and token ids appear in public URLs and customer code, and new rows use the same 20-character alphanumeric format (`newId()`). Content and asset ids are unique only **within a space** — export/import upserts by id, so importing one space's export into another repeats them — so their primary key is `(space_id, id)`. Schemas and translations are keyed `(space_id, id)` too, with user-chosen ids. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
+All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks and webhook logs have UUIDv7 ids (`uuid` columns, `newUuid()`); a token's secret is its separate `token` value. one imported from Firebase keeps its Firestore id / Firebase uid in `legacy_id`, and the public API accepts either in space URLs. The App API and the SPA work only with UUIDs; spaces carry `legacyId` for display. The other ids are moving to UUIDv7 feature by feature ([roadmap](roadmap/firebase-migration-uuidv7.md)); until then they're `text`: rows imported from Firestore keep their document ids, because content and asset ids appear in public URLs and customer code, and new rows use the same 20-character alphanumeric format (`newId()`). Content and asset ids are unique only **within a space** — export/import upserts by id, so importing one space's export into another repeats them — so their primary key is `(space_id, id)`. Schemas and translations are keyed `(space_id, id)` too, with user-chosen ids. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
 
 ```
 settings                          single row: global UI settings

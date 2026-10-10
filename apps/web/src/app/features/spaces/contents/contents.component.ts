@@ -465,7 +465,7 @@ export class ContentsComponent implements AfterViewInit {
       this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
-            this.availableToken = tokens[0].id;
+            this.availableToken = tokens[0].token;
             this.openApiV1InNewTab(this.availableToken);
           } else {
             this.notificationService.error('Please create Access Token with Content Public Permission in your Space Settings');

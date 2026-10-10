@@ -399,7 +399,7 @@ export class TranslationsComponent implements OnInit {
       this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_DRAFT).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
-            this.availableToken = tokens[0].id;
+            this.availableToken = tokens[0].token;
             this.openApiV1InNewTab(locale, this.availableToken, 'draft');
           } else {
             this.notificationService.error('Please create Access Token with Translation Draft Permission in your Space Settings');
@@ -416,7 +416,7 @@ export class TranslationsComponent implements OnInit {
       this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_PUBLIC).subscribe({
         next: tokens => {
           if (tokens.length === 1) {
-            this.availableToken = tokens[0].id;
+            this.availableToken = tokens[0].token;
             this.openApiV1InNewTab(locale, this.availableToken);
           } else {
             this.notificationService.error('Please create Access Token with Translation Public Permission in your Space Settings');
