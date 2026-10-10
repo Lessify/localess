@@ -84,6 +84,22 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     ]);
   });
 
+  it('sends a custom user only the events it may read', async () => {
+    const reader = await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['TRANSLATION_READ'] });
+    const events = t.app.get(EventsService);
+    const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 2, async () => {
+      await events.publish({ spaceId: S1, entity: 'tokens', id: 'tok', op: 'updated' });
+      await events.publish({ spaceId: S1, entity: 'contents', id: 'c', op: 'updated' });
+      await events.publish({ spaceId: null, entity: 'users', id: 'someone', op: 'updated' });
+      await events.publish({ spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' });
+      await events.publish({ spaceId: null, entity: 'settings', op: 'updated' });
+    });
+    expect(received).toEqual([
+      { spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' },
+      { spaceId: null, entity: 'settings', op: 'updated' },
+    ]);
+  });
+
   it('does not publish events of a rolled-back transaction', async () => {
     const client = api(t, cookie);
     let after = '';
