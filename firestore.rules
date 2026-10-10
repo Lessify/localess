@@ -154,8 +154,10 @@ service cloud.firestore {
 
     // Configs
     match /configs/{configId} {
-      allow read: if isSignedIn() && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
-      allow write: if isSignedIn() && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
+      // configs/migration holds the migration token's hash: only admins read it, and only the admin-only
+      // migrationtoken callables (Admin SDK) write it, so nobody can set a token of their choosing.
+      allow read: if isSignedIn() && (hasRole('admin') || (configId != 'migration' && hasPermission('SETTINGS_MANAGEMENT')));
+      allow write: if isSignedIn() && configId != 'migration' && (hasRole('admin') || hasPermission('SETTINGS_MANAGEMENT'));
     }
   }
 }
