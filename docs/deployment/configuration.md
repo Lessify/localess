@@ -80,6 +80,11 @@ expiry; role and permission changes apply on the user's next request.
    redirect URI `<LOCALESS_PUBLIC_URL>/api/auth/oauth/microsoft/callback`, and create a client secret.
 2. Set `LOCALESS_AUTH_PROVIDERS=MICROSOFT` (or `GOOGLE,MICROSOFT`), `LOCALESS_MICROSOFT_CLIENT_ID`,
    `LOCALESS_MICROSOFT_CLIENT_SECRET`, and `LOCALESS_AUTH_CUSTOM_DOMAIN` to your tenant domain or id.
+3. Under *Token configuration* → *Add optional claim* → **ID** token, add `email` and `xms_edov`.
+   A user's first Microsoft sign-in links (or, with `LOCALESS_AUTH_AUTO_REGISTER`, creates) an
+   account only when the token carries `email` with `xms_edov: true`, meaning the domain owner
+   verified the address; otherwise it is refused with `email-not-verified`. Once linked, later
+   sign-ins match the Microsoft identity, not the email.
 
 Multi-tenant Microsoft sign-in is not supported. Note that `LOCALESS_AUTH_CUSTOM_DOMAIN` is shared:
 with both providers enabled it is the Google Workspace domain *and* the Microsoft tenant.

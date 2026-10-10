@@ -141,11 +141,12 @@ export class OAuthService implements OnModuleInit {
       }
       return claims['email'];
     }
-    // Microsoft: the issuer (and so the tenant) was verified against the configured one, so its
-    // directory vouches for the address.
-    const email = claims['email'] ?? claims['preferred_username'];
-    if (typeof email !== 'string' || !email.includes('@')) {
-      throw new OAuthError('email-not-verified', 'Microsoft did not return an email');
+    // Microsoft: a tenant's admins can set any user's `email` (and `preferred_username` is just the
+    // UPN), so only `xms_edov` proves the domain owner verified it. Both are optional ID token claims
+    // the app registration must request.
+    const email = claims['email'];
+    if (claims['xms_edov'] !== true || typeof email !== 'string' || !email.includes('@')) {
+      throw new OAuthError('email-not-verified', 'Microsoft did not confirm this email; ask an administrator');
     }
     return email;
   }

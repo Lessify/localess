@@ -120,13 +120,26 @@ describe('OAuth sign-in', () => {
       expect((await signIn(t)).headers.location).toBe('/auth/login?error=disabled');
     });
 
-    it('accepts Microsoft preferred_username from the configured tenant', async () => {
+    it('never links by a Microsoft email the directory did not verify', async () => {
       await t.app.get(UsersService).create({ email: 'bob@contoso.com', role: 'custom' });
-      claims = { sub: 'ms-sub-1', preferred_username: 'bob@contoso.com' };
+      claims = { sub: 'ms-impostor', preferred_username: 'bob@contoso.com' };
+      expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
+      claims = { sub: 'ms-impostor', email: 'bob@contoso.com' };
+      expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
+      claims = { sub: 'ms-impostor', email: 'bob@contoso.com', xms_edov: false };
+      expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
+    });
+
+    it('links a Microsoft account by a verified email, then signs in by the identity alone', async () => {
+      claims = { sub: 'ms-sub-1', email: 'bob@contoso.com', xms_edov: true };
       const response = await signIn(t, 'microsoft');
       expect(response.headers.location).toBe('/features');
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
       expect(me.json().user).toMatchObject({ email: 'bob@contoso.com', providers: ['microsoft.com'] });
+
+      // Already linked: the stored identity decides, so a token without the optional claims still signs in.
+      claims = { sub: 'ms-sub-1', preferred_username: 'bob@contoso.com' };
+      expect((await signIn(t, 'microsoft')).headers.location).toBe('/features');
     });
 
     it('ignores off-site returnTo values', async () => {
@@ -153,6 +166,29 @@ describe('OAuth sign-in', () => {
 
     it('answers 404 for providers that are not enabled', async () => {
       expect((await t.request({ method: 'GET', url: '/api/auth/oauth/github' })).statusCode).toBe(404);
+    });
+  });
+
+  describe('with auto-registration and Microsoft', () => {
+    let t: TestApp;
+
+    beforeAll(async () => {
+      t = await appFor({ LOCALESS_AUTH_AUTO_REGISTER: 'true', LOCALESS_AUTH_PROVIDERS: 'MICROSOFT' });
+    });
+
+    afterAll(() => t?.close());
+
+    it('creates no account from an unverified Microsoft email', async () => {
+      claims = { sub: 'ms-new', email: 'carol@contoso.com', name: 'Carol' };
+      expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
+      expect(await t.db.select().from(users).where(eq(users.email, 'carol@contoso.com'))).toHaveLength(0);
+    });
+
+    it('creates an account from a verified Microsoft email', async () => {
+      claims = { sub: 'ms-new', email: 'carol@contoso.com', xms_edov: true, name: 'Carol' };
+      const response = await signIn(t, 'microsoft');
+      const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
+      expect(me.json().user).toMatchObject({ email: 'carol@contoso.com', providers: ['microsoft.com'] });
     });
   });
 
