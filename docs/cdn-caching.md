@@ -49,6 +49,8 @@ So content and translation drafts never go stale, and all existing `cv` values b
 | 404 — translations never published, slug not found | *(no `Cache-Control` header sent)* | | |
 | 404 — asset: no `assets` row (asset genuinely does not exist) | 7 days | 7 days | browser / CDN |
 | 404 — asset: row exists but stored file missing | `no-cache` | `no-cache` | browser / CDN |
+| 404 — asset route with an old (Firestore) space id no space has yet | `no-cache` | `no-cache` | browser / CDN |
+| 503 — any `/api/v1/spaces/:spaceId/**` while the space is importing from Firebase or its import failed (`Retry-After: 60`) | `no-store` | `no-store` | browser / CDN |
 
 > Redirect TTL is a flat default (`CACHE_REDIRECT_MAX_AGE_DEFAULT`), not split by published/draft. It can be overridden per-token via the `cacheTtl` field on `TokenV2` — see [Auth Tokens](auth-tokens.md) — where `cacheTtl: 0` disables caching entirely (`Cache-Control: no-cache`).
 >

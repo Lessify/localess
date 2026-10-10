@@ -8,6 +8,7 @@ const STATUS = {
   'permission-denied': 'PERMISSION_DENIED',
   'failed-precondition': 'FAILED_PRECONDITION',
   internal: 'INTERNAL',
+  unavailable: 'UNAVAILABLE',
 } as const;
 
 export type V1ErrorCode = keyof typeof STATUS;
