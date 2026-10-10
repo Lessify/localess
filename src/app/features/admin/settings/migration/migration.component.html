@@ -1,0 +1,29 @@
+<section class="flex flex-col gap-4 py-4">
+  <p class="text-muted-foreground text-sm">
+    A self-hosted Localess install imports spaces from this environment with this token (Admin → Spaces → Import from Firebase). Only admins
+    can see the data; the token reads every space.
+  </p>
+  @if (error(); as message) {
+    <p class="text-destructive text-sm">{{ message }}</p>
+  }
+  @if (newToken(); as token) {
+    <div class="rounded-md border p-3">
+      <p class="text-sm font-semibold">Copy the token now, it is not shown again.</p>
+      <code class="break-all">{{ token }}</code>
+      <div class="mt-2 flex gap-2">
+        <button hlmBtn size="sm" [cdkCopyToClipboard]="token">Copy</button>
+        <button hlmBtn size="sm" variant="ghost" (click)="dismissToken()">Done</button>
+      </div>
+    </div>
+  }
+  @if (configuredAt(); as at) {
+    <p class="text-sm">Migration API enabled since {{ at | date: 'medium' }}.</p>
+    <div class="flex gap-2">
+      <button hlmBtn variant="outline" (click)="generate()">Regenerate token</button>
+      <button hlmBtn variant="destructive" (click)="revoke()">Revoke</button>
+    </div>
+  } @else {
+    <p class="text-sm">Migration API disabled.</p>
+    <button hlmBtn (click)="generate()">Generate token</button>
+  }
+</section>

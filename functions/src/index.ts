@@ -29,6 +29,10 @@ export { user } from './users';
 
 export { webhook } from './webhooks';
 
+export { migrationapi } from './migration';
+
+export { migrationtoken } from './migration-token';
+
 export { v1 as publicv1 } from './v1';
 
 // Plugins API

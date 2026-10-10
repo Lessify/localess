@@ -67,6 +67,18 @@ Thank you for considering sponsoring us on GitHub!
 2. [Setup](https://github.com/Lessify/localess/wiki/Setup)
 3. [Integration](https://github.com/Lessify/localess/wiki/Integration)
 
+## Moving to a self-hosted install
+
+A self-hosted Localess install imports spaces from this environment, one space at a time:
+
+1. Deploy this version (functions and hosting) so `/api/migration/**` exists.
+2. In Admin → Settings → Migration, generate a migration token and copy it (it is shown once).
+3. In the self-hosted install, Admin → Spaces → Import from Firebase: enter this environment's URL and the token,
+   pick a space, import. Repeat per space.
+4. Revoke the token when the move is done.
+
+The migration API is read-only and answers `404` while no token is configured.
+
 ## How it works
 
 **Localess** is using Firebase products to run the application.

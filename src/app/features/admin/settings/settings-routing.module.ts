@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { MigrationComponent } from './migration/migration.component';
 import { SettingsComponent } from './settings.component';
 import { UiComponent } from './ui/ui.component';
 
@@ -13,6 +14,10 @@ const routes: Routes = [
       {
         path: 'ui',
         component: UiComponent,
+      },
+      {
+        path: 'migration',
+        component: MigrationComponent,
       },
     ],
   },

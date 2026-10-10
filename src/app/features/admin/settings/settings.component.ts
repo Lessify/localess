@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { provideIcons } from '@ng-icons/core';
-import { lucideLayoutDashboard } from '@ng-icons/lucide';
+import { lucideArrowRightLeft, lucideLayoutDashboard } from '@ng-icons/lucide';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 
@@ -19,6 +19,7 @@ interface TabItem {
   imports: [RouterModule, HlmTabsImports, HlmIconImports],
   providers: [
     provideIcons({
+      lucideArrowRightLeft,
       lucideLayoutDashboard,
     }),
   ],
@@ -27,7 +28,10 @@ export class SettingsComponent {
   private readonly router = inject(Router);
 
   activeTab = signal('ui');
-  tabItems: TabItem[] = [{ icon: 'lucideLayoutDashboard', label: 'UI', link: 'ui' }];
+  tabItems: TabItem[] = [
+    { icon: 'lucideLayoutDashboard', label: 'UI', link: 'ui' },
+    { icon: 'lucideArrowRightLeft', label: 'Migration', link: 'migration' },
+  ];
 
   constructor() {
     const idx = this.router.url.lastIndexOf('/');
