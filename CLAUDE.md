@@ -55,7 +55,7 @@ pnpm --filter @localess/web add <pkg>         # add to one workspace; versions u
 - **Backend**: NestJS 12 on Fastify (`apps/server/`, ESM), serving the API and the built SPA from one port
 - **Database**: Postgres via Drizzle ORM; migrations in `apps/server/drizzle` run on every boot; `embedded-postgres` starts a local one when `DATABASE_URL` is unset
 - **Auth**: Session cookies + argon2id passwords, Google/Microsoft via OIDC (`apps/server/src/auth`)
-- **Storage**: Local disk or S3-compatible driver (`apps/server/src/infra/storage`)
+- **Storage**: Local disk driver (`apps/server/src/infra/storage`); an S3-compatible driver is an open decision (see docs/deployment/production.md)
 - **UI**: Spartan/Helm component library (`packages/ui/`); Angular Material remains only as residual providers in `app.config.ts`
 - **Styling**: Tailwind CSS 4 + SCSS
 - **Rich Text**: TipTap editor
@@ -176,7 +176,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Repository layout, workspaces, structure refactoring phases | [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md) | Moving files between apps/packages, workspace scripts, Dockerfile |
 | Import / Export (hidden behind `FEATURE_FLAGS.importExport`) — what is hidden, what must be fixed before turning it back on | [docs/roadmap/import-export.md](docs/roadmap/import-export.md) | Contents/Schemas/Assets/Translations import or export, Tasks page, `apps/server/src/modules/tasks/task-runner.service.ts` |
 | Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `apps/web/src/test-setup.ts` |
-| UUIDv7 ids (`newUuid()`), `legacy_id` for Firebase-imported rows, schema `name` / translation `key` / token `token` as references, deferred reference migration | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | Any new table or id, `apps/server/src/cli/firebase-import/`, schema/translation/token keys |
+| UUIDv7 ids (`newUuid()`), `legacy_id` (spaces and assets only, for old asset URLs), schema `name` / translation `key` / token `token` as references; the original migration plan, superseded by the space import | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | Any new table or id, schema/translation/token keys |
 | **Deployment & self-hosting** | | |
 | Deployment overview, requirements, ways to run, first admin, CLI | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Docker image & Compose | [docs/deployment/docker.md](docs/deployment/docker.md) | `Dockerfile`, `docker-compose.yml` |

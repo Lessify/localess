@@ -2,7 +2,7 @@
 
 > Related: [CDN & Caching](cdn-caching.md) · [Auth Tokens](auth-tokens.md) · [Publish Flow](publish-flow.md)
 
-The public REST API is served under `/api/v1/**` by the NestJS server: each feature module owns its public controller (`apps/server/src/modules/<feature>/<feature>.public.controller.ts`), with shared request plumbing in `apps/server/src/infra/http/v1/`, on the same port as the app and the app API. It replaced the `publicv1` Firebase Function with the same URLs, query parameters, token rules, status codes, bodies and `Cache-Control` values; the former Express routers are now three Fastify controllers: `CdnController`, `ManageController` and `DevToolsController`. All routes are `@Public()` (no session) and authenticate with API tokens instead. JSON request bodies are limited to 5 MB (Fastify `bodyLimit` in `apps/server/src/app.factory.ts`), so a whole space's schemas fit in one push. CORS reflects any origin on `/api/v1/**` only; the cookie-authenticated app API gets no CORS headers. Responses are gzip/deflate-compressed above 1 KB (`@fastify/compress`).
+The public REST API is served under `/api/v1/**` by the NestJS server: each feature module owns its public controller (`apps/server/src/modules/<feature>/<feature>.public.controller.ts`), with shared request plumbing in `apps/server/src/infra/http/v1/`, on the same port as the app and the app API. It replaced the `publicv1` Firebase Function with the same URLs, query parameters, token rules, status codes, bodies and `Cache-Control` values; the former Express routers are now five per-feature public controllers (see [Implementation Files](#implementation-files) below). All routes are `@Public()` (no session) and authenticate with API tokens instead. JSON request bodies are limited to 5 MB (Fastify `bodyLimit` in `apps/server/src/app.factory.ts`), so a whole space's schemas fit in one push. CORS reflects any origin on `/api/v1/**` only; the cookie-authenticated app API gets no CORS headers. Responses are gzip/deflate-compressed above 1 KB (`@fastify/compress`).
 ---
 
 ## Routers
@@ -178,7 +178,7 @@ Space introspection and OpenAPI generation. Uses `token` query param auth.
 
 ### `validIdParams()` — ID validation (all controllers)
 
-`validIdParams()` (exported from `cdn.controller.ts`, used by all three controllers before anything else runs) checks `spaceId`, `contentId` and `assetId`. A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`apps/server/src/infra/http/v1/id-param.ts`) gets `400 invalid-argument`, with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`), so a bad ID never reaches the permission checks, a query or a storage key.
+`validIdParams()` (exported from `apps/server/src/infra/http/v1/v1-request.ts`, called first by every public controller) checks `spaceId`, `contentId` and `assetId`. A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`apps/server/src/infra/http/v1/id-param.ts`) gets `400 invalid-argument`, with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`), so a bad ID never reaches the permission checks, a query or a storage key.
 
 The check dates from the Firebase era, when IDs were spliced into Firestore and Storage paths and `GET /contents/X%2Fdraft?cv=…` could serve the **unpublished draft** file under a `CONTENT_PUBLIC` token. IDs are now bound SQL parameters, but asset IDs still form storage keys (`spaces/{spaceId}/assets/{assetId}/original`), so the guard stays.
 

@@ -5,8 +5,9 @@
 **Superseded for the data migration** by [firebase-space-import.md](firebase-space-import.md): spaces are imported
 one at a time from the admin UI, every reference inside a space is rewritten during the import, and `legacy_id`
 stays only on spaces (unique, one import per Firebase space) and assets, so the space's old asset URLs keep working.
-The `import:firebase` CLI, `legacy_id` on users, webhooks and contents, the old-id fallbacks and the "deferred
-reference migration" planned below were removed.
+The `import:firebase` CLI (`apps/server/src/cli/firebase-import/`, now `apps/server/src/modules/firebase-import/`),
+`legacy_id` on users, webhooks and contents, the old-id fallbacks and the "deferred reference migration" planned
+below were removed. Webhook logs are not imported (webhooks are, disabled); Q5's answer below no longer holds.
 
 Sections from "Goal" to "Open questions" record the original plan and the rollout; where they differ from the
 space import design, that design is what was built.
