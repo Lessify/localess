@@ -30,7 +30,8 @@ describe('SpacesComponent', () => {
     const apply = vi.fn().mockReturnValue(of(undefined));
 
     TestBed.overrideComponent(SpacesComponent, {
-      set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
+      // The sort defaults mirror the real template: by name, ascending.
+      set: { template: '<table llTableSort llTableSortActive="name" llTableSortDirection="asc"></table><ll-paginator [length]="0" />' },
     });
     TestBed.configureTestingModule({
       providers: [
@@ -80,6 +81,12 @@ describe('SpacesComponent', () => {
     expect(findAll).toHaveBeenCalled();
     expect(component.dataSource.filteredData()).toEqual(spaces);
     expect(component.isLoading()).toBe(false);
+  });
+
+  it('sorts by name by default, case-insensitive like the server', () => {
+    const { component } = setup([space({ id: 's1', name: 'beta' }), space({ id: 's2', name: 'Gamma' }), space({ id: 's3', name: 'Alpha' })]);
+
+    expect(component.dataSource.sortedData().map(it => it.name)).toEqual(['Alpha', 'beta', 'Gamma']);
   });
 
   it('onFilterChange() serializes the filter value onto the data source', () => {

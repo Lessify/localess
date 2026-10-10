@@ -118,6 +118,11 @@ export class SpacesComponent implements OnInit, AfterViewInit {
     this.dataSource.filterPredicate = FilterPredicateUtils.create<Space>({
       searchFields: space => [space.id, space.name],
     });
+    // Names compare case-insensitively, the order the server lists spaces in.
+    this.dataSource.sortingDataAccessor = (space, column) => {
+      const value = (space as unknown as Record<string, unknown>)[column];
+      return column === 'name' ? space.name.toLowerCase() : ((value ?? '') as string | number);
+    };
     this.loadData();
   }
 

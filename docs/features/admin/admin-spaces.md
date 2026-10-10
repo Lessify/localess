@@ -24,7 +24,7 @@ apps/web/src/app/features/admin/spaces/
 
 ## SpacesComponent
 
-Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar.
+Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar. It is sorted by name by default, case-insensitively (`sortingDataAccessor` lowercases `name`), the order the server lists spaces in (`lower(name), id`).
 
 **Injected services:** `SpaceService`, `SpaceTemplateService`, `HlmDialogService`, `NotificationService`, `Injector`
 
