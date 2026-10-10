@@ -19,6 +19,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { PathItem } from '@core/stores/space.store';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -52,8 +53,8 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { BehaviorSubject, Subject } from 'rxjs';
-import { concatMap, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, EMPTY, Subject } from 'rxjs';
+import { catchError, concatMap, finalize, switchMap } from 'rxjs/operators';
 
 import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-select-dialog.model';
 
@@ -176,21 +177,26 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.fileUploadQueue$
       .pipe(
-        tap(console.log),
-        concatMap(it => this.assetService.createFile(this.context.spaceId, this.parentPath, it)),
+        // Each upload handles its own failure: an error reaching this stream would end it, and every later
+        // upload on the page with it.
+        concatMap(item =>
+          this.assetService.createFile(this.context.spaceId, this.parentPath, item).pipe(
+            catchError((error: unknown) => {
+              this.notificationService.error(uploadErrorMessage(item.name, error));
+              return EMPTY;
+            }),
+            finalize(() => this.fileUploadQueue.update(items => items.filter(it => it !== item))),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: () => {
-          this.fileUploadQueue.update(files => {
-            files.shift();
-            return files;
-          });
-        },
-        error: () => {
-          this.notificationService.error(`Asset can not be uploaded.`);
-        },
-      });
+      .subscribe();
+  }
+
+  /** Shows the item in the "Uploading … (n)" count and uploads it after the ones before it. */
+  private enqueue(item: File): void {
+    this.fileUploadQueue.update(items => [...items, item]);
+    this.fileUploadQueue$.next(item);
   }
 
   navigateToSlug(pathItem: PathItem) {
@@ -230,11 +236,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
       if (target.files && target.files.length > 0) {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
-          this.fileUploadQueue.update(files => {
-            files.push(file);
-            return files;
-          });
-          this.fileUploadQueue$.next(file);
+          this.enqueue(file);
         }
       }
     }

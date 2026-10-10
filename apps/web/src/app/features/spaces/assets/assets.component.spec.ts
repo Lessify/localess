@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { AssetFile, AssetFolder, AssetKind } from '@localess/shared';
@@ -7,7 +8,7 @@ import { TaskService } from '@core/services/task.service';
 import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
 import { PathItem, SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { AssetsComponent } from './assets.component';
@@ -104,6 +105,49 @@ describe('AssetsComponent', () => {
       component.onFileUpload({ target: input } as unknown as Event);
 
       expect(createFile).toHaveBeenCalledWith('space-1', '', uploadedFile);
+      expect(component.fileUploadQueue()).toEqual([]);
+    });
+
+    it('reports a failed file and keeps uploading the rest of the batch and later picks', () => {
+      const { component, createFile, error } = setup();
+      const [first, broken, third, later] = ['a.png', 'b.png', 'c.png', 'd.png'].map(name => new File(['data'], name));
+      createFile.mockImplementation((_space: string, _path: string, file: File) =>
+        file === broken ? throwError(() => new HttpErrorResponse({ status: 413 })) : of({ id: file.name }),
+      );
+      const pick = (...files: File[]) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        Object.defineProperty(input, 'files', { value: files });
+        component.onFileUpload({ target: input } as unknown as Event);
+      };
+
+      pick(first, broken, third);
+      expect(createFile.mock.calls.map(([, , file]) => file)).toEqual([first, broken, third]);
+      expect(error).toHaveBeenCalledExactlyOnceWith('b.png could not be uploaded: the file is too large.');
+      expect(component.fileUploadQueue()).toEqual([]);
+
+      pick(later);
+      expect(createFile).toHaveBeenLastCalledWith('space-1', '', later);
+      expect(component.fileUploadQueue()).toEqual([]);
+    });
+
+    it('updates the queue with a new array, so the count re-renders', () => {
+      const { component, createFile } = setup();
+      const pending = new Subject<unknown>();
+      createFile.mockReturnValue(pending);
+      const before = component.fileUploadQueue();
+      const input = document.createElement('input');
+      input.type = 'file';
+      Object.defineProperty(input, 'files', { value: [new File(['data'], 'a.png')] });
+
+      component.onFileUpload({ target: input } as unknown as Event);
+      const queued = component.fileUploadQueue();
+      expect(queued).not.toBe(before);
+      expect(queued).toHaveLength(1);
+
+      pending.next({ id: 'a' });
+      pending.complete();
+      expect(component.fileUploadQueue()).not.toBe(queued);
       expect(component.fileUploadQueue()).toEqual([]);
     });
   });

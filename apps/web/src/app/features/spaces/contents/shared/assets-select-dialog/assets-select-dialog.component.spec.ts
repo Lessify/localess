@@ -122,7 +122,29 @@ describe('AssetsSelectDialogComponent', () => {
 
     component.onFileUpload({ target: input } as unknown as Event);
 
-    expect(error).toHaveBeenCalledWith('Asset can not be uploaded.');
+    expect(error).toHaveBeenCalledWith('photo.png could not be uploaded.');
+    expect(component.fileUploadQueue()).toEqual([]);
+  });
+
+  it('keeps uploading after a failed file, in the same batch and in later picks', () => {
+    const { component, createFile, error } = setup({ spaceId: 'space-1' });
+    const [first, broken, third, later] = ['a.png', 'b.png', 'c.png', 'd.png'].map(name => new File(['data'], name));
+    createFile.mockImplementation((_space: string, _path: string, file: File) =>
+      file === broken ? throwError(() => new Error('boom')) : of({ id: file.name }),
+    );
+    const pick = (...files: File[]) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      Object.defineProperty(input, 'files', { value: files });
+      component.onFileUpload({ target: input } as unknown as Event);
+    };
+
+    pick(first, broken, third);
+    pick(later);
+
+    expect(createFile.mock.calls.map(([, , file]) => file)).toEqual([first, broken, third, later]);
+    expect(error).toHaveBeenCalledExactlyOnceWith('b.png could not be uploaded.');
+    expect(component.fileUploadQueue()).toEqual([]);
   });
   /**
    * Renders the real template, unlike `setup` above, which stubs it out.

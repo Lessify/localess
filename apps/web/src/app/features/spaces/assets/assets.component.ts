@@ -21,6 +21,7 @@ import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { PathItem, SpaceStore } from '@core/stores/space.store';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -85,8 +86,8 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { Subject } from 'rxjs';
-import { concatMap, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { EMPTY, Subject } from 'rxjs';
+import { catchError, concatMap, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { AddFolderDialogContext } from './add-folder-dialog/add-folder-dialog.model';
@@ -221,27 +222,29 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.fileUploadQueue$
       .pipe(
-        tap(console.log),
-        concatMap(it => {
-          if (it instanceof File) {
-            return this.assetService.createFile(this.spaceId(), this.parentPath, it);
-          } else {
-            return this.assetService.importFile(this.spaceId(), this.parentPath, it);
-          }
-        }),
+        // Each upload handles its own failure: an error reaching this stream would end it, and every later
+        // upload on the page with it.
+        concatMap(item =>
+          (item instanceof File
+            ? this.assetService.createFile(this.spaceId(), this.parentPath, item)
+            : this.assetService.importFile(this.spaceId(), this.parentPath, item)
+          ).pipe(
+            catchError((error: unknown) => {
+              this.notificationService.error(uploadErrorMessage(item instanceof File ? item.name : `${item.name}${item.extension}`, error));
+              return EMPTY;
+            }),
+            finalize(() => this.fileUploadQueue.update(items => items.filter(it => it !== item))),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: () => {
-          this.fileUploadQueue.update(files => {
-            files.shift();
-            return files;
-          });
-        },
-        error: () => {
-          this.notificationService.error(`Asset can not be uploaded.`);
-        },
-      });
+      .subscribe();
+  }
+
+  /** Shows the item in the "Uploading … (n)" count and uploads it after the ones before it. */
+  private enqueue(item: File | AssetFileImport): void {
+    this.fileUploadQueue.update(items => [...items, item]);
+    this.fileUploadQueue$.next(item);
   }
 
   ngAfterViewInit(): void {
@@ -254,11 +257,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       if (target.files && target.files.length > 0) {
         for (let idx = 0; idx < target.files.length; idx++) {
           const file = target.files[idx];
-          this.fileUploadQueue.update(files => {
-            files.push(file);
-            return files;
-          });
-          this.fileUploadQueue$.next(file);
+          this.enqueue(file);
         }
       }
     }
@@ -289,11 +288,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       extension: extIdx > 0 ? name.substring(extIdx) : '',
       source: urlStr,
     };
-    this.fileUploadQueue.update(files => {
-      files.push(asset);
-      return files;
-    });
-    this.fileUploadQueue$.next(asset);
+    this.enqueue(asset);
   }
 
   openUnsplashDialog() {
@@ -321,11 +316,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
               alt: asset.alt_description || asset.description || undefined,
               source: asset.urls.raw,
             };
-            this.fileUploadQueue.update(files => {
-              files.push(afi);
-              return files;
-            });
-            this.fileUploadQueue$.next(afi);
+            this.enqueue(afi);
           }
         },
         error: () => {
@@ -605,11 +596,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   filesUpload(event: File[]) {
     event.forEach(file => {
-      this.fileUploadQueue.update(files => {
-        files.push(file);
-        return files;
-      });
-      this.fileUploadQueue$.next(file);
+      this.enqueue(file);
     });
   }
 

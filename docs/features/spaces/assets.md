@@ -40,6 +40,7 @@ File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes 
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
 - `onFileUpload(event)` — handles the `<input type="file">` change event and queues each selected file
 - Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentPath`/`name`/… fields must precede the file). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset (there is no `inProgress` phase). Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
+- The queue uploads one item at a time, in order (`enqueue()`, also used by URL and Unsplash imports). A failed item gets its own notification (`uploadErrorMessage()` in `@core/utils/upload-error`: a `413` from the server or a reverse proxy reads "the file is too large") and the queue moves on; the "Uploading … (n)" count drops on success and failure alike. The asset picker in the content editor (`assets-select-dialog`) behaves the same
 - `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
 - `openAddFolderDialog()` — creates a new folder
 - `openEditDialog(asset)` — dispatches to `openEditFileDialog()` or `openEditFolderDialog()` by `kind`
