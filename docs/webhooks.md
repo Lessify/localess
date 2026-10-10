@@ -52,7 +52,7 @@ interface WebHook {
 | `CONTENT_UNPUBLISHED`   | `content.unpublished`   | `ContentsService.unpublish()` (`POST …/contents/:id/unpublish`) |
 | `CONTENT_CHANGED`       | `content.changed`       | Document data save, document metadata edit that keeps its slug (a slug change or move fires nothing), delete (one per deleted item, folders and their subtrees included), content import |
 | `TRANSLATION_PUBLISHED` | `translation.published` | `TranslationsService.publish()` (`POST …/translations/publish`) |
-| `TRANSLATION_CHANGED`   | `translation.changed`   | Every translation write through the app API (`TranslationsService.write()`), translation import with changes |
+| `TRANSLATION_CHANGED`   | `translation.changed`   | Every translation write through the app API (`TranslationsService.write()`), translation import with changes, a v1 translation push (`POST /api/v1/spaces/:s/translations/:locale`) that wrote something (not a dry run or a no-op) |
 
 Events are dispatched only **after** the transaction that caused them commits, and the request does not wait for delivery (`WebhookDispatcher.dispatch()` is fire-and-forget; shutdown waits for deliveries in flight).
 ---

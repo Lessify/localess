@@ -1,12 +1,13 @@
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { TokenPermission, TranslationType, TranslationUpdateResponse } from '@localess/shared';
+import { TokenPermission, TranslationType, TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
 import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { spaces, translations } from '../../infra/database/schema.js';
+import { EventsService } from '../../infra/events/events.service.js';
 import {
   isDraft,
   needsRedirect,
@@ -19,6 +20,7 @@ import {
 } from '../../infra/http/v1/v1-request.js';
 import { q, sendV1Error } from '../../infra/http/v1/v1-response.js';
 import { SpacesService } from '../spaces/spaces.service.js';
+import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
 import { buildTranslationMap, TranslationDeliveryService } from './translation-delivery.service.js';
 import { translationsByKey } from './translation-row.js';
 import { newUuid } from '../../infra/database/id.js';
@@ -50,6 +52,8 @@ export class TranslationsPublicController {
     private readonly spaces: SpacesService,
     private readonly delivery: TranslationDeliveryService,
     private readonly tokens: TokenAuthService,
+    private readonly events: EventsService,
+    private readonly webhooks: WebhookDispatcher,
   ) {}
 
   @Get('translations/:locale')
@@ -215,7 +219,10 @@ export class TranslationsPublicController {
         .update(spaces)
         .set({ translationVersion: sql`${spaces.translationVersion} + 1` })
         .where(eq(spaces.id, spaceId));
+      await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
     });
+    // Same as an edit in the app (and the Firebase endpoint): hooks that rebuild on translation.changed fire after a push.
+    this.webhooks.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
     const response: TranslationUpdateResponse = { message: `${past} ${actionable.length} ${noun}`, ids: actionable };
     void reply.send(response);
   }

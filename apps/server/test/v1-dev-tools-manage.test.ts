@@ -1,6 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { WebHookEvent } from '@localess/shared';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { schemas, spaces, translations } from '../src/infra/database/schema.js';
+import { EventsService } from '../src/infra/events/events.service.js';
+import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
@@ -94,6 +97,28 @@ describe('v1 dev tools and manage API', () => {
 
   describe('translation push (X-API-KEY with DEV_TOOLS)', () => {
     const push = (payload: unknown, apiKey: string | null = TOKEN_DEV) => post(`/api/v1/spaces/${S1}/translations/de`, payload, apiKey);
+    let dispatch: MockInstance<WebhookDispatcher['dispatch']>;
+    let publish: MockInstance<EventsService['publish']>;
+
+    beforeAll(() => {
+      dispatch = vi.spyOn(t.app.get(WebhookDispatcher), 'dispatch');
+      publish = vi.spyOn(t.app.get(EventsService), 'publish');
+    });
+    beforeEach(() => {
+      dispatch.mockClear();
+      publish.mockClear();
+    });
+
+    /** A push that wrote something fires translation.changed and refreshes open editors; others notify nobody. */
+    const expectNotified = (notified: boolean) => {
+      if (notified) {
+        expect(dispatch.mock.calls).toEqual([[S1, WebHookEvent.TRANSLATION_CHANGED]]);
+        expect(publish.mock.calls.map(([event]) => event)).toEqual([{ spaceId: S1, entity: 'translations', op: 'updated' }]);
+      } else {
+        expect(dispatch).not.toHaveBeenCalled();
+        expect(publish).not.toHaveBeenCalled();
+      }
+    };
 
     it('authenticates with the X-API-KEY header only', async () => {
       expect((await post(`/api/v1/spaces/${S1}/translations/de`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
@@ -121,6 +146,7 @@ describe('v1 dev tools and manage API', () => {
       expect(response.json()).toEqual({ message: '[DryRun] Would add 1 translation', ids: ['brand.new'], dryRun: true });
       expect(await translation('brand.new')).toBeUndefined();
       expect((await space()).translationVersion).toBe(before.translationVersion);
+      expectNotified(false);
     });
 
     it('adds missing keys and bumps the translation version', async () => {
@@ -130,6 +156,7 @@ describe('v1 dev tools and manage API', () => {
       expect(await translation('brand.new')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
       expect((await translation('greeting')).locales).toEqual({ en: 'Hello', de: 'Hallo' });
       expect((await space()).translationVersion).toBe(before.translationVersion + 1);
+      expectNotified(true);
     });
 
     it('updates only the pushed locale of existing keys', async () => {
@@ -137,6 +164,7 @@ describe('v1 dev tools and manage API', () => {
       expect(response.json().ids.sort()).toEqual(['farewell', 'greeting']);
       expect((await translation('greeting')).locales).toEqual({ en: 'Hello', de: 'Servus' });
       expect((await translation('farewell')).locales).toEqual({ en: 'Bye', de: 'Tschüss' });
+      expectNotified(true);
     });
 
     it('is visible immediately in draft translations', async () => {
@@ -149,12 +177,14 @@ describe('v1 dev tools and manage API', () => {
       const response = await push({ type: 'delete-missing-value', values: { greeting: 'Servus', 'brand.new': 'Neu' } });
       expect(response.json()).toEqual({ message: 'Removed 1 locale value', ids: ['farewell'] });
       expect((await translation('farewell')).locales).toEqual({ en: 'Bye' });
+      expectNotified(true);
     });
 
     it('deletes whole keys missing from the payload (delete-missing-key)', async () => {
       const response = await push({ type: 'delete-missing-key', values: { greeting: 'x', farewell: 'x', 'brand.new': 'x' } });
       expect(response.json()).toEqual({ message: 'Deleted 1 translation key', ids: ['new.key'] });
       expect(await translation('new.key')).toBeUndefined();
+      expectNotified(true);
     });
 
     it('says when there is nothing to do', async () => {
@@ -162,6 +192,7 @@ describe('v1 dev tools and manage API', () => {
         message: 'No translations to add',
         ids: [],
       });
+      expectNotified(false);
     });
   });
 
