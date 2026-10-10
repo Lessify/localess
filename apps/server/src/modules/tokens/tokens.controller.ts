@@ -5,7 +5,7 @@ import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission, UserPermission } from '
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId, newUuid } from '../../infra/database/id.js';
+import { newTokenSecret, newUuid } from '../../infra/database/id.js';
 import { tokens } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { toDto } from '../../infra/http/dto.js';
@@ -71,7 +71,7 @@ export class TokensController {
         .values({
           id: newUuid(),
           spaceId,
-          token: newId(),
+          token: newTokenSecret(),
           version: 2,
           name: body.name,
           permissions: body.permissions,
@@ -114,7 +114,7 @@ export class TokensController {
       const [row] = await tx
         .update(tokens)
         .set({
-          token: newId(),
+          token: newTokenSecret(),
           version: 2,
           permissions: old.version === 2 ? old.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
           cacheTtl: old.version === 2 ? old.cacheTtl : null,

@@ -23,13 +23,14 @@ import { RequirePermission } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { newUuid } from '../../infra/database/id.js';
 import { taskLogs, tasks } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { buildContentDisposition } from '../../infra/http/content-disposition.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { toPrincipal, type UserRow } from '../../auth/users/users.service.js';
 import { toDto } from '../../infra/http/dto.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { requireSpace } from '../../infra/http/space-access.js';
 
 const READ_PERMISSIONS = [
@@ -105,22 +106,22 @@ export class TasksController {
 
   @Get(':id')
   @RequirePermission(...READ_PERMISSIONS)
-  async get(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return taskDto(await this.find(spaceId, id));
   }
 
   @Get(':id/logs')
   @RequirePermission(...READ_PERMISSIONS)
-  async logs(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async logs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     await this.find(spaceId, id);
     const rows = await this.db.select().from(taskLogs).where(eq(taskLogs.taskId, id)).orderBy(asc(taskLogs.createdAt), asc(taskLogs.id));
-    return rows.map(row => ({ ...toDto(row, ['taskId']), id: String(row.id) }));
+    return rows.map(row => toDto(row, ['taskId']));
   }
 
   /** The task's file (export result or uploaded import), as an attachment. */
   @Get(':id/download')
   @RequirePermission(...READ_PERMISSIONS)
-  async download(@Param('spaceId') spaceId: string, @Param('id') id: string, @Res() reply: FastifyReply): Promise<void> {
+  async download(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Res() reply: FastifyReply): Promise<void> {
     const task = await this.find(spaceId, id);
     const key = taskKey(spaceId, id);
     const stat = await this.storage.stat(key);
@@ -155,7 +156,7 @@ export class TasksController {
     @CurrentUser() user: UserRow,
   ) {
     assertCanManage(user, body.kind);
-    return taskDto(await this.insert(spaceId, { id: newId(), ...body }));
+    return taskDto(await this.insert(spaceId, { id: newUuid(), ...body }));
   }
 
   /**
@@ -180,7 +181,7 @@ export class TasksController {
       throw error;
     }
     await requireSpace(this.db, spaceId);
-    const id = newId();
+    const id = newUuid();
     const key = taskKey(spaceId, id);
     try {
       const stored = await this.storage.put(key, file.file);
@@ -204,7 +205,7 @@ export class TasksController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(...READ_PERMISSIONS)
-  async delete(@Param('spaceId') spaceId: string, @Param('id') id: string, @CurrentUser() user: UserRow): Promise<void> {
+  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow): Promise<void> {
     const task = await this.find(spaceId, id);
     assertCanManage(user, task.kind);
     await this.db.transaction(async tx => {

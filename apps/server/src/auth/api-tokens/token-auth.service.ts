@@ -20,7 +20,7 @@ export interface ApiToken {
 
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
 
-/** The shape of every token value: 20 alphanumerics (`newId()`, or a Firestore id for imported tokens). */
+/** The shape of every token value: 20 alphanumerics (`newTokenSecret()`, or a Firestore id for imported tokens). */
 export function validateToken(token?: unknown): token is string {
   return typeof token === 'string' && /^[A-Za-z0-9]{20}$/.test(token);
 }

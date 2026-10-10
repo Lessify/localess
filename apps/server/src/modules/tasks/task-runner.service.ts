@@ -130,7 +130,7 @@ export class TaskRunner {
     else if (level === 'WARN') this.logger.warn(line);
     else this.logger.log(line);
     try {
-      await this.db.insert(taskLogs).values({ taskId: task.id, level, message, trace });
+      await this.db.insert(taskLogs).values({ id: newUuid(), taskId: task.id, level, message, trace });
       await this.events.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created' });
     } catch (error) {
       this.logger.warn(`Could not persist task log: ${error}`);

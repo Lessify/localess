@@ -1,10 +1,14 @@
 # Firebase → self-hosted data migration with UUIDv7 ids
 
-**Status:** In progress, one feature block at a time (see [Rollout by feature](#rollout-by-feature)) ·
-**Recorded:** 2026-10-09 · **Done:** admin (users, spaces), space settings (tokens, webhooks, webhook logs), 2026-10-10
-**Replaces:** the `import:firebase` CLI (`apps/server/src/cli/firebase-import/`) copying Firestore ids verbatim into
-`text` columns. Users and spaces already get UUIDv7s; the other entities still keep their Firestore ids until
-their block.
+**Status:** Ids done — every table has UUIDv7 ids (2026-10-10, see [Rollout by feature](#rollout-by-feature)).
+Open: the [deferred reference migration](#deferred-reference-migration), required before an install imported from
+Firebase goes live. · **Recorded:** 2026-10-09
+**Replaced:** the `import:firebase` CLI copying Firestore ids verbatim into `text` columns. It now gives every row a
+UUIDv7 and keeps the Firestore id in `legacy_id` where old ids must keep resolving.
+
+Sections after "Rollout by feature" up to "Open questions" record the original plan; where they differ (a
+`legacy_ids` table, rewriting references during the import, `contents.schema_id`, single-column keys), the rollout
+table, the deferred migration and the decisions noted inline are what was built.
 
 ## Goal
 
@@ -51,7 +55,7 @@ Derived requirements (needed for R1–R6 to be safe):
 - Column type becomes native `uuid` for every generated id (16 bytes, time-ordered B-tree inserts). Postgres
   rejects anything else in a `uuid` column, so every lookup by an id from a request checks `isUuid()` first and
   answers 404 instead of a 500.
-- `newId()` (20 alphanumerics) stays for the entities not migrated yet, and for new API token values.
+- `newTokenSecret()` (20 random alphanumerics, formerly `newId()`) is only used for API token secrets.
 - `isValidId` / `zId` accept a canonical lowercase UUID; the generic `[A-Za-z0-9_-]{1,128}` pattern is only kept
   where legacy ids are still accepted (D2).
 
@@ -230,8 +234,12 @@ deleted once per block).
 | 4 | Translations | `translations` (`id` uuid + `key`, unique per space); `translation_published` unchanged | ✅ 2026-10-10 |
 | 5 | Assets | `assets` (`id` uuid + `legacy_id`, unique per space, shown in the UI; key stays `(space_id, id)`); old asset URLs `301` to the UUID one; `parent_path` rewritten on import; references in content **not** rewritten (see below) | ✅ 2026-10-10 |
 | 6 | Contents | `contents` (`id` uuid + `legacy_id`, unique per space, shown in the UI; key stays `(space_id, id)`; `schema` stays the name), `content_published.content_id` uuid; old `/contents/:id` URLs redirect (cv redirect, `302`) to the UUID one; references in content **not** rewritten (see below) | ✅ 2026-10-10 |
-| 7 | Tasks | `tasks`, `task_logs`, Export/Import id mapping | planned |
-| 8 | Final | `newId()` only for token values, docs, release notes | planned |
+| 7 | Tasks | `tasks` and `task_logs` (`id` uuid, `task_id` uuid); never imported, so no `legacy_id`. The export/import tasks already map Firestore ids (blocks 5 and 6) | ✅ 2026-10-10 |
+| 8 | Final | `newId()` renamed `newTokenSecret()` (token secrets only); unused `zId` removed; docs | ✅ 2026-10-10 (with block 7) |
+
+Release notes for an install imported from Firebase: space, document and asset ids in API responses, webhook
+payloads and the Visual Editor are UUIDs; old space ids, document URLs and asset URLs keep working (resolved, `302`,
+`301`); `GET /links` is keyed by UUID (see 5a below).
 
 The implementation steps below are what the blocks add up to.
 

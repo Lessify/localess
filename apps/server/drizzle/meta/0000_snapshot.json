@@ -1,5 +1,5 @@
 {
-  "id": "da705b3d-c906-484f-9d55-2a228098afc6",
+  "id": "9883731c-961d-4343-8eb6-26a749462cb4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1022,13 +1022,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigserial",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
         "task_id": {
           "name": "task_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1108,7 +1108,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },

@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
   bigint,
-  bigserial,
   boolean,
   foreignKey,
   index,
@@ -16,15 +15,16 @@ import {
 } from 'drizzle-orm/pg-core';
 
 /*
- * Ids are moving to UUIDv7 (`newUuid()`) one feature at a time, see docs/roadmap/firebase-migration-uuidv7.md.
- * Done: users, spaces, tokens, webhooks, webhook_logs, schemas (references to a schema use its `name`), translations
- * (referred to by `key`), assets and contents (`legacy_id` kept for old URLs and imported references). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
- * `legacy_id`, so old ids in URLs and customer code still resolve (`byIdOrLegacy()`) and a re-run of the
- * import updates the same rows. The other tables still use `text` ids in the 20-char alphanumeric format
- * of `newId()`; imported rows keep their Firestore document ids there.
+ * Every id is a UUIDv7 (`newUuid()`, see docs/roadmap/firebase-migration-uuidv7.md). What other rows, customer code,
+ * the SDK and Code as Source refer to stays human readable where it always was: a schema's `name`, a translation's
+ * `key`, a token's secret `token`.
  *
- * Content and asset ids are only unique *within a space*: the export/import tasks upsert by id, so
- * importing space A's export into space B legitimately repeats them. Their keys are (space_id, id).
+ * A row that can come from Firebase (users, spaces, webhooks, assets, contents) keeps its Firestore id / Firebase uid
+ * in `legacy_id`: a re-run of the import updates the same row, old space ids, asset and document URLs keep working
+ * on the public API, and content imported from Firebase still references assets and documents by it (`legacy-ids.ts`)
+ * until a later migration rewrites those references.
+ *
+ * Content and asset keys are (space_id, id): the export/import tasks reuse the ids of an export in another space.
  */
 
 const timestamps = {
@@ -320,7 +320,7 @@ export const translationPublished = pgTable(
 export const tasks = pgTable(
   'tasks',
   {
-    id: text('id').primaryKey(),
+    id: uuid('id').primaryKey(),
     spaceId: spaceId(),
     kind: text('kind').notNull(),
     // 'INITIATED' | 'IN_PROGRESS' | 'ERROR' | 'FINISHED'
@@ -347,8 +347,8 @@ export const tasks = pgTable(
 export const taskLogs = pgTable(
   'task_logs',
   {
-    id: bigserial('id', { mode: 'number' }).primaryKey(),
-    taskId: text('task_id')
+    id: uuid('id').primaryKey(),
+    taskId: uuid('task_id')
       .notNull()
       .references(() => tasks.id, { onDelete: 'cascade' }),
     // 'INFO' | 'WARN' | 'ERROR'
@@ -369,7 +369,7 @@ export const tokens = pgTable(
   {
     id: uuid('id').primaryKey(),
     spaceId: spaceId(),
-    // The secret passed as `?token=` / `X-API-KEY`: 20 alphanumerics (`newId()`), never the UUID (74 random bits and
+    // The secret passed as `?token=` / `X-API-KEY`: 20 alphanumerics (`newTokenSecret()`), never the UUID (74 random bits and
     // a readable creation time). An imported token keeps its Firestore id here, the value customers already use.
     token: text('token').notNull().unique(),
     name: text('name').notNull(),

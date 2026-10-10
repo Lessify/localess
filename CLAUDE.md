@@ -176,7 +176,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [apps/server/README.md](apps/server/README.md) | Anything in `apps/server/`, or replacing a Firebase dependency |
 | Repository layout, workspaces, structure refactoring phases | [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md) | Moving files between apps/packages, workspace scripts, Dockerfile |
 | Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `apps/web/src/test-setup.ts` |
-| Firebase data migration with UUIDv7 ids, reference rewrite, legacy ids (planned) | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | `apps/server/src/cli/firebase-import/`, id generation, schema/translation/token keys |
+| UUIDv7 ids (`newUuid()`), `legacy_id` for Firebase-imported rows, schema `name` / translation `key` / token `token` as references, deferred reference migration | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | Any new table or id, `apps/server/src/cli/firebase-import/`, schema/translation/token keys |
 | **Deployment & self-hosting** | | |
 | Deployment overview, requirements, ways to run, first admin, CLI | [docs/deployment/overview.md](docs/deployment/overview.md) | Any deployment/self-hosting question |
 | Docker image & Compose | [docs/deployment/docker.md](docs/deployment/docker.md) | `Dockerfile`, `docker-compose.yml` |

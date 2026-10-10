@@ -104,8 +104,8 @@ CREATE TABLE "spaces" (
 );
 --> statement-breakpoint
 CREATE TABLE "task_logs" (
-	"id" bigserial PRIMARY KEY NOT NULL,
-	"task_id" text NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
+	"task_id" uuid NOT NULL,
 	"level" text NOT NULL,
 	"message" text NOT NULL,
 	"trace" text,
@@ -113,7 +113,7 @@ CREATE TABLE "task_logs" (
 );
 --> statement-breakpoint
 CREATE TABLE "tasks" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
 	"kind" text NOT NULL,
 	"status" text NOT NULL,

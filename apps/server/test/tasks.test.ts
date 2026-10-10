@@ -398,6 +398,14 @@ describe('task worker: exports and imports', () => {
   });
 });
 
+// Queue tasks, by the names the assertions use.
+const Q = {
+  older: '00000000-0000-7000-8000-0000000000d1',
+  newer: '00000000-0000-7000-8000-0000000000d2',
+  stuck: '00000000-0000-7000-8000-0000000000d3',
+  running: '00000000-0000-7000-8000-0000000000d4',
+} as const;
+
 describe('task worker: queue', () => {
   let t: TestApp;
 
@@ -411,13 +419,13 @@ describe('task worker: queue', () => {
 
   it('hands each task to exactly one claimant, oldest first', async () => {
     await t.db.insert(tasks).values([
-      { id: 'older', spaceId: SPACE_S, kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-01') },
-      { id: 'newer', spaceId: SPACE_S, kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-02') },
+      { id: Q.older, spaceId: SPACE_S, kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-01') },
+      { id: Q.newer, spaceId: SPACE_S, kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-02') },
     ]);
     const worker = t.app.get(TaskWorker);
     const claims = await Promise.all([worker.claim(), worker.claim(), worker.claim()]);
     const claimed = claims.filter(Boolean).map(it => it!.id);
-    expect(claimed.sort()).toEqual(['newer', 'older']);
+    expect(claimed.sort()).toEqual([Q.older, Q.newer]);
     const rows = await t.db.select().from(tasks).where(eq(tasks.spaceId, SPACE_S));
     expect(rows.every(row => row.status === 'IN_PROGRESS' && row.lockedBy === worker.workerId)).toBe(true);
   });
@@ -425,18 +433,18 @@ describe('task worker: queue', () => {
   it('marks tasks interrupted mid-run as failed instead of running them again', async () => {
     await t.db.insert(tasks).values([
       {
-        id: 'stuck',
+        id: Q.stuck,
         spaceId: SPACE_S,
         kind: 'CONTENT_IMPORT',
         status: 'IN_PROGRESS',
         lockedBy: 'gone',
         lockedAt: new Date(Date.now() - STALE_AFTER_MS - 1000),
       },
-      { id: 'running', spaceId: SPACE_S, kind: 'CONTENT_IMPORT', status: 'IN_PROGRESS', lockedBy: 'alive', lockedAt: new Date() },
+      { id: Q.running, spaceId: SPACE_S, kind: 'CONTENT_IMPORT', status: 'IN_PROGRESS', lockedBy: 'alive', lockedAt: new Date() },
     ]);
     await t.app.get(TaskWorker).failStale();
-    const [stuck] = await t.db.select().from(tasks).where(eq(tasks.id, 'stuck'));
-    const [running] = await t.db.select().from(tasks).where(eq(tasks.id, 'running'));
+    const [stuck] = await t.db.select().from(tasks).where(eq(tasks.id, Q.stuck));
+    const [running] = await t.db.select().from(tasks).where(eq(tasks.id, Q.running));
     expect(stuck).toMatchObject({ status: 'ERROR', message: expect.stringContaining('interrupted'), lockedBy: null });
     expect(running.status).toBe('IN_PROGRESS');
   });

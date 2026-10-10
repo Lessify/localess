@@ -1,8 +1,8 @@
 /**
- * Shape every Localess ID has: Firestore auto-IDs are 20 alphanumerics; `_` and `-` are allowed for
- * headroom. Anything else — above all `/`, which Express decodes from `%2F` in route params — is
- * refused, because these IDs are spliced into Firestore and Storage paths. `X%2Fdraft` as a content
- * ID would otherwise resolve to the unpublished draft file under a public token.
+ * Shape of every id a request may carry: a UUID (ids are UUIDv7s), or a Firestore id (20 alphanumerics, `_` and `-`
+ * allowed for headroom) that public URLs and imported content still use. Anything else — above all `/`, which is
+ * decoded from `%2F` in route params — is refused, because ids end up in storage keys. In the Firebase era
+ * `X%2Fdraft` as a content id resolved to the unpublished draft file under a public token.
  */
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 

@@ -106,8 +106,8 @@ describe('migrateDatabase', () => {
       [A],
     );
     await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-0000000000c1', 'en', '{}')`, [A]);
-    await pool.query(`insert into tasks (id, space_id, kind, status) values ('t1', $1, 'SCHEMA_EXPORT', 'INITIATED')`, [A]);
-    await pool.query(`insert into task_logs (task_id, level, message) values ('t1', 'INFO', 'started')`);
+    await pool.query(`insert into tasks (id, space_id, kind, status) values ('00000000-0000-7000-8000-0000000000e1', $1, 'SCHEMA_EXPORT', 'INITIATED')`, [A]);
+    await pool.query(`insert into task_logs (id, task_id, level, message) values ('00000000-0000-7000-8000-0000000000e2', '00000000-0000-7000-8000-0000000000e1', 'INFO', 'started')`);
 
     await pool.query(`delete from spaces where id = $1`, [A]);
 

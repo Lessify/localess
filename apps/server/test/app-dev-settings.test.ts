@@ -251,13 +251,16 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const list = (await exporter.get(base)).json();
       expect(list.map((it: { kind: string }) => it.kind)).toEqual(['CONTENT_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT']);
       await t.db.insert(taskLogs).values([
-        { taskId: list[0].id, level: 'INFO', message: 'first' },
-        { taskId: list[0].id, level: 'INFO', message: 'second' },
+        { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'first' },
+        { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'second' },
       ]);
       expect((await exporter.get(`${base}/${list[0].id}/logs`)).json().map((it: { message: string }) => it.message)).toEqual([
         'first',
         'second',
       ]);
+      expect(list[0].id).toMatch(UUID_V7);
+      for (const log of (await exporter.get(`${base}/${list[0].id}/logs`)).json()) expect(log.id).toMatch(UUID_V7);
+      expect((await exporter.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
       expect((await exporter.get(`${base}/${list[2].id}/download`)).statusCode).toBe(404);
     });
 

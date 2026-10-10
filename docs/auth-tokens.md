@@ -10,7 +10,7 @@ Tokens are rows of the Postgres `tokens` table (`apps/server/src/infra/database/
 ```
 tokens (id uuid, space_id, token unique, name, version, permissions text[], cache_ttl, created_at, updated_at)
 ```
-`token` is the secret: 20 random alphanumerics (`newId()`, about 119 bits). `id` is a UUIDv7 used only by the App API and change events; it is never accepted as a token, because a UUIDv7 has only 74 random bits and reveals its creation time. A token imported from Firebase keeps its Firestore id as `token`, so existing tokens keep working.
+`token` is the secret: 20 random alphanumerics (`newTokenSecret()`, about 119 bits). `id` is a UUIDv7 used only by the App API and change events; it is never accepted as a token, because a UUIDv7 has only 74 random bits and reveals its creation time. A token imported from Firebase keeps its Firestore id as `token`, so existing tokens keep working.
 
 Tokens are managed in the app (Space Settings → Tokens) through `/api/app/spaces/:spaceId/tokens` (`apps/server/src/modules/tokens/tokens.controller.ts`, `SPACE_MANAGEMENT`): list, get, create, update, delete, and `POST …/:id/regenerate`, which replaces `token` in place, keeping the row and its `id` (a V1 token comes back as V2 with its implicit permissions spelled out). `:id` is the UUID; anything else answers 404. Only these SPACE_MANAGEMENT responses carry `token`; change events (SSE) carry the UUID only. New and updated tokens are always V2.
 
