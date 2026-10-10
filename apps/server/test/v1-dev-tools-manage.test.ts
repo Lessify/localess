@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { schemas, spaces, translations } from '../src/infra/database/schema.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
+import { S1 } from './ids.js';
 
 describe('v1 dev tools and manage API', () => {
   let t: TestApp;
@@ -20,21 +21,21 @@ describe('v1 dev tools and manage API', () => {
   /** `apiKey: null` sends no header. */
   const post = (url: string, payload: unknown, apiKey: string | null = TOKEN_DEV) =>
     t.request({ method: 'POST', url, payload: payload as object, headers: apiKey ? { 'x-api-key': apiKey } : {} });
-  const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, 's1')))[0];
+  const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0];
   const translation = async (id: string) =>
     (
       await t.db
         .select()
         .from(translations)
-        .where(and(eq(translations.spaceId, 's1'), eq(translations.id, id)))
+        .where(and(eq(translations.spaceId, S1), eq(translations.id, id)))
     )[0];
 
   describe('dev tools (?token= with DEV_TOOLS)', () => {
     it('describes the space', async () => {
-      const response = await get(`/api/v1/spaces/s1?token=${TOKEN_DEV}`);
+      const response = await get(`/api/v1/spaces/${S1}?token=${TOKEN_DEV}`);
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({
-        id: 's1',
+        id: S1,
         name: 'Space',
         locales: [
           { id: 'en', name: 'English' },
@@ -47,20 +48,20 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('refuses tokens without DEV_TOOLS', async () => {
-      expect((await get(`/api/v1/spaces/s1?token=${TOKEN_PUBLIC}`)).statusCode).toBe(403);
+      expect((await get(`/api/v1/spaces/${S1}?token=${TOKEN_PUBLIC}`)).statusCode).toBe(403);
     });
 
     it('generates an OpenAPI document from the schemas', async () => {
-      const body = (await get(`/api/v1/spaces/s1/open-api?token=${TOKEN_DEV}`)).json();
+      const body = (await get(`/api/v1/spaces/${S1}/open-api?token=${TOKEN_DEV}`)).json();
       expect(body.openapi).toMatch(/^3\./);
       expect(JSON.stringify(body.components)).toContain('page');
     });
 
     it('returns stored values for one locale without fallback filling', async () => {
-      const response = await get(`/api/v1/spaces/s1/translations/de/values?token=${TOKEN_DEV}`);
+      const response = await get(`/api/v1/spaces/${S1}/translations/de/values?token=${TOKEN_DEV}`);
       expect(response.headers['cache-control']).toBe('no-cache');
       expect(response.json()).toEqual({ greeting: 'Hallo' });
-      const unknown = await get(`/api/v1/spaces/s1/translations/fr/values?token=${TOKEN_DEV}`);
+      const unknown = await get(`/api/v1/spaces/${S1}/translations/fr/values?token=${TOKEN_DEV}`);
       expect(unknown.statusCode).toBe(400);
       expect(unknown.json()).toEqual({
         details: 'Locale fr is not in space locales',
@@ -70,7 +71,7 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('exports schemas without timestamps or nulls', async () => {
-      expect((await get(`/api/v1/spaces/s1/schemas?token=${TOKEN_DEV}`)).json()).toEqual([
+      expect((await get(`/api/v1/spaces/${S1}/schemas?token=${TOKEN_DEV}`)).json()).toEqual([
         {
           id: 'page',
           type: 'ROOT',
@@ -92,12 +93,12 @@ describe('v1 dev tools and manage API', () => {
   });
 
   describe('translation push (X-API-KEY with DEV_TOOLS)', () => {
-    const push = (payload: unknown, apiKey: string | null = TOKEN_DEV) => post('/api/v1/spaces/s1/translations/de', payload, apiKey);
+    const push = (payload: unknown, apiKey: string | null = TOKEN_DEV) => post(`/api/v1/spaces/${S1}/translations/de`, payload, apiKey);
 
     it('authenticates with the X-API-KEY header only', async () => {
-      expect((await post('/api/v1/spaces/s1/translations/de', { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
+      expect((await post(`/api/v1/spaces/${S1}/translations/de`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
       expect(
-        (await post(`/api/v1/spaces/s1/translations/de?token=${TOKEN_DEV}`, { type: 'add-missing', values: {} }, null)).statusCode,
+        (await post(`/api/v1/spaces/${S1}/translations/de?token=${TOKEN_DEV}`, { type: 'add-missing', values: {} }, null)).statusCode,
       ).toBe(401);
       expect((await push({ type: 'add-missing', values: {} }, TOKEN_PUBLIC)).statusCode).toBe(403);
     });
@@ -110,7 +111,7 @@ describe('v1 dev tools and manage API', () => {
       const bad = await push({ type: 'replace-everything', values: {} });
       expect(bad.statusCode).toBe(400);
       expect(bad.json()).toMatchObject({ message: 'Bad request body', status: 'INVALID_ARGUMENT', details: expect.anything() });
-      expect((await post('/api/v1/spaces/s1/translations/fr', { type: 'add-missing', values: {} })).statusCode).toBe(400);
+      expect((await post(`/api/v1/spaces/${S1}/translations/fr`, { type: 'add-missing', values: {} })).statusCode).toBe(400);
     });
 
     it('reports a dry run without writing, with status 200 like the Express endpoint', async () => {
@@ -140,7 +141,7 @@ describe('v1 dev tools and manage API', () => {
 
     it('is visible immediately in draft translations', async () => {
       const { translationVersion } = await space();
-      const response = await get(`/api/v1/spaces/s1/translations/de?cv=${translationVersion}&version=draft&token=${TOKEN_DEV}`);
+      const response = await get(`/api/v1/spaces/${S1}/translations/de?cv=${translationVersion}&version=draft&token=${TOKEN_DEV}`);
       expect(response.json()).toMatchObject({ greeting: 'Servus', 'brand.new': 'Neu' });
     });
 
@@ -165,7 +166,7 @@ describe('v1 dev tools and manage API', () => {
   });
 
   describe('schema push (X-API-KEY with DEV_TOOLS)', () => {
-    const push = (payload: unknown) => post('/api/v1/spaces/s1/schemas', payload);
+    const push = (payload: unknown) => post(`/api/v1/spaces/${S1}/schemas`, payload);
     const card = { id: 'card', type: 'NODE', fields: [{ name: 'heading', kind: 'TEXT' }] };
     const color = { id: 'color', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] };
 
@@ -179,7 +180,7 @@ describe('v1 dev tools and manage API', () => {
         counts: { created: 2, updated: 1, deleted: 0, unchanged: 0 },
         ids: { created: ['card', 'color'], updated: ['page'], deleted: [] },
       });
-      const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, 's1'));
+      const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, S1));
       expect(rows.find(it => it.id === 'page')).toMatchObject({
         displayName: 'Page',
         fields: [{ name: 'title', kind: 'TEXT', translatable: true }],
@@ -207,7 +208,7 @@ describe('v1 dev tools and manage API', () => {
     it('syncs: deletes schemas absent from the payload', async () => {
       const response = await push({ type: 'sync', schemas: [card] });
       expect(response.json().ids.deleted.sort()).toEqual(['color', 'page']);
-      const rows = await t.db.select({ id: schemas.id }).from(schemas).where(eq(schemas.spaceId, 's1'));
+      const rows = await t.db.select({ id: schemas.id }).from(schemas).where(eq(schemas.spaceId, S1));
       expect(rows.map(it => it.id)).toEqual(['card']);
     });
 

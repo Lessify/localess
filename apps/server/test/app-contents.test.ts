@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { contentPublished, contents, schemas, spaces, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { S1 } from './ids.js';
 
 interface Received {
   headers: IncomingMessage['headers'];
@@ -18,13 +19,13 @@ describe('app API: contents', () => {
   let reader: ReturnType<typeof api>;
   let receiver: Server;
   let received: Received[];
-  const base = '/api/app/spaces/s1/contents';
+  const base = `/api/app/spaces/${S1}/contents`;
   const TOKEN = 'TTTTTTTTTTTTTTTTTTTT';
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true' });
     await t.db.insert(spaces).values({
-      id: 's1',
+      id: S1,
       name: 'S',
       locales: [
         { id: 'en', name: 'English' },
@@ -34,8 +35,8 @@ describe('app API: contents', () => {
     });
     await t.db
       .insert(schemas)
-      .values({ spaceId: 's1', id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
-    await t.db.insert(tokens).values({ id: TOKEN, spaceId: 's1', name: 't', version: 2, permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
+      .values({ spaceId: S1, id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
+    await t.db.insert(tokens).values({ id: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
@@ -57,7 +58,7 @@ describe('app API: contents', () => {
     await new Promise<void>(resolve => receiver.listen(0, '127.0.0.1', resolve));
     await t.db.insert(webhooks).values({
       id: 'hook1',
-      spaceId: 's1',
+      spaceId: S1,
       name: 'site',
       url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,
       events: ['content.published', 'content.unpublished', 'content.changed'],
@@ -79,13 +80,13 @@ describe('app API: contents', () => {
     await t.app.get(WebhookDispatcher).whenIdle();
     return received.map(it => JSON.parse(it.body));
   };
-  const version = async () => (await t.db.select().from(spaces).where(eq(spaces.id, 's1')))[0].contentVersion;
+  const version = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].contentVersion;
   const row = async (id: string) =>
     (
       await t.db
         .select()
         .from(contents)
-        .where(and(eq(contents.spaceId, 's1'), eq(contents.id, id)))
+        .where(and(eq(contents.spaceId, S1), eq(contents.id, id)))
     )[0];
   const create = async (body: object) => {
     const response = await editor.post(base, body);
@@ -143,7 +144,7 @@ describe('app API: contents', () => {
       });
       expect(response.json()).toMatchObject({ data: { title: 'Hello' }, assets: ['a1'] });
       expect(await deliveries()).toEqual([
-        { event: 'content.changed', spaceId: 's1', timestamp: expect.any(String), data: { id: post.id, fullSlug: 'blog/post' } },
+        { event: 'content.changed', spaceId: S1, timestamp: expect.any(String), data: { id: post.id, fullSlug: 'blog/post' } },
       ]);
     });
 
@@ -198,7 +199,7 @@ describe('app API: contents', () => {
   });
 
   describe('publishing', () => {
-    const cdn = (id: string, query = '') => t.request({ method: 'GET', url: `/api/v1/spaces/s1/contents/${id}?token=${TOKEN}${query}` });
+    const cdn = (id: string, query = '') => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/contents/${id}?token=${TOKEN}${query}` });
     const cdnFollow = async (id: string, query = '') => {
       const redirect = await cdn(id, query);
       return t.request({ method: 'GET', url: redirect.headers.location as string });
@@ -269,13 +270,13 @@ describe('app API: contents', () => {
       await editor.post(`${base}/${post.id}/publish`);
       await deliveries();
       received = [];
-      const subtree = (await t.db.select().from(contents).where(eq(contents.spaceId, 's1'))).filter(
+      const subtree = (await t.db.select().from(contents).where(eq(contents.spaceId, S1))).filter(
         c => c.fullSlug === 'news' || c.fullSlug.startsWith('news/'),
       );
       expect((await editor.delete(`${base}/${blog.id}`)).statusCode).toBe(204);
-      const remaining = (await t.db.select().from(contents).where(eq(contents.spaceId, 's1'))).map(c => c.fullSlug).sort();
+      const remaining = (await t.db.select().from(contents).where(eq(contents.spaceId, S1))).map(c => c.fullSlug).sort();
       expect(remaining).toEqual(['about', 'blog-archive']);
-      expect(await t.db.select().from(contentPublished).where(eq(contentPublished.spaceId, 's1'))).toEqual([]);
+      expect(await t.db.select().from(contentPublished).where(eq(contentPublished.spaceId, S1))).toEqual([]);
       expect((await deliveries()).map(d => d.data.id).sort()).toEqual(subtree.map(c => c.id).sort());
     });
 

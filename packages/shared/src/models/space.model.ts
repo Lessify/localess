@@ -3,6 +3,8 @@ import type { Timestamp } from './timestamp.js';
 
 export interface Space {
   id: string;
+  /** Firestore id of a space imported from Firebase, for display. Only the public API accepts it in URLs. */
+  legacyId?: string;
   name: string;
   locales: Locale[];
   localeFallback: Locale;

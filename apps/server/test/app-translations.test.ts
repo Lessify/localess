@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { S1 } from './ids.js';
 
 /** A local HTTP server recording requests and answering with `respond`. */
 async function fakeServer(respond: (request: IncomingMessage) => { status: number; body: unknown; headers?: Record<string, string> }) {
@@ -32,7 +33,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
   let reader: ReturnType<typeof api>;
   let hooks: Awaited<ReturnType<typeof fakeServer>>;
   let unsplash: Awaited<ReturnType<typeof fakeServer>>;
-  const base = '/api/app/spaces/s1/translations';
+  const base = `/api/app/spaces/${S1}/translations`;
   const TOKEN = 'TTTTTTTTTTTTTTTTTTTT';
 
   beforeAll(async () => {
@@ -49,7 +50,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       LOCALESS_UNSPLASH_API_URL: unsplash.url,
     });
     await t.db.insert(spaces).values({
-      id: 's1',
+      id: S1,
       name: 'S',
       locales: [
         { id: 'en', name: 'English' },
@@ -59,10 +60,10 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
     await t.db
       .insert(tokens)
-      .values({ id: TOKEN, spaceId: 's1', name: 't', version: 2, permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
+      .values({ id: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
     await t.db
       .insert(webhooks)
-      .values({ id: 'h', spaceId: 's1', name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'] });
+      .values({ id: 'h', spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'] });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
@@ -99,13 +100,13 @@ describe('app API: translations, machine translation, Unsplash', () => {
     await t.app.get(WebhookDispatcher).whenIdle();
     return hooks.requests.map(it => JSON.parse(it.body).event);
   };
-  const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, 's1')))[0];
+  const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0];
   const stored = async (id: string) =>
     (
       await t.db
         .select()
         .from(translations)
-        .where(and(eq(translations.spaceId, 's1'), eq(translations.id, id)))
+        .where(and(eq(translations.spaceId, S1), eq(translations.id, id)))
     )[0];
 
   describe('keys', () => {
@@ -161,7 +162,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await space()).progress).toEqual({ translations: { en: 2, de: 1 } });
       expect(await events()).toEqual(['translation.published']);
 
-      const redirect = await t.request({ method: 'GET', url: `/api/v1/spaces/s1/translations/de?token=${TOKEN}` });
+      const redirect = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/translations/de?token=${TOKEN}` });
       const published = await t.request({ method: 'GET', url: redirect.headers.location as string });
       expect(published.json()).toEqual({ 'hero.title': 'Welcome', taken: 'genommen' });
     });
@@ -238,7 +239,7 @@ describe('app API: without a translation provider or Unsplash key', () => {
     t = await createTestApp();
     await t.db
       .insert(spaces)
-      .values({ id: 's1', name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
   });
 
   afterAll(() => t?.close());

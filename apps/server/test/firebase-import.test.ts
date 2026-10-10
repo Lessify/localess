@@ -14,6 +14,7 @@ import { loadConfig } from '../src/infra/config/config.js';
 import * as schema from '../src/infra/database/schema.js';
 import type { FirebaseSource, SourceAuthUser, SourceDocument } from '../src/cli/firebase-import/firebase-source.js';
 import { createTestDatabase, TestDatabase } from './database.js';
+import { UUID_V7 } from './ids.js';
 import { XHR } from './test-app.js';
 
 /** Behaves like a Firestore Timestamp (has toDate()). */
@@ -247,7 +248,10 @@ describe('import:firebase', () => {
   });
 
   it('maps Firestore data onto rows: timestamps, string data, claims, md5', async () => {
-    const [user] = (await db.select().from(schema.users)).filter(it => it.id === 'u1');
+    const [user] = (await db.select().from(schema.users)).filter(it => it.legacyId === 'u1');
+    // A UUIDv7 dated to the Firebase creation time, so imported users keep their order.
+    expect(user.id).toMatch(UUID_V7);
+    expect(parseInt(user.id.replaceAll('-', '').slice(0, 12), 16)).toBe(Date.parse('2025-01-06T10:00:00Z'));
     expect(user).toMatchObject({
       email: 'editor@example.com',
       displayName: 'Ed Itor',
@@ -267,7 +271,9 @@ describe('import:firebase', () => {
     expect(posts[0].publishedAt?.toISOString()).toBe('2026-01-10T00:00:00.000Z');
 
     // admin:create also seeded "Hello World"; the imported space is s1.
-    const [space] = (await db.select().from(schema.spaces)).filter(it => it.id === 's1');
+    const [space] = (await db.select().from(schema.spaces)).filter(it => it.legacyId === 's1');
+    expect(space.id).toMatch(UUID_V7);
+    expect(posts[0].spaceId).toBe(space.id);
     expect(space.overview).toEqual({ contentsCount: 2, updatedAt: '2026-02-01T00:00:00.000Z' });
 
     const a1 = (await db.select().from(schema.assets)).find(it => it.id === 'a1');
@@ -308,13 +314,21 @@ describe('import:firebase', () => {
   });
 
   it('can run again for the final delta: nothing duplicates, copied files are skipped, re-hashed passwords are kept', async () => {
-    const credentialBefore = (await db.select().from(schema.userCredentials)).find(it => it.userId === 'u1');
+    const ids = async () => ({
+      users: (await db.select({ id: schema.users.id, legacyId: schema.users.legacyId }).from(schema.users)).sort((a, b) => a.id.localeCompare(b.id)),
+      spaces: (await db.select({ id: schema.spaces.id, legacyId: schema.spaces.legacyId }).from(schema.spaces)).sort((a, b) => a.id.localeCompare(b.id)),
+    });
+    const idsBefore = await ids();
+    const [u1] = idsBefore.users.filter(it => it.legacyId === 'u1');
+    const credentialBefore = (await db.select().from(schema.userCredentials)).find(it => it.userId === u1.id);
     expect(credentialBefore?.hashAlgo).toBe('argon2id'); // re-hashed by the sign-in above
     expect(await run(['import:firebase', '--project', 'demo'], SCRYPT_ENV)).toBe(0);
     expect(output.join('\n')).toMatch(/filesSkipped: 1/);
     expect(await db.select().from(schema.webhookLogs)).toHaveLength(2);
     expect(await db.select().from(schema.contents)).toHaveLength(3);
-    expect((await db.select().from(schema.userCredentials)).find(it => it.userId === 'u1')?.hashAlgo).toBe('argon2id');
+    expect((await db.select().from(schema.userCredentials)).find(it => it.userId === u1.id)?.hashAlgo).toBe('argon2id');
+    // Matched by legacy_id: the same rows, with the same UUIDs.
+    expect(await ids()).toEqual(idsBefore);
     const a1 = (await db.select().from(schema.assets)).find(it => it.id === 'a1');
     expect(a1?.md5).toBe(createHash('md5').update(photo).digest('base64'));
   });

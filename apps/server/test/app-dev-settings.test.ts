@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { schemas, spaces, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
+import { S1 } from './ids.js';
 
 function multipart(fields: Record<string, string>, file: { filename: string; bytes: Buffer }) {
   const boundary = `----localess${randomBytes(8).toString('hex')}`;
@@ -46,8 +47,8 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
     await t.db
       .insert(spaces)
-      .values({ id: 's1', name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
-    await t.db.insert(schemas).values({ spaceId: 's1', id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
+      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await t.db.insert(schemas).values({ spaceId: S1, id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
     manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] }));
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {
@@ -61,7 +62,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   afterAll(() => t?.close());
 
   describe('tokens', () => {
-    const base = '/api/app/spaces/s1/tokens';
+    const base = `/api/app/spaces/${S1}/tokens`;
 
     it('creates V2 tokens with 20-character secret ids, for SPACE_MANAGEMENT only', async () => {
       const response = await manager.post(base, { name: 'Website', permissions: ['CONTENT_PUBLIC'], cacheTtl: 120 });
@@ -84,7 +85,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('regenerates a V1 token as V2 with its implicit permissions, under a new secret', async () => {
-      await t.db.insert(tokens).values({ id: 'VVVVVVVVVVVVVVVVVVVV', spaceId: 's1', name: 'Legacy' });
+      await t.db.insert(tokens).values({ id: 'VVVVVVVVVVVVVVVVVVVV', spaceId: S1, name: 'Legacy' });
       const response = await manager.post(`${base}/VVVVVVVVVVVVVVVVVVVV/regenerate`);
       expect(response.json()).toMatchObject({
         version: 2,
@@ -97,7 +98,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
     it('revokes a token for the public API immediately, despite its 5-minute cache', async () => {
       const token = (await manager.post(base, { name: 'Short-lived', permissions: ['CONTENT_PUBLIC'] })).json();
-      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/s1/links?token=${token.id}` });
+      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.id}` });
       expect((await read()).statusCode).toBe(302); // now cached
       expect((await manager.delete(`${base}/${token.id}`)).statusCode).toBe(204);
       await eventually(async () => expect((await read()).statusCode).toBe(401));
@@ -105,7 +106,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
     it('applies permission edits immediately too', async () => {
       const token = (await manager.post(base, { name: 'Editable', permissions: ['CONTENT_PUBLIC'] })).json();
-      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/s1/links?token=${token.id}` });
+      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.id}` });
       expect((await read()).statusCode).toBe(302);
       await manager.put(`${base}/${token.id}`, { name: 'Editable', permissions: ['TRANSLATION_PUBLIC'] });
       await eventually(async () => expect((await read()).statusCode).toBe(403));
@@ -113,7 +114,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   });
 
   describe('webhooks', () => {
-    const base = '/api/app/spaces/s1/webhooks';
+    const base = `/api/app/spaces/${S1}/webhooks`;
     let hook: { id: string };
 
     it('creates enabled webhooks, accepting https and local http only', async () => {
@@ -184,7 +185,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   });
 
   describe('tasks', () => {
-    const base = '/api/app/spaces/s1/tasks';
+    const base = `/api/app/spaces/${S1}/tasks`;
 
     it('creates exports for the permission the kind names', async () => {
       const response = await exporter.post(base, { kind: 'CONTENT_EXPORT', path: 'blog' });
@@ -252,16 +253,16 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await exporter.delete(`${base}/${regen.id}`)).statusCode).toBe(403);
       expect((await exporter.delete(`${base}/${imported.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(taskLogs)).toEqual([]);
-      expect(await readdir(join(t.storageDir, 'spaces/s1/tasks'))).toEqual([]);
+      expect(await readdir(join(t.storageDir, `spaces/${S1}/tasks`))).toEqual([]);
     });
   });
 
   describe('OpenAPI', () => {
     it('generates the document for DEV_OPEN_API', async () => {
-      const response = await exporter.post('/api/app/spaces/s1/open-api');
+      const response = await exporter.post(`/api/app/spaces/${S1}/open-api`);
       expect(response.statusCode).toBe(200);
       expect(response.json().openapi).toMatch(/^3\./);
-      expect((await nobody.post('/api/app/spaces/s1/open-api')).statusCode).toBe(403);
+      expect((await nobody.post(`/api/app/spaces/${S1}/open-api`)).statusCode).toBe(403);
     });
   });
 });

@@ -3,7 +3,7 @@ import { DEFAULT_LOCALE } from '@localess/shared';
 import { hashPassword, PASSWORD_MIN_LENGTH } from '../password.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { newUuid } from '../../infra/database/id.js';
 import { spaces, userCredentials, users } from '../../infra/database/schema.js';
 import { UsersService } from './users.service.js';
 
@@ -52,7 +52,7 @@ export class FirstAdminService implements OnApplicationBootstrap {
       const [user] = await tx
         .insert(users)
         .values({
-          id: newId(),
+          id: newUuid(),
           email: admin.email,
           emailVerified: true,
           displayName: admin.displayName ?? DEFAULT_ADMIN_NAME,
@@ -62,7 +62,7 @@ export class FirstAdminService implements OnApplicationBootstrap {
       await tx.insert(userCredentials).values({ userId: user.id, passwordHash, hashAlgo: 'argon2id' });
       const [space] = await tx
         .insert(spaces)
-        .values({ id: newId(), name: 'Hello World', locales: [DEFAULT_LOCALE], localeFallback: DEFAULT_LOCALE })
+        .values({ id: newUuid(), name: 'Hello World', locales: [DEFAULT_LOCALE], localeFallback: DEFAULT_LOCALE })
         .returning({ id: spaces.id });
       return { userId: user.id, spaceId: space.id };
     });

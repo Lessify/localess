@@ -25,6 +25,7 @@ catalog:
   'tailwind-merge': '^3.7.0'
   'tslib': '^2.3.0'
   'typescript': '~6.0.3'
+  'uuid': '^14.0.2'
   'vitest': '^4.1.11'
   'zod': '^4.6.5'
 

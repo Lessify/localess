@@ -21,6 +21,7 @@ import {
   webhookLogs,
   webhooks,
 } from '../../infra/database/schema.js';
+import { newUuid } from '../../infra/database/id.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
 import type { StorageDriver } from '../../infra/storage/storage.driver.js';
 import type { FirebaseSource, SourceDocument } from './firebase-source.js';
@@ -50,6 +51,12 @@ export interface ImportReport {
 }
 
 type Json = Record<string, unknown>;
+
+/** A space's UUID here and its Firestore id, which still names its collections and files in Firebase. */
+interface SpaceIds {
+  id: string;
+  source: string;
+}
 
 /** Firestore Timestamp (or its plain `{seconds, nanoseconds}` form) → Date. */
 export function toDate(value: unknown): Date | undefined {
@@ -167,7 +174,7 @@ export class FirebaseImporter {
       const claims = auth.customClaims ?? {};
       const role = (claims['role'] ?? profile['role'] ?? null) as string | null;
       const values = {
-        id: auth.uid,
+        legacyId: auth.uid,
         email,
         emailVerified: auth.emailVerified,
         displayName: auth.displayName ?? str(profile['displayName']),
@@ -180,16 +187,21 @@ export class FirebaseImporter {
         updatedAt: toDate(profile['updatedAt']) ?? new Date(),
       };
       const [clash] = await this.db
-        .select({ id: users.id })
+        .select({ legacyId: users.legacyId })
         .from(users)
         .where(sql`lower(${users.email}) = ${email.toLowerCase()}`);
-      if (clash && clash.id !== auth.uid) {
+      if (clash && clash.legacyId !== auth.uid) {
         this.warn(`user ${auth.uid}: ${email} already belongs to another account here, skipped`);
         continue;
       }
-      const { id: _id, ...update } = values;
-      void _id;
-      await this.db.insert(users).values(values).onConflictDoUpdate({ target: users.id, set: update });
+      const { legacyId: _l, ...update } = values;
+      void _l;
+      // Keyed by the Firebase uid: a re-run updates the user it created before, with the same UUID.
+      const [{ id: userId }] = await this.db
+        .insert(users)
+        .values({ id: newUuid(values.createdAt), ...values })
+        .onConflictDoUpdate({ target: users.legacyId, set: update })
+        .returning({ id: users.id });
       this.report.users++;
 
       if (auth.passwordHash && auth.passwordSalt) {
@@ -197,7 +209,7 @@ export class FirebaseImporter {
         const passwordHash = encodeFirebaseHash(this.options.scrypt, auth.passwordHash);
         await this.db
           .insert(userCredentials)
-          .values({ userId: auth.uid, hashAlgo: 'firebase-scrypt', salt: auth.passwordSalt, passwordHash })
+          .values({ userId, hashAlgo: 'firebase-scrypt', salt: auth.passwordSalt, passwordHash })
           // An account that already re-hashed to argon2id here keeps its current password.
           .onConflictDoUpdate({
             target: userCredentials.userId,
@@ -217,13 +229,12 @@ export class FirebaseImporter {
   }
 
   private async importSpace(space: SourceDocument): Promise<void> {
-    const spaceId = space.id;
     const data = space.data;
     const locales = (Array.isArray(data['locales']) ? data['locales'] : []) as Locale[];
     const localeFallback = obj<Locale>(data['localeFallback']) ?? locales[0] ?? { id: 'en', name: 'English' };
     const values = {
-      id: spaceId,
-      name: str(data['name']) ?? spaceId,
+      legacyId: space.id,
+      name: str(data['name']) ?? space.id,
       locales: locales.length ? locales : [localeFallback],
       localeFallback,
       environments: Array.isArray(data['environments']) ? (data['environments'] as { name: string; url: string }[]) : null,
@@ -231,17 +242,23 @@ export class FirebaseImporter {
       progress: obj<{ translations: Record<string, number> }>(data['progress']),
       ...timestamps(data),
     };
-    const { id: _id, ...update } = values;
-    void _id;
-    await this.db.insert(spaces).values(values).onConflictDoUpdate({ target: spaces.id, set: update });
+    const { legacyId: _l, ...update } = values;
+    void _l;
+    // Keyed by the Firestore id: a re-run updates the space it created before, with the same UUID.
+    const [{ id: spaceId }] = await this.db
+      .insert(spaces)
+      .values({ id: newUuid(values.createdAt), ...values })
+      .onConflictDoUpdate({ target: spaces.legacyId, set: update })
+      .returning({ id: spaces.id });
     this.report.spaces++;
 
-    await this.importSchemas(spaceId);
-    await this.importContents(spaceId, values.locales);
-    await this.importTranslations(spaceId, values.locales);
-    await this.importAssets(spaceId);
-    await this.importTokens(spaceId);
-    await this.importWebhooks(spaceId);
+    const ids: SpaceIds = { id: spaceId, source: space.id };
+    await this.importSchemas(ids);
+    await this.importContents(ids, values.locales);
+    await this.importTranslations(ids, values.locales);
+    await this.importAssets(ids);
+    await this.importTokens(ids);
+    await this.importWebhooks(ids);
 
     // Every client re-reads past its cached copies once.
     await this.db
@@ -250,8 +267,8 @@ export class FirebaseImporter {
       .where(eq(spaces.id, spaceId));
   }
 
-  private async importSchemas(spaceId: string): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${spaceId}/schemas`)) {
+  private async importSchemas({ id: spaceId, source }: SpaceIds): Promise<void> {
+    for (const doc of await this.source.documents(`spaces/${source}/schemas`)) {
       const d = doc.data;
       const values = {
         spaceId,
@@ -288,10 +305,10 @@ export class FirebaseImporter {
     }
   }
 
-  private async importContents(spaceId: string, locales: Locale[]): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${spaceId}/contents`)) {
+  private async importContents({ id: spaceId, source }: SpaceIds, locales: Locale[]): Promise<void> {
+    for (const doc of await this.source.documents(`spaces/${source}/contents`)) {
       if (!isValidId(doc.id)) {
-        this.warn(`content '${doc.id}' in ${spaceId}: id is not usable in URLs, skipped`);
+        this.warn(`content '${doc.id}' in ${source}: id is not usable in URLs, skipped`);
         continue;
       }
       const d = doc.data;
@@ -307,7 +324,7 @@ export class FirebaseImporter {
         parentSlug,
         fullSlug: str(d['fullSlug']) ?? (parentSlug ? `${parentSlug}/${slug}` : slug),
         schema: isDocument ? str(d['schema']) : null,
-        data: isDocument ? parseData(d['data'], m => this.warn(m), `content ${spaceId}/${doc.id}`) : null,
+        data: isDocument ? parseData(d['data'], m => this.warn(m), `content ${source}/${doc.id}`) : null,
         assets: strings(d['assets']),
         links: strings(d['links']),
         references: strings(d['references']),
@@ -327,7 +344,7 @@ export class FirebaseImporter {
       // The published snapshot is copied as served, never rebuilt: it may legitimately differ from the draft.
       if (!values.publishedAt) continue;
       for (const locale of locales) {
-        const published = await this.readJson(`spaces/${spaceId}/contents/${doc.id}/${locale.id}.json`);
+        const published = await this.readJson(`spaces/${source}/contents/${doc.id}/${locale.id}.json`);
         if (!published) continue;
         await this.db
           .insert(contentPublished)
@@ -341,8 +358,8 @@ export class FirebaseImporter {
     }
   }
 
-  private async importTranslations(spaceId: string, locales: Locale[]): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${spaceId}/translations`)) {
+  private async importTranslations({ id: spaceId, source }: SpaceIds, locales: Locale[]): Promise<void> {
+    for (const doc of await this.source.documents(`spaces/${source}/translations`)) {
       const d = doc.data;
       const values = {
         spaceId,
@@ -364,7 +381,7 @@ export class FirebaseImporter {
       this.report.translations++;
     }
     for (const locale of locales) {
-      const published = await this.readJson(`spaces/${spaceId}/translations/${locale.id}.json`);
+      const published = await this.readJson(`spaces/${source}/translations/${locale.id}.json`);
       if (!published) continue;
       await this.db
         .insert(translationPublished)
@@ -377,10 +394,10 @@ export class FirebaseImporter {
     }
   }
 
-  private async importAssets(spaceId: string): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${spaceId}/assets`)) {
+  private async importAssets({ id: spaceId, source }: SpaceIds): Promise<void> {
+    for (const doc of await this.source.documents(`spaces/${source}/assets`)) {
       if (!isValidId(doc.id)) {
-        this.warn(`asset '${doc.id}' in ${spaceId}: id is not usable as a storage key, skipped`);
+        this.warn(`asset '${doc.id}' in ${source}: id is not usable as a storage key, skipped`);
         continue;
       }
       const d = doc.data;
@@ -388,7 +405,7 @@ export class FirebaseImporter {
       let md5: string | null = null;
       if (isFile && this.options.files !== false) {
         const path = `spaces/${spaceId}/assets/${doc.id}/original`;
-        md5 = await this.copyFile(path);
+        md5 = await this.copyFile(`spaces/${source}/assets/${doc.id}/original`, path);
         if (!md5 && (await this.storage.stat(path))) {
           // Copied by an earlier run: hash the local copy only if the row doesn't know it yet.
           const [row] = await this.db
@@ -426,11 +443,14 @@ export class FirebaseImporter {
     }
   }
 
-  /** Copies a Storage object unless an object of the same size is already here. Returns its base64 md5. */
-  private async copyFile(path: string): Promise<string | null> {
-    const size = await this.source.fileSize(path);
+  /**
+   * Copies a Firebase Storage object to `path` unless an object of the same size is already there. Returns its
+   * base64 md5.
+   */
+  private async copyFile(sourcePath: string, path: string): Promise<string | null> {
+    const size = await this.source.fileSize(sourcePath);
     if (size === undefined) {
-      this.warn(`${path}: missing in Firebase Storage`);
+      this.warn(`${sourcePath}: missing in Firebase Storage`);
       return null;
     }
     const existing = await this.storage.stat(path);
@@ -439,7 +459,7 @@ export class FirebaseImporter {
       // Already copied by an earlier run; its md5 is unchanged, keep the stored row's value.
       return null;
     }
-    const stored = await this.storage.put(path, this.source.readFile(path));
+    const stored = await this.storage.put(path, this.source.readFile(sourcePath));
     this.report.filesCopied++;
     return stored.md5;
   }
@@ -450,8 +470,8 @@ export class FirebaseImporter {
     return hash.digest('base64');
   }
 
-  private async importTokens(spaceId: string): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${spaceId}/tokens`)) {
+  private async importTokens({ id: spaceId, source }: SpaceIds): Promise<void> {
+    for (const doc of await this.source.documents(`spaces/${source}/tokens`)) {
       const d = doc.data;
       const values = {
         id: doc.id,
@@ -469,8 +489,8 @@ export class FirebaseImporter {
     }
   }
 
-  private async importWebhooks(spaceId: string): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${spaceId}/webhooks`)) {
+  private async importWebhooks({ id: spaceId, source }: SpaceIds): Promise<void> {
+    for (const doc of await this.source.documents(`spaces/${source}/webhooks`)) {
       const d = doc.data;
       const values = {
         id: doc.id,
@@ -490,7 +510,7 @@ export class FirebaseImporter {
 
       // Logs have generated ids here; re-runs replace the imported history rather than duplicating it.
       await this.db.delete(webhookLogs).where(eq(webhookLogs.webhookId, doc.id));
-      for (const log of await this.source.documents(`spaces/${spaceId}/webhooks/${doc.id}/logs`)) {
+      for (const log of await this.source.documents(`spaces/${source}/webhooks/${doc.id}/logs`)) {
         const l = log.data;
         await this.db.insert(webhookLogs).values({
           webhookId: doc.id,

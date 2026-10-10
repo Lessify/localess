@@ -11,7 +11,7 @@ this page is the operator's procedure.
 
 | From | To | Notes |
 |------|----|-------|
-| Firestore documents | Postgres rows | **Same ids**, so public API URLs, API tokens and SDK caches keep working |
+| Firestore documents | Postgres rows | Spaces and users get new UUIDv7 ids; their Firestore id / Firebase uid is kept in `legacy_id`, and the old space id is still accepted in public API URLs (SDK configs keep working). Bookmarked UI links with an old space id open the first available space instead. Contents, assets, API tokens and the rest keep their Firestore ids, so URLs, tokens and SDK caches keep working |
 | Storage: asset originals | The storage directory | ETags stay the same |
 | Storage: published content and translation JSON | Postgres | Copied as served, not re-published — a published snapshot can legitimately differ from the current draft |
 | Auth users | `users` | With role, permissions and lock state |
@@ -23,8 +23,9 @@ first, see [Configuration](configuration.md#sign-in)). A user whose email alread
 account in the new install (for example an admin you created before importing) is skipped and
 reported.
 
-Every write is an upsert, so the import can be run any number of times: once to rehearse, again
-right before the switch to pick up what changed in between.
+Every write is an upsert (spaces and users matched by their Firebase id in `legacy_id`), so the import
+can be run any number of times: once to rehearse, again right before the switch to pick up what changed
+in between. Ids in API responses and webhook payloads (`spaceId`) are the new UUIDs.
 
 ## Procedure
 

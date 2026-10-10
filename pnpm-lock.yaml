@@ -227,6 +227,9 @@ catalogs:
     typescript:
       specifier: ~6.0.3
       version: 6.0.3
+    uuid:
+      specifier: ^14.0.2
+      version: 14.0.2
     vitest:
       specifier: ^4.1.11
       version: 4.1.11
@@ -334,6 +337,9 @@ importers:
       unzipper:
         specifier: ^0.12.5
         version: 0.12.5
+      uuid:
+        specifier: 'catalog:'
+        version: 14.0.2
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -582,7 +588,7 @@ importers:
         specifier: 'catalog:'
         version: 2.8.1
       uuid:
-        specifier: ^14.0.2
+        specifier: 'catalog:'
         version: 14.0.2
     devDependencies:
       '@angular-eslint/builder':

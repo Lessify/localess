@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
+import { S1 } from './ids.js';
 
 /** A multipart body with the fields first, then the file — the order the endpoint expects. */
 function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
@@ -30,13 +31,13 @@ describe('app API: assets', () => {
   let cookie: string;
   let editor: ReturnType<typeof api>;
   let contentReader: ReturnType<typeof api>;
-  const base = '/api/app/spaces/s1/assets';
+  const base = `/api/app/spaces/${S1}/assets`;
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_UPLOAD_MAX_MB: '1' });
     await t.db
       .insert(spaces)
-      .values({ id: 's1', name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
     cookie = await userWithAccess(t, 'editor@example.com', {
       role: 'custom',
       permissions: ['ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE'],
@@ -58,12 +59,12 @@ describe('app API: assets', () => {
   };
   const storedFiles = async () => {
     try {
-      return await readdir(join(t.storageDir, 'spaces/s1/assets'));
+      return await readdir(join(t.storageDir, `spaces/${S1}/assets`));
     } catch {
       return [];
     }
   };
-  const contentVersion = async () => (await t.db.select().from(spaces).where(eq(spaces.id, 's1')))[0].contentVersion;
+  const contentVersion = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].contentVersion;
 
   let photos: { id: string };
   let nested: { id: string };
@@ -109,7 +110,7 @@ describe('app API: assets', () => {
     });
 
     it('is served by the public API straight away, with an ETag built from the stored md5', async () => {
-      const response = await t.request({ method: 'GET', url: `/api/v1/spaces/s1/assets/${photo['id']}/original` });
+      const response = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo['id']}/original` });
       expect(response.statusCode).toBe(200);
       expect(response.headers.etag).toBe(`"${photo['md5']}-orig"`);
     });

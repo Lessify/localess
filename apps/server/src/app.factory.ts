@@ -8,6 +8,8 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
 import { AppConfig } from './infra/config/config.js';
+import { DATABASE, type Database } from './infra/database/database.module.js';
+import { registerSpaceIdResolution, SpaceIdResolver } from './infra/http/space-id.js';
 import { SpaFallbackFilter } from './infra/static/spa-fallback.filter.js';
 import { registerStaticSite } from './infra/static/static-site.js';
 
@@ -37,6 +39,7 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
     return parseJson(request, body as string, done);
   });
   await app.register(fastifyCookie);
+  registerSpaceIdResolution(fastify, new SpaceIdResolver(app.get<Database>(DATABASE)));
   // The public API is called from customer sites, so it reflects any origin (as `cors({ origin: true })`
   // did). The cookie-authenticated app API is same-origin only and gets no CORS headers.
   await app.register(fastifyCors, {

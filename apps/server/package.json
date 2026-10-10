@@ -47,6 +47,7 @@
     "rxjs": "catalog:",
     "sharp": "^0.35.5",
     "unzipper": "^0.12.5",
+    "uuid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

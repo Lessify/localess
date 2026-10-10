@@ -10,6 +10,7 @@ import {
   translations,
 } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { S1 } from './ids.js';
 import type { TestApp } from './test-app.js';
 
 export const TOKEN_V1 = 'AAAAAAAAAAAAAAAAAAAA';
@@ -24,7 +25,7 @@ const de = { id: 'de', name: 'German' };
 const at = new Date('2026-01-01T00:00:00Z');
 
 /** A space `s1` (en fallback, de) with one token per permission profile. */
-export async function seedSpace(t: TestApp, spaceId = 's1'): Promise<void> {
+export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
   await t.db
     .insert(spaces)
     .values({ id: spaceId, name: 'Space', locales: [en, de], localeFallback: en, contentVersion: 7, translationVersion: 3 });
@@ -44,7 +45,7 @@ export async function seedSpace(t: TestApp, spaceId = 's1'): Promise<void> {
  *   blog/post-1 (DOCUMENT, published en only) blog/post-2 (DOCUMENT, never published)
  *   blog-archive (FOLDER) / old (DOCUMENT)    — a sibling sharing the "blog" prefix
  */
-export async function seedContent(t: TestApp, spaceId = 's1'): Promise<void> {
+export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
   await t.db.insert(schemas).values({
     spaceId,
     id: 'page',
@@ -136,7 +137,7 @@ export async function seedContent(t: TestApp, spaceId = 's1'): Promise<void> {
     ]);
 }
 
-export async function seedTranslations(t: TestApp, spaceId = 's1'): Promise<void> {
+export async function seedTranslations(t: TestApp, spaceId = S1): Promise<void> {
   await t.db.insert(translations).values([
     { spaceId, id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' } },
     { spaceId, id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
@@ -158,7 +159,7 @@ export interface SeededAsset {
   storageMissing?: boolean;
 }
 
-export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = 's1'): Promise<string> {
+export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): Promise<string> {
   const md5 = asset.bytes ? createHash('md5').update(asset.bytes).digest('base64') : null;
   await t.db.insert(assets).values({
     id: asset.id,

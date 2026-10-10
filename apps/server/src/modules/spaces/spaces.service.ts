@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, sql, sum } from 'drizzle-orm';
 import { DEFAULT_LOCALE } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { isUuid, newUuid } from '../../infra/database/id.js';
 import {
   assets,
   contentPublished,
@@ -36,6 +36,7 @@ export class SpacesService {
 
   /** The space, or undefined (the public API answers 404 itself; `get` throws). */
   async findSpace(spaceId: string): Promise<SpaceRow | undefined> {
+    if (!isUuid(spaceId)) return undefined;
     const [space] = await this.db.select().from(spaces).where(eq(spaces.id, spaceId));
     return space;
   }
@@ -48,7 +49,7 @@ export class SpacesService {
     return this.db.transaction(async tx => {
       const [space] = await tx
         .insert(spaces)
-        .values({ id: newId(), name, locales: [DEFAULT_LOCALE], localeFallback: DEFAULT_LOCALE })
+        .values({ id: newUuid(), name, locales: [DEFAULT_LOCALE], localeFallback: DEFAULT_LOCALE })
         .returning();
       await this.events.publish({ spaceId: null, entity: 'spaces', id: space.id, op: 'created' }, tx);
       return space;

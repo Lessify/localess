@@ -14,6 +14,7 @@ import {
   TOKEN_V1,
 } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
+import { EMPTY_SPACE, S1, S2 } from './ids.js';
 
 /**
  * The public delivery API against real rows. The cases ported from functions/src/v1/*.test.ts keep
@@ -32,8 +33,8 @@ describe('v1 CDN API', () => {
     // A second space with nothing published, and its own token.
     await t.db
       .insert(spaces)
-      .values({ id: 'empty', name: 'Empty', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
-    await t.db.insert(tokens).values({ id: EMPTY_TOKEN, spaceId: 'empty', name: 'v1' });
+      .values({ id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await t.db.insert(tokens).values({ id: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'v1' });
   });
 
   afterAll(() => t?.close());
@@ -43,9 +44,9 @@ describe('v1 CDN API', () => {
   describe('token authentication', () => {
     it('answers a missing, malformed or unknown token with the same 401 body', async () => {
       for (const url of [
-        '/api/v1/spaces/s1/translations/en',
-        '/api/v1/spaces/s1/translations/en?token=short',
-        '/api/v1/spaces/s1/translations/en?token=ZZZZZZZZZZZZZZZZZZZZ',
+        `/api/v1/spaces/${S1}/translations/en`,
+        `/api/v1/spaces/${S1}/translations/en?token=short`,
+        `/api/v1/spaces/${S1}/translations/en?token=ZZZZZZZZZZZZZZZZZZZZ`,
       ]) {
         const response = await get(url);
         expect(response.statusCode).toBe(401);
@@ -54,12 +55,12 @@ describe('v1 CDN API', () => {
     });
 
     it('does not accept a token from another space', async () => {
-      expect((await get(`/api/v1/spaces/empty/links?token=${TOKEN_PUBLIC}`)).statusCode).toBe(401);
-      expect((await get(`/api/v1/spaces/s1/links?token=${EMPTY_TOKEN}`)).statusCode).toBe(401);
+      expect((await get(`/api/v1/spaces/${EMPTY_SPACE}/links?token=${TOKEN_PUBLIC}`)).statusCode).toBe(401);
+      expect((await get(`/api/v1/spaces/${S1}/links?token=${EMPTY_TOKEN}`)).statusCode).toBe(401);
     });
 
     it('names the missing permissions in a 403', async () => {
-      const response = await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_NONE}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_NONE}`);
       expect(response.statusCode).toBe(403);
       expect(response.json()).toEqual({
         details: {
@@ -73,16 +74,16 @@ describe('v1 CDN API', () => {
     });
 
     it('requires a draft permission whenever `version` is present', async () => {
-      const response = await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_PUBLIC}&version=draft`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
       expect(response.json().details.reason).toMatch(/draft content/);
-      expect((await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_DRAFT}&version=draft`)).statusCode).toBe(302);
-      expect((await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_DEV}&version=draft`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_DRAFT}&version=draft`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_DEV}&version=draft`)).statusCode).toBe(302);
     });
 
     it('gives V1 tokens their implicit public and draft permissions', async () => {
-      expect((await get(`/api/v1/spaces/s1/translations/en?token=${TOKEN_V1}&version=draft`)).statusCode).toBe(302);
-      expect((await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_V1}`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}&version=draft`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_V1}`)).statusCode).toBe(302);
     });
   });
 
@@ -101,13 +102,19 @@ describe('v1 CDN API', () => {
     });
 
     it('lets a well-formed id through to the permission check', async () => {
-      expect((await get('/api/v1/spaces/S1/contents/C1')).statusCode).toBe(401);
+      expect((await get(`/api/v1/spaces/${S2}/contents/C1`)).statusCode).toBe(401);
+    });
+
+    it('answers 404 for a well-formed id that is neither a space UUID nor an imported Firestore id', async () => {
+      const response = await get(`/api/v1/spaces/NoSuchFirestoreId/contents/home?token=${TOKEN_V1}`);
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toEqual({ message: 'Not found', status: 'NOT_FOUND' });
     });
   });
 
   describe('cv redirects (ported)', () => {
     it('keeps a decoded value that contains & and = inside its own parameter', async () => {
-      const response = await get(`/api/v1/spaces/s1/translations/en?token=${TOKEN_V1}&version=x%26token%3Dinjected`);
+      const response = await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}&version=x%26token%3Dinjected`);
       expect(response.statusCode).toBe(302);
       const location = new URL(response.headers.location as string, 'https://cms.example.com');
       expect(location.searchParams.getAll('token')).toEqual([TOKEN_V1]);
@@ -115,34 +122,34 @@ describe('v1 CDN API', () => {
     });
 
     it('leaves ordinary values unchanged', async () => {
-      const response = await get(`/api/v1/spaces/s1/translations/en?token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}`);
       expect(response.statusCode).toBe(302);
-      expect(response.headers.location).toBe(`/api/v1/spaces/s1/translations/en?cv=3&token=${TOKEN_V1}`);
+      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/translations/en?cv=3&token=${TOKEN_V1}`);
       expect(response.headers['cache-control']).toBe('public, max-age=60, s-maxage=60');
     });
 
     it('also redirects a stale cv, and honours the token cacheTtl', async () => {
-      const stale = await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_DRAFT}&cv=1&locale=de&resolveLink=true`);
-      expect(stale.headers.location).toBe(`/api/v1/spaces/s1/contents/home?cv=7&locale=de&token=${TOKEN_DRAFT}&resolveLink=true`);
+      const stale = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_DRAFT}&cv=1&locale=de&resolveLink=true`);
+      expect(stale.headers.location).toBe(`/api/v1/spaces/${S1}/contents/home?cv=7&locale=de&token=${TOKEN_DRAFT}&resolveLink=true`);
       expect(stale.headers['cache-control']).toBe('public, max-age=30, s-maxage=30');
 
-      const noCache = await get(`/api/v1/spaces/s1/links?token=${TOKEN_NO_CACHE}&parentSlug=blog&excludeChildren=true&kind=DOCUMENT`);
+      const noCache = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_NO_CACHE}&parentSlug=blog&excludeChildren=true&kind=DOCUMENT`);
       expect(noCache.headers.location).toBe(
-        `/api/v1/spaces/s1/links?cv=7&parentSlug=blog&excludeChildren=true&kind=DOCUMENT&token=${TOKEN_NO_CACHE}`,
+        `/api/v1/spaces/${S1}/links?cv=7&parentSlug=blog&excludeChildren=true&kind=DOCUMENT&token=${TOKEN_NO_CACHE}`,
       );
       expect(noCache.headers['cache-control']).toBe('no-cache');
     });
 
     it('follows the space version, so publishing invalidates every cached URL', async () => {
-      await t.db.update(spaces).set({ contentVersion: 8 }).where(eq(spaces.id, 's1'));
-      const response = await get(`/api/v1/spaces/s1/contents/home?token=${TOKEN_V1}&cv=7`);
+      await t.db.update(spaces).set({ contentVersion: 8 }).where(eq(spaces.id, S1));
+      const response = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_V1}&cv=7`);
       expect(response.headers.location).toContain('cv=8');
-      await t.db.update(spaces).set({ contentVersion: 7 }).where(eq(spaces.id, 's1'));
+      await t.db.update(spaces).set({ contentVersion: 7 }).where(eq(spaces.id, S1));
     });
   });
 
   describe('translations', () => {
-    const translations = (query: string) => get(`/api/v1/spaces/s1/translations/${query}&cv=3&token=${TOKEN_V1}`);
+    const translations = (query: string) => get(`/api/v1/spaces/${S1}/translations/${query}&cv=3&token=${TOKEN_V1}`);
 
     it('serves the published locale file, cached for a week', async () => {
       const response = await translations('de?x=1');
@@ -163,14 +170,14 @@ describe('v1 CDN API', () => {
     });
 
     it('answers 404 when nothing was published', async () => {
-      const response = await get(`/api/v1/spaces/empty/translations/en?cv=1&token=${EMPTY_TOKEN}`);
+      const response = await get(`/api/v1/spaces/${EMPTY_SPACE}/translations/en?cv=1&token=${EMPTY_TOKEN}`);
       expect(response.statusCode).toBe(404);
       expect(response.json()).toEqual({ message: 'File not found, Publish first.', status: 'NOT_FOUND' });
     });
   });
 
   describe('content by id', () => {
-    const content = (id: string, query = '') => get(`/api/v1/spaces/s1/contents/${id}?cv=7&token=${TOKEN_DRAFT}${query}`);
+    const content = (id: string, query = '') => get(`/api/v1/spaces/${S1}/contents/${id}?cv=7&token=${TOKEN_DRAFT}${query}`);
 
     it('serves the published snapshot without the internal id arrays', async () => {
       const response = await content('home', '&locale=de');
@@ -228,25 +235,25 @@ describe('v1 CDN API', () => {
 
   describe('content by slug', () => {
     it('finds a document by its full slug', async () => {
-      const response = await get(`/api/v1/spaces/s1/contents/slugs/blog/post-1?cv=7&token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&token=${TOKEN_V1}`);
       expect(response.statusCode).toBe(200);
       expect(response.json()).toMatchObject({ id: 'post1', fullSlug: 'blog/post-1' });
     });
 
     it('redirects with each segment encoded', async () => {
-      const response = await get(`/api/v1/spaces/s1/contents/slugs/blog/post-1?token=${TOKEN_V1}&locale=de`);
-      expect(response.headers.location).toBe(`/api/v1/spaces/s1/contents/slugs/blog/post-1?cv=7&locale=de&token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?token=${TOKEN_V1}&locale=de`);
+      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&locale=de&token=${TOKEN_V1}`);
     });
 
     it('answers an unknown slug with 404 Slug not found', async () => {
-      const response = await get(`/api/v1/spaces/s1/contents/slugs/missing/page?cv=7&token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/missing/page?cv=7&token=${TOKEN_V1}`);
       expect(response.statusCode).toBe(404);
       expect(response.json()).toEqual({ message: 'Slug not found', status: 'NOT_FOUND' });
     });
   });
 
   describe('links', () => {
-    const links = (query = '') => get(`/api/v1/spaces/s1/links?cv=7&token=${TOKEN_PUBLIC}${query}`);
+    const links = (query = '') => get(`/api/v1/spaces/${S1}/links?cv=7&token=${TOKEN_PUBLIC}${query}`);
 
     it('lists every content item as metadata keyed by id', async () => {
       const body = (await links()).json();
@@ -277,7 +284,7 @@ describe('v1 CDN API', () => {
     it('gzips large JSON responses and marks them as varying on Accept-Encoding', async () => {
       const response = await t.request({
         method: 'GET',
-        url: `/api/v1/spaces/s1/links?cv=7&token=${TOKEN_PUBLIC}`,
+        url: `/api/v1/spaces/${S1}/links?cv=7&token=${TOKEN_PUBLIC}`,
         headers: { 'accept-encoding': 'gzip' },
       });
       expect(response.headers['content-encoding']).toBe('gzip');
@@ -286,13 +293,13 @@ describe('v1 CDN API', () => {
     });
 
     it('leaves bodies under the 1kb threshold uncompressed', async () => {
-      const response = await t.request({ method: 'GET', url: '/api/v1/spaces/s1/links', headers: { 'accept-encoding': 'gzip' } });
+      const response = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links`, headers: { 'accept-encoding': 'gzip' } });
       expect(response.headers['content-encoding']).toBeUndefined();
     });
 
     it('allows cross-origin reads of the public API only', async () => {
       const origin = { origin: 'https://www.customer.example' };
-      const api = await get(`/api/v1/spaces/s1/links?cv=7&token=${TOKEN_PUBLIC}`, origin);
+      const api = await get(`/api/v1/spaces/${S1}/links?cv=7&token=${TOKEN_PUBLIC}`, origin);
       expect(api.headers['access-control-allow-origin']).toBe('https://www.customer.example');
       const app = await get('/api/auth/me', origin);
       expect(app.headers['access-control-allow-origin']).toBeUndefined();

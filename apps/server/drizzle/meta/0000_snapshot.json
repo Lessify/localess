@@ -1,5 +1,5 @@
 {
-  "id": "44d94669-06a4-4346-a8ea-3fff4fcfd574",
+  "id": "21d86986-d5bf-4c21-864a-2a4314a5f0f5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -11,12 +11,12 @@
         "id": {
           "name": "id",
           "type": "text",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -201,7 +201,15 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "assets_space_id_id_pk": {
+          "name": "assets_space_id_id_pk",
+          "columns": [
+            "space_id",
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -211,6 +219,12 @@
       "name": "content_published",
       "schema": "",
       "columns": {
+        "space_id": {
+          "name": "space_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "content_id": {
           "name": "content_id",
           "type": "text",
@@ -239,14 +253,16 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "content_published_content_id_contents_id_fk": {
-          "name": "content_published_content_id_contents_id_fk",
+        "content_published_space_id_content_id_contents_space_id_id_fk": {
+          "name": "content_published_space_id_content_id_contents_space_id_id_fk",
           "tableFrom": "content_published",
           "tableTo": "contents",
           "columnsFrom": [
+            "space_id",
             "content_id"
           ],
           "columnsTo": [
+            "space_id",
             "id"
           ],
           "onDelete": "cascade",
@@ -254,9 +270,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "content_published_content_id_locale_pk": {
-          "name": "content_published_content_id_locale_pk",
+        "content_published_space_id_content_id_locale_pk": {
+          "name": "content_published_space_id_content_id_locale_pk",
           "columns": [
+            "space_id",
             "content_id",
             "locale"
           ]
@@ -274,12 +291,12 @@
         "id": {
           "name": "id",
           "type": "text",
-          "primaryKey": true,
+          "primaryKey": false,
           "notNull": true
         },
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -490,7 +507,15 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "contents_space_id_id_pk": {
+          "name": "contents_space_id_id_pk",
+          "columns": [
+            "space_id",
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -508,7 +533,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -560,7 +585,7 @@
       "columns": {
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -697,7 +722,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -811,9 +836,15 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
+        },
+        "legacy_id": {
+          "name": "legacy_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "name": {
           "name": "name",
@@ -899,7 +930,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "spaces_legacy_id_unique": {
+          "name": "spaces_legacy_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "legacy_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1002,7 +1041,7 @@
         },
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1153,7 +1192,7 @@
         },
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1261,7 +1300,7 @@
       "columns": {
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1321,7 +1360,7 @@
       "columns": {
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1413,7 +1452,7 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
@@ -1471,7 +1510,7 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1547,9 +1586,15 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
+        },
+        "legacy_id": {
+          "name": "legacy_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "email": {
           "name": "email",
@@ -1637,7 +1682,15 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "users_legacy_id_unique": {
+          "name": "users_legacy_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "legacy_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1800,7 +1853,7 @@
         },
         "space_id": {
           "name": "space_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },

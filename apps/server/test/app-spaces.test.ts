@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contents, spaces, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { S2, UUID_V7 } from './ids.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: spaces, locales, settings', () => {
@@ -43,7 +44,7 @@ describe('app API: spaces, locales, settings', () => {
       expect(response.json()).not.toHaveProperty('contentVersion');
       expect(response.json()).not.toHaveProperty('environments');
       spaceId = response.json().id;
-      expect(spaceId).toMatch(/^[A-Za-z0-9]{20}$/);
+      expect(spaceId).toMatch(UUID_V7);
     });
 
     it('lists spaces by name for any role, but not for users without one', async () => {
@@ -52,6 +53,23 @@ describe('app API: spaces, locales, settings', () => {
       expect((await noRole.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().name).toBe('Marketing');
       expect((await reader.get('/api/app/spaces/missing')).statusCode).toBe(404);
+      expect((await reader.get(`/api/app/spaces/${S2}`)).statusCode).toBe(404);
+      expect((await reader.get('/api/app/spaces/a%2Fb')).statusCode).toBe(404);
+    });
+
+    it('takes only UUIDs, not the Firestore id of an imported space, which it shows as legacyId', async () => {
+      await t.db.insert(spaces).values({
+        id: S2,
+        legacyId: 'Firestore20charsId01',
+        name: 'Imported',
+        locales: [{ id: 'en', name: 'English' }],
+        localeFallback: { id: 'en', name: 'English' },
+      });
+      expect((await reader.get('/api/app/spaces/Firestore20charsId01')).statusCode).toBe(404);
+      expect((await admin.get('/api/app/spaces/Firestore20charsId01/tokens')).statusCode).toBe(404);
+      const response = await reader.get(`/api/app/spaces/${S2}`);
+      expect(response.json()).toMatchObject({ id: S2, legacyId: 'Firestore20charsId01', name: 'Imported' });
+      await t.db.delete(spaces).where(eq(spaces.id, S2));
     });
 
     it('renames and sets environments', async () => {

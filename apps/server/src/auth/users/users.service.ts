@@ -3,7 +3,7 @@ import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { Principal, UserRole } from '@localess/shared';
 import { hashPassword } from '../password.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { isUuid, newUuid } from '../../infra/database/id.js';
 import { userCredentials, userIdentities, users } from '../../infra/database/schema.js';
 
 export type UserRow = typeof users.$inferSelect;
@@ -64,6 +64,7 @@ export class UsersService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   async findById(id: string): Promise<UserRow | undefined> {
+    if (!isUuid(id)) return undefined;
     const [user] = await this.db.select().from(users).where(eq(users.id, id));
     return user;
   }
@@ -102,7 +103,7 @@ export class UsersService {
       const [user] = await tx
         .insert(users)
         .values({
-          id: newId(),
+          id: newUuid(),
           email: input.email,
           emailVerified: input.emailVerified ?? false,
           displayName: input.displayName || null,

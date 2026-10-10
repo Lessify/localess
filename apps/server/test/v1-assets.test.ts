@@ -8,6 +8,7 @@ import { assets } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { seedAsset, seedSpace, SeededAsset } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
+import { S1 } from './ids.js';
 
 /** Ported from functions/src/v1/cdn-assets.test.ts, against real rows and files instead of spies. */
 
@@ -70,7 +71,7 @@ describe('v1 asset routes', () => {
   async function given(asset: Omit<SeededAsset, 'id'>): Promise<{ url: string; md5: string; id: string }> {
     const id = `asset${++n}`;
     const md5 = await seedAsset(t, { id, ...asset });
-    return { url: `/api/v1/spaces/s1/assets/${id}`, md5, id };
+    return { url: `/api/v1/spaces/${S1}/assets/${id}`, md5, id };
   }
 
   const get = (url: string, headers: Record<string, string> = {}) => t.request({ method: 'GET', url, headers });
@@ -111,7 +112,7 @@ describe('v1 asset routes', () => {
     });
 
     it('caches a genuinely missing asset hard', async () => {
-      const response = await get('/api/v1/spaces/s1/assets/doesnotexist/original');
+      const response = await get(`/api/v1/spaces/${S1}/assets/doesnotexist/original`);
       expect(response.statusCode).toBe(404);
       expect(response.headers['cache-control']).toContain('max-age=604800');
     });
@@ -206,7 +207,7 @@ describe('v1 asset routes', () => {
     it('caches generated renditions and serves repeats from the cache', async () => {
       const { url, id } = await given({ bytes: await jpegFixture(), type: 'image/jpeg', extension: '.jpg' });
       const first = await get(`${url}?w=120&q=50`);
-      const renditions = await readdir(join(t.storageDir, `spaces/s1/assets/${id}/renditions`));
+      const renditions = await readdir(join(t.storageDir, `spaces/${S1}/assets/${id}/renditions`));
       expect(renditions).toEqual(['w120-q50-fjpeg']);
 
       const storage = t.app.get<StorageDriver>(STORAGE_DRIVER);
@@ -214,7 +215,7 @@ describe('v1 asset routes', () => {
       const second = await get(`${url}?w=120&q=50`);
       expect(second.rawPayload.equals(first.rawPayload)).toBe(true);
       // Only the cached rendition was read, never the original.
-      expect(read.mock.calls.map(([key]) => key)).toEqual([`spaces/s1/assets/${id}/renditions/w120-q50-fjpeg`]);
+      expect(read.mock.calls.map(([key]) => key)).toEqual([`spaces/${S1}/assets/${id}/renditions/w120-q50-fjpeg`]);
     });
   });
 
@@ -301,7 +302,7 @@ describe('v1 asset routes', () => {
         metadata: { width: 400, height: 300, format: 'jpeg' },
       });
       const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
-      const resolved = await t.app.get(ContentDeliveryService).resolveAssets('s1', [id, 'missing']);
+      const resolved = await t.app.get(ContentDeliveryService).resolveAssets(S1, [id, 'missing']);
       expect(resolved).toEqual({
         [id]: {
           id,
@@ -317,9 +318,9 @@ describe('v1 asset routes', () => {
     });
 
     it('skips folders', async () => {
-      await t.db.insert(assets).values({ id: 'folder1', spaceId: 's1', kind: 'FOLDER', name: 'Folder' });
+      await t.db.insert(assets).values({ id: 'folder1', spaceId: S1, kind: 'FOLDER', name: 'Folder' });
       const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
-      expect(await t.app.get(ContentDeliveryService).resolveAssets('s1', ['folder1'])).toEqual({});
+      expect(await t.app.get(ContentDeliveryService).resolveAssets(S1, ['folder1'])).toEqual({});
     });
   });
 

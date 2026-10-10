@@ -2,19 +2,20 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { S1 } from './ids.js';
 
 describe('app API: schemas', () => {
   let t: TestApp;
   let editor: ReturnType<typeof api>;
   let contentReader: ReturnType<typeof api>;
   let other: ReturnType<typeof api>;
-  const base = '/api/app/spaces/s1/schemas';
+  const base = `/api/app/spaces/${S1}/schemas`;
 
   beforeAll(async () => {
     t = await createTestApp();
     await t.db
       .insert(spaces)
-      .values({ id: 's1', name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
@@ -28,7 +29,7 @@ describe('app API: schemas', () => {
 
   afterAll(() => t?.close());
 
-  const contentVersion = async () => (await t.db.select().from(spaces).where(eq(spaces.id, 's1')))[0].contentVersion;
+  const contentVersion = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].contentVersion;
 
   it('creates schemas, refusing duplicates and bad ids, and bumps the content version', async () => {
     const before = await contentVersion();

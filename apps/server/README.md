@@ -149,9 +149,11 @@ IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: impor
 ## Migrating from a Firebase install
 
 `import:firebase` copies a Firebase-era Localess project into this server — Firestore documents
-(same ids, so public URLs, API tokens and SDK caches keep working), Storage files (asset originals;
+(spaces and users get UUIDv7 ids and keep their Firebase id in `legacy_id`, which public API URLs
+still accept; the other entities keep their ids, so public URLs, API tokens and SDK caches keep
+working), Storage files (asset originals;
 the published content and translation JSON snapshots are copied as served, not rebuilt) and Auth
-users with their roles and permissions. Every write is an upsert: run it once to rehearse, then
+users with their roles and permissions. Every write is an upsert (spaces and users by `legacy_id`): run it once to rehearse, then
 again right before switching DNS to pick up the delta.
 
 1. Create a service account key for the Firebase project with read access to Firestore, Storage and

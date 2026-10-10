@@ -1,10 +1,10 @@
 # Firebase → self-hosted data migration with UUIDv7 ids
 
-**Status:** Proposed, not started · **Recorded:** 2026-10-09
-**Starts after:** the application migration ([firebase-to-nestjs-postgres.md](firebase-to-nestjs-postgres.md))
-is stable and tested. Until then the schema and the public API may still move, so nothing here is built.
-**Replaces:** the current `import:firebase` CLI (`apps/server/src/cli/firebase-import/`), which copies Firestore ids
-verbatim into `text` columns.
+**Status:** In progress, one feature block at a time (see [Rollout by feature](#rollout-by-feature)) ·
+**Recorded:** 2026-10-09 · **Admin block (users, spaces) done:** 2026-10-10
+**Replaces:** the `import:firebase` CLI (`apps/server/src/cli/firebase-import/`) copying Firestore ids verbatim into
+`text` columns. Users and spaces already get UUIDv7s; the other entities still keep their Firestore ids until
+their block.
 
 ## Goal
 
@@ -44,11 +44,14 @@ Derived requirements (needed for R1–R6 to be safe):
 
 ### Generation
 
-- `newId()` in `apps/server/src/infra/database/id.ts` returns a UUIDv7 (RFC 9562). It's generated in Node, not with
-  Postgres 18's `uuidv7()`, because `DATABASE_URL` may point at Postgres < 18.
-- `newId(at?: Date)` takes an optional timestamp. The migration passes the Firestore `createdAt`, so migrated
+- `newUuid()` in `apps/server/src/infra/database/id.ts` returns a UUIDv7 (RFC 9562, `uuid` package). It's
+  generated in Node, not with Postgres 18's `uuidv7()`, because `DATABASE_URL` may point at Postgres < 18.
+- `newUuid(at?: Date)` takes an optional timestamp. The migration passes the Firebase creation time, so migrated
   rows sort by their real creation time instead of by migration time. The 74 random bits still make it unique.
-- Column type becomes native `uuid` for every generated id (16 bytes, time-ordered B-tree inserts).
+- Column type becomes native `uuid` for every generated id (16 bytes, time-ordered B-tree inserts). Postgres
+  rejects anything else in a `uuid` column, so every lookup by an id from a request checks `isUuid()` first and
+  answers 404 instead of a 500.
+- `newId()` (20 alphanumerics) stays for the entities not migrated yet, and for new API token values.
 - `isValidId` / `zId` accept a canonical lowercase UUID; the generic `[A-Za-z0-9_-]{1,128}` pattern is only kept
   where legacy ids are still accepted (D2).
 
@@ -56,14 +59,14 @@ Derived requirements (needed for R1–R6 to be safe):
 
 | Entity | New primary key | Kept value | Notes |
 |---|---|---|---|
-| users | `id uuid` | `legacy_ids` (Firebase uid) | Firebase uid is never exposed publicly. |
-| spaces | `id uuid` | `legacy_ids` | Space id is in every public URL and SDK config → D2. |
-| contents | `id uuid` (unique per space today, global now) | `legacy_ids` | `content_published.content_id` follows. |
-| assets | `id uuid` | `legacy_ids` | `parent_path` (slash-joined folder ids) rewritten; storage key moves to the new id. |
+| users | `id uuid` ✅ | `legacy_id` (Firebase uid), unique | Never exposed publicly; makes re-runs update the same user. |
+| spaces | `id uuid` ✅ | `legacy_id` (Firestore id), unique | Space id is in every public URL and SDK config → D2. |
+| contents | `id uuid` (unique per space today, global now) | `legacy_id`, unique per space | `content_published.content_id` follows. |
+| assets | `id uuid` | `legacy_id`, unique per space | `parent_path` (slash-joined folder ids) rewritten; storage key moves to the new id. |
 | schemas | `id uuid` | **`name text`**, unique `(space_id, name)` | R5. Public API shows `name` where it showed `id`. |
 | translations | `id uuid` | **`key text`**, unique `(space_id, key)` | R4. `translation_published` stays keyed by key. |
 | tokens | `id uuid` | **`token text`**, unique | R3. Token lookup becomes `WHERE token = $1`. |
-| webhooks | `id uuid` | `legacy_ids` | Webhook secret copied as-is. |
+| webhooks | `id uuid` | `legacy_id`, unique per space | Webhook secret copied as-is. |
 | tasks | `id uuid` | — | Not migrated (history only, files are transient). |
 | task_logs, webhook_logs | `bigserial` | — | Unchanged. Webhook logs: migrate or drop (open question). |
 | sessions, password reset tokens | hash keys | — | Unchanged, never migrated. |
@@ -137,25 +140,29 @@ New ids break every URL that contains an old id unless the old ids keep working.
 - `/api/v1/spaces/{spaceId}/assets/{assetId}` — asset URLs are embedded in customer sites, CDNs and sent emails;
 - `/api/v1/spaces/{spaceId}/contents/{contentId}` — fetch-by-id in customer code.
 
-Proposal: a `legacy_ids` table, written by the migration and read-only afterwards.
+Decision (2026-10-10): a nullable **`legacy_id text` column on each table whose rows come from Firebase**,
+unique (per space for space-scoped tables), instead of a separate `legacy_ids` mapping table. A row is found by
+either id with one indexed query: a UUID matches `id`, anything else matches `legacy_id`.
 
-```sql
-CREATE TABLE legacy_ids (
-  entity    text NOT NULL,          -- 'space' | 'content' | 'asset' | 'user' | 'webhook'
-  space_id  uuid,                   -- null for space/user
-  legacy_id text NOT NULL,          -- Firestore document id / Firebase uid
-  id        uuid NOT NULL           -- new UUIDv7
-);
-CREATE UNIQUE INDEX legacy_ids_lookup ON legacy_ids (entity, space_id, legacy_id) NULLS NOT DISTINCT;
-```
+It also serves D3: the migration upserts on `legacy_id`, so a re-run updates the row it created before, with
+the same UUID, and the returned row gives the UUID that child rows' foreign keys need (an in-memory map
+during the run; foreign keys always hold the real UUID).
 
-It also serves D3: a re-run looks up the existing UUID instead of generating a new one.
+References *inside JSON* (content data, reference arrays) may then stay as old ids and be resolved through
+`legacy_id` too, which would make the rewrite pass optional. That trade-off (mixed ids in stored data, every
+resolver querying both columns, `text[]` instead of `uuid[]` arrays) is decided in the contents block.
+
+Done for spaces: a Fastify `preHandler` hook (`apps/server/src/infra/http/space-id.ts`) rewrites a `/api/v1`
+`:spaceId` route param to the UUID before any controller runs, with hits cached in memory; an unknown id
+answers 404. The App API takes UUIDs only (anything else is a 404). Space responses carry `legacyId` so the UI
+can display it, but the SPA works only with UUIDs and never resolves by `legacyId`: an old UI link falls back
+to the first available space like any unknown space id (Q4).
 
 Public API behaviour for a non-UUID id:
 
 | Route | Behaviour |
 |---|---|
-| `spaceId` path segment | Resolve silently (lookup cached in memory). No redirect: tokens and `cv` already handle caching. |
+| `spaceId` path segment | Resolve silently (lookup cached in memory). No redirect: tokens and `cv` already handle caching. ✅ |
 | `assets/:assetId`, `/original`, `/download` | `301` to the canonical UUID URL, so CDNs and browsers converge on one URL. |
 | `contents/:contentId` | Resolve, or `301` — same choice as assets (Q2). |
 | `links` response, `id` fields in payloads | New UUIDs. Consumers that hard-coded ids in *responses* (not URLs) see a change → release note. |
@@ -165,9 +172,8 @@ The lookup only runs when the path segment isn't a UUID, so new installs pay not
 
 Other visible changes to call out in the release notes:
 
-- Webhook payloads carry the new content ids.
-- UI deep links (`/features/spaces/<old id>/…`) bookmarked before the migration stop working — the SPA can
-  resolve them through an App API endpoint, or we accept it (Q4).
+- Webhook payloads carry the new space ids (`spaceId`) and, after the contents block, the new content ids.
+- App API responses carry the new space and user ids.
 
 ## Migration process
 
@@ -212,9 +218,27 @@ The UI tasks stay the way to move a single space between self-hosted instances. 
 - Exports made by the Firebase version (20-char ids) are accepted the same way: the ids are just "foreign"
   ids that get mapped.
 
-## Implementation plan
+## Rollout by feature
 
-Each step is a commit with tests; nothing starts before the application migration is declared stable.
+The change is too big for one step, so it's rolled out per feature block, each reviewed before it's built,
+with build and tests passing at the end of each. Until the last block, every block regenerates
+`apps/server/drizzle/0000_init.sql` from the schema (there are no released installs; local `.data` is
+deleted once per block).
+
+| # | Block | Tables | Status |
+|---|---|---|---|
+| 1 | Admin | `users`, `spaces` (+ `legacy_id`); every `user_id` / `space_id` column becomes `uuid` | ✅ 2026-10-10 |
+| 2 | Space settings | `tokens` (+ `token` value column), `webhooks`, `webhook_logs` | planned |
+| 3 | Schemas | `schemas` (+ `name`) | planned |
+| 4 | Translations | `translations` (+ `key`), `translation_published` | planned |
+| 5 | Assets | `assets` (+ `legacy_id`, `parent_path`) | planned |
+| 6 | Contents | `contents` (+ `legacy_id`, `schema_id`), `content_published`, references | planned |
+| 7 | Tasks | `tasks`, `task_logs`, Export/Import id mapping | planned |
+| 8 | Final | `newId()` only for token values, docs, release notes | planned |
+
+The implementation steps below are what the blocks add up to.
+
+## Implementation plan
 
 1. **`newId()` → UUIDv7** with optional timestamp; tests for format, ordering and timestamp.
 2. **Schema migration**: `uuid` columns; `schemas.name`, `translations.key`, `tokens.token`; `contents.schema_id`;
@@ -240,6 +264,6 @@ Each step is a commit with tests; nothing starts before the application migratio
 | Q1 | Draft `_schema`: store schema UUID or name? | UUID — rename-safe, matches R2; map to name at the API edge. |
 | Q2 | Old content id on `contents/:contentId`: resolve or 301? | 301, same as assets. |
 | Q3 | Rewrite asset URLs found inside RICH_TEXT / MARKDOWN strings? | Yes, if the URL matches this install's `/api/v1/spaces/{space}/assets/{asset}`; with D2 they'd still work anyway. |
-| Q4 | Resolve old UI deep links (`/features/spaces/<old id>`)? | No — internal users, a one-time inconvenience. |
+| Q4 | Resolve old UI deep links (`/features/spaces/<old id>`)? | No — decided 2026-10-10: the SPA works only with UUIDs (it shows `legacyId`, never resolves by it); an old link falls back to the first available space. |
 | Q5 | Migrate webhook logs and task history? | Webhook logs no (re-created on delivery), task history no. |
-| Q6 | How long to keep `legacy_ids` resolution on? | Until the operator turns it off; it costs nothing for UUID requests. |
+| Q6 | How long to keep legacy id resolution on? | Always: it costs nothing for UUID requests and one indexed query otherwise. |

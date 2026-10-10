@@ -82,7 +82,7 @@
     "rxjs": "catalog:",
     "tailwind-merge": "catalog:",
     "tslib": "catalog:",
-    "uuid": "^14.0.2"
+    "uuid": "catalog:"
   },
   "devDependencies": {
     "@angular-eslint/builder": "~22.5.0",

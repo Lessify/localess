@@ -8,6 +8,7 @@ import { assets, contents, schemas, spaces, tasks, tokens, translations } from '
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
 import { createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
+import { SPACE_A, SPACE_B, SPACE_S } from './ids.js';
 
 const en = { id: 'en', name: 'English' };
 const de = { id: 'de', name: 'German' };
@@ -53,16 +54,16 @@ describe('task worker: exports and imports', () => {
     jpeg = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#336699' } })
       .jpeg()
       .toBuffer();
-    for (const id of ['A', 'B']) await t.db.insert(spaces).values({ id, name: id, locales: [en, de], localeFallback: en });
+    for (const id of [SPACE_A, SPACE_B]) await t.db.insert(spaces).values({ id, name: id, locales: [en, de], localeFallback: en });
     await t.db.insert(schemas).values([
-      { spaceId: 'A', id: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] },
-      { spaceId: 'A', id: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
+      { spaceId: SPACE_A, id: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] },
+      { spaceId: SPACE_A, id: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
     ]);
     await t.db.insert(contents).values([
-      { spaceId: 'A', id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
-      { spaceId: 'A', id: 'y2026', kind: 'FOLDER', name: '2026', slug: '2026', parentSlug: 'blog', fullSlug: 'blog/2026' },
+      { spaceId: SPACE_A, id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
+      { spaceId: SPACE_A, id: 'y2026', kind: 'FOLDER', name: '2026', slug: '2026', parentSlug: 'blog', fullSlug: 'blog/2026' },
       {
-        spaceId: 'A',
+        spaceId: SPACE_A,
         id: 'post',
         kind: 'DOCUMENT',
         name: 'Post',
@@ -72,16 +73,16 @@ describe('task worker: exports and imports', () => {
         schema: 'page',
         data: { _id: 'r', _schema: 'page', title: 'Hi', title_i18n_de: 'Hallo' },
       },
-      { spaceId: 'A', id: 'about', kind: 'DOCUMENT', name: 'About', slug: 'about', parentSlug: '', fullSlug: 'about', schema: 'page' },
+      { spaceId: SPACE_A, id: 'about', kind: 'DOCUMENT', name: 'About', slug: 'about', parentSlug: '', fullSlug: 'about', schema: 'page' },
     ]);
     await t.db.insert(translations).values([
-      { spaceId: 'A', id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
-      { spaceId: 'A', id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
+      { spaceId: SPACE_A, id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
+      { spaceId: SPACE_A, id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
     ]);
     await t.db.insert(assets).values([
-      { spaceId: 'A', id: 'photos', kind: 'FOLDER', name: 'Photos', parentPath: '' },
+      { spaceId: SPACE_A, id: 'photos', kind: 'FOLDER', name: 'Photos', parentPath: '' },
       {
-        spaceId: 'A',
+        spaceId: SPACE_A,
         id: 'pic',
         kind: 'FILE',
         name: 'pic',
@@ -92,7 +93,7 @@ describe('task worker: exports and imports', () => {
         metadata: { type: 'image', width: 64, height: 48 },
       },
     ]);
-    await t.app.get<StorageDriver>(STORAGE_DRIVER).put('spaces/A/assets/pic/original', jpeg);
+    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${SPACE_A}/assets/pic/original`, jpeg);
   });
 
   afterAll(() => t?.close());
@@ -141,18 +142,18 @@ describe('task worker: exports and imports', () => {
 
   describe('schemas', () => {
     it('exports a zip with schemas.json and metadata, and imports it into another space', async () => {
-      const exported = await exportTask('A', { kind: 'SCHEMA_EXPORT' });
+      const exported = await exportTask(SPACE_A, { kind: 'SCHEMA_EXPORT' });
       expect(exported).toMatchObject({ status: 'FINISHED', file: { name: `schema-export-${exported.id}.lls.zip` } });
-      const bytes = await download('A', exported.id);
+      const bytes = await download(SPACE_A, exported.id);
       expect(exported.file?.size).toBe(bytes.length);
       const files = await readZip(bytes);
       expect(JSON.parse(files['metadata.json'].toString())).toEqual({ kind: 'SCHEMA' });
       expect(JSON.parse(files['schemas.json'].toString()).map((s: { id: string }) => s.id)).toEqual(['colors', 'page']);
 
-      const imported = await importTask('B', 'SCHEMA_IMPORT', bytes);
+      const imported = await importTask(SPACE_B, 'SCHEMA_IMPORT', bytes);
       expect(imported.status).toBe('FINISHED');
-      expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, 'B'))).map(s => s.id).sort()).toEqual(['colors', 'page']);
-      expect(await logs('B', imported.id)).toEqual(
+      expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, SPACE_B))).map(s => s.id).sort()).toEqual(['colors', 'page']);
+      expect(await logs(SPACE_B, imported.id)).toEqual(
         expect.arrayContaining(['Starting SCHEMA_IMPORT processing', 'total changes : 2', 'Task finished successfully']),
       );
     });
@@ -160,29 +161,29 @@ describe('task worker: exports and imports', () => {
 
   describe('contents', () => {
     it('round-trips the whole tree into another space, keeping ids', async () => {
-      const exported = await exportTask('A', { kind: 'CONTENT_EXPORT' });
+      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT' });
       expect(exported.file?.name).toBe(`content-export-${exported.id}.llc.zip`);
-      const bytes = await download('A', exported.id);
-      expect((await importTask('B', 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
-      const b = await t.db.select().from(contents).where(eq(contents.spaceId, 'B'));
+      const bytes = await download(SPACE_A, exported.id);
+      expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
+      const b = await t.db.select().from(contents).where(eq(contents.spaceId, SPACE_B));
       expect(b.map(c => c.id).sort()).toEqual(['about', 'blog', 'post', 'y2026']);
       expect(b.find(c => c.id === 'post')).toMatchObject({ fullSlug: 'blog/2026/post', data: { title: 'Hi', title_i18n_de: 'Hallo' } });
 
       // The same file again changes nothing.
-      const again = await importTask('B', 'CONTENT_IMPORT', bytes);
-      expect(await logs('B', again.id)).toContain('total changes : 0');
+      const again = await importTask(SPACE_B, 'CONTENT_IMPORT', bytes);
+      expect(await logs(SPACE_B, again.id)).toContain('total changes : 0');
     });
 
     it('exports one document with the folders leading to it', async () => {
-      const exported = await exportTask('A', { kind: 'CONTENT_EXPORT', path: 'post' });
-      const files = await readZip(await download('A', exported.id));
+      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: 'post' });
+      const files = await readZip(await download(SPACE_A, exported.id));
       expect(JSON.parse(files['metadata.json'].toString())).toEqual({ kind: 'CONTENT', path: 'post' });
       expect(JSON.parse(files['contents.json'].toString()).map((c: { id: string }) => c.id)).toEqual(['post', 'blog', 'y2026']);
     });
 
     it('exports a folder with its subtree', async () => {
-      const exported = await exportTask('A', { kind: 'CONTENT_EXPORT', path: 'blog' });
-      const files = await readZip(await download('A', exported.id));
+      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: 'blog' });
+      const files = await readZip(await download(SPACE_A, exported.id));
       expect(
         JSON.parse(files['contents.json'].toString())
           .map((c: { id: string }) => c.id)
@@ -206,19 +207,19 @@ describe('task worker: exports and imports', () => {
           },
         ]),
       });
-      expect((await importTask('B', 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
+      expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
       const [row] = await t.db
         .select()
         .from(contents)
-        .where(and(eq(contents.spaceId, 'B'), eq(contents.id, 'legacy')));
+        .where(and(eq(contents.spaceId, SPACE_B), eq(contents.id, 'legacy')));
       expect(row.data).toEqual({ _id: 'x', _schema: 'page', title: 'Old' });
     });
 
     it('is served by the public API of the importing space', async () => {
-      await t.db.insert(tokens).values({ id: 'BBBBBBBBBBBBBBBBBBBB', spaceId: 'B', name: 't', version: 2, permissions: ['CONTENT_DRAFT'] });
+      await t.db.insert(tokens).values({ id: 'BBBBBBBBBBBBBBBBBBBB', spaceId: SPACE_B, name: 't', version: 2, permissions: ['CONTENT_DRAFT'] });
       const redirect = await t.request({
         method: 'GET',
-        url: '/api/v1/spaces/B/contents/post?token=BBBBBBBBBBBBBBBBBBBB&version=draft&locale=de',
+        url: `/api/v1/spaces/${SPACE_B}/contents/post?token=BBBBBBBBBBBBBBBBBBBB&version=draft&locale=de`,
       });
       const response = await t.request({ method: 'GET', url: redirect.headers.location as string });
       expect(response.json()).toMatchObject({ id: 'post', locale: 'de', data: { title: 'Hallo' } });
@@ -227,22 +228,22 @@ describe('task worker: exports and imports', () => {
 
   describe('assets', () => {
     it('round-trips folders and files with their bytes into another space', async () => {
-      const exported = await exportTask('A', { kind: 'ASSET_EXPORT' });
+      const exported = await exportTask(SPACE_A, { kind: 'ASSET_EXPORT' });
       expect(exported.file?.name).toBe(`asset-export-${exported.id}.lla.zip`);
-      const bytes = await download('A', exported.id);
+      const bytes = await download(SPACE_A, exported.id);
       const files = await readZip(bytes);
       expect(Object.keys(files).sort()).toEqual(['assets.json', 'assets/pic', 'metadata.json']);
       expect(files['assets/pic'].equals(jpeg)).toBe(true);
 
-      expect((await importTask('B', 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      const b = await t.db.select().from(assets).where(eq(assets.spaceId, 'B'));
+      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
+      const b = await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B));
       expect(b.find(a => a.id === 'pic')).toMatchObject({
         parentPath: 'photos',
         size: jpeg.length,
         md5: expect.any(String),
         metadata: { width: 64, height: 48 },
       });
-      const served = await t.request({ method: 'GET', url: '/api/v1/spaces/B/assets/pic/original' });
+      const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/pic/original` });
       expect(served.rawPayload.equals(jpeg)).toBe(true);
     });
 
@@ -255,14 +256,14 @@ describe('task worker: exports and imports', () => {
         ]),
         'assets/fresh': jpeg,
       });
-      expect((await importTask('B', 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      const ids = (await t.db.select().from(assets).where(eq(assets.spaceId, 'B'))).map(a => a.id);
+      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
+      const ids = (await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B))).map(a => a.id);
       expect(ids).toContain('fresh');
       expect(ids).not.toContain('ghost');
       const [fresh] = await t.db
         .select()
         .from(assets)
-        .where(and(eq(assets.spaceId, 'B'), eq(assets.id, 'fresh')));
+        .where(and(eq(assets.spaceId, SPACE_B), eq(assets.id, 'fresh')));
       expect(fresh.metadata).toMatchObject({ type: 'image', width: 64, height: 48 });
     });
 
@@ -271,50 +272,50 @@ describe('task worker: exports and imports', () => {
         'metadata.json': JSON.stringify({ kind: 'ASSET' }),
         'assets.json': JSON.stringify([{ id: '../escape', kind: 'FOLDER', name: 'x', parentPath: '' }]),
       });
-      expect(await importTask('B', 'ASSET_IMPORT', bytes)).toMatchObject({ status: 'ERROR', message: 'Asset data is invalid.' });
+      expect(await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).toMatchObject({ status: 'ERROR', message: 'Asset data is invalid.' });
     });
 
     it('regenerates metadata of every file', async () => {
       await t.db
         .update(assets)
         .set({ metadata: null })
-        .where(and(eq(assets.spaceId, 'A'), eq(assets.id, 'pic')));
-      expect((await exportTask('A', { kind: 'ASSET_REGEN_METADATA' })).status).toBe('FINISHED');
+        .where(and(eq(assets.spaceId, SPACE_A), eq(assets.id, 'pic')));
+      expect((await exportTask(SPACE_A, { kind: 'ASSET_REGEN_METADATA' })).status).toBe('FINISHED');
       const [pic] = await t.db
         .select()
         .from(assets)
-        .where(and(eq(assets.spaceId, 'A'), eq(assets.id, 'pic')));
+        .where(and(eq(assets.spaceId, SPACE_A), eq(assets.id, 'pic')));
       expect(pic.metadata).toMatchObject({ type: 'image', format: 'jpg', width: 64, height: 48 });
     });
   });
 
   describe('translations', () => {
     it('round-trips all translations as a zip', async () => {
-      const exported = await exportTask('A', { kind: 'TRANSLATION_EXPORT' });
+      const exported = await exportTask(SPACE_A, { kind: 'TRANSLATION_EXPORT' });
       expect(exported.file?.name).toBe(`translation-export-${exported.id}.llt.zip`);
-      const files = await readZip(await download('A', exported.id));
+      const files = await readZip(await download(SPACE_A, exported.id));
       expect(JSON.parse(files['translations.json'].toString())).toEqual([
         { id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
         { id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
       ]);
-      const before = (await t.db.select().from(spaces).where(eq(spaces.id, 'B')))[0].translationVersion;
-      expect((await importTask('B', 'TRANSLATION_IMPORT', await download('A', exported.id))).status).toBe('FINISHED');
-      expect((await t.db.select().from(translations).where(eq(translations.spaceId, 'B'))).map(it => it.id).sort()).toEqual([
+      const before = (await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion;
+      expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', await download(SPACE_A, exported.id))).status).toBe('FINISHED');
+      expect((await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B))).map(it => it.id).sort()).toEqual([
         'farewell',
         'greeting',
       ]);
-      expect((await t.db.select().from(spaces).where(eq(spaces.id, 'B')))[0].translationVersion).toBe(before + 1);
+      expect((await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion).toBe(before + 1);
     });
 
     it('exports one locale as flat JSON and imports it into a locale, creating missing keys', async () => {
-      const exported = await exportTask('A', { kind: 'TRANSLATION_EXPORT', locale: 'de' });
+      const exported = await exportTask(SPACE_A, { kind: 'TRANSLATION_EXPORT', locale: 'de' });
       expect(exported.file?.name).toBe(`translation-de-export-${exported.id}.json`);
-      const flat = await download('A', exported.id);
+      const flat = await download(SPACE_A, exported.id);
       expect(JSON.parse(flat.toString())).toEqual({ greeting: 'Hallo' });
 
       const edited = Buffer.from(JSON.stringify({ greeting: 'Servus', brandNew: 'Neu' }));
-      expect((await importTask('B', 'TRANSLATION_IMPORT', edited, { locale: 'de' })).status).toBe('FINISHED');
-      const b = await t.db.select().from(translations).where(eq(translations.spaceId, 'B'));
+      expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', edited, { locale: 'de' })).status).toBe('FINISHED');
+      const b = await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B));
       expect(b.find(it => it.id === 'greeting')?.locales).toEqual({ en: 'Hello', de: 'Servus' });
       expect(b.find(it => it.id === 'brandNew')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
     });
@@ -322,15 +323,15 @@ describe('task worker: exports and imports', () => {
 
   describe('bad files', () => {
     it('reports the wrong kind of export', async () => {
-      const exported = await exportTask('A', { kind: 'SCHEMA_EXPORT' });
-      expect(await importTask('B', 'CONTENT_IMPORT', await download('A', exported.id))).toMatchObject({
+      const exported = await exportTask(SPACE_A, { kind: 'SCHEMA_EXPORT' });
+      expect(await importTask(SPACE_B, 'CONTENT_IMPORT', await download(SPACE_A, exported.id))).toMatchObject({
         status: 'ERROR',
         message: 'It is not a Content Export file.',
       });
     });
 
     it('reports files that are not archives', async () => {
-      expect(await importTask('B', 'TRANSLATION_IMPORT', Buffer.from('not a zip'))).toMatchObject({
+      expect(await importTask(SPACE_B, 'TRANSLATION_IMPORT', Buffer.from('not a zip'))).toMatchObject({
         status: 'ERROR',
         message: 'It is not a Translation Export file.',
       });
@@ -341,14 +342,14 @@ describe('task worker: exports and imports', () => {
         'metadata.json': JSON.stringify({ kind: 'CONTENT' }),
         'contents.json': JSON.stringify([{ id: 'x', kind: 'DOCUMENT' }]),
       });
-      const task = await importTask('B', 'CONTENT_IMPORT', bytes);
+      const task = await importTask(SPACE_B, 'CONTENT_IMPORT', bytes);
       expect(task).toMatchObject({ status: 'ERROR', message: 'Content data is invalid.' });
       expect(JSON.parse(task.trace as string).length).toBeGreaterThan(0);
       expect(
         await t.db
           .select()
           .from(contents)
-          .where(and(eq(contents.spaceId, 'B'), eq(contents.id, 'x'))),
+          .where(and(eq(contents.spaceId, SPACE_B), eq(contents.id, 'x'))),
       ).toEqual([]);
     });
   });
@@ -360,21 +361,21 @@ describe('task worker: queue', () => {
   beforeAll(async () => {
     // The worker is driven by hand here.
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
-    await t.db.insert(spaces).values({ id: 'S', name: 'S', locales: [en], localeFallback: en });
+    await t.db.insert(spaces).values({ id: SPACE_S, name: 'S', locales: [en], localeFallback: en });
   });
 
   afterAll(() => t?.close());
 
   it('hands each task to exactly one claimant, oldest first', async () => {
     await t.db.insert(tasks).values([
-      { id: 'older', spaceId: 'S', kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-01') },
-      { id: 'newer', spaceId: 'S', kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-02') },
+      { id: 'older', spaceId: SPACE_S, kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-01') },
+      { id: 'newer', spaceId: SPACE_S, kind: 'SCHEMA_EXPORT', status: 'INITIATED', createdAt: new Date('2026-01-02') },
     ]);
     const worker = t.app.get(TaskWorker);
     const claims = await Promise.all([worker.claim(), worker.claim(), worker.claim()]);
     const claimed = claims.filter(Boolean).map(it => it!.id);
     expect(claimed.sort()).toEqual(['newer', 'older']);
-    const rows = await t.db.select().from(tasks).where(eq(tasks.spaceId, 'S'));
+    const rows = await t.db.select().from(tasks).where(eq(tasks.spaceId, SPACE_S));
     expect(rows.every(row => row.status === 'IN_PROGRESS' && row.lockedBy === worker.workerId)).toBe(true);
   });
 
@@ -382,13 +383,13 @@ describe('task worker: queue', () => {
     await t.db.insert(tasks).values([
       {
         id: 'stuck',
-        spaceId: 'S',
+        spaceId: SPACE_S,
         kind: 'CONTENT_IMPORT',
         status: 'IN_PROGRESS',
         lockedBy: 'gone',
         lockedAt: new Date(Date.now() - STALE_AFTER_MS - 1000),
       },
-      { id: 'running', spaceId: 'S', kind: 'CONTENT_IMPORT', status: 'IN_PROGRESS', lockedBy: 'alive', lockedAt: new Date() },
+      { id: 'running', spaceId: SPACE_S, kind: 'CONTENT_IMPORT', status: 'IN_PROGRESS', lockedBy: 'alive', lockedAt: new Date() },
     ]);
     await t.app.get(TaskWorker).failStale();
     const [stuck] = await t.db.select().from(tasks).where(eq(tasks.id, 'stuck'));

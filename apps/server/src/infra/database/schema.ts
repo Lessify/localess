@@ -12,12 +12,15 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 /*
- * Ids are `text`, not uuid: rows imported from Firestore keep their document ids, because content,
- * asset and token ids appear in public API URLs and customer code. New rows use the same 20-char
- * alphanumeric format (see `newId()`).
+ * Ids are moving to UUIDv7 (`newUuid()`) one feature at a time, see docs/roadmap/firebase-migration-uuidv7.md.
+ * Done: users, spaces. A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
+ * `legacy_id`, so old ids in URLs and customer code still resolve (`byIdOrLegacy()`) and a re-run of the
+ * import updates the same rows. The other tables still use `text` ids in the 20-char alphanumeric format
+ * of `newId()`; imported rows keep their Firestore document ids there.
  *
  * Content and asset ids are only unique *within a space*: the export/import tasks upsert by id, so
  * importing space A's export into space B legitimately repeats them. Their keys are (space_id, id).
@@ -45,7 +48,9 @@ export interface UpdatedBy {
 export const users = pgTable(
   'users',
   {
-    id: text('id').primaryKey(),
+    id: uuid('id').primaryKey(),
+    // Firebase uid of an imported user.
+    legacyId: text('legacy_id').unique(),
     email: text('email').notNull(),
     emailVerified: boolean('email_verified').notNull().default(false),
     displayName: text('display_name'),
@@ -64,7 +69,7 @@ export const users = pgTable(
 );
 
 export const userCredentials = pgTable('user_credentials', {
-  userId: text('user_id')
+  userId: uuid('user_id')
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
   passwordHash: text('password_hash').notNull(),
@@ -78,7 +83,7 @@ export const userCredentials = pgTable('user_credentials', {
 export const userIdentities = pgTable(
   'user_identities',
   {
-    userId: text('user_id')
+    userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     // 'google' | 'microsoft'
@@ -94,7 +99,7 @@ export const sessions = pgTable(
   {
     // sha256 of the cookie value; the raw value is never stored.
     id: text('id').primaryKey(),
-    userId: text('user_id')
+    userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -108,7 +113,7 @@ export const sessions = pgTable(
 
 export const passwordResetTokens = pgTable('password_reset_tokens', {
   tokenHash: text('token_hash').primaryKey(),
-  userId: text('user_id')
+  userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -133,7 +138,9 @@ export const settings = pgTable('settings', {
 export const spaces = pgTable(
   'spaces',
   {
-    id: text('id').primaryKey(),
+    id: uuid('id').primaryKey(),
+    // Firestore id of an imported space; still accepted wherever a space id is (public API URLs, SDK configs).
+    legacyId: text('legacy_id').unique(),
     name: text('name').notNull(),
     locales: jsonb('locales').$type<Locale[]>().notNull(),
     localeFallback: jsonb('locale_fallback').$type<Locale>().notNull(),
@@ -149,7 +156,7 @@ export const spaces = pgTable(
 );
 
 const spaceId = () =>
-  text('space_id')
+  uuid('space_id')
     .notNull()
     .references(() => spaces.id, { onDelete: 'cascade' });
 
@@ -190,7 +197,7 @@ export const contents = pgTable(
 export const contentPublished = pgTable(
   'content_published',
   {
-    spaceId: text('space_id').notNull(),
+    spaceId: uuid('space_id').notNull(),
     contentId: text('content_id').notNull(),
     locale: text('locale').notNull(),
     data: jsonb('data').$type<Record<string, unknown>>().notNull(),

@@ -162,6 +162,7 @@ describe('user management', () => {
 
     it('answers 404 for unknown users', async () => {
       expect((await call(adminCookie, 'PATCH', '/api/app/users/nope', { role: null })).statusCode).toBe(404);
+      expect((await call(adminCookie, 'GET', '/api/app/users/00000000-0000-7000-8000-000000000099')).statusCode).toBe(404);
     });
   });
 
