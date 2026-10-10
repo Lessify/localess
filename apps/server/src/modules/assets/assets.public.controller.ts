@@ -4,7 +4,10 @@ import { Public } from '../../auth/decorators.js';
 import { Params, validIdParams } from '../../infra/http/v1/v1-request.js';
 import { AssetDeliveryService } from './asset-delivery.service.js';
 
-/** Asset delivery on the public API (no token): transformed images, the original file and downloads. */
+/**
+ * Asset delivery on the public API (no token): transformed images, the original file and downloads. A Firestore asset
+ * id (imported from Firebase) redirects to the UUID URL.
+ */
 @Public()
 @Controller('api/v1/spaces/:spaceId')
 export class AssetsPublicController {
@@ -14,6 +17,7 @@ export class AssetsPublicController {
   async asset(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     const params = request.params as Params;
     if (!validIdParams(reply, params)) return;
+    if (await this.assetDelivery.redirectLegacyId(request, reply, params['spaceId'], params['assetId'])) return;
     await this.assetDelivery.serveTransformed(request, reply, params['spaceId'], params['assetId']);
   }
 
@@ -21,6 +25,7 @@ export class AssetsPublicController {
   async assetOriginal(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     const params = request.params as Params;
     if (!validIdParams(reply, params)) return;
+    if (await this.assetDelivery.redirectLegacyId(request, reply, params['spaceId'], params['assetId'])) return;
     await this.assetDelivery.serveStored(request, reply, params['spaceId'], params['assetId'], false);
   }
 
@@ -28,6 +33,7 @@ export class AssetsPublicController {
   async assetDownload(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     const params = request.params as Params;
     if (!validIdParams(reply, params)) return;
+    if (await this.assetDelivery.redirectLegacyId(request, reply, params['spaceId'], params['assetId'])) return;
     await this.assetDelivery.serveStored(request, reply, params['spaceId'], params['assetId'], true);
   }
 }

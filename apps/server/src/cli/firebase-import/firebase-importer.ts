@@ -397,32 +397,43 @@ export class FirebaseImporter {
   }
 
   private async importAssets({ id: spaceId, source }: SpaceIds): Promise<void> {
-    for (const doc of await this.source.documents(`spaces/${source}/assets`)) {
-      if (!isValidId(doc.id)) {
-        this.warn(`asset '${doc.id}' in ${source}: id is not usable as a storage key, skipped`);
-        continue;
-      }
+    const docs = (await this.source.documents(`spaces/${source}/assets`)).filter(doc => {
+      if (isValidId(doc.id)) return true;
+      this.warn(`asset '${doc.id}' in ${source}: id is not usable as a storage key, skipped`);
+      return false;
+    });
+    // Every asset gets a UUID (the one an earlier run gave it, found by `legacy_id`). Folder ids in `parentPath` are
+    // internal to the tree, so they follow; references in content keep the Firestore ids, resolved through `legacy_id`.
+    const earlier = await this.db
+      .select({ id: assets.id, legacyId: assets.legacyId })
+      .from(assets)
+      .where(eq(assets.spaceId, spaceId));
+    const known = new Map(earlier.filter(it => it.legacyId).map(it => [it.legacyId as string, it.id]));
+    const ids = new Map(docs.map(doc => [doc.id, known.get(doc.id) ?? newUuid(timestamps(doc.data).createdAt)]));
+    const mapPath = (path: string) => (path ? path.split('/').map(segment => ids.get(segment) ?? segment).join('/') : path);
+    for (const doc of docs) {
+      const id = ids.get(doc.id) as string;
       const d = doc.data;
       const isFile = d['kind'] === 'FILE';
       let md5: string | null = null;
       if (isFile && this.options.files !== false) {
-        const path = `spaces/${spaceId}/assets/${doc.id}/original`;
+        const path = `spaces/${spaceId}/assets/${id}/original`;
         md5 = await this.copyFile(`spaces/${source}/assets/${doc.id}/original`, path);
         if (!md5 && (await this.storage.stat(path))) {
           // Copied by an earlier run: hash the local copy only if the row doesn't know it yet.
           const [row] = await this.db
             .select({ md5: assets.md5 })
             .from(assets)
-            .where(and(eq(assets.spaceId, spaceId), eq(assets.id, doc.id)));
+            .where(and(eq(assets.spaceId, spaceId), eq(assets.id, id)));
           if (!row?.md5) md5 = await this.localMd5(path);
         }
       }
       const values = {
         spaceId,
-        id: doc.id,
+        legacyId: doc.id,
         kind: isFile ? 'FILE' : 'FOLDER',
         name: str(d['name']) ?? doc.id,
-        parentPath: typeof d['parentPath'] === 'string' ? d['parentPath'] : '',
+        parentPath: mapPath(typeof d['parentPath'] === 'string' ? d['parentPath'] : ''),
         extension: isFile ? (typeof d['extension'] === 'string' ? d['extension'] : '') : null,
         type: isFile ? str(d['type']) : null,
         size: isFile && typeof d['size'] === 'number' ? d['size'] : null,
@@ -434,13 +445,13 @@ export class FirebaseImporter {
         ...(md5 ? { md5 } : {}),
         ...timestamps(d),
       };
-      const { spaceId: _s, id: _i, ...update } = values;
+      const { spaceId: _s, legacyId: _l, ...update } = values;
       void _s;
-      void _i;
+      void _l;
       await this.db
         .insert(assets)
-        .values(values)
-        .onConflictDoUpdate({ target: [assets.spaceId, assets.id], set: update });
+        .values({ id, ...values })
+        .onConflictDoUpdate({ target: [assets.spaceId, assets.legacyId], set: update });
       this.report.assets++;
     }
   }

@@ -228,12 +228,38 @@ deleted once per block).
 | 2 | Space settings | `tokens` (+ `token`, unique; regenerate updates it in place), `webhooks` (+ `legacy_id`, unique per space, not in the DTO), `webhook_logs` (UUIDv7 too) | ✅ 2026-10-10 |
 | 3 | Schemas | `schemas` (`id` uuid + `name`, unique per space); references stay names | ✅ 2026-10-10 |
 | 4 | Translations | `translations` (`id` uuid + `key`, unique per space); `translation_published` unchanged | ✅ 2026-10-10 |
-| 5 | Assets | `assets` (+ `legacy_id`, `parent_path`) | planned |
+| 5 | Assets | `assets` (`id` uuid + `legacy_id`, unique per space, shown in the UI; key stays `(space_id, id)`); old asset URLs `301` to the UUID one; `parent_path` rewritten on import; references in content **not** rewritten (see below) | ✅ 2026-10-10 |
 | 6 | Contents | `contents` (+ `legacy_id`, `schema_id`), `content_published`, references | planned |
 | 7 | Tasks | `tasks`, `task_logs`, Export/Import id mapping | planned |
 | 8 | Final | `newId()` only for token values, docs, release notes | planned |
 
 The implementation steps below are what the blocks add up to.
+
+## Deferred reference migration
+
+Decided 2026-10-10 (assets block): the Firebase import does **not** rewrite references inside content. Imported content
+keeps the Firestore ids it had, and every place that resolves them falls back to `legacy_id`. A separate migration
+script, designed later, will rewrite them from `legacy_id` to the UUIDs; then the fallbacks below (except the public
+redirects) can go. Every reference type and use case that script and its follow-up must handle:
+
+| # | Where | What holds a Firestore id | Today (fallback) | After the migration |
+|---|---|---|---|---|
+| 1 | `contents.assets[]` | ids of the assets a document references | `resolveAssets` matches `id` or `legacy_id` (`apps/server/src/modules/assets/asset-ids.ts`) | rewrite to UUIDs |
+| 2 | `contents.data` (draft) | `uri` of `{ kind: 'ASSET' }` in ASSET / ASSETS fields, any depth, every locale variant | delivery: same fallback; editor: App API `?ids=` matches `legacy_id`, and the asset pickers index results by `legacyId` too | rewrite; remove the App API and editor fallback |
+| 3 | `content_published.data` | same shapes, locale-extracted snapshots | delivery fallback | rewrite (snapshots are copied, not rebuilt) |
+| 4 | RICH_TEXT / MARKDOWN values | `/api/v1/spaces/{space}/assets/{asset}` URLs, with Firestore space and asset ids | public `301` (asset) and space id resolution | optional rewrite (Q3); the redirects stay for customer sites anyway |
+| 5 | `contents.links[]`, `references[]`, `LINK` / `REFERENCE` `uri` | content ids | none needed yet: content ids are still the Firestore ones | contents block decides; same pattern expected |
+| 6 | Content export of a migrated space | Firestore asset ids in content, UUIDs in the matching asset export (whose files do not carry `legacy_id`) | links between the two break when imported elsewhere | export after the migration, or add `legacyId` to the asset export |
+| 7 | Asset import of a Firebase-era export file | Firestore ids in `assets.json` | each becomes a UUID with `legacy_id` (re-import reuses it), `parent_path` follows | unchanged |
+| 8 | Resolved asset metadata in API responses | — | carries the UUID `id`, not the Firestore id it was referenced by (release note) | unchanged |
+
+Not affected: schema references (`_schema`, fields) and translation keys are names/keys, not ids; `parent_path` is
+rewritten by the import already.
+
+Migration script sketch: per space, build `legacy_id → id` for assets (and later contents); walk `contents.data` and
+`content_published.data` by shape (as described in [References to rewrite](#references-to-rewrite)), replace mapped
+ids, rewrite the id arrays, bump the content version; idempotent (UUIDs are left alone), with a dry-run report of
+unmapped (dangling) ids.
 
 ## Implementation plan
 

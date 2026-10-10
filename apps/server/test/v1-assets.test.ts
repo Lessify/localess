@@ -4,11 +4,13 @@ import { join } from 'node:path';
 import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { assets } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { seedAsset, seedSpace, SeededAsset } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 /** Ported from functions/src/v1/cdn-assets.test.ts, against real rows and files instead of spies. */
 
@@ -56,7 +58,6 @@ const FFMPEG = ffmpegStatic as unknown as string | null;
 
 describe('v1 asset routes', () => {
   let t: TestApp;
-  let n = 0;
 
   beforeAll(async () => {
     t = await createTestApp(FFMPEG ? { LOCALESS_FFMPEG_PATH: FFMPEG } : {});
@@ -69,12 +70,26 @@ describe('v1 asset routes', () => {
 
   /** Seeds a fresh asset per test and returns its URL plus the base64 md5 ETags are built from. */
   async function given(asset: Omit<SeededAsset, 'id'>): Promise<{ url: string; md5: string; id: string }> {
-    const id = `asset${++n}`;
+    const id = newUuid();
     const md5 = await seedAsset(t, { id, ...asset });
     return { url: `/api/v1/spaces/${S1}/assets/${id}`, md5, id };
   }
 
   const get = (url: string, headers: Record<string, string> = {}) => t.request({ method: 'GET', url, headers });
+
+  describe('Firestore asset ids (imported from Firebase)', () => {
+    it('redirect permanently to the UUID URL on every route, keeping the query', async () => {
+      const { id } = await given({ bytes: Buffer.from('legacy'), type: 'text/plain', extension: '.txt' });
+      await t.db.update(assets).set({ legacyId: 'FirestoreAsset000002' }).where(eq(assets.id, id));
+      for (const suffix of ['', '/original', '/download']) {
+        const response = await get(`/api/v1/spaces/${S1}/assets/FirestoreAsset000002${suffix}?w=10`);
+        expect(response.statusCode).toBe(301);
+        expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/assets/${id}${suffix}?w=10`);
+        expect(response.headers['cache-control']).toBe('public, max-age=31536000, s-maxage=31536000');
+      }
+      expect((await get(`/api/v1/spaces/${S1}/assets/UnknownFirestoreId/original`)).statusCode).toBe(404);
+    });
+  });
 
   describe('the passthrough pair', () => {
     it('/original serves the stored bytes inline', async () => {
@@ -318,9 +333,19 @@ describe('v1 asset routes', () => {
     });
 
     it('skips folders', async () => {
-      await t.db.insert(assets).values({ id: 'folder1', spaceId: S1, kind: 'FOLDER', name: 'Folder' });
+      const folder = newUuid();
+      await t.db.insert(assets).values({ id: folder, spaceId: S1, kind: 'FOLDER', name: 'Folder' });
       const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
-      expect(await t.app.get(ContentDeliveryService).resolveAssets(S1, ['folder1'])).toEqual({});
+      expect(await t.app.get(ContentDeliveryService).resolveAssets(S1, [folder])).toEqual({});
+    });
+
+    it('resolves a Firestore id that imported content still references, keyed by that id', async () => {
+      const { id } = await given({ bytes: Buffer.from('x'), type: 'text/plain', extension: '.txt' });
+      await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, id));
+      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      const resolved = await t.app.get(ContentDeliveryService).resolveAssets(S1, ['FirestoreAsset000001', id]);
+      expect(resolved['FirestoreAsset000001']).toMatchObject({ id, name: 'photo' });
+      expect(resolved[id]).toMatchObject({ id });
     });
   });
 

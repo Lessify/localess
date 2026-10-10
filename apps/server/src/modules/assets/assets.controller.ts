@@ -20,6 +20,7 @@ import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { toDto } from '../../infra/http/dto.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { AssetRow, AssetsService } from './assets.service.js';
 
 const parentPath = z
@@ -81,7 +82,7 @@ export class AssetsController {
 
   @Get(':id')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  async get(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return dto(await this.assets.get(spaceId, id));
   }
 
@@ -126,7 +127,7 @@ export class AssetsController {
   @RequirePermission(UserPermission.ASSET_UPDATE)
   async update(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
   ) {
     return dto(await this.assets.update(spaceId, id, body));
@@ -136,7 +137,7 @@ export class AssetsController {
   @RequirePermission(UserPermission.ASSET_UPDATE)
   async move(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(moveSchema)) body: z.infer<typeof moveSchema>,
   ) {
     return dto(await this.assets.move(spaceId, id, body.parentPath));
@@ -145,7 +146,7 @@ export class AssetsController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.ASSET_DELETE)
-  async delete(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.assets.delete(spaceId, id);
   }
 }

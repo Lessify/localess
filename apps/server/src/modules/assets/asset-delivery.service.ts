@@ -10,6 +10,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import sharp, { type Sharp } from 'sharp';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
+import { isUuid } from '../../infra/database/id.js';
 import { assets } from '../../infra/database/schema.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import {
@@ -75,11 +76,29 @@ export class AssetDeliveryService {
   }
 
   private async findAsset(spaceId: string, assetId: string): Promise<AssetRow | undefined> {
+    if (!isUuid(assetId)) return undefined;
     const [row] = await this.db
       .select()
       .from(assets)
       .where(and(eq(assets.spaceId, spaceId), eq(assets.id, assetId)));
     return row;
+  }
+
+  /**
+   * An asset URL with a Firestore id (an asset imported from Firebase, linked from customer sites, CDNs and emails):
+   * `301` to the same URL with the asset's UUID, so caches converge on one URL. Returns false when `assetId` is a
+   * UUID or no asset has it as `legacy_id`, and the route carries on as usual.
+   */
+  async redirectLegacyId(request: FastifyRequest, reply: FastifyReply, spaceId: string, assetId: string): Promise<boolean> {
+    if (isUuid(assetId)) return false;
+    const [row] = await this.db
+      .select({ id: assets.id })
+      .from(assets)
+      .where(and(eq(assets.spaceId, spaceId), eq(assets.legacyId, assetId)));
+    if (!row) return false;
+    const location = request.url.replace(`/assets/${encodeURIComponent(assetId)}`, `/assets/${row.id}`);
+    void reply.header('cache-control', publicCache(CACHE_ASSET_MAX_AGE)).redirect(location, 301);
+    return true;
   }
 
   /**

@@ -28,7 +28,7 @@ import { isAssetChanged, isContentChanged, isTranslationChanged } from './import
 import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
 import { schemaFromRow, schemasByName } from '../schemas/schema-row.js';
 import { translationsByKey } from '../translations/translation-row.js';
-import { newUuid } from '../../infra/database/id.js';
+import { isUuid, newUuid } from '../../infra/database/id.js';
 import { applySchemaPushPlan } from '../schemas/schema-push.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
@@ -244,22 +244,30 @@ export class TaskRunner {
     const parse = zAssetExportArraySchema.safeParse(raw);
     if (!parse.success) return this.invalid(task, 'ASSET', parse.error);
     // Validated, but the raw items are imported (as before): the schemas strip keys they don't list.
-    const imported = raw as AssetExport[];
+    const entries = raw as AssetExport[];
     // Ids end up in storage keys.
-    const badId = imported.find(it => !isValidId(it.id));
+    const badId = entries.find(it => !isValidId(it.id));
     if (badId) return { status: 'ERROR', message: 'Asset data is invalid.', trace: `Invalid asset id '${badId.id}'` };
-    await this.log(task, 'INFO', `valid=${imported.length}`);
+    await this.log(task, 'INFO', `valid=${entries.length}`);
 
-    const existing = new Map(
-      (await this.db.select().from(assets).where(eq(assets.spaceId, spaceId))).map(row => [row.id, withoutNulls(row) as unknown as Asset]),
-    );
+    const rows = await this.db.select().from(assets).where(eq(assets.spaceId, spaceId));
+    const existing = new Map(rows.map(row => [row.id, withoutNulls(row) as unknown as Asset]));
+    // Exports from the Firebase era carry Firestore ids: each becomes a UUID, kept as `legacy_id` (so content that
+    // references the old id still finds it, and a re-import reuses the same UUID), and parent paths follow.
+    const legacy = new Map(rows.filter(row => row.legacyId).map(row => [row.legacyId as string, row.id]));
+    const ids = new Map(entries.map(it => [it.id, isUuid(it.id) ? it.id : (legacy.get(it.id) ?? newUuid())]));
+    const mapPath = (path: string) => (path ? path.split('/').map(segment => ids.get(segment) ?? legacy.get(segment) ?? segment).join('/') : path);
+    const legacyIds = new Map(entries.map(it => [ids.get(it.id) as string, isUuid(it.id) ? null : it.id]));
+    // The id each entry has in the file, for reading its bytes from the archive.
+    const fileIds = new Map(entries.map(it => [ids.get(it.id) as string, it.id]));
+    const imported = entries.map(it => ({ ...it, id: ids.get(it.id) as string, parentPath: mapPath(it.parentPath) }) as AssetExport);
     // Store new files first, so rows never point at missing files; undo them if the rows fail.
     const storedFiles = new Map<string, { size: number; md5: string; metadata?: Record<string, unknown>; alt?: string }>();
     try {
       let streamed = 0;
       for (const asset of imported) {
         if (existing.has(asset.id) || asset.kind !== 'FILE') continue;
-        const entry = opened.zip.open(`assets/${asset.id}`, this.config.uploadMaxBytes);
+        const entry = opened.zip.open(`assets/${fileIds.get(asset.id)}`, this.config.uploadMaxBytes);
         if (!entry) continue; // as before: a file asset without its bytes is skipped
         const stored = await this.storage.put(assetKey(spaceId, asset.id), entry);
         const extracted = asset.metadata ? undefined : await this.metadata.extract(assetKey(spaceId, asset.id), asset.type, asset.alt);
@@ -297,6 +305,7 @@ export class TaskRunner {
             await tx.insert(assets).values({
               id: asset.id,
               spaceId,
+              legacyId: legacyIds.get(asset.id),
               kind: 'FILE',
               name: file.name,
               parentPath: file.parentPath,
@@ -309,7 +318,9 @@ export class TaskRunner {
               metadata: (file.metadata as Record<string, unknown>) ?? stored.metadata ?? null,
             });
           } else {
-            await tx.insert(assets).values({ id: asset.id, spaceId, kind: 'FOLDER', name: asset.name, parentPath: asset.parentPath });
+            await tx
+              .insert(assets)
+              .values({ id: asset.id, spaceId, legacyId: legacyIds.get(asset.id), kind: 'FOLDER', name: asset.name, parentPath: asset.parentPath });
           }
           total++;
         }

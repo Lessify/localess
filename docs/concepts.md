@@ -166,7 +166,7 @@ Three translation types:
 An **Asset** is either a `FOLDER` or a `FILE`. Metadata is a Postgres row; the file lives in the server's storage directory (`LOCALESS_STORAGE_DIR`, default `$LOCALESS_DATA_DIR/storage`).
 
 ```
-Postgres: assets (space_id, id)                                   ← parent_path = slash-joined ancestor folder ids
+Postgres: assets (space_id, id uuid, legacy_id)                   ← parent_path = slash-joined ancestor folder ids
 Storage:  spaces/{spaceId}/assets/{assetId}/original               ← raw file
           spaces/{spaceId}/assets/{assetId}/renditions/…           ← cached image transforms
 ```
@@ -199,7 +199,7 @@ An API token (`tokens` table; the `token` column is the secret, `id` a UUIDv7) g
 
 ## Data Model Map
 
-All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks and webhook logs have UUIDv7 ids (`uuid` columns, `newUuid()`); a token's secret is its separate `token` value. one imported from Firebase keeps its Firestore id / Firebase uid in `legacy_id`, and the public API accepts either in space URLs. The App API and the SPA work only with UUIDs; spaces carry `legacyId` for display. The other ids are moving to UUIDv7 feature by feature ([roadmap](roadmap/firebase-migration-uuidv7.md)); until then they're `text`: rows imported from Firestore keep their document ids, because content and asset ids appear in public URLs and customer code, and new rows use the same 20-character alphanumeric format (`newId()`). Content and asset ids are unique only **within a space** — export/import upserts by id, so importing one space's export into another repeats them — so their primary key is `(space_id, id)`. Schemas and translations are keyed `(space_id, id)` too, with user-chosen ids. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
+All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks, webhook logs, schemas, translations and assets have UUIDv7 ids (`uuid` columns, `newUuid()`). What everything else refers to stays human readable where it already was: a schema's `name`, a translation's `key`, a token's secret `token`. Rows imported from Firebase keep their Firestore id / Firebase uid in `legacy_id` (spaces, users, webhooks, assets): the public API accepts an old space id, and an old asset URL redirects to the UUID one. Content imported from Firebase still references assets by their Firestore ids, which delivery and the editor resolve through `legacy_id` until a later migration rewrites them ([roadmap](roadmap/firebase-migration-uuidv7.md#deferred-reference-migration)). Contents still have `text` ids (20-character `newId()`, imported ones keep their Firestore ids). Content and asset keys are `(space_id, id)`: the export/import tasks reuse ids in another space. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
 
 ```
 settings                          single row: global UI settings

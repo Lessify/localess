@@ -1,6 +1,7 @@
 CREATE TABLE "assets" (
-	"id" text NOT NULL,
+	"id" uuid NOT NULL,
 	"space_id" uuid NOT NULL,
+	"legacy_id" text,
 	"kind" text NOT NULL,
 	"name" text NOT NULL,
 	"parent_path" text DEFAULT '' NOT NULL,
@@ -241,6 +242,7 @@ ALTER TABLE "user_credentials" ADD CONSTRAINT "user_credentials_user_id_users_id
 ALTER TABLE "user_identities" ADD CONSTRAINT "user_identities_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "webhook_logs" ADD CONSTRAINT "webhook_logs_webhook_id_webhooks_id_fk" FOREIGN KEY ("webhook_id") REFERENCES "public"."webhooks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "assets_legacy_idx" ON "assets" USING btree ("space_id","legacy_id");--> statement-breakpoint
 CREATE INDEX "assets_parent_idx" ON "assets" USING btree ("space_id","parent_path","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "assets_parent_path_prefix_idx" ON "assets" USING btree ("space_id","parent_path" text_pattern_ops);--> statement-breakpoint

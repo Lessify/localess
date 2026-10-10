@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, inArray, or, sql, SQL } from 'drizzle-orm';
 import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata, Schema } from '@localess/shared';
+import { assetsByIdOrLegacyId, indexAssets } from '../assets/asset-ids.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contentPublished, contents, schemas } from '../../infra/database/schema.js';
 import { SpaceRow } from '../../infra/http/space-access.js';
@@ -136,8 +137,9 @@ export class ContentDeliveryService {
     const rows = await this.db
       .select()
       .from(assets)
-      .where(and(eq(assets.spaceId, spaceId), inArray(assets.id, unique)));
-    const byId = new Map(rows.map(row => [row.id, row]));
+      .where(assetsByIdOrLegacyId(spaceId, unique));
+    // Imported content may still reference an asset by its Firestore id; the result is keyed by the id asked for.
+    const byId = indexAssets(rows);
     const resolved: Record<string, AssetMetadata> = {};
     for (const id of unique) {
       const asset = byId.get(id);

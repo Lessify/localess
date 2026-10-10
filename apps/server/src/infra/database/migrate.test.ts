@@ -90,7 +90,7 @@ describe('migrateDatabase', () => {
         `insert into contents (id, space_id, kind, name, slug, full_slug) values ('c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
         [id],
       );
-      await pool.query(`insert into assets (id, space_id, kind, name) values ('a1', $1, 'FILE', 'logo')`, [id]);
+      await pool.query(`insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`, [id]);
       await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, 'c1', 'en', '{}')`, [id]);
     }
     await expect(

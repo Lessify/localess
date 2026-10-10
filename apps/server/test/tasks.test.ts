@@ -8,7 +8,7 @@ import { assets, contents, schemas, spaces, tasks, tokens, translations } from '
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
 import { createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
-import { SPACE_A, SPACE_B, SPACE_S } from './ids.js';
+import { SPACE_A, SPACE_B, SPACE_S, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
 const en = { id: 'en', name: 'English' };
@@ -43,6 +43,9 @@ async function readZip(bytes: Buffer): Promise<Record<string, Buffer>> {
   const directory = await unzipper.Open.buffer(bytes);
   return Object.fromEntries(await Promise.all(directory.files.map(async file => [file.path, await file.buffer()] as const)));
 }
+
+const PHOTOS = '00000000-0000-7000-8000-0000000000f1';
+const PIC = '00000000-0000-7000-8000-0000000000f2';
 
 describe('task worker: exports and imports', () => {
   let t: TestApp;
@@ -81,20 +84,20 @@ describe('task worker: exports and imports', () => {
       { id: newUuid(), spaceId: SPACE_A, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
     ]);
     await t.db.insert(assets).values([
-      { spaceId: SPACE_A, id: 'photos', kind: 'FOLDER', name: 'Photos', parentPath: '' },
+      { spaceId: SPACE_A, id: PHOTOS, kind: 'FOLDER', name: 'Photos', parentPath: '' },
       {
         spaceId: SPACE_A,
-        id: 'pic',
+        id: PIC,
         kind: 'FILE',
         name: 'pic',
-        parentPath: 'photos',
+        parentPath: PHOTOS,
         extension: '.jpg',
         type: 'image/jpeg',
         size: jpeg.length,
         metadata: { type: 'image', width: 64, height: 48 },
       },
     ]);
-    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${SPACE_A}/assets/pic/original`, jpeg);
+    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${SPACE_A}/assets/${PIC}/original`, jpeg);
   });
 
   afterAll(() => t?.close());
@@ -233,19 +236,44 @@ describe('task worker: exports and imports', () => {
       expect(exported.file?.name).toBe(`asset-export-${exported.id}.lla.zip`);
       const bytes = await download(SPACE_A, exported.id);
       const files = await readZip(bytes);
-      expect(Object.keys(files).sort()).toEqual(['assets.json', 'assets/pic', 'metadata.json']);
-      expect(files['assets/pic'].equals(jpeg)).toBe(true);
+      expect(Object.keys(files).sort()).toEqual(['assets.json', `assets/${PIC}`, 'metadata.json']);
+      expect(files[`assets/${PIC}`].equals(jpeg)).toBe(true);
 
       expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
       const b = await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B));
-      expect(b.find(a => a.id === 'pic')).toMatchObject({
-        parentPath: 'photos',
+      // Same ids in the other space: the key is (space_id, id).
+      expect(b.find(a => a.id === PIC)).toMatchObject({
+        parentPath: PHOTOS,
         size: jpeg.length,
         md5: expect.any(String),
         metadata: { width: 64, height: 48 },
       });
-      const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/pic/original` });
+      const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/${PIC}/original` });
       expect(served.rawPayload.equals(jpeg)).toBe(true);
+    });
+
+    it('gives Firestore ids of a Firebase-era export UUIDs, kept as legacy_id; folders paths follow; a re-import reuses them', async () => {
+      const bytes = await zipOf({
+        'metadata.json': JSON.stringify({ kind: 'ASSET' }),
+        'assets.json': JSON.stringify([
+          { id: 'oldFolder', kind: 'FOLDER', name: 'Old', parentPath: '' },
+          { id: 'oldFile', kind: 'FILE', name: 'old', parentPath: 'oldFolder', extension: '.jpg', type: 'image/jpeg', size: jpeg.length },
+        ]),
+        'assets/oldFile': jpeg,
+      });
+      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
+      const imported = async () => {
+        const rows = await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B));
+        return { folder: rows.find(a => a.legacyId === 'oldFolder')!, file: rows.find(a => a.legacyId === 'oldFile')! };
+      };
+      const { folder, file } = await imported();
+      expect(folder.id).toMatch(UUID_V7);
+      expect(file).toMatchObject({ id: expect.stringMatching(UUID_V7), parentPath: folder.id });
+      const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/${file.id}/original` });
+      expect(served.rawPayload.equals(jpeg)).toBe(true);
+
+      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
+      expect(await imported()).toMatchObject({ folder: { id: folder.id }, file: { id: file.id } });
     });
 
     it('extracts metadata for imported files that carry none, and skips files missing from the archive', async () => {
@@ -258,13 +286,13 @@ describe('task worker: exports and imports', () => {
         'assets/fresh': jpeg,
       });
       expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      const ids = (await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B))).map(a => a.id);
-      expect(ids).toContain('fresh');
-      expect(ids).not.toContain('ghost');
+      const legacyIds = (await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B))).map(a => a.legacyId);
+      expect(legacyIds).toContain('fresh');
+      expect(legacyIds).not.toContain('ghost');
       const [fresh] = await t.db
         .select()
         .from(assets)
-        .where(and(eq(assets.spaceId, SPACE_B), eq(assets.id, 'fresh')));
+        .where(and(eq(assets.spaceId, SPACE_B), eq(assets.legacyId, 'fresh')));
       expect(fresh.metadata).toMatchObject({ type: 'image', width: 64, height: 48 });
     });
 
@@ -280,12 +308,12 @@ describe('task worker: exports and imports', () => {
       await t.db
         .update(assets)
         .set({ metadata: null })
-        .where(and(eq(assets.spaceId, SPACE_A), eq(assets.id, 'pic')));
+        .where(and(eq(assets.spaceId, SPACE_A), eq(assets.id, PIC)));
       expect((await exportTask(SPACE_A, { kind: 'ASSET_REGEN_METADATA' })).status).toBe('FINISHED');
       const [pic] = await t.db
         .select()
         .from(assets)
-        .where(and(eq(assets.spaceId, SPACE_A), eq(assets.id, 'pic')));
+        .where(and(eq(assets.spaceId, SPACE_A), eq(assets.id, PIC)));
       expect(pic.metadata).toMatchObject({ type: 'image', format: 'jpg', width: 64, height: 48 });
     });
   });

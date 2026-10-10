@@ -9,6 +9,11 @@ export enum AssetKind {
 
 export interface AssetBase {
   id: string;
+  /**
+   * Firestore id of an asset imported from Firebase, for display. Old asset URLs redirect to the UUID one, and
+   * content imported from Firebase may still reference the asset by it.
+   */
+  legacyId?: string;
   kind: AssetKind;
   name: string;
   parentPath: string;

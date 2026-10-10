@@ -4,9 +4,9 @@ import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces } from '../src/infra/database/schema.js';
+import { assets, spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
-import { S1 } from './ids.js';
+import { S1, UUID_V7 } from './ids.js';
 
 /** A multipart body with the fields first, then the file — the order the endpoint expects. */
 function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
@@ -176,6 +176,16 @@ describe('app API: assets', () => {
       expect((await contentReader.get(`${base}?name=sun`)).json().map((a: { name: string }) => a.name)).toEqual(['Sunset.Final']);
       expect((await contentReader.get(`${base}/count?kind=FILE`)).json()).toEqual({ count: 3 });
       expect((await contentReader.post(`${base}/folders`, { parentPath: '', name: 'x' })).statusCode).toBe(403);
+    });
+
+    it('finds assets by UUID or, for content imported from Firebase, by their Firestore id; routes take UUIDs only', async () => {
+      const [first] = (await contentReader.get(`${base}?parentPath=&kind=FILE`)).json();
+      expect(first.id).toMatch(UUID_V7);
+      await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, first.id));
+      const found = (await contentReader.get(`${base}?ids=FirestoreAsset000001,${first.id},unknown`)).json();
+      expect(found.map((a: { id: string }) => a.id)).toEqual([first.id]);
+      expect(found[0].legacyId).toBe('FirestoreAsset000001');
+      expect((await contentReader.get(`${base}/FirestoreAsset000001`)).statusCode).toBe(404);
     });
   });
 

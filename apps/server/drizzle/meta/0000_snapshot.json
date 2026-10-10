@@ -1,5 +1,5 @@
 {
-  "id": "9762e851-1d8e-4d11-9291-5da46c1e9842",
+  "id": "9c0b3201-b193-4a3c-976e-a06f251d3ff7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -10,7 +10,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -19,6 +19,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "legacy_id": {
+          "name": "legacy_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "kind": {
           "name": "kind",
@@ -104,6 +110,27 @@
         }
       },
       "indexes": {
+        "assets_legacy_idx": {
+          "name": "assets_legacy_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "assets_parent_idx": {
           "name": "assets_parent_idx",
           "columns": [

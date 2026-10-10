@@ -18,7 +18,7 @@ import {
 /*
  * Ids are moving to UUIDv7 (`newUuid()`) one feature at a time, see docs/roadmap/firebase-migration-uuidv7.md.
  * Done: users, spaces, tokens, webhooks, webhook_logs, schemas (references to a schema use its `name`), translations
- * (referred to by `key`). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
+ * (referred to by `key`), assets (`legacy_id` kept for old URLs and imported content). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
  * `legacy_id`, so old ids in URLs and customer code still resolve (`byIdOrLegacy()`) and a re-run of the
  * import updates the same rows. The other tables still use `text` ids in the 20-char alphanumeric format
  * of `newId()`; imported rows keep their Firestore document ids there.
@@ -217,12 +217,15 @@ export const contentPublished = pgTable(
 export const assets = pgTable(
   'assets',
   {
-    id: text('id').notNull(),
+    id: uuid('id').notNull(),
     spaceId: spaceId(),
+    // Firestore id of an imported asset. Old asset URLs redirect to the UUID one, and content imported from Firebase
+    // still references assets by it (see `assetsByIdOrLegacyId`) until a later migration rewrites those references.
+    legacyId: text('legacy_id'),
     // 'FOLDER' | 'FILE'
     kind: text('kind').notNull(),
     name: text('name').notNull(),
-    // Slash-joined ancestor folder ids, '' for root.
+    // Slash-joined ancestor folder ids (UUIDs; the import rewrites Firestore ones), '' for root.
     parentPath: text('parent_path').notNull().default(''),
     extension: text('extension'),
     type: text('type'),
@@ -236,7 +239,9 @@ export const assets = pgTable(
     ...timestamps,
   },
   t => [
+    // Kept per space: the asset import task reuses the ids of an export in another space.
     primaryKey({ columns: [t.spaceId, t.id] }),
+    uniqueIndex('assets_legacy_idx').on(t.spaceId, t.legacyId),
     index('assets_parent_idx').on(t.spaceId, t.parentPath, t.kind.desc(), t.name),
     index('assets_kind_idx').on(t.spaceId, t.kind, t.name),
     index('assets_parent_path_prefix_idx').on(t.spaceId, sql`${t.parentPath} text_pattern_ops`),

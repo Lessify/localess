@@ -301,8 +301,12 @@ describe('import:firebase', () => {
     expect(logs.map(it => it.webhookId)).toEqual([webhook.id, webhook.id]);
     for (const log of logs) expect(log.id).toMatch(UUID_V7);
 
-    const a1 = (await db.select().from(schema.assets)).find(it => it.id === 'a1');
-    expect(a1).toMatchObject({ parentPath: 'f1', md5: createHash('md5').update(photo).digest('base64'), inProgress: false });
+    // Assets get UUIDs, the Firestore id kept as legacy_id; the folder path follows the folder's UUID.
+    const importedAssets = await db.select().from(schema.assets);
+    const a1 = importedAssets.find(it => it.legacyId === 'a1')!;
+    const f1 = importedAssets.find(it => it.legacyId === 'f1')!;
+    expect(a1.id).toMatch(UUID_V7);
+    expect(a1).toMatchObject({ parentPath: f1.id, md5: createHash('md5').update(photo).digest('base64'), inProgress: false });
     expect((await db.select().from(schema.settings))[0].ui).toEqual({ text: 'Migrated', color: 'primary' });
   });
 
@@ -333,7 +337,11 @@ describe('import:firebase', () => {
     // Drafts are rebuilt from the imported data.
     expect((await follow(`/api/v1/spaces/s1/contents/post?token=${TOKEN}&locale=de&version=draft`)).json().data.title).toBe('Entwurf');
     expect((await follow(`/api/v1/spaces/s1/translations/en?token=${TOKEN}`)).json()).toEqual({ greeting: 'Hello' });
-    const original = await request({ method: 'GET', url: '/api/v1/spaces/s1/assets/a1/original' });
+    // An old asset URL (Firestore space and asset ids) redirects to the UUID one, which serves the copied file.
+    const redirect = await request({ method: 'GET', url: '/api/v1/spaces/s1/assets/a1/original' });
+    expect(redirect.statusCode).toBe(301);
+    expect(redirect.headers.location).toMatch(/^\/api\/v1\/spaces\/s1\/assets\/[0-9a-f-]{36}\/original$/);
+    const original = await request({ method: 'GET', url: redirect.headers.location as string });
     expect(original.rawPayload.equals(photo)).toBe(true);
     expect(original.headers.etag).toBe(`"${createHash('md5').update(photo).digest('base64')}-orig"`);
   });
@@ -356,7 +364,7 @@ describe('import:firebase', () => {
     expect((await db.select().from(schema.userCredentials)).find(it => it.userId === u1.id)?.hashAlgo).toBe('argon2id');
     // Matched by legacy_id: the same rows, with the same UUIDs.
     expect(await ids()).toEqual(idsBefore);
-    const a1 = (await db.select().from(schema.assets)).find(it => it.id === 'a1');
+    const a1 = (await db.select().from(schema.assets)).find(it => it.legacyId === 'a1');
     expect(a1?.md5).toBe(createHash('md5').update(photo).digest('base64'));
   });
 
