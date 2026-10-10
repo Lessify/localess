@@ -3,6 +3,8 @@
 > Parent: [Spaces Overview](overview.md) · Related: [Schemas](schemas.md) · [Publish Flow](../../publish-flow.md) · [Tasks](tasks.md) ·
 > [Concepts — Content](../../concepts.md)
 
+> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+
 ## Purpose
 
 Manage structured content documents organised in a folder/document hierarchy. Supports creating, editing (via schema-driven editor),

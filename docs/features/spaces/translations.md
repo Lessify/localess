@@ -3,6 +3,8 @@
 > Parent: [Spaces Overview](overview.md) · Related: [Publish Flow](../../publish-flow.md) · [Tasks](tasks.md) ·
 > [Concepts — Translation](../../concepts.md)
 
+> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+
 ## Purpose
 
 Manage all localisation keys for a space. Supports creating, editing, and publishing translations across multiple locales. Includes

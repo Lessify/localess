@@ -2,6 +2,8 @@
 
 > Parent: [Spaces Overview](overview.md) · Related: [Contents](contents.md) · [Concepts — Schema](../../concepts.md) · [Filter Toolbar](../../components/filter-toolbar.md) · [Table](../../components/table.md)
 
+> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+
 ## Purpose
 
 Define and manage content type schemas that structure `ContentDocument` data. Schemas consist of typed fields and can be composed — a `ROOT` schema embeds `NODE` schemas. `ENUM` schemas define fixed option sets used in dropdown fields.

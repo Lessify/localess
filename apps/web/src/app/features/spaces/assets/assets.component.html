@@ -43,26 +43,30 @@
       Create Folder
     </button>
   }
-  @if (['ASSET_IMPORT', 'ASSET_EXPORT'] | canUserPerform | async) {
+  @if ((importExportEnabled ? ['ASSET_IMPORT', 'ASSET_EXPORT'] : 'ASSET_REGEN_METADATA') | canUserPerform | async) {
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="w-50">
-        @if ('ASSET_IMPORT' | canUserPerform | async) {
-          <button hlmDropdownMenuItem (click)="openImportDialog()">
-            <ng-icon hlm size="sm" name="lucideUploadCloud" />
-            Import
-          </button>
-        }
-        @if ('ASSET_EXPORT' | canUserPerform | async) {
-          <button hlmDropdownMenuItem (click)="openExportDialog()">
-            <ng-icon hlm size="sm" name="lucideCloudDownload" />
-            Export
-          </button>
+        @if (importExportEnabled) {
+          @if ('ASSET_IMPORT' | canUserPerform | async) {
+            <button hlmDropdownMenuItem (click)="openImportDialog()">
+              <ng-icon hlm size="sm" name="lucideUploadCloud" />
+              Import
+            </button>
+          }
+          @if ('ASSET_EXPORT' | canUserPerform | async) {
+            <button hlmDropdownMenuItem (click)="openExportDialog()">
+              <ng-icon hlm size="sm" name="lucideCloudDownload" />
+              Export
+            </button>
+          }
         }
         @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
-          <hlm-dropdown-menu-separator />
+          @if (importExportEnabled) {
+            <hlm-dropdown-menu-separator />
+          }
           <button hlmDropdownMenuItem (click)="openRegenerateMetadataDialog()">
             <ng-icon hlm size="sm" name="lucideRefreshCcwDot" />
             Regenerate Metadata

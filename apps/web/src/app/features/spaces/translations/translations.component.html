@@ -53,7 +53,7 @@
           </hlm-dropdown-menu-group>
           <hlm-dropdown-menu-separator />
         }
-        @if (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async) {
+        @if (importExportEnabled && (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async)) {
           <hlm-dropdown-menu-group>
             @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
               <button hlmDropdownMenuItem (click)="openImportDialog(space.locales)">

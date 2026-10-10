@@ -2,6 +2,8 @@
 
 > Parent: [Spaces Overview](overview.md) · Related: [Translations](translations.md) · [Contents](contents.md) · [Assets](assets.md) · [Schemas](schemas.md)
 
+> **Hidden for now:** the Tasks page and every Import/Export entry point are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed. The server API is unchanged.
+
 ## Purpose
 
 Monitor and manage background jobs (Tasks) triggered by import and export operations across all other space modules. Tasks are asynchronous — they run server-side in the task worker, and the list and detail views update live (SSE change events) as status and logs change.

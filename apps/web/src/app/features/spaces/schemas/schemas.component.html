@@ -5,7 +5,7 @@
       Add Schema
     </button>
   }
-  @if (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async) {
+  @if (importExportEnabled && (['SCHEMA_IMPORT', 'SCHEMA_EXPORT'] | canUserPerform | async)) {
     <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
@@ -113,6 +114,7 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
   ],
 })
 export class ContentsComponent implements AfterViewInit {
+  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly router = inject(Router);
   private readonly schemasService = inject(SchemaService);
   private readonly contentService = inject(ContentService);

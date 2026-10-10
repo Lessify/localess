@@ -15,6 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
@@ -99,6 +100,7 @@ import { ImportDialogResult } from './import-dialog/import-dialog.model';
   ],
 })
 export class SchemasComponent implements OnInit, AfterViewInit {
+  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);

@@ -2,6 +2,8 @@
 
 > Parent: [Spaces Overview](overview.md) · Related: [Tasks](tasks.md) · [Concepts — Asset](../../concepts.md) · [CDN & Caching](../../cdn-caching.md)
 
+> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+
 ## Purpose
 
 Browse, upload, organise, and manage binary assets (images, videos, documents, fonts) stored by the server under `$LOCALESS_STORAGE_DIR` (`spaces/{spaceId}/assets/{assetId}/original`), with their metadata in the `assets` table. Supports folder hierarchy, drag-and-drop upload, clipboard paste upload, image resizing preview, and Unsplash integration.

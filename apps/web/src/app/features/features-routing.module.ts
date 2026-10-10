@@ -1,5 +1,6 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { inject, NgModule } from '@angular/core';
+import { Router, RouterModule, Routes } from '@angular/router';
+import { FEATURE_FLAGS } from '@core/feature-flags';
 import { permissionGuard } from '@core/guards/permission.guard';
 import { spaceSelectionGuard } from '@core/guards/space-selection.guard';
 import { UserPermission } from '@localess/shared';
@@ -102,6 +103,8 @@ const routes: Routes = [
           {
             path: 'tasks',
             title: 'Tasks',
+            // Hidden with Import/Export (FEATURE_FLAGS): an old link lands on the start page instead.
+            canMatch: [() => FEATURE_FLAGS.importExport || inject(Router).parseUrl('/features')],
             loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
             canActivate: [
               permissionGuard(

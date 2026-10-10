@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
@@ -88,6 +89,7 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   ],
 })
 export class TranslationsComponent implements OnInit {
+  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly translationService = inject(TranslationService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);

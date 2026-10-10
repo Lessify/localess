@@ -22,19 +22,21 @@
   </button>
   <ng-template #extraMenu>
     <hlm-dropdown-menu>
-      @if ('CONTENT_IMPORT' | canUserPerform | async) {
-        <button hlmDropdownMenuItem (click)="openImportDialog()">
-          <ng-icon hlm size="sm" name="lucideUploadCloud" />
-          Import
-        </button>
+      @if (importExportEnabled) {
+        @if ('CONTENT_IMPORT' | canUserPerform | async) {
+          <button hlmDropdownMenuItem (click)="openImportDialog()">
+            <ng-icon hlm size="sm" name="lucideUploadCloud" />
+            Import
+          </button>
+        }
+        @if ('CONTENT_EXPORT' | canUserPerform | async) {
+          <button hlmDropdownMenuItem (click)="openExportDialog()">
+            <ng-icon hlm size="sm" name="lucideCloudDownload" />
+            Export
+          </button>
+        }
+        <hlm-dropdown-menu-separator />
       }
-      @if ('CONTENT_EXPORT' | canUserPerform | async) {
-        <button hlmDropdownMenuItem (click)="openExportDialog()">
-          <ng-icon hlm size="sm" name="lucideCloudDownload" />
-          Export
-        </button>
-      }
-      <hlm-dropdown-menu-separator />
       <button hlmDropdownMenuItem (click)="openLinksV1InNewTab()">
         <ng-icon hlm size="sm" name="lucideLink" />
         Links

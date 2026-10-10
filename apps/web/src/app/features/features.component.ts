@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
+import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AuthApiService } from '@core/services/auth-api.service';
 import { NotificationService } from '@core/services/notification.service';
 import { VersionService } from '@core/services/version.service';
@@ -269,7 +270,16 @@ export class FeaturesComponent implements OnInit {
         },
         { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', permission: UserPermission.ASSET_READ },
         { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', permission: UserPermission.SCHEMA_READ },
-        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', permission: USER_PERMISSIONS_IMPORT_EXPORT },
+        ...(FEATURE_FLAGS.importExport
+          ? [
+              {
+                link: `spaces/${selectedSpaceId}/tasks`,
+                label: 'Tasks',
+                icon: 'lucideFileCheck',
+                permission: USER_PERMISSIONS_IMPORT_EXPORT,
+              },
+            ]
+          : []),
         {
           link: '',
           label: 'Developers',

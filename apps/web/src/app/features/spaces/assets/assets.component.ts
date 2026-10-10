@@ -13,6 +13,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
@@ -157,6 +158,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
   ],
 })
 export class AssetsComponent implements OnInit, AfterViewInit {
+  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(HlmDialogService);
