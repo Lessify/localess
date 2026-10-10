@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
@@ -144,6 +145,16 @@ describe('ContentsComponent', () => {
 
       expect(error).toHaveBeenCalledWith('Document can not be created.');
     });
+
+    it("shows the server's reason when the slug is taken", () => {
+      const { component, open, createDocument, error } = setup();
+      createDocument.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })));
+      open.mockReturnValue({ closed$: of({ name: 'New', slug: 'page', schema: 's1' }) });
+
+      component.openAddDocumentDialog();
+
+      expect(error).toHaveBeenCalledWith("Document can not be created: 'page' is already used");
+    });
   });
 
   describe('openAddFolderDialog', () => {
@@ -238,6 +249,16 @@ describe('ContentsComponent', () => {
       expect(move).toHaveBeenCalledWith('space-1', 'c1', 'new-parent', 'page');
       expect(success).toHaveBeenCalledWith('Document has been moved.');
     });
+
+    it("shows the server's reason when the target folder already has the slug", () => {
+      const { component, open, move, error } = setup();
+      move.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })));
+      open.mockReturnValue({ closed$: of({ path: 'new-parent' }) });
+
+      component.openMoveDialog(doc({ id: 'c1', slug: 'page' }));
+
+      expect(error).toHaveBeenCalledWith("Document can not be moved: 'page' is already used");
+    });
   });
 
   describe('openCloneDialog', () => {
@@ -250,6 +271,16 @@ describe('ContentsComponent', () => {
 
       expect(cloneDocument).toHaveBeenCalledWith('space-1', element);
       expect(success).toHaveBeenCalledWith("Document 'Page' has been cloned.");
+    });
+
+    it("shows the server's reason when the clone's slug is taken", () => {
+      const { component, open, cloneDocument, error } = setup();
+      cloneDocument.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })));
+      open.mockReturnValue({ closed$: of(true) });
+
+      component.openCloneDialog(doc({ name: 'Page' }));
+
+      expect(error).toHaveBeenCalledWith("Document 'Page' can not be cloned: 'page' is already used");
     });
   });
 

@@ -10,6 +10,7 @@ import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
 import { PathItem, SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import {
   Content,
@@ -200,8 +201,8 @@ export class ContentsComponent implements AfterViewInit {
         next: () => {
           this.notificationService.success('Document has been created.');
         },
-        error: () => {
-          this.notificationService.error('Document can not be created.');
+        error: (err: unknown) => {
+          this.notificationService.error(apiErrorMessage(err, 'Document can not be created.'));
         },
       });
   }
@@ -224,8 +225,8 @@ export class ContentsComponent implements AfterViewInit {
         next: () => {
           this.notificationService.success('Folder has been created.');
         },
-        error: () => {
-          this.notificationService.error('Folder can not be created.');
+        error: (err: unknown) => {
+          this.notificationService.error(apiErrorMessage(err, 'Folder can not be created.'));
         },
       });
   }
@@ -249,8 +250,8 @@ export class ContentsComponent implements AfterViewInit {
         next: () => {
           this.notificationService.success('Content has been updated.');
         },
-        error: () => {
-          this.notificationService.error('Content can not be updated.');
+        error: (err: unknown) => {
+          this.notificationService.error(apiErrorMessage(err, 'Content can not be updated.'));
         },
       });
   }
@@ -291,7 +292,7 @@ export class ContentsComponent implements AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(messageError);
+          this.notificationService.error(apiErrorMessage(err, messageError));
         },
       });
   }
@@ -313,8 +314,8 @@ export class ContentsComponent implements AfterViewInit {
         next: () => {
           this.notificationService.success('Document has been moved.');
         },
-        error: () => {
-          this.notificationService.error('Document can not be moved.');
+        error: (err: unknown) => {
+          this.notificationService.error(apiErrorMessage(err, 'Document can not be moved.'));
         },
       });
   }
@@ -339,7 +340,7 @@ export class ContentsComponent implements AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(`Document '${element.name}' can not be cloned.`);
+          this.notificationService.error(apiErrorMessage(err, `Document '${element.name}' can not be cloned.`));
         },
       });
   }
