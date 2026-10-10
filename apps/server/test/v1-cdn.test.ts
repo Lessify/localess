@@ -1,7 +1,7 @@
 import { gunzipSync } from 'node:zlib';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces, tokens } from '../src/infra/database/schema.js';
+import { contents, spaces, tokens } from '../src/infra/database/schema.js';
 import {
   seedContent,
   seedSpace,
@@ -14,7 +14,7 @@ import {
   TOKEN_V1,
 } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
-import { EMPTY_SPACE, S1, S2 } from './ids.js';
+import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
 /**
@@ -61,7 +61,7 @@ describe('v1 CDN API', () => {
     });
 
     it('names the missing permissions in a 403', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_NONE}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_NONE}`);
       expect(response.statusCode).toBe(403);
       expect(response.json()).toEqual({
         details: {
@@ -75,16 +75,16 @@ describe('v1 CDN API', () => {
     });
 
     it('requires a draft permission whenever `version` is present', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_PUBLIC}&version=draft`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
       expect(response.json().details.reason).toMatch(/draft content/);
-      expect((await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_DRAFT}&version=draft`)).statusCode).toBe(302);
-      expect((await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_DEV}&version=draft`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DRAFT}&version=draft`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DEV}&version=draft`)).statusCode).toBe(302);
     });
 
     it('gives V1 tokens their implicit public and draft permissions', async () => {
       expect((await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}&version=draft`)).statusCode).toBe(302);
-      expect((await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_V1}`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_V1}`)).statusCode).toBe(302);
     });
   });
 
@@ -107,7 +107,7 @@ describe('v1 CDN API', () => {
     });
 
     it('answers 404 for a well-formed id that is neither a space UUID nor an imported Firestore id', async () => {
-      const response = await get(`/api/v1/spaces/NoSuchFirestoreId/contents/home?token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/NoSuchFirestoreId/contents/${C.home}?token=${TOKEN_V1}`);
       expect(response.statusCode).toBe(404);
       expect(response.json()).toEqual({ message: 'Not found', status: 'NOT_FOUND' });
     });
@@ -130,8 +130,8 @@ describe('v1 CDN API', () => {
     });
 
     it('also redirects a stale cv, and honours the token cacheTtl', async () => {
-      const stale = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_DRAFT}&cv=1&locale=de&resolveLink=true`);
-      expect(stale.headers.location).toBe(`/api/v1/spaces/${S1}/contents/home?cv=7&locale=de&token=${TOKEN_DRAFT}&resolveLink=true`);
+      const stale = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DRAFT}&cv=1&locale=de&resolveLink=true`);
+      expect(stale.headers.location).toBe(`/api/v1/spaces/${S1}/contents/${C.home}?cv=7&locale=de&token=${TOKEN_DRAFT}&resolveLink=true`);
       expect(stale.headers['cache-control']).toBe('public, max-age=30, s-maxage=30');
 
       const noCache = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_NO_CACHE}&parentSlug=blog&excludeChildren=true&kind=DOCUMENT`);
@@ -143,7 +143,7 @@ describe('v1 CDN API', () => {
 
     it('follows the space version, so publishing invalidates every cached URL', async () => {
       await t.db.update(spaces).set({ contentVersion: 8 }).where(eq(spaces.id, S1));
-      const response = await get(`/api/v1/spaces/${S1}/contents/home?token=${TOKEN_V1}&cv=7`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_V1}&cv=7`);
       expect(response.headers.location).toContain('cv=8');
       await t.db.update(spaces).set({ contentVersion: 7 }).where(eq(spaces.id, S1));
     });
@@ -181,50 +181,50 @@ describe('v1 CDN API', () => {
     const content = (id: string, query = '') => get(`/api/v1/spaces/${S1}/contents/${id}?cv=7&token=${TOKEN_DRAFT}${query}`);
 
     it('serves the published snapshot without the internal id arrays', async () => {
-      const response = await content('home', '&locale=de');
+      const response = await content(C.home, '&locale=de');
       expect(response.statusCode).toBe(200);
       expect(response.headers['cache-control']).toBe('public, max-age=604800, s-maxage=604800');
       const body = response.json();
-      expect(body).toMatchObject({ id: 'home', locale: 'de', fullSlug: 'home', data: { title: 'Startseite' } });
+      expect(body).toMatchObject({ id: C.home, locale: 'de', fullSlug: 'home', data: { title: 'Startseite' } });
       expect(body).not.toHaveProperty('assets');
       expect(body).not.toHaveProperty('links');
       expect(body).not.toHaveProperty('references');
     });
 
     it('uses the fallback locale when the locale is unknown or was not published', async () => {
-      expect((await content('home', '&locale=fr')).json()).toMatchObject({ locale: 'en', data: { title: 'Home' } });
-      expect((await content('post1', '&locale=de')).json()).toMatchObject({ locale: 'en', data: { title: 'Post 1' } });
+      expect((await content(C.home, '&locale=fr')).json()).toMatchObject({ locale: 'en', data: { title: 'Home' } });
+      expect((await content(C.post1, '&locale=de')).json()).toMatchObject({ locale: 'en', data: { title: 'Post 1' } });
     });
 
     it('answers a never-published document with a 404 cached for ten minutes', async () => {
-      const response = await content('post2');
+      const response = await content(C.post2);
       expect(response.statusCode).toBe(404);
       expect(response.headers['cache-control']).toBe('public, max-age=600, s-maxage=600');
       expect(response.json().message).toMatch(/Please Publish again/);
     });
 
     it('builds drafts from the current data, per locale', async () => {
-      expect((await content('post2', '&version=draft&locale=de')).json()).toMatchObject({
-        id: 'post2',
+      expect((await content(C.post2, '&version=draft&locale=de')).json()).toMatchObject({
+        id: C.post2,
         locale: 'de',
         data: { _id: 'post2-root', _schema: 'page', title: 'Beitrag 2' },
       });
-      const home = (await content('home', '&version=draft')).json();
+      const home = (await content(C.home, '&version=draft')).json();
       expect(home.data.title).toBe('Home (draft)');
       expect(home).not.toHaveProperty('publishedAt');
     });
 
     it('treats any other `version` value as published, as before', async () => {
-      expect((await content('home', '&version=latest')).json().data.title).toBe('Home');
+      expect((await content(C.home, '&version=latest')).json().data.title).toBe('Home');
     });
 
     it('resolves links (skipping deleted targets), assets and references on request', async () => {
-      const body = (await content('home', '&resolveLink=true&resolveAsset=true&resolveReference=true')).json();
+      const body = (await content(C.home, '&resolveLink=true&resolveAsset=true&resolveReference=true')).json();
       expect(body.links).toEqual({
-        post1: expect.objectContaining({ id: 'post1', kind: 'DOCUMENT', fullSlug: 'blog/post-1', publishedAt: '2026-01-01T00:00:00.000Z' }),
+        [C.post1]: expect.objectContaining({ id: C.post1, kind: 'DOCUMENT', fullSlug: 'blog/post-1', publishedAt: '2026-01-01T00:00:00.000Z' }),
       });
-      expect(body.references.post1).toMatchObject({ id: 'post1', locale: 'en', data: { title: 'Post 1' } });
-      expect(body.references.post1).not.toHaveProperty('assets');
+      expect(body.references[C.post1]).toMatchObject({ id: C.post1, locale: 'en', data: { title: 'Post 1' } });
+      expect(body.references[C.post1]).not.toHaveProperty('assets');
       // The asset row is seeded by the asset tests; here it doesn't exist, so it is skipped.
       expect(body.assets).toEqual({});
     });
@@ -234,11 +234,39 @@ describe('v1 CDN API', () => {
     });
   });
 
+  describe('Firestore content ids (imported from Firebase)', () => {
+    beforeAll(async () => {
+      await t.db.update(contents).set({ legacyId: 'FirestoreHome' }).where(eq(contents.id, C.home));
+      await t.db.update(contents).set({ legacyId: 'FirestorePost1' }).where(eq(contents.id, C.post1));
+    });
+    afterAll(async () => {
+      await t.db.update(contents).set({ legacyId: null }).where(inArray(contents.id, [C.home, C.post1]));
+    });
+
+    it('redirects an old document URL to the UUID one, even with a current cv', async () => {
+      const response = await get(`/api/v1/spaces/${S1}/contents/FirestoreHome?cv=7&token=${TOKEN_DRAFT}&locale=de`);
+      expect(response.statusCode).toBe(302);
+      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/contents/${C.home}?cv=7&locale=de&token=${TOKEN_DRAFT}`);
+      expect((await get(`/api/v1/spaces/${S1}/contents/UnknownFirestoreId?cv=7&token=${TOKEN_DRAFT}`)).statusCode).toBe(404);
+    });
+
+    it('resolves links and references that still hold Firestore ids, keyed by those ids', async () => {
+      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      const delivery = t.app.get(ContentDeliveryService);
+      expect(await delivery.resolveLinks(S1, ['FirestorePost1', 'gone'])).toEqual({
+        FirestorePost1: expect.objectContaining({ id: C.post1, fullSlug: 'blog/post-1' }),
+      });
+      expect(await delivery.resolveReferences(S1, ['FirestorePost1'], 'en', undefined)).toEqual({
+        FirestorePost1: expect.objectContaining({ id: C.post1, data: expect.objectContaining({ title: 'Post 1' }) }),
+      });
+    });
+  });
+
   describe('content by slug', () => {
     it('finds a document by its full slug', async () => {
       const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&token=${TOKEN_V1}`);
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toMatchObject({ id: 'post1', fullSlug: 'blog/post-1' });
+      expect(response.json()).toMatchObject({ id: C.post1, fullSlug: 'blog/post-1' });
     });
 
     it('redirects with each segment encoded', async () => {
@@ -258,9 +286,9 @@ describe('v1 CDN API', () => {
 
     it('lists every content item as metadata keyed by id', async () => {
       const body = (await links()).json();
-      expect(Object.keys(body).sort()).toEqual(['archive', 'blog', 'home', 'old', 'post1', 'post2']);
-      expect(body.blog).toEqual({
-        id: 'blog',
+      expect(Object.keys(body).map(contentName).sort()).toEqual(['archive', 'blog', 'home', 'old', 'post1', 'post2']);
+      expect(body[C.blog]).toEqual({
+        id: C.blog,
         kind: 'FOLDER',
         name: 'Blog',
         slug: 'blog',
@@ -272,12 +300,12 @@ describe('v1 CDN API', () => {
     });
 
     it('selects a folder subtree by prefix, without sibling folders that share it', async () => {
-      expect(Object.keys((await links('&parentSlug=blog')).json()).sort()).toEqual(['post1', 'post2']);
+      expect(Object.keys((await links('&parentSlug=blog')).json()).map(contentName).sort()).toEqual(['post1', 'post2']);
     });
 
     it('filters to direct children and by kind', async () => {
-      expect(Object.keys((await links('&excludeChildren=true')).json()).sort()).toEqual(['archive', 'blog', 'home']);
-      expect(Object.keys((await links('&excludeChildren=true&kind=FOLDER')).json()).sort()).toEqual(['archive', 'blog']);
+      expect(Object.keys((await links('&excludeChildren=true')).json()).map(contentName).sort()).toEqual(['archive', 'blog', 'home']);
+      expect(Object.keys((await links('&excludeChildren=true&kind=FOLDER')).json()).map(contentName).sort()).toEqual(['archive', 'blog']);
     });
   });
 

@@ -44,6 +44,14 @@ async function readZip(bytes: Buffer): Promise<Record<string, Buffer>> {
   return Object.fromEntries(await Promise.all(directory.files.map(async file => [file.path, await file.buffer()] as const)));
 }
 
+// The content tree of space A, by the names the assertions use.
+const TC = {
+  blog: '00000000-0000-7000-8000-0000000000b1',
+  y2026: '00000000-0000-7000-8000-0000000000b2',
+  post: '00000000-0000-7000-8000-0000000000b3',
+  about: '00000000-0000-7000-8000-0000000000b4',
+} as const;
+const name = (id: string) => Object.entries(TC).find(([, value]) => value === id)?.[0] ?? id;
 const PHOTOS = '00000000-0000-7000-8000-0000000000f1';
 const PIC = '00000000-0000-7000-8000-0000000000f2';
 
@@ -64,11 +72,11 @@ describe('task worker: exports and imports', () => {
       { id: newUuid(), spaceId: SPACE_A, name: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
     ]);
     await t.db.insert(contents).values([
-      { spaceId: SPACE_A, id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
-      { spaceId: SPACE_A, id: 'y2026', kind: 'FOLDER', name: '2026', slug: '2026', parentSlug: 'blog', fullSlug: 'blog/2026' },
+      { spaceId: SPACE_A, id: TC.blog, kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
+      { spaceId: SPACE_A, id: TC.y2026, kind: 'FOLDER', name: '2026', slug: '2026', parentSlug: 'blog', fullSlug: 'blog/2026' },
       {
         spaceId: SPACE_A,
-        id: 'post',
+        id: TC.post,
         kind: 'DOCUMENT',
         name: 'Post',
         slug: 'post',
@@ -77,7 +85,7 @@ describe('task worker: exports and imports', () => {
         schema: 'page',
         data: { _id: 'r', _schema: 'page', title: 'Hi', title_i18n_de: 'Hallo' },
       },
-      { spaceId: SPACE_A, id: 'about', kind: 'DOCUMENT', name: 'About', slug: 'about', parentSlug: '', fullSlug: 'about', schema: 'page' },
+      { spaceId: SPACE_A, id: TC.about, kind: 'DOCUMENT', name: 'About', slug: 'about', parentSlug: '', fullSlug: 'about', schema: 'page' },
     ]);
     await t.db.insert(translations).values([
       { id: newUuid(), spaceId: SPACE_A, key: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
@@ -170,8 +178,8 @@ describe('task worker: exports and imports', () => {
       const bytes = await download(SPACE_A, exported.id);
       expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
       const b = await t.db.select().from(contents).where(eq(contents.spaceId, SPACE_B));
-      expect(b.map(c => c.id).sort()).toEqual(['about', 'blog', 'post', 'y2026']);
-      expect(b.find(c => c.id === 'post')).toMatchObject({ fullSlug: 'blog/2026/post', data: { title: 'Hi', title_i18n_de: 'Hallo' } });
+      expect(b.map(c => name(c.id)).sort()).toEqual(['about', 'blog', 'post', 'y2026']);
+      expect(b.find(c => c.id === TC.post)).toMatchObject({ fullSlug: 'blog/2026/post', data: { title: 'Hi', title_i18n_de: 'Hallo' } });
 
       // The same file again changes nothing.
       const again = await importTask(SPACE_B, 'CONTENT_IMPORT', bytes);
@@ -179,23 +187,23 @@ describe('task worker: exports and imports', () => {
     });
 
     it('exports one document with the folders leading to it', async () => {
-      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: 'post' });
+      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: TC.post });
       const files = await readZip(await download(SPACE_A, exported.id));
-      expect(JSON.parse(files['metadata.json'].toString())).toEqual({ kind: 'CONTENT', path: 'post' });
-      expect(JSON.parse(files['contents.json'].toString()).map((c: { id: string }) => c.id)).toEqual(['post', 'blog', 'y2026']);
+      expect(JSON.parse(files['metadata.json'].toString())).toEqual({ kind: 'CONTENT', path: TC.post });
+      expect(JSON.parse(files['contents.json'].toString()).map((c: { id: string }) => name(c.id))).toEqual(['post', 'blog', 'y2026']);
     });
 
     it('exports a folder with its subtree', async () => {
-      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: 'blog' });
+      const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: TC.blog });
       const files = await readZip(await download(SPACE_A, exported.id));
       expect(
         JSON.parse(files['contents.json'].toString())
-          .map((c: { id: string }) => c.id)
+          .map((c: { id: string }) => name(c.id))
           .sort(),
       ).toEqual(['blog', 'post', 'y2026']);
     });
 
-    it('imports a Firebase-era export whose document data is a JSON string', async () => {
+    it('imports a Firebase-era export: data as a JSON string, Firestore ids as UUIDs kept in legacy_id', async () => {
       const bytes = await zipOf({
         'metadata.json': JSON.stringify({ kind: 'CONTENT' }),
         'contents.json': JSON.stringify([
@@ -212,21 +220,27 @@ describe('task worker: exports and imports', () => {
         ]),
       });
       expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
-      const [row] = await t.db
-        .select()
-        .from(contents)
-        .where(and(eq(contents.spaceId, SPACE_B), eq(contents.id, 'legacy')));
+      const legacy = () =>
+        t.db
+          .select()
+          .from(contents)
+          .where(and(eq(contents.spaceId, SPACE_B), eq(contents.legacyId, 'legacy')));
+      const [row] = await legacy();
+      expect(row.id).toMatch(UUID_V7);
       expect(row.data).toEqual({ _id: 'x', _schema: 'page', title: 'Old' });
+      // A re-import finds it by legacy_id and keeps its UUID.
+      expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
+      expect((await legacy()).map(it => it.id)).toEqual([row.id]);
     });
 
     it('is served by the public API of the importing space', async () => {
       await t.db.insert(tokens).values({ id: newUuid(), token: 'BBBBBBBBBBBBBBBBBBBB', spaceId: SPACE_B, name: 't', version: 2, permissions: ['CONTENT_DRAFT'] });
       const redirect = await t.request({
         method: 'GET',
-        url: `/api/v1/spaces/${SPACE_B}/contents/post?token=BBBBBBBBBBBBBBBBBBBB&version=draft&locale=de`,
+        url: `/api/v1/spaces/${SPACE_B}/contents/${TC.post}?token=BBBBBBBBBBBBBBBBBBBB&version=draft&locale=de`,
       });
       const response = await t.request({ method: 'GET', url: redirect.headers.location as string });
-      expect(response.json()).toMatchObject({ id: 'post', locale: 'de', data: { title: 'Hallo' } });
+      expect(response.json()).toMatchObject({ id: TC.post, locale: 'de', data: { title: 'Hallo' } });
     });
   });
 
@@ -378,7 +392,7 @@ describe('task worker: exports and imports', () => {
         await t.db
           .select()
           .from(contents)
-          .where(and(eq(contents.spaceId, SPACE_B), eq(contents.id, 'x'))),
+          .where(and(eq(contents.spaceId, SPACE_B), eq(contents.legacyId, 'x'))),
       ).toEqual([]);
     });
   });

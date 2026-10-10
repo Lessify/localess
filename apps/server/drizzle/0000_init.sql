@@ -20,7 +20,7 @@ CREATE TABLE "assets" (
 --> statement-breakpoint
 CREATE TABLE "content_published" (
 	"space_id" uuid NOT NULL,
-	"content_id" text NOT NULL,
+	"content_id" uuid NOT NULL,
 	"locale" text NOT NULL,
 	"data" jsonb NOT NULL,
 	"published_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -28,8 +28,9 @@ CREATE TABLE "content_published" (
 );
 --> statement-breakpoint
 CREATE TABLE "contents" (
-	"id" text NOT NULL,
+	"id" uuid NOT NULL,
 	"space_id" uuid NOT NULL,
+	"legacy_id" text,
 	"kind" text NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
@@ -246,6 +247,7 @@ CREATE UNIQUE INDEX "assets_legacy_idx" ON "assets" USING btree ("space_id","leg
 CREATE INDEX "assets_parent_idx" ON "assets" USING btree ("space_id","parent_path","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "assets_parent_path_prefix_idx" ON "assets" USING btree ("space_id","parent_path" text_pattern_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "contents_legacy_idx" ON "contents" USING btree ("space_id","legacy_id");--> statement-breakpoint
 CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_slug","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","full_slug" text_pattern_ops);--> statement-breakpoint

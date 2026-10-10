@@ -423,15 +423,16 @@ export class TaskRunner {
     const parse = zContentExportArraySchema.safeParse(raw);
     if (!parse.success) return this.invalid(task, 'CONTENT', parse.error);
     // Validated, but the raw items are imported (as before): the schema strips document data fields.
-    const imported = raw as ContentExport[];
-    await this.log(task, 'INFO', `valid=${imported.length}`);
+    const entries = raw as ContentExport[];
+    await this.log(task, 'INFO', `valid=${entries.length}`);
 
-    const existing = new Map(
-      (await this.db.select().from(contents).where(eq(contents.spaceId, spaceId))).map(row => [
-        row.id,
-        withoutNulls(row) as unknown as Content,
-      ]),
-    );
+    const rows = await this.db.select().from(contents).where(eq(contents.spaceId, spaceId));
+    const existing = new Map(rows.map(row => [row.id, withoutNulls(row) as unknown as Content]));
+    // Exports from the Firebase era carry Firestore ids: each becomes a UUID, kept as `legacy_id` (so content that
+    // links to or references the old id still finds it, and a re-import reuses the same UUID).
+    const legacy = new Map(rows.filter(row => row.legacyId).map(row => [row.legacyId as string, row.id]));
+    const ids = new Map(entries.map(it => [it.id, isUuid(it.id) ? it.id : (legacy.get(it.id) ?? newUuid())]));
+    const imported = entries.map(it => ({ ...it, id: ids.get(it.id) as string, legacyId: isUuid(it.id) ? undefined : it.id }));
     const changedDocuments: { id: string; fullSlug: string }[] = [];
     const total = await this.db.transaction(async (tx: Transaction) => {
       let changes = 0;
@@ -458,7 +459,7 @@ export class TaskRunner {
           // As the update trigger did: an edited document is a `content.changed`.
           if (document) changedDocuments.push({ id: content.id, fullSlug: content.fullSlug });
         } else {
-          await tx.insert(contents).values({ id: content.id, spaceId, ...columns });
+          await tx.insert(contents).values({ id: content.id, spaceId, legacyId: content.legacyId ?? null, ...columns });
         }
         changes++;
       }

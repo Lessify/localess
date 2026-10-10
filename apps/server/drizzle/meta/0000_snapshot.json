@@ -1,5 +1,5 @@
 {
-  "id": "9c0b3201-b193-4a3c-976e-a06f251d3ff7",
+  "id": "da705b3d-c906-484f-9d55-2a228098afc6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -254,7 +254,7 @@
         },
         "content_id": {
           "name": "content_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -317,7 +317,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -326,6 +326,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "legacy_id": {
+          "name": "legacy_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "kind": {
           "name": "kind",
@@ -416,6 +422,27 @@
         }
       },
       "indexes": {
+        "contents_legacy_idx": {
+          "name": "contents_legacy_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "contents_parent_idx": {
           "name": "contents_parent_idx",
           "columns": [

@@ -2,6 +2,7 @@ import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ContentDocumentApi, ContentKind, TokenPermission } from '@localess/shared';
 import { ApiToken, TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
+import { isUuid } from '../../infra/database/id.js';
 import { Public } from '../../auth/decorators.js';
 import { SpaceRow } from '../../infra/http/space-access.js';
 import { publicCache, TEN_MINUTES } from '../../infra/http/v1/cache-control.js';
@@ -96,7 +97,9 @@ export class ContentsPublicController {
 
     const space = await this.spaces.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
-    await this.sendContent(request, reply, token, space, contentId, `/api/v1/spaces/${spaceId}/contents/${q(contentId)}`);
+    // The Firestore id of a document imported from Firebase: redirect, like a stale `cv`, to the UUID URL.
+    const id = isUuid(contentId) ? contentId : ((await this.delivery.findContentIdByLegacyId(spaceId, contentId)) ?? contentId);
+    await this.sendContent(request, reply, token, space, id, `/api/v1/spaces/${spaceId}/contents/${q(id)}`, id !== contentId);
   }
 
   private authorizeContent(request: FastifyRequest, reply: FastifyReply, spaceId: string): Promise<ApiToken | undefined> {
@@ -125,9 +128,10 @@ export class ContentsPublicController {
     space: SpaceRow,
     contentId: string,
     path: string,
+    redirect = false,
   ): Promise<void> {
     const { cv, locale, version, token: tokenId, resolveReference, resolveLink, resolveAsset } = request.query as Query;
-    if (needsRedirect(cv, space.contentVersion)) {
+    if (redirect || needsRedirect(cv, space.contentVersion)) {
       let url = `${path}?cv=${space.contentVersion}`;
       if (locale) url += `&locale=${q(locale)}`;
       if (version) url += `&version=${q(version)}`;

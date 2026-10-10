@@ -8,7 +8,7 @@ import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
 import { AssetMetadataService } from './asset-metadata.service.js';
-import { assetsByIdOrLegacyId } from './asset-ids.js';
+import { byIdOrLegacyId } from '../../infra/database/legacy-ids.js';
 
 export type AssetRow = typeof assets.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -71,7 +71,7 @@ export class AssetsService {
     if (query.name) conditions.push(ilike(assets.name, `${escapeLike(query.name)}%`));
     // Folders stay visible while browsing by file type.
     if (query.fileType) conditions.push(or(eq(assets.kind, 'FOLDER'), like(assets.type, `${escapeLike(query.fileType)}%`)) as SQL);
-    if (query.ids) conditions.push(assetsByIdOrLegacyId(spaceId, query.ids));
+    if (query.ids) conditions.push(byIdOrLegacyId(assets, spaceId, query.ids));
     const select = this.db
       .select()
       .from(assets)

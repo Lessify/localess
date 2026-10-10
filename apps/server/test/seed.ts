@@ -10,7 +10,7 @@ import {
   translations,
 } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { S1 } from './ids.js';
+import { C, S1 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 import type { TestApp } from './test-app.js';
 
@@ -58,16 +58,16 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
       { name: 'cta', kind: 'LINK' },
     ],
   });
-  const doc = (id: string, slug: string, parentSlug: string, data: Record<string, unknown>, extra: object = {}) => ({
-    id,
+  const doc = (name: keyof typeof C, slug: string, parentSlug: string, data: Record<string, unknown>, extra: object = {}) => ({
+    id: C[name],
     spaceId,
     kind: 'DOCUMENT',
-    name: id,
+    name,
     slug,
     parentSlug,
     fullSlug: parentSlug ? `${parentSlug}/${slug}` : slug,
     schema: 'page',
-    data: { _id: `${id}-root`, _schema: 'page', ...data },
+    data: { _id: `${name}-root`, _schema: 'page', ...data },
     createdAt: at,
     updatedAt: at,
     ...extra,
@@ -80,16 +80,16 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
       { title: 'Home (draft)', title_i18n_de: 'Startseite (Entwurf)' },
       {
         assets: ['logo'],
-        links: ['post1', 'deleted-link'],
-        references: ['post1'],
+        links: [C.post1, 'deleted-link'],
+        references: [C.post1],
         publishedAt: at,
       },
     ),
-    { id: 'blog', spaceId, kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog', createdAt: at, updatedAt: at },
+    { id: C.blog, spaceId, kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog', createdAt: at, updatedAt: at },
     doc('post1', 'post-1', 'blog', { title: 'Post 1 (draft)' }, { publishedAt: at }),
     doc('post2', 'post-2', 'blog', { title: 'Post 2 (draft)', title_i18n_de: 'Beitrag 2' }),
     {
-      id: 'archive',
+      id: C.archive,
       spaceId,
       kind: 'FOLDER',
       name: 'Archive',
@@ -101,18 +101,18 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
     },
     doc('old', 'old', 'blog-archive', { title: 'Old' }),
   ]);
-  const published = (id: string, locale: string, data: Record<string, unknown>, extra: object = {}) => ({
+  const published = (name: 'home' | 'post1', locale: string, data: Record<string, unknown>, extra: object = {}) => ({
     spaceId,
-    contentId: id,
+    contentId: C[name],
     locale,
     data: {
-      id,
-      name: id,
+      id: C[name],
+      name,
       kind: 'DOCUMENT',
       locale,
-      slug: id === 'home' ? 'home' : 'post-1',
-      fullSlug: id === 'home' ? 'home' : 'blog/post-1',
-      parentSlug: id === 'home' ? '' : 'blog',
+      slug: name === 'home' ? 'home' : 'post-1',
+      fullSlug: name === 'home' ? 'home' : 'blog/post-1',
+      parentSlug: name === 'home' ? '' : 'blog',
       createdAt: at.toISOString(),
       updatedAt: at.toISOString(),
       publishedAt: at.toISOString(),
@@ -127,13 +127,13 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
         'home',
         'en',
         { _id: 'home-root', _schema: 'page', title: 'Home' },
-        { assets: ['logo'], links: ['post1', 'deleted-link'], references: ['post1'] },
+        { assets: ['logo'], links: [C.post1, 'deleted-link'], references: [C.post1] },
       ),
       published(
         'home',
         'de',
         { _id: 'home-root', _schema: 'page', title: 'Startseite' },
-        { assets: ['logo'], links: ['post1'], references: ['post1'] },
+        { assets: ['logo'], links: [C.post1], references: [C.post1] },
       ),
       published('post1', 'en', { _id: 'post1-root', _schema: 'page', title: 'Post 1' }, { assets: ['logo'] }),
     ]);

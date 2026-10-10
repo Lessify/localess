@@ -3,7 +3,8 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
 import { Schema, WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newId } from '../../infra/database/id.js';
+import { isUuid, newUuid } from '../../infra/database/id.js';
+import { byIdOrLegacyId } from '../../infra/database/legacy-ids.js';
 import { contentPublished, contents, schemas, UpdatedBy } from '../../infra/database/schema.js';
 import { buildDocumentStorage } from './content-extract.js';
 import { EventsService } from '../../infra/events/events.service.js';
@@ -56,7 +57,8 @@ export class ContentsService {
     if (query.parentSlug !== undefined) conditions.push(eq(contents.parentSlug, query.parentSlug));
     if (query.kind) conditions.push(eq(contents.kind, query.kind));
     if (query.name) conditions.push(ilike(contents.name, startsWith(query.name)));
-    if (query.ids) conditions.push(query.ids.length ? inArray(contents.id, query.ids) : sql`false`);
+    // The editor asks for the documents content links to or references, which may be Firestore ids in imported content.
+    if (query.ids) conditions.push(byIdOrLegacyId(contents, spaceId, query.ids));
     const select = this.db
       .select()
       .from(contents)
@@ -74,6 +76,7 @@ export class ContentsService {
   }
 
   async get(spaceId: string, id: string, executor: Pick<Database, 'select'> = this.db): Promise<ContentRow> {
+    if (!isUuid(id)) throw new NotFoundException('Content not found');
     const [row] = await executor
       .select()
       .from(contents)
@@ -125,7 +128,7 @@ export class ContentsService {
       const [row] = await tx
         .insert(contents)
         .values({
-          id: newId(),
+          id: newUuid(),
           spaceId,
           kind: input.kind,
           name: input.name,

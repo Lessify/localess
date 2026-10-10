@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { contentPublished, contents, schemas, spaces, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
-import { S1 } from './ids.js';
+import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
 interface Received {
@@ -132,6 +132,15 @@ describe('app API: contents', () => {
       expect((await reader.get(`${base}?kind=DOCUMENT&limit=1`)).json()).toHaveLength(1);
       expect((await reader.get(`${base}/count?kind=DOCUMENT`)).json()).toEqual({ count: 2 });
       expect((await reader.get(`${base}/missing`)).statusCode).toBe(404);
+    });
+
+    it('gives documents UUIDv7 ids; `?ids=` also matches the Firestore id imported content still references', async () => {
+      expect(post.id).toMatch(UUID_V7);
+      await t.db.update(contents).set({ legacyId: 'FirestorePost' }).where(eq(contents.id, post.id));
+      const found = (await reader.get(`${base}?ids=FirestorePost`)).json();
+      expect(found).toEqual([expect.objectContaining({ id: post.id, legacyId: 'FirestorePost' })]);
+      expect((await reader.get(`${base}/FirestorePost`)).statusCode).toBe(404);
+      await t.db.update(contents).set({ legacyId: null }).where(eq(contents.id, post.id));
     });
   });
 

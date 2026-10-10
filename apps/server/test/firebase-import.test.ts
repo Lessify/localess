@@ -261,7 +261,9 @@ describe('import:firebase', () => {
     });
     expect(user.createdAt.toISOString()).toBe('2025-01-06T10:00:00.000Z');
 
-    const posts = (await db.select().from(schema.contents)).filter(it => it.id === 'post');
+    // Documents get UUIDs, the Firestore id kept as legacy_id; references in data and arrays are not rewritten.
+    const posts = (await db.select().from(schema.contents)).filter(it => it.legacyId === 'post');
+    expect(posts[0].id).toMatch(UUID_V7);
     expect(posts[0]).toMatchObject({
       fullSlug: 'blog/post',
       data: { title: 'Draft title' },
@@ -335,7 +337,13 @@ describe('import:firebase', () => {
       data: { title: 'Veröffentlicht' },
     });
     // Drafts are rebuilt from the imported data.
-    expect((await follow(`/api/v1/spaces/s1/contents/post?token=${TOKEN}&locale=de&version=draft`)).json().data.title).toBe('Entwurf');
+    // An old document URL redirects to the UUID one, like a stale cv.
+    const byFirestoreId = await request({ method: 'GET', url: `/api/v1/spaces/s1/contents/post?token=${TOKEN}&locale=de&version=draft&cv=1` });
+    expect(byFirestoreId.statusCode).toBe(302);
+    expect(byFirestoreId.headers.location).toMatch(/\/contents\/[0-9a-f-]{36}\?cv=/);
+    const draft = (await follow(`/api/v1/spaces/s1/contents/post?token=${TOKEN}&locale=de&version=draft`)).json();
+    expect(draft.data.title).toBe('Entwurf');
+    expect(draft.id).toMatch(UUID_V7);
     expect((await follow(`/api/v1/spaces/s1/translations/en?token=${TOKEN}`)).json()).toEqual({ greeting: 'Hello' });
     // An old asset URL (Firestore space and asset ids) redirects to the UUID one, which serves the copied file.
     const redirect = await request({ method: 'GET', url: '/api/v1/spaces/s1/assets/a1/original' });

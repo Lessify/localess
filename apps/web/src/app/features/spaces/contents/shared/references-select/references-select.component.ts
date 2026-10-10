@@ -75,7 +75,11 @@ export class ReferencesSelectComponent implements OnInit {
     if (ids && ids.length > 0) {
       this.contentService.findByIds(this.space().id, ids).subscribe({
         next: contents => {
-          const byId = new Map<string, Content>(contents.map(item => [item.id, item]));
+          // Content imported from Firebase may reference a document by its Firestore id (`legacyId`) until the
+          // references are migrated (docs/roadmap/firebase-migration-uuidv7.md, "Deferred reference migration").
+          const byId = new Map<string, Content>(
+            contents.flatMap(item => [[item.id, item] as const, ...(item.legacyId ? [[item.legacyId, item] as const] : [])]),
+          );
           // Make sure to have contents display in exactly the same order
           this.contents.set(
             ids

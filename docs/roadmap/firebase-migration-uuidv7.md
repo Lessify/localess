@@ -229,7 +229,7 @@ deleted once per block).
 | 3 | Schemas | `schemas` (`id` uuid + `name`, unique per space); references stay names | ✅ 2026-10-10 |
 | 4 | Translations | `translations` (`id` uuid + `key`, unique per space); `translation_published` unchanged | ✅ 2026-10-10 |
 | 5 | Assets | `assets` (`id` uuid + `legacy_id`, unique per space, shown in the UI; key stays `(space_id, id)`); old asset URLs `301` to the UUID one; `parent_path` rewritten on import; references in content **not** rewritten (see below) | ✅ 2026-10-10 |
-| 6 | Contents | `contents` (+ `legacy_id`, `schema_id`), `content_published`, references | planned |
+| 6 | Contents | `contents` (`id` uuid + `legacy_id`, unique per space, shown in the UI; key stays `(space_id, id)`; `schema` stays the name), `content_published.content_id` uuid; old `/contents/:id` URLs redirect (cv redirect, `302`) to the UUID one; references in content **not** rewritten (see below) | ✅ 2026-10-10 |
 | 7 | Tasks | `tasks`, `task_logs`, Export/Import id mapping | planned |
 | 8 | Final | `newId()` only for token values, docs, release notes | planned |
 
@@ -244,11 +244,13 @@ redirects) can go. Every reference type and use case that script and its follow-
 
 | # | Where | What holds a Firestore id | Today (fallback) | After the migration |
 |---|---|---|---|---|
-| 1 | `contents.assets[]` | ids of the assets a document references | `resolveAssets` matches `id` or `legacy_id` (`apps/server/src/modules/assets/asset-ids.ts`) | rewrite to UUIDs |
+| 1 | `contents.assets[]` | ids of the assets a document references | `resolveAssets` matches `id` or `legacy_id` (`apps/server/src/infra/database/legacy-ids.ts`) | rewrite to UUIDs |
 | 2 | `contents.data` (draft) | `uri` of `{ kind: 'ASSET' }` in ASSET / ASSETS fields, any depth, every locale variant | delivery: same fallback; editor: App API `?ids=` matches `legacy_id`, and the asset pickers index results by `legacyId` too | rewrite; remove the App API and editor fallback |
 | 3 | `content_published.data` | same shapes, locale-extracted snapshots | delivery fallback | rewrite (snapshots are copied, not rebuilt) |
 | 4 | RICH_TEXT / MARKDOWN values | `/api/v1/spaces/{space}/assets/{asset}` URLs, with Firestore space and asset ids | public `301` (asset) and space id resolution | optional rewrite (Q3); the redirects stay for customer sites anyway |
-| 5 | `contents.links[]`, `references[]`, `LINK` / `REFERENCE` `uri` | content ids | none needed yet: content ids are still the Firestore ones | contents block decides; same pattern expected |
+| 5 | `contents.links[]`, `references[]`, `LINK` (`type: 'content'`) / `REFERENCE` / REFERENCES `uri` in drafts and published snapshots | ids of documents | `resolveLink` / `resolveReference` match `id` or `legacy_id`, keyed by the id asked for; editor: App API `?ids=` matches `legacy_id`, the references picker indexes by `legacyId`, the link picker matches `id` or `legacyId` | rewrite; remove the App API and editor fallback |
+| 5a | `GET /links` | keyed by document **UUID** | customer code that looks up `links[uri]` with a Firestore id from imported content misses it | **the migration must run before an imported install goes live** (decided 2026-10-10) |
+| 5b | Document `id` in API responses, `content.*` webhook payloads, Visual Editor `documentId` | — | the UUID (published snapshots copied by the import get the UUID as `id` too) | unchanged (release note) |
 | 6 | Content export of a migrated space | Firestore asset ids in content, UUIDs in the matching asset export (whose files do not carry `legacy_id`) | links between the two break when imported elsewhere | export after the migration, or add `legacyId` to the asset export |
 | 7 | Asset import of a Firebase-era export file | Firestore ids in `assets.json` | each becomes a UUID with `legacy_id` (re-import reuses it), `parent_path` follows | unchanged |
 | 8 | Resolved asset metadata in API responses | — | carries the UUID `id`, not the Firestore id it was referenced by (release note) | unchanged |
@@ -285,7 +287,7 @@ unmapped (dangling) ids.
 | # | Question | Leaning |
 |---|---|---|
 | Q1 | Draft `_schema`: store schema UUID or name? | Name — decided 2026-10-10: every schema reference stays the human-readable name (SDK, Code as Source). |
-| Q2 | Old content id on `contents/:contentId`: resolve or 301? | 301, same as assets. |
+| Q2 | Old content id on `contents/:contentId`: resolve or 301? | Redirect, decided 2026-10-10: through the `cv` redirect (`302`, the token's TTL), so it costs no extra hop. |
 | Q3 | Rewrite asset URLs found inside RICH_TEXT / MARKDOWN strings? | Yes, if the URL matches this install's `/api/v1/spaces/{space}/assets/{asset}`; with D2 they'd still work anyway. |
 | Q4 | Resolve old UI deep links (`/features/spaces/<old id>`)? | No — decided 2026-10-10: the SPA works only with UUIDs (it shows `legacyId`, never resolves by it); an old link falls back to the first available space. |
 | Q5 | Migrate webhook logs and task history? | Webhook logs yes (the import copies them, with UUIDv7 ids); task history no. |

@@ -87,14 +87,14 @@ describe('migrateDatabase', () => {
       ]);
       // Same content and asset id in two spaces, as an export of one imported into the other produces.
       await pool.query(
-        `insert into contents (id, space_id, kind, name, slug, full_slug) values ('c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
+        `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
         [id],
       );
       await pool.query(`insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`, [id]);
-      await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, 'c1', 'en', '{}')`, [id]);
+      await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-0000000000c1', 'en', '{}')`, [id]);
     }
     await expect(
-      pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, 'missing', 'en', '{}')`, [A]),
+      pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-00000000dead', 'en', '{}')`, [A]),
     ).rejects.toThrow(/foreign key/);
   });
 
@@ -102,10 +102,10 @@ describe('migrateDatabase', () => {
     await migrateDatabase(pool);
     await pool.query(`insert into spaces (id, name, locales, locale_fallback) values ($1, 'S', '[]', '{"id":"en","name":"English"}')`, [A]);
     await pool.query(
-      `insert into contents (id, space_id, kind, name, slug, full_slug) values ('c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
+      `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
       [A],
     );
-    await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, 'c1', 'en', '{}')`, [A]);
+    await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-0000000000c1', 'en', '{}')`, [A]);
     await pool.query(`insert into tasks (id, space_id, kind, status) values ('t1', $1, 'SCHEMA_EXPORT', 'INITIATED')`, [A]);
     await pool.query(`insert into task_logs (task_id, level, message) values ('t1', 'INFO', 'started')`);
 

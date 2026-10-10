@@ -49,6 +49,13 @@ describe('ReferencesSelectComponent', () => {
     expect(component.contents()).toEqual([c2, c1]);
   });
 
+  it('matches a uri that is the Firestore id of an imported document (legacyId)', () => {
+    const imported = { ...doc('0190a3b4-0000-7000-8000-000000000001', 'Imported'), legacyId: 'FirestoreDoc' };
+    const { component } = setup(['FirestoreDoc'], [imported]);
+
+    expect(component.contents()).toEqual([imported]);
+  });
+
   it('ignores non-document content in the resolved results', () => {
     const folder = { id: 'f1', kind: ContentKind.FOLDER, name: 'Folder' } as unknown as ContentDocument;
     const { component } = setup(['f1'], [folder]);

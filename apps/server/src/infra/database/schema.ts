@@ -18,7 +18,7 @@ import {
 /*
  * Ids are moving to UUIDv7 (`newUuid()`) one feature at a time, see docs/roadmap/firebase-migration-uuidv7.md.
  * Done: users, spaces, tokens, webhooks, webhook_logs, schemas (references to a schema use its `name`), translations
- * (referred to by `key`), assets (`legacy_id` kept for old URLs and imported content). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
+ * (referred to by `key`), assets and contents (`legacy_id` kept for old URLs and imported references). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
  * `legacy_id`, so old ids in URLs and customer code still resolve (`byIdOrLegacy()`) and a re-run of the
  * import updates the same rows. The other tables still use `text` ids in the 20-char alphanumeric format
  * of `newId()`; imported rows keep their Firestore document ids there.
@@ -168,8 +168,11 @@ const spaceId = () =>
 export const contents = pgTable(
   'contents',
   {
-    id: text('id').notNull(),
+    id: uuid('id').notNull(),
     spaceId: spaceId(),
+    // Firestore id of an imported document: old `/contents/:id` URLs redirect, and imported content still links to
+    // and references documents by it (see `legacy-ids.ts`) until a later migration rewrites those references.
+    legacyId: text('legacy_id'),
     // 'FOLDER' | 'DOCUMENT'
     kind: text('kind').notNull(),
     name: text('name').notNull(),
@@ -186,7 +189,9 @@ export const contents = pgTable(
     ...timestamps,
   },
   t => [
+    // Kept per space: the content import task reuses the ids of an export in another space.
     primaryKey({ columns: [t.spaceId, t.id] }),
+    uniqueIndex('contents_legacy_idx').on(t.spaceId, t.legacyId),
     index('contents_parent_idx').on(t.spaceId, t.parentSlug, t.kind.desc(), t.name),
     index('contents_kind_idx').on(t.spaceId, t.kind, t.name),
     index('contents_full_slug_idx').on(t.spaceId, sql`${t.fullSlug} text_pattern_ops`),
@@ -199,7 +204,7 @@ export const contentPublished = pgTable(
   'content_published',
   {
     spaceId: uuid('space_id').notNull(),
-    contentId: text('content_id').notNull(),
+    contentId: uuid('content_id').notNull(),
     locale: text('locale').notNull(),
     data: jsonb('data').$type<Record<string, unknown>>().notNull(),
     publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
@@ -220,7 +225,7 @@ export const assets = pgTable(
     id: uuid('id').notNull(),
     spaceId: spaceId(),
     // Firestore id of an imported asset. Old asset URLs redirect to the UUID one, and content imported from Firebase
-    // still references assets by it (see `assetsByIdOrLegacyId`) until a later migration rewrites those references.
+    // still references assets by it (see `legacy-ids.ts`) until a later migration rewrites those references.
     legacyId: text('legacy_id'),
     // 'FOLDER' | 'FILE'
     kind: text('kind').notNull(),

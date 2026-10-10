@@ -307,18 +307,26 @@ export class FirebaseImporter {
   }
 
   private async importContents({ id: spaceId, source }: SpaceIds, locales: Locale[]): Promise<void> {
+    // Every document gets a UUID (the one an earlier run gave it, found by `legacy_id`). Links and references in content
+    // keep the Firestore ids, resolved through `legacy_id` until a later migration rewrites them.
+    const earlier = await this.db
+      .select({ id: contents.id, legacyId: contents.legacyId })
+      .from(contents)
+      .where(eq(contents.spaceId, spaceId));
+    const known = new Map(earlier.filter(it => it.legacyId).map(it => [it.legacyId as string, it.id]));
     for (const doc of await this.source.documents(`spaces/${source}/contents`)) {
       if (!isValidId(doc.id)) {
         this.warn(`content '${doc.id}' in ${source}: id is not usable in URLs, skipped`);
         continue;
       }
       const d = doc.data;
+      const id = known.get(doc.id) ?? newUuid(timestamps(d).createdAt);
       const isDocument = d['kind'] === 'DOCUMENT';
       const slug = str(d['slug']) ?? doc.id;
       const parentSlug = typeof d['parentSlug'] === 'string' ? d['parentSlug'] : '';
       const values = {
         spaceId,
-        id: doc.id,
+        legacyId: doc.id,
         kind: isDocument ? 'DOCUMENT' : 'FOLDER',
         name: str(d['name']) ?? slug,
         slug,
@@ -333,23 +341,25 @@ export class FirebaseImporter {
         updatedBy: obj<UpdatedBy>(d['updatedBy']),
         ...timestamps(d),
       };
-      const { spaceId: _s, id: _i, ...update } = values;
+      const { spaceId: _s, legacyId: _l, ...update } = values;
       void _s;
-      void _i;
+      void _l;
       await this.db
         .insert(contents)
-        .values(values)
-        .onConflictDoUpdate({ target: [contents.spaceId, contents.id], set: update });
+        .values({ id, ...values })
+        .onConflictDoUpdate({ target: [contents.spaceId, contents.legacyId], set: update });
       this.report.contents++;
 
       // The published snapshot is copied as served, never rebuilt: it may legitimately differ from the draft.
       if (!values.publishedAt) continue;
       for (const locale of locales) {
-        const published = await this.readJson(`spaces/${source}/contents/${doc.id}/${locale.id}.json`);
-        if (!published) continue;
+        const snapshot = await this.readJson(`spaces/${source}/contents/${doc.id}/${locale.id}.json`);
+        if (!snapshot) continue;
+        // Copied as served, except the document's own id, which is its UUID now (as in drafts and every response).
+        const published = { ...snapshot, id };
         await this.db
           .insert(contentPublished)
-          .values({ spaceId, contentId: doc.id, locale: locale.id, data: published, publishedAt: values.publishedAt })
+          .values({ spaceId, contentId: id, locale: locale.id, data: published, publishedAt: values.publishedAt })
           .onConflictDoUpdate({
             target: [contentPublished.spaceId, contentPublished.contentId, contentPublished.locale],
             set: { data: published, publishedAt: values.publishedAt },

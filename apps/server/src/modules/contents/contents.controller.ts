@@ -6,6 +6,7 @@ import { CurrentUser } from '../../auth/request-context.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import type { UserRow } from '../../auth/users/users.service.js';
 import { toDto } from '../../infra/http/dto.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { ContentRow, ContentsService } from './contents.service.js';
 
 /** No `/` (it separates path segments) and nothing that needs URL encoding. */
@@ -59,7 +60,7 @@ export class ContentsController {
 
   @Get(':id')
   @RequirePermission(UserPermission.CONTENT_READ)
-  async get(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return dto(await this.contents.get(spaceId, id));
   }
 
@@ -75,7 +76,7 @@ export class ContentsController {
 
   @Post(':id/clone')
   @RequirePermission(UserPermission.CONTENT_CREATE)
-  async clone(@Param('spaceId') spaceId: string, @Param('id') id: string, @CurrentUser() user: UserRow) {
+  async clone(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow) {
     return dto(await this.contents.clone(spaceId, id, user));
   }
 
@@ -84,7 +85,7 @@ export class ContentsController {
   @RequirePermission(UserPermission.CONTENT_UPDATE)
   async update(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
     @CurrentUser() user: UserRow,
   ) {
@@ -95,7 +96,7 @@ export class ContentsController {
   @RequirePermission(UserPermission.CONTENT_UPDATE)
   async updateData(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(dataSchema)) body: z.infer<typeof dataSchema>,
     @CurrentUser() user: UserRow,
   ) {
@@ -105,21 +106,21 @@ export class ContentsController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_DELETE)
-  async delete(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.contents.delete(spaceId, id);
   }
 
   @Post(':id/publish')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_PUBLISH)
-  async publish(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async publish(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.contents.publish(spaceId, id);
   }
 
   @Post(':id/unpublish')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_PUBLISH)
-  async unpublish(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async unpublish(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.contents.unpublish(spaceId, id);
   }
 }

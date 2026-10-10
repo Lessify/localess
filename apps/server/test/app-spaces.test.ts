@@ -110,7 +110,7 @@ describe('app API: spaces, locales, settings', () => {
 
     it('calculates the overview for any role', async () => {
       await t.db.insert(translations).values({ id: newUuid(), spaceId, key: 'hello', type: 'STRING', locales: { en: 'Hello' } });
-      await t.db.insert(contents).values({ spaceId, id: 'c1', kind: 'DOCUMENT', name: 'Home', slug: 'home', fullSlug: 'home' });
+      await t.db.insert(contents).values({ spaceId, id: newUuid(), kind: 'DOCUMENT', name: 'Home', slug: 'home', fullSlug: 'home' });
       await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/a1/original`, Buffer.alloc(1000));
       const response = await reader.post(`/api/app/spaces/${spaceId}/overview`);
       expect(response.statusCode).toBe(200);
