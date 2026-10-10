@@ -66,6 +66,10 @@ CACHE_BAD_REQUEST_MAX_AGE       = HOUR          // 3600s — cached 400 for reje
 
 ---
 
+### No ETag on JSON responses (by design)
+
+Content, translation and links JSON responses carry no `ETag` and never answer `304`, unlike the Firebase-era Express server, which added a weak ETag to every JSON body. Freshness comes from the `cv` pattern instead: every publish moves the version, a stale `cv` redirects to the new URL, and a versioned URL is immutable for its 7-day TTL, so revalidation would only save re-sending one body after expiry. Don't add one without a client that needs it. Assets do carry ETags (see below).
+
 ## Endpoints
 
 | Endpoint | Auth | cv source |
