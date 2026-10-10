@@ -17,9 +17,6 @@ export interface Space {
   defaultLocale: Locale;
   /** Preview environments for the Visual Editor (http(s) URLs only), in the order users gave them; the first is the default. */
   environments: SpaceEnvironment[];
-  // overview
-  overview?: SpaceOverview;
-  progress?: ProgressOverview;
   // timestamp
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -47,24 +44,28 @@ export interface SpaceUpdate {
   name: string;
 }
 
-export interface SpaceOverviewData {
-  spaceId: string;
-}
-
+/** Dashboard numbers, computed on request (`GET /api/app/spaces/:id/overview`). */
 export interface SpaceOverview {
-  translationsCount: number;
-  translationsSize: number;
-  assetsCount: number;
-  assetsSize: number;
-  contentsCount: number;
-  contentsSize: number;
-  schemasCount: number;
-  tasksCount: number;
-  tasksSize: number;
-  totalSize: number;
-  updatedAt: Timestamp;
-}
-
-export interface ProgressOverview {
-  translations: Record<string, number>;
+  counts: {
+    locales: number;
+    /** Translation keys. */
+    translations: number;
+    /** Asset files (folders not counted). */
+    assets: number;
+    /** Content documents (folders not counted). */
+    contents: number;
+    schemas: number;
+  };
+  storage: {
+    /** Bytes: the sum of the asset files' recorded sizes. */
+    assets: number;
+    /** Asset files with no recorded size (imported without their file); not in `assets`. */
+    assetsWithoutSize: number;
+  };
+  progress: {
+    /** Translation keys, the 100% of every locale. */
+    total: number;
+    /** The space's locales in their order, with how many keys have a non-empty value. */
+    locales: (Locale & { translated: number })[];
+  };
 }

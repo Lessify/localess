@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Space, SpaceCreate, SpaceEnvironmentInput, SpaceUpdate } from '@localess/shared';
+import { Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 const BASE = '/api/app/spaces';
@@ -53,7 +53,13 @@ export class SpaceService {
     return this.http.delete<void>(`${BASE}/${id}`);
   }
 
-  calculateOverview(spaceId: string): Observable<void> {
-    return this.http.post<void>(`${BASE}/${spaceId}/overview`, {});
+  /**
+   * Dashboard numbers, computed by the server on each request; refetched when what they count changes (the space's
+   * locales arrive as a `spaces` event).
+   */
+  overview(spaceId: string): Observable<SpaceOverview> {
+    return liveQueryWith(this.events, { spaceId, entities: ['spaces', 'translations', 'assets', 'contents', 'schemas'] }, () =>
+      this.http.get<SpaceOverview>(`${BASE}/${spaceId}/overview`),
+    );
   }
 }

@@ -2,7 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contents, spaces, translations } from '../src/infra/database/schema.js';
+import { assets, contents, schemas, spaces, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
@@ -16,10 +16,12 @@ describe('app API: spaces, locales, settings', () => {
   let noRole: ReturnType<typeof api>;
   let readerCookie: string;
   let managerCookie: string;
+  let adminCookie: string;
 
   beforeAll(async () => {
     t = await createTestApp();
-    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
+    adminCookie = await userWithAccess(t, 'admin@example.com', { role: 'admin' });
+    admin = api(t, adminCookie);
     managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] });
     manager = api(t, managerCookie);
     readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['CONTENT_READ'] });
@@ -198,30 +200,71 @@ describe('app API: spaces, locales, settings', () => {
       expect((await admin.post('/api/app/locales', { id: 'xx', name: 'X' })).statusCode).toBe(404);
     });
 
-    it('calculates the overview for any role', async () => {
-      await t.db.insert(translations).values({ id: newUuid(), spaceId, key: 'hello', type: 'STRING', locales: { en: 'Hello' } });
-      await t.db.insert(contents).values({ spaceId, id: newUuid(), kind: 'DOCUMENT', name: 'Home', slug: 'home', fullSlug: 'home' });
-      await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/a1/original`, Buffer.alloc(1000));
-      const response = await reader.post(`/api/app/spaces/${spaceId}/overview`);
+    it('computes the overview on request for any role: counts, asset storage, translation progress', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      await manager.post(`${base}/locales`, { id: 'de' });
+      await manager.post(`${base}/locales`, { id: 'fr' });
+      await t.db.insert(translations).values([
+        { id: newUuid(), spaceId, key: 'hello', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' } },
+        { id: newUuid(), spaceId, key: 'bye', type: 'STRING', locales: { en: 'Bye', de: '' } },
+        { id: newUuid(), spaceId, key: 'later', type: 'STRING', locales: {} },
+      ]);
+      await t.db.insert(contents).values([
+        { spaceId, id: newUuid(), kind: 'DOCUMENT', name: 'Home', slug: 'home', fullSlug: 'home' },
+        { spaceId, id: newUuid(), kind: 'FOLDER', name: 'Blog', slug: 'blog', fullSlug: 'blog' },
+      ]);
+      await t.db.insert(assets).values([
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'a', size: 1000 },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'b', size: 24 },
+        // Imported from Firebase without its file: counted, size unknown.
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'c', size: null },
+        { spaceId, id: newUuid(), kind: 'FOLDER', name: 'f' },
+      ]);
+      await t.db.insert(schemas).values({ id: newUuid(), spaceId, name: 'page', type: 'ROOT', fields: [] });
+      // Read from the table, not the storage folder.
+      await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/x/original`, Buffer.alloc(5000));
+
+      const response = await reader.get(`${base}/overview`);
       expect(response.statusCode).toBe(200);
-      expect(response.json().overview).toMatchObject({
-        translationsCount: 1,
-        contentsCount: 1,
-        assetsCount: 0,
-        assetsSize: 1000,
-        schemasCount: 0,
-        tasksCount: 0,
-        totalSize: 1000,
+      expect(response.json()).toEqual({
+        counts: { locales: 3, translations: 3, assets: 3, contents: 1, schemas: 1 },
+        storage: { assets: 1024, assetsWithoutSize: 1 },
+        progress: {
+          total: 3,
+          // In the space's locale order; an empty value is not translated.
+          locales: [
+            { id: 'en', name: 'English', translated: 2 },
+            { id: 'de', name: 'German', translated: 1 },
+            { id: 'fr', name: 'French', translated: 0 },
+          ],
+        },
       });
+      expect((await noRole.get(`${base}/overview`)).statusCode).toBe(403);
+      expect((await reader.get(`/api/app/spaces/${newUuid()}/overview`)).statusCode).toBe(404);
+      // The stored overview and its recalculation are gone.
+      expect((await admin.post(`${base}/overview`)).statusCode).toBe(404);
+      expect((await reader.get(base)).json()).not.toHaveProperty('overview');
+      expect((await reader.get(base)).json()).not.toHaveProperty('progress');
+      for (const id of ['de', 'fr']) await manager.delete(`${base}/locales/${id}`);
+    });
+
+    it('counts an empty space as zeros', async () => {
+      const empty = (await manager.post('/api/app/spaces', { name: 'Empty' })).json().id;
+      expect((await reader.get(`/api/app/spaces/${empty}/overview`)).json()).toEqual({
+        counts: { locales: 1, translations: 0, assets: 0, contents: 0, schemas: 0 },
+        storage: { assets: 0, assetsWithoutSize: 0 },
+        progress: { total: 0, locales: [{ id: 'en', name: 'English', translated: 0 }] },
+      });
+      await manager.delete(`/api/app/spaces/${empty}`);
     });
 
     it('accepts body-less actions sent with Content-Type: application/json', async () => {
       const response = await t.request({
         method: 'POST',
-        url: `/api/app/spaces/${spaceId}/overview`,
-        headers: { cookie: readerCookie, 'x-requested-with': 'XMLHttpRequest', 'content-type': 'application/json' },
+        url: `/api/app/spaces/${spaceId}/translations/publish`,
+        headers: { cookie: adminCookie, 'x-requested-with': 'XMLHttpRequest', 'content-type': 'application/json' },
       });
-      expect(response.statusCode).toBe(200);
+      expect(response.statusCode).toBe(204);
       const malformed = await t.request({
         method: 'PATCH',
         url: `/api/app/spaces/${spaceId}`,

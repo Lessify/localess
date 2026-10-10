@@ -155,8 +155,6 @@ export const spaces = pgTable(
     defaultLocaleId: text('default_locale_id')
       .notNull()
       .references(() => locales.id),
-    overview: jsonb('overview').$type<Record<string, unknown>>(),
-    progress: jsonb('progress').$type<{ translations: Record<string, number> }>(),
     // Cache-busters for the public API `cv` redirect (were the GCS generations of `cache.json`).
     contentVersion: bigint('content_version', { mode: 'number' }).notNull().default(1),
     translationVersion: bigint('translation_version', { mode: 'number' }).notNull().default(1),

@@ -1,19 +1,16 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, count, eq, max, sql, sum } from 'drizzle-orm';
-import { DEFAULT_LOCALE } from '@localess/shared';
+import { and, asc, count, eq, max, sql } from 'drizzle-orm';
+import { DEFAULT_LOCALE, type SpaceOverview } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import {
   assets,
-  contentPublished,
   contents,
   locales,
   schemas,
   spaceEnvironments,
   spaceLocales,
   spaces,
-  tasks,
-  translationPublished,
   translations,
 } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
@@ -194,18 +191,17 @@ export class SpacesService {
     await this.storage.deletePrefix(`spaces/${spaceId}/`);
   }
 
-  /** Dashboard numbers (was the `space-calculateoverview` callable), stored on the space. */
-  async calculateOverview(spaceId: string): Promise<SpaceRow> {
-    await requireSpace(this.db, spaceId);
+  /**
+   * Dashboard numbers, computed on request (were stored on the space by the `space-calculateoverview` callable).
+   * Assets and contents count files and documents only; asset storage is the sum of `assets.size`, so files without
+   * a recorded size (imported without their file) are counted apart. Progress uses the current values, the rule of
+   * delivery: a non-empty value is translated.
+   */
+  async overview(spaceId: string): Promise<SpaceOverview> {
+    const space = await requireSpace(this.db, spaceId);
     const countOf = async (query: Promise<{ value: number }[]>) => Number((await query)[0]?.value ?? 0);
-    const [translationsCount, assetsCount, contentsCount, schemasCount, tasksCount] = await Promise.all([
+    const [translationsCount, contentsCount, schemasCount, assetStats, progress] = await Promise.all([
       countOf(this.db.select({ value: count() }).from(translations).where(eq(translations.spaceId, spaceId))),
-      countOf(
-        this.db
-          .select({ value: count() })
-          .from(assets)
-          .where(and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FILE'))),
-      ),
       countOf(
         this.db
           .select({ value: count() })
@@ -213,41 +209,38 @@ export class SpacesService {
           .where(and(eq(contents.spaceId, spaceId), eq(contents.kind, 'DOCUMENT'))),
       ),
       countOf(this.db.select({ value: count() }).from(schemas).where(eq(schemas.spaceId, spaceId))),
-      countOf(this.db.select({ value: count() }).from(tasks).where(eq(tasks.spaceId, spaceId))),
+      this.db
+        .select({
+          files: count(),
+          size: sql<string | null>`sum(${assets.size})`,
+          withoutSize: sql<number>`count(*) filter (where ${assets.size} is null)`,
+        })
+        .from(assets)
+        .where(and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FILE'))),
+      this.db
+        .select({
+          id: spaceLocales.localeId,
+          translated: sql<number>`count(${translations.id}) filter (where coalesce(${translations.locales} ->> ${spaceLocales.localeId}, '') <> '')`,
+        })
+        .from(spaceLocales)
+        .leftJoin(translations, eq(translations.spaceId, spaceLocales.spaceId))
+        .where(eq(spaceLocales.spaceId, spaceId))
+        .groupBy(spaceLocales.localeId),
     ]);
-    // Sizes of what used to be Storage JSON files are now the size of the JSON in Postgres.
-    const jsonSize = async (query: Promise<{ value: string | null }[]>) => Number((await query)[0]?.value ?? 0);
-    const [translationsSize, contentsSize, assetsSize, tasksSize] = await Promise.all([
-      jsonSize(
-        this.db
-          .select({ value: sum(sql`octet_length(${translationPublished.data}::text)`) })
-          .from(translationPublished)
-          .where(eq(translationPublished.spaceId, spaceId)),
-      ),
-      jsonSize(
-        this.db
-          .select({ value: sum(sql`octet_length(${contentPublished.data}::text)`) })
-          .from(contentPublished)
-          .where(eq(contentPublished.spaceId, spaceId)),
-      ),
-      this.storage.sizeOfPrefix(`spaces/${spaceId}/assets/`),
-      this.storage.sizeOfPrefix(`spaces/${spaceId}/tasks/`),
-    ]);
-    const overview = {
-      translationsCount,
-      translationsSize,
-      assetsCount,
-      assetsSize,
-      contentsCount,
-      contentsSize,
-      tasksCount,
-      tasksSize,
-      schemasCount,
-      totalSize: translationsSize + assetsSize + contentsSize + tasksSize,
-      updatedAt: new Date().toISOString(),
+    const translatedBy = new Map(progress.map(it => [it.id, Number(it.translated)]));
+    return {
+      counts: {
+        locales: space.locales.length,
+        translations: translationsCount,
+        assets: Number(assetStats[0]?.files ?? 0),
+        contents: contentsCount,
+        schemas: schemasCount,
+      },
+      storage: { assets: Number(assetStats[0]?.size ?? 0), assetsWithoutSize: Number(assetStats[0]?.withoutSize ?? 0) },
+      progress: {
+        total: translationsCount,
+        locales: space.locales.map(locale => ({ ...locale, translated: translatedBy.get(locale.id) ?? 0 })),
+      },
     };
-    await this.db.update(spaces).set({ overview }).where(eq(spaces.id, spaceId));
-    await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'updated' });
-    return requireSpace(this.db, spaceId);
   }
 }

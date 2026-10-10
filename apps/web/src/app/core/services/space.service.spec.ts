@@ -117,10 +117,28 @@ describe('SpaceService', () => {
     await done;
   });
 
-  it('calculateOverview() posts to the overview endpoint', async () => {
+  it('overview() reads the computed overview and refetches when what it counts changes', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const done = firstValueFrom(service.calculateOverview('s1'));
-    http.expectOne({ method: 'POST', url: '/api/app/spaces/s1/overview' }).flush({});
-    await done;
+    const results: unknown[] = [];
+    const subscription = service.overview('s1').subscribe(it => results.push(it));
+    http.expectOne({ method: 'GET', url: '/api/app/spaces/s1/overview' }).flush({ counts: { assets: 1 } });
+
+    events.next({ spaceId: 's1', entity: 'webhooks', id: 'w', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone('/api/app/spaces/s1/overview');
+
+    for (const entity of ['translations', 'assets', 'contents', 'schemas']) {
+      events.next({ spaceId: 's1', entity, id: 'x', op: 'created' });
+      await vi.advanceTimersByTimeAsync(200);
+      http.expectOne('/api/app/spaces/s1/overview').flush({ counts: { assets: 1 } });
+    }
+    // A locale added or removed arrives as a change of the space.
+    events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne('/api/app/spaces/s1/overview').flush({ counts: { assets: 2 } });
+
+    expect(results).toHaveLength(6);
+    subscription.unsubscribe();
   });
 });

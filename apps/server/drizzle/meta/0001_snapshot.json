@@ -1,6 +1,6 @@
 {
-  "id": "b4161bd5-5289-479c-8903-60ec239829f0",
-  "prevId": "44707242-86ff-416b-a6bd-0d79b3f512ee",
+  "id": "5bda9167-c986-4fab-b3a3-08a413145370",
+  "prevId": "4c2950e9-8666-4a79-948b-79b474efb1ca",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1233,18 +1233,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "overview": {
-          "name": "overview",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "progress": {
-          "name": "progress",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
         },
         "content_version": {
           "name": "content_version",

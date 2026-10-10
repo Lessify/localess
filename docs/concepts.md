@@ -15,9 +15,7 @@ Key properties:
   which migrations seed and change (the API only reads it, `GET /api/app/locales`)
 - `defaultLocale` — `default_locale_id`: new translations are created in it, content stores its values in the bare field,
   and a locale with no value falls back to it (one of the space's locales, checked by the API)
-- `overview` — aggregated counts and sizes (denormalized for dashboard display)
 - `content_version` / `translation_version` — counters bumped on every change; the public API's [`cv`](cdn-caching.md)
-- `progress.translations` — per-locale translated counts, written on translation publish
 
 ---
 
@@ -210,7 +208,7 @@ users                             role, permissions, lock, disabled
   user_identities                 Google / Microsoft sign-in links
   sessions, password_reset_tokens
 locales                           every locale a space can use (seeded by migrations, read-only API)
-spaces                            default_locale_id, overview, progress, content/translation_version
+spaces                            default_locale_id, content/translation_version
   space_locales     (space_id, locale_id)   position, created_at
   space_environments (id)                   Visual Editor previews: name, url, position
   contents          (space_id, id)

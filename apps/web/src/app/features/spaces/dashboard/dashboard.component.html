@@ -1,115 +1,87 @@
-<div class="flex items-center justify-end gap-2 p-2">
-  @if ('SPACE_MANAGEMENT' | canUserPerform | async) {
-    <button hlmBtn size="icon" variant="ghost" (click)="calculateOverview()">
-      <ng-icon hlm size="sm" name="lucideRotateCw" />
-    </button>
-  }
-</div>
+@if (isLoading()) {
+  <hlm-progress class="h-0.5">
+    <hlm-progress-indicator />
+  </hlm-progress>
+}
 <div class="mx-auto mt-3 px-2">
-  @if (space(); as space) {
+  @if (isError()) {
+    <p class="text-destructive text-sm" role="alert">The overview can not be loaded.</p>
+  }
+  @if (overview(); as overview) {
     <div class="grid max-w-7xl grid-rows-1 gap-4">
-      @if (space.overview; as overview) {
-        <section id="overview">
-          <h3 class="text-base leading-6 font-semibold">Overview</h3>
-          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Locales</h3>
-              </div>
-              <div hlmCardContent>{{ space.locales.length }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Translations</h3>
-              </div>
-              <div hlmCardContent>{{ overview.translationsCount }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Asset Files</h3>
-              </div>
-              <div hlmCardContent>{{ overview.assetsCount }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Content Documents</h3>
-              </div>
-              <div hlmCardContent>{{ overview.contentsCount }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Schemas</h3>
-              </div>
-              <div hlmCardContent>{{ overview.schemasCount }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Tasks</h3>
-              </div>
-              <div hlmCardContent>{{ overview.tasksCount }} / ∞</div>
-            </section>
-          </div>
-        </section>
-        <section id="storage">
-          <h3 class="text-base leading-6 font-semibold">Storage</h3>
-          <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Total</h3>
-              </div>
-              <div hlmCardContent>{{ overview.totalSize | formatFileSize }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Translations</h3>
-              </div>
-              <div hlmCardContent>{{ overview.translationsSize | formatFileSize }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Asset Files</h3>
-              </div>
-              <div hlmCardContent>{{ overview.assetsSize | formatFileSize }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Content Documents</h3>
-              </div>
-              <div hlmCardContent>{{ overview.contentsSize | formatFileSize }} / ∞</div>
-            </section>
-            <section hlmCard>
-              <div hlmCardHeader>
-                <h3 hlmCardTitle>Task Files</h3>
-              </div>
-              <div hlmCardContent>{{ overview.tasksSize | formatFileSize }} / ∞</div>
-            </section>
-          </div>
-        </section>
-        @if (space.progress; as progress) {
-          <section id="translations">
-            <h3 class="text-base leading-6 font-semibold">Translations</h3>
-            @if (progress.translations) {
-              <dl class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                @for (locale of space.locales; track locale.id) {
-                  @let translationsCount = overview.translationsCount; @let localeCount = progress.translations[locale.id] ?? 0;
-                  @let localeProgress = translationsCount === 0 || localeCount === 0 ? 0 : localeCount / translationsCount;
-                  <section hlmCard>
-                    <div hlmCardHeader>
-                      <h3 hlmCardTitle> {{ locale.name }}</h3>
-                    </div>
-                    <div hlmCardContent>
-                      {{ localeProgress | percent: '1.0-2' }} - {{ localeCount }} from {{ overview.translationsCount }}
-                      <hlm-progress [value]="localeProgress === 0 ? 0 : localeProgress * 100">
-                        <hlm-progress-indicator />
-                      </hlm-progress>
-                    </div>
-                  </section>
-                }
-              </dl>
-            }
+      <section id="overview">
+        <h3 class="text-base leading-6 font-semibold">Overview</h3>
+        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <section hlmCard>
+            <div hlmCardHeader>
+              <h3 hlmCardTitle>Locales</h3>
+            </div>
+            <div hlmCardContent>{{ overview.counts.locales }}</div>
           </section>
-        }
-      }
+          <section hlmCard>
+            <div hlmCardHeader>
+              <h3 hlmCardTitle>Translation Keys</h3>
+            </div>
+            <div hlmCardContent>{{ overview.counts.translations }}</div>
+          </section>
+          <section hlmCard>
+            <div hlmCardHeader>
+              <h3 hlmCardTitle>Asset Files</h3>
+            </div>
+            <div hlmCardContent>{{ overview.counts.assets }}</div>
+          </section>
+          <section hlmCard>
+            <div hlmCardHeader>
+              <h3 hlmCardTitle>Content Documents</h3>
+            </div>
+            <div hlmCardContent>{{ overview.counts.contents }}</div>
+          </section>
+          <section hlmCard>
+            <div hlmCardHeader>
+              <h3 hlmCardTitle>Schemas</h3>
+            </div>
+            <div hlmCardContent>{{ overview.counts.schemas }}</div>
+          </section>
+        </div>
+      </section>
+      <section id="storage">
+        <h3 class="text-base leading-6 font-semibold">Storage</h3>
+        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          <section hlmCard>
+            <div hlmCardHeader>
+              <h3 hlmCardTitle>Asset Files</h3>
+            </div>
+            <div hlmCardContent>
+              {{ overview.storage.assets | formatFileSize }}
+              @if (overview.storage.assetsWithoutSize > 0) {
+                <p class="text-muted-foreground mt-1 text-xs" id="assets-without-size">
+                  {{ overview.storage.assetsWithoutSize }} {{ overview.storage.assetsWithoutSize === 1 ? 'file has' : 'files have' }} no
+                  recorded size and {{ overview.storage.assetsWithoutSize === 1 ? 'is' : 'are' }} not counted.
+                </p>
+              }
+            </div>
+          </section>
+        </div>
+      </section>
+      <section id="translations">
+        <h3 class="text-base leading-6 font-semibold">Translations</h3>
+        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          @for (locale of overview.progress.locales; track locale.id) {
+            @let localeRatio = ratio(locale.translated, overview.progress.total);
+            <section hlmCard>
+              <div hlmCardHeader>
+                <h3 hlmCardTitle>{{ locale.name }}</h3>
+              </div>
+              <div hlmCardContent>
+                {{ localeRatio | percent: '1.0-2' }} - {{ locale.translated }} of {{ overview.progress.total }}
+                <hlm-progress [value]="localeRatio * 100">
+                  <hlm-progress-indicator />
+                </hlm-progress>
+              </div>
+            </section>
+          }
+        </div>
+      </section>
     </div>
   }
 </div>

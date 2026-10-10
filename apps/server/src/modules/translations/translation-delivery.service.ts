@@ -28,25 +28,15 @@ export class TranslationDeliveryService {
 }
 
 /**
- * The flat `{key: value}` map for one locale, filling gaps from the fallback locale — the rule of
- * `saveTranslationFiles` in functions/src/services/translation.service.ts. Also returns how many keys
- * the locale itself has a value for (space `progress`).
+ * The flat `{key: value}` map for one locale, filling gaps from the default locale — the rule of
+ * `saveTranslationFiles` in functions/src/services/translation.service.ts.
  */
 export function buildTranslationMap(
   rows: { key: string; locales: Record<string, string> }[],
   locale: string,
-  fallbackLocale: string,
-): { values: Record<string, string>; translated: number } {
+  defaultLocale: string,
+): { values: Record<string, string> } {
   const values: Record<string, string> = {};
-  let translated = 0;
-  for (const row of rows) {
-    let value = row.locales[locale];
-    if (value) {
-      translated++;
-    } else {
-      value = row.locales[fallbackLocale];
-    }
-    values[row.key] = value;
-  }
-  return { values, translated };
+  for (const row of rows) values[row.key] = row.locales[locale] || row.locales[defaultLocale];
+  return { values };
 }

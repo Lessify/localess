@@ -3,7 +3,7 @@ import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { spaces, translationPublished, translations } from '../../infra/database/schema.js';
+import { translationPublished, translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { buildTranslationMap } from './translation-delivery.service.js';
 import { TranslateService } from './translate/translate.service.js';
@@ -168,7 +168,7 @@ export class TranslationsService {
   }
 
   /**
-   * Snapshot of every locale, filled from the default locale, plus per-locale progress (was the
+   * Snapshot of every locale, filled from the default locale (was the
    * `translation-publish` callable). Publishing an empty space is allowed and serves `{}`.
    */
   async publish(spaceId: string): Promise<void> {
@@ -179,22 +179,15 @@ export class TranslationsService {
         .from(translations)
         .where(eq(translations.spaceId, spaceId))
         .orderBy(sql`${translations.key} collate "C"`);
-      const progress: Record<string, number> = {};
       const publishedAt = new Date();
       for (const locale of space.locales) {
-        const { values, translated } = buildTranslationMap(rows, locale.id, space.defaultLocaleId);
-        progress[locale.id] = translated;
+        const { values } = buildTranslationMap(rows, locale.id, space.defaultLocaleId);
         await tx
           .insert(translationPublished)
           .values({ spaceId, locale: locale.id, data: values, publishedAt })
           .onConflictDoUpdate({ target: [translationPublished.spaceId, translationPublished.locale], set: { data: values, publishedAt } });
       }
-      await tx
-        .update(spaces)
-        .set({ progress: { translations: progress } })
-        .where(eq(spaces.id, spaceId));
       await bumpVersion(tx, spaceId, 'translation');
-      await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'updated' }, tx);
     });
     this.webhooks.dispatch(spaceId, WebHookEvent.TRANSLATION_PUBLISHED);
   }

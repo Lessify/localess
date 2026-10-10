@@ -14,7 +14,7 @@ const environmentOrderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(1000
 const localeIdSchema = z.object({ id: z.string().min(1).max(64) });
 const localeOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).min(1).max(1000) });
 
-/** Spaces and their locales (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */
+/** Spaces, their locales and environments, and the dashboard overview (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */
 @Controller('api/app/spaces')
 export class SpacesController {
   constructor(private readonly spaces: SpacesService) {}
@@ -50,12 +50,11 @@ export class SpacesController {
     await this.spaces.delete(spaceId);
   }
 
-  /** Same audience as reading the space: the dashboard recalculates for anyone who opens it. */
-  @Post(':spaceId/overview')
-  @HttpCode(200)
+  /** Same audience as reading the space: the dashboard shows it to anyone who opens it. */
+  @Get(':spaceId/overview')
   @RequireAnyRole()
-  async overview(@Param('spaceId') spaceId: string) {
-    return spaceDto(await this.spaces.calculateOverview(spaceId));
+  overview(@Param('spaceId') spaceId: string) {
+    return this.spaces.overview(spaceId);
   }
 
   @Post(':spaceId/environments')

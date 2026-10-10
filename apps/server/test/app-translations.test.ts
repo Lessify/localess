@@ -182,12 +182,11 @@ describe('app API: translations, machine translation, Unsplash', () => {
   });
 
   describe('publishing', () => {
-    it('publishes every locale with fallback filling, records progress, and the public API serves it', async () => {
+    it('publishes every locale with default-locale filling, and the public API serves it', async () => {
       await editor.put(`${url('taken')}/locales/de`, { value: 'genommen' });
       await t.app.get(WebhookDispatcher).whenIdle();
       hooks.requests.length = 0;
       expect((await editor.post(`${base}/publish`)).statusCode).toBe(204);
-      expect((await space()).progress).toEqual({ translations: { en: 2, de: 1 } });
       expect(await events()).toEqual(['translation.published']);
 
       const redirect = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/translations/de?token=${TOKEN}` });

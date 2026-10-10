@@ -130,8 +130,6 @@ CREATE TABLE "spaces" (
 	"import_status" text,
 	"name" text NOT NULL,
 	"default_locale_id" text NOT NULL,
-	"overview" jsonb,
-	"progress" jsonb,
 	"content_version" bigint DEFAULT 1 NOT NULL,
 	"translation_version" bigint DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,

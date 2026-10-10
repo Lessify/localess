@@ -12,7 +12,7 @@ keep, what to move. Decisions are listed per table; open items are under [To do]
 | `locales` jsonb | **Replaced** by `locales` + `space_locales` (below). |
 | `locale_fallback` jsonb | **Replaced** by `default_locale_id` (below). |
 | `environments` jsonb | **Replaced** by `space_environments` (below). |
-| `overview`, `progress` jsonb | Kept for now; replaced by an on-the-fly endpoint later ([To do](#to-do)). |
+| `overview`, `progress` jsonb | **Dropped**: the dashboard numbers are computed on request ([Overview](#overview)). |
 | `content_version`, `translation_version` | Kept for now; to be reviewed ([To do](#to-do)). |
 | `spaces_name_idx` | **Dropped**: it serves only the admin list, a handful of rows. |
 
@@ -62,14 +62,18 @@ space_environments (id uuid PK, space_id → spaces CASCADE, name, url, position
 Managed one by one (create, edit, delete, reorder); names may repeat. The editor remembers the selected environment by
 its id; the first by `position` is the default.
 
+### Overview
+
+`GET /api/app/spaces/:spaceId/overview` computes the dashboard on every request (any role): counts (locales, translation
+keys, asset files, content documents, schemas), storage (the sum of `assets.size`; files without a size counted apart)
+and translation progress per locale against the number of keys, on the current values. Tasks and the sizes of the
+published JSON are no longer shown. See [dashboard.md](../features/spaces/dashboard.md).
+
 ## To do
 
 - **Removing a locale from a space:** decide what happens to its values in translations and contents (keep as today,
   purge, or archive).
 - **Changing the default locale of a space with content:** move the values (bare ↔ `_i18n_<locale>`, published
   snapshots included) instead of only warning.
-- **Overview endpoint:** compute the dashboard numbers on request and drop `overview` / `progress`: counts (locales in
-  use, translation keys, assets, contents, schemas), storage (sum of `assets.size`) and translation progress per locale
-  against the number of keys (current values, not the published snapshot).
 - **`content_version` / `translation_version`:** review.
 - **Table names:** singular instead of plural (`space`, `content`, …); `user` is a reserved word in Postgres.

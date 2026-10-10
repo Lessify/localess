@@ -58,8 +58,7 @@ There are no draft files any more. `GET /api/v1/.../contents/...?version=draft` 
    a. reads every translation row of the space
    b. per space locale, builds the flat key/value map, filled from the default locale
       (buildTranslationMap), and upserts a translation_published row
-   c. writes per-locale translated counts to spaces.progress.translations
-   d. bumps spaces.translation_version (new cv), emits a `spaces` change event
+   c. bumps spaces.translation_version (new cv)
 4. After commit: TRANSLATION_PUBLISHED webhook
 ```
 
@@ -112,7 +111,7 @@ After the first cache miss for the new cv, a CDN or caching proxy keeps the resp
 ```
 content_published      PK (space_id, content_id, locale)  data jsonb, published_at
 translation_published  PK (space_id, locale)              data jsonb, published_at
-spaces                 content_version, translation_version (the cv), progress
+spaces                 content_version, translation_version (the cv)
 ```
 
 Only binary files are in storage (`$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/...` and task files). The Firebase-era `contents/{id}/{locale}.json`, `draft/` and `cache.json` files are gone; an import from Firebase brings drafts only; the space is published again after the import.

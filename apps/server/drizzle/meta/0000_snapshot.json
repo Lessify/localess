@@ -1,5 +1,5 @@
 {
-  "id": "44707242-86ff-416b-a6bd-0d79b3f512ee",
+  "id": "4c2950e9-8666-4a79-948b-79b474efb1ca",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1233,18 +1233,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "overview": {
-          "name": "overview",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "progress": {
-          "name": "progress",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
         },
         "content_version": {
           "name": "content_version",
