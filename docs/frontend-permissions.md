@@ -101,7 +101,7 @@ No session → `401`; insufficient access → `403`. Checks that depend on the r
 
 ### Frontend (navigation only)
 
-`authGuard()` in `apps/web/src/app/app-routing.ts` sends signed-out users to `/auth/login`. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`apps/web/src/app/core/guards/permission.guard.ts`):
+`authGuard()` in `apps/web/src/app/app-routing.ts` sends signed-out users to `/auth/login`. The reverse, `guestGuard` (`core/guards/guest.guard.ts`) on `/auth/login`, sends signed-in users to `/features` once the session check (`UserStore.loaded$`) has answered; the reset routes stay open to them. Feature routes in `features-routing.module.ts` use the functional `permissionGuard(...permissions)` (`apps/web/src/app/core/guards/permission.guard.ts`):
 
 ```typescript
 // a child of the `spaces/:spaceId` parent route (see frontend-state.md → SpaceStore)

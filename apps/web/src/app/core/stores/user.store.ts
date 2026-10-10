@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { User, UserRole } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStore, withComputed, withHooks, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap } from 'rxjs';
 
@@ -85,6 +86,10 @@ export function userToState(user: User): Partial<UserState> {
 export const UserStore = signalStore(
   { providedIn: 'root' },
   withState<UserState>(initialStateFactory),
+  withProps(store => ({
+    /** `loaded` as an observable, created once with the store, for guards that must wait for the session check. */
+    loaded$: toObservable(store.loaded),
+  })),
   withMethods(state => {
     const http = inject(HttpClient);
     const signedIn = (user: User) => {

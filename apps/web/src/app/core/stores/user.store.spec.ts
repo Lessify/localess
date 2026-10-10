@@ -1,3 +1,4 @@
+import { firstValueFrom } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -66,5 +67,14 @@ describe('UserStore', () => {
     expect(store.isAuthenticated()).toBe(false);
     expect(store.role()).toBeUndefined();
     expect(store.permissions()).toBeUndefined();
+  });
+
+  it('stays loaded and signed out after signedOut(), so the login page (guestGuard) lets the user in', async () => {
+    const store = setup();
+    http.expectOne('/api/auth/me').flush({ user });
+    store.signedOut();
+    expect(store.loaded()).toBe(true);
+    expect(store.isAuthenticated()).toBe(false);
+    expect(await firstValueFrom(store.loaded$)).toBe(true);
   });
 });
