@@ -357,6 +357,26 @@ describe('task worker: exports and imports', () => {
       expect(b.find(it => it.key === 'greeting')?.locales).toEqual({ en: 'Hello', de: 'Servus' });
       expect(b.find(it => it.key === 'brandNew')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
     });
+
+    it("imports values only for the space's locales, logging the skipped ones", async () => {
+      const bytes = await zipOf({
+        'metadata.json': JSON.stringify({ kind: 'TRANSLATION' }),
+        'translations.json': JSON.stringify([{ id: 'only.fr', type: 'STRING', locales: { en: 'Only', fr: 'Seul', it: 'Solo' } }]),
+      });
+      const task = await importTask(SPACE_B, 'TRANSLATION_IMPORT', bytes);
+      expect(task.status).toBe('FINISHED');
+      const [row] = await t.db
+        .select()
+        .from(translations)
+        .where(and(eq(translations.spaceId, SPACE_B), eq(translations.key, 'only.fr')));
+      expect(row.locales).toEqual({ en: 'Only' });
+      expect((await logs(SPACE_B, task.id)).join('\n')).toMatch(/skipped 2 values of locales not in the space: fr, it/);
+    });
+
+    it("refuses a single-locale import into a locale the space does not have", async () => {
+      const task = await importTask(SPACE_B, 'TRANSLATION_IMPORT', Buffer.from(JSON.stringify({ greeting: 'Salut' })), { locale: 'fr' });
+      expect(task).toMatchObject({ status: 'ERROR', message: 'Locale fr is not in the space locales.' });
+    });
   });
 
   describe('bad files', () => {

@@ -141,6 +141,24 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
     });
 
+    it("writes values only for the space's locales; removing a value is allowed for any locale", async () => {
+      const refused = await editor.post(base, { key: 'stray', type: 'STRING', locales: { en: 'Hi', fr: 'Salut' } });
+      expect(refused.statusCode).toBe(400);
+      expect(refused.json().message).toMatch(/fr/);
+      expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).not.toContain('stray');
+
+      expect((await editor.put(`${url('home.title')}/locales/fr`, { value: 'Bienvenue' })).statusCode).toBe(400);
+      expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
+
+      // A value left behind by a removed locale can still be cleared.
+      await t.db
+        .update(translations)
+        .set({ locales: { en: 'Welcome', fr: 'Bienvenue' } })
+        .where(eq(translations.id, ids['home.title']));
+      expect((await editor.put(`${url('home.title')}/locales/fr`, { value: '' })).statusCode).toBe(200);
+      expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
+    });
+
     it('updates labels and description, clearing them when empty', async () => {
       expect((await editor.patch(url('home.title'), { description: 'Hero heading' })).json()).toMatchObject({
         description: 'Hero heading',
@@ -196,6 +214,12 @@ describe('app API: translations, machine translation, Unsplash', () => {
         failed: 0,
       });
       expect((await stored('taken')).locales.de).toBe('x : en -> de');
+    });
+
+    it("translates only between the space's locales", async () => {
+      expect((await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'fr' })).statusCode).toBe(400);
+      expect((await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'fr', targetLocaleId: 'de' })).statusCode).toBe(400);
+      expect((await stored('taken')).locales).not.toHaveProperty('fr');
     });
 
     it('translates single strings and batches for editors with both permissions', async () => {

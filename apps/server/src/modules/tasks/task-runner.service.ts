@@ -20,7 +20,7 @@ import {
 } from '@localess/shared/zod';
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { folderPath } from '../assets/assets.service.js';
-import { bumpVersion } from '../../infra/http/space-access.js';
+import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
@@ -552,8 +552,22 @@ export class TaskRunner {
     const raw = await opened.zip.readJson('translations.json', MAX_JSON_BYTES);
     const parse = zTranslationExportArraySchema.safeParse(raw);
     if (!parse.success) return this.invalid(task, 'TRANSLATION', parse.error);
-    const imported = raw as TranslationExport[];
+    // Values are written only for the space's locales; the others are skipped and logged.
+    const spaceLocales = new Set((await requireSpace(this.db, spaceId)).locales.map(it => it.id));
+    const skipped = new Map<string, number>();
+    const imported = (raw as TranslationExport[]).map(translation => {
+      const locales: Record<string, string> = {};
+      for (const [locale, value] of Object.entries(translation.locales)) {
+        if (spaceLocales.has(locale)) locales[locale] = value;
+        else skipped.set(locale, (skipped.get(locale) ?? 0) + 1);
+      }
+      return { ...translation, locales };
+    });
     await this.log(task, 'INFO', `valid=${imported.length}`);
+    if (skipped.size) {
+      const count = [...skipped.values()].reduce((sum, it) => sum + it, 0);
+      await this.log(task, 'WARN', `skipped ${count} values of locales not in the space: ${[...skipped.keys()].sort().join(', ')}`);
+    }
     const existing = translationsByKey(await this.orderedTranslations(spaceId));
     const changes = await this.db.transaction(async tx => {
       let total = 0;
@@ -601,6 +615,9 @@ export class TaskRunner {
     const parse = zTranslationFlatExportSchema.safeParse(raw);
     if (!parse.success) return this.invalid(task, 'TRANSLATION', parse.error);
     const values = parse.data;
+    if (!(await requireSpace(this.db, spaceId)).locales.some(it => it.id === locale)) {
+      return { status: 'ERROR', message: `Locale ${locale} is not in the space locales.` };
+    }
     await this.log(task, 'INFO', `valid=${Object.keys(values).length}`);
     const existing = new Map((await this.orderedTranslations(spaceId)).map(row => [row.key, row]));
     const changes = await this.db.transaction(async tx => {

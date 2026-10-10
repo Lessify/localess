@@ -115,14 +115,22 @@ There is no separate draft publish. Draft translations (`?version=draft` on the 
 `translations` table, and every translation write bumps the space's `translation_version` and emits a change event in the same
 transaction. `updatedBy` is set by the server from the session, not sent by the client.
 
+## Values only for the space's locales
+
+The server writes translation values only for the space's locales (`Not in space locales: …`, 400): creating a key with a
+`locales` map, `PUT …/translations/:id/locales/:locale` with a value, and Translate Locale (source and target). Removing a value
+(an empty string) is allowed for any locale, so values left behind by a removed locale can be cleared. v1 push already refused
+other locales. The (hidden) import task skips other locales' values and logs how many, and refuses a single-locale import into a
+locale the space does not have.
+
 ## Auto-Translate on Create
 
 `AddDialogComponent` has an "auto-translate" switch for `STRING` keys. Rather than a server-side hook on create,
 `TranslationsComponent.openAddDialog()` resolves every locale value client-side **before** writing anything:
 
 1. If auto-translate is checked, it calls the generic `POST /api/app/translate` endpoint (`TranslateService.translate()`, also used for
-   single-cell AI translation) in parallel (`forkJoin`) for each of `space.locales` other than the fallback.
-2. All resulting values (fallback + translated locales) are merged into a single `locales` map.
+   single-cell AI translation) in parallel (`forkJoin`) for each of `space.locales` other than the default locale.
+2. All resulting values (default + translated locales) are merged into a single `locales` map.
 3. `TranslationService.create()` sends **one** `POST /api/app/spaces/:s/translations` with the full `locales` map already populated — no follow-up per-locale
    writes.
 

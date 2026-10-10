@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
@@ -10,10 +10,16 @@ import { TranslateService } from './translate/translate.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
 import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
 import { updatedByOf } from '../contents/contents.service.js';
-import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
+import { bumpVersion, requireSpace, SpaceRow } from '../../infra/http/space-access.js';
 
 export type TranslationRow = typeof translations.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/** Values are written only for the space's locales (removing one is allowed for any locale). */
+function requireSpaceLocales(space: Pick<SpaceRow, 'locales'>, localeIds: string[]): void {
+  const unknown = localeIds.filter(id => !space.locales.some(it => it.id === id));
+  if (unknown.length) throw new BadRequestException(`Not in space locales: ${unknown.join(', ')}`);
+}
 
 const isUniqueViolation = (error: unknown) =>
   (error as { cause?: { code?: string } })?.cause?.code === '23505' || (error as { code?: string })?.code === '23505';
@@ -53,13 +59,13 @@ export class TranslationsService {
 
   private async write<T>(
     spaceId: string,
-    work: (tx: Transaction) => Promise<{ result: T; changed: { id?: string; op: 'created' | 'updated' | 'deleted' }[] }>,
+    work: (tx: Transaction, space: SpaceRow) => Promise<{ result: T; changed: { id?: string; op: 'created' | 'updated' | 'deleted' }[] }>,
   ): Promise<T> {
     let result: T;
     try {
       result = await this.db.transaction(async tx => {
-        await requireSpace(tx, spaceId);
-        const outcome = await work(tx);
+        const space = await requireSpace(tx, spaceId);
+        const outcome = await work(tx, space);
         await bumpVersion(tx, spaceId, 'translation');
         for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'translations', ...it }, tx);
         return outcome.result;
@@ -81,7 +87,8 @@ export class TranslationsService {
     input: { key: string; type: string; locales: Record<string, string>; labels?: string[]; description?: string },
     user: UserRow,
   ): Promise<TranslationRow> {
-    return this.write(spaceId, async tx => {
+    return this.write(spaceId, async (tx, space) => {
+      requireSpaceLocales(space, Object.keys(input.locales));
       const [row] = await tx
         .insert(translations)
         .values({
@@ -114,9 +121,10 @@ export class TranslationsService {
     });
   }
 
-  /** One locale's value; an empty string removes it. */
+  /** One locale's value, for a locale of the space; an empty string removes it (for any locale: leftovers of a removed locale). */
   updateLocale(spaceId: string, id: string, locale: string, value: string, user: UserRow): Promise<TranslationRow> {
-    return this.write(spaceId, async tx => {
+    return this.write(spaceId, async (tx, space) => {
+      if (value) requireSpaceLocales(space, [locale]);
       const locales = value
         ? sql`jsonb_set(${translations.locales}, ${`{${locale}}`}::text[], ${JSON.stringify(value)}::jsonb)`
         : sql`${translations.locales} - ${locale}::text`;
@@ -203,6 +211,7 @@ export class TranslationsService {
     user: UserRow,
   ): Promise<{ translated: number; failed: number }> {
     this.translate.requireProvider();
+    requireSpaceLocales(await requireSpace(this.db, spaceId), [sourceLocale, targetLocale]);
     const candidates = (await this.list(spaceId)).filter(row => row.locales[sourceLocale] && (overwrite || !row.locales[targetLocale]));
     if (!candidates.length) return { translated: 0, failed: 0 };
     const result = await this.translate.translateItems(
