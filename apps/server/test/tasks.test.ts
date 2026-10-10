@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, schemas, spaces, tasks, tokens, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
-import { createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
+import { createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { SPACE_A, SPACE_B, SPACE_S, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -66,7 +66,7 @@ describe('task worker: exports and imports', () => {
     jpeg = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#336699' } })
       .jpeg()
       .toBuffer();
-    for (const id of [SPACE_A, SPACE_B]) await t.db.insert(spaces).values({ id, name: id, locales: [en, de], localeFallback: en });
+    for (const id of [SPACE_A, SPACE_B]) await insertSpace(t.db, { id, name: id, locales: [en, de], defaultLocale: en });
     await t.db.insert(schemas).values([
       { id: newUuid(), spaceId: SPACE_A, name: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] },
       { id: newUuid(), spaceId: SPACE_A, name: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
@@ -404,7 +404,7 @@ describe('task worker: queue', () => {
   beforeAll(async () => {
     // The worker is driven by hand here.
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
-    await t.db.insert(spaces).values({ id: SPACE_S, name: 'S', locales: [en], localeFallback: en });
+    await insertSpace(t.db, { id: SPACE_S, name: 'S', locales: [en], defaultLocale: en });
   });
 
   afterAll(() => t?.close());

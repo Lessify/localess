@@ -19,7 +19,7 @@ const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
 function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [en, de], localeFallback: en, ...overrides } as Space;
+  return { id: 'space-1', name: 'Space 1', locales: [en, de], defaultLocale: en, ...overrides } as Space;
 }
 
 function translation(overrides: Partial<Translation> = {}): Translation {
@@ -143,7 +143,7 @@ describe('TranslationsComponent', () => {
   });
 
   describe('openAddDialog', () => {
-    it('creates the translation with only the fallback locale when auto-translate is off', () => {
+    it('creates the translation with only the default locale when auto-translate is off', () => {
       const { component, open, create, success } = setup();
       open.mockReturnValue({
         closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),

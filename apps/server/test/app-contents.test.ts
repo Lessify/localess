@@ -5,7 +5,7 @@ import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { contentPublished, contents, schemas, spaces, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -25,14 +25,14 @@ describe('app API: contents', () => {
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true' });
-    await t.db.insert(spaces).values({
+    await insertSpace(t.db, {
       id: S1,
       name: 'S',
       locales: [
         { id: 'en', name: 'English' },
         { id: 'de', name: 'German' },
       ],
-      localeFallback: { id: 'en', name: 'English' },
+      defaultLocale: { id: 'en', name: 'English' },
     });
     await t.db
       .insert(schemas)

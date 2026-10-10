@@ -14,7 +14,7 @@ function space(overrides: Partial<Space> = {}): Space {
     id: 'space-1',
     name: 'Space 1',
     locales: [],
-    localeFallback: { id: 'en', name: 'English' } as Space['localeFallback'],
+    defaultLocale: { id: 'en', name: 'English' } as Space['defaultLocale'],
     ...overrides,
   } as Space;
 }

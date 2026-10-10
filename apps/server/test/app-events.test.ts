@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces } from '../src/infra/database/schema.js';
 import { EventsService } from '../src/infra/events/events.service.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, S2 } from './ids.js';
 
 /** Reads SSE `change` events from a live stream until `count` arrived (or the timeout). */
@@ -57,9 +56,7 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     origin = await t.app.getUrl();
     origin = origin.replace('[::1]', '127.0.0.1');
     cookie = await userWithAccess(t, 'admin@example.com', { role: 'admin' });
-    await t.db
-      .insert(spaces)
-      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
   afterAll(() => t?.close());

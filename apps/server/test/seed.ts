@@ -4,7 +4,6 @@ import {
   contentPublished,
   contents,
   schemas,
-  spaces,
   tokens,
   translationPublished,
   translations,
@@ -12,7 +11,7 @@ import {
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { C, S1 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
-import type { TestApp } from './test-app.js';
+import { insertSpace, type TestApp } from './test-app.js';
 
 export const TOKEN_V1 = 'AAAAAAAAAAAAAAAAAAAA';
 export const TOKEN_PUBLIC = 'BBBBBBBBBBBBBBBBBBBB';
@@ -27,9 +26,7 @@ const at = new Date('2026-01-01T00:00:00Z');
 
 /** A space `s1` (en fallback, de) with one token per permission profile. */
 export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
-  await t.db
-    .insert(spaces)
-    .values({ id: spaceId, name: 'Space', locales: [en, de], localeFallback: en, contentVersion: 7, translationVersion: 3 });
+  await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en, contentVersion: 7, translationVersion: 3 });
   await t.db.insert(tokens).values([
     { id: newUuid(), token: TOKEN_V1, spaceId, name: 'legacy v1' },
     { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', version: 2, permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },

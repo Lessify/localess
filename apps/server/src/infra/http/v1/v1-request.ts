@@ -24,10 +24,10 @@ export const CONTENT_CACHE = publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE);
 /** `?version=draft` reads drafts; any other value (or none) reads published content, as before. */
 export const isDraft = (version: unknown): boolean => version === 'draft';
 
-/** Same rule as functions `identifySpaceLocale`: unknown or missing locales use the fallback. */
-export function identifySpaceLocale(space: Pick<SpaceRow, 'locales' | 'localeFallback'>, locale: unknown): string {
+/** Same rule as functions `identifySpaceLocale`: unknown or missing locales use the default locale. */
+export function identifySpaceLocale(space: Pick<SpaceRow, 'locales' | 'defaultLocaleId'>, locale: unknown): string {
   if (typeof locale === 'string' && space.locales.some(it => it.id === locale)) return locale;
-  return space.localeFallback.id;
+  return space.defaultLocaleId;
 }
 
 /** Route params naming a stored object; validated before anything else runs (was `validateIdParams`). */

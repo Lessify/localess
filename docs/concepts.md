@@ -11,8 +11,10 @@ Postgres: spaces (id)
 ```
 
 Key properties:
-- `locales` — list of supported locales (e.g. `[{ id: 'en' }, { id: 'de' }]`)
-- `localeFallback` — the default locale used when a requested locale has no data
+- `locales` — the space's locales in their order (`space_locales`: `position`, `created_at`), picked from the `locales` table,
+  which migrations seed and change (the API only reads it, `GET /api/app/locales`)
+- `defaultLocale` — `default_locale_id`: new translations are created in it, content stores its values in the bare field,
+  and a locale with no value falls back to it (one of the space's locales, checked by the API)
 - `overview` — aggregated counts and sizes (denormalized for dashboard display)
 - `content_version` / `translation_version` — counters bumped on every change; the public API's [`cv`](cdn-caching.md)
 - `progress.translations` — per-locale translated counts, written on translation publish
@@ -92,7 +94,7 @@ value, empty if absent, so an author can see what is still untranslated. The def
 as the input's *placeholder* instead — visible, but not mistaken for a real translation.
 
 **`default` is a storage sentinel, not a language.** `CONTENT_DEFAULT_LOCALE.id` is the literal
-string `default`, and `availableLocales` rewrites the space's `localeFallback` to it (labelled
+string `default`, and `availableLocales` rewrites the space's `defaultLocale` to it (labelled
 "English (Default)"). So the id that identifies the bare key is never a language code. Anything
 talking to a translation provider must resolve it first — see `toProviderLocale()` in
 `locale.model.ts` and [Contents → AI translation](features/spaces/contents.md#ai-translation).
@@ -199,7 +201,7 @@ An API token (`tokens` table; the `token` column is the secret, `id` a UUIDv7) g
 
 ## Data Model Map
 
-All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks, webhook logs, schemas, translations, assets and contents have UUIDv7 ids (`uuid` columns, `newUuid()`). What everything else refers to stays human readable where it already was: a schema's `name`, a translation's `key`, a token's secret `token`. A space imported from Firebase (Admin → Spaces → Import from Firebase, [design](roadmap/firebase-space-import.md)) keeps its Firestore id in `spaces.legacy_id` (unique: one import per Firebase space), and its assets keep theirs in `assets.legacy_id`, so the space's old asset URLs redirect to the UUID ones; every other reference is rewritten to the new UUIDs during the import. Content and asset keys are `(space_id, id)`: the export/import tasks reuse ids in another space. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
+All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks, webhook logs, schemas, translations, assets and contents have UUIDv7 ids (`uuid` columns, `newUuid()`). What everything else refers to stays human readable where it already was: a schema's `name`, a translation's `key`, a token's secret `token`. A space imported from Firebase (Admin → Spaces → Import from Firebase, [design](roadmap/firebase-space-import.md)) keeps its Firestore id in `spaces.legacy_id` (unique: one import per Firebase space), and its assets keep theirs in `assets.legacy_id`, so the space's old asset URLs redirect to the UUID ones; every other reference is rewritten to the new UUIDs during the import. Content and asset keys are `(space_id, id)`: the export/import tasks reuse ids in another space. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
 
 ```
 settings                          single row: global UI settings
@@ -207,7 +209,9 @@ users                             role, permissions, lock, disabled
   user_credentials                password hash (argon2id)
   user_identities                 Google / Microsoft sign-in links
   sessions, password_reset_tokens
-spaces                            locales, fallback, overview, progress, content/translation_version
+locales                           every locale a space can use (seeded by migrations, read-only API)
+spaces                            default_locale_id, overview, progress, content/translation_version
+  space_locales     (space_id, locale_id)   position, created_at
   contents          (space_id, id)
     content_published (space_id, content_id, locale)
   translations      (space_id, id)

@@ -31,8 +31,9 @@ space_locales  (space_id → spaces CASCADE, locale_id → locales RESTRICT,
   in `@localess/shared` (the Google/DeepL support lists stay there: they describe the providers, not the list).
 - A space adds a locale by id; an id not in `locales` is refused. `position` orders a space's locales (users can
   reorder them), `created_at` records when it was added.
-- Locales a space already had that are not in `locales` are skipped by the migration (and by the Firebase import,
-  which reports them): their values stay in the data, unread, until locale deletion is designed.
+- A Firebase space's locales that are not in `locales` are skipped by the import, which reports them: their values
+  stay in the data, unread, until locale deletion is designed. (The schema change itself regenerates `0000_init.sql`,
+  as every change has before the first release; existing development databases are recreated.)
 - The locale flags (`tools/scripts/generate-locale-flags.mjs`) cover every ISO region, independent of the list.
 
 ### Default locale

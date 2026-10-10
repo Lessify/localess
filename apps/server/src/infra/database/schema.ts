@@ -129,6 +129,15 @@ export const settings = pgTable('settings', {
 });
 
 // ---------------------------------------------------------------------------------------------------
+// Locales: every locale a space can use. Database data only, seeded and changed by migrations; the API only reads it.
+// ---------------------------------------------------------------------------------------------------
+
+export const locales = pgTable('locales', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+});
+
+// ---------------------------------------------------------------------------------------------------
 // Spaces
 // ---------------------------------------------------------------------------------------------------
 
@@ -141,8 +150,11 @@ export const spaces = pgTable(
     // 'IMPORTING' while an import from Firebase fills the space, 'FAILED' after a failed one, null otherwise.
     importStatus: text('import_status'),
     name: text('name').notNull(),
-    locales: jsonb('locales').$type<Locale[]>().notNull(),
-    localeFallback: jsonb('locale_fallback').$type<Locale>().notNull(),
+    // The default locale: new translations are created in it, content stores its values in the bare field, and a
+    // locale with no value falls back to it. That it is one of the space's locales is checked by the API.
+    defaultLocaleId: text('default_locale_id')
+      .notNull()
+      .references(() => locales.id),
     environments: jsonb('environments').$type<{ name: string; url: string }[]>(),
     overview: jsonb('overview').$type<Record<string, unknown>>(),
     progress: jsonb('progress').$type<{ translations: Record<string, number> }>(),
@@ -151,13 +163,26 @@ export const spaces = pgTable(
     translationVersion: bigint('translation_version', { mode: 'number' }).notNull().default(1),
     ...timestamps,
   },
-  t => [index('spaces_name_idx').on(t.name)],
 );
 
 const spaceId = () =>
   uuid('space_id')
     .notNull()
     .references(() => spaces.id, { onDelete: 'cascade' });
+
+/** The locales of a space, in the order users gave them (`position`). */
+export const spaceLocales = pgTable(
+  'space_locales',
+  {
+    spaceId: spaceId(),
+    localeId: text('locale_id')
+      .notNull()
+      .references(() => locales.id, { onDelete: 'restrict' }),
+    position: integer('position').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [primaryKey({ columns: [t.spaceId, t.localeId] })],
+);
 
 // ---------------------------------------------------------------------------------------------------
 // Contents

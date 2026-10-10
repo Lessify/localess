@@ -8,7 +8,7 @@ const german: PreviewUrlContext = {
   slug: 'hello',
   parentSlug: 'blog',
   localeId: 'de',
-  fallbackLocaleId: 'en',
+  defaultLocaleId: 'en',
 };
 const defaultLocale: PreviewUrlContext = { ...german, localeId: 'default' };
 
@@ -30,7 +30,7 @@ describe('resolvePreviewUrl', () => {
     expect(resolvePreviewUrl(url, german)).toBe(expected);
   });
 
-  it('uses the fallback locale for {locale} and nothing for {locale/} on the default locale', () => {
+  it('uses the space default locale for {locale} and nothing for {locale/} on the default locale', () => {
     expect(resolvePreviewUrl('https://site.com/{locale}/{fullSlug}', defaultLocale)).toBe('https://site.com/en/blog/hello');
     expect(resolvePreviewUrl('https://site.com/{locale/}{fullSlug}', defaultLocale)).toBe('https://site.com/blog/hello');
   });

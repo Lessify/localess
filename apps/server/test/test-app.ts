@@ -87,3 +87,14 @@ export function api(t: TestApp, cookie: string) {
     delete: (url: string) => call('DELETE', url),
   };
 }
+
+type SpaceInsert = Omit<typeof schema.spaces.$inferInsert, 'defaultLocaleId'> & {
+  locales: { id: string; name?: string }[];
+  defaultLocale?: { id: string; name?: string };
+};
+
+/** Inserts a space with its `space_locales` rows; the default locale is `defaultLocale`, else the first locale. */
+export async function insertSpace(db: TestApp['db'], { locales, defaultLocale, ...space }: SpaceInsert): Promise<void> {
+  await db.insert(schema.spaces).values({ ...space, defaultLocaleId: (defaultLocale ?? locales[0]).id });
+  await db.insert(schema.spaceLocales).values(locales.map((it, position) => ({ spaceId: space.id, localeId: it.id, position })));
+}

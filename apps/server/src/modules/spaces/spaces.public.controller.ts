@@ -28,7 +28,7 @@ export class SpacesPublicController {
       id: space.id,
       name: space.name,
       locales: space.locales,
-      localeFallback: space.localeFallback,
+      defaultLocale: space.defaultLocale,
       createdAt: space.createdAt.toISOString(),
       updatedAt: space.updatedAt.toISOString(),
     });

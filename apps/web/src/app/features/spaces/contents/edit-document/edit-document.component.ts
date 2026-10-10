@@ -192,9 +192,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   availableLocales = computed<Locale[]>(() => {
     const space = this.selectedSpace();
     if (space) {
-      const { locales, localeFallback } = space;
+      const { locales, defaultLocale } = space;
       return locales.map(locale => {
-        if (locale.id === localeFallback.id) {
+        if (locale.id === defaultLocale.id) {
           return {
             id: CONTENT_DEFAULT_LOCALE.id,
             name: `${locale.name} (${CONTENT_DEFAULT_LOCALE.name})`,
@@ -690,7 +690,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
         context: {
           locales: this.availableLocales(),
-          localeFallback: this.selectedSpace()?.localeFallback,
+          defaultLocale: this.selectedSpace()?.defaultLocale,
           selectedLocale: this.selectedLocale().id,
         },
         contentClass: DIALOG_WIDTH_SM,
@@ -707,12 +707,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
             return EMPTY;
           }
           const byId = new Map(fields.map(field => [field.id, field]));
-          const fallbackLocaleId = this.selectedSpace()?.localeFallback.id;
+          const defaultLocaleId = this.selectedSpace()?.defaultLocale.id;
           return this.translateService
             .translateBatch({
               items: fields.map(({ id, content, format }) => ({ id, content, format })),
-              sourceLocale: toProviderLocale(it.sourceLocale, fallbackLocaleId),
-              targetLocale: toProviderLocale(it.targetLocale, fallbackLocaleId),
+              sourceLocale: toProviderLocale(it.sourceLocale, defaultLocaleId),
+              targetLocale: toProviderLocale(it.targetLocale, defaultLocaleId),
             })
             .pipe(map(result => ({ result, byId, total: fields.length })));
         }),

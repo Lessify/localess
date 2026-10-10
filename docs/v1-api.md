@@ -24,7 +24,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 **Notable behaviors:**
 
 - **Published vs draft** — Published documents and translations are read from the `content_published` / `translation_published` tables written on publish. `?version=draft` is built on every request from the live `contents` / `translations` rows (locale extraction against the current schemas), so a draft always exists, even for a document that was never saved after import.
-- **Locale fallback** — If the requested locale doesn't exist in the space, falls back to `space.localeFallback`.
+- **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
 - **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `ContentDeliveryService.resolveAssets()` (`apps/server/src/modules/contents/content-delivery.service.ts`). References are asset UUIDs (an import from Firebase rewrites them).
@@ -165,7 +165,7 @@ Space introspection and OpenAPI generation. Uses `token` query param auth.
 
 | Method | Path                               | Auth        | Response                                                      |
 |--------|------------------------------------|-------------|---------------------------------------------------------------|
-| `GET`  | `/api/v1/spaces/:spaceId`          | `DEV_TOOLS` | `{ id, name, locales, localeFallback, createdAt, updatedAt }` |
+| `GET`  | `/api/v1/spaces/:spaceId`          | `DEV_TOOLS` | `{ id, name, locales, defaultLocale, createdAt, updatedAt }` — `locales` in the space's order; `defaultLocale` was `localeFallback` before the self-hosted version (breaking for clients reading it) |
 | `GET`  | `/api/v1/spaces/:spaceId/open-api` | `DEV_TOOLS` | OpenAPI 3.0 JSON spec generated from schemas                  |
 | `GET`  | `/api/v1/spaces/:spaceId/schemas`  | `DEV_TOOLS` | `SchemaExport[]` (id + type-specific fields, no timestamps)   |
 | `GET`  | `/api/v1/spaces/:spaceId/translations/:locale/values` | `DEV_TOOLS` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |

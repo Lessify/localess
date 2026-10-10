@@ -1,4 +1,4 @@
-import { COUNTRY_FLAGS, IDENTICAL_FLAG_LOCALES, LANGUAGE_FLAGS } from './locale-flags';
+import { COUNTRY_FLAGS, IDENTICAL_FLAG_PAIRS, LANGUAGE_FLAGS } from './locale-flags';
 
 /** One side of the icon: a flag image, or the language code when no flag exists for it. */
 export interface LocaleIconHalf {
@@ -34,7 +34,7 @@ const MACRO_REGIONS = new Set(['001', '419']);
  * - `de-DE`, `en-GB` - both halves known but the *same* picture, because circle-flags' language
  *   flags are national flags under another name: one flag, since two identical halves only look
  *   like a rendering bug. Which locales those are is measured by the generator rather than guessed
- *   - see `IDENTICAL_FLAG_LOCALES`.
+ *   - see `IDENTICAL_FLAG_PAIRS`.
  * - `agq-CM` - region flag only: Cameroon's flag alone. `ksf-CM` gets the same icon; the locale
  *   name beside it is what tells them apart.
  * - `de`, `ar`, `zh-Hans` - language flag only: one flag, no region to add.
@@ -49,7 +49,7 @@ export function localeIcon(localeId: string): LocaleIcon {
   const languageFlag = LANGUAGE_FLAGS.has(language) ? `${FLAG_BASE}/language/${language}.svg` : undefined;
   const regionFlag = regionFlagOf(region);
 
-  if (languageFlag !== undefined && regionFlag !== undefined && !IDENTICAL_FLAG_LOCALES.has(localeId)) {
+  if (languageFlag !== undefined && regionFlag !== undefined && !IDENTICAL_FLAG_PAIRS.has(`${language}-${region}`)) {
     return { start: { flag: languageFlag }, end: { flag: regionFlag } };
   }
   const single = languageFlag ?? regionFlag;

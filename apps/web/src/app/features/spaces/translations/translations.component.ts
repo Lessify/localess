@@ -107,9 +107,9 @@ export class TranslationsComponent implements OnInit {
   availableLocales = computed(() => {
     const space = this.selectedSpace();
     if (space) {
-      const { locales, localeFallback } = space;
+      const { locales, defaultLocale } = space;
       return locales.map(locale => {
-        if (locale.id === localeFallback.id) {
+        if (locale.id === defaultLocale.id) {
           return {
             id: locale.id,
             name: `${locale.name} (${CONTENT_DEFAULT_LOCALE.name})`,
@@ -217,8 +217,8 @@ export class TranslationsComponent implements OnInit {
         // BEFORE writing anything, so `create()` performs a single request with all
         // required locale fields already populated — no follow-up per-locale saves.
         switchMap(it => {
-          const locales: Record<string, string> = { [space.localeFallback.id]: it!.value };
-          const otherLocales = space.locales.filter(locale => locale.id !== space.localeFallback.id);
+          const locales: Record<string, string> = { [space.defaultLocale.id]: it!.value };
+          const otherLocales = space.locales.filter(locale => locale.id !== space.defaultLocale.id);
           if (!it!.autoTranslate || it!.type !== TranslationType.STRING || otherLocales.length === 0) {
             return of({ it: it!, locales });
           }
@@ -227,7 +227,7 @@ export class TranslationsComponent implements OnInit {
               this.translateService
                 .translate({
                   content: it!.value,
-                  sourceLocale: space.localeFallback.id,
+                  sourceLocale: space.defaultLocale.id,
                   targetLocale: locale.id,
                 })
                 .pipe(

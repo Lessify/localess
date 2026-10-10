@@ -56,7 +56,7 @@ There are no draft files any more. `GET /api/v1/.../contents/...?version=draft` 
 2. Angular TranslationService → POST /api/app/spaces/:spaceId/translations/publish   (TRANSLATION_PUBLISH)
 3. TranslationsService.publish(), in one transaction:
    a. reads every translation row of the space
-   b. per space locale, builds the flat key/value map, filled from the fallback locale
+   b. per space locale, builds the flat key/value map, filled from the default locale
       (buildTranslationMap), and upserts a translation_published row
    c. writes per-locale translated counts to spaces.progress.translations
    d. bumps spaces.translation_version (new cv), emits a `spaces` change event

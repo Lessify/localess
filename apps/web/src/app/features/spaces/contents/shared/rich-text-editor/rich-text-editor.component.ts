@@ -57,8 +57,8 @@ export class RichTextEditorComponent implements OnDestroy {
   component = input.required<SchemaFieldRichText>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
-  /** The space fallback locale, i.e. the real language the `default` locale stands for. */
-  fallbackLocale = input<Locale>();
+  /** The space's default locale, i.e. the real language the `default` locale stands for. */
+  defaultLocale = input<Locale>();
 
   isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
@@ -97,8 +97,8 @@ export class RichTextEditorComponent implements OnDestroy {
     this.translateService
       .translate({
         content,
-        sourceLocale: toProviderLocale(sourceLocale, this.fallbackLocale()?.id),
-        targetLocale: toProviderLocale(targetLocale, this.fallbackLocale()?.id),
+        sourceLocale: toProviderLocale(sourceLocale, this.defaultLocale()?.id),
+        targetLocale: toProviderLocale(targetLocale, this.defaultLocale()?.id),
         format: 'html',
       })
       .subscribe({

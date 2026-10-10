@@ -9,7 +9,7 @@ import { ContentPreviewComponent } from './content-preview.component';
 const en: Locale = { id: 'en', name: 'English' };
 
 function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [en], localeFallback: en, environments: [], ...overrides } as Space;
+  return { id: 'space-1', name: 'Space 1', locales: [en], defaultLocale: en, environments: [], ...overrides } as Space;
 }
 
 function documentOf(): ContentDocument {
@@ -251,7 +251,7 @@ describe('ContentPreviewComponent', () => {
       expect(postMessage).toHaveBeenCalledWith({ type: 'pong' }, 'https://de.preview.example.com');
     });
 
-    it('uses the space fallback locale for {locale} on the default locale', () => {
+    it('uses the space default locale for {locale} on the default locale', () => {
       const pattern: SpaceEnvironment = { name: 'query', url: 'https://preview.example.com/{fullSlug}?lang={locale}' };
       const { component, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
       fixture.componentRef.setInput('selectedLocale', { id: 'default', name: 'Default' });

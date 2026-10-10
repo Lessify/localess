@@ -8,8 +8,13 @@ export interface Space {
   /** Set while an import from Firebase fills the space (`IMPORTING`) or after it failed (`FAILED`). */
   importStatus?: 'IMPORTING' | 'FAILED';
   name: string;
+  /** The space's locales, in the order users gave them. */
   locales: Locale[];
-  localeFallback: Locale;
+  /**
+   * New translations are created in it and content stores its values in the bare field; a locale with
+   * no value falls back to it.
+   */
+  defaultLocale: Locale;
   /** Preview environments for the Visual Editor (http(s) URLs only). */
   environments?: SpaceEnvironment[];
   // overview

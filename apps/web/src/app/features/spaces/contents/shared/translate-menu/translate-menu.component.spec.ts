@@ -92,19 +92,19 @@ describe('TranslateMenuComponent', () => {
      * `default` is a storage key, not a language. Resolved through the space fallback it is the
      * fallback's language; without a fallback there is nothing to send, so it stays unsupported.
      */
-    it('resolves the default sentinel through the fallback locale', () => {
+    it('resolves the default sentinel through the default locale', () => {
       const { component, fixture } = setup(de, [CONTENT_DEFAULT_LOCALE, de]);
 
       expect(component.canTranslateFrom(CONTENT_DEFAULT_LOCALE)).toBe(false);
 
-      fixture.componentRef.setInput('fallbackLocale', en);
+      fixture.componentRef.setInput('defaultLocale', en);
 
       expect(component.canTranslateFrom(CONTENT_DEFAULT_LOCALE)).toBe(true);
     });
 
     it('applies the same resolution to the field locale as a target', () => {
       const { component, fixture } = setup(CONTENT_DEFAULT_LOCALE, [CONTENT_DEFAULT_LOCALE, de]);
-      fixture.componentRef.setInput('fallbackLocale', en);
+      fixture.componentRef.setInput('defaultLocale', en);
 
       expect(component.canTranslateToSelected()).toBe(true);
     });

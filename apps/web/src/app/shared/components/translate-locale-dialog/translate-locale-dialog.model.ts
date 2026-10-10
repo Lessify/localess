@@ -3,11 +3,11 @@ import { Locale } from '@localess/shared';
 export interface TranslateLocaleDialogContext {
   locales: Locale[];
   /**
-   * The space's fallback locale. Required from the content side, where `locales` carries the
+   * The space's default locale. Required from the content side, where `locales` carries the
    * `default` sentinel instead of the fallback's real language and the dialog cannot otherwise
    * tell whether the provider supports it.
    */
-  localeFallback?: Locale;
+  defaultLocale?: Locale;
   /**
    * The locale the caller is currently showing, if it has one - the content side passes the locale
    * the document is open in. It is preselected as the target, because translating into the locale

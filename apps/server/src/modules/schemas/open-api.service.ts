@@ -206,7 +206,7 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
               description:
                 'Locale this content was served at. This is the locale actually resolved, which may differ from the ' +
                 'one requested: when the requested locale does not exist in the space, the API falls back to the ' +
-                'localeFallback configured on the space.',
+                'defaultLocale configured on the space.',
               example: 'en',
             },
             data: {

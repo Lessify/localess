@@ -114,7 +114,7 @@ export class ContentPreviewComponent {
       slug: document.slug ?? '',
       parentSlug: document.parentSlug ?? '',
       localeId: this.selectedLocale().id,
-      fallbackLocaleId: this.selectedSpace()?.localeFallback?.id ?? CONTENT_DEFAULT_LOCALE.id,
+      defaultLocaleId: this.selectedSpace()?.defaultLocale?.id ?? CONTENT_DEFAULT_LOCALE.id,
     });
   });
   readonly safePreviewUrl = computed(() => {

@@ -82,7 +82,7 @@ export class ContentDeliveryService {
   }
 
   /**
-   * The document in `locale`, else in the space's fallback locale (what `resolveLocaleFilePath` did
+   * The document in `locale`, else in the space's default locale (what `resolveLocaleFilePath` did
    * with the two Storage files). `resolvedLocale` says which one was found.
    */
   async findLocaleDocument(
@@ -94,7 +94,7 @@ export class ContentDeliveryService {
     const draft = isDraft(version);
     const primary = (await this.localeDocuments(space.id, [contentId], locale, draft)).get(contentId);
     if (primary) return { document: primary, resolvedLocale: locale };
-    const fallbackLocale = space.localeFallback.id;
+    const fallbackLocale = space.defaultLocaleId;
     if (fallbackLocale === locale) return undefined;
     const fallback = (await this.localeDocuments(space.id, [contentId], fallbackLocale, draft)).get(contentId);
     return fallback ? { document: fallback, resolvedLocale: fallbackLocale } : undefined;

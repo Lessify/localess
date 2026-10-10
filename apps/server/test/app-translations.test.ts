@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -50,14 +50,14 @@ describe('app API: translations, machine translation, Unsplash', () => {
       UNSPLASH_API_KEY: 'unsplash-key',
       LOCALESS_UNSPLASH_API_URL: unsplash.url,
     });
-    await t.db.insert(spaces).values({
+    await insertSpace(t.db, {
       id: S1,
       name: 'S',
       locales: [
         { id: 'en', name: 'English' },
         { id: 'de', name: 'German' },
       ],
-      localeFallback: { id: 'en', name: 'English' },
+      defaultLocale: { id: 'en', name: 'English' },
     });
     await t.db
       .insert(tokens)
@@ -247,14 +247,14 @@ describe('app API: without a translation provider or Unsplash key', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.db.insert(spaces).values({
+    await insertSpace(t.db, {
       id: S1,
       name: 'S',
       locales: [
         { id: 'en', name: 'English' },
         { id: 'de', name: 'German' },
       ],
-      localeFallback: { id: 'en', name: 'English' },
+      defaultLocale: { id: 'en', name: 'English' },
     });
   });
 

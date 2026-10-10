@@ -43,7 +43,8 @@ export class LocaleDialogComponent implements OnInit {
    */
   private readonly context = injectBrnDialogContext<LocaleDialogContext>({ optional: true });
 
-  locales: Locale[] = [];
+  /** Every locale from the server, minus the ones the space already has. */
+  readonly locales = signal<Locale[]>([]);
   form: FormGroup = this.fb.group({
     locale: this.fb.control<Locale | undefined>(undefined, LocaleValidator.LOCALE),
   });
@@ -57,22 +58,17 @@ export class LocaleDialogComponent implements OnInit {
   filteredOptions = computed(() => {
     const search = this.search().trim().toLowerCase();
     if (search) {
-      return this.locales.filter(option => option.name.toLowerCase().includes(search));
+      return this.locales().filter(option => option.name.toLowerCase().includes(search));
     }
-    return this.locales;
+    return this.locales();
   });
 
   ngOnInit(): void {
     this.localeService.findAllLocales().subscribe(response => {
-      this.locales = response;
       // `?.` because the injection above is optional: without it, a dialog opened with no context
       // at all throws here rather than falling back to the full list.
-      if (this.context?.locales != null) {
-        this.context.locales.forEach(it => {
-          const pos: number = this.locales.findIndex(row => row.id === it.id);
-          this.locales.splice(pos, 1);
-        });
-      }
+      const taken = new Set((this.context?.locales ?? []).map(it => it.id));
+      this.locales.set(response.filter(it => !taken.has(it.id)));
     });
   }
 

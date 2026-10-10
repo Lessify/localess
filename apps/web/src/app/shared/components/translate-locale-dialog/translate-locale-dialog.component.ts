@@ -58,11 +58,11 @@ export class TranslateLocaleDialogComponent {
    * content side labels the fallback - so support is decided on the resolved locale.
    */
   canTranslateFrom(locale: Locale): boolean {
-    return this.localeService.isLocaleTranslatableFrom(locale.id, this.context.localeFallback?.id);
+    return this.localeService.isLocaleTranslatableFrom(locale.id, this.context.defaultLocale?.id);
   }
 
   canTranslateTo(locale: Locale): boolean {
-    return this.localeService.isLocaleTranslatableTo(locale.id, this.context.localeFallback?.id);
+    return this.localeService.isLocaleTranslatableTo(locale.id, this.context.defaultLocale?.id);
   }
 
   /**

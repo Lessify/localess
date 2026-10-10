@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { schemas, spaces, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
-import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
+import { schemas, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -46,9 +46,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   beforeAll(async () => {
     // These pin the API; task processing has its own tests (test/tasks.test.ts).
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
-    await t.db
-      .insert(spaces)
-      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
     manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] }));

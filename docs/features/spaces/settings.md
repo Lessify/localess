@@ -52,12 +52,17 @@ Edit the space name and other top-level space metadata. Reads current data from 
 
 ## LocalesComponent
 
-Add and remove locales from the space (there is no reordering). Set the **fallback locale** — used by the CDN when a requested locale has no
-published data. The table is filtered through an `<ll-filter-toolbar>` (`onFilterChange()`).
+Add, remove and reorder the space's locales, and set the **default locale**: new translations are created in it, content stores
+its values in the bare field, and a locale with no value falls back to it. The table lists the locales in the space's order (the
+order used everywhere in the app) until a column header sorts it, and is filtered through an `<ll-filter-toolbar>` (`onFilterChange()`).
 
-- `openAddDialog()` — opens `LocaleDialogComponent`, passing the space's existing locales so they are excluded
-- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`). The action is disabled for the fallback locale, and the server refuses to delete it too
-- `markAsFallback(element)` — makes the locale the space's fallback (`PUT /api/app/spaces/:s/locale-fallback`)
+- `openAddDialog()` — opens `LocaleDialogComponent`, which loads every locale from `GET /api/app/locales` (database data, read-only)
+  minus the space's own, and adds the pick by id (`POST /api/app/spaces/:s/locales {id}`; an id not in the `locales` table is refused)
+- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`). The action is disabled for the default locale, and the server refuses to delete it too
+- `openSetDefaultDialog(element)` — `ConfirmationDialogComponent` warning that content values stored for the default locale are not
+  moved (they are read as the new locale from then on; translations are unaffected), then `PUT /api/app/spaces/:s/default-locale`
+- `move(element, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: swaps the locale with its neighbour in the space's order
+  and sends the whole order (`PUT /api/app/spaces/:s/locales/order {ids}`, every locale of the space once)
 
 **Services:** `LocaleService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
@@ -131,11 +136,12 @@ A hairline `var(--border)` ring is drawn inside each circle, because the flags a
 flag like Japan's, or the white band of Italy's, has no visible edge against a light row without it.
 
 **Where the data comes from.** Flags are the `circle-flags` package (MIT), copied into `assets/flags` by an `angular.json` asset glob — all
-633 files, since restricting the glob would have to be regenerated whenever a locale is added. The component cannot stat that folder at
+633 files. The constants cover every language flag and every two-letter (ISO 3166) region flag of the package, independent of the
+locale list, which lives in the database. The component cannot stat that folder at
 runtime, so the available codes are baked into `locale-flags.ts` by `tools/scripts/generate-locale-flags.mjs`; a wrong constant would point an
 `<img>` at a missing asset, which the server's SPA fallback (`SpaFallbackFilter`) answers with `index.html` instead of a 404.
 `tools/scripts/generate-locale-flags.test.mjs` (part of `pnpm test:scripts`) fails when the constants and the installed package disagree —
-re-run the generator after upgrading it. The collapse list is computed by **comparing file contents**, not by mapping a language to "its"
+re-run the generator after upgrading it. The collapse list (`IDENTICAL_FLAG_PAIRS`, `language-region` pairs) is computed by **comparing file contents**, not by mapping a language to "its"
 country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en-GB` wrong.
 
 ### LocaleDialogComponent
@@ -207,13 +213,13 @@ The URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an ab
 **URL patterns:** a URL without `{` keeps the original convention, `url + locale/ + fullSlug` with the locale left out for the default
 locale. A URL with placeholders is filled in instead by `resolvePreviewUrl()` (`core/utils/preview-url.ts`):
 
-| Placeholder    | Value for `blog/hello` in German (fallback locale `en`)               |
+| Placeholder    | Value for `blog/hello` in German (default locale `en`)               |
 |----------------|-----------------------------------------------------------------------|
 | `{fullSlug}`   | `blog/hello`                                                          |
 | `{slug}`       | `hello`                                                               |
 | `{parentSlug}` | `blog`                                                                |
 | `{documentId}` | the document id                                                       |
-| `{locale}`     | `de`; the space's fallback locale (`en`) for the default locale       |
+| `{locale}`     | `de`; the space's default locale (`en`) on the `default` sentinel       |
 | `{locale/}`    | `de/`; nothing for the default locale                                 |
 
 Values are URL-encoded per path segment. The validator rejects unknown placeholders (error key `previewUrlPlaceholder`) and checks the URL

@@ -84,7 +84,7 @@ describe('RichTextEditorComponent', () => {
 
       expect(translate).toHaveBeenCalledWith({
         content: '<p>Hello</p>',
-        // No fallback locale supplied here, so the sentinel goes on as-is.
+        // No default locale supplied here, so the sentinel goes on as-is.
         sourceLocale: CONTENT_DEFAULT_LOCALE.id,
         targetLocale: 'de',
         format: 'html',
@@ -93,9 +93,9 @@ describe('RichTextEditorComponent', () => {
 
     // `default` is a storage sentinel, not a language. Given the space's fallback, the provider is
     // told the real source language instead of being left to auto-detect.
-    it('sends the fallback language when the source is the default locale', () => {
+    it('sends the language of the default locale when the source is the default locale', () => {
       const { component, fixture, translate } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
-      fixture.componentRef.setInput('fallbackLocale', { id: 'en', name: 'English' });
+      fixture.componentRef.setInput('defaultLocale', { id: 'en', name: 'English' });
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 

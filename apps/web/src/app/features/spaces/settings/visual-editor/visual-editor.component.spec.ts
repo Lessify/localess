@@ -15,7 +15,7 @@ function space(environments?: SpaceEnvironment[]): Space {
     id: 'space-1',
     name: 'Space 1',
     locales: [],
-    localeFallback: { id: 'en', name: 'English' } as Space['localeFallback'],
+    defaultLocale: { id: 'en', name: 'English' } as Space['defaultLocale'],
     environments,
   } as unknown as Space;
 }

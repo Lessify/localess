@@ -2,8 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { AVAILABLE_LOCALES } from './locales.js';
-
 /**
  * The Google locale lists used to exist twice (server and UI) with a parity test between them. They
  * are defined once now; what is left to guard is the shape of the lists themselves.
@@ -40,13 +38,5 @@ describe('Google locale lists', () => {
     const codes = codesOf(await source(), 'GCP_BIDIRECTIONAL_LOCALES');
 
     expect(codes).toEqual([...new Set(codes)]);
-  });
-});
-
-describe('AVAILABLE_LOCALES', () => {
-  it('has unique ids', () => {
-    const ids = AVAILABLE_LOCALES.map(it => it.id);
-
-    expect(ids).toEqual([...new Set(ids)]);
   });
 });

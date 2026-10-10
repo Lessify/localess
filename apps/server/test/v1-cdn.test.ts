@@ -13,7 +13,7 @@ import {
   TOKEN_PUBLIC,
   TOKEN_V1,
 } from './seed.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { createTestApp, insertSpace, TestApp } from './test-app.js';
 import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -32,9 +32,7 @@ describe('v1 CDN API', () => {
     await seedContent(t);
     await seedTranslations(t);
     // A second space with nothing published, and its own token.
-    await t.db
-      .insert(spaces)
-      .values({ id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await insertSpace(t.db, { id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     await t.db.insert(tokens).values({ id: newUuid(), token: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'v1' });
   });
 

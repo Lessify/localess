@@ -6,7 +6,7 @@ import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
+import { lucideArrowDown, lucideArrowUp, lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -49,6 +49,8 @@ import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-
       lucideTrash,
       lucideCheck,
       lucideX,
+      lucideArrowUp,
+      lucideArrowDown,
     }),
   ],
 })
@@ -66,7 +68,7 @@ export class LocalesComponent implements AfterViewInit {
 
   private readonly locales = signal<Locale[]>([]);
   readonly dataSource = new TableDataSource<Locale>(this.locales, this.injector);
-  displayedColumns: string[] = ['id', 'icon', 'name', 'translateFrom', 'translateTo', 'isFallback', 'actions'];
+  displayedColumns: string[] = ['id', 'icon', 'name', 'translateFrom', 'translateTo', 'isDefault', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -151,18 +153,58 @@ export class LocalesComponent implements AfterViewInit {
       });
   }
 
-  markAsFallback(element: Locale): void {
-    const spaceId = this.spaceStore.selectedSpaceId();
-    if (spaceId) {
-      this.localeService.markAsFallback(spaceId, element).subscribe({
+  /**
+   * Content stores the default locale's values in the bare field, so changing the default re-labels them: they are not
+   * moved. Translations are keyed by locale and unaffected. Hence the confirmation.
+   */
+  openSetDefaultDialog(element: Locale): void {
+    const space = this.spaceStore.selectedSpace();
+    if (!space) return;
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
+          title: 'Change Default Locale',
+          content:
+            `Make '${element.name}' the default locale instead of '${space.defaultLocale.name}'? ` +
+            `Content values stored for the default locale are not moved: from now on they are read as '${element.name}'. ` +
+            'Translations are not affected.',
+        },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+      })
+      .closed$.pipe(
+        take(1),
+        filter(it => it || false),
+        switchMap(() => this.localeService.setDefault(space.id, element)),
+      )
+      .subscribe({
         next: () => {
-          this.notificationService.success(`Locale '${element.name}' has been marked as fallback.`);
+          this.notificationService.success(`Locale '${element.name}' is now the default locale.`);
         },
         error: () => {
-          this.notificationService.error(`Locale '${element.name}' can not be marked as fallback.`);
+          this.notificationService.error(`Locale '${element.name}' can not be made the default locale.`);
         },
       });
-    }
+  }
+
+  /** Whether `element` can move one place in the space's order (`-1` up, `1` down). */
+  canMove(element: Locale, direction: -1 | 1): boolean {
+    const locales = this.spaceStore.selectedSpace()?.locales ?? [];
+    const index = locales.findIndex(it => it.id === element.id);
+    return index >= 0 && index + direction >= 0 && index + direction < locales.length;
+  }
+
+  /** Swaps `element` with its neighbour in the space's order, which is also the order everywhere else in the app. */
+  move(element: Locale, direction: -1 | 1): void {
+    const space = this.spaceStore.selectedSpace();
+    if (!space || !this.canMove(element, direction)) return;
+    const ids = space.locales.map(it => it.id);
+    const index = ids.indexOf(element.id);
+    [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
+    this.localeService.reorder(space.id, ids).subscribe({
+      error: () => {
+        this.notificationService.error(`Locale '${element.name}' can not be moved.`);
+      },
+    });
   }
 
   /**

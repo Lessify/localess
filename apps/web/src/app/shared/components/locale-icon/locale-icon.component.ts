@@ -27,11 +27,11 @@ export class LocaleIconComponent {
   locale = input<string>('en');
 
   /**
-   * The space's fallback locale id, for call sites on the content side whose lists carry the
+   * The space's default locale id, for call sites on the content side whose lists carry the
    * `default` sentinel instead of a language. Without it `default` parses as a language subtag and
    * renders as a "DEF" code badge; with it the entry shows the flag of the locale it stands for.
    */
-  localeFallback = input<string>();
+  defaultLocale = input<string>();
 
-  icon = computed(() => localeIcon(toProviderLocale(this.locale(), this.localeFallback())));
+  icon = computed(() => localeIcon(toProviderLocale(this.locale(), this.defaultLocale())));
 }

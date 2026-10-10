@@ -1,8 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { AVAILABLE_LOCALES, GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
+import { GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
 import { toProviderLocale } from '@shared/models/locale.model';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
@@ -12,20 +12,27 @@ export class LocaleService {
     return `/api/app/spaces/${spaceId}`;
   }
 
-  markAsFallback(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/locale-fallback`, { id: entity.id });
+  setDefault(spaceId: string, entity: Locale): Observable<void> {
+    return this.http.put<void>(`${this.base(spaceId)}/default-locale`, { id: entity.id });
   }
 
+  /** Adds a locale from the list (`findAllLocales`); the server takes only its id. */
   create(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id, name: entity.name });
+    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id });
+  }
+
+  /** `localeIds`: every locale of the space, in the new order. */
+  reorder(spaceId: string, localeIds: string[]): Observable<void> {
+    return this.http.put<void>(`${this.base(spaceId)}/locales/order`, { ids: localeIds });
   }
 
   delete(spaceId: string, entity: Locale): Observable<void> {
     return this.http.delete<void>(`${this.base(spaceId)}/locales/${entity.id}`);
   }
 
+  /** Every locale a space can add. Database data, read-only. */
   findAllLocales(): Observable<Locale[]> {
-    return of([...AVAILABLE_LOCALES]);
+    return this.http.get<Locale[]>('/api/app/locales');
   }
 
   /**
@@ -36,19 +43,19 @@ export class LocaleService {
    * Without a fallback the sentinel resolves to itself and is reported unsupported, which is the
    * safe answer: that is exactly what the provider would be sent.
    * @param locale locale id, possibly `CONTENT_DEFAULT_LOCALE.id`
-   * @param fallbackLocale the space's fallback locale id, when `locale` may be the sentinel
+   * @param defaultLocale the space's default locale id, when `locale` may be the sentinel
    */
-  isLocaleTranslatableFrom(locale: string, fallbackLocale?: string): boolean {
-    return GCP_SOURCE_SUPPORT_LOCALES.has(toProviderLocale(locale, fallbackLocale));
+  isLocaleTranslatableFrom(locale: string, defaultLocale?: string): boolean {
+    return GCP_SOURCE_SUPPORT_LOCALES.has(toProviderLocale(locale, defaultLocale));
   }
 
   /**
    * Whether a locale can be the *target* of a translation. Resolves the `default` sentinel the same
    * way as {@link isLocaleTranslatableFrom}.
    * @param locale locale id, possibly `CONTENT_DEFAULT_LOCALE.id`
-   * @param fallbackLocale the space's fallback locale id, when `locale` may be the sentinel
+   * @param defaultLocale the space's default locale id, when `locale` may be the sentinel
    */
-  isLocaleTranslatableTo(locale: string, fallbackLocale?: string): boolean {
-    return GCP_TARGET_SUPPORT_LOCALES.has(toProviderLocale(locale, fallbackLocale));
+  isLocaleTranslatableTo(locale: string, defaultLocale?: string): boolean {
+    return GCP_TARGET_SUPPORT_LOCALES.has(toProviderLocale(locale, defaultLocale));
   }
 }

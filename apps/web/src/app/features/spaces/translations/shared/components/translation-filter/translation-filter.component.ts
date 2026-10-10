@@ -59,7 +59,7 @@ export class TranslationFilterComponent {
 
   // Inputs
   readonly availableLocales = input.required<Locale[]>();
-  readonly localeFallbackId = input<string | undefined>(undefined);
+  readonly defaultLocaleId = input<string | undefined>(undefined);
   readonly allLabels = input<string[]>([]);
 
   // Outputs
@@ -99,7 +99,7 @@ export class TranslationFilterComponent {
       });
     });
     effect(() => {
-      const fallbackId = this.localeFallbackId();
+      const fallbackId = this.defaultLocaleId();
       if (fallbackId && this.filterForm.value.locale === '') {
         this.filterForm.patchValue({ locale: fallbackId });
       }

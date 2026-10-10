@@ -44,7 +44,7 @@ describe('v1 dev tools and manage API', () => {
           { id: 'en', name: 'English' },
           { id: 'de', name: 'German' },
         ],
-        localeFallback: { id: 'en', name: 'English' },
+        defaultLocale: { id: 'en', name: 'English' },
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });

@@ -242,7 +242,7 @@ and it answers the two directions separately — Google's `SupportedLanguage` ca
 | Translations screen (`translation-detail`) | only the translate button, never the locale selects - those also choose which locale is displayed and hand-edited, so they keep offering every locale ([details](translations.md#translationscomponent)) |
 
 All three ask `LocaleService.isLocaleTranslatableFrom()` / `isLocaleTranslatableTo()`, which resolve the `default` sentinel through the
-fallback locale first — hence the `fallbackLocale` input on the menu and `localeFallback` on the dialog model. Without a fallback the
+space's default locale first — hence the `defaultLocale` input on the menu and on the dialog model. Without it the
 sentinel is reported unsupported, which is the honest answer: `default` is exactly what would be sent. The Locales settings table reports
 the same two directions per locale — see [Space Settings → Translation support](settings.md#translation-support).
 
@@ -293,7 +293,7 @@ by format, chunks to 27,000 code points and translates each chunk in **one** pro
 
 **Locale ids are not language codes.** `default` is a storage sentinel, not a language — see
 [Concepts → How localised values are stored](../../concepts.md#how-localised-values-are-stored) for the rule and why the bare field name
-holds the default. `availableLocales` rewrites the space's fallback locale to that sentinel and labels it "English (Default)", so it is what
+holds the default. `availableLocales` rewrites the space's default locale to that sentinel and labels it "English (Default)", so it is what
 every locale picker returns.
 
 `toProviderLocale(localeId, fallbackLocaleId)` in `locale.model.ts` resolves it back to the real language before a request leaves the
@@ -301,7 +301,7 @@ browser, so the provider is told the source language instead of auto-detecting, 
 language that exists. **All four** request builders use it — the whole-document dialog, `edit-document-schema` for TEXT/TEXTAREA, and the
 two editors' per-field buttons, which take a `fallbackLocale` input for the purpose.
 
-`sourceLocale` is a plain `string` — not nullable — the whole way down, because a space always has a fallback locale and every request
+`sourceLocale` is a plain `string` — not nullable — the whole way down, because a space always has a default locale and every request
 therefore knows its language. Nothing asks the provider to auto-detect. If the sentinel somehow cannot be resolved, the raw `default` is
 sent and the provider rejects it, which surfaces the missing space instead of quietly translating from a guessed language.
 

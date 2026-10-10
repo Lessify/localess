@@ -52,7 +52,7 @@ describe('TranslationDetailComponent', () => {
     fixture.componentRef.setInput('translation', t);
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.componentRef.setInput('availableLocales', [en, de]);
-    fixture.componentRef.setInput('localeFallback', en);
+    fixture.componentRef.setInput('defaultLocale', en);
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,

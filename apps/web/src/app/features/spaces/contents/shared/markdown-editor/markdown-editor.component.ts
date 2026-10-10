@@ -60,8 +60,8 @@ export class MarkdownEditorComponent implements OnDestroy {
   default = input<string>();
   selectedLocale = input.required<Locale>();
   availableLocales = input.required<Locale[]>();
-  /** The space fallback locale, i.e. the real language the `default` locale stands for. */
-  fallbackLocale = input<Locale>();
+  /** The space's default locale, i.e. the real language the `default` locale stands for. */
+  defaultLocale = input<Locale>();
 
   isDefaultLocale = computed(() => this.selectedLocale().id === CONTENT_DEFAULT_LOCALE.id);
   selectedLocaleId = computed(() => this.selectedLocale().id);
@@ -148,8 +148,8 @@ export class MarkdownEditorComponent implements OnDestroy {
       this.translateService
         .translate({
           content: content,
-          sourceLocale: toProviderLocale(sourceLocale, this.fallbackLocale()?.id),
-          targetLocale: toProviderLocale(targetLocale, this.fallbackLocale()?.id),
+          sourceLocale: toProviderLocale(sourceLocale, this.defaultLocale()?.id),
+          targetLocale: toProviderLocale(targetLocale, this.defaultLocale()?.id),
         })
         .subscribe({
           next: result => {

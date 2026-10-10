@@ -9,12 +9,12 @@ import { CONTENT_DEFAULT_LOCALE } from '@localess/shared';
  * the real code is known and worth sending - the provider is told the source language instead of
  * guessing it, and a translation *into* the default locale asks for a language that exists.
  *
- * A space always has a fallback locale, so the sentinel is always resolvable in practice. If it is
+ * A space always has a default locale, so the sentinel is always resolvable in practice. If it is
  * not, the raw id is returned rather than a guess: the provider rejects `default` as a language,
  * which surfaces the missing space instead of quietly translating from the wrong one.
  * @param localeId locale id as selected in the UI
- * @param fallbackLocaleId the space's `localeFallback` id
+ * @param defaultLocaleId the space's `defaultLocale` id
  */
-export function toProviderLocale(localeId: string, fallbackLocaleId: string | undefined): string {
-  return localeId === CONTENT_DEFAULT_LOCALE.id ? (fallbackLocaleId ?? localeId) : localeId;
+export function toProviderLocale(localeId: string, defaultLocaleId: string | undefined): string {
+  return localeId === CONTENT_DEFAULT_LOCALE.id ? (defaultLocaleId ?? localeId) : localeId;
 }

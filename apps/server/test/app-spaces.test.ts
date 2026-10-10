@@ -6,7 +6,7 @@ import { contents, spaces, translations } from '../src/infra/database/schema.js'
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: spaces, locales, settings', () => {
   let t: TestApp;
@@ -39,7 +39,7 @@ describe('app API: spaces, locales, settings', () => {
       expect(response.json()).toMatchObject({
         name: 'Marketing',
         locales: [{ id: 'en', name: 'English' }],
-        localeFallback: { id: 'en', name: 'English' },
+        defaultLocale: { id: 'en', name: 'English' },
         createdAt: expect.stringMatching(/^\d{4}-/),
       });
       expect(response.json()).not.toHaveProperty('contentVersion');
@@ -49,8 +49,10 @@ describe('app API: spaces, locales, settings', () => {
     });
 
     it('lists spaces by name for any role, but not for users without one', async () => {
-      await admin.post('/api/app/spaces', { name: 'Alpha' });
-      expect((await reader.get('/api/app/spaces')).json().map((s: { name: string }) => s.name)).toEqual(['Alpha', 'Marketing']);
+      await admin.post('/api/app/spaces', { name: 'alpha' });
+      await admin.post('/api/app/spaces', { name: 'Beta' });
+      // Case-insensitive, whatever the database collation.
+      expect((await reader.get('/api/app/spaces')).json().map((s: { name: string }) => s.name)).toEqual(['alpha', 'Beta', 'Marketing']);
       expect((await noRole.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().name).toBe('Marketing');
       expect((await reader.get('/api/app/spaces/missing')).statusCode).toBe(404);
@@ -59,12 +61,12 @@ describe('app API: spaces, locales, settings', () => {
     });
 
     it('takes only UUIDs, not the Firestore id of an imported space, which it shows as legacyId', async () => {
-      await t.db.insert(spaces).values({
+      await insertSpace(t.db, {
         id: S2,
         legacyId: 'Firestore20charsId01',
         name: 'Imported',
         locales: [{ id: 'en', name: 'English' }],
-        localeFallback: { id: 'en', name: 'English' },
+        defaultLocale: { id: 'en', name: 'English' },
       });
       expect((await reader.get('/api/app/spaces/Firestore20charsId01')).statusCode).toBe(404);
       expect((await admin.get('/api/app/spaces/Firestore20charsId01/tokens')).statusCode).toBe(404);
@@ -75,11 +77,11 @@ describe('app API: spaces, locales, settings', () => {
 
     it('refuses to delete a space while it is being imported, allows it once the import failed', async () => {
       const id = newUuid();
-      await t.db.insert(spaces).values({
+      await insertSpace(t.db, {
         id,
         name: 'Importing',
         locales: [{ id: 'en', name: 'English' }],
-        localeFallback: { id: 'en', name: 'English' },
+        defaultLocale: { id: 'en', name: 'English' },
         importStatus: 'IMPORTING',
       });
       expect((await admin.get(`/api/app/spaces/${id}`)).json()).toMatchObject({ importStatus: 'IMPORTING' });
@@ -108,19 +110,48 @@ describe('app API: spaces, locales, settings', () => {
       expect((await reader.patch(`/api/app/spaces/${spaceId}`, { name: 'x' })).statusCode).toBe(403);
     });
 
-    it('manages locales: add (idempotent), mark fallback, refuse removing the fallback, remove', async () => {
+    it('manages locales: add by id (idempotent, known locales only), set the default, refuse removing it, remove', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      await manager.post(`${base}/locales`, { id: 'de', name: 'German' });
-      const twice = await manager.post(`${base}/locales`, { id: 'de', name: 'German' });
+      expect((await manager.post(`${base}/locales`, { id: 'xx-unknown' })).statusCode).toBe(400);
+      await manager.post(`${base}/locales`, { id: 'de' });
+      const twice = await manager.post(`${base}/locales`, { id: 'de' });
       expect(twice.json().locales).toEqual([
         { id: 'en', name: 'English' },
         { id: 'de', name: 'German' },
       ]);
-      expect((await manager.put(`${base}/locale-fallback`, { id: 'de' })).json().localeFallback).toEqual({ id: 'de', name: 'German' });
-      expect((await manager.put(`${base}/locale-fallback`, { id: 'fr' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/default-locale`, { id: 'de' })).json().defaultLocale).toEqual({ id: 'de', name: 'German' });
+      expect((await manager.put(`${base}/default-locale`, { id: 'fr' })).statusCode).toBe(400);
       expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(400);
-      await manager.put(`${base}/locale-fallback`, { id: 'en' });
+      await manager.put(`${base}/default-locale`, { id: 'en' });
       expect((await manager.delete(`${base}/locales/de`)).json().locales).toEqual([{ id: 'en', name: 'English' }]);
+      expect((await reader.post(`${base}/locales`, { id: 'de' })).statusCode).toBe(403);
+    });
+
+    it('reorders locales: every locale of the space, each once', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      await manager.post(`${base}/locales`, { id: 'de' });
+      await manager.post(`${base}/locales`, { id: 'fr' });
+      const reordered = await manager.put(`${base}/locales/order`, { ids: ['fr', 'en', 'de'] });
+      expect(reordered.statusCode).toBe(200);
+      expect(reordered.json().locales.map((it: { id: string }) => it.id)).toEqual(['fr', 'en', 'de']);
+      expect((await reader.get(base)).json().locales.map((it: { id: string }) => it.id)).toEqual(['fr', 'en', 'de']);
+      // A locale added later goes last.
+      await manager.post(`${base}/locales`, { id: 'it' });
+      expect((await reader.get(base)).json().locales.map((it: { id: string }) => it.id)).toEqual(['fr', 'en', 'de', 'it']);
+      for (const ids of [['fr', 'en', 'de'], ['fr', 'en', 'de', 'it', 'it'], ['fr', 'en', 'de', 'es']]) {
+        expect((await manager.put(`${base}/locales/order`, { ids })).statusCode, ids.join()).toBe(400);
+      }
+      expect((await reader.put(`${base}/locales/order`, { ids: ['en', 'fr', 'de', 'it'] })).statusCode).toBe(403);
+      for (const id of ['fr', 'de', 'it']) await manager.delete(`${base}/locales/${id}`);
+    });
+
+    it('lists every locale a space can add, read-only', async () => {
+      const response = await reader.get('/api/app/locales');
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual(expect.arrayContaining([{ id: 'en', name: 'English' }, { id: 'de-AT', name: 'German (Austria)' }]));
+      expect(response.json().length).toBeGreaterThan(400);
+      expect((await noRole.get('/api/app/locales')).statusCode).toBe(403);
+      expect((await admin.post('/api/app/locales', { id: 'xx', name: 'X' })).statusCode).toBe(404);
     });
 
     it('calculates the overview for any role', async () => {

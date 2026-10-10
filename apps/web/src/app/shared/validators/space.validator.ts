@@ -48,7 +48,7 @@ export const SAMPLE_PREVIEW_CONTEXT: PreviewUrlContext = {
   slug: 'hello',
   parentSlug: 'blog',
   localeId: 'de',
-  fallbackLocaleId: 'en',
+  defaultLocaleId: 'en',
 };
 
 export class SpaceValidator {

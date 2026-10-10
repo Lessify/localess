@@ -90,15 +90,15 @@ export class TranslationsPublicController {
       return;
     }
 
-    const actualLocale = space.locales.some(it => it.id === locale) ? locale : space.localeFallback.id;
+    const actualLocale = space.locales.some(it => it.id === locale) ? locale : space.defaultLocaleId;
     let values: Record<string, string> | undefined;
     if (isDraft(version)) {
-      values = buildTranslationMap(await this.delivery.findTranslations(spaceId), actualLocale, space.localeFallback.id).values;
+      values = buildTranslationMap(await this.delivery.findTranslations(spaceId), actualLocale, space.defaultLocaleId).values;
     } else {
       values =
         (await this.delivery.findPublishedTranslations(spaceId, actualLocale)) ??
-        (actualLocale !== space.localeFallback.id
-          ? await this.delivery.findPublishedTranslations(spaceId, space.localeFallback.id)
+        (actualLocale !== space.defaultLocaleId
+          ? await this.delivery.findPublishedTranslations(spaceId, space.defaultLocaleId)
           : undefined);
     }
     if (!values) {

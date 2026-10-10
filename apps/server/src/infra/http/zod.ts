@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-export const zLocale = z.object({ id: z.string().min(1).max(64), name: z.string().min(1).max(200) });
 export const zLabels = z.array(z.string().max(200)).max(100);
 
 /**

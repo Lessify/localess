@@ -23,7 +23,7 @@ describe('SpaceStore', () => {
       id,
       name: `Space ${id}`,
       locales: [],
-      localeFallback: { id: 'en', name: 'English' } as Space['localeFallback'],
+      defaultLocale: { id: 'en', name: 'English' } as Space['defaultLocale'],
       environments,
       createdAt: 0 as unknown as Space['createdAt'],
       updatedAt: 0 as unknown as Space['updatedAt'],

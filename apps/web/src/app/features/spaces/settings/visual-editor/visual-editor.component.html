@@ -28,8 +28,9 @@
     >, <code>{{ '{slug}' }}</code
     >, <code>{{ '{parentSlug}' }}</code
     >, <code>{{ '{documentId}' }}</code
-    >, <code>{{ '{locale}' }}</code> (the fallback locale for the default locale) and <code>{{ '{locale/}' }}</code> (<code>de/</code>, or
-    nothing for the default locale). For example <code>{{ 'https://site.com/{locale/}blog/{slug}/' }}</code
+    >, <code>{{ '{locale}' }}</code> (the space's default locale on the `default` sentinel) and
+    <code>{{ '{locale/}' }}</code> (<code>de/</code>, or nothing for the default locale). For example
+    <code>{{ 'https://site.com/{locale/}blog/{slug}/' }}</code
     >.
   </p>
   <form [formGroup]="form">

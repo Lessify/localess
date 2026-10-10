@@ -89,7 +89,7 @@ export class TranslationDetailComponent {
   readonly translation = input.required<Translation>();
   readonly spaceId = input.required<string>();
   readonly availableLocales = input.required<Locale[]>();
-  readonly localeFallback = input<Locale | undefined>(undefined);
+  readonly defaultLocale = input<Locale | undefined>(undefined);
   /** Keys already taken, for the rename dialog. */
   readonly reservedKeys = input<string[]>([]);
   readonly selectedLabels = input<string[]>([]);
@@ -98,8 +98,8 @@ export class TranslationDetailComponent {
   // Outputs
   readonly save = output<{ translation: Translation; locale: Locale; value: string }>();
 
-  selectedSourceLocale = linkedSignal(() => this.localeFallback() ?? DEFAULT_LOCALE);
-  selectedTargetLocale = linkedSignal(() => this.localeFallback() ?? DEFAULT_LOCALE);
+  selectedSourceLocale = linkedSignal(() => this.defaultLocale() ?? DEFAULT_LOCALE);
+  selectedTargetLocale = linkedSignal(() => this.defaultLocale() ?? DEFAULT_LOCALE);
   selectedTranslationLocaleValue = linkedSignal(() => {
     return this.translation()?.locales[this.selectedTargetLocale().id] || '';
   });

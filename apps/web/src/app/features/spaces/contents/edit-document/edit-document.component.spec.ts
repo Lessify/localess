@@ -30,7 +30,7 @@ const rootSchema: Schema = {
 const childSchema: Schema = { id: 'child1', name: 'child1', type: SchemaType.NODE, fields: [] } as unknown as Schema;
 
 function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [en, de], localeFallback: en, environments: [], ...overrides } as Space;
+  return { id: 'space-1', name: 'Space 1', locales: [en, de], defaultLocale: en, environments: [], ...overrides } as Space;
 }
 
 function documentOf(data?: object | string): ContentDocument {
@@ -654,7 +654,7 @@ describe('EditDocumentComponent', () => {
 
       component.openTranslateLocaleDialog();
 
-      expect(open.mock.calls[0][1].context).toMatchObject({ selectedLocale: 'de', localeFallback: en });
+      expect(open.mock.calls[0][1].context).toMatchObject({ selectedLocale: 'de', defaultLocale: en });
     });
 
     it('sends the collected fields as one batch and applies the results to the document', () => {
@@ -668,7 +668,7 @@ describe('EditDocumentComponent', () => {
 
       expect(translateBatch).toHaveBeenCalledTimes(1);
       expect(translateBatch.mock.calls[0][0]).toMatchObject({
-        // `default` is the space's fallback locale, so the provider is told the real language
+        // `default` is the space's default locale, so the provider is told the real language
         // rather than being left to auto-detect it.
         sourceLocale: 'en',
         targetLocale: 'de',
@@ -678,9 +678,9 @@ describe('EditDocumentComponent', () => {
       expect(success).toHaveBeenCalledWith('Translated 1 fields. Review them and press Save.');
     });
 
-    // Translating *into* the default locale asks the provider for the fallback language, and the
+    // Translating *into* the default locale asks the provider for the language of the default locale, and the
     // result belongs under the bare field name. Sending `default` would be rejected as a language.
-    it('resolves the default locale to the fallback language in both directions', () => {
+    it('resolves the default locale to the language of the default locale in both directions', () => {
       const { component, open, translateBatch } = setup(documentOf({ _id: 'd1', _schema: 'root1', title_i18n_de: 'Hallo' }), {
         schemas: [translatableSchema],
       });

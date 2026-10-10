@@ -501,8 +501,8 @@ export class EditDocumentSchemaComponent {
       this.translateService
         .translate({
           content: content,
-          sourceLocale: toProviderLocale(sourceLocale, this.space()?.localeFallback.id),
-          targetLocale: toProviderLocale(targetLocale, this.space()?.localeFallback.id),
+          sourceLocale: toProviderLocale(sourceLocale, this.space()?.defaultLocale.id),
+          targetLocale: toProviderLocale(targetLocale, this.space()?.defaultLocale.id),
         })
         .subscribe({
           next: result => {

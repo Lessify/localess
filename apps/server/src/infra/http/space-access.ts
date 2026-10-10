@@ -1,16 +1,34 @@
 import { NotFoundException } from '@nestjs/common';
-import { type AnyColumn, eq, type SQL, sql } from 'drizzle-orm';
+import { type AnyColumn, eq, getTableColumns, type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.module.js';
 import { isUuid } from '../database/id.js';
-import { spaces } from '../database/schema.js';
+import { type Locale, locales, spaceLocales, spaces } from '../database/schema.js';
 
 type Executor = Pick<Database, 'select' | 'update'>;
 
-export type SpaceRow = typeof spaces.$inferSelect;
+/** A space with its locales (by `position`) and its default locale, read from `space_locales` and `locales`. */
+export type SpaceRow = typeof spaces.$inferSelect & { locales: Locale[]; defaultLocale: Locale };
+
+// Columns of the outer `spaces` are written qualified: drizzle renders `${spaces.id}` unqualified in a one-table select,
+// which inside these subqueries would resolve to `space_locales` / `locales`.
+const spaceColumns = {
+  ...getTableColumns(spaces),
+  locales: sql<Locale[]>`coalesce((
+    select jsonb_agg(jsonb_build_object('id', l.id, 'name', l.name) order by sl.position, sl.created_at)
+    from ${spaceLocales} sl join ${locales} l on l.id = sl.locale_id
+    where sl.space_id = "spaces"."id"
+  ), '[]'::jsonb)`,
+  defaultLocale: sql<Locale>`(select jsonb_build_object('id', l.id, 'name', l.name) from ${locales} l where l.id = "spaces"."default_locale_id")`,
+};
+
+/** `select … from spaces` with the locales joined in; add `where` / `orderBy` as needed. */
+export function selectSpaces(db: Pick<Database, 'select'>) {
+  return db.select(spaceColumns).from(spaces);
+}
 
 /** `spaceId` is a UUID by now: a legacy id in a route param is resolved before the controller (see space-id.ts). */
 export async function requireSpace(db: Executor, spaceId: string): Promise<SpaceRow> {
-  const [space] = isUuid(spaceId) ? await db.select().from(spaces).where(eq(spaces.id, spaceId)) : [];
+  const [space] = isUuid(spaceId) ? await selectSpaces(db).where(eq(spaces.id, spaceId)) : [];
   if (!space) throw new NotFoundException('Space not found');
   return space;
 }

@@ -7,7 +7,7 @@ import { FirebaseClient } from '../src/modules/firebase-import/firebase-client.j
 import { FirebaseImportRunner } from '../src/modules/firebase-import/firebase-import.runner.js';
 import { FirebaseImportService } from '../src/modules/firebase-import/firebase-import.service.js';
 import { fakeFirebase } from './fake-firebase.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 const base = '/api/app/admin/firebase-import';
 
@@ -112,7 +112,7 @@ describe('app API: import from Firebase', () => {
   it('marks a run interrupted by a restart as failed', async () => {
     const id = newUuid();
     const spaceId = newUuid();
-    await t.db.insert(spaces).values({ id: spaceId, name: 'Half', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' }, importStatus: 'IMPORTING' });
+    await insertSpace(t.db, { id: spaceId, name: 'Half', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' }, importStatus: 'IMPORTING' });
     await t.db.insert(firebaseImports).values({
       id, origin: fake.url, sourceSpaceId: 'fbB', sourceSpaceName: 'Site B', spaceId, status: 'RUNNING',
       // Its instance stopped long ago.

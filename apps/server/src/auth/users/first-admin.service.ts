@@ -4,7 +4,7 @@ import { hashPassword, PASSWORD_MIN_LENGTH } from '../password.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
-import { spaces, userCredentials, users } from '../../infra/database/schema.js';
+import { spaceLocales, spaces, userCredentials, users } from '../../infra/database/schema.js';
 import { UsersService } from './users.service.js';
 
 export const DEFAULT_ADMIN_NAME = 'Admin';
@@ -60,11 +60,10 @@ export class FirstAdminService implements OnApplicationBootstrap {
         })
         .returning({ id: users.id });
       await tx.insert(userCredentials).values({ userId: user.id, passwordHash, hashAlgo: 'argon2id' });
-      const [space] = await tx
-        .insert(spaces)
-        .values({ id: newUuid(), name: 'Hello World', locales: [DEFAULT_LOCALE], localeFallback: DEFAULT_LOCALE })
-        .returning({ id: spaces.id });
-      return { userId: user.id, spaceId: space.id };
+      const spaceId = newUuid();
+      await tx.insert(spaces).values({ id: spaceId, name: 'Hello World', defaultLocaleId: DEFAULT_LOCALE.id });
+      await tx.insert(spaceLocales).values({ spaceId, localeId: DEFAULT_LOCALE.id, position: 0 });
+      return { userId: user.id, spaceId };
     });
   }
 }

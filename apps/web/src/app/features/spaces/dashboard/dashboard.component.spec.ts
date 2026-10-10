@@ -14,7 +14,7 @@ function space(overview?: Space['overview']): Space {
     id: 'space-1',
     name: 'Space 1',
     locales: [],
-    localeFallback: { id: 'en', name: 'English' } as Space['localeFallback'],
+    defaultLocale: { id: 'en', name: 'English' } as Space['defaultLocale'],
     overview,
     createdAt: 0 as unknown as Space['createdAt'],
     updatedAt: 0 as unknown as Space['updatedAt'],

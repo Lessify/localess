@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, spaces } from '../src/infra/database/schema.js';
-import { api, createTestApp, TestApp, userWithAccess, XHR } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 
 /** A multipart body with the fields first, then the file — the order the endpoint expects. */
@@ -35,9 +35,7 @@ describe('app API: assets', () => {
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_UPLOAD_MAX_MB: '1' });
-    await t.db
-      .insert(spaces)
-      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     cookie = await userWithAccess(t, 'editor@example.com', {
       role: 'custom',
       permissions: ['ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE'],

@@ -20,20 +20,29 @@ describe('LocaleService', () => {
     http.verify();
   });
 
-  it('markAsFallback() puts the locale id as the space fallback', async () => {
+  it('setDefault() puts the locale id as the space default locale', async () => {
     const service = setup();
-    const done = firstValueFrom(service.markAsFallback('space-1', entity));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/locale-fallback' });
+    const done = firstValueFrom(service.setDefault('space-1', entity));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/default-locale' });
     expect(request.request.body).toEqual({ id: 'de' });
     request.flush({});
     await done;
   });
 
-  it('create() posts the locale to the space', async () => {
+  it('create() posts only the locale id to the space', async () => {
     const service = setup();
     const done = firstValueFrom(service.create('space-1', entity));
     const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/space-1/locales' });
-    expect(request.request.body).toEqual({ id: 'de', name: 'German' });
+    expect(request.request.body).toEqual({ id: 'de' });
+    request.flush({});
+    await done;
+  });
+
+  it('reorder() puts the locale ids in their new order', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.reorder('space-1', ['de', 'en']));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/locales/order' });
+    expect(request.request.body).toEqual({ ids: ['de', 'en'] });
     request.flush({});
     await done;
   });
@@ -45,11 +54,11 @@ describe('LocaleService', () => {
     await done;
   });
 
-  it('findAllLocales() returns the static locale list without a request', async () => {
+  it('findAllLocales() reads the locale list from the server', async () => {
     const service = setup();
-    const result = await firstValueFrom(service.findAllLocales());
-    expect(result.length).toBeGreaterThan(0);
-    expect(result).toContainEqual({ id: 'en', name: 'English' });
+    const result = firstValueFrom(service.findAllLocales());
+    http.expectOne({ method: 'GET', url: '/api/app/locales' }).flush([{ id: 'en', name: 'English' }]);
+    expect(await result).toEqual([{ id: 'en', name: 'English' }]);
   });
 
   it('isLocaleTranslatableFrom() reflects the source-support set', () => {

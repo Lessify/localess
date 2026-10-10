@@ -31,7 +31,7 @@
                       placement="addon"
                       [selectedLocale]="selectedLocale()"
                       [availableLocales]="availableLocales()"
-                      [fallbackLocale]="space()?.localeFallback"
+                      [defaultLocale]="space()?.defaultLocale"
                       (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
                   </div>
                 }
@@ -75,7 +75,7 @@
                       placement="addon"
                       [selectedLocale]="selectedLocale()"
                       [availableLocales]="availableLocales()"
-                      [fallbackLocale]="space()?.localeFallback"
+                      [defaultLocale]="space()?.defaultLocale"
                       (translateFrom)="translate(field.name, $event, selectedLocaleId())" />
                   </div>
                 }
@@ -99,7 +99,7 @@
                 [component]="field"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()"
-                [fallbackLocale]="space()?.localeFallback" />
+                [defaultLocale]="space()?.defaultLocale" />
             }
           }
           <!--MARKDOWN-->
@@ -112,7 +112,7 @@
                 [default]="isDefaultLocale() ? undefined : data()[field.name]"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()"
-                [fallbackLocale]="space()?.localeFallback" />
+                [defaultLocale]="space()?.defaultLocale" />
             }
           }
           <!--NUMBER-->

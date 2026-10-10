@@ -11,8 +11,8 @@ export interface PreviewUrlContext {
   parentSlug: string;
   /** The selected locale id; `default` for the default locale. */
   localeId: string;
-  /** The space's fallback locale id, used for `{locale}` on the default locale. */
-  fallbackLocaleId: string;
+  /** The space's default locale id, used for `{locale}` on the default locale. */
+  defaultLocaleId: string;
 }
 
 export const PREVIEW_URL_PLACEHOLDERS = ['fullSlug', 'slug', 'parentSlug', 'locale', 'locale/', 'documentId'] as const;
@@ -33,7 +33,7 @@ export function unknownPreviewUrlPlaceholders(url: string): string[] {
  * A URL without placeholders keeps the original convention: `url + locale/ + fullSlug`, leaving
  * the locale out for the default locale. Otherwise each placeholder is replaced, URL-encoded per
  * path segment: `{fullSlug}`, `{slug}`, `{parentSlug}`, `{documentId}`, `{locale}` (the space's
- * fallback locale for the default locale) and `{locale/}` (`de/`, or nothing for the default
+ * space's default locale on the `default` sentinel) and `{locale/}` (`de/`, or nothing for the default
  * locale). Unknown placeholders are left as they are; the settings form rejects them.
  *
  * The result is not checked here: pass it through `isSafePreviewUrl` before loading it.
@@ -49,7 +49,7 @@ export function resolvePreviewUrl(url: string, context: PreviewUrlContext): stri
     slug: encodePath(context.slug),
     parentSlug: encodePath(context.parentSlug),
     documentId: encodeURIComponent(context.documentId),
-    locale: encodeURIComponent(isDefaultLocale ? context.fallbackLocaleId : context.localeId),
+    locale: encodeURIComponent(isDefaultLocale ? context.defaultLocaleId : context.localeId),
     'locale/': isDefaultLocale ? '' : `${encodeURIComponent(context.localeId)}/`,
   };
   return url.replace(PLACEHOLDER, (match, name: string) => (name in values ? values[name as keyof typeof values] : match));

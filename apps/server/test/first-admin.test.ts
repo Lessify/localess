@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { FirstAdminService } from '../src/auth/users/first-admin.service.js';
 import { spaces, users } from '../src/infra/database/schema.js';
+import { selectSpaces } from '../src/infra/http/space-access.js';
 import { createTestApp, login, TestApp } from './test-app.js';
 
 describe('first admin', () => {
@@ -16,12 +17,12 @@ describe('first admin', () => {
     const rows = await t.db.select().from(users);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ email: 'root@example.com', role: 'admin', emailVerified: true, displayName: 'Admin' });
-    const spaceRows = await t.db.select().from(spaces);
+    const spaceRows = await selectSpaces(t.db);
     expect(spaceRows).toHaveLength(1);
     expect(spaceRows[0]).toMatchObject({
       name: 'Hello World',
       locales: [{ id: 'en', name: 'English' }],
-      localeFallback: { id: 'en', name: 'English' },
+      defaultLocale: { id: 'en', name: 'English' },
     });
     await expect(login(t, 'root@example.com', 'root-pass')).resolves.toContain('localess_session=');
   });

@@ -11,10 +11,12 @@ const EXPECTED_TABLES = [
   'content_published',
   'contents',
   'firebase_imports',
+  'locales',
   'password_reset_tokens',
   'schemas',
   'sessions',
   'settings',
+  'space_locales',
   'spaces',
   'task_logs',
   'tasks',
@@ -70,22 +72,36 @@ describe('migrateDatabase', () => {
     }
     expect(await tables()).toEqual(EXPECTED_TABLES);
     const applied = await pool.query('select count(*)::int as n from drizzle.__drizzle_migrations');
-    expect(applied.rows[0].n).toBe(1);
+    expect(applied.rows[0].n).toBe(2);
+  });
+
+  it('seeds the locales', async () => {
+    await migrateDatabase(pool);
+    const { rows } = await pool.query(`select id, name from locales where id in ('en', 'de') order by id`);
+    expect(rows).toEqual([
+      { id: 'de', name: 'German' },
+      { id: 'en', name: 'English' },
+    ]);
+  });
+
+  it('refuses locales that are not in the locales table', async () => {
+    await migrateDatabase(pool);
+    await expect(pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'xx-unknown')`, [A])).rejects.toThrow(/foreign key/);
+    await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [A]);
+    await expect(pool.query(`insert into space_locales (space_id, locale_id, position) values ($1, 'xx-unknown', 0)`, [A])).rejects.toThrow(/foreign key/);
   });
 
   it('rejects a space id that is not a UUID', async () => {
     await migrateDatabase(pool);
     await expect(
-      pool.query(`insert into spaces (id, name, locales, locale_fallback) values ('s1', 'S', '[]', '{"id":"en","name":"English"}')`),
+      pool.query(`insert into spaces (id, name, default_locale_id) values ('s1', 'S', 'en')`),
     ).rejects.toThrow(/invalid input syntax for type uuid/);
   });
 
   it('scopes content and asset ids to their space', async () => {
     await migrateDatabase(pool);
     for (const id of [A, B]) {
-      await pool.query(`insert into spaces (id, name, locales, locale_fallback) values ($1, 'S', '[]', '{"id":"en","name":"English"}')`, [
-        id,
-      ]);
+      await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [id]);
       // Same content and asset id in two spaces, as an export of one imported into the other produces.
       await pool.query(
         `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
@@ -101,7 +117,8 @@ describe('migrateDatabase', () => {
 
   it('cascades space deletion to its children', async () => {
     await migrateDatabase(pool);
-    await pool.query(`insert into spaces (id, name, locales, locale_fallback) values ($1, 'S', '[]', '{"id":"en","name":"English"}')`, [A]);
+    await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [A]);
+    await pool.query(`insert into space_locales (space_id, locale_id, position) values ($1, 'en', 0)`, [A]);
     await pool.query(
       `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
       [A],
@@ -112,7 +129,7 @@ describe('migrateDatabase', () => {
 
     await pool.query(`delete from spaces where id = $1`, [A]);
 
-    for (const table of ['contents', 'content_published', 'tasks', 'task_logs']) {
+    for (const table of ['space_locales', 'contents', 'content_published', 'tasks', 'task_logs']) {
       const { rows } = await pool.query(`select count(*)::int as n from ${table}`);
       expect(rows[0].n, table).toBe(0);
     }

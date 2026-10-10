@@ -9,87 +9,65 @@
  * available codes are baked into a constant here and the drift is caught by
  * `tools/scripts/generate-locale-flags.test.mjs` instead.
  *
- * Only codes reachable from `AVAILABLE_LOCALES` are emitted: the package ships 633 flags, the
- * locale list can only ask for a fraction of them.
+ * Every language flag and every ISO 3166 region flag of the package is emitted, independent of the
+ * locale list (it lives in the database): any locale id resolves, whatever locales are added later.
  *
  * Run: node tools/scripts/generate-locale-flags.mjs
  */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import prettier from 'prettier';
 
 const FLAGS_DIR = join('apps', 'web', 'node_modules', 'circle-flags', 'flags');
-const LOCALE_LIST = join('packages', 'shared', 'src', 'locales.ts');
 const OUTPUT = join('apps', 'web', 'src', 'app', 'shared', 'components', 'locale-icon', 'locale-flags.ts');
-
-/** The locale ids the app offers, read as text so the generator needs no TypeScript toolchain. */
-export function readLocaleIds(source) {
-  const list = source.slice(source.indexOf('const AVAILABLE_LOCALES'));
-  return [...list.matchAll(/\{ id: '([^']+)'/g)].map(match => match[1]);
-}
-
-/** Splits a locale id the same way the runtime does - see `localeIcon()`. */
-export function subtagsOf(localeId) {
-  try {
-    const { language, region } = new Intl.Locale(localeId);
-    return { language, region: region?.toLowerCase() };
-  } catch {
-    return { language: localeId.toLowerCase(), region: undefined };
-  }
-}
 
 const hashOf = path => createHash('md5').update(readFileSync(path)).digest('hex');
 
+/** The codes of the `*.svg` files in `dir` that match `pattern`, skipping dangling symlinks. */
+function codesIn(dir, pattern) {
+  return readdirSync(dir)
+    .filter(file => file.endsWith('.svg'))
+    .map(file => file.slice(0, -'.svg'.length))
+    .filter(code => pattern.test(code) && existsSync(join(dir, `${code}.svg`)))
+    .sort();
+}
+
 /**
- * Collects the language flags and country flags the locale list can ask for, plus the locales whose
- * two halves would be the *same picture*.
+ * Collects every language flag and every ISO region flag, plus the language/region pairs whose two
+ * flags are the *same picture*.
  *
  * A "language flag" in circle-flags is usually just a national flag under another name: `de` is
  * byte-identical to Germany's, `en` to the United Kingdom's. `de-DE` would therefore render two
- * identical halves, which reads as a rendering bug, so those locales collapse to a single flag.
+ * identical halves, which reads as a rendering bug, so those pairs collapse to a single flag.
  *
  * The two files are compared by content, not by name. The package ships aliases of the same
  * artwork - `gb.svg` and `uk.svg` are identical bytes - so asking "which country does this language
  * flag belong to" has more than one right answer, and picking by name gets `en-GB` wrong.
+ *
+ * A dangling entry counts as absent: the package keeps some flags as symlinks that npm does not
+ * materialise on install, and those are exactly the ones that would 404 in the browser.
  */
-export function collectFlags(localeIds, flagsDir = FLAGS_DIR) {
-  const languages = new Set();
-  const countries = new Set();
-  const identicalLocales = [];
-
-  for (const localeId of localeIds) {
-    const { language, region } = subtagsOf(localeId);
-    const languageFlag = join(flagsDir, 'language', `${language}.svg`);
-    const countryFlag = region === undefined ? undefined : join(flagsDir, `${region}.svg`);
-    // A dangling entry counts as absent: the package keeps some flags as symlinks that npm does not
-    // materialise on install, and those are exactly the ones that would 404 in the browser.
-    const hasLanguage = existsSync(languageFlag);
-    const hasCountry = countryFlag !== undefined && existsSync(countryFlag);
-
-    if (hasLanguage) {
-      languages.add(language);
-    }
-    if (hasCountry) {
-      countries.add(region);
-    }
-    if (hasLanguage && hasCountry && hashOf(languageFlag) === hashOf(countryFlag)) {
-      identicalLocales.push(localeId);
-    }
+export function collectFlags(flagsDir = FLAGS_DIR) {
+  const languages = codesIn(join(flagsDir, 'language'), /^[a-z]{2,3}$/);
+  const countries = codesIn(flagsDir, /^[a-z]{2}$/);
+  const countriesByHash = new Map();
+  for (const region of countries) {
+    const hash = hashOf(join(flagsDir, `${region}.svg`));
+    countriesByHash.set(hash, [...(countriesByHash.get(hash) ?? []), region]);
   }
-  return {
-    languages: [...languages].sort(),
-    countries: [...countries].sort(),
-    identicalLocales: identicalLocales.sort(),
-  };
+  const identicalPairs = languages
+    .flatMap(language => (countriesByHash.get(hashOf(join(flagsDir, 'language', `${language}.svg`))) ?? []).map(region => `${language}-${region}`))
+    .sort();
+  return { languages, countries, identicalPairs };
 }
 
 /** Flags the component names itself instead of deriving them from a locale id. */
 export const FIXED_FLAGS = ['un.svg'];
 
-export function render({ languages, countries, identicalLocales }, version) {
+export function render({ languages, countries, identicalPairs }, version) {
   const set = codes => 'new Set([' + codes.map(code => "'" + code + "'").join(', ') + '])';
   return [
     '// GENERATED by tools/scripts/generate-locale-flags.mjs from circle-flags ' + version + '. Do not edit by hand.',
@@ -97,27 +75,26 @@ export function render({ languages, countries, identicalLocales }, version) {
     '// if this file and the installed flags disagree.',
     '',
     '/**',
-    ' * Language subtags that have a flag in `flags/language/`, limited to the ones',
-    ' * `AVAILABLE_LOCALES` can actually ask for.',
+    ' * Language subtags that have a flag in `flags/language/`.',
     ' */',
     'export const LANGUAGE_FLAGS: ReadonlySet<string> = ' + set(languages) + ';',
     '',
-    '/** Region subtags that have a country flag, lowercased to match the file names. */',
+    '/** ISO 3166 region subtags that have a country flag, lowercased to match the file names. */',
     'export const COUNTRY_FLAGS: ReadonlySet<string> = ' + set(countries) + ';',
     '',
     '/**',
-    ' * Locales whose language flag and country flag are the same picture, so they render one flag',
+    ' * `language-region` pairs (region lowercased) whose language flag and country flag are the same picture, so they render one flag',
     " * instead of two identical halves. circle-flags' language flags are mostly national flags under",
     ' * another name, which is why there are so many of these.',
     ' */',
-    'export const IDENTICAL_FLAG_LOCALES: ReadonlySet<string> = ' + set(identicalLocales) + ';',
+    'export const IDENTICAL_FLAG_PAIRS: ReadonlySet<string> = ' + set(identicalPairs) + ';',
     '',
   ].join('\n');
 }
 
 export async function generate() {
   const version = JSON.parse(readFileSync(join('apps', 'web', 'node_modules', 'circle-flags', 'package.json'), 'utf8')).version;
-  const flags = collectFlags(readLocaleIds(readFileSync(LOCALE_LIST, 'utf8')));
+  const flags = collectFlags();
   // Formatted with the project config so the next 'pnpm lint:fix' leaves it alone - an
   // unformatted generator output would show up as a spurious diff after every run.
   const source = render(flags, version);
@@ -128,11 +105,11 @@ export async function generate() {
 
 // Only writes when run as a command - the test imports the functions above.
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
-  const { languages, countries, identicalLocales, version } = await generate();
+  const { languages, countries, identicalPairs, version } = await generate();
   console.log(
     OUTPUT +
       ': ' +
       `${languages.length} language flags, ${countries.length} country flags, ` +
-      `${identicalLocales.length} collapsed locales (circle-flags ${version})`,
+      `${identicalPairs.length} collapsed pairs (circle-flags ${version})`,
   );
 }

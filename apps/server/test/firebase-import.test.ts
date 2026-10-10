@@ -6,6 +6,7 @@ import { newUuid } from '../src/infra/database/id.js';
 import { assets, contents, firebaseImports, schemas, spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { FirebaseClient } from '../src/modules/firebase-import/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/firebase-import.runner.js';
+import { selectSpaces } from '../src/infra/http/space-access.js';
 import { fakeFirebase, FakeFirebaseSpace } from './fake-firebase.js';
 import { UUID_V7 } from './ids.js';
 import { createTestApp, TestApp } from './test-app.js';
@@ -151,6 +152,43 @@ describe('Firebase import run', () => {
     expect(run.status).toBe('FINISHED');
     expect(run.stages.every(it => it.status === 'DONE')).toBe(true);
     expect(run.stages.find(it => it.stage === 'contents')!.count).toBe(0);
+    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    expect(space).toMatchObject({ locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
+  });
+
+  it('keeps known locales in their order and skips the others, with a warning', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbOdd',
+        name: 'Odd',
+        doc: {
+          locales: [{ id: 'xx-old', name: 'Old' }, { id: 'fr', name: 'Français' }, { id: 'de', name: 'German' }],
+          localeFallback: { id: 'xx-old', name: 'Old' },
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: odd.url, sourceSpaceId: 'fbOdd', sourceSpaceName: 'Odd', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbOdd');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const stage = run.stages.find(it => it.stage === 'locales')!;
+      expect(stage.count).toBe(2);
+      expect(stage.warnings?.join('\n')).toMatch(/xx-old: not a known locale, skipped/);
+      expect(stage.warnings?.join('\n')).toMatch(/default locale xx-old skipped; fr is the default/);
+      const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+      // Names come from the locales table, not from the Firebase space.
+      expect(space.locales).toEqual([{ id: 'fr', name: 'French' }, { id: 'de', name: 'German' }]);
+      expect(space.defaultLocale).toEqual({ id: 'fr', name: 'French' });
+    } finally {
+      await odd.close();
+    }
   });
 
   it('fails at tokens when a token value already belongs to another space', async () => {

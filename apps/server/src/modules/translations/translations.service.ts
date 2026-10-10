@@ -160,7 +160,7 @@ export class TranslationsService {
   }
 
   /**
-   * Snapshot of every locale, filled from the fallback locale, plus per-locale progress (was the
+   * Snapshot of every locale, filled from the default locale, plus per-locale progress (was the
    * `translation-publish` callable). Publishing an empty space is allowed and serves `{}`.
    */
   async publish(spaceId: string): Promise<void> {
@@ -174,7 +174,7 @@ export class TranslationsService {
       const progress: Record<string, number> = {};
       const publishedAt = new Date();
       for (const locale of space.locales) {
-        const { values, translated } = buildTranslationMap(rows, locale.id, space.localeFallback.id);
+        const { values, translated } = buildTranslationMap(rows, locale.id, space.defaultLocaleId);
         progress[locale.id] = translated;
         await tx
           .insert(translationPublished)

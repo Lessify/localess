@@ -134,7 +134,7 @@ every 50 files, so polling shows movement.
 | # | Stage | What it does |
 |---|---|---|
 | 1 | `space` | Reads the space document. Creates the space: new UUIDv7, `legacy_id` = Firebase id, `name`, `import_status = 'IMPORTING'`. Sets the run's `space_id`. |
-| 2 | `locales` | Sets `locales` and `localeFallback` (fallback: the first locale, else `en`). Count: locales. |
+| 2 | `locales` | Keeps the locales found in the `locales` table, in their order; others are skipped with a warning (their values stay in the data, unused). `localeFallback` becomes the default locale when kept, else the first kept locale, else `en`. Count: kept locales. |
 | 3 | `environments` | Sets `environments`. Count: environments. |
 | 4 | `tokens` | Inserts each token: new UUIDv7 `id`, `token` = Firebase id, name, version, permissions, cacheTtl, timestamps. A `token` that already exists in another space fails the stage: "Token `<name>` already exists in space `<space name>`". |
 | 5 | `webhooks` | Inserts each webhook with a new UUIDv7, `enabled = false`; url, events, headers and secret copied. |

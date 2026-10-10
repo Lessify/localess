@@ -21,7 +21,7 @@ describe('TranslationFilterComponent', () => {
   it('defaults the filter locale to the given fallback id', () => {
     const { component, fixture } = setup();
 
-    fixture.componentRef.setInput('localeFallbackId', 'de');
+    fixture.componentRef.setInput('defaultLocaleId', 'de');
     fixture.detectChanges();
 
     expect(component.filterForm.value.locale).toBe('de');

@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Locale } from '@localess/shared';
 import { LocaleService } from '@core/services/locale.service';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { LocaleDialogComponent } from './locale-dialog.component';
@@ -37,19 +37,46 @@ describe('LocaleDialogComponent', () => {
   it('excludes already-added locales from the options', () => {
     const { component } = setup({ locales: [en] });
 
-    expect(component.locales).toEqual([de, fr]);
+    expect(component.locales()).toEqual([de, fr]);
+  });
+
+  it('keeps every option when the space has a locale the list does not know', () => {
+    const { component } = setup({ locales: [{ id: 'xx-old', name: 'Old' }] });
+
+    expect(component.locales()).toEqual([en, de, fr]);
+  });
+
+  // The list comes from the server now: options that arrive after the dialog opened must show up.
+  it('fills the options when the list arrives later', () => {
+    const list = new Subject<Locale[]>();
+    const findAllLocales = vi.fn().mockReturnValue(list);
+    TestBed.overrideComponent(LocaleDialogComponent, { set: { template: '<div></div>' } });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: { locales: [en] } },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+        { provide: LocaleService, useValue: { findAllLocales } },
+      ],
+    });
+    const fixture = TestBed.createComponent(LocaleDialogComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.filteredOptions()).toEqual([]);
+
+    list.next([en, de, fr]);
+
+    expect(fixture.componentInstance.filteredOptions()).toEqual([de, fr]);
   });
 
   it('offers every locale when no context is given', () => {
     const { component } = setup(null);
 
-    expect(component.locales).toEqual([en, de, fr]);
+    expect(component.locales()).toEqual([en, de, fr]);
   });
 
   it('offers every locale when the context carries no locales', () => {
     const { component } = setup({});
 
-    expect(component.locales).toEqual([en, de, fr]);
+    expect(component.locales()).toEqual([en, de, fr]);
   });
 
   it('filteredOptions() returns everything when the search is blank', () => {

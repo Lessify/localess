@@ -49,10 +49,10 @@
           }
         </td>
       </ng-container>
-      <ng-container llColumnDef="isFallback">
-        <th llHeaderCell *llHeaderCellDef>Fallback</th>
+      <ng-container llColumnDef="isDefault">
+        <th llHeaderCell *llHeaderCellDef>Default</th>
         <td llCell *llCellDef="let element">
-          @if (spaceStore.selectedSpace()?.localeFallback?.id === element.id) {
+          @if (spaceStore.selectedSpace()?.defaultLocale?.id === element.id) {
             <ng-icon name="lucideCheck" />
           }
         </td>
@@ -65,20 +65,31 @@
           </button>
           <ng-template #actionsMenu>
             <hlm-dropdown-menu class="text-nowrap">
-              @if (spaceStore.selectedSpace()?.localeFallback?.id !== element.id) {
+              @if (spaceStore.selectedSpace()?.defaultLocale?.id !== element.id) {
                 <hlm-dropdown-menu-group>
-                  <button hlmDropdownMenuItem (click)="markAsFallback(element)">
+                  <button hlmDropdownMenuItem (click)="openSetDefaultDialog(element)">
                     <ng-icon hlm size="sm" name="lucideCheck" />
-                    Set as Fallback
+                    Set as Default
                   </button>
                 </hlm-dropdown-menu-group>
                 <hlm-dropdown-menu-separator />
               }
               <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem [disabled]="!canMove(element, -1)" (click)="move(element, -1)">
+                  <ng-icon hlm size="sm" name="lucideArrowUp" />
+                  Move Up
+                </button>
+                <button hlmDropdownMenuItem [disabled]="!canMove(element, 1)" (click)="move(element, 1)">
+                  <ng-icon hlm size="sm" name="lucideArrowDown" />
+                  Move Down
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
                 <button
                   hlmDropdownMenuItem
                   variant="destructive"
-                  [disabled]="spaceStore.selectedSpace()?.localeFallback?.id === element.id"
+                  [disabled]="spaceStore.selectedSpace()?.defaultLocale?.id === element.id"
                   (click)="openDeleteDialog(element)">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                   Delete

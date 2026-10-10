@@ -8,7 +8,7 @@ Spaces move one at a time from a running Firebase-era Localess environment, from
    *Generate token*. Copy it (it is shown once).
 2. **This install:** Admin → Spaces → *Import from Firebase*. Enter the Firebase environment's URL and the token,
    *Connect*, pick a space, *Import*. Follow the stages; warnings (files missing in Firebase, references to deleted
-   documents, unreadable data) are listed per stage.
+   documents, unreadable data, locales this install does not know, which are skipped) are listed per stage.
 3. Repeat for each space. A space can be imported once; to repeat an import, delete the imported space first.
    A failed import leaves its space flagged *Import failed* with the failing stage; delete it and import again.
 4. **After each import:** publish the space's content and translations, re-invite users, re-enable the webhooks

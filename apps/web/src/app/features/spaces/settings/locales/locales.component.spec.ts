@@ -11,14 +11,15 @@ import { vi } from 'vitest';
 import { LocalesComponent } from './locales.component';
 
 function space(locales: Locale[]): Space {
-  return { id: 'space-1', name: 'Space 1', locales, localeFallback: locales[0] } as Space;
+  return { id: 'space-1', name: 'Space 1', locales, defaultLocale: locales[0] } as Space;
 }
 
 describe('LocalesComponent', () => {
   function setup(selectedSpace: Space | undefined) {
     const create = vi.fn().mockReturnValue(of(undefined));
     const deleteLocale = vi.fn().mockReturnValue(of(undefined));
-    const markAsFallback = vi.fn().mockReturnValue(of(undefined));
+    const setDefault = vi.fn().mockReturnValue(of(undefined));
+    const reorder = vi.fn().mockReturnValue(of(undefined));
     const isLocaleTranslatableFrom = vi.fn().mockReturnValue(true);
     const isLocaleTranslatableTo = vi.fn().mockReturnValue(false);
     const success = vi.fn();
@@ -34,7 +35,7 @@ describe('LocalesComponent', () => {
       providers: [
         {
           provide: LocaleService,
-          useValue: { create, delete: deleteLocale, markAsFallback, isLocaleTranslatableFrom, isLocaleTranslatableTo },
+          useValue: { create, delete: deleteLocale, setDefault, reorder, isLocaleTranslatableFrom, isLocaleTranslatableTo },
         },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open: openDialog } },
@@ -47,7 +48,8 @@ describe('LocalesComponent', () => {
       component: fixture.componentInstance,
       create,
       deleteLocale,
-      markAsFallback,
+      setDefault,
+      reorder,
       isLocaleTranslatableFrom,
       isLocaleTranslatableTo,
       success,
@@ -139,22 +141,67 @@ describe('LocalesComponent', () => {
     expect(error).toHaveBeenCalledWith("Locale 'German' can not be deleted.");
   });
 
-  it('markAsFallback() notifies success', () => {
-    const { component, markAsFallback, success } = setup(space([en, de]));
+  it('openSetDefaultDialog() warns that content values are not moved, then sets the default', () => {
+    const { component, openDialog, setDefault, success } = setup(space([en, de]));
+    openDialog.mockReturnValue({ closed$: of(true) });
 
-    component.markAsFallback(de);
+    component.openSetDefaultDialog(de);
 
-    expect(markAsFallback).toHaveBeenCalledWith('space-1', de);
-    expect(success).toHaveBeenCalledWith("Locale 'German' has been marked as fallback.");
+    const content = openDialog.mock.calls[0][1].context.content as string;
+    expect(content).toContain("instead of 'English'");
+    expect(content).toContain("are not moved: from now on they are read as 'German'");
+    expect(setDefault).toHaveBeenCalledWith('space-1', de);
+    expect(success).toHaveBeenCalledWith("Locale 'German' is now the default locale.");
   });
 
-  it('markAsFallback() notifies an error on failure', () => {
-    const { component, markAsFallback, error } = setup(space([en, de]));
-    markAsFallback.mockReturnValue(throwError(() => new Error('boom')));
+  it('openSetDefaultDialog() changes nothing when cancelled', () => {
+    const { component, openDialog, setDefault } = setup(space([en, de]));
+    openDialog.mockReturnValue({ closed$: of(undefined) });
 
-    component.markAsFallback(de);
+    component.openSetDefaultDialog(de);
 
-    expect(error).toHaveBeenCalledWith("Locale 'German' can not be marked as fallback.");
+    expect(setDefault).not.toHaveBeenCalled();
+  });
+
+  it('openSetDefaultDialog() notifies an error on failure', () => {
+    const { component, openDialog, setDefault, error } = setup(space([en, de]));
+    setDefault.mockReturnValue(throwError(() => new Error('boom')));
+    openDialog.mockReturnValue({ closed$: of(true) });
+
+    component.openSetDefaultDialog(de);
+
+    expect(error).toHaveBeenCalledWith("Locale 'German' can not be made the default locale.");
+  });
+
+  it('move() swaps a locale with its neighbour in the space order', () => {
+    const fr: Locale = { id: 'fr', name: 'French' };
+    const { component, reorder } = setup(space([en, de, fr]));
+
+    component.move(fr, -1);
+    expect(reorder).toHaveBeenLastCalledWith('space-1', ['en', 'fr', 'de']);
+
+    component.move(en, 1);
+    expect(reorder).toHaveBeenLastCalledWith('space-1', ['de', 'en', 'fr']);
+  });
+
+  it('canMove() is false at the ends, and move() then sends nothing', () => {
+    const { component, reorder } = setup(space([en, de]));
+
+    expect(component.canMove(en, -1)).toBe(false);
+    expect(component.canMove(en, 1)).toBe(true);
+    expect(component.canMove(de, 1)).toBe(false);
+    component.move(de, 1);
+
+    expect(reorder).not.toHaveBeenCalled();
+  });
+
+  it('move() notifies an error on failure', () => {
+    const { component, reorder, error } = setup(space([en, de]));
+    reorder.mockReturnValue(throwError(() => new Error('boom')));
+
+    component.move(de, -1);
+
+    expect(error).toHaveBeenCalledWith("Locale 'German' can not be moved.");
   });
 
   // The two columns are answered by two different predicates - a locale can be one-way.

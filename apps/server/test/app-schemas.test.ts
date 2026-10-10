@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spaces } from '../src/infra/database/schema.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 
 describe('app API: schemas', () => {
@@ -13,9 +13,7 @@ describe('app API: schemas', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.db
-      .insert(spaces)
-      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {

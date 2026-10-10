@@ -45,13 +45,13 @@ describe('TranslateLocaleDialogComponent', () => {
     const fr: Locale = { id: 'fr', name: 'French' };
 
     it('preselects the default locale as the source, wherever it sits in the list', () => {
-      const { component } = setup({ locales: [de, CONTENT_DEFAULT_LOCALE, fr], localeFallback: en });
+      const { component } = setup({ locales: [de, CONTENT_DEFAULT_LOCALE, fr], defaultLocale: en });
 
       expect(component.form.value.sourceLocale).toBe(CONTENT_DEFAULT_LOCALE.id);
     });
 
     it('preselects the caller’s current locale as the target', () => {
-      const { component } = setup({ locales: [CONTENT_DEFAULT_LOCALE, de, fr], localeFallback: en, selectedLocale: 'fr' });
+      const { component } = setup({ locales: [CONTENT_DEFAULT_LOCALE, de, fr], defaultLocale: en, selectedLocale: 'fr' });
 
       expect(component.form.value).toMatchObject({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'fr' });
     });
@@ -124,15 +124,15 @@ describe('TranslateLocaleDialogComponent', () => {
      * The content side labels the space fallback with the `default` sentinel, which is a storage
      * key rather than a language - without the fallback there is nothing to send the provider.
      */
-    it('resolves the default sentinel through the fallback locale', () => {
-      const { component } = setup({ locales: [CONTENT_DEFAULT_LOCALE, de], localeFallback: en });
+    it('resolves the default sentinel through the default locale', () => {
+      const { component } = setup({ locales: [CONTENT_DEFAULT_LOCALE, de], defaultLocale: en });
 
       expect(component.canTranslateFrom(CONTENT_DEFAULT_LOCALE)).toBe(true);
       expect(component.canTranslateTo(CONTENT_DEFAULT_LOCALE)).toBe(true);
     });
 
     // Nothing to resolve the sentinel with means nothing to send the provider.
-    it('treats the sentinel as unsupported without a fallback locale', () => {
+    it('treats the sentinel as unsupported without a default locale', () => {
       const { component } = setup({ locales: [CONTENT_DEFAULT_LOCALE, de] });
 
       expect(component.canTranslateFrom(CONTENT_DEFAULT_LOCALE)).toBe(false);

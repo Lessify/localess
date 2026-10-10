@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { zLocale, zPreviewUrl } from '../../infra/http/zod.js';
+import { zPreviewUrl } from '../../infra/http/zod.js';
 import { spaceDto, SpacesService } from './spaces.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(200) });
@@ -13,7 +13,8 @@ const updateSchema = z
     environments: z.array(z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl })).optional(),
   })
   .refine(it => it.name !== undefined || it.environments !== undefined, 'Nothing to update');
-const fallbackSchema = z.object({ id: z.string().min(1) });
+const localeIdSchema = z.object({ id: z.string().min(1).max(64) });
+const localeOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).min(1).max(1000) });
 
 /** Spaces and their locales (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */
 @Controller('api/app/spaces')
@@ -63,8 +64,17 @@ export class SpacesController {
 
   @Post(':spaceId/locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async addLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zLocale)) body: z.infer<typeof zLocale>) {
-    return spaceDto(await this.spaces.addLocale(spaceId, body));
+  async addLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>) {
+    return spaceDto(await this.spaces.addLocale(spaceId, body.id));
+  }
+
+  @Put(':spaceId/locales/order')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  async reorderLocales(
+    @Param('spaceId') spaceId: string,
+    @Body(new ZodValidationPipe(localeOrderSchema)) body: z.infer<typeof localeOrderSchema>,
+  ) {
+    return spaceDto(await this.spaces.reorderLocales(spaceId, body.ids));
   }
 
   @Delete(':spaceId/locales/:localeId')
@@ -73,9 +83,12 @@ export class SpacesController {
     return spaceDto(await this.spaces.removeLocale(spaceId, localeId));
   }
 
-  @Put(':spaceId/locale-fallback')
+  @Put(':spaceId/default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async markFallback(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(fallbackSchema)) body: z.infer<typeof fallbackSchema>) {
-    return spaceDto(await this.spaces.markFallback(spaceId, body.id));
+  async setDefaultLocale(
+    @Param('spaceId') spaceId: string,
+    @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>,
+  ) {
+    return spaceDto(await this.spaces.setDefaultLocale(spaceId, body.id));
   }
 }

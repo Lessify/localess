@@ -33,10 +33,10 @@ export class TranslateMenuComponent {
   availableLocales = input.required<Locale[]>();
 
   /**
-   * The space's fallback locale, needed to decide what the provider supports: the selected locale
+   * The space's default locale, needed to decide what the provider supports: the selected locale
    * can be the `default` sentinel, which is a storage key rather than a language.
    */
-  fallbackLocale = input<Locale>();
+  defaultLocale = input<Locale>();
 
   /**
    * Where the host puts this button, which decides how it is nudged into place:
@@ -63,7 +63,7 @@ export class TranslateMenuComponent {
    * Whether the field's locale can be a translation *target*. The whole button is disabled when it
    * cannot: every item in the menu would translate into it, so there is nothing left to offer.
    */
-  canTranslateToSelected = computed(() => this.localeService.isLocaleTranslatableTo(this.selectedLocale().id, this.fallbackLocale()?.id));
+  canTranslateToSelected = computed(() => this.localeService.isLocaleTranslatableTo(this.selectedLocale().id, this.defaultLocale()?.id));
 
   /** Whether any source at all is offerable, so the button is not opened onto a fully disabled menu. */
   hasTranslatableSource = computed(() => this.sourceLocales().some(locale => this.canTranslateFrom(locale)));
@@ -82,6 +82,6 @@ export class TranslateMenuComponent {
 
   /** Whether a locale can be the source for this field, i.e. the provider accepts translating out of it. */
   canTranslateFrom(locale: Locale): boolean {
-    return this.localeService.isLocaleTranslatableFrom(locale.id, this.fallbackLocale()?.id);
+    return this.localeService.isLocaleTranslatableFrom(locale.id, this.defaultLocale()?.id);
   }
 }

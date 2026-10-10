@@ -109,7 +109,7 @@
     <div class="mx-auto mt-3 px-2">
       <ll-translation-filter
         [availableLocales]="availableLocales()"
-        [localeFallbackId]="selectedSpace()?.localeFallback?.id"
+        [defaultLocaleId]="selectedSpace()?.defaultLocale?.id"
         [allLabels]="allLabels()"
         (localeChange)="currentLocale.set($event)"
         (filterChange)="filterCriteria.set($event)" />
@@ -128,7 +128,7 @@
             [translation]="translation"
             [spaceId]="spaceId()"
             [availableLocales]="availableLocales()"
-            [localeFallback]="selectedSpace()?.localeFallback"
+            [defaultLocale]="selectedSpace()?.defaultLocale"
             [reservedKeys]="translationKeys()"
             [selectedLabels]="filterCriteria()?.labels || []"
             [isLocaleUpdateLoading]="isLocaleUpdateLoading()"

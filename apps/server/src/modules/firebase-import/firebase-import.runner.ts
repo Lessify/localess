@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, asc, eq, gt } from 'drizzle-orm';
-import type { FirebaseImportStage, FirebaseImportStageName, Locale } from '@localess/shared';
+import { DEFAULT_LOCALE, type FirebaseImportStage, type FirebaseImportStageName, type Locale } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
-import { assets, contents, firebaseImports, schemas, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
+import { assets, contents, firebaseImports, locales, schemas, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
@@ -90,24 +90,34 @@ export class FirebaseImportRunner {
       await begin('space');
       const source = await client.space(sourceSpaceId);
       spaceId = newUuid(timestamps(source).createdAt);
-      const locales = (Array.isArray(source['locales']) ? source['locales'] : []) as Locale[];
-      const fallback = obj<Locale>(source['localeFallback']) ?? locales[0] ?? { id: 'en', name: 'English' };
-      await this.db.insert(spaces).values({
-        id: spaceId,
-        legacyId: sourceSpaceId,
-        name: str(source['name']) ?? sourceSpaceId,
-        locales: locales.length ? locales : [fallback],
-        localeFallback: fallback,
-        importStatus: 'IMPORTING',
-        ...timestamps(source),
+      const sid = spaceId;
+      // Only locales in the `locales` table are kept; the default falls back to the first kept one, else English.
+      const known = new Set((await this.db.select({ id: locales.id }).from(locales)).map(it => it.id));
+      const sourceLocales = (Array.isArray(source['locales']) ? source['locales'] : []) as Locale[];
+      const keptLocales = [...new Set(sourceLocales.map(it => it?.id).filter(id => typeof id === 'string' && known.has(id)))];
+      const skippedLocales = sourceLocales.filter(it => !keptLocales.includes(it?.id));
+      const sourceDefault = obj<Locale>(source['localeFallback'])?.id;
+      const defaultLocaleId = sourceDefault && keptLocales.includes(sourceDefault) ? sourceDefault : (keptLocales[0] ?? DEFAULT_LOCALE.id);
+      if (!keptLocales.length) keptLocales.push(defaultLocaleId);
+      await this.db.transaction(async tx => {
+        await tx.insert(spaces).values({
+          id: sid,
+          legacyId: sourceSpaceId,
+          name: str(source['name']) ?? sourceSpaceId,
+          defaultLocaleId,
+          importStatus: 'IMPORTING',
+          ...timestamps(source),
+        });
+        await tx.insert(spaceLocales).values(keptLocales.map((localeId, position) => ({ spaceId: sid, localeId, position })));
       });
       await save({ spaceId });
       await done('space', 1);
-      const sid = spaceId;
 
       // 2 locales, 3 environments (set with the space; counted separately for the progress view)
       await begin('locales');
-      await done('locales', locales.length);
+      for (const it of skippedLocales) warn('locales', `${it?.id ?? 'unknown'}: not a known locale, skipped (its values are kept, unused)`);
+      if (sourceDefault && sourceDefault !== defaultLocaleId) warn('locales', `default locale ${sourceDefault} skipped; ${defaultLocaleId} is the default`);
+      await done('locales', keptLocales.length);
       await begin('environments');
       const environments = Array.isArray(source['environments']) ? (source['environments'] as { name: string; url: string }[]) : [];
       if (environments.length) await this.db.update(spaces).set({ environments }).where(eq(spaces.id, sid));

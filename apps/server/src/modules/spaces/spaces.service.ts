@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, eq, sql, sum } from 'drizzle-orm';
+import { and, asc, count, eq, max, sql, sum } from 'drizzle-orm';
 import { DEFAULT_LOCALE } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
@@ -7,8 +7,9 @@ import {
   assets,
   contentPublished,
   contents,
-  Locale,
+  locales,
   schemas,
+  spaceLocales,
   spaces,
   tasks,
   translationPublished,
@@ -17,10 +18,12 @@ import {
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { toDto } from '../../infra/http/dto.js';
-import { requireSpace, SpaceRow } from '../../infra/http/space-access.js';
+import { requireSpace, selectSpaces, SpaceRow } from '../../infra/http/space-access.js';
 
-/** `Space` as the SPA reads it; the cache versions are an API-internal detail. */
-export const spaceDto = (space: SpaceRow) => toDto(space, ['contentVersion', 'translationVersion']);
+type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/** `Space` as the SPA reads it; the cache versions are an API-internal detail, the default locale comes as `defaultLocale`. */
+export const spaceDto = (space: SpaceRow) => toDto(space, ['contentVersion', 'translationVersion', 'defaultLocaleId']);
 
 @Injectable()
 export class SpacesService {
@@ -30,14 +33,15 @@ export class SpacesService {
     private readonly events: EventsService,
   ) {}
 
+  /** By name, case-insensitive whatever the database collation; the id keeps equal names in a stable order. */
   async list(): Promise<SpaceRow[]> {
-    return this.db.select().from(spaces).orderBy(asc(spaces.name));
+    return selectSpaces(this.db).orderBy(asc(sql`lower(${spaces.name})`), asc(spaces.id));
   }
 
   /** The space, or undefined (the public API answers 404 itself; `get` throws). */
   async findSpace(spaceId: string): Promise<SpaceRow | undefined> {
     if (!isUuid(spaceId)) return undefined;
-    const [space] = await this.db.select().from(spaces).where(eq(spaces.id, spaceId));
+    const [space] = await selectSpaces(this.db).where(eq(spaces.id, spaceId));
     return space;
   }
 
@@ -47,58 +51,85 @@ export class SpacesService {
 
   async create(name: string): Promise<SpaceRow> {
     return this.db.transaction(async tx => {
-      const [space] = await tx
-        .insert(spaces)
-        .values({ id: newUuid(), name, locales: [DEFAULT_LOCALE], localeFallback: DEFAULT_LOCALE })
-        .returning();
-      await this.events.publish({ spaceId: null, entity: 'spaces', id: space.id, op: 'created' }, tx);
-      return space;
+      const id = newUuid();
+      await tx.insert(spaces).values({ id, name, defaultLocaleId: DEFAULT_LOCALE.id });
+      await tx.insert(spaceLocales).values({ spaceId: id, localeId: DEFAULT_LOCALE.id, position: 0 });
+      await this.events.publish({ spaceId: null, entity: 'spaces', id, op: 'created' }, tx);
+      return requireSpace(tx, id);
     });
   }
 
-  /** Applies `change` to the space row inside a transaction and announces it. */
-  private async update(spaceId: string, change: (space: SpaceRow) => Partial<typeof spaces.$inferInsert>): Promise<SpaceRow> {
+  /**
+   * Runs `change` on the space inside a transaction (it may write `spaces` and `space_locales`), touches
+   * `updated_at` and announces it.
+   */
+  private async update(
+    spaceId: string,
+    change: (space: SpaceRow, tx: Transaction) => Promise<Partial<typeof spaces.$inferInsert> | void>,
+  ): Promise<SpaceRow> {
     return this.db.transaction(async tx => {
       const space = await requireSpace(tx, spaceId);
-      const [updated] = await tx
+      const values = (await change(space, tx)) ?? {};
+      await tx
         .update(spaces)
-        .set({ ...change(space), updatedAt: new Date() })
-        .where(eq(spaces.id, spaceId))
-        .returning();
+        .set({ ...values, updatedAt: new Date() })
+        .where(eq(spaces.id, spaceId));
       await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'updated' }, tx);
-      return updated;
+      return requireSpace(tx, spaceId);
     });
   }
 
   rename(spaceId: string, name: string): Promise<SpaceRow> {
-    return this.update(spaceId, () => ({ name }));
+    return this.update(spaceId, async () => ({ name }));
   }
 
   updateEnvironments(spaceId: string, environments: { name: string; url: string }[]): Promise<SpaceRow> {
-    return this.update(spaceId, () => ({ environments }));
+    return this.update(spaceId, async () => ({ environments }));
   }
 
-  /** Adds a locale (no-op when it is already there, like `arrayUnion`). */
-  addLocale(spaceId: string, locale: Locale): Promise<SpaceRow> {
-    return this.update(spaceId, space => ({
-      locales: space.locales.some(it => it.id === locale.id) ? space.locales : [...space.locales, locale],
-    }));
-  }
-
-  removeLocale(spaceId: string, localeId: string): Promise<SpaceRow> {
-    return this.update(spaceId, space => {
-      if (space.localeFallback.id === localeId) {
-        throw new BadRequestException('The fallback locale cannot be removed; mark another locale as fallback first');
-      }
-      return { locales: space.locales.filter(it => it.id !== localeId) };
+  /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */
+  addLocale(spaceId: string, localeId: string): Promise<SpaceRow> {
+    return this.update(spaceId, async (space, tx) => {
+      if (space.locales.some(it => it.id === localeId)) return;
+      const [known] = await tx.select({ id: locales.id }).from(locales).where(eq(locales.id, localeId));
+      if (!known) throw new BadRequestException(`Unknown locale ${localeId}`);
+      const [{ last }] = await tx
+        .select({ last: max(spaceLocales.position) })
+        .from(spaceLocales)
+        .where(eq(spaceLocales.spaceId, spaceId));
+      await tx.insert(spaceLocales).values({ spaceId, localeId, position: (last ?? -1) + 1 });
     });
   }
 
-  markFallback(spaceId: string, localeId: string): Promise<SpaceRow> {
-    return this.update(spaceId, space => {
-      const locale = space.locales.find(it => it.id === localeId);
-      if (!locale) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
-      return { localeFallback: locale };
+  removeLocale(spaceId: string, localeId: string): Promise<SpaceRow> {
+    return this.update(spaceId, async (space, tx) => {
+      if (space.defaultLocaleId === localeId) {
+        throw new BadRequestException('The default locale cannot be removed; make another locale the default first');
+      }
+      await tx.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
+    });
+  }
+
+  /** `localeIds` is the space's locales in their new order: every one of them, each once. */
+  reorderLocales(spaceId: string, localeIds: string[]): Promise<SpaceRow> {
+    return this.update(spaceId, async (space, tx) => {
+      const current = new Set(space.locales.map(it => it.id));
+      if (localeIds.length !== current.size || new Set(localeIds).size !== localeIds.length || localeIds.some(id => !current.has(id))) {
+        throw new BadRequestException("The new order must list each of the space's locales once");
+      }
+      for (const [position, localeId] of localeIds.entries()) {
+        await tx
+          .update(spaceLocales)
+          .set({ position })
+          .where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
+      }
+    });
+  }
+
+  setDefaultLocale(spaceId: string, localeId: string): Promise<SpaceRow> {
+    return this.update(spaceId, async space => {
+      if (!space.locales.some(it => it.id === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
+      return { defaultLocaleId: localeId };
     });
   }
 
@@ -165,8 +196,8 @@ export class SpacesService {
       totalSize: translationsSize + assetsSize + contentsSize + tasksSize,
       updatedAt: new Date().toISOString(),
     };
-    const [updated] = await this.db.update(spaces).set({ overview }).where(eq(spaces.id, spaceId)).returning();
+    await this.db.update(spaces).set({ overview }).where(eq(spaces.id, spaceId));
     await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'updated' });
-    return updated;
+    return requireSpace(this.db, spaceId);
   }
 }
