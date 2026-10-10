@@ -1,0 +1,31 @@
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Imports from Firebase</h2>
+</hlm-dialog-header>
+@if (selectedRun(); as run) {
+  <button hlmBtn variant="ghost" size="sm" class="self-start" (click)="select(undefined)">Back</button>
+  <p class="text-sm">{{ run.sourceSpaceName }} from {{ run.origin }}: {{ run.status }}</p>
+  @if (run.error; as error) {
+    <p class="text-destructive text-sm">Failed at {{ error.stage }}: {{ error.message }}</p>
+  }
+  <ll-firebase-import-progress [run]="run" />
+} @else {
+  @if (runs().length) {
+    <ul class="flex flex-col gap-1">
+      @for (run of runs(); track run.id) {
+        <li>
+          <button hlmBtn variant="ghost" class="h-auto w-full justify-between py-2 text-left" (click)="select(run)">
+            <span class="flex flex-col">
+              <span class="font-medium">{{ run.sourceSpaceName }}</span>
+              <span class="text-muted-foreground text-xs"
+                >{{ run.origin }} · {{ run.startedBy.email }} · {{ run.startedAt | date: 'medium' }}</span
+              >
+            </span>
+            <span class="text-sm">{{ run.status }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="text-muted-foreground text-sm">No imports yet.</p>
+  }
+}

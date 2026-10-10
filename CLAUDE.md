@@ -37,9 +37,8 @@ pnpm server:test       # Server vitest suite (real embedded Postgres, one databa
 pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
 
 # Server CLI (apps/server/src/cli; needs `pnpm server:build` first)
-pnpm localess <command>                       # db:migrate, check, admin:create --email <email>, import:firebase --project <id>
+pnpm localess <command>                       # db:migrate, check, admin:create --email <email>
 pnpm localess:check                           # Health check of an installation
-pnpm localess:import --project <id>           # One-off import from a Firebase install (import:firebase)
 pnpm --filter @localess/server db:generate    # Generate a Drizzle migration after editing the schema
 
 # Dependencies
@@ -184,7 +183,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Reverse proxy, CDN, backups, multiple instances | [docs/deployment/production.md](docs/deployment/production.md) | Production hardening, scaling |
 | Upgrades, migrations on boot, backup/restore, rollback | [docs/deployment/updates.md](docs/deployment/updates.md) | Releases, `apps/server/drizzle/` |
 | Health check CLI (`pnpm localess:check`) vs `/api/health` | [docs/deployment/check.md](docs/deployment/check.md) | `apps/server/src/cli/check.ts`, `apps/server/src/infra/health/`, diagnosing a broken install |
-| Importing a Firebase install (`import:firebase`) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md) | `apps/server/src/cli/firebase-import/` |
+| Importing spaces from a Firebase install (Admin → Spaces → Import from Firebase) | [docs/deployment/migrate-from-firebase.md](docs/deployment/migrate-from-firebase.md), [docs/roadmap/firebase-space-import.md](docs/roadmap/firebase-space-import.md) | `apps/server/src/modules/firebase-import/` |
 | **Feature modules — Admin** | | |
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |

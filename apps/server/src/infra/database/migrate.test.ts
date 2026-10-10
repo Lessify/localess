@@ -10,6 +10,7 @@ const EXPECTED_TABLES = [
   'assets',
   'content_published',
   'contents',
+  'firebase_imports',
   'password_reset_tokens',
   'schemas',
   'sessions',

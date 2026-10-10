@@ -5,7 +5,7 @@ import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { assets } from '../src/infra/database/schema.js';
+import { assets, spaces } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { seedAsset, seedSpace, SeededAsset } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
@@ -88,6 +88,13 @@ describe('v1 asset routes', () => {
         expect(response.headers['cache-control']).toBe('public, max-age=31536000, s-maxage=31536000');
       }
       expect((await get(`/api/v1/spaces/${S1}/assets/UnknownFirestoreId/original`)).statusCode).toBe(404);
+      // An imported space's old id still reaches its old asset URLs, and only those.
+      await t.db.update(spaces).set({ legacyId: 'FirestoreSpace' }).where(eq(spaces.id, S1));
+      const viaOldSpace = await get(`/api/v1/spaces/FirestoreSpace/assets/FirestoreAsset000002/original`);
+      expect(viaOldSpace.statusCode).toBe(301);
+      expect(viaOldSpace.headers.location).toBe(`/api/v1/spaces/FirestoreSpace/assets/${id}/original`);
+      expect((await get(viaOldSpace.headers.location as string)).statusCode).toBe(200);
+      await t.db.update(spaces).set({ legacyId: null }).where(eq(spaces.id, S1));
     });
   });
 
@@ -339,13 +346,12 @@ describe('v1 asset routes', () => {
       expect(await t.app.get(ContentDeliveryService).resolveAssets(S1, [folder])).toEqual({});
     });
 
-    it('resolves a Firestore id that imported content still references, keyed by that id', async () => {
+    it('resolves asset references by UUID only (the import rewrites Firestore ids)', async () => {
       const { id } = await given({ bytes: Buffer.from('x'), type: 'text/plain', extension: '.txt' });
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, id));
       const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
       const resolved = await t.app.get(ContentDeliveryService).resolveAssets(S1, ['FirestoreAsset000001', id]);
-      expect(resolved['FirestoreAsset000001']).toMatchObject({ id, name: 'photo' });
-      expect(resolved[id]).toMatchObject({ id });
+      expect(Object.keys(resolved)).toEqual([id]);
     });
   });
 

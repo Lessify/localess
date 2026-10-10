@@ -134,13 +134,9 @@ describe('app API: contents', () => {
       expect((await reader.get(`${base}/missing`)).statusCode).toBe(404);
     });
 
-    it('gives documents UUIDv7 ids; `?ids=` also matches the Firestore id imported content still references', async () => {
+    it('gives documents UUIDv7 ids; `?ids=` matches ids exactly', async () => {
       expect(post.id).toMatch(UUID_V7);
-      await t.db.update(contents).set({ legacyId: 'FirestorePost' }).where(eq(contents.id, post.id));
-      const found = (await reader.get(`${base}?ids=FirestorePost`)).json();
-      expect(found).toEqual([expect.objectContaining({ id: post.id, legacyId: 'FirestorePost' })]);
-      expect((await reader.get(`${base}/FirestorePost`)).statusCode).toBe(404);
-      await t.db.update(contents).set({ legacyId: null }).where(eq(contents.id, post.id));
+      expect((await reader.get(`${base}?ids=not-a-uuid,${post.id}`)).json().map((c: { id: string }) => c.id)).toEqual([post.id]);
     });
   });
 

@@ -30,7 +30,6 @@ CREATE TABLE "content_published" (
 CREATE TABLE "contents" (
 	"id" uuid NOT NULL,
 	"space_id" uuid NOT NULL,
-	"legacy_id" text,
 	"kind" text NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
@@ -46,6 +45,21 @@ CREATE TABLE "contents" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "contents_space_id_id_pk" PRIMARY KEY("space_id","id")
+);
+--> statement-breakpoint
+CREATE TABLE "firebase_imports" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"origin" text NOT NULL,
+	"source_space_id" text NOT NULL,
+	"source_space_name" text NOT NULL,
+	"space_id" uuid,
+	"status" text NOT NULL,
+	"stages" jsonb NOT NULL,
+	"error" jsonb,
+	"started_by" jsonb NOT NULL,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"heartbeat_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"finished_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "password_reset_tokens" (
@@ -90,6 +104,7 @@ CREATE TABLE "settings" (
 CREATE TABLE "spaces" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"legacy_id" text,
+	"import_status" text,
 	"name" text NOT NULL,
 	"locales" jsonb NOT NULL,
 	"locale_fallback" jsonb NOT NULL,
@@ -167,7 +182,6 @@ CREATE TABLE "user_credentials" (
 	"user_id" uuid PRIMARY KEY NOT NULL,
 	"password_hash" text NOT NULL,
 	"hash_algo" text NOT NULL,
-	"salt" text,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
@@ -181,7 +195,6 @@ CREATE TABLE "user_identities" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY NOT NULL,
-	"legacy_id" text,
 	"email" text NOT NULL,
 	"email_verified" boolean DEFAULT false NOT NULL,
 	"display_name" text,
@@ -191,8 +204,7 @@ CREATE TABLE "users" (
 	"permissions" text[] DEFAULT '{}'::text[] NOT NULL,
 	"lock" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_legacy_id_unique" UNIQUE("legacy_id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "webhook_logs" (
@@ -217,7 +229,6 @@ CREATE TABLE "webhook_logs" (
 CREATE TABLE "webhooks" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
-	"legacy_id" text,
 	"name" text NOT NULL,
 	"url" text NOT NULL,
 	"enabled" boolean DEFAULT true NOT NULL,
@@ -231,6 +242,7 @@ CREATE TABLE "webhooks" (
 ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_published" ADD CONSTRAINT "content_published_space_id_content_id_contents_space_id_id_fk" FOREIGN KEY ("space_id","content_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contents" ADD CONSTRAINT "contents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "schemas" ADD CONSTRAINT "schemas_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -247,11 +259,12 @@ CREATE UNIQUE INDEX "assets_legacy_idx" ON "assets" USING btree ("space_id","leg
 CREATE INDEX "assets_parent_idx" ON "assets" USING btree ("space_id","parent_path","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "assets_parent_path_prefix_idx" ON "assets" USING btree ("space_id","parent_path" text_pattern_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "contents_legacy_idx" ON "contents" USING btree ("space_id","legacy_id");--> statement-breakpoint
 CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_slug","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","full_slug" text_pattern_ops);--> statement-breakpoint
 CREATE INDEX "contents_parent_slug_prefix_idx" ON "contents" USING btree ("space_id","parent_slug" text_pattern_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "firebase_imports_running_idx" ON "firebase_imports" USING btree ("status") WHERE "firebase_imports"."status" = 'RUNNING';--> statement-breakpoint
+CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("started_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE UNIQUE INDEX "schemas_name_idx" ON "schemas" USING btree ("space_id","name");--> statement-breakpoint
 CREATE INDEX "schemas_type_idx" ON "schemas" USING btree ("space_id","type","display_name");--> statement-breakpoint
 CREATE INDEX "sessions_user_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
@@ -266,5 +279,4 @@ CREATE INDEX "user_identities_user_idx" ON "user_identities" USING btree ("user_
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint
 CREATE INDEX "webhook_logs_webhook_idx" ON "webhook_logs" USING btree ("webhook_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "webhooks_space_idx" ON "webhooks" USING btree ("space_id","name");--> statement-breakpoint
-CREATE INDEX "webhooks_events_idx" ON "webhooks" USING gin ("events");--> statement-breakpoint
-CREATE UNIQUE INDEX "webhooks_legacy_idx" ON "webhooks" USING btree ("space_id","legacy_id");
+CREATE INDEX "webhooks_events_idx" ON "webhooks" USING gin ("events");

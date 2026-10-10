@@ -106,9 +106,8 @@ docker compose exec localess node server/dist/cli.js <command>   # in Docker
 | `db:migrate` | Apply pending migrations and exit (the server also does this on boot) |
 | `check` | Report what the install has and lacks — see [Health Check](check.md) |
 | `admin:create --email <e> [--name <n>]` | Create an administrator and the "Hello World" space |
-| `import:firebase --project <id> [--bucket <b>] [--no-files]` | Copy a Firebase-era install in — see [Migrating from Firebase](migrate-from-firebase.md) |
 
-Shortcuts: `pnpm localess:check` and `pnpm localess:import --project <id>`.
+Shortcut: `pnpm localess:check`. Spaces from a Firebase-era install are imported in the admin UI — see [Migrating from Firebase](migrate-from-firebase.md).
 
 The CLI reads the same environment variables as the server, so run it with the same
 `DATABASE_URL` / `LOCALESS_DATA_DIR`. With the **embedded** database, see

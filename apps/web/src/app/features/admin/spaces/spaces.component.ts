@@ -32,6 +32,7 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
@@ -40,6 +41,8 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Observable, of } from 'rxjs';
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
+import { FirebaseImportDialogComponent } from './firebase-import-dialog/firebase-import-dialog.component';
+import { FirebaseImportsDialogComponent } from './firebase-imports-dialog/firebase-imports-dialog.component';
 import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-dialog.component';
 import { SpaceCreateDialogResult } from './space-create-dialog/space-create-dialog.model';
 import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
@@ -63,6 +66,7 @@ const CREATE_ACTION = 'create';
     LlTableImports,
     LlPaginatorImports,
     LlFilterToolbarImports,
+    HlmBadgeImports,
     HlmButtonImports,
     HlmIconImports,
     HlmProgressImports,
@@ -134,6 +138,21 @@ export class SpacesComponent implements OnInit, AfterViewInit {
         this.spaces.set(response);
         this.isLoading.set(false);
       });
+  }
+
+  openFirebaseImport(): void {
+    this.dialog.open(FirebaseImportDialogComponent, { contentClass: DIALOG_WIDTH_SM });
+  }
+
+  openFirebaseImports(): void {
+    this.dialog.open(FirebaseImportsDialogComponent, { contentClass: DIALOG_WIDTH_SM });
+  }
+
+  /** A space being imported from Firebase, or whose import failed, cannot be opened until it is done or deleted. */
+  importLabel(space: Space): string | undefined {
+    if (space.importStatus === 'IMPORTING') return 'Importing';
+    if (space.importStatus === 'FAILED') return 'Import failed';
+    return undefined;
   }
 
   openAddDialog(): void {

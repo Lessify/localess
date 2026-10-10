@@ -55,6 +55,12 @@ describe('SpaceStore', () => {
     return configure(() => of(spaces), listeners);
   }
 
+  it('leaves out spaces that are being imported or whose import failed: they cannot be opened', () => {
+    const store = createStore([{ ...space('importing'), importStatus: 'IMPORTING' }, { ...space('failed'), importStatus: 'FAILED' }, space('ready')]);
+    expect(store.spaces().map(it => it.id)).toEqual(['ready']);
+    expect(store.selectedSpace()?.id).toBe('ready');
+  });
+
   it('selects no space and clears paths when the response is empty', () => {
     const store = createStore([]);
     expect(store.spaces()).toEqual([]);

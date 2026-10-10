@@ -115,7 +115,7 @@ translation_published  PK (space_id, locale)              data jsonb, published_
 spaces                 content_version, translation_version (the cv), progress
 ```
 
-Only binary files are in storage (`$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/...` and task files). The Firebase-era `contents/{id}/{locale}.json`, `draft/` and `cache.json` files are gone; `import:firebase` copies the published snapshots into the two tables as served, without re-publishing.
+Only binary files are in storage (`$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/...` and task files). The Firebase-era `contents/{id}/{locale}.json`, `draft/` and `cache.json` files are gone; an import from Firebase brings drafts only; the space is published again after the import.
 
 ---
 

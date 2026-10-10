@@ -131,11 +131,3 @@ The task queue is the `tasks` table: any instance with the worker on claims the 
 one at a time. A task still running after an hour (for example because the process was killed) is
 marked as failed, not retried.
 
-## Firebase import only
-
-Read by `import:firebase`, not by the server. See [Migrating from Firebase](migrate-from-firebase.md).
-
-| Variable | Purpose |
-|----------|---------|
-| `GOOGLE_APPLICATION_CREDENTIALS` | Service-account key for the source Firebase project |
-| `FIREBASE_SCRYPT_SIGNER_KEY`, `FIREBASE_SCRYPT_SALT_SEPARATOR`, `FIREBASE_SCRYPT_ROUNDS`, `FIREBASE_SCRYPT_MEM_COST` | The project's password hash parameters, so users keep their passwords |

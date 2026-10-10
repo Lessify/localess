@@ -199,12 +199,12 @@ An API token (`tokens` table; the `token` column is the secret, `id` a UUIDv7) g
 
 ## Data Model Map
 
-All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks, webhook logs, schemas, translations, assets and contents have UUIDv7 ids (`uuid` columns, `newUuid()`). What everything else refers to stays human readable where it already was: a schema's `name`, a translation's `key`, a token's secret `token`. Rows imported from Firebase keep their Firestore id / Firebase uid in `legacy_id` (spaces, users, webhooks, assets, contents): the public API accepts an old space id, and old asset and document URLs redirect to the UUID ones. Content imported from Firebase still references assets and documents by their Firestore ids, which delivery and the editor resolve through `legacy_id` until a later migration rewrites them ([roadmap](roadmap/firebase-migration-uuidv7.md#deferred-reference-migration)). Content and asset keys are `(space_id, id)`: the export/import tasks reuse ids in another space. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
+All tables are defined in `apps/server/src/infra/database/schema.ts` (Drizzle; migrations in `apps/server/drizzle/`). Spaces, users, tokens, webhooks, webhook logs, schemas, translations, assets and contents have UUIDv7 ids (`uuid` columns, `newUuid()`). What everything else refers to stays human readable where it already was: a schema's `name`, a translation's `key`, a token's secret `token`. A space imported from Firebase (Admin → Spaces → Import from Firebase, [design](roadmap/firebase-space-import.md)) keeps its Firestore id in `spaces.legacy_id` (unique: one import per Firebase space), and its assets keep theirs in `assets.legacy_id`, so the space's old asset URLs redirect to the UUID ones; every other reference is rewritten to the new UUIDs during the import. Content and asset keys are `(space_id, id)`: the export/import tasks reuse ids in another space. JSON-shaped parts (`contents.data`, `schemas.fields`, `translations.locales`, `assets.metadata`, `spaces.locales`) are `jsonb`; timestamps are `timestamptz` and the API returns ISO strings.
 
 ```
 settings                          single row: global UI settings
 users                             role, permissions, lock, disabled
-  user_credentials                password hash (argon2id, or imported firebase-scrypt)
+  user_credentials                password hash (argon2id)
   user_identities                 Google / Microsoft sign-in links
   sessions, password_reset_tokens
 spaces                            locales, fallback, overview, progress, content/translation_version

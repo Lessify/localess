@@ -428,11 +428,9 @@ export class TaskRunner {
 
     const rows = await this.db.select().from(contents).where(eq(contents.spaceId, spaceId));
     const existing = new Map(rows.map(row => [row.id, withoutNulls(row) as unknown as Content]));
-    // Exports from the Firebase era carry Firestore ids: each becomes a UUID, kept as `legacy_id` (so content that
-    // links to or references the old id still finds it, and a re-import reuses the same UUID).
-    const legacy = new Map(rows.filter(row => row.legacyId).map(row => [row.legacyId as string, row.id]));
-    const ids = new Map(entries.map(it => [it.id, isUuid(it.id) ? it.id : (legacy.get(it.id) ?? newUuid())]));
-    const imported = entries.map(it => ({ ...it, id: ids.get(it.id) as string, legacyId: isUuid(it.id) ? undefined : it.id }));
+    // Exports from the Firebase era carry Firestore ids: each becomes a new UUID (references in the data are not
+    // rewritten; spaces from Firebase are imported with Admin → Spaces → Import from Firebase instead).
+    const imported = entries.map(it => ({ ...it, id: isUuid(it.id) ? it.id : newUuid() }));
     const changedDocuments: { id: string; fullSlug: string }[] = [];
     const total = await this.db.transaction(async (tx: Transaction) => {
       let changes = 0;
@@ -459,7 +457,7 @@ export class TaskRunner {
           // As the update trigger did: an edited document is a `content.changed`.
           if (document) changedDocuments.push({ id: content.id, fullSlug: content.fullSlug });
         } else {
-          await tx.insert(contents).values({ id: content.id, spaceId, legacyId: content.legacyId ?? null, ...columns });
+          await tx.insert(contents).values({ id: content.id, spaceId, ...columns });
         }
         changes++;
       }

@@ -8,6 +8,8 @@ import { SpaceTemplateService } from './space-template.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { FirebaseImportDialogComponent } from './firebase-import-dialog/firebase-import-dialog.component';
+import { FirebaseImportsDialogComponent } from './firebase-imports-dialog/firebase-imports-dialog.component';
 import { SpacesComponent } from './spaces.component';
 
 function space(overrides: Partial<Space> = {}): Space {
@@ -218,6 +220,22 @@ describe('SpacesComponent', () => {
 
       expect(error).toHaveBeenCalledWith('Space can not be created.');
     });
+  });
+
+  it('opens the Firebase import dialog and the imports history', () => {
+    const { component, open } = setup();
+    open.mockReturnValue(closesWith(undefined));
+    component.openFirebaseImport();
+    expect(open).toHaveBeenCalledWith(FirebaseImportDialogComponent, expect.anything());
+    component.openFirebaseImports();
+    expect(open).toHaveBeenCalledWith(FirebaseImportsDialogComponent, expect.anything());
+  });
+
+  it('labels spaces being imported or whose import failed', () => {
+    const { component } = setup();
+    expect(component.importLabel({ importStatus: 'IMPORTING' } as Space)).toBe('Importing');
+    expect(component.importLabel({ importStatus: 'FAILED' } as Space)).toBe('Import failed');
+    expect(component.importLabel({} as Space)).toBeUndefined();
   });
 
   it('openEditDialog() updates the space and notifies success when confirmed', () => {

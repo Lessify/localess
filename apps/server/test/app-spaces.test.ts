@@ -73,6 +73,21 @@ describe('app API: spaces, locales, settings', () => {
       await t.db.delete(spaces).where(eq(spaces.id, S2));
     });
 
+    it('refuses to delete a space while it is being imported, allows it once the import failed', async () => {
+      const id = newUuid();
+      await t.db.insert(spaces).values({
+        id,
+        name: 'Importing',
+        locales: [{ id: 'en', name: 'English' }],
+        localeFallback: { id: 'en', name: 'English' },
+        importStatus: 'IMPORTING',
+      });
+      expect((await admin.get(`/api/app/spaces/${id}`)).json()).toMatchObject({ importStatus: 'IMPORTING' });
+      expect((await admin.delete(`/api/app/spaces/${id}`)).statusCode).toBe(409);
+      await t.db.update(spaces).set({ importStatus: 'FAILED' }).where(eq(spaces.id, id));
+      expect((await admin.delete(`/api/app/spaces/${id}`)).statusCode).toBe(204);
+    });
+
     it('renames and sets environments', async () => {
       const response = await manager.patch(`/api/app/spaces/${spaceId}`, {
         name: 'Marketing Site',

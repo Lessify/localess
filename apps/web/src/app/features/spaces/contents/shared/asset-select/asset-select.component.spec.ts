@@ -10,14 +10,14 @@ import { AssetSelectComponent } from './asset-select.component';
 
 describe('AssetSelectComponent', () => {
   function setup(uri: string | null, kind: SchemaFieldKind.ASSET | null = SchemaFieldKind.ASSET) {
-    const findByIds = vi.fn().mockReturnValue(of([{ id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png' } as AssetFile]));
+    const findById = vi.fn().mockReturnValue(of({ id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png' } as AssetFile));
     const open = vi.fn();
 
     TestBed.overrideComponent(AssetSelectComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: HlmDialogService, useValue: { open } },
-        { provide: AssetService, useValue: { findByIds } },
+        { provide: AssetService, useValue: { findById } },
       ],
     });
     const fb = TestBed.inject(FormBuilder);
@@ -27,7 +27,7 @@ describe('AssetSelectComponent', () => {
     fixture.componentRef.setInput('component', { fileTypes: undefined } as unknown as SchemaFieldAsset);
     fixture.componentRef.setInput('space', { id: 'space-1' } as Space);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findByIds, open, form };
+    return { component: fixture.componentInstance, findById, open, form };
   }
 
   it('defaults the kind to ASSET when unset', () => {
@@ -37,16 +37,16 @@ describe('AssetSelectComponent', () => {
   });
 
   it('loads the asset when a uri is already set', () => {
-    const { component, findByIds } = setup('a1');
+    const { component, findById } = setup('a1');
 
-    expect(findByIds).toHaveBeenCalledWith('space-1', ['a1']);
+    expect(findById).toHaveBeenCalledWith('space-1', 'a1');
     expect(component.asset()?.id).toBe('a1');
   });
 
   it('does not load an asset when there is no uri', () => {
-    const { findByIds } = setup(null);
+    const { findById } = setup(null);
 
-    expect(findByIds).not.toHaveBeenCalled();
+    expect(findById).not.toHaveBeenCalled();
   });
 
   it('openAssetSelectDialog() sets the asset and form fields from the dialog result', () => {

@@ -1,4 +1,6 @@
-<div class="flex justify-end p-2">
+<div class="flex justify-end gap-2 p-2">
+  <button hlmBtn variant="outline" (click)="openFirebaseImports()">Imports</button>
+  <button hlmBtn variant="outline" (click)="openFirebaseImport()">Import from Firebase</button>
   <button hlmBtn (click)="openAddDialog()">
     <ng-icon hlm size="sm" name="lucidePlus" />
     Add Space
@@ -19,7 +21,12 @@
       </ng-container>
       <ng-container llColumnDef="name">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
-        <td llCell *llCellDef="let element">{{ element.name }}</td>
+        <td llCell *llCellDef="let element">
+          {{ element.name }}
+          @if (importLabel(element); as label) {
+            <span hlmBadge [variant]="element.importStatus === 'FAILED' ? 'destructive' : 'secondary'">{{ label }}</span>
+          }
+        </td>
       </ng-container>
       <ng-container llColumnDef="updatedAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>

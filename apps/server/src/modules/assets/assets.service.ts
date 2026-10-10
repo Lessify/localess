@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, like, or, SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, like, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { assets } from '../../infra/database/schema.js';
@@ -8,7 +8,6 @@ import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
 import { AssetMetadataService } from './asset-metadata.service.js';
-import { byIdOrLegacyId } from '../../infra/database/legacy-ids.js';
 
 export type AssetRow = typeof assets.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -20,7 +19,6 @@ export interface AssetQuery {
   name?: string;
   /** MIME prefix, e.g. `image` or `video`. */
   fileType?: string;
-  /** UUIDs, or Firestore ids still referenced by imported content (`legacy_id`). */
   ids?: string[];
   limit?: number;
 }
@@ -65,13 +63,15 @@ export class AssetsService {
 
   async list(spaceId: string, query: AssetQuery): Promise<AssetRow[]> {
     const conditions: SQL[] = [eq(assets.spaceId, spaceId)];
-    // The editor asks for the assets content references, which may be Firestore ids in imported content.
     if (query.parentPath !== undefined) conditions.push(eq(assets.parentPath, query.parentPath));
     if (query.kind) conditions.push(eq(assets.kind, query.kind));
     if (query.name) conditions.push(ilike(assets.name, `${escapeLike(query.name)}%`));
     // Folders stay visible while browsing by file type.
     if (query.fileType) conditions.push(or(eq(assets.kind, 'FOLDER'), like(assets.type, `${escapeLike(query.fileType)}%`)) as SQL);
-    if (query.ids) conditions.push(byIdOrLegacyId(assets, spaceId, query.ids));
+    if (query.ids) {
+      const ids = query.ids.filter(isUuid);
+      conditions.push(ids.length ? inArray(assets.id, ids) : sql`false`);
+    }
     const select = this.db
       .select()
       .from(assets)

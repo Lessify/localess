@@ -135,13 +135,13 @@ export function sanitizeWebhookHeaders(headers: Record<string, string> | undefin
 type LookupCallback = (err: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void;
 
 /**
- * DNS lookup that refuses internal addresses; used as the socket's `lookup` so the check applies
+ * DNS lookup that refuses internal addresses (also used by the Firebase import's client); used as the socket's `lookup` so the check applies
  * to the address actually connected to.
  * @param {string} hostname host to resolve
  * @param {object} options lookup options from the socket
  * @param {Function} callback node-style lookup callback
  */
-function guardedLookup(hostname: string, options: { all?: boolean; family?: number }, callback: LookupCallback): void {
+export function guardedLookup(hostname: string, options: { all?: boolean; family?: number }, callback: LookupCallback): void {
   dnsLookup(hostname, { all: true, family: options.family ?? 0 }, (err, addresses) => {
     if (err) return callback(err, []);
     const list = addresses as LookupAddress[];

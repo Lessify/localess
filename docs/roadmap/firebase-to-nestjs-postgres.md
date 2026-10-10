@@ -299,6 +299,9 @@ binaries (verify musl support before considering Alpine).
 
 ## 8. Data migration from an existing Firebase install
 
+> **Superseded (2026-10-10):** the `import:firebase` CLI described here was replaced by importing spaces one at a
+> time from the admin UI — see [firebase-space-import.md](firebase-space-import.md). Kept as the original plan.
+
 > **Superseded (planned):** [firebase-migration-uuidv7.md](firebase-migration-uuidv7.md) replaces the 1:1 id
 > copy below with UUIDv7 ids, rewritten references and legacy id resolution. Built once the application
 > migration is stable; until then the importer below is what ships.

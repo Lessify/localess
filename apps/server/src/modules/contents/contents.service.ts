@@ -4,7 +4,6 @@ import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, o
 import { Schema, WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { byIdOrLegacyId } from '../../infra/database/legacy-ids.js';
 import { contentPublished, contents, schemas, UpdatedBy } from '../../infra/database/schema.js';
 import { buildDocumentStorage } from './content-extract.js';
 import { EventsService } from '../../infra/events/events.service.js';
@@ -57,8 +56,10 @@ export class ContentsService {
     if (query.parentSlug !== undefined) conditions.push(eq(contents.parentSlug, query.parentSlug));
     if (query.kind) conditions.push(eq(contents.kind, query.kind));
     if (query.name) conditions.push(ilike(contents.name, startsWith(query.name)));
-    // The editor asks for the documents content links to or references, which may be Firestore ids in imported content.
-    if (query.ids) conditions.push(byIdOrLegacyId(contents, spaceId, query.ids));
+    if (query.ids) {
+      const ids = query.ids.filter(isUuid);
+      conditions.push(ids.length ? inArray(contents.id, ids) : sql`false`);
+    }
     const select = this.db
       .select()
       .from(contents)

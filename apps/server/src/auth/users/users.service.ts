@@ -159,10 +159,10 @@ export class UsersService {
     const passwordHash = await hashPassword(password);
     await this.db
       .insert(userCredentials)
-      .values({ userId: id, passwordHash, hashAlgo: 'argon2id', salt: null })
+      .values({ userId: id, passwordHash, hashAlgo: 'argon2id' })
       .onConflictDoUpdate({
         target: userCredentials.userId,
-        set: { passwordHash, hashAlgo: 'argon2id', salt: null, updatedAt: new Date() },
+        set: { passwordHash, hashAlgo: 'argon2id', updatedAt: new Date() },
       });
   }
 

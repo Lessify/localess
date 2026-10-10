@@ -37,6 +37,18 @@ Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform
 
 - `openAddDialog()` — opens the create dialog; see [Creating a space](#creating-a-space)
 
+## Importing a space from Firebase
+
+**Import from Firebase** (`firebase-import-dialog/`) connects to a running Firebase-era environment with its URL and
+migration token (generated there under Admin → Settings → Migration), lists its spaces (already imported ones are
+disabled, "Imported as …"), and imports the one picked into a new space. The dialog then polls the run every 2 s
+(`FirebaseImportService.poll`) and shows each stage — space, locales, environments, tokens, webhooks (imported
+disabled), translations, schemas, assets, contents, content migration — with its count, warnings and, on failure,
+the error (`firebase-import-progress/`). **Imports** (`firebase-imports-dialog/`) lists past runs. A space being
+imported or whose import failed shows a badge, is left out of `SpaceStore` (so it cannot be opened), and a failed one
+can be deleted to import again. Server side: `apps/server/src/modules/firebase-import/`; design:
+[firebase-space-import.md](../../roadmap/firebase-space-import.md).
+
 ## Creating a space
 
 **`/features/admin/spaces?action=create` opens the create dialog**, so a page that is not the spaces

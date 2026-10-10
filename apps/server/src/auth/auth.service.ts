@@ -14,9 +14,6 @@ export class AuthService {
     if (!user || !check.valid || user.disabled) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    if (check.needsRehash) {
-      await this.users.setPassword(user.id, password);
-    }
     return user;
   }
 

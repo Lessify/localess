@@ -43,11 +43,13 @@ export class AuthGuard implements CanActivate {
     if (!access) return true;
     const principal = toPrincipal(session.user);
     const allowed =
-      access.kind === 'anyRole'
-        ? hasAnyRole(principal)
-        : access.kind === 'anyOf'
-          ? access.permissions.some(permission => canPerform(principal, permission))
-          : access.permissions.every(permission => canPerform(principal, permission));
+      access.kind === 'admin'
+        ? principal.role === 'admin'
+        : access.kind === 'anyRole'
+          ? hasAnyRole(principal)
+          : access.kind === 'anyOf'
+            ? access.permissions.some(permission => canPerform(principal, permission))
+            : access.permissions.every(permission => canPerform(principal, permission));
     if (!allowed) throw new ForbiddenException();
     return true;
   }

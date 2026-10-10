@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { FirebaseImportStage, FirebaseImportStageName } from '@localess/shared';
 import {
   bigint,
   boolean,
@@ -19,10 +20,9 @@ import {
  * the SDK and Code as Source refer to stays human readable where it always was: a schema's `name`, a translation's
  * `key`, a token's secret `token`.
  *
- * A row that can come from Firebase (users, spaces, webhooks, assets, contents) keeps its Firestore id / Firebase uid
- * in `legacy_id`: a re-run of the import updates the same row, old space ids, asset and document URLs keep working
- * on the public API, and content imported from Firebase still references assets and documents by it (`legacy-ids.ts`)
- * until a later migration rewrites those references.
+ * A space imported from Firebase keeps its Firestore id in `legacy_id` (unique: one import per Firebase space), and
+ * so do its assets, so that the space's old asset URLs keep working (docs/roadmap/firebase-space-import.md). The
+ * import rewrites every other reference to the new UUIDs.
  *
  * Content and asset keys are (space_id, id): the export/import tasks reuse the ids of an export in another space.
  */
@@ -50,8 +50,6 @@ export const users = pgTable(
   'users',
   {
     id: uuid('id').primaryKey(),
-    // Firebase uid of an imported user.
-    legacyId: text('legacy_id').unique(),
     email: text('email').notNull(),
     emailVerified: boolean('email_verified').notNull().default(false),
     displayName: text('display_name'),
@@ -74,10 +72,8 @@ export const userCredentials = pgTable('user_credentials', {
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
   passwordHash: text('password_hash').notNull(),
-  // 'argon2id' for new passwords, 'firebase-scrypt' for imported ones (re-hashed on next login).
+  // 'argon2id'
   hashAlgo: text('hash_algo').notNull(),
-  // Firebase scrypt salt, only for 'firebase-scrypt'.
-  salt: text('salt'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -140,8 +136,10 @@ export const spaces = pgTable(
   'spaces',
   {
     id: uuid('id').primaryKey(),
-    // Firestore id of an imported space; still accepted wherever a space id is (public API URLs, SDK configs).
+    // Firestore id of a space imported from Firebase: one import per Firebase space; its old asset URLs keep working.
     legacyId: text('legacy_id').unique(),
+    // 'IMPORTING' while an import from Firebase fills the space, 'FAILED' after a failed one, null otherwise.
+    importStatus: text('import_status'),
     name: text('name').notNull(),
     locales: jsonb('locales').$type<Locale[]>().notNull(),
     localeFallback: jsonb('locale_fallback').$type<Locale>().notNull(),
@@ -170,9 +168,6 @@ export const contents = pgTable(
   {
     id: uuid('id').notNull(),
     spaceId: spaceId(),
-    // Firestore id of an imported document: old `/contents/:id` URLs redirect, and imported content still links to
-    // and references documents by it (see `legacy-ids.ts`) until a later migration rewrites those references.
-    legacyId: text('legacy_id'),
     // 'FOLDER' | 'DOCUMENT'
     kind: text('kind').notNull(),
     name: text('name').notNull(),
@@ -191,7 +186,6 @@ export const contents = pgTable(
   t => [
     // Kept per space: the content import task reuses the ids of an export in another space.
     primaryKey({ columns: [t.spaceId, t.id] }),
-    uniqueIndex('contents_legacy_idx').on(t.spaceId, t.legacyId),
     index('contents_parent_idx').on(t.spaceId, t.parentSlug, t.kind.desc(), t.name),
     index('contents_kind_idx').on(t.spaceId, t.kind, t.name),
     index('contents_full_slug_idx').on(t.spaceId, sql`${t.fullSlug} text_pattern_ops`),
@@ -224,8 +218,7 @@ export const assets = pgTable(
   {
     id: uuid('id').notNull(),
     spaceId: spaceId(),
-    // Firestore id of an imported asset. Old asset URLs redirect to the UUID one, and content imported from Firebase
-    // still references assets by it (see `legacy-ids.ts`) until a later migration rewrites those references.
+    // Firestore id of an imported asset: its old URL redirects (301) to the UUID one.
     legacyId: text('legacy_id'),
     // 'FOLDER' | 'FILE'
     kind: text('kind').notNull(),
@@ -391,8 +384,6 @@ export const webhooks = pgTable(
   {
     id: uuid('id').primaryKey(),
     spaceId: spaceId(),
-    // Firestore id of an imported webhook, so a re-run of the import updates it.
-    legacyId: text('legacy_id'),
     name: text('name').notNull(),
     url: text('url').notNull(),
     enabled: boolean('enabled').notNull().default(true),
@@ -404,7 +395,6 @@ export const webhooks = pgTable(
   t => [
     index('webhooks_space_idx').on(t.spaceId, t.name),
     index('webhooks_events_idx').using('gin', t.events),
-    uniqueIndex('webhooks_legacy_idx').on(t.spaceId, t.legacyId),
   ],
 );
 
@@ -432,4 +422,35 @@ export const webhookLogs = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   t => [index('webhook_logs_webhook_idx').on(t.webhookId, t.createdAt.desc())],
+);
+
+// ---------------------------------------------------------------------------------------------------
+// Imports from a Firebase environment (Admin → Spaces → Import from Firebase), one row per run
+// ---------------------------------------------------------------------------------------------------
+
+export const firebaseImports = pgTable(
+  'firebase_imports',
+  {
+    id: uuid('id').primaryKey(),
+    origin: text('origin').notNull(),
+    sourceSpaceId: text('source_space_id').notNull(),
+    sourceSpaceName: text('source_space_name').notNull(),
+    spaceId: uuid('space_id').references(() => spaces.id, { onDelete: 'set null' }),
+    // 'RUNNING' | 'FINISHED' | 'FAILED'
+    status: text('status').notNull(),
+    stages: jsonb('stages').$type<FirebaseImportStage[]>().notNull(),
+    error: jsonb('error').$type<{ stage: FirebaseImportStageName; message: string }>(),
+    startedBy: jsonb('started_by').$type<UpdatedBy>().notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    // Moved on every progress write and every 30 s while running: a RUNNING run whose heartbeat is stale was cut off.
+    heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  t => [
+    // At most one running import per install, whichever instance started it.
+    uniqueIndex('firebase_imports_running_idx')
+      .on(t.status)
+      .where(sql`${t.status} = 'RUNNING'`),
+    index('firebase_imports_started_idx').on(t.startedAt.desc()),
+  ],
 );

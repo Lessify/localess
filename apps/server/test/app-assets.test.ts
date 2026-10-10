@@ -178,14 +178,12 @@ describe('app API: assets', () => {
       expect((await contentReader.post(`${base}/folders`, { parentPath: '', name: 'x' })).statusCode).toBe(403);
     });
 
-    it('finds assets by UUID or, for content imported from Firebase, by their Firestore id; routes take UUIDs only', async () => {
+    it('`?ids=` matches asset UUIDs exactly, not the Firestore id an asset was imported with', async () => {
       const [first] = (await contentReader.get(`${base}?parentPath=&kind=FILE`)).json();
       expect(first.id).toMatch(UUID_V7);
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, first.id));
-      const found = (await contentReader.get(`${base}?ids=FirestoreAsset000001,${first.id},unknown`)).json();
-      expect(found.map((a: { id: string }) => a.id)).toEqual([first.id]);
-      expect(found[0].legacyId).toBe('FirestoreAsset000001');
-      expect((await contentReader.get(`${base}/FirestoreAsset000001`)).statusCode).toBe(404);
+      expect((await contentReader.get(`${base}?ids=FirestoreAsset000001`)).json()).toEqual([]);
+      expect((await contentReader.get(`${base}?ids=${first.id}`)).json()[0]).toMatchObject({ id: first.id, legacyId: 'FirestoreAsset000001' });
     });
   });
 

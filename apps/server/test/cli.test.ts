@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { runCli } from '../src/cli/commands.js';
@@ -72,6 +75,38 @@ describe('CLI', () => {
     expect(await run(['admin:create'])).toBe(2);
     expect(output.join('\n')).toMatch(/Usage/);
     expect(await run(['nope'])).toBe(2);
+    // Spaces are imported from Firebase in the admin UI now (Admin → Spaces → Import from Firebase).
+    expect(await run(['import:firebase', '--project', 'demo'])).toBe(2);
+    expect(output.join('\n')).not.toMatch(/import:firebase/);
     expect(await run([])).toBe(0);
+  });
+});
+
+describe('check', () => {
+  it('fails without an admin, passes once there is one', async () => {
+    const database = await createTestDatabase();
+    const storageDir = await mkdtemp(join(tmpdir(), 'localess-check-'));
+    const output: string[] = [];
+    const run = (argv: string[], env: Record<string, string> = {}) => {
+      output.length = 0;
+      return runCli(argv, {
+        env: { DATABASE_URL: database.url, LOCALESS_STORAGE_DIR: storageDir, LOCALESS_LOG_LEVEL: 'error', ...env },
+        out: line => output.push(line),
+        promptPassword: async () => '',
+      });
+    };
+    try {
+      expect(await run(['check'])).toBe(1);
+      expect(output.join('\n')).toMatch(/✗ admin user: none/);
+      expect(await run(['admin:create', '--email', 'root@example.com'], { LOCALESS_ADMIN_PASSWORD: 'root-pass' })).toBe(0);
+      expect(await run(['check'])).toBe(0);
+      const text = output.join('\n');
+      expect(text).toMatch(/✓ admin user: 1 admin/);
+      expect(text).toMatch(/✓ storage: writable/);
+      expect(text).toMatch(/! password reset email: no SMTP/);
+    } finally {
+      await database.drop();
+      await rm(storageDir, { recursive: true, force: true });
+    }
   });
 });

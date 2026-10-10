@@ -16,7 +16,6 @@ pnpm test         # vitest (starts a throwaway embedded Postgres)
 pnpm db:generate  # drizzle-kit: SQL migration from src/infra/database/schema.ts changes (commit the output)
 pnpm cli db:migrate
 pnpm cli check
-pnpm cli import:firebase --project <firebase-project-id>
 LOCALESS_ADMIN_PASSWORD=… pnpm cli admin:create --email admin@example.com [--name "Admin"]
 ```
 
@@ -123,6 +122,7 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 |---|---|
 | Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }` |
 | Spaces | `/api/app/spaces` CRUD, `POST …/:id/overview`, `POST/DELETE …/:id/locales[/:locale]`, `PUT …/:id/locale-fallback` |
+| Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
 | Settings | `GET /api/app/settings`, `PATCH /api/app/settings/ui` |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`:id` = UUID), `PUT …/:id/name` (rename), `POST …/template` |
 | Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
@@ -148,27 +148,7 @@ IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: impor
 
 ## Migrating from a Firebase install
 
-`import:firebase` copies a Firebase-era Localess project into this server — Firestore documents
-(spaces and users get UUIDv7 ids and keep their Firebase id in `legacy_id`, which public API URLs
-still accept; the other entities keep their ids, so public URLs, API tokens and SDK caches keep
-working), Storage files (asset originals;
-the published content and translation JSON snapshots are copied as served, not rebuilt) and Auth
-users with their roles and permissions. Every write is an upsert (spaces and users by `legacy_id`): run it once to rehearse, then
-again right before switching DNS to pick up the delta.
-
-1. Create a service account key for the Firebase project with read access to Firestore, Storage and
-   Authentication (e.g. *Firebase Admin SDK Administrator Service Agent*) and point
-   `GOOGLE_APPLICATION_CREDENTIALS` at it.
-2. Copy the project's password hash parameters (Firebase console → Authentication → Users → ⋮ →
-   *Password hash parameters*) into `FIREBASE_SCRYPT_SIGNER_KEY`, `FIREBASE_SCRYPT_SALT_SEPARATOR`,
-   `FIREBASE_SCRYPT_ROUNDS`, `FIREBASE_SCRYPT_MEM_COST`. Users then keep their passwords: the
-   Firebase hash is accepted once and replaced by argon2id on their first sign-in. Without the
-   parameters, password users must reset their password.
-3. `pnpm cli import:firebase --project <id> [--bucket <name>]` (`--no-files` skips Storage for
-   a quick data-only rehearsal). The report lists counts and every item that was skipped.
-4. Freeze edits in the old install, run the import again, switch DNS, keep the Firebase project
-   read-only for a while as a rollback.
-
-Not imported: tasks and their files (temporary export artifacts), and Google/Microsoft identities —
-those users are linked by verified email on their first OAuth sign-in. Users whose email is already
-taken by another account here (e.g. an admin created before the import) are skipped and reported.
+Spaces are imported from a running Firebase-era environment in the admin UI, one at a time: Admin → Spaces →
+*Import from Firebase* (`src/modules/firebase-import/`, App API `/api/app/admin/firebase-import`). See
+[docs/deployment/migrate-from-firebase.md](../../docs/deployment/migrate-from-firebase.md) and the design in
+[docs/roadmap/firebase-space-import.md](../../docs/roadmap/firebase-space-import.md).

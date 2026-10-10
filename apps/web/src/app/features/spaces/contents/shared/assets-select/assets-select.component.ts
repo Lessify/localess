@@ -86,11 +86,7 @@ export class AssetsSelectComponent implements OnInit {
     if (ids && ids.length > 0) {
       this.assetService.findByIds(this.space().id, ids).subscribe({
         next: assets => {
-          // Content imported from Firebase may reference an asset by its Firestore id (`legacyId`) until the
-          // references are migrated (docs/roadmap/firebase-migration-uuidv7.md, "Deferred reference migration").
-          const byId = new Map<string, Asset>(
-            assets.flatMap(item => [[item.id, item] as const, ...(item.legacyId ? [[item.legacyId, item] as const] : [])]),
-          );
+          const byId = new Map<string, Asset>(assets.map(item => [item.id, item]));
           // Make sure to have assets display in exactly the same order
           this.assets.set(
             ids

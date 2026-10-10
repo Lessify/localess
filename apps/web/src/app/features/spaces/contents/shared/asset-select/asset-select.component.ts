@@ -80,11 +80,9 @@ export class AssetSelectComponent implements OnInit {
   loadData(): void {
     const id: string | undefined = this.form().value.uri;
     if (id) {
-      // By the id list, which also matches the Firestore id (`legacyId`) content imported from Firebase may still
-      // reference (docs/roadmap/firebase-migration-uuidv7.md, "Deferred reference migration").
-      this.assetService.findByIds(this.space().id, [id]).subscribe({
-        next: ([asset]) => {
-          if (asset) this.asset.set(asset as AssetFile);
+      this.assetService.findById(this.space().id, id).subscribe({
+        next: asset => {
+          this.asset.set(asset as AssetFile);
         },
       });
     }

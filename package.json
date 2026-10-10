@@ -31,8 +31,7 @@
     "shared:build": "pnpm --filter @localess/shared build",
     "shared:test": "pnpm --filter @localess/shared test",
     "localess": "pnpm --filter @localess/server cli",
-    "localess:check": "pnpm --filter @localess/server cli check",
-    "localess:import": "pnpm --filter @localess/server cli import:firebase"
+    "localess:check": "pnpm --filter @localess/server cli check"
   },
   "packageManager": "pnpm@12.10.1",
   "devDependencies": {

@@ -1,0 +1,39 @@
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Import from Firebase</h2>
+</hlm-dialog-header>
+@if (run(); as current) {
+  <p class="text-sm">{{ current.sourceSpaceName }}: {{ current.status }}</p>
+  <ll-firebase-import-progress [run]="current" />
+} @else {
+  <form [formGroup]="form" class="flex flex-col gap-3" (ngSubmit)="connect()">
+    <div hlmField>
+      <label hlmFieldLabel for="origin">Firebase environment URL</label>
+      <input hlmInput id="origin" formControlName="origin" placeholder="https://cms.example.com" autocomplete="off" />
+    </div>
+    <div hlmField>
+      <label hlmFieldLabel for="token">Migration token</label>
+      <input hlmInput id="token" type="password" formControlName="token" autocomplete="off" />
+      <p class="text-muted-foreground text-xs">Generated in the Firebase environment under Admin → Settings → Migration.</p>
+    </div>
+    <button hlmBtn type="submit" [disabled]="form.invalid || busy()">Connect</button>
+  </form>
+  @if (spaces().length) {
+    <ul class="flex flex-col gap-1">
+      @for (space of spaces(); track space.id) {
+        <li>
+          <label class="flex items-center gap-2" [class.opacity-50]="!isSelectable(space)">
+            <input type="radio" name="space" [value]="space.id" [disabled]="!isSelectable(space)" (change)="selected.set(space.id)" />
+            {{ space.name }}
+            @if (space.importedAs; as imported) {
+              <span class="text-muted-foreground text-xs">Imported as {{ imported.name }}</span>
+            }
+          </label>
+        </li>
+      }
+    </ul>
+    <button hlmBtn [disabled]="!selected()" (click)="startImport()">Import</button>
+  }
+}
+@if (error()) {
+  <p class="text-destructive text-sm">{{ error() }}</p>
+}

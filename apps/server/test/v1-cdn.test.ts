@@ -1,7 +1,7 @@
 import { gunzipSync } from 'node:zlib';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contents, spaces, tokens } from '../src/infra/database/schema.js';
+import { spaces, tokens } from '../src/infra/database/schema.js';
 import {
   seedContent,
   seedSpace,
@@ -234,31 +234,12 @@ describe('v1 CDN API', () => {
     });
   });
 
-  describe('Firestore content ids (imported from Firebase)', () => {
-    beforeAll(async () => {
-      await t.db.update(contents).set({ legacyId: 'FirestoreHome' }).where(eq(contents.id, C.home));
-      await t.db.update(contents).set({ legacyId: 'FirestorePost1' }).where(eq(contents.id, C.post1));
-    });
-    afterAll(async () => {
-      await t.db.update(contents).set({ legacyId: null }).where(inArray(contents.id, [C.home, C.post1]));
-    });
-
-    it('redirects an old document URL to the UUID one, even with a current cv', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/FirestoreHome?cv=7&token=${TOKEN_DRAFT}&locale=de`);
-      expect(response.statusCode).toBe(302);
-      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/contents/${C.home}?cv=7&locale=de&token=${TOKEN_DRAFT}`);
-      expect((await get(`/api/v1/spaces/${S1}/contents/UnknownFirestoreId?cv=7&token=${TOKEN_DRAFT}`)).statusCode).toBe(404);
-    });
-
-    it('resolves links and references that still hold Firestore ids, keyed by those ids', async () => {
-      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
-      const delivery = t.app.get(ContentDeliveryService);
-      expect(await delivery.resolveLinks(S1, ['FirestorePost1', 'gone'])).toEqual({
-        FirestorePost1: expect.objectContaining({ id: C.post1, fullSlug: 'blog/post-1' }),
-      });
-      expect(await delivery.resolveReferences(S1, ['FirestorePost1'], 'en', undefined)).toEqual({
-        FirestorePost1: expect.objectContaining({ id: C.post1, data: expect.objectContaining({ title: 'Post 1' }) }),
-      });
+  describe('old Firebase ids', () => {
+    it('are not accepted for documents, nor for the space outside asset routes', async () => {
+      await t.db.update(spaces).set({ legacyId: 'FirestoreSpace' }).where(eq(spaces.id, S1));
+      expect((await get(`/api/v1/spaces/FirestoreSpace/contents/${C.home}?cv=7&token=${TOKEN_DRAFT}`)).statusCode).toBe(404);
+      expect((await get(`/api/v1/spaces/${S1}/contents/FirestoreHome?cv=7&token=${TOKEN_DRAFT}`)).statusCode).toBe(404);
+      await t.db.update(spaces).set({ legacyId: null }).where(eq(spaces.id, S1));
     });
   });
 

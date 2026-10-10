@@ -49,13 +49,6 @@ describe('AssetsSelectComponent', () => {
     expect(component.assets()).toEqual([a2, a1]);
   });
 
-  it('matches a uri that is the Firestore id of an imported asset (legacyId)', () => {
-    const imported = { ...file('0190a3b4-0000-7000-8000-000000000001', 'Imported'), legacyId: 'FirestoreAsset000001' };
-    const { component } = setup(['FirestoreAsset000001'], [imported]);
-
-    expect(component.assets()).toEqual([imported]);
-  });
-
   it('openAssetSelectDialog() appends selected assets and rebuilds the form', () => {
     const { component, open, form } = setup([]);
     const selected = [file('a1', 'New')];

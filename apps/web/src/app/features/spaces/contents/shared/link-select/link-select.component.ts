@@ -18,12 +18,6 @@ import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { map, startWith, switchMap } from 'rxjs';
 
-/**
- * A link's `uri` is the document id, or the Firestore id (`legacyId`) in content imported from Firebase until the
- * references are migrated (docs/roadmap/firebase-migration-uuidv7.md, "Deferred reference migration").
- */
-const matchesUri = (document: ContentDocument, uri: string) => document.id === uri || document.legacyId === uri;
-
 @Component({
   selector: 'll-link-select',
   templateUrl: './link-select.component.html',
@@ -63,7 +57,7 @@ export class LinkSelectComponent implements OnInit {
   defaultDocument = computed(() => {
     const defaultUri = this.default()?.uri;
     if (defaultUri) {
-      return this.documents().find(it => matchesUri(it, defaultUri));
+      return this.documents().find(it => it.id === defaultUri);
     }
     return undefined;
   });
@@ -101,7 +95,7 @@ export class LinkSelectComponent implements OnInit {
     effect(() => {
       if (this.linkType() !== 'content') return;
       const uriValue = this.form().get('uri')?.value;
-      const doc = uriValue ? this.documents().find(it => matchesUri(it, uriValue)) : null;
+      const doc = uriValue ? this.documents().find(it => it.id === uriValue) : null;
       this.selectedDocument.set(doc ?? null);
     });
   }

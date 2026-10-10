@@ -5,6 +5,8 @@ export interface Space {
   id: string;
   /** Firestore id of a space imported from Firebase, for display. Only the public API accepts it in URLs. */
   legacyId?: string;
+  /** Set while an import from Firebase fills the space (`IMPORTING`) or after it failed (`FAILED`). */
+  importStatus?: 'IMPORTING' | 'FAILED';
   name: string;
   locales: Locale[];
   localeFallback: Locale;

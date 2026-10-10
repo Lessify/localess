@@ -4,11 +4,6 @@ export type Content = ContentDocument | ContentFolder;
 
 export interface ContentBase {
   id: string;
-  /**
-   * Firestore id of a document imported from Firebase, for display. Old `/contents/:id` URLs redirect to the UUID one,
-   * and content imported from Firebase may still link to or reference the document by it.
-   */
-  legacyId?: string;
   kind: ContentKind;
   name: string;
 

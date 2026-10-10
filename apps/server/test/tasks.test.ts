@@ -203,7 +203,7 @@ describe('task worker: exports and imports', () => {
       ).toEqual(['blog', 'post', 'y2026']);
     });
 
-    it('imports a Firebase-era export: data as a JSON string, Firestore ids as UUIDs kept in legacy_id', async () => {
+    it('imports a Firebase-era export: data as a JSON string, Firestore ids replaced by new UUIDs', async () => {
       const bytes = await zipOf({
         'metadata.json': JSON.stringify({ kind: 'CONTENT' }),
         'contents.json': JSON.stringify([
@@ -220,17 +220,12 @@ describe('task worker: exports and imports', () => {
         ]),
       });
       expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
-      const legacy = () =>
-        t.db
-          .select()
-          .from(contents)
-          .where(and(eq(contents.spaceId, SPACE_B), eq(contents.legacyId, 'legacy')));
-      const [row] = await legacy();
+      const [row] = await t.db
+        .select()
+        .from(contents)
+        .where(and(eq(contents.spaceId, SPACE_B), eq(contents.fullSlug, 'legacy')));
       expect(row.id).toMatch(UUID_V7);
       expect(row.data).toEqual({ _id: 'x', _schema: 'page', title: 'Old' });
-      // A re-import finds it by legacy_id and keeps its UUID.
-      expect((await importTask(SPACE_B, 'CONTENT_IMPORT', bytes)).status).toBe('FINISHED');
-      expect((await legacy()).map(it => it.id)).toEqual([row.id]);
     });
 
     it('is served by the public API of the importing space', async () => {
@@ -385,15 +380,12 @@ describe('task worker: exports and imports', () => {
         'metadata.json': JSON.stringify({ kind: 'CONTENT' }),
         'contents.json': JSON.stringify([{ id: 'x', kind: 'DOCUMENT' }]),
       });
+      const count = async () => (await t.db.select().from(contents).where(eq(contents.spaceId, SPACE_B))).length;
+      const before = await count();
       const task = await importTask(SPACE_B, 'CONTENT_IMPORT', bytes);
       expect(task).toMatchObject({ status: 'ERROR', message: 'Content data is invalid.' });
       expect(JSON.parse(task.trace as string).length).toBeGreaterThan(0);
-      expect(
-        await t.db
-          .select()
-          .from(contents)
-          .where(and(eq(contents.spaceId, SPACE_B), eq(contents.legacyId, 'x'))),
-      ).toEqual([]);
+      expect(await count()).toBe(before);
     });
   });
 });

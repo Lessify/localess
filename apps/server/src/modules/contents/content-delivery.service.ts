@@ -3,12 +3,10 @@ import { and, asc, eq, inArray, or, sql, SQL } from 'drizzle-orm';
 import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata, Schema } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid } from '../../infra/database/id.js';
-import { byIdOrLegacyId, indexByIdAndLegacyId } from '../../infra/database/legacy-ids.js';
 import { assets, contentPublished, contents, schemas } from '../../infra/database/schema.js';
 import { SpaceRow } from '../../infra/http/space-access.js';
 import { isDraft } from '../../infra/http/v1/v1-request.js';
 import { buildDocumentStorage } from './content-extract.js';
-import { isValidId } from '../../infra/http/v1/id-param.js';
 import { stripStorageIds } from './strip-storage-ids.js';
 
 type ContentRow = typeof contents.$inferSelect;
@@ -47,15 +45,6 @@ export class ContentDeliveryService {
       .from(contents)
       .where(and(eq(contents.spaceId, spaceId), eq(contents.fullSlug, fullSlug)))
       .limit(1);
-    return row?.id;
-  }
-
-  /** The UUID of the document imported from Firebase with this Firestore id. */
-  async findContentIdByLegacyId(spaceId: string, legacyId: string): Promise<string | undefined> {
-    const [row] = await this.db
-      .select({ id: contents.id })
-      .from(contents)
-      .where(and(eq(contents.spaceId, spaceId), eq(contents.legacyId, legacyId)));
     return row?.id;
   }
 
@@ -114,24 +103,11 @@ export class ContentDeliveryService {
   /** Resolved `references`, one level deep, without their own id arrays. Same locale, no fallback. */
   async resolveReferences(spaceId: string, ids: string[], locale: string, version: unknown): Promise<Record<string, ContentDocumentApi>> {
     // A malformed stored id is skipped like a missing one rather than failing the whole response.
-    const valid = [...new Set(ids.filter(id => id && isValidId(id)))];
-    if (!valid.length) return {};
-    // Imported content may still reference a document by its Firestore id; the result is keyed by the id asked for.
-    const rows = await this.db
-      .select({ id: contents.id, legacyId: contents.legacyId })
-      .from(contents)
-      .where(byIdOrLegacyId(contents, spaceId, valid));
-    const uuidOf = indexByIdAndLegacyId(rows);
-    const found = await this.localeDocuments(
-      spaceId,
-      rows.map(it => it.id),
-      locale,
-      isDraft(version),
-    );
+    const valid = [...new Set(ids.filter(isUuid))];
+    const found = await this.localeDocuments(spaceId, valid, locale, isDraft(version));
     const resolved: Record<string, ContentDocumentApi> = {};
     for (const id of valid) {
-      const row = uuidOf.get(id);
-      const document = row && found.get(row.id);
+      const document = found.get(id);
       if (document) resolved[id] = stripStorageIds(document) as ContentDocumentApi;
     }
     return resolved;
@@ -139,32 +115,24 @@ export class ContentDeliveryService {
 
   /** Link targets' metadata; deleted targets are skipped. */
   async resolveLinks(spaceId: string, ids: string[]): Promise<Record<string, ContentMetadata>> {
-    const unique = [...new Set(ids)];
+    const unique = [...new Set(ids.filter(isUuid))];
     if (!unique.length) return {};
     const rows = await this.db
       .select()
       .from(contents)
-      .where(byIdOrLegacyId(contents, spaceId, unique));
-    // Imported content may still link to a document by its Firestore id; the result is keyed by the id asked for.
-    const byId = indexByIdAndLegacyId(rows);
-    const resolved: Record<string, ContentMetadata> = {};
-    for (const id of unique) {
-      const row = byId.get(id);
-      if (row) resolved[id] = toContentMetadata(row);
-    }
-    return resolved;
+      .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, unique)));
+    return Object.fromEntries(rows.map(row => [row.id, toContentMetadata(row)]));
   }
 
   /** Asset metadata for FILE assets; folders and deleted assets are skipped. */
   async resolveAssets(spaceId: string, ids: string[]): Promise<Record<string, AssetMetadata>> {
-    const unique = [...new Set(ids)];
+    const unique = [...new Set(ids.filter(isUuid))];
     if (!unique.length) return {};
     const rows = await this.db
       .select()
       .from(assets)
-      .where(byIdOrLegacyId(assets, spaceId, unique));
-    // Imported content may still reference an asset by its Firestore id; the result is keyed by the id asked for.
-    const byId = indexByIdAndLegacyId(rows);
+      .where(and(eq(assets.spaceId, spaceId), inArray(assets.id, unique)));
+    const byId = new Map(rows.map(row => [row.id, row]));
     const resolved: Record<string, AssetMetadata> = {};
     for (const id of unique) {
       const asset = byId.get(id);

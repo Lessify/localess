@@ -30,6 +30,11 @@
               </button>
             </div>
           </div>
+          @if (space.legacyId) {
+            <p class="text-muted-foreground text-xs"
+              >Imported from Firebase: <code>{{ space.legacyId }}</code></p
+            >
+          }
         </div>
         <div hlmField>
           <label hlmFieldLabel for="space-id">Space Name</label>

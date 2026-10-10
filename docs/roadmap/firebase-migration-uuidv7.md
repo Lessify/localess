@@ -1,14 +1,15 @@
 # Firebase → self-hosted data migration with UUIDv7 ids
 
 **Status:** Ids done — every table has UUIDv7 ids (2026-10-10, see [Rollout by feature](#rollout-by-feature)).
-Open: the [deferred reference migration](#deferred-reference-migration), required before an install imported from
-Firebase goes live. · **Recorded:** 2026-10-09
-**Replaced:** the `import:firebase` CLI copying Firestore ids verbatim into `text` columns. It now gives every row a
-UUIDv7 and keeps the Firestore id in `legacy_id` where old ids must keep resolving.
+· **Recorded:** 2026-10-09
+**Superseded for the data migration** by [firebase-space-import.md](firebase-space-import.md): spaces are imported
+one at a time from the admin UI, every reference inside a space is rewritten during the import, and `legacy_id`
+stays only on spaces (unique, one import per Firebase space) and assets, so the space's old asset URLs keep working.
+The `import:firebase` CLI, `legacy_id` on users, webhooks and contents, the old-id fallbacks and the "deferred
+reference migration" planned below were removed.
 
-Sections after "Rollout by feature" up to "Open questions" record the original plan; where they differ (a
-`legacy_ids` table, rewriting references during the import, `contents.schema_id`, single-column keys), the rollout
-table, the deferred migration and the decisions noted inline are what was built.
+Sections from "Goal" to "Open questions" record the original plan and the rollout; where they differ from the
+space import design, that design is what was built.
 
 ## Goal
 
@@ -237,39 +238,17 @@ deleted once per block).
 | 7 | Tasks | `tasks` and `task_logs` (`id` uuid, `task_id` uuid); never imported, so no `legacy_id`. The export/import tasks already map Firestore ids (blocks 5 and 6) | ✅ 2026-10-10 |
 | 8 | Final | `newId()` renamed `newTokenSecret()` (token secrets only); unused `zId` removed; docs | ✅ 2026-10-10 (with block 7) |
 
-Release notes for an install imported from Firebase: space, document and asset ids in API responses, webhook
-payloads and the Visual Editor are UUIDs; old space ids, document URLs and asset URLs keep working (resolved, `302`,
-`301`); `GET /links` is keyed by UUID (see 5a below).
+Release notes for a space imported from Firebase: every id in API responses, webhook payloads and the Visual Editor
+is a UUID, and the SDK needs the new origin and space id (tokens keep their values). Only old asset URLs keep working
+(`301`), when the old host points at the new install. See [firebase-space-import.md](firebase-space-import.md).
 
 The implementation steps below are what the blocks add up to.
 
 ## Deferred reference migration
 
-Decided 2026-10-10 (assets block): the Firebase import does **not** rewrite references inside content. Imported content
-keeps the Firestore ids it had, and every place that resolves them falls back to `legacy_id`. A separate migration
-script, designed later, will rewrite them from `legacy_id` to the UUIDs; then the fallbacks below (except the public
-redirects) can go. Every reference type and use case that script and its follow-up must handle:
-
-| # | Where | What holds a Firestore id | Today (fallback) | After the migration |
-|---|---|---|---|---|
-| 1 | `contents.assets[]` | ids of the assets a document references | `resolveAssets` matches `id` or `legacy_id` (`apps/server/src/infra/database/legacy-ids.ts`) | rewrite to UUIDs |
-| 2 | `contents.data` (draft) | `uri` of `{ kind: 'ASSET' }` in ASSET / ASSETS fields, any depth, every locale variant | delivery: same fallback; editor: App API `?ids=` matches `legacy_id`, and the asset pickers index results by `legacyId` too | rewrite; remove the App API and editor fallback |
-| 3 | `content_published.data` | same shapes, locale-extracted snapshots | delivery fallback | rewrite (snapshots are copied, not rebuilt) |
-| 4 | RICH_TEXT / MARKDOWN values | `/api/v1/spaces/{space}/assets/{asset}` URLs, with Firestore space and asset ids | public `301` (asset) and space id resolution | optional rewrite (Q3); the redirects stay for customer sites anyway |
-| 5 | `contents.links[]`, `references[]`, `LINK` (`type: 'content'`) / `REFERENCE` / REFERENCES `uri` in drafts and published snapshots | ids of documents | `resolveLink` / `resolveReference` match `id` or `legacy_id`, keyed by the id asked for; editor: App API `?ids=` matches `legacy_id`, the references picker indexes by `legacyId`, the link picker matches `id` or `legacyId` | rewrite; remove the App API and editor fallback |
-| 5a | `GET /links` | keyed by document **UUID** | customer code that looks up `links[uri]` with a Firestore id from imported content misses it | **the migration must run before an imported install goes live** (decided 2026-10-10) |
-| 5b | Document `id` in API responses, `content.*` webhook payloads, Visual Editor `documentId` | — | the UUID (published snapshots copied by the import get the UUID as `id` too) | unchanged (release note) |
-| 6 | Content export of a migrated space | Firestore asset ids in content, UUIDs in the matching asset export (whose files do not carry `legacy_id`) | links between the two break when imported elsewhere | export after the migration, or add `legacyId` to the asset export |
-| 7 | Asset import of a Firebase-era export file | Firestore ids in `assets.json` | each becomes a UUID with `legacy_id` (re-import reuses it), `parent_path` follows | unchanged |
-| 8 | Resolved asset metadata in API responses | — | carries the UUID `id`, not the Firestore id it was referenced by (release note) | unchanged |
-
-Not affected: schema references (`_schema`, fields) and translation keys are names/keys, not ids; `parent_path` is
-rewritten by the import already.
-
-Migration script sketch: per space, build `legacy_id → id` for assets (and later contents); walk `contents.data` and
-`content_published.data` by shape (as described in [References to rewrite](#references-to-rewrite)), replace mapped
-ids, rewrite the id arrays, bump the content version; idempotent (UUIDs are left alone), with a dry-run report of
-unmapped (dangling) ids.
+Dropped (2026-10-10): the space import ([firebase-space-import.md](firebase-space-import.md)) rewrites every content
+and asset reference inside a space while importing it, so imported content never holds Firestore ids and no later
+migration or fallback lookup is needed.
 
 ## Implementation plan
 

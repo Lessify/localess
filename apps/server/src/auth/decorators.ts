@@ -5,12 +5,16 @@ export const IS_PUBLIC = 'localess:isPublic';
 export const REQUIRED_ACCESS = 'localess:requiredAccess';
 
 export type RequiredAccess =
+  | { kind: 'admin' }
   | { kind: 'anyRole' }
   | { kind: 'anyOf'; permissions: UserPermission[] }
   | { kind: 'allOf'; permissions: UserPermission[] };
 
 /** No session needed (login, public API, health). */
 export const Public = () => SetMetadata(IS_PUBLIC, true);
+
+/** The `admin` role only — e.g. importing spaces from a Firebase environment. */
+export const RequireAdmin = () => SetMetadata(REQUIRED_ACCESS, { kind: 'admin' } satisfies RequiredAccess);
 
 /** Signed in with any role (`admin` or `custom`) — e.g. reading spaces. */
 export const RequireAnyRole = () => SetMetadata(REQUIRED_ACCESS, { kind: 'anyRole' } satisfies RequiredAccess);

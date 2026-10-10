@@ -8,6 +8,7 @@ import { HealthController } from './infra/health/health.controller.js';
 import { StorageModule } from './infra/storage/storage.module.js';
 import { AssetsModule } from './modules/assets/assets.module.js';
 import { ContentsModule } from './modules/contents/contents.module.js';
+import { FirebaseImportModule } from './modules/firebase-import/firebase-import.module.js';
 import { PluginsModule } from './modules/plugins/plugins.module.js';
 import { SchemasModule } from './modules/schemas/schemas.module.js';
 import { SettingsModule } from './modules/settings/settings.module.js';
@@ -38,6 +39,7 @@ export class AppModule {
         AssetsModule,
         TokensModule,
         TasksModule,
+        FirebaseImportModule,
         PluginsModule,
       ],
       controllers: [HealthController],

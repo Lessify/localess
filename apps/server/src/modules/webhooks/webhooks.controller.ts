@@ -27,8 +27,7 @@ const webhookSchema = z.object({
 const statusSchema = z.object({ enabled: z.boolean() });
 
 type WebhookRow = typeof webhooks.$inferSelect;
-// `legacyId` only serves import re-runs.
-const dto = (row: WebhookRow) => toDto(row, ['spaceId', 'legacyId']);
+const dto = (row: WebhookRow) => toDto(row);
 
 /** Webhook configuration and delivery logs (was `spaces/{s}/webhooks`). */
 @Controller('api/app/spaces/:spaceId/webhooks')

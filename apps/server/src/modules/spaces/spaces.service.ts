@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, sql, sum } from 'drizzle-orm';
 import { DEFAULT_LOCALE } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
@@ -105,7 +105,8 @@ export class SpacesService {
   /** Everything in the space goes with it: rows by FK cascade, files by prefix. */
   async delete(spaceId: string): Promise<void> {
     await this.db.transaction(async tx => {
-      await requireSpace(tx, spaceId);
+      const space = await requireSpace(tx, spaceId);
+      if (space.importStatus === 'IMPORTING') throw new ConflictException('The space is being imported');
       await tx.delete(spaces).where(eq(spaces.id, spaceId));
       await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'deleted' }, tx);
     });
