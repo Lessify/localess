@@ -1,4 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, NotImplementedException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, PreconditionFailedException } from '@nestjs/common';
 import type { TranslationServiceClient } from '@google-cloud/translate';
 import type { Translator } from 'deepl-node';
 import {
@@ -15,6 +15,12 @@ import { translateItems } from './translate-batch.js';
 import { deeplTranslateOptions, googleMimeType } from './translate-format.utils.js';
 
 /** 424 like the callable's `failed-precondition`: the provider rejected the request (key, quota, API off). */
+/** 412: the request is fine, the environment lacks the provider (DeepL or Google Cloud Translation). */
+const notConfigured = () =>
+  new PreconditionFailedException(
+    'Machine translation is not configured on this environment (set GOOGLE_CLOUD_PROJECT for Google Translate, or DEEPL_API_KEY)',
+  );
+
 class ProviderError extends HttpException {
   constructor(message: string) {
     super({ statusCode: HttpStatus.FAILED_DEPENDENCY, error: 'Failed Dependency', message }, HttpStatus.FAILED_DEPENDENCY);
@@ -32,6 +38,11 @@ export class TranslateService {
   private google?: TranslationServiceClient;
 
   constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+
+  /** Throws 412 when no provider is configured: the UI keeps its Translate actions and explains this on use. */
+  requireProvider(): void {
+    if (!this.enabled) throw notConfigured();
+  }
 
   get enabled(): boolean {
     return this.config.translate.provider !== 'none';
@@ -64,7 +75,7 @@ export class TranslateService {
     const translate = this.config.translate;
     switch (translate.provider) {
       case 'none':
-        throw new NotImplementedException('Machine translation is not configured (set DEEPL_API_KEY or GOOGLE_CLOUD_PROJECT)');
+        throw notConfigured();
       case 'stub':
         return contents.map(content => this.stub(content, sourceLocale, targetLocale, format));
       case 'deepl': {
@@ -113,8 +124,7 @@ export class TranslateService {
 
   /** Grouped by format, chunked to the provider cap; a failing chunk only fails its own items. */
   translateItems(items: TranslateItem[], sourceLocale: string, targetLocale: string): Promise<TranslateBatchResult> {
-    if (!this.enabled)
-      throw new NotImplementedException('Machine translation is not configured (set DEEPL_API_KEY or GOOGLE_CLOUD_PROJECT)');
+    this.requireProvider();
     return translateItems(items, sourceLocale, targetLocale, (contents, source, target, format) =>
       this.translateBatch(contents, source, target, format),
     );

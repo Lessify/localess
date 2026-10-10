@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { CONTENT_DEFAULT_LOCALE, ContentData, Locale, SchemaFieldRichText } from '@localess/shared';
@@ -167,13 +169,22 @@ describe('RichTextEditorComponent', () => {
       expect(translate.mock.calls[0][0].content).toBe('<p>Hello</p>');
     });
 
-    it('notifies an error with a documentation link on failure', () => {
+    it('notifies a plain error on failure', () => {
       const { component, translate, error } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
       translate.mockReturnValue(throwError(() => new Error('boom')));
 
       component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
 
-      expect(error).toHaveBeenCalledWith('Can not be translation.', expect.anything());
+      expect(error).toHaveBeenCalledWith('Could not be translated.');
+    });
+
+    it('explains that translation is not configured on a 412', () => {
+      const { component, translate, error } = setup({ _id: 'c1', _schema: 's1', body: doc('Hello') });
+      translate.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 412, error: { message: 'not configured' } })));
+
+      component.translate('body', CONTENT_DEFAULT_LOCALE.id, 'de');
+
+      expect(error).toHaveBeenCalledWith(TRANSLATE_NOT_CONFIGURED);
     });
   });
 });

@@ -202,6 +202,7 @@ export class TranslationsService {
     overwrite: boolean,
     user: UserRow,
   ): Promise<{ translated: number; failed: number }> {
+    this.translate.requireProvider();
     const candidates = (await this.list(spaceId)).filter(row => row.locales[sourceLocale] && (overwrite || !row.locales[targetLocale]));
     if (!candidates.length) return { translated: 0, failed: 0 };
     const result = await this.translate.translateItems(

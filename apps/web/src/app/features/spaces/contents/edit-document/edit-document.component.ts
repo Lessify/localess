@@ -24,6 +24,7 @@ import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { normalizeContent } from '@core/utils/content-data';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { translateErrorMessage } from '@core/utils/translate-error';
 import {
   CONTENT_DEFAULT_LOCALE,
   ContentData,
@@ -729,8 +730,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
             this.notificationService.success(`Translated ${result.items.length} fields. Review them and press Save.`);
           }
         },
-        error: () => {
-          this.notificationService.error('Locale Translate failed.');
+        error: (err: unknown) => {
+          this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.'));
         },
       });
   }

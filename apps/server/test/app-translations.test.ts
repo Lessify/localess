@@ -247,17 +247,30 @@ describe('app API: without a translation provider or Unsplash key', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.db
-      .insert(spaces)
-      .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
+    await t.db.insert(spaces).values({
+      id: S1,
+      name: 'S',
+      locales: [
+        { id: 'en', name: 'English' },
+        { id: 'de', name: 'German' },
+      ],
+      localeFallback: { id: 'en', name: 'English' },
+    });
   });
 
   afterAll(() => t?.close());
 
-  it('answers 501 so the UI can hide the actions', async () => {
+  it('answers 412 with an explanation, so the UI can tell the user why', async () => {
     const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
     expect((await admin.get('/api/app/translate/status')).json()).toEqual({ enabled: false, provider: 'none' });
-    expect((await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(501);
+    const single = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' });
+    expect(single.statusCode).toBe(412);
+    expect(single.json().message).toMatch(/not configured on this environment/);
+    const batch = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', items: [{ id: 'a', content: 'x' }] });
+    expect(batch.statusCode).toBe(412);
+    // Even with nothing to translate: the user learns translation is unavailable, not "0 translated".
+    const locale = await admin.post(`/api/app/spaces/${S1}/translations/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de' });
+    expect(locale.statusCode).toBe(412);
     expect((await admin.get('/api/app/plugins/unsplash/random')).statusCode).toBe(501);
   });
 });

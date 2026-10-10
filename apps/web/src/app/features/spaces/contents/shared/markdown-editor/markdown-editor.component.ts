@@ -5,6 +5,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { NotificationService } from '@core/services/notification.service';
 import { TranslateService } from '@core/services/translate.service';
 import { LocalSettingsStore, MarkdownMode } from '@core/stores/local-settings.store';
+import { translateErrorMessage } from '@core/utils/translate-error';
 import { CONTENT_DEFAULT_LOCALE, ContentData, Locale, SchemaFieldMarkdown } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideEye, lucideFileCode, lucideInfo, lucideLanguages } from '@ng-icons/lucide';
@@ -157,13 +158,7 @@ export class MarkdownEditorComponent implements OnDestroy {
           },
           error: err => {
             console.error(err);
-            this.notificationService.error('Can not be translation.', {
-              action: {
-                type: 'link',
-                label: 'Documentation',
-                link: 'https://localess.org/docs/setup/firebase#errors-in-the-user-interface',
-              },
-            });
+            this.notificationService.error(translateErrorMessage(err, 'Could not be translated.'));
           },
         });
     }

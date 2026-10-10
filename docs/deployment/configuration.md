@@ -117,7 +117,7 @@ reset link** and passes the link on.
 | `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | `global` | Cloud Translation location |
 | `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes the input back — for development only |
 
-With none set, machine translation is off and the UI hides it.
+With none set, machine translation is off. The Translate actions stay visible; using one answers `412 Precondition Failed`, and the UI explains that Google Translate is not configured on this environment and to ask an administrator.
 
 ## Unsplash
 

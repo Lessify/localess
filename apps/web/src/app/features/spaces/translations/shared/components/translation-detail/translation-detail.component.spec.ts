@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale, Translation, TranslationType } from '@localess/shared';
@@ -180,14 +182,24 @@ describe('TranslationDetailComponent', () => {
       expect(component.isTranslateLoading()).toBe(false);
     });
 
-    it('notifies an error with a documentation link on failure', () => {
+    it('notifies a plain error on failure', () => {
       const t = translation({ id: 't1', locales: { en: 'Hello' } });
       const { component, translate, error } = setup(t);
       translate.mockReturnValue(throwError(() => new Error('boom')));
 
       component.translate();
 
-      expect(error).toHaveBeenCalledWith('Can not be translation.', expect.anything());
+      expect(error).toHaveBeenCalledWith('Could not be translated.');
+    });
+
+    it('explains that translation is not configured on a 412', () => {
+      const t = translation({ id: 't1', locales: { en: 'Hello' } });
+      const { component, translate, error } = setup(t);
+      translate.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 412, error: { message: 'not configured' } })));
+
+      component.translate();
+
+      expect(error).toHaveBeenCalledWith(TRANSLATE_NOT_CONFIGURED);
     });
   });
 

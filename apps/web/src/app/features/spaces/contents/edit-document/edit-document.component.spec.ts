@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
@@ -754,6 +756,16 @@ describe('EditDocumentComponent', () => {
 
       expect(error).toHaveBeenCalledWith('Locale Translate failed.');
       expect(component.documentData['title_i18n_de']).toBeUndefined();
+    });
+
+    it('explains that translation is not configured on a 412', () => {
+      const { component, open, translateBatch, error } = translatableSetup();
+      translateBatch.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 412, error: { message: 'not configured' } })));
+      open.mockReturnValue({ closed$: of({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'de', overwrite: false }) });
+
+      component.openTranslateLocaleDialog();
+
+      expect(error).toHaveBeenCalledWith(TRANSLATE_NOT_CONFIGURED);
     });
   });
 });

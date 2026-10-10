@@ -125,7 +125,7 @@ code, called inside the same transaction as the write that used to fire the trig
 | `task-oncreate` | trigger (4 GiB, 540 s) | `JobWorker` (see §5). The zip/unzip/zod code moves unchanged; only the Firestore/Storage calls change. |
 | `task-ondelete` | trigger | FK cascade on `task_logs` + delete `tasks/{id}/` storage prefix. |
 | `webhook-ondelete` | trigger | FK cascade on `webhook_logs`. |
-| `translate` | callable | `POST /api/app/translate`. DeepL key from `DEEPL_API_KEY` env; Google Translate v3 stays optional (needs `GOOGLE_APPLICATION_CREDENTIALS` + `GOOGLE_PROJECT_ID`) — without either, the endpoint returns 501 and the UI hides the action. |
+| `translate` | callable | `POST /api/app/translate`. DeepL key from `DEEPL_API_KEY` env; Google Translate v3 stays optional (needs `GOOGLE_APPLICATION_CREDENTIALS` + `GOOGLE_PROJECT_ID`) — without either, the endpoint returns 412 and the UI explains that translation is not configured on this environment (the actions stay visible). |
 | `translation-publish` | callable | `POST …/translations/publish` → upsert `translation_published` (with fallback fill), update `progress`, bump `translation_version`, webhook. |
 | `translation-publishdraft` | callable | **Deleted.** Draft translations are computed on read from `translations`; every translation write bumps `translation_version`. Removes the extra callable the UI fires after every edit. |
 | `translation-deleteall` | callable | `DELETE …/translations`. |

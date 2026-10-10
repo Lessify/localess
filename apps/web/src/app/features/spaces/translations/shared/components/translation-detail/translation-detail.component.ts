@@ -7,6 +7,7 @@ import { PlatformService } from '@core/services/platform.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { translateErrorMessage } from '@core/utils/translate-error';
 import { DEFAULT_LOCALE, Locale, Translation, TranslationUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowRight, lucideCopy, lucideLanguages, lucidePencil, lucideReplace, lucideSave, lucideTrash } from '@ng-icons/lucide';
@@ -131,13 +132,7 @@ export class TranslationDetailComponent {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('Can not be translation.', {
-            action: {
-              type: 'link',
-              label: 'Documentation',
-              link: 'https://localess.org/docs/setup/firebase#errors-in-the-user-interface',
-            },
-          });
+          this.notificationService.error(translateErrorMessage(err, 'Could not be translated.'));
         },
         complete: () => {
           setTimeout(() => {

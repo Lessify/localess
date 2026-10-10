@@ -9,6 +9,7 @@ import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
+import { translateErrorMessage } from '@core/utils/translate-error';
 import { CONTENT_DEFAULT_LOCALE, Locale, TokenPermission, Translation, TranslationCreate, TranslationType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -200,6 +201,8 @@ export class TranslationsComponent implements OnInit {
   openAddDialog(): void {
     const space = this.selectedSpace();
     if (!space) return;
+    // A locale that could not be auto-translated is left empty; the first reason is reported once, after the save.
+    let autoTranslateError: unknown;
     this.dialog
       .open<AddDialogResult, AddDialogContext>(AddDialogComponent, {
         context: {
@@ -229,8 +232,9 @@ export class TranslationsComponent implements OnInit {
                 })
                 .pipe(
                   map(value => ({ localeId: locale.id, value })),
-                  catchError(err => {
+                  catchError((err: unknown) => {
                     console.error(err);
+                    autoTranslateError ??= err;
                     return of(null);
                   }),
                 ),
@@ -258,6 +262,9 @@ export class TranslationsComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notificationService.success('Translation has been added.');
+          if (autoTranslateError !== undefined) {
+            this.notificationService.error(translateErrorMessage(autoTranslateError, 'Some locales could not be auto-translated.'));
+          }
         },
         error: () => {
           this.notificationService.error('Translation can not be added.');
@@ -353,11 +360,17 @@ export class TranslationsComponent implements OnInit {
         switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale, it.overwrite)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Locale Translate run with success.');
+        next: ({ translated, failed }) => {
+          if (failed > 0) {
+            this.notificationService.error(`Translated ${translated} keys; ${failed} failed and were left unchanged.`);
+          } else if (translated === 0) {
+            this.notificationService.success('Nothing to translate.');
+          } else {
+            this.notificationService.success(`Translated ${translated} keys.`);
+          }
         },
-        error: () => {
-          this.notificationService.error('Locale Translate failed.');
+        error: (err: unknown) => {
+          this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.'));
         },
       });
   }

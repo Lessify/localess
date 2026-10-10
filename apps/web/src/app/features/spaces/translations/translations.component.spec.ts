@@ -1,3 +1,5 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale, Space, Token, TokenPermission, Translation, TranslationType } from '@localess/shared';
@@ -39,7 +41,7 @@ describe('TranslationsComponent', () => {
     const create = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const updateLocale = vi.fn().mockReturnValue(of(undefined));
-    const translateLocale = vi.fn().mockReturnValue(of(undefined));
+    const translateLocale = vi.fn().mockReturnValue(of({ translated: 12, failed: 0 }));
     const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
@@ -195,6 +197,20 @@ describe('TranslationsComponent', () => {
       });
     });
 
+    it('creates the translation and explains once when auto-translate is not configured', () => {
+      const { component, open, create, translate, error, success } = setup();
+      translate.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 412, error: { message: 'not configured' } })));
+      open.mockReturnValue({
+        closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
+      });
+
+      component.openAddDialog();
+
+      expect(create).toHaveBeenCalledWith('space-1', expect.objectContaining({ locales: { en: 'Hello' } }));
+      expect(success).toHaveBeenCalledWith('Translation has been added.');
+      expect(error).toHaveBeenCalledExactlyOnceWith(TRANSLATE_NOT_CONFIGURED);
+    });
+
     it('does nothing when there is no selected space', () => {
       const { component, open } = setup([], NO_SPACE);
 
@@ -271,23 +287,37 @@ describe('TranslationsComponent', () => {
   });
 
   describe('openTranslateLocaleDialog', () => {
-    it('translates the locale and notifies success when confirmed', () => {
-      const { component, open, translateLocale, success } = setup();
+    function run(result: unknown) {
+      const { component, open, translateLocale, success, error } = setup();
+      translateLocale.mockReturnValue(result);
       open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de', overwrite: true }) });
-
       component.openTranslateLocaleDialog([en, de]);
+      return { translateLocale, success, error };
+    }
 
+    it('translates the locale and reports how many keys were written', () => {
+      const { translateLocale, success } = run(of({ translated: 12, failed: 0 }));
       expect(translateLocale).toHaveBeenCalledWith('space-1', 'en', 'de', true);
-      expect(success).toHaveBeenCalledWith('Locale Translate run with success.');
+      expect(success).toHaveBeenCalledWith('Translated 12 keys.');
     });
 
-    it('notifies an error on failure', () => {
-      const { component, open, translateLocale, error } = setup();
-      translateLocale.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de' }) });
+    it('reports keys the provider failed on', () => {
+      const { error } = run(of({ translated: 10, failed: 2 }));
+      expect(error).toHaveBeenCalledWith('Translated 10 keys; 2 failed and were left unchanged.');
+    });
 
-      component.openTranslateLocaleDialog([en, de]);
+    it('says when there was nothing to translate', () => {
+      const { success } = run(of({ translated: 0, failed: 0 }));
+      expect(success).toHaveBeenCalledWith('Nothing to translate.');
+    });
 
+    it('explains that translation is not configured on a 412', () => {
+      const { error } = run(throwError(() => new HttpErrorResponse({ status: 412, error: { message: 'not configured' } })));
+      expect(error).toHaveBeenCalledWith(TRANSLATE_NOT_CONFIGURED);
+    });
+
+    it('notifies a plain error on other failures', () => {
+      const { error } = run(throwError(() => new Error('boom')));
       expect(error).toHaveBeenCalledWith('Locale Translate failed.');
     });
   });

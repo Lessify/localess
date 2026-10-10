@@ -87,7 +87,17 @@ export class TranslationService {
     return this.http.delete<void>(this.base(spaceId));
   }
 
-  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string, overwrite = false): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/translate-locale`, { sourceLocaleId, targetLocaleId, overwrite });
+  /** Keys written, and keys the provider failed on (left unchanged). */
+  translateLocale(
+    spaceId: string,
+    sourceLocaleId: string,
+    targetLocaleId: string,
+    overwrite = false,
+  ): Observable<{ translated: number; failed: number }> {
+    return this.http.post<{ translated: number; failed: number }>(`${this.base(spaceId)}/translate-locale`, {
+      sourceLocaleId,
+      targetLocaleId,
+      overwrite,
+    });
   }
 }
