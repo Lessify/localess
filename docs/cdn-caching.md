@@ -26,6 +26,8 @@ The `cv` value is a **version counter on the space row** (`spaces` table):
 - Content:     `spaces.content_version`
 - Translation: `spaces.translation_version`
 
+Each bump sets the version to `greatest(current + 1, now in epoch milliseconds)` (`nextVersion()` in `apps/server/src/infra/http/space-access.ts`), so values are 13-digit numbers that only ever grow, even across a **database restore**: a plain counter would go back with the backup and reuse `cv` numbers that browsers and CDNs still cache with the discarded content for 7 days. (This relies on the server clock moving forward, as the Firebase-era storage `generation` did.)
+
 The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpVersion()` in `apps/server/src/infra/http/space-access.ts`):
 
 - `content_version` — every content create/update/move/delete/publish/unpublish, every schema write (drafts are rendered through schemas), asset updates and deletes, content/schema/asset imports, and `POST /api/v1/.../schemas` (schema push).

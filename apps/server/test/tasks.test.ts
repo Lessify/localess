@@ -342,7 +342,7 @@ describe('task worker: exports and imports', () => {
         'farewell',
         'greeting',
       ]);
-      expect((await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion).toBe(before + 1);
+      expect((await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion).toBeGreaterThan(before);
     });
 
     it('exports one locale as flat JSON and imports it into a locale, creating missing keys', async () => {

@@ -25,6 +25,7 @@ import { buildTranslationMap, TranslationDeliveryService } from './translation-d
 import { translationsByKey } from './translation-row.js';
 import { newUuid } from '../../infra/database/id.js';
 import { planTranslationUpdate, storedLocaleValues } from './translation.utils.js';
+import { nextVersion } from '../../infra/http/space-access.js';
 
 /** Per-type verb labels used for response messages. */
 const TRANSLATION_UPDATE_VERBS: Record<
@@ -217,7 +218,7 @@ export class TranslationsPublicController {
       // Draft translations are built from these rows on read; the new version moves clients past cached copies.
       await tx
         .update(spaces)
-        .set({ translationVersion: sql`${spaces.translationVersion} + 1` })
+        .set({ translationVersion: nextVersion(spaces.translationVersion) })
         .where(eq(spaces.id, spaceId));
       await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
     });

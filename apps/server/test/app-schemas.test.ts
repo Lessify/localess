@@ -40,7 +40,7 @@ describe('app API: schemas', () => {
     expect(response.json()).toMatchObject({ id: expect.stringMatching(UUID_V7), name: 'page', type: 'ROOT', displayName: 'Page' });
     expect(response.json()).not.toHaveProperty('spaceId');
     ids['page'] = response.json().id;
-    expect(await contentVersion()).toBe(before + 1);
+    expect(await contentVersion()).toBeGreaterThan(before);
     expect((await editor.post(base, { name: 'page', type: 'NODE' })).statusCode).toBe(409);
     expect((await editor.post(base, { name: 'bad name!', type: 'NODE' })).statusCode).toBe(400);
     expect((await editor.post('/api/app/spaces/missing/schemas', { name: 'x', type: 'NODE' })).statusCode).toBe(404);

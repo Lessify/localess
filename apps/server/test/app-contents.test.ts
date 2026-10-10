@@ -111,7 +111,7 @@ describe('app API: contents', () => {
         updatedBy: { name: 'editor@example.com', email: 'editor@example.com' },
       });
       expect(post).not.toHaveProperty('publishedAt');
-      expect(await version()).toBe(before + 2);
+      expect(await version()).toBeGreaterThan(before);
     });
 
     it('refuses a missing parent folder, a taken slug, and slugs with slashes', async () => {

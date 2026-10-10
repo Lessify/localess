@@ -94,6 +94,9 @@ excluding them makes backups smaller. Task archives under `tasks/` are temporary
    `pgdata` copy back) and the storage directory from the **same** backup.
 3. Start the image version that the backup was taken with, or a newer one (a newer one migrates
    forward on boot).
+4. Publish (or edit) once in each space you care about. Until then the public API serves the restored data under
+   the backup's `cv` values, which caches may hold from before; the next change moves the space to a `cv` that was
+   never used before (versions are time-based, see [CDN caching](../cdn-caching.md#the-cv-cache-version-pattern)).
 
 ---
 

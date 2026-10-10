@@ -15,6 +15,7 @@ import { generateOpenApi } from './open-api.service.js';
 import { applySchemaPushPlan } from './schema-push.js';
 import { schemaFromRow, schemasByName } from './schema-row.js';
 import { docSchemaToExport, planSchemaPush } from './schema.utils.js';
+import { nextVersion } from '../../infra/http/space-access.js';
 
 /**
  * Schemas on the public API, for developers and the CLI: the OpenAPI document and the schema export
@@ -105,7 +106,7 @@ export class SchemasPublicController {
       // Schemas shape the draft output (locale extraction), so content drafts change too.
       await tx
         .update(spaces)
-        .set({ contentVersion: sql`${spaces.contentVersion} + 1` })
+        .set({ contentVersion: nextVersion(spaces.contentVersion) })
         .where(eq(spaces.id, spaceId));
     });
     void reply.send({

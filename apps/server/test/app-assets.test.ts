@@ -193,7 +193,7 @@ describe('app API: assets', () => {
       const before = await contentVersion();
       expect((await editor.patch(`${base}/${file.id}`, { name: 'Loader', alt: '' })).json()).toMatchObject({ name: 'Loader' });
       expect((await editor.get(`${base}/${file.id}`)).json()).not.toHaveProperty('alt');
-      expect(await contentVersion()).toBe(before + 1);
+      expect(await contentVersion()).toBeGreaterThan(before);
     });
 
     it('moves files between folders, but never folders', async () => {

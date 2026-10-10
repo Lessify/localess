@@ -155,7 +155,7 @@ describe('v1 dev tools and manage API', () => {
       expect(response.json()).toEqual({ message: 'Added 1 translation', ids: ['brand.new'] });
       expect(await translation('brand.new')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
       expect((await translation('greeting')).locales).toEqual({ en: 'Hello', de: 'Hallo' });
-      expect((await space()).translationVersion).toBe(before.translationVersion + 1);
+      expect((await space()).translationVersion).toBeGreaterThan(before.translationVersion);
       expectNotified(true);
     });
 
@@ -217,7 +217,7 @@ describe('v1 dev tools and manage API', () => {
         fields: [{ name: 'title', kind: 'TEXT', translatable: true }],
       });
       expect(rows.find(it => it.name === 'color')).toMatchObject({ type: 'ENUM', values: [{ name: 'Red', value: 'red' }], fields: null });
-      expect((await space()).contentVersion).toBe(before.contentVersion + 1);
+      expect((await space()).contentVersion).toBeGreaterThan(before.contentVersion);
     });
 
     it('reports unchanged schemas on a repeat push', async () => {

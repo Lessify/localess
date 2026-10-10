@@ -126,7 +126,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
         labels: ['home'],
         updatedBy: { email: 'editor@example.com' },
       });
-      expect((await space()).translationVersion).toBe(before + 1);
+      expect((await space()).translationVersion).toBeGreaterThan(before);
       expect(await events()).toEqual(['translation.changed']);
       expect((await editor.post(base, { key: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);
       expect((await reader.post(base, { key: 'x', type: 'STRING', locales: {} })).statusCode).toBe(403);

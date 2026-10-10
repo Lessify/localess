@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, asc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, eq, gt } from 'drizzle-orm';
 import type { FirebaseImportStage, FirebaseImportStageName, Locale } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
@@ -10,6 +10,7 @@ import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { FirebaseClient, type FirebaseDoc } from './firebase-client.js';
 import { obj, parseData, str, strings, timestamps } from './firebase-docs.js';
 import { ReferenceMaps, rewriteData, rewriteIds } from './rewrite-references.js';
+import { nextVersion } from '../../infra/http/space-access.js';
 
 const MAX_WARNINGS = 50;
 /** Rows of the space read at once by the content migration. */
@@ -332,7 +333,7 @@ export class FirebaseImportRunner {
 
       await this.db
         .update(spaces)
-        .set({ importStatus: null, contentVersion: sql`${spaces.contentVersion} + 1`, translationVersion: sql`${spaces.translationVersion} + 1` })
+        .set({ importStatus: null, contentVersion: nextVersion(spaces.contentVersion), translationVersion: nextVersion(spaces.translationVersion) })
         .where(eq(spaces.id, sid));
       await save({ status: 'FINISHED', finishedAt: new Date() });
       await this.events.publish({ spaceId: null, entity: 'spaces', id: sid, op: 'created' });
