@@ -83,6 +83,15 @@ describe('UserService', () => {
     await done;
   });
 
+  it('setDisabled() patches the status', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.setDisabled('u1', true));
+    const req = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1/status' });
+    expect(req.request.body).toEqual({ disabled: true });
+    req.flush({});
+    await done;
+  });
+
   it('invite() posts the invite', async () => {
     const service = setup();
     const invite = { email: 'new@example.com', password: 'secret1', role: 'admin' as const };

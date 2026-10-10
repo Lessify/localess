@@ -37,6 +37,7 @@ describe('UsersComponent', () => {
     const invite = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteUser = vi.fn().mockReturnValue(of(undefined));
+    const setDisabled = vi.fn().mockReturnValue(of(undefined));
     const passwordResetLink = vi
       .fn()
       .mockReturnValue(of({ url: 'https://cms.example.com/reset?token=t', expiresAt: '2026-01-01T00:00:00.000Z' }));
@@ -49,7 +50,7 @@ describe('UsersComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, passwordResetLink } },
+        { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, passwordResetLink, setDisabled } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         userStoreOf(currentUser),
@@ -57,7 +58,7 @@ describe('UsersComponent', () => {
     });
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, passwordResetLink, success, error, open };
+    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, setDisabled, passwordResetLink, success, error, open };
   }
 
   it('loads users on init', () => {
@@ -161,6 +162,53 @@ describe('UsersComponent', () => {
     component.openDeleteDialog(user({ id: 'u1', email: 'user@example.com' }));
 
     expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be deleted.");
+  });
+
+  describe('disable / enable', () => {
+    it('disables after confirmation and notifies success', () => {
+      const { component, open, setDisabled, success } = setup();
+      open.mockReturnValue({ closed$: of(true) });
+
+      component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: false }));
+
+      expect(open).toHaveBeenCalled();
+      expect(setDisabled).toHaveBeenCalledWith('u1', true);
+      expect(success).toHaveBeenCalledWith("User 'user@example.com' has been disabled. They are signed out and cannot sign in.");
+    });
+
+    it('does not disable when cancelled', () => {
+      const { component, open, setDisabled } = setup();
+      open.mockReturnValue({ closed$: of(undefined) });
+
+      component.toggleDisabled(user({ id: 'u1', disabled: false }));
+
+      expect(setDisabled).not.toHaveBeenCalled();
+    });
+
+    it('enables without confirmation', () => {
+      const { component, open, setDisabled, success } = setup();
+
+      component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: true }));
+
+      expect(open).not.toHaveBeenCalled();
+      expect(setDisabled).toHaveBeenCalledWith('u1', false);
+      expect(success).toHaveBeenCalledWith("User 'user@example.com' has been enabled.");
+    });
+
+    it('notifies an error on failure', () => {
+      const { component, setDisabled, error } = setup();
+      setDisabled.mockReturnValue(throwError(() => new Error('boom')));
+
+      component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: true }));
+
+      expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be enabled.");
+    });
+
+    it('is not offered on your own account', () => {
+      const { component } = setup();
+      expect(component.canChangeStatus(user({ id: ADMIN.id }))).toBe(false);
+      expect(component.canChangeStatus(user({ id: 'u1' }))).toBe(true);
+    });
   });
 
   it('copyPasswordResetLink() copies the link to the clipboard and notifies success', async () => {

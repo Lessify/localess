@@ -25,6 +25,8 @@ const inviteSchema = z.object({
   lock: z.boolean().optional(),
 });
 
+const statusSchema = z.object({ disabled: z.boolean() });
+
 const accessSchema = z.object({
   role: roleSchema,
   permissions: permissionsSchema,
@@ -83,6 +85,21 @@ export class UsersController {
       throw new ForbiddenException();
     }
     const user = await this.users.updateAccess(id, body);
+    await this.changed(id, 'updated');
+    return this.users.toDto(user);
+  }
+
+  /** Blocks (or restores) sign-in without deleting the user; was the Firebase Auth console's "Disable account". */
+  @Patch(':id/status')
+  async updateStatus(
+    @CurrentUser() caller: UserRow,
+    @Param('id', UuidParamPipe) id: string,
+    @Body(new ZodValidationPipe(statusSchema)) body: z.infer<typeof statusSchema>,
+  ): Promise<UserDto> {
+    const target = await this.users.getById(id);
+    // Nobody disables themselves: an admin could lock the install out of user management.
+    if (caller.id === target.id || !canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
+    const user = await this.users.setDisabled(id, body.disabled);
     await this.changed(id, 'updated');
     return this.users.toDto(user);
   }

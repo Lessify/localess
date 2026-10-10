@@ -27,7 +27,9 @@ import {
   lucidePencil,
   lucideShieldCheck,
   lucideTrash,
+  lucideUserCheck,
   lucideUserPlus,
+  lucideUserX,
   lucideX,
 } from '@ng-icons/lucide';
 import {
@@ -46,6 +48,7 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { of } from 'rxjs';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { UserService } from './user.service';
@@ -84,6 +87,8 @@ import { canManageUser } from './user-management';
       lucideLock,
       lucideShieldCheck,
       lucideKeyRound,
+      lucideUserX,
+      lucideUserCheck,
     }),
   ],
 })
@@ -226,6 +231,43 @@ export class UsersComponent implements OnInit, AfterViewInit {
           this.notificationService.error(`User '${element.email}' can not be deleted.`);
         },
       });
+  }
+
+  /** Disable/Enable is offered on everyone you may manage except yourself (the server refuses that too). */
+  canChangeStatus(element: User): boolean {
+    return element.id !== this.userStore.id() && this.canManage(element);
+  }
+
+  /** Disabling asks first: it signs the user out at once. Enabling just lets them sign in again. */
+  toggleDisabled(element: User): void {
+    const disabled = !element.disabled;
+    const confirmed$ = disabled
+      ? this.dialog
+          .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+            context: {
+              title: 'Disable User',
+              content: `Disable '${element.email}'? They are signed out at once and cannot sign in until enabled again.`,
+              variant: 'destructive',
+            },
+            contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+          })
+          .closed$.pipe(
+            take(1),
+            filter(it => it || false),
+          )
+      : of(true);
+    confirmed$.pipe(switchMap(() => this.userService.setDisabled(element.id, disabled))).subscribe({
+      next: () => {
+        this.notificationService.success(
+          disabled
+            ? `User '${element.email}' has been disabled. They are signed out and cannot sign in.`
+            : `User '${element.email}' has been enabled.`,
+        );
+      },
+      error: () => {
+        this.notificationService.error(`User '${element.email}' can not be ${disabled ? 'disabled' : 'enabled'}.`);
+      },
+    });
   }
 
   copyPasswordResetLink(element: User): void {

@@ -166,6 +166,44 @@ describe('user management', () => {
     });
   });
 
+  describe('status (disable / enable)', () => {
+    const signIn = (email: string) =>
+      t.request({ method: 'POST', url: '/api/auth/login', headers: XHR, payload: { email, password: 'secret1' } });
+    const me = (cookie: string) => t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
+
+    it('disables a user: their sessions end and sign-in is refused; enabling lets them back in', async () => {
+      const user = await usersService.create({ email: 'leaver@example.com', password: 'secret1', role: 'custom', permissions: [CONTENT_READ] });
+      const cookie = await login(t, 'leaver@example.com', 'secret1');
+
+      const disabled = await call(managerCookie, 'PATCH', `/api/app/users/${user.id}/status`, { disabled: true });
+      expect(disabled.statusCode).toBe(200);
+      expect(disabled.json()).toMatchObject({ id: user.id, disabled: true });
+      expect((await me(cookie)).statusCode).toBe(401);
+      expect((await signIn('leaver@example.com')).statusCode).toBe(401);
+
+      const enabled = await call(managerCookie, 'PATCH', `/api/app/users/${user.id}/status`, { disabled: false });
+      expect(enabled.json()).toMatchObject({ disabled: false });
+      expect((await signIn('leaver@example.com')).statusCode).toBe(200);
+      // The old session stays ended: disabling deleted it.
+      expect((await me(cookie)).statusCode).toBe(401);
+    });
+
+    it('stops anyone, admins included, from disabling themselves', async () => {
+      expect((await call(adminCookie, 'PATCH', `/api/app/users/${ids.admin}/status`, { disabled: true })).statusCode).toBe(403);
+      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.manager}/status`, { disabled: true })).statusCode).toBe(403);
+    });
+
+    it('stops a manager from disabling an admin, and readers from disabling anyone', async () => {
+      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.admin}/status`, { disabled: true })).statusCode).toBe(403);
+      expect((await call(readerCookie, 'PATCH', `/api/app/users/${ids.manager}/status`, { disabled: true })).statusCode).toBe(403);
+      expect((await me(adminCookie)).statusCode).toBe(200);
+    });
+
+    it('validates the body', async () => {
+      expect((await call(adminCookie, 'PATCH', `/api/app/users/${ids.reader}/status`, { disabled: 'yes' })).statusCode).toBe(400);
+    });
+  });
+
   describe('delete', () => {
     it('stops a manager from deleting an admin', async () => {
       expect((await call(managerCookie, 'DELETE', `/api/app/users/${ids.admin}`)).statusCode).toBe(403);

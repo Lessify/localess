@@ -4,7 +4,7 @@ import { Principal, UserRole } from '@localess/shared';
 import { hashPassword } from '../password.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { userCredentials, userIdentities, users } from '../../infra/database/schema.js';
+import { sessions, userCredentials, userIdentities, users } from '../../infra/database/schema.js';
 
 export type UserRow = typeof users.$inferSelect;
 
@@ -125,6 +125,16 @@ export class UsersService {
       .returning();
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  /** Sets `disabled`; disabling also deletes the user's sessions, so they are signed out at once. */
+  async setDisabled(id: string, disabled: boolean): Promise<UserRow> {
+    return this.db.transaction(async tx => {
+      const [user] = await tx.update(users).set({ disabled, updatedAt: new Date() }).where(eq(users.id, id)).returning();
+      if (!user) throw new NotFoundException('User not found');
+      if (disabled) await tx.delete(sessions).where(eq(sessions.userId, id));
+      return user;
+    });
   }
 
   async updateProfile(id: string, profile: { displayName?: string | null; photoURL?: string | null }): Promise<UserRow> {

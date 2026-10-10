@@ -35,6 +35,11 @@ export class UserService {
     return this.http.delete<void>(`${BASE}/${id}`);
   }
 
+  /** Disabling ends the user's sessions and blocks sign-in; nobody can change their own status. */
+  setDisabled(id: string, disabled: boolean): Observable<void> {
+    return this.http.patch<void>(`${BASE}/${id}/status`, { disabled });
+  }
+
   invite(model: UserInvite): Observable<void> {
     return this.http.post<void>(BASE, model);
   }

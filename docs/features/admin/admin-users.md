@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Manage all platform users — invite new users, edit their roles and granular permissions, lock accounts, delete users, and hand out password reset links.
+Manage all platform users — invite new users, edit their roles and granular permissions, lock accounts, disable or enable sign-in, delete users, and hand out password reset links.
 
 ## Route
 
@@ -34,6 +34,7 @@ Displays a searchable, paginated `ll-table` (`LlTableImports`) of all users in t
 - `inviteDialog()` — opens `UserInviteDialogComponent`
 - `openEditDialog(user)` — opens `UserDialogComponent` to edit role/permissions/lock
 - `openDeleteDialog(user)` — opens `ConfirmationDialogComponent`, then deletes
+- `toggleDisabled(user)` — **Disable** (after a confirmation) or **Enable** via `UserService.setDisabled()` (`PATCH /api/app/users/:id/status` `{ disabled }`). Disabling deletes the user's sessions, so they are signed out at once; password and OAuth sign-in are refused while `users.disabled` is set, and the list shows them as *inactive*. Offered only on users the caller may manage and never on their own account (`canChangeStatus()`); the server enforces both (403). Replaces the Firebase Authentication console's "Disable account"
 - `copyPasswordResetLink(user)` — calls `UserService.passwordResetLink()` (`POST /api/app/users/:id/password-reset-link`) and copies the returned one-hour reset link to the clipboard. This is how passwords get reset when the server has no SMTP configured. The server requires that the caller may manage the target user (`canManageUser`)
 
 The list is live: `UserService.findAll()` is a `liveQuery` that refetches on `users` change events from the SSE stream. There is no "Sync" action any more — role and permissions live only in the `users` table, so there is nothing to sync.
@@ -60,5 +61,5 @@ Both dialogs render `permissions[]` as grouped checkboxes rather than a plain mu
 
 | Service | Purpose |
 |---------|---------|
-| `UserService` | `/api/app/users`: live list/get, `update()` (`PATCH`), `delete()`, `invite()` (`POST`), `passwordResetLink()` (`POST …/:id/password-reset-link`) |
+| `UserService` | `/api/app/users`: live list/get, `update()` (`PATCH`), `delete()`, `setDisabled()` (`PATCH …/:id/status`), `invite()` (`POST`), `passwordResetLink()` (`POST …/:id/password-reset-link`) |
 | `NotificationService` | Toast feedback |
