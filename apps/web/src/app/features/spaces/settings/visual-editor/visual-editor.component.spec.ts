@@ -1,58 +1,68 @@
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Space, SpaceEnvironment } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
-import { PlatformService } from '@core/services/platform.service';
 import { SpaceService } from '@core/services/space.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { signal } from '@angular/core';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { VisualEditorComponent } from './visual-editor.component';
 
-function space(environments?: SpaceEnvironment[]): Space {
-  return {
-    id: 'space-1',
-    name: 'Space 1',
-    locales: [],
-    defaultLocale: { id: 'en', name: 'English' } as Space['defaultLocale'],
-    environments,
-  } as unknown as Space;
+const prod: SpaceEnvironment = { id: 'e1', name: 'prod', url: 'https://prod.example.com/' };
+const staging: SpaceEnvironment = { id: 'e2', name: 'staging', url: 'https://staging.example.com/' };
+const twin: SpaceEnvironment = { id: 'e3', name: 'prod', url: 'https://twin.example.com/' };
+
+function space(environments: SpaceEnvironment[]): Space {
+  return { id: 'space-1', name: 'Space 1', locales: [], environments } as unknown as Space;
 }
 
+const dropOf = (previousIndex: number, currentIndex: number) => ({ previousIndex, currentIndex }) as CdkDragDrop<SpaceEnvironment[]>;
+
 describe('VisualEditorComponent', () => {
-  function setup(selectedSpace: Space | undefined, isActionSave = false) {
-    const updateEnvironments = vi.fn().mockReturnValue(of(undefined));
+  function setup(selectedSpace: Space | undefined) {
+    const spaceService = {
+      createEnvironment: vi.fn().mockReturnValue(of(undefined)),
+      updateEnvironment: vi.fn().mockReturnValue(of(undefined)),
+      deleteEnvironment: vi.fn().mockReturnValue(of(undefined)),
+      reorderEnvironments: vi.fn().mockReturnValue(of(undefined)),
+    };
     const success = vi.fn();
     const error = vi.fn();
+    const openDialog = vi.fn();
+    const selected: WritableSignal<Space | undefined> = signal(selectedSpace);
 
     TestBed.overrideComponent(VisualEditorComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SpaceService, useValue: { updateEnvironments } },
+        { provide: SpaceService, useValue: spaceService },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(isActionSave) } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
+        { provide: HlmDialogService, useValue: { open: openDialog } },
+        { provide: SpaceStore, useValue: { selectedSpace: selected, selectedSpaceId: signal('space-1') } },
       ],
     });
     const fixture = TestBed.createComponent(VisualEditorComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, updateEnvironments, success, error };
+    return { component: fixture.componentInstance, spaceService, success, error, openDialog, selected };
   }
 
-  it('starts loading until a space is selected', () => {
+  it('is loading until a space is selected', () => {
     const { component } = setup(undefined);
 
     expect(component.isLoading()).toBe(true);
-    expect(component.environments.length).toBe(0);
+    expect(component.environments()).toEqual([]);
   });
 
-  it('populates one form group per environment once the space arrives', () => {
-    const { component } = setup(space([{ name: 'prod', url: 'https://prod' }]));
+  it("lists the space's environments, names repeating", () => {
+    const { component, selected } = setup(space([prod, twin]));
 
     expect(component.isLoading()).toBe(false);
-    expect(component.environments.length).toBe(1);
-    expect(component.environments.at(0).value).toEqual({ name: 'prod', url: 'https://prod' });
+    expect(component.environments()).toEqual([prod, twin]);
+
+    selected.set(space([twin]));
+    expect(component.environments()).toEqual([twin]);
   });
 
   it('exampleUrl() shows what an environment URL opens for the sample document', () => {
@@ -62,88 +72,83 @@ describe('VisualEditorComponent', () => {
     expect(component.exampleUrl('https://site.com/{locale/}news/{slug}/')).toBe('https://site.com/de/news/hello/');
   });
 
-  it('addEnvironment() appends an empty group by default', () => {
-    const { component } = setup(space([]));
+  it('openAddDialog() creates the environment from the dialog', () => {
+    const { component, openDialog, spaceService, success } = setup(space([]));
+    openDialog.mockReturnValue({ closed$: of({ name: 'Prod', url: 'https://prod.example.com/' }) });
 
-    component.addEnvironment();
+    component.openAddDialog();
 
-    expect(component.environments.length).toBe(1);
-    expect(component.environments.at(0).value).toEqual({ name: '', url: '' });
+    expect(openDialog.mock.calls[0][1].context).toBeUndefined();
+    expect(spaceService.createEnvironment).toHaveBeenCalledWith('space-1', { name: 'Prod', url: 'https://prod.example.com/' });
+    expect(success).toHaveBeenCalledWith('Environment has been added.');
   });
 
-  it('removeEnvironment() removes the group at the given index', () => {
-    const { component } = setup(
-      space([
-        { name: 'a', url: 'https://a' },
-        { name: 'b', url: 'https://b' },
-      ]),
-    );
+  it('openAddDialog() does nothing when dismissed, and reports a failure', () => {
+    const { component, openDialog, spaceService, error } = setup(space([]));
+    openDialog.mockReturnValue({ closed$: of(undefined) });
+    component.openAddDialog();
+    expect(spaceService.createEnvironment).not.toHaveBeenCalled();
 
-    component.removeEnvironment(0);
-
-    expect(component.environments.length).toBe(1);
-    expect(component.environments.at(0).value.name).toBe('b');
+    spaceService.createEnvironment.mockReturnValue(throwError(() => new Error('boom')));
+    openDialog.mockReturnValue({ closed$: of({ name: 'Prod', url: 'https://prod.example.com/' }) });
+    component.openAddDialog();
+    expect(error).toHaveBeenCalledWith('Environment can not be added.');
   });
 
-  it('environmentDropDrop() moves an environment from one index to another', () => {
-    const { component } = setup(
-      space([
-        { name: 'a', url: 'https://a' },
-        { name: 'b', url: 'https://b' },
-      ]),
-    );
+  it('openEditDialog() passes the environment and updates it by id', () => {
+    const { component, openDialog, spaceService, success } = setup(space([prod, twin]));
+    openDialog.mockReturnValue({ closed$: of({ name: 'Twin', url: 'https://twin.example.com/' }) });
 
-    component.environmentDropDrop({ previousIndex: 0, currentIndex: 1 } as never);
+    component.openEditDialog(twin);
 
-    expect(component.environments.at(0).value.name).toBe('b');
-    expect(component.environments.at(1).value.name).toBe('a');
+    expect(openDialog.mock.calls[0][1].context).toEqual({ name: 'prod', url: 'https://twin.example.com/' });
+    expect(spaceService.updateEnvironment).toHaveBeenCalledWith('space-1', 'e3', { name: 'Twin', url: 'https://twin.example.com/' });
+    expect(success).toHaveBeenCalledWith("Environment 'prod' has been updated.");
   });
 
-  it('environmentDropDrop() no-ops when the index is unchanged', () => {
-    const { component } = setup(space([{ name: 'a', url: 'https://a' }]));
+  it('openDeleteDialog() deletes by id once confirmed', () => {
+    const { component, openDialog, spaceService, success } = setup(space([prod, staging]));
+    openDialog.mockReturnValue({ closed$: of(true) });
 
-    component.environmentDropDrop({ previousIndex: 0, currentIndex: 0 } as never);
+    component.openDeleteDialog(staging);
 
-    expect(component.environments.at(0).value.name).toBe('a');
+    expect(spaceService.deleteEnvironment).toHaveBeenCalledWith('space-1', 'e2');
+    expect(success).toHaveBeenCalledWith("Environment 'staging' has been deleted.");
   });
 
-  it('save() updates the environments and notifies success', () => {
-    const { component, updateEnvironments, success } = setup(space([]));
-    component.addEnvironment({ name: 'prod', url: 'https://prod' });
+  it('openDeleteDialog() keeps the environment when cancelled', () => {
+    const { component, openDialog, spaceService } = setup(space([prod, staging]));
+    openDialog.mockReturnValue({ closed$: of(undefined) });
 
-    component.save();
+    component.openDeleteDialog(staging);
 
-    expect(updateEnvironments).toHaveBeenCalledWith('space-1', [{ name: 'prod', url: 'https://prod' }]);
-    expect(success).toHaveBeenCalledWith('Space has been updated.');
-    expect(component.isSaveLoading()).toBe(false);
+    expect(spaceService.deleteEnvironment).not.toHaveBeenCalled();
   });
 
-  it('save() notifies an error on failure', () => {
-    const { component, updateEnvironments, error } = setup(space([]));
-    updateEnvironments.mockReturnValue(throwError(() => new Error('boom')));
+  it('drop() reorders at once and sends the new order', () => {
+    const { component, spaceService } = setup(space([prod, staging, twin]));
 
-    component.save();
+    component.drop(dropOf(2, 0));
 
-    expect(error).toHaveBeenCalledWith('Space can not be updated.');
+    expect(component.environments()).toEqual([twin, prod, staging]);
+    expect(spaceService.reorderEnvironments).toHaveBeenCalledWith('space-1', ['e3', 'e1', 'e2']);
   });
 
-  it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {
-    const { component, updateEnvironments } = setup(space([]), true);
-    const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+  it('drop() on the same place sends nothing', () => {
+    const { component, spaceService } = setup(space([prod, staging]));
 
-    component.captureKeyboard(event);
+    component.drop(dropOf(1, 1));
 
-    expect(event.preventDefault).toHaveBeenCalled();
-    expect(updateEnvironments).toHaveBeenCalled();
+    expect(spaceService.reorderEnvironments).not.toHaveBeenCalled();
   });
 
-  it('captureKeyboard() does nothing for other key combinations', () => {
-    const { component, updateEnvironments } = setup(space([]), false);
-    const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
+  it('drop() puts the old order back when the server refuses', () => {
+    const { component, spaceService, error } = setup(space([prod, staging]));
+    spaceService.reorderEnvironments.mockReturnValue(throwError(() => new Error('boom')));
 
-    component.captureKeyboard(event);
+    component.drop(dropOf(0, 1));
 
-    expect(event.preventDefault).not.toHaveBeenCalled();
-    expect(updateEnvironments).not.toHaveBeenCalled();
+    expect(component.environments()).toEqual([prod, staging]);
+    expect(error).toHaveBeenCalledWith('Environments can not be reordered.');
   });
 });

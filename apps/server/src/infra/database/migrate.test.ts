@@ -16,6 +16,7 @@ const EXPECTED_TABLES = [
   'schemas',
   'sessions',
   'settings',
+  'space_environments',
   'space_locales',
   'spaces',
   'task_logs',

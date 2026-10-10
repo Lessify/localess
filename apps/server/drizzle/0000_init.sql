@@ -106,6 +106,16 @@ CREATE TABLE "settings" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "space_environments" (
+	"id" uuid PRIMARY KEY NOT NULL,
+	"space_id" uuid NOT NULL,
+	"name" text NOT NULL,
+	"url" text NOT NULL,
+	"position" integer NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "space_locales" (
 	"space_id" uuid NOT NULL,
 	"locale_id" text NOT NULL,
@@ -120,7 +130,6 @@ CREATE TABLE "spaces" (
 	"import_status" text,
 	"name" text NOT NULL,
 	"default_locale_id" text NOT NULL,
-	"environments" jsonb,
 	"overview" jsonb,
 	"progress" jsonb,
 	"content_version" bigint DEFAULT 1 NOT NULL,
@@ -258,6 +267,7 @@ ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "schemas" ADD CONSTRAINT "schemas_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "space_environments" ADD CONSTRAINT "space_environments_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "space_locales" ADD CONSTRAINT "space_locales_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "space_locales" ADD CONSTRAINT "space_locales_locale_id_locales_id_fk" FOREIGN KEY ("locale_id") REFERENCES "public"."locales"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "spaces" ADD CONSTRAINT "spaces_default_locale_id_locales_id_fk" FOREIGN KEY ("default_locale_id") REFERENCES "public"."locales"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -283,6 +293,7 @@ CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("
 CREATE UNIQUE INDEX "schemas_name_idx" ON "schemas" USING btree ("space_id","name");--> statement-breakpoint
 CREATE INDEX "schemas_type_idx" ON "schemas" USING btree ("space_id","type","display_name");--> statement-breakpoint
 CREATE INDEX "sessions_user_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "space_environments_space_idx" ON "space_environments" USING btree ("space_id","position");--> statement-breakpoint
 CREATE INDEX "task_logs_task_idx" ON "task_logs" USING btree ("task_id","created_at");--> statement-breakpoint
 CREATE INDEX "tasks_space_idx" ON "tasks" USING btree ("space_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "tasks_queue_idx" ON "tasks" USING btree ("created_at") WHERE "tasks"."status" = 'INITIATED';--> statement-breakpoint

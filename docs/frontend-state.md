@@ -92,7 +92,7 @@ Key methods:
 
 This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. Selecting the space is all it takes: the store then moves its own documents/schemas live queries to it (see `_syncSpaceData`).
 
-**Space Environments** — a Space can have multiple environments (e.g. staging, production URLs). The selected environment is persisted per space in `selectedEnvironmentBySpaceId`.
+**Space Environments** — a Space can have multiple environments (e.g. staging, production URLs). The selected environment is persisted per space in `selectedEnvironmentBySpaceId`, **by id** (names may repeat); a stored id that no longer matches (or a name stored by an older version) falls back to the first environment.
 
 ---
 

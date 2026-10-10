@@ -155,7 +155,6 @@ export const spaces = pgTable(
     defaultLocaleId: text('default_locale_id')
       .notNull()
       .references(() => locales.id),
-    environments: jsonb('environments').$type<{ name: string; url: string }[]>(),
     overview: jsonb('overview').$type<Record<string, unknown>>(),
     progress: jsonb('progress').$type<{ translations: Record<string, number> }>(),
     // Cache-busters for the public API `cv` redirect (were the GCS generations of `cache.json`).
@@ -169,6 +168,20 @@ const spaceId = () =>
   uuid('space_id')
     .notNull()
     .references(() => spaces.id, { onDelete: 'cascade' });
+
+/** Visual Editor preview environments of a space, in the order users gave them; the first is the default. Names may repeat. */
+export const spaceEnvironments = pgTable(
+  'space_environments',
+  {
+    id: uuid('id').primaryKey(),
+    spaceId: spaceId(),
+    name: text('name').notNull(),
+    url: text('url').notNull(),
+    position: integer('position').notNull(),
+    ...timestamps,
+  },
+  t => [index('space_environments_space_idx').on(t.spaceId, t.position)],
+);
 
 /** The locales of a space, in the order users gave them (`position`). */
 export const spaceLocales = pgTable(

@@ -201,12 +201,20 @@ Form fields (`token-dialog.component.ts:62-66`; helpers follow below it):
 
 ## VisualEditorComponent
 
-Configure the **visual editor** integration — allows in-context editing when Localess is embedded in a preview environment. The form is an
-`environments` `FormArray` of `{ name, url }` groups: `addEnvironment()` / `removeEnvironment(i)` add and remove rows,
-`environmentDropDrop()` reorders them by drag-and-drop (CDK), and `save()` writes them via `SpaceService.updateEnvironments()`. The form is
-repopulated whenever `SpaceStore.selectedSpace` changes. `captureKeyboard()` (a `(window:keydown)` host listener) saves on Ctrl/Cmd + S.
+Configure the **visual editor** integration — allows in-context editing when Localess is embedded in a preview environment. Environments
+(`space_environments`: id, name, url, position) are managed one by one and every change is saved at once; names may repeat, the id tells
+them apart, and the first is the default:
 
-The URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an absolute `http:`/`https:` URL on a different origin from the app
+- `openAddDialog()` / `openEditDialog(environment)` — `EnvironmentDialogComponent` (name + URL, with the example URL under the field), then
+  `SpaceService.createEnvironment()` (`POST /api/app/spaces/:s/environments`, appended last) or `updateEnvironment()`
+  (`PATCH …/environments/:id`)
+- `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `deleteEnvironment()` (`DELETE …/environments/:id`)
+- `drop(event)` — drag-and-drop (CDK) reorders the list at once and sends the whole order (`PUT …/environments/order {ids}`); a refused
+  order is put back
+
+The list (`environments`, a `linkedSignal`) follows `SpaceStore.selectedSpace`: every write returns the space and announces a `spaces` change.
+
+The dialog's URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an absolute `http:`/`https:` URL on a different origin from the app
 (error key `previewUrl`). This only gives feedback in the form; the security check that matters runs again when the preview renders. See
 "Preview security" in [contents.md](contents.md).
 

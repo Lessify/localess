@@ -3,7 +3,7 @@ import { and, asc, eq, gt } from 'drizzle-orm';
 import { DEFAULT_LOCALE, type FirebaseImportStage, type FirebaseImportStageName, type Locale } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
-import { assets, contents, firebaseImports, locales, schemas, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
+import { assets, contents, firebaseImports, locales, schemas, spaceEnvironments, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
@@ -119,8 +119,18 @@ export class FirebaseImportRunner {
       if (sourceDefault && sourceDefault !== defaultLocaleId) warn('locales', `default locale ${sourceDefault} skipped; ${defaultLocaleId} is the default`);
       await done('locales', keptLocales.length);
       await begin('environments');
-      const environments = Array.isArray(source['environments']) ? (source['environments'] as { name: string; url: string }[]) : [];
-      if (environments.length) await this.db.update(spaces).set({ environments }).where(eq(spaces.id, sid));
+      const sourceEnvironments = (Array.isArray(source['environments']) ? source['environments'] : []) as Partial<Record<'name' | 'url', unknown>>[];
+      const environments = sourceEnvironments.filter(
+        (it): it is { name: string; url: string } => typeof it?.name === 'string' && typeof it?.url === 'string',
+      );
+      if (environments.length < sourceEnvironments.length) {
+        warn('environments', `${sourceEnvironments.length - environments.length} without a name or URL, skipped`);
+      }
+      if (environments.length) {
+        await this.db
+          .insert(spaceEnvironments)
+          .values(environments.map((it, position) => ({ id: newUuid(), spaceId: sid, name: it.name, url: it.url, position })));
+      }
       await done('environments', environments.length);
 
       // 4 tokens

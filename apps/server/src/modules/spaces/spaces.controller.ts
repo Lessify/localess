@@ -2,17 +2,15 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { zPreviewUrl } from '../../infra/http/zod.js';
 import { spaceDto, SpacesService } from './spaces.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(200) });
-const updateSchema = z
-  .object({
-    name: z.string().trim().min(1).max(200).optional(),
-    environments: z.array(z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl })).optional(),
-  })
-  .refine(it => it.name !== undefined || it.environments !== undefined, 'Nothing to update');
+const updateSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
+const environmentSchema = z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl });
+const environmentOrderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(1000) });
 const localeIdSchema = z.object({ id: z.string().min(1).max(64) });
 const localeOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).min(1).max(1000) });
 
@@ -42,9 +40,7 @@ export class SpacesController {
   @Patch(':spaceId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   async update(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>) {
-    let space = body.name !== undefined ? await this.spaces.rename(spaceId, body.name) : undefined;
-    if (body.environments !== undefined) space = await this.spaces.updateEnvironments(spaceId, body.environments);
-    return spaceDto(space!);
+    return spaceDto(await this.spaces.rename(spaceId, body.name));
   }
 
   @Delete(':spaceId')
@@ -60,6 +56,40 @@ export class SpacesController {
   @RequireAnyRole()
   async overview(@Param('spaceId') spaceId: string) {
     return spaceDto(await this.spaces.calculateOverview(spaceId));
+  }
+
+  @Post(':spaceId/environments')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  async createEnvironment(
+    @Param('spaceId') spaceId: string,
+    @Body(new ZodValidationPipe(environmentSchema)) body: z.infer<typeof environmentSchema>,
+  ) {
+    return spaceDto(await this.spaces.createEnvironment(spaceId, body));
+  }
+
+  @Put(':spaceId/environments/order')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  async reorderEnvironments(
+    @Param('spaceId') spaceId: string,
+    @Body(new ZodValidationPipe(environmentOrderSchema)) body: z.infer<typeof environmentOrderSchema>,
+  ) {
+    return spaceDto(await this.spaces.reorderEnvironments(spaceId, body.ids));
+  }
+
+  @Patch(':spaceId/environments/:environmentId')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  async updateEnvironment(
+    @Param('spaceId') spaceId: string,
+    @Param('environmentId', UuidParamPipe) environmentId: string,
+    @Body(new ZodValidationPipe(environmentSchema)) body: z.infer<typeof environmentSchema>,
+  ) {
+    return spaceDto(await this.spaces.updateEnvironment(spaceId, environmentId, body));
+  }
+
+  @Delete(':spaceId/environments/:environmentId')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  async deleteEnvironment(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string) {
+    return spaceDto(await this.spaces.deleteEnvironment(spaceId, environmentId));
   }
 
   @Post(':spaceId/locales')

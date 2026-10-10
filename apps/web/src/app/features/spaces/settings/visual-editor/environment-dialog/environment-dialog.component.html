@@ -1,0 +1,33 @@
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>{{ isEdit ? 'Edit Environment' : 'Add Environment' }}</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex flex-col gap-4">
+  <div hlmField>
+    <label hlmFieldLabel for="environment-name">Name</label>
+    <input
+      hlmInput
+      id="environment-name"
+      type="text"
+      formControlName="name"
+      autocomplete="off"
+      placeholder="Production/Testing/Development" />
+    @if (form.controls['name'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+  <div hlmField>
+    <label hlmFieldLabel for="environment-url">URL</label>
+    <input hlmInput id="environment-url" type="text" formControlName="url" autocomplete="off" placeholder="https://localess.io/api/url" />
+    @if (form.controls['url'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    } @else if (form.controls['url'].value) {
+      <p class="text-muted-foreground text-xs" id="environment-url-example">
+        Opens <code>{{ exampleUrl(form.controls['url'].value) }}</code> for <i>blog/hello</i> in German
+      </p>
+    }
+  </div>
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+</hlm-dialog-footer>

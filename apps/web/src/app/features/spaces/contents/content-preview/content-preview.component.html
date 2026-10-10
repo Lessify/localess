@@ -12,12 +12,12 @@
           </button>
           <ng-template #envMenu>
             <hlm-dropdown-menu class="text-nowrap">
-              @for (env of availableEnvironments(); track env.name) {
+              @for (env of availableEnvironments(); track env.id) {
                 <button
                   hlmDropdownMenuCheckbox
-                  [id]="'env-option-' + env.name"
+                  [id]="'env-option-' + env.id"
                   (click)="onEnvironmentSelection(env)"
-                  [checked]="env.name === selectedEnvironment()?.name"
+                  [checked]="env.id === selectedEnvironment()?.id"
                   [hlmTooltip]="env.url">
                   <hlm-dropdown-menu-checkbox-indicator />
                   <span>{{ env.name }}</span>

@@ -177,7 +177,7 @@ export class ContentPreviewComponent {
       initialized = true;
       const storedEnvironment = this.spaceStore.environment();
       if (storedEnvironment) {
-        const environment = envs.find(it => it.name === storedEnvironment.name) ?? envs[0];
+        const environment = envs.find(it => it.id === storedEnvironment.id) ?? envs[0];
         this.selectedEnvironment.set(environment);
       }
     });

@@ -2,12 +2,21 @@ import { NotFoundException } from '@nestjs/common';
 import { type AnyColumn, eq, getTableColumns, type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.module.js';
 import { isUuid } from '../database/id.js';
-import { type Locale, locales, spaceLocales, spaces } from '../database/schema.js';
+import { type Locale, locales, spaceEnvironments, spaceLocales, spaces } from '../database/schema.js';
 
 type Executor = Pick<Database, 'select' | 'update'>;
 
-/** A space with its locales (by `position`) and its default locale, read from `space_locales` and `locales`. */
-export type SpaceRow = typeof spaces.$inferSelect & { locales: Locale[]; defaultLocale: Locale };
+export interface SpaceEnvironment {
+  id: string;
+  name: string;
+  url: string;
+}
+
+/**
+ * A space with its locales (by `position`) and its default locale, read from `space_locales` and `locales`, and its
+ * environments (by `position`) from `space_environments`.
+ */
+export type SpaceRow = typeof spaces.$inferSelect & { locales: Locale[]; defaultLocale: Locale; environments: SpaceEnvironment[] };
 
 // Columns of the outer `spaces` are written qualified: drizzle renders `${spaces.id}` unqualified in a one-table select,
 // which inside these subqueries would resolve to `space_locales` / `locales`.
@@ -19,9 +28,14 @@ const spaceColumns = {
     where sl.space_id = "spaces"."id"
   ), '[]'::jsonb)`,
   defaultLocale: sql<Locale>`(select jsonb_build_object('id', l.id, 'name', l.name) from ${locales} l where l.id = "spaces"."default_locale_id")`,
+  environments: sql<SpaceEnvironment[]>`coalesce((
+    select jsonb_agg(jsonb_build_object('id', e.id, 'name', e.name, 'url', e.url) order by e.position, e.created_at)
+    from ${spaceEnvironments} e
+    where e.space_id = "spaces"."id"
+  ), '[]'::jsonb)`,
 };
 
-/** `select … from spaces` with the locales joined in; add `where` / `orderBy` as needed. */
+/** `select … from spaces` with the locales and environments joined in; add `where` / `orderBy` as needed. */
 export function selectSpaces(db: Pick<Database, 'select'>) {
   return db.select(spaceColumns).from(spaces);
 }

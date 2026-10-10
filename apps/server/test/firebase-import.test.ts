@@ -99,8 +99,13 @@ describe('Firebase import run', () => {
       contentMigration: ['DONE', 1],
     });
 
-    const [space] = await t.db.select().from(spaces).where(eq(spaces.id, run.spaceId!));
-    expect(space).toMatchObject({ name: 'Site', legacyId: 'fbSpace', importStatus: null, environments: [{ name: 'Preview', url: 'https://preview.example.com' }] });
+    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    expect(space).toMatchObject({
+      name: 'Site',
+      legacyId: 'fbSpace',
+      importStatus: null,
+      environments: [{ id: expect.stringMatching(UUID_V7), name: 'Preview', url: 'https://preview.example.com' }],
+    });
 
     expect((await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id))).map(it => it.token).sort()).toEqual(['TOKENV1000000000000A', 'TOKENV2000000000000B']);
     expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({ enabled: false, secret: 's' });
@@ -156,7 +161,7 @@ describe('Firebase import run', () => {
     expect(space).toMatchObject({ locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
-  it('keeps known locales in their order and skips the others, with a warning', async () => {
+  it('keeps known locales in their order and skips the others (and broken environments), with a warning', async () => {
     const odd = await fakeFirebase([
       {
         id: 'fbOdd',
@@ -164,6 +169,7 @@ describe('Firebase import run', () => {
         doc: {
           locales: [{ id: 'xx-old', name: 'Old' }, { id: 'fr', name: 'Français' }, { id: 'de', name: 'German' }],
           localeFallback: { id: 'xx-old', name: 'Old' },
+          environments: [{ name: 'Ok', url: 'https://ok.example.com' }, { name: 'Broken' }],
           createdAt: '2025-01-01T00:00:00.000Z',
         },
       },
@@ -186,6 +192,8 @@ describe('Firebase import run', () => {
       // Names come from the locales table, not from the Firebase space.
       expect(space.locales).toEqual([{ id: 'fr', name: 'French' }, { id: 'de', name: 'German' }]);
       expect(space.defaultLocale).toEqual({ id: 'fr', name: 'French' });
+      expect(space.environments.map(it => it.name)).toEqual(['Ok']);
+      expect(run.stages.find(it => it.stage === 'environments')!.warnings).toEqual(['1 without a name or URL, skipped']);
     } finally {
       await odd.close();
     }

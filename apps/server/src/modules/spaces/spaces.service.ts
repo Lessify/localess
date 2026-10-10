@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, eq, max, sql, sum } from 'drizzle-orm';
 import { DEFAULT_LOCALE } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
@@ -9,6 +9,7 @@ import {
   contents,
   locales,
   schemas,
+  spaceEnvironments,
   spaceLocales,
   spaces,
   tasks,
@@ -83,8 +84,57 @@ export class SpacesService {
     return this.update(spaceId, async () => ({ name }));
   }
 
-  updateEnvironments(spaceId: string, environments: { name: string; url: string }[]): Promise<SpaceRow> {
-    return this.update(spaceId, async () => ({ environments }));
+  /** Adds a Visual Editor environment at the end of the space's list. */
+  createEnvironment(spaceId: string, environment: { name: string; url: string }): Promise<SpaceRow> {
+    return this.update(spaceId, async (_, tx) => {
+      const [{ last }] = await tx
+        .select({ last: max(spaceEnvironments.position) })
+        .from(spaceEnvironments)
+        .where(eq(spaceEnvironments.spaceId, spaceId));
+      await tx.insert(spaceEnvironments).values({ id: newUuid(), spaceId, ...environment, position: (last ?? -1) + 1 });
+    });
+  }
+
+  updateEnvironment(spaceId: string, environmentId: string, environment: { name: string; url: string }): Promise<SpaceRow> {
+    return this.update(spaceId, async (_, tx) => {
+      const [updated] = await tx
+        .update(spaceEnvironments)
+        .set({ ...environment, updatedAt: new Date() })
+        .where(this.environment(spaceId, environmentId))
+        .returning({ id: spaceEnvironments.id });
+      if (!updated) throw new NotFoundException('Environment not found');
+    });
+  }
+
+  deleteEnvironment(spaceId: string, environmentId: string): Promise<SpaceRow> {
+    return this.update(spaceId, async (_, tx) => {
+      const [deleted] = await tx
+        .delete(spaceEnvironments)
+        .where(this.environment(spaceId, environmentId))
+        .returning({ id: spaceEnvironments.id });
+      if (!deleted) throw new NotFoundException('Environment not found');
+    });
+  }
+
+  /** `environmentIds` is the space's environments in their new order: every one of them, each once. */
+  reorderEnvironments(spaceId: string, environmentIds: string[]): Promise<SpaceRow> {
+    return this.update(spaceId, async (space, tx) => {
+      const current = new Set(space.environments.map(it => it.id));
+      if (
+        environmentIds.length !== current.size ||
+        new Set(environmentIds).size !== environmentIds.length ||
+        environmentIds.some(id => !current.has(id))
+      ) {
+        throw new BadRequestException("The new order must list each of the space's environments once");
+      }
+      for (const [position, id] of environmentIds.entries()) {
+        await tx.update(spaceEnvironments).set({ position }).where(this.environment(spaceId, id));
+      }
+    });
+  }
+
+  private environment(spaceId: string, environmentId: string) {
+    return and(eq(spaceEnvironments.spaceId, spaceId), eq(spaceEnvironments.id, environmentId));
   }
 
   /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */

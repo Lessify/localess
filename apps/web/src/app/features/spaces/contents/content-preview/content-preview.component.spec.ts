@@ -16,7 +16,7 @@ function documentOf(): ContentDocument {
   return { id: 'doc1', kind: ContentKind.DOCUMENT, name: 'Doc', slug: 'doc', fullSlug: 'doc' } as unknown as ContentDocument;
 }
 
-const preview: SpaceEnvironment = { name: 'preview', url: 'https://preview.example.com/' };
+const preview: SpaceEnvironment = { id: 'e-preview', name: 'preview', url: 'https://preview.example.com/' };
 
 function messageEvent(data: unknown, options: { isTrusted?: boolean; origin?: string; source?: unknown } = {}): MessageEvent {
   const { isTrusted = true, origin = 'https://preview.example.com', source } = options;
@@ -46,16 +46,24 @@ describe('ContentPreviewComponent', () => {
   }
 
   it('restores the previously stored environment when available', () => {
-    const prod: SpaceEnvironment = { name: 'prod', url: 'https://prod' };
-    const staging: SpaceEnvironment = { name: 'staging', url: 'https://staging' };
+    const prod: SpaceEnvironment = { id: 'e-prod', name: 'prod', url: 'https://prod' };
+    const staging: SpaceEnvironment = { id: 'e-staging', name: 'staging', url: 'https://staging' };
     const { component } = setup({ selectedSpace: space({ environments: [staging, prod] }), environment: prod });
 
     expect(component.selectedEnvironment()).toEqual(prod);
   });
 
+  it('restores the stored environment by id when names repeat', () => {
+    const one: SpaceEnvironment = { id: 'e-1', name: 'preview', url: 'https://one' };
+    const two: SpaceEnvironment = { id: 'e-2', name: 'preview', url: 'https://two' };
+    const { component } = setup({ selectedSpace: space({ environments: [one, two] }), environment: two });
+
+    expect(component.selectedEnvironment()).toEqual(two);
+  });
+
   it('onEnvironmentSelection() updates the selected environment and persists it', () => {
     const { component, changeEnvironment } = setup();
-    const env: SpaceEnvironment = { name: 'staging', url: 'https://staging' };
+    const env: SpaceEnvironment = { id: 'e-staging', name: 'staging', url: 'https://staging' };
 
     component['onEnvironmentSelection'](env);
 
@@ -213,7 +221,7 @@ describe('ContentPreviewComponent', () => {
     it.each([['javascript:alert(document.domain)//'], ['data:text/html,<script>alert(1)</script>'], ['/relative/path'], ['not a url']])(
       'does not load %s and flags the environment as invalid',
       url => {
-        const { component } = setup({ selectedSpace: space({ environments: [{ name: 'bad', url }] }) });
+        const { component } = setup({ selectedSpace: space({ environments: [{ id: 'e-bad', name: 'bad', url }] }) });
 
         expect(component.iframeUrl()).toBeUndefined();
         expect(component.invalidEnvironmentUrl()).toBe(true);
@@ -221,7 +229,7 @@ describe('ContentPreviewComponent', () => {
     );
 
     it('does not load a URL on the app origin', () => {
-      const { component } = setup({ selectedSpace: space({ environments: [{ name: 'self', url: `${location.origin}/page/` }] }) });
+      const { component } = setup({ selectedSpace: space({ environments: [{ id: 'e-self', name: 'self', url: `${location.origin}/page/` }] }) });
 
       expect(component.iframeUrl()).toBeUndefined();
       expect(component.invalidEnvironmentUrl()).toBe(true);
@@ -235,7 +243,7 @@ describe('ContentPreviewComponent', () => {
     });
 
     it('fills a URL pattern, and talks only to the resolved origin', () => {
-      const pattern: SpaceEnvironment = { name: 'localized', url: 'https://{locale}.preview.example.com/{fullSlug}/' };
+      const pattern: SpaceEnvironment = { id: 'e-localized', name: 'localized', url: 'https://{locale}.preview.example.com/{fullSlug}/' };
       const { component, frameWindow, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
       fixture.componentRef.setInput('selectedLocale', { id: 'de', name: 'German' });
       const postMessage = vi.spyOn(frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
@@ -252,7 +260,7 @@ describe('ContentPreviewComponent', () => {
     });
 
     it('uses the space default locale for {locale} on the default locale', () => {
-      const pattern: SpaceEnvironment = { name: 'query', url: 'https://preview.example.com/{fullSlug}?lang={locale}' };
+      const pattern: SpaceEnvironment = { id: 'e-query', name: 'query', url: 'https://preview.example.com/{fullSlug}?lang={locale}' };
       const { component, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
       fixture.componentRef.setInput('selectedLocale', { id: 'default', name: 'Default' });
 

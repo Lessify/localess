@@ -76,12 +76,36 @@ describe('SpaceService', () => {
     await done;
   });
 
-  it('updateEnvironments() patches the environments', async () => {
+  it('createEnvironment() posts the name and URL', async () => {
     const service = setup();
-    const environments = [{ name: 'Prod', url: 'https://example.com' }];
-    const done = firstValueFrom(service.updateEnvironments('s1', environments));
-    const request = http.expectOne({ method: 'PATCH', url: '/api/app/spaces/s1' });
-    expect(request.request.body).toEqual({ environments });
+    const done = firstValueFrom(service.createEnvironment('s1', { name: 'Prod', url: 'https://example.com' }));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/s1/environments' });
+    expect(request.request.body).toEqual({ name: 'Prod', url: 'https://example.com' });
+    request.flush({});
+    await done;
+  });
+
+  it('updateEnvironment() patches one environment by id', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.updateEnvironment('s1', 'e1', { name: 'Prod', url: 'https://example.com' }));
+    const request = http.expectOne({ method: 'PATCH', url: '/api/app/spaces/s1/environments/e1' });
+    expect(request.request.body).toEqual({ name: 'Prod', url: 'https://example.com' });
+    request.flush({});
+    await done;
+  });
+
+  it('deleteEnvironment() deletes one environment by id', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.deleteEnvironment('s1', 'e1'));
+    http.expectOne({ method: 'DELETE', url: '/api/app/spaces/s1/environments/e1' }).flush({});
+    await done;
+  });
+
+  it('reorderEnvironments() puts the ids in their new order', async () => {
+    const service = setup();
+    const done = firstValueFrom(service.reorderEnvironments('s1', ['e2', 'e1']));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/s1/environments/order' });
+    expect(request.request.body).toEqual({ ids: ['e2', 'e1'] });
     request.flush({});
     await done;
   });

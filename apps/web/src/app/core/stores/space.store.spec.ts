@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Space } from '@localess/shared';
+import { Space, SpaceEnvironment } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
@@ -18,7 +18,7 @@ describe('SpaceStore', () => {
     localStorage.clear();
   });
 
-  function space(id: string, environments?: { name: string; url: string }[]): Space {
+  function space(id: string, environments: SpaceEnvironment[] = []): Space {
     return {
       id,
       name: `Space ${id}`,
@@ -102,8 +102,8 @@ describe('SpaceStore', () => {
 
   it('resolves the first environment by default when a space has environments', () => {
     const spaceA = space('a', [
-      { name: 'prod', url: 'https://prod' },
-      { name: 'staging', url: 'https://staging' },
+      { id: 'e1', name: 'prod', url: 'https://prod' },
+      { id: 'e2', name: 'staging', url: 'https://staging' },
     ]);
     const store = createStore([spaceA]);
     expect(store.environment()?.name).toBe('prod');
@@ -121,14 +121,25 @@ describe('SpaceStore', () => {
     expect(store.selectedSpace()?.id).toBe('a');
   });
 
-  it('resolves the persisted environment for the selected space when it exists', () => {
+  it('resolves the persisted environment by id for the selected space, even among equal names', () => {
     const spaceA = space('a', [
-      { name: 'prod', url: 'https://prod' },
-      { name: 'staging', url: 'https://staging' },
+      { id: 'e1', name: 'preview', url: 'https://one' },
+      { id: 'e2', name: 'preview', url: 'https://two' },
+    ]);
+    localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: { a: 'e2' } }));
+    const store = createStore([spaceA]);
+    expect(store.environment()?.url).toBe('https://two');
+  });
+
+  // Older versions stored the name; it matches no id, so the first environment is used.
+  it('falls back to the first environment for a selection stored by name', () => {
+    const spaceA = space('a', [
+      { id: 'e1', name: 'prod', url: 'https://prod' },
+      { id: 'e2', name: 'staging', url: 'https://staging' },
     ]);
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: { a: 'staging' } }));
     const store = createStore([spaceA]);
-    expect(store.environment()?.name).toBe('staging');
+    expect(store.environment()?.id).toBe('e1');
   });
 
   it('spaceById finds a space by id, or returns undefined', () => {
@@ -139,7 +150,7 @@ describe('SpaceStore', () => {
 
   it('changeSpace updates the selected space, resets paths, and resolves its environment', () => {
     const spaceA = space('a');
-    const spaceB = space('b', [{ name: 'prod', url: 'https://prod' }]);
+    const spaceB = space('b', [{ id: 'e1', name: 'prod', url: 'https://prod' }]);
     const store = createStore([spaceA, spaceB]);
     store.changeContentPath([{ fullSlug: 'nested', name: 'Nested' }]);
 
@@ -289,15 +300,15 @@ describe('SpaceStore', () => {
 
   it('changeEnvironment updates the environment and persists the per-space selection', () => {
     const spaceA = space('a', [
-      { name: 'prod', url: 'https://prod' },
-      { name: 'staging', url: 'https://staging' },
+      { id: 'e1', name: 'prod', url: 'https://prod' },
+      { id: 'e2', name: 'staging', url: 'https://staging' },
     ]);
     const store = createStore([spaceA]);
 
-    store.changeEnvironment({ name: 'staging', url: 'https://staging' });
+    store.changeEnvironment({ id: 'e2', name: 'staging', url: 'https://staging' });
 
     expect(store.environment()?.name).toBe('staging');
     const persisted = JSON.parse(localStorage.getItem(LS_KEY)!);
-    expect(persisted.selectedEnvironmentBySpaceId.a).toBe('staging');
+    expect(persisted.selectedEnvironmentBySpaceId.a).toBe('e2');
   });
 });

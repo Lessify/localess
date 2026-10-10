@@ -1,150 +1,135 @@
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { NotificationService } from '@core/services/notification.service';
-import { PlatformService } from '@core/services/platform.service';
 import { SpaceService } from '@core/services/space.service';
-import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { resolvePreviewUrl } from '@core/utils/preview-url';
 import { SpaceEnvironment } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideGripVertical, lucidePlus, lucideSave, lucideTrash } from '@ng-icons/lucide';
-import { SAMPLE_PREVIEW_CONTEXT, SpaceValidator } from '@shared/validators/space.validator';
+import { lucideGripVertical, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
+import {
+  CONFIRMATION_DIALOG_CONTENT_CLASS,
+  ConfirmationDialogComponent,
+  ConfirmationDialogContext,
+  ConfirmationDialogResult,
+} from '@shared/components/confirmation-dialog';
+import { SAMPLE_PREVIEW_CONTEXT } from '@shared/validators/space.validator';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmFieldImports } from '@spartan-ng/helm/field';
+import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmItemImports } from '@spartan-ng/helm/item';
-import { HlmKbd } from '@spartan-ng/helm/kbd';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmSpinner } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
+import { EnvironmentDialogComponent } from './environment-dialog/environment-dialog.component';
+import { EnvironmentDialogContext, EnvironmentDialogResult } from './environment-dialog/environment-dialog.model';
+
+/**
+ * Visual Editor preview environments, managed one by one: add and edit in a dialog, delete with a confirmation, reorder
+ * by drag and drop (the first is the default). Every change is saved at once; the list follows the space.
+ */
 @Component({
   selector: 'll-space-settings-visual-editor',
   templateUrl: './visual-editor.component.html',
   styleUrls: ['./visual-editor.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(window:keydown)': 'captureKeyboard($event)',
-  },
-  imports: [
-    ReactiveFormsModule,
-    DragDropModule,
-    CommonModule,
-    HlmProgressImports,
-    HlmButtonImports,
-    HlmIconImports,
-    HlmItemImports,
-    HlmTooltipImports,
-    HlmFieldImports,
-    HlmInputImports,
-    HlmKbd,
-    HlmSpinner,
-  ],
-  providers: [
-    provideIcons({
-      lucideSave,
-      lucidePlus,
-      lucideTrash,
-      lucideGripVertical,
-    }),
-  ],
+  imports: [DragDropModule, HlmProgressImports, HlmButtonImports, HlmIconImports, HlmItemImports, HlmTooltipImports],
+  providers: [provideIcons({ lucidePlus, lucidePencil, lucideTrash, lucideGripVertical })],
 })
 export class VisualEditorComponent {
-  readonly platformService = inject(PlatformService);
-  private readonly fb = inject(FormBuilder);
-  readonly fe = inject(FormErrorHandlerService);
   private readonly spaceService = inject(SpaceService);
-  private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
+  private readonly hlmDialog = inject(HlmDialogService);
+  readonly spaceStore = inject(SpaceStore);
 
-  //Loadings
-  isLoading = signal(true);
-  isSaveLoading = signal(false);
+  readonly isLoading = computed(() => this.spaceStore.selectedSpace() === undefined);
+  /** The space's environments; a drop reorders this copy at once, the server's answer then replaces it. */
+  readonly environments = linkedSignal<SpaceEnvironment[]>(() => this.spaceStore.selectedSpace()?.environments ?? []);
 
-  // Stores
-  spaceStore = inject(SpaceStore);
-
-  // Form
-  form: FormGroup = this.fb.group({
-    environments: this.fb.array([]),
-  });
-
-  // Subscriptions
-  settingsStore = inject(LocalSettingsStore);
-  private destroyRef = inject(DestroyRef);
-
-  constructor() {
-    toObservable(this.spaceStore.selectedSpace)
-      .pipe(
-        filter(it => it !== undefined),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: space => {
-          this.environments.clear();
-          space?.environments?.forEach(env => this.addEnvironment(env));
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
-      });
-  }
-
-  get environments(): FormArray<FormGroup> {
-    return this.form.controls['environments'] as FormArray<FormGroup>;
-  }
-
-  addEnvironment(env?: SpaceEnvironment): void {
-    const environment: FormGroup = this.fb.group({
-      name: this.fb.control<string>(env?.name || '', SpaceValidator.ENVIRONMENT_NAME),
-      url: this.fb.control<string>(env?.url || '', SpaceValidator.ENVIRONMENT_URL),
-    });
-    this.environments.push(environment);
-  }
-
-  /** What a valid environment URL opens for the sample document, shown under its field. */
+  /** What an environment URL opens for the sample document. */
   exampleUrl(url: string): string {
     return resolvePreviewUrl(url, SAMPLE_PREVIEW_CONTEXT);
   }
 
-  removeEnvironment(i: number): void {
-    this.environments.removeAt(i);
+  openAddDialog(): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    if (!spaceId) return;
+    this.openDialog(undefined)
+      .pipe(switchMap(it => this.spaceService.createEnvironment(spaceId, it)))
+      .subscribe({
+        next: () => this.notificationService.success('Environment has been added.'),
+        error: () => this.notificationService.error('Environment can not be added.'),
+      });
   }
 
-  save(): void {
-    this.isSaveLoading.set(true);
-    this.spaceService.updateEnvironments(this.spaceStore.selectedSpaceId()!, this.form.value.environments).subscribe({
-      next: () => {
-        this.notificationService.success('Space has been updated.');
-      },
-      error: (err: unknown) => {
-        console.error(err);
-        this.notificationService.error('Space can not be updated.');
-      },
-      complete: () => {
-        this.isSaveLoading.set(false);
-      },
-    });
+  openEditDialog(environment: SpaceEnvironment): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    if (!spaceId) return;
+    this.openDialog({ name: environment.name, url: environment.url })
+      .pipe(switchMap(it => this.spaceService.updateEnvironment(spaceId, environment.id, it)))
+      .subscribe({
+        next: () => this.notificationService.success(`Environment '${environment.name}' has been updated.`),
+        error: () => this.notificationService.error(`Environment '${environment.name}' can not be updated.`),
+      });
   }
 
-  environmentDropDrop(event: CdkDragDrop<string[]>): void {
-    if (event.previousIndex === event.currentIndex) return;
-    const tmp = this.environments.at(event.previousIndex);
-    this.environments.removeAt(event.previousIndex);
-    this.environments.insert(event.currentIndex, tmp);
+  openDeleteDialog(environment: SpaceEnvironment): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    if (!spaceId) return;
+    this.hlmDialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
+          title: 'Delete Environment',
+          content: `Are you sure about deleting Environment '${environment.name}' (${environment.url})?`,
+          variant: 'destructive',
+        },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+      })
+      .closed$.pipe(
+        take(1),
+        filter(it => it || false),
+        switchMap(() => this.spaceService.deleteEnvironment(spaceId, environment.id)),
+      )
+      .subscribe({
+        next: () => this.notificationService.success(`Environment '${environment.name}' has been deleted.`),
+        error: () => this.notificationService.error(`Environment '${environment.name}' can not be deleted.`),
+      });
   }
 
-  captureKeyboard(event: KeyboardEvent): void {
-    // Ctrl + S to Save
-    if (this.platformService.isActionSave(event)) {
-      event.preventDefault();
-      this.save();
-    }
+  drop(event: CdkDragDrop<SpaceEnvironment[]>): void {
+    const spaceId = this.spaceStore.selectedSpaceId();
+    if (!spaceId || event.previousIndex === event.currentIndex) return;
+    const before = this.environments();
+    const reordered = [...before];
+    moveItemInArray(reordered, event.previousIndex, event.currentIndex);
+    this.environments.set(reordered);
+    this.spaceService
+      .reorderEnvironments(
+        spaceId,
+        reordered.map(it => it.id),
+      )
+      .subscribe({
+        error: () => {
+          this.environments.set(before);
+          this.notificationService.error('Environments can not be reordered.');
+        },
+      });
+  }
+
+  /**
+   * `closed$` does not complete the way `afterClosed()` does, hence `take(1)`; a dismissed dialog closes with
+   * `undefined`.
+   */
+  private openDialog(context: EnvironmentDialogContext | undefined) {
+    return this.hlmDialog
+      .open<EnvironmentDialogResult, EnvironmentDialogContext>(EnvironmentDialogComponent, {
+        context,
+        contentClass: 'w-lg! max-w-lg!',
+      })
+      .closed$.pipe(
+        take(1),
+        filter((it): it is EnvironmentDialogResult => it !== undefined),
+      );
   }
 }

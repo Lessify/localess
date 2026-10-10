@@ -212,6 +212,7 @@ users                             role, permissions, lock, disabled
 locales                           every locale a space can use (seeded by migrations, read-only API)
 spaces                            default_locale_id, overview, progress, content/translation_version
   space_locales     (space_id, locale_id)   position, created_at
+  space_environments (id)                   Visual Editor previews: name, url, position
   contents          (space_id, id)
     content_published (space_id, content_id, locale)
   translations      (space_id, id)

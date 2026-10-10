@@ -75,9 +75,10 @@ const resolveEnvironmentForSpace = (
   if (environments.length === 0) {
     return undefined;
   }
-  const selectedEnvironmentName = selectedEnvironmentBySpaceId[space.id];
-  if (selectedEnvironmentName) {
-    const foundEnvironment = environments.find(environment => environment.name === selectedEnvironmentName);
+  // Remembered by id: names may repeat. A name stored by an older version matches no id and falls back to the first.
+  const selectedEnvironmentId = selectedEnvironmentBySpaceId[space.id];
+  if (selectedEnvironmentId) {
+    const foundEnvironment = environments.find(environment => environment.id === selectedEnvironmentId);
     if (foundEnvironment) {
       return foundEnvironment;
     }
@@ -284,7 +285,7 @@ export const SpaceStore = signalStore(
         }
         const selectedEnvironmentBySpaceId = {
           ...state.selectedEnvironmentBySpaceId(),
-          [selectedSpaceId]: environment.name,
+          [selectedSpaceId]: environment.id,
         };
         patchState(state, {
           environment,

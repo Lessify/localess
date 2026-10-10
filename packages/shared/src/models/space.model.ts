@@ -15,8 +15,8 @@ export interface Space {
    * no value falls back to it.
    */
   defaultLocale: Locale;
-  /** Preview environments for the Visual Editor (http(s) URLs only). */
-  environments?: SpaceEnvironment[];
+  /** Preview environments for the Visual Editor (http(s) URLs only), in the order users gave them; the first is the default. */
+  environments: SpaceEnvironment[];
   // overview
   overview?: SpaceOverview;
   progress?: ProgressOverview;
@@ -26,6 +26,14 @@ export interface Space {
 }
 
 export interface SpaceEnvironment {
+  id: string;
+  /** Names may repeat; the id tells environments apart. */
+  name: string;
+  url: string;
+}
+
+/** Creating or editing an environment. */
+export interface SpaceEnvironmentInput {
   name: string;
   url: string;
 }
