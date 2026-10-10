@@ -17,13 +17,13 @@ export class TranslationDeliveryService {
     return row?.data;
   }
 
-  /** Every translation of the space, ordered like Firestore returned documents (by id, byte order). */
+  /** Every translation of the space, ordered like Firestore returned documents (by key, byte order). */
   findTranslations(spaceId: string) {
     return this.db
       .select()
       .from(translations)
       .where(eq(translations.spaceId, spaceId))
-      .orderBy(asc(sql`${translations.id} collate "C"`));
+      .orderBy(asc(sql`${translations.key} collate "C"`));
   }
 }
 
@@ -33,7 +33,7 @@ export class TranslationDeliveryService {
  * the locale itself has a value for (space `progress`).
  */
 export function buildTranslationMap(
-  rows: { id: string; locales: Record<string, string> }[],
+  rows: { key: string; locales: Record<string, string> }[],
   locale: string,
   fallbackLocale: string,
 ): { values: Record<string, string>; translated: number } {
@@ -46,7 +46,7 @@ export function buildTranslationMap(
     } else {
       value = row.locales[fallbackLocale];
     }
-    values[row.id] = value;
+    values[row.key] = value;
   }
   return { values, translated };
 }

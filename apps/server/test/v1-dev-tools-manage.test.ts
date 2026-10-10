@@ -22,12 +22,12 @@ describe('v1 dev tools and manage API', () => {
   const post = (url: string, payload: unknown, apiKey: string | null = TOKEN_DEV) =>
     t.request({ method: 'POST', url, payload: payload as object, headers: apiKey ? { 'x-api-key': apiKey } : {} });
   const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0];
-  const translation = async (id: string) =>
+  const translation = async (key: string) =>
     (
       await t.db
         .select()
         .from(translations)
-        .where(and(eq(translations.spaceId, S1), eq(translations.id, id)))
+        .where(and(eq(translations.spaceId, S1), eq(translations.key, key)))
     )[0];
 
   describe('dev tools (?token= with DEV_TOOLS)', () => {

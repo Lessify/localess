@@ -16,7 +16,7 @@ const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
 function translation(overrides: Partial<Translation> = {}): Translation {
-  return { id: 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+  return { id: 't1', key: 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
 describe('TranslationDetailComponent', () => {
@@ -26,7 +26,7 @@ describe('TranslationDetailComponent', () => {
 
   function setup(t: Translation = translation(), isActionSave = false) {
     const update = vi.fn().mockReturnValue(of(undefined));
-    const updateId = vi.fn().mockReturnValue(of(undefined));
+    const updateKey = vi.fn().mockReturnValue(of(undefined));
     const deleteTranslation = vi.fn().mockReturnValue(of(undefined));
     const isLocaleTranslatableFrom = vi.fn().mockReturnValue(true);
     const isLocaleTranslatableTo = vi.fn().mockReturnValue(true);
@@ -38,7 +38,7 @@ describe('TranslationDetailComponent', () => {
     TestBed.overrideComponent(TranslationDetailComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TranslationService, useValue: { update, updateId, delete: deleteTranslation } },
+        { provide: TranslationService, useValue: { update, updateKey, delete: deleteTranslation } },
         { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
@@ -55,7 +55,7 @@ describe('TranslationDetailComponent', () => {
     return {
       component: fixture.componentInstance,
       update,
-      updateId,
+      updateKey,
       deleteTranslation,
       translate,
       success,
@@ -193,19 +193,19 @@ describe('TranslationDetailComponent', () => {
 
   describe('openEditIdDialog', () => {
     it('updates the id and notifies success when confirmed', () => {
-      const { component, open, updateId, success } = setup();
+      const { component, open, updateKey, success } = setup();
       open.mockReturnValue({ closed$: of('new.id') });
       const t = translation({ id: 't1' });
 
       component.openEditIdDialog(t);
 
-      expect(updateId).toHaveBeenCalledWith('space-1', t, 'new.id');
+      expect(updateKey).toHaveBeenCalledWith('space-1', t, 'new.id');
       expect(success).toHaveBeenCalledWith('Translation ID has been updated.');
     });
 
     it('notifies an error on failure', () => {
-      const { component, open, updateId, error } = setup();
-      updateId.mockReturnValue(throwError(() => new Error('boom')));
+      const { component, open, updateKey, error } = setup();
+      updateKey.mockReturnValue(throwError(() => new Error('boom')));
       open.mockReturnValue({ closed$: of('new.id') });
 
       component.openEditIdDialog(translation({ id: 't1' }));

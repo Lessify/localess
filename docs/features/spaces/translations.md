@@ -87,9 +87,9 @@ locale, see [Space Settings → Translation support](settings.md#translation-sup
 
 | Dialog                           | Purpose                                                                                                                                                               |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AddDialogComponent`             | Create a new translation key (always `STRING` type — no type picker; ID, labels, description, optional client-side auto-translate to other locales)                   |
+| `AddDialogComponent`             | Create a new translation key (always `STRING` type — no type picker; Key, labels, description, optional client-side auto-translate to other locales)                   |
 | `EditDialogComponent`            | Edit key metadata (labels, description)                                                                                                                               |
-| `EditIdDialogComponent`          | Rename a translation key ID                                                                                                                                           |
+| `EditIdDialogComponent`          | Rename a translation key (`PUT …/:id/key`, addressed by the UUID `id`)                                                                                                 |
 | `ExportDialogComponent`          | Choose format and locales to export                                                                                                                                   |
 | `ImportDialogComponent`          | Upload a translation file → creates a Task                                                                                                                            |
 | `TranslateLocaleDialogComponent` | Bulk AI-translate to a target locale — shared/global component (`apps/web/src/app/shared/components/translate-locale-dialog/`), also used by Contents' `EditDocumentComponent` |

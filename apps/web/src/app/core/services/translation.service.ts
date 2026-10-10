@@ -38,7 +38,7 @@ export class TranslationService {
     for (const [locale, value] of Object.entries(entity.locales)) {
       locales[locale] = this.wrapLocaleValue(entity.type, value);
     }
-    const body: TranslationCreate = { id: entity.id, type: entity.type, locales };
+    const body: TranslationCreate = { key: entity.key, type: entity.type, locales };
     if (entity.labels && entity.labels.length > 0) {
       body.labels = entity.labels;
     }
@@ -65,9 +65,9 @@ export class TranslationService {
     return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { labels: entity.labels, description: entity.description });
   }
 
-  /** Renames in one server transaction (values and timestamps are kept). */
-  updateId(spaceId: string, entity: Translation, newId: string): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/id`, { id: newId });
+  /** Changes the key; the id, values and timestamps are kept. */
+  updateKey(spaceId: string, entity: Translation, key: string): Observable<void> {
+    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/key`, { key });
   }
 
   /** An empty value removes the locale. */

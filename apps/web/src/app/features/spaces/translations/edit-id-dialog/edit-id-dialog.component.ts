@@ -27,14 +27,14 @@ export class EditIdDialogComponent implements OnInit {
   private readonly context = injectBrnDialogContext<EditIdDialogContext>();
 
   form: FormGroup = this.fb.group({
-    id: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedIds)]),
+    key: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedKeys)]),
   });
 
   ngOnInit(): void {
-    this.form.patchValue({ id: this.context.id });
+    this.form.patchValue({ key: this.context.key });
   }
 
   save(): void {
-    this.dialogRef.close(this.form.value.id as EditIdDialogResult);
+    this.dialogRef.close(this.form.value.key as EditIdDialogResult);
   }
 }

@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
-import { S1 } from './ids.js';
+import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
 /** A local HTTP server recording requests and answering with `respond`. */
@@ -102,61 +102,70 @@ describe('app API: translations, machine translation, Unsplash', () => {
     return hooks.requests.map(it => JSON.parse(it.body).event);
   };
   const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0];
-  const stored = async (id: string) =>
+  const stored = async (key: string) =>
     (
       await t.db
         .select()
         .from(translations)
-        .where(and(eq(translations.spaceId, S1), eq(translations.id, id)))
+        .where(and(eq(translations.spaceId, S1), eq(translations.key, key)))
     )[0];
+  // Routes take the row UUID; tests name translations by key.
+  const ids: Record<string, string> = {};
+  const url = (key: string) => `${base}/${ids[key]}`;
 
   describe('keys', () => {
-    it('creates keys, refusing duplicates, with translation.changed and a version bump', async () => {
+    it('creates keys with a UUIDv7 id, refusing duplicates, with translation.changed and a version bump', async () => {
       const before = (await space()).translationVersion;
-      const response = await editor.post(base, { id: 'home.title', type: 'STRING', locales: { en: 'Welcome' }, labels: ['home'] });
+      const response = await editor.post(base, { key: 'home.title', type: 'STRING', locales: { en: 'Welcome' }, labels: ['home'] });
       expect(response.statusCode).toBe(201);
+      ids['home.title'] = response.json().id;
       expect(response.json()).toMatchObject({
-        id: 'home.title',
+        id: expect.stringMatching(UUID_V7),
+        key: 'home.title',
         locales: { en: 'Welcome' },
         labels: ['home'],
         updatedBy: { email: 'editor@example.com' },
       });
       expect((await space()).translationVersion).toBe(before + 1);
       expect(await events()).toEqual(['translation.changed']);
-      expect((await editor.post(base, { id: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);
-      expect((await reader.post(base, { id: 'x', type: 'STRING', locales: {} })).statusCode).toBe(403);
+      expect((await editor.post(base, { key: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);
+      expect((await reader.post(base, { key: 'x', type: 'STRING', locales: {} })).statusCode).toBe(403);
+      // Routes take the UUID, not the key.
+      expect((await reader.get(`${base}/home.title`)).statusCode).toBe(404);
     });
 
     it('sets and removes one locale value without touching the others', async () => {
-      await editor.put(`${base}/home.title/locales/de`, { value: 'Willkommen' });
+      await editor.put(`${url('home.title')}/locales/de`, { value: 'Willkommen' });
       expect((await stored('home.title')).locales).toEqual({ en: 'Welcome', de: 'Willkommen' });
-      await editor.put(`${base}/home.title/locales/de`, { value: '' });
+      await editor.put(`${url('home.title')}/locales/de`, { value: '' });
       expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
     });
 
     it('updates labels and description, clearing them when empty', async () => {
-      expect((await editor.patch(`${base}/home.title`, { description: 'Hero heading' })).json()).toMatchObject({
+      expect((await editor.patch(url('home.title'), { description: 'Hero heading' })).json()).toMatchObject({
         description: 'Hero heading',
       });
-      expect((await editor.patch(`${base}/home.title`, {})).json()).not.toHaveProperty('labels');
+      expect((await editor.patch(url('home.title'), {})).json()).not.toHaveProperty('labels');
     });
 
-    it('renames atomically', async () => {
-      await editor.post(base, { id: 'taken', type: 'STRING', locales: { en: 'x' } });
-      expect((await editor.put(`${base}/home.title/id`, { id: 'taken' })).statusCode).toBe(409);
-      expect((await editor.put(`${base}/home.title/id`, { id: 'hero.title' })).json().id).toBe('hero.title');
-      expect((await editor.get(`${base}/home.title`)).statusCode).toBe(404);
+    it('renames: a new key under the same id, refusing a taken key', async () => {
+      ids['taken'] = (await editor.post(base, { key: 'taken', type: 'STRING', locales: { en: 'x' } })).json().id;
+      expect((await editor.put(`${url('home.title')}/key`, { key: 'taken' })).statusCode).toBe(409);
+      const renamed = (await editor.put(`${url('home.title')}/key`, { key: 'hero.title' })).json();
+      expect(renamed).toMatchObject({ id: ids['home.title'], key: 'hero.title' });
+      ids['hero.title'] = renamed.id;
+      expect(await stored('home.title')).toBeUndefined();
     });
 
-    it('lists by id and counts', async () => {
-      expect((await reader.get(base)).json().map((it: { id: string }) => it.id)).toEqual(['hero.title', 'taken']);
+    it('lists by key and counts', async () => {
+      expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hero.title', 'taken']);
       expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 2 });
     });
   });
 
   describe('publishing', () => {
     it('publishes every locale with fallback filling, records progress, and the public API serves it', async () => {
-      await editor.put(`${base}/taken/locales/de`, { value: 'genommen' });
+      await editor.put(`${url('taken')}/locales/de`, { value: 'genommen' });
       await t.app.get(WebhookDispatcher).whenIdle();
       hooks.requests.length = 0;
       expect((await editor.post(`${base}/publish`)).statusCode).toBe(204);
@@ -224,7 +233,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
 
   describe('deleting', () => {
     it('deletes one key, or all keys with SPACE_MANAGEMENT', async () => {
-      expect((await editor.delete(`${base}/taken`)).statusCode).toBe(204);
+      expect((await editor.delete(url('taken'))).statusCode).toBe(204);
       expect((await editor.delete(base)).statusCode).toBe(403);
       const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
       expect((await admin.delete(base)).statusCode).toBe(204);

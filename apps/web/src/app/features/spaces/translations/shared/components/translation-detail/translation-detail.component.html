@@ -113,7 +113,7 @@
     <div>
       <div class="align-items-start flex gap-2 p-2">
         @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit ID" (click)="openEditIdDialog(translation)">
+          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" (click)="openEditIdDialog(translation)">
             <ng-icon hlm size="sm" name="lucideReplace" />
           </button>
           <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" (click)="openEditDialog(translation)">
@@ -131,16 +131,16 @@
         <li role="listitem" class="relative flex items-center p-2">
           <div class="min-w-0 flex-auto">
             <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all">ID</div>
+              <div class="text-sm leading-6 font-semibold break-all">Key</div>
             </div>
             <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              <code>{{ translation.id }}</code>
+              <code>{{ translation.key }}</code>
               <button
                 hlmBtn
                 size="icon"
                 variant="ghost"
-                hlmTooltip="Copy ID"
-                [cdkCopyToClipboard]="translation.id"
+                hlmTooltip="Copy Key"
+                [cdkCopyToClipboard]="translation.key"
                 (cdkCopyToClipboardCopied)="copied()">
                 <ng-icon hlm size="sm" name="lucideCopy" />
               </button>

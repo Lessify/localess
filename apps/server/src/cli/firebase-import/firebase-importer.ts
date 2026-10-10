@@ -364,7 +364,8 @@ export class FirebaseImporter {
       const d = doc.data;
       const values = {
         spaceId,
-        id: doc.id,
+        // The Firestore id is the translation key.
+        key: doc.id,
         type: str(d['type']) ?? 'STRING',
         locales: obj<Record<string, string>>(d['locales']) ?? {},
         labels: strings(d['labels']),
@@ -372,13 +373,13 @@ export class FirebaseImporter {
         updatedBy: obj<UpdatedBy>(d['updatedBy']),
         ...timestamps(d),
       };
-      const { spaceId: _s, id: _i, ...update } = values;
+      const { spaceId: _s, key: _k, ...update } = values;
       void _s;
-      void _i;
+      void _k;
       await this.db
         .insert(translations)
-        .values(values)
-        .onConflictDoUpdate({ target: [translations.spaceId, translations.id], set: update });
+        .values({ id: newUuid(values.createdAt), ...values })
+        .onConflictDoUpdate({ target: [translations.spaceId, translations.key], set: update });
       this.report.translations++;
     }
     for (const locale of locales) {

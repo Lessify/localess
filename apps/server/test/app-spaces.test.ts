@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contents, spaces, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
@@ -108,7 +109,7 @@ describe('app API: spaces, locales, settings', () => {
     });
 
     it('calculates the overview for any role', async () => {
-      await t.db.insert(translations).values({ spaceId, id: 'hello', type: 'STRING', locales: { en: 'Hello' } });
+      await t.db.insert(translations).values({ id: newUuid(), spaceId, key: 'hello', type: 'STRING', locales: { en: 'Hello' } });
       await t.db.insert(contents).values({ spaceId, id: 'c1', kind: 'DOCUMENT', name: 'Home', slug: 'home', fullSlug: 'home' });
       await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/a1/original`, Buffer.alloc(1000));
       const response = await reader.post(`/api/app/spaces/${spaceId}/overview`);

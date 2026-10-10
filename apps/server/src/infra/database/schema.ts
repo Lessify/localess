@@ -17,7 +17,8 @@ import {
 
 /*
  * Ids are moving to UUIDv7 (`newUuid()`) one feature at a time, see docs/roadmap/firebase-migration-uuidv7.md.
- * Done: users, spaces, tokens, webhooks, webhook_logs, schemas (references to a schema use its `name`). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
+ * Done: users, spaces, tokens, webhooks, webhook_logs, schemas (references to a schema use its `name`), translations
+ * (referred to by `key`). A table whose rows can come from Firebase keeps the Firestore id / Firebase uid in
  * `legacy_id`, so old ids in URLs and customer code still resolve (`byIdOrLegacy()`) and a re-run of the
  * import updates the same rows. The other tables still use `text` ids in the 20-char alphanumeric format
  * of `newId()`; imported rows keep their Firestore document ids there.
@@ -274,8 +275,11 @@ export const schemas = pgTable(
 export const translations = pgTable(
   'translations',
   {
+    id: uuid('id').primaryKey(),
     spaceId: spaceId(),
-    id: text('id').notNull(),
+    // The translation key: what the public API, the SDK, the CLI and export files use, so unique per space. An
+    // imported translation keeps its Firestore id here.
+    key: text('key').notNull(),
     // 'STRING' | 'PLURAL' | 'ARRAY'
     type: text('type').notNull(),
     locales: jsonb('locales').$type<Record<string, string>>().notNull().default({}),
@@ -284,7 +288,7 @@ export const translations = pgTable(
     updatedBy: jsonb('updated_by').$type<UpdatedBy>(),
     ...timestamps,
   },
-  t => [primaryKey({ columns: [t.spaceId, t.id] })],
+  t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key)],
 );
 
 /** Published flat `{key: value}` maps (were `spaces/{s}/translations/{locale}.json` in Storage). */

@@ -15,7 +15,7 @@
           } @else {
             <ll-translation-status [status]="identifyTranslationStatus(translation)" />
           }
-          {{ translation.id }}
+          {{ translation.key }}
         </div>
         <p hlmItemDescription class="break-all">
           <ll-translation-string-view [value]="translation.locales[currentLocale() || '']" />

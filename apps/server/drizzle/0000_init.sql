@@ -149,16 +149,16 @@ CREATE TABLE "translation_published" (
 );
 --> statement-breakpoint
 CREATE TABLE "translations" (
+	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
-	"id" text NOT NULL,
+	"key" text NOT NULL,
 	"type" text NOT NULL,
 	"locales" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"labels" text[],
 	"description" text,
 	"updated_by" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "translations_space_id_id_pk" PRIMARY KEY("space_id","id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user_credentials" (
@@ -257,6 +257,7 @@ CREATE INDEX "tasks_space_idx" ON "tasks" USING btree ("space_id","created_at" D
 CREATE INDEX "tasks_queue_idx" ON "tasks" USING btree ("created_at") WHERE "tasks"."status" = 'INITIATED';--> statement-breakpoint
 CREATE INDEX "tokens_space_idx" ON "tokens" USING btree ("space_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "tokens_permissions_idx" ON "tokens" USING gin ("permissions");--> statement-breakpoint
+CREATE UNIQUE INDEX "translations_key_idx" ON "translations" USING btree ("space_id","key");--> statement-breakpoint
 CREATE INDEX "user_identities_user_idx" ON "user_identities" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint
 CREATE INDEX "webhook_logs_webhook_idx" ON "webhook_logs" USING btree ("webhook_id","created_at" DESC NULLS LAST);--> statement-breakpoint

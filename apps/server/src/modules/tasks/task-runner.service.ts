@@ -8,7 +8,6 @@ import {
   ContentExport,
   SchemaExport,
   TaskExportMetadata,
-  Translation,
   TranslationExport,
   WebHookEvent,
 } from '@localess/shared';
@@ -28,7 +27,8 @@ import { assets, contents, schemas, taskLogs, tasks, translations } from '../../
 import { isAssetChanged, isContentChanged, isTranslationChanged } from './import-diff.js';
 import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
 import { schemaFromRow, schemasByName } from '../schemas/schema-row.js';
-import { translationFromRow } from '../translations/translation-row.js';
+import { translationsByKey } from '../translations/translation-row.js';
+import { newUuid } from '../../infra/database/id.js';
 import { applySchemaPushPlan } from '../schemas/schema-push.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
@@ -98,7 +98,8 @@ export function contentToExport(row: typeof contents.$inferSelect): ContentExpor
 }
 
 export function translationToExport(row: typeof translations.$inferSelect): TranslationExport {
-  const exported: TranslationExport = { id: row.id, type: row.type as TranslationExport['type'], locales: row.locales };
+  // Export files identify a translation by its key, carried as `id`.
+  const exported: TranslationExport = { id: row.key, type: row.type as TranslationExport['type'], locales: row.locales };
   if (row.labels?.length) exported.labels = row.labels;
   if (row.description) exported.description = row.description;
   return exported;
@@ -504,7 +505,7 @@ export class TaskRunner {
       .select()
       .from(translations)
       .where(eq(translations.spaceId, spaceId))
-      .orderBy(asc(sql`${translations.id} collate "C"`));
+      .orderBy(asc(sql`${translations.key} collate "C"`));
   }
 
   private async translationsExport(task: TaskRow): Promise<TaskOutcome> {
@@ -523,7 +524,7 @@ export class TaskRunner {
     const rows = await this.orderedTranslations(task.spaceId);
     await this.log(task, 'INFO', `exporting ${rows.length} translations for locale ${locale}`);
     const values: Record<string, string> = {};
-    for (const row of rows) if (row.locales[locale]) values[row.id] = row.locales[locale];
+    for (const row of rows) if (row.locales[locale]) values[row.key] = row.locales[locale];
     const stored = await this.storage.put(taskFileKey(task), Buffer.from(JSON.stringify(values)));
     return { status: 'FINISHED', file: { name: `translation-${locale}-export-${task.id}.json`, size: stored.size } };
   }
@@ -543,7 +544,7 @@ export class TaskRunner {
     if (!parse.success) return this.invalid(task, 'TRANSLATION', parse.error);
     const imported = raw as TranslationExport[];
     await this.log(task, 'INFO', `valid=${imported.length}`);
-    const existing = new Map<string, Translation>((await this.orderedTranslations(spaceId)).map(row => [row.id, translationFromRow(row)]));
+    const existing = translationsByKey(await this.orderedTranslations(spaceId));
     const changes = await this.db.transaction(async tx => {
       let total = 0;
       for (const translation of imported) {
@@ -559,9 +560,9 @@ export class TaskRunner {
           await tx
             .update(translations)
             .set({ ...columns, updatedAt: new Date() })
-            .where(and(eq(translations.spaceId, spaceId), eq(translations.id, translation.id)));
+            .where(and(eq(translations.spaceId, spaceId), eq(translations.key, translation.id)));
         } else {
-          await tx.insert(translations).values({ spaceId, id: translation.id, ...columns });
+          await tx.insert(translations).values({ id: newUuid(), spaceId, key: translation.id, ...columns });
         }
         total++;
       }
@@ -591,11 +592,11 @@ export class TaskRunner {
     if (!parse.success) return this.invalid(task, 'TRANSLATION', parse.error);
     const values = parse.data;
     await this.log(task, 'INFO', `valid=${Object.keys(values).length}`);
-    const existing = new Map((await this.orderedTranslations(spaceId)).map(row => [row.id, row]));
+    const existing = new Map((await this.orderedTranslations(spaceId)).map(row => [row.key, row]));
     const changes = await this.db.transaction(async tx => {
       let total = 0;
-      for (const [id, value] of Object.entries(values)) {
-        const current = existing.get(id);
+      for (const [key, value] of Object.entries(values)) {
+        const current = existing.get(key);
         if (current) {
           if (current.locales[locale] === value) continue;
           await tx
@@ -604,9 +605,9 @@ export class TaskRunner {
               locales: sql`jsonb_set(${translations.locales}, ${`{${locale}}`}::text[], ${JSON.stringify(value)}::jsonb)`,
               updatedAt: new Date(),
             })
-            .where(and(eq(translations.spaceId, spaceId), eq(translations.id, id)));
+            .where(and(eq(translations.spaceId, spaceId), eq(translations.key, key)));
         } else {
-          await tx.insert(translations).values({ spaceId, id, type: 'STRING', locales: { [locale]: value } });
+          await tx.insert(translations).values({ id: newUuid(), spaceId, key, type: 'STRING', locales: { [locale]: value } });
         }
         total++;
       }

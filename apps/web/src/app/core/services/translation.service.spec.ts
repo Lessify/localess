@@ -70,18 +70,18 @@ describe('TranslationService', () => {
   it('create() posts the translation, wrapping locale values by type and dropping empty labels/description', async () => {
     const service = setup();
     const plural = firstValueFrom(
-      service.create('space-1', { id: 'items', type: TranslationType.PLURAL, locales: { en: 'Item' }, labels: [], description: '' }),
+      service.create('space-1', { key: 'items', type: TranslationType.PLURAL, locales: { en: 'Item' }, labels: [], description: '' }),
     );
     const request = http.expectOne({ method: 'POST', url: BASE });
-    expect(request.request.body).toEqual({ id: 'items', type: 'PLURAL', locales: { en: '{"0":"Item"}' } });
+    expect(request.request.body).toEqual({ key: 'items', type: 'PLURAL', locales: { en: '{"0":"Item"}' } });
     request.flush({});
     await plural;
 
     const array = firstValueFrom(
-      service.create('space-1', { id: 'list', type: TranslationType.ARRAY, locales: { en: 'A' }, labels: ['x'], description: 'd' }),
+      service.create('space-1', { key: 'list', type: TranslationType.ARRAY, locales: { en: 'A' }, labels: ['x'], description: 'd' }),
     );
     const arrayRequest = http.expectOne({ method: 'POST', url: BASE });
-    expect(arrayRequest.request.body).toEqual({ id: 'list', type: 'ARRAY', locales: { en: '["A"]' }, labels: ['x'], description: 'd' });
+    expect(arrayRequest.request.body).toEqual({ key: 'list', type: 'ARRAY', locales: { en: '["A"]' }, labels: ['x'], description: 'd' });
     arrayRequest.flush({});
     await array;
   });
@@ -95,11 +95,11 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('updateId() renames on the server', async () => {
+  it('updateKey() renames on the server, addressing the translation by id', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateId('space-1', { id: 'old' } as Translation, 'new'));
-    const request = http.expectOne({ method: 'PUT', url: `${BASE}/old/id` });
-    expect(request.request.body).toEqual({ id: 'new' });
+    const done = firstValueFrom(service.updateKey('space-1', { id: 'uuid-1', key: 'old' } as Translation, 'new'));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/uuid-1/key` });
+    expect(request.request.body).toEqual({ key: 'new' });
     request.flush({});
     await done;
   });

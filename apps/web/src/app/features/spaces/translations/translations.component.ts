@@ -120,7 +120,8 @@ export class TranslationsComponent implements OnInit {
 
   // Translations
   translations = signal<Translation[]>([]);
-  translationIds = computed(() => this.translations().map(it => it.id));
+  /** Keys already taken, for the add and rename dialogs. */
+  translationKeys = computed(() => this.translations().map(it => it.key));
 
   // Labels
   allLabels = computed(() => {
@@ -200,7 +201,7 @@ export class TranslationsComponent implements OnInit {
     this.dialog
       .open<AddDialogResult, AddDialogContext>(AddDialogComponent, {
         context: {
-          reservedIds: this.translationIds(),
+          reservedKeys: this.translationKeys(),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -243,7 +244,7 @@ export class TranslationsComponent implements OnInit {
         }),
         switchMap(({ it, locales }) => {
           const tc: TranslationCreate = {
-            id: it.id,
+            key: it.key,
             type: it.type,
             locales,
             labels: it.labels,

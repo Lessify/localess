@@ -126,7 +126,7 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 | Settings | `GET /api/app/settings`, `PATCH /api/app/settings/ui` |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`:id` = UUID), `PUT …/:id/name` (rename), `POST …/template` |
 | Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
-| Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:id/locales/:locale`, `PUT …/:id/id`, `POST …/publish`, `POST …/translate-locale`, `DELETE` (all) |
+| Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:id/locales/:locale`, `PUT …/:id/key` (rename; `:id` = UUID), `POST …/publish`, `POST …/translate-locale`, `DELETE` (all) |
 | Machine translation | `POST /api/app/translate` (`content` or `items`), `GET /api/app/translate/status` |
 | Assets | `/api/app/spaces/:s/assets` list/`count`/get, `POST …/folders`, `POST …/files` (multipart, fields before file), `PATCH …/:id`, `PUT …/:id/parent`, `DELETE` |
 | Tokens / webhooks | `/api/app/spaces/:s/tokens` (+ `POST …/:id/regenerate`), `/api/app/spaces/:s/webhooks` (+ `PATCH …/:id/status`, `GET …/:id/logs`) |

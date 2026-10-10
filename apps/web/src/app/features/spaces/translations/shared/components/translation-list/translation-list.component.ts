@@ -55,7 +55,7 @@ export class TranslationListComponent {
     );
   });
   readonly translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
-  readonly translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.id, it])));
+  readonly translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.key, it])));
 
   /** True when any filter narrows the list — search text, labels or states. */
   readonly isFiltering = computed(() => {
@@ -128,7 +128,7 @@ export class TranslationListComponent {
       const matchByLocaleStatus = !localeStates.length || localeStates.includes(identifyLocaleStatus(it, locale));
       if (!matchByTranslationStatus) return false;
       if (!matchByLocaleStatus) return false;
-      if (it.id.toLowerCase().includes(lcFilter) && matchByLabel) {
+      if (it.key.toLowerCase().includes(lcFilter) && matchByLabel) {
         return true;
       } else {
         const localeValue = it.locales[locale];
@@ -143,7 +143,7 @@ export class TranslationListComponent {
   buildTranslationTree(translations: Translation[]): TranslationNode[] {
     const tTree: Record<string, any> = {};
     for (const translation of translations) {
-      const keys = translation.id.split('.');
+      const keys = translation.key.split('.');
       let currentNode = tTree;
       for (const key of keys) {
         if (!currentNode[key]) {

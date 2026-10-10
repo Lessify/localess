@@ -44,7 +44,7 @@ export class AddDialogComponent {
   private readonly context = injectBrnDialogContext<AddDialogContext>();
 
   form: FormGroup = this.fb.group({
-    id: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedIds)]),
+    key: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedKeys)]),
     type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),

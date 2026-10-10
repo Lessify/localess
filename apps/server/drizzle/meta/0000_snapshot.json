@@ -1,5 +1,5 @@
 {
-  "id": "a8ba1d7f-f056-4366-8554-17a5d8b4a863",
+  "id": "9762e851-1d8e-4d11-9291-5da46c1e9842",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1391,14 +1391,20 @@
       "name": "translations",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
         "space_id": {
           "name": "space_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "id": {
-          "name": "id",
+        "key": {
+          "name": "key",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1449,7 +1455,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "translations_key_idx": {
+          "name": "translations_key_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "translations_space_id_spaces_id_fk": {
           "name": "translations_space_id_spaces_id_fk",
@@ -1465,15 +1493,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "translations_space_id_id_pk": {
-          "name": "translations_space_id_id_pk",
-          "columns": [
-            "space_id",
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

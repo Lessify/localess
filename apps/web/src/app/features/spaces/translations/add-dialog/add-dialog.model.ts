@@ -1,11 +1,11 @@
 import { TranslationType } from '@localess/shared';
 
 export interface AddDialogContext {
-  reservedIds: string[];
+  reservedKeys: string[];
 }
 
 export interface AddDialogResult {
-  id: string;
+  key: string;
   type: TranslationType;
   value: string;
   labels: string[];

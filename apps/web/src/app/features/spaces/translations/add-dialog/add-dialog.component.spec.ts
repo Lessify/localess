@@ -22,22 +22,22 @@ describe('AddDialogComponent', () => {
   }
 
   it('starts with STRING type and no auto-translate', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedKeys: [] });
 
     expect(component.form.value.type).toBe('STRING');
     expect(component.form.value.autoTranslate).toBe(false);
   });
 
   it('rejects an id that collides with a reserved id', () => {
-    const { component } = setup({ reservedIds: ['existing.id'] });
+    const { component } = setup({ reservedKeys: ['existing.id'] });
 
-    component.form.controls['id'].setValue('existing.id');
+    component.form.controls['key'].setValue('existing.id');
 
-    expect(component.form.controls['id'].errors).toEqual({ reservedName: true });
+    expect(component.form.controls['key'].errors).toEqual({ reservedName: true });
   });
 
   it('addLabel() trims and appends to an empty labels list', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedKeys: [] });
 
     component.addLabel('  ui  ');
 
@@ -45,7 +45,7 @@ describe('AddDialogComponent', () => {
   });
 
   it('addLabel() appends to an existing labels list', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedKeys: [] });
     component.addLabel('ui');
 
     component.addLabel('marketing');
@@ -54,7 +54,7 @@ describe('AddDialogComponent', () => {
   });
 
   it('addLabel() ignores a blank value', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedKeys: [] });
 
     component.addLabel('   ');
 
@@ -62,7 +62,7 @@ describe('AddDialogComponent', () => {
   });
 
   it('removeLabel() removes the given label', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedKeys: [] });
     component.addLabel('ui');
     component.addLabel('marketing');
 
@@ -71,11 +71,11 @@ describe('AddDialogComponent', () => {
     expect(component.form.value.labels).toEqual(['marketing']);
   });
   it('closes with the form value when saved', () => {
-    const { component, close } = setup({ reservedIds: [] });
-    component.form.patchValue({ id: 'greeting', value: 'Hello' });
+    const { component, close } = setup({ reservedKeys: [] });
+    component.form.patchValue({ key: 'greeting', value: 'Hello' });
 
     component.save();
 
-    expect(close).toHaveBeenCalledWith(expect.objectContaining({ id: 'greeting', value: 'Hello' }));
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ key: 'greeting', value: 'Hello' }));
   });
 });

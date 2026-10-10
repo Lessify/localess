@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { TokenPermission, Translation, TranslationType, TranslationUpdateResponse } from '@localess/shared';
+import { TokenPermission, TranslationType, TranslationUpdateResponse } from '@localess/shared';
 import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
@@ -20,7 +20,8 @@ import {
 import { q, sendV1Error } from '../../infra/http/v1/v1-response.js';
 import { SpacesService } from '../spaces/spaces.service.js';
 import { buildTranslationMap, TranslationDeliveryService } from './translation-delivery.service.js';
-import { translationFromRow } from './translation-row.js';
+import { translationsByKey } from './translation-row.js';
+import { newUuid } from '../../infra/database/id.js';
 import { planTranslationUpdate, storedLocaleValues } from './translation.utils.js';
 
 /** Per-type verb labels used for response messages. */
@@ -123,7 +124,7 @@ export class TranslationsPublicController {
       return;
     }
     const rows = await this.delivery.findTranslations(spaceId);
-    const values = storedLocaleValues(new Map(rows.map(row => [row.id, translationFromRow(row)])), locale);
+    const values = storedLocaleValues(translationsByKey(rows), locale);
     void reply.header('cache-control', 'no-cache').send(values);
   }
 
@@ -147,7 +148,7 @@ export class TranslationsPublicController {
       return;
     }
 
-    // add-missing / update-existing only need the pushed ids; the delete types need every id.
+    // add-missing / update-existing only need the pushed keys; the delete types need every key.
     const ids = Object.getOwnPropertyNames(values);
     const rows =
       type === 'delete-missing-key' || type === 'delete-missing-value'
@@ -156,9 +157,9 @@ export class TranslationsPublicController {
           ? await this.db
               .select()
               .from(translations)
-              .where(and(eq(translations.spaceId, spaceId), inArray(translations.id, ids)))
+              .where(and(eq(translations.spaceId, spaceId), inArray(translations.key, ids)))
           : [];
-    const existing = new Map<string, Translation>(rows.map(row => [row.id, translationFromRow(row)]));
+    const existing = translationsByKey(rows);
 
     const plan = planTranslationUpdate(existing, locale, values);
     const actionable = {
@@ -186,11 +187,11 @@ export class TranslationsPublicController {
     }
 
     await this.db.transaction(async tx => {
-      const inSpace = (selected: string[]) => and(eq(translations.spaceId, spaceId), inArray(translations.id, selected));
+      const inSpace = (selected: string[]) => and(eq(translations.spaceId, spaceId), inArray(translations.key, selected));
       if (type === 'add-missing') {
         await tx
           .insert(translations)
-          .values(actionable.map(id => ({ spaceId, id, type: TranslationType.STRING, locales: { [locale]: values[id] } })));
+          .values(actionable.map(key => ({ id: newUuid(), spaceId, key, type: TranslationType.STRING, locales: { [locale]: values[key] } })));
       } else if (type === 'update-existing') {
         for (const id of actionable) {
           await tx

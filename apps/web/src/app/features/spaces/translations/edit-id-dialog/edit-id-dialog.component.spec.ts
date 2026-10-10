@@ -22,22 +22,22 @@ describe('EditIdDialogComponent', () => {
   }
 
   it('patches the form with the current id', () => {
-    const { component } = setup({ id: 'my.translation', reservedIds: ['other.id'] });
+    const { component } = setup({ key: 'my.translation', reservedKeys: ['other.id'] });
 
-    expect(component.form.value).toEqual({ id: 'my.translation' });
+    expect(component.form.value).toEqual({ key: 'my.translation' });
     expect(component.form.valid).toBe(true);
   });
 
   it('rejects an id that collides with a reserved id', () => {
-    const { component } = setup({ id: 'my.translation', reservedIds: ['other.id'] });
+    const { component } = setup({ key: 'my.translation', reservedKeys: ['other.id'] });
 
-    component.form.controls['id'].setValue('other.id');
+    component.form.controls['key'].setValue('other.id');
 
-    expect(component.form.controls['id'].errors).toEqual({ reservedName: true });
+    expect(component.form.controls['key'].errors).toEqual({ reservedName: true });
   });
   it('closes with the bare id, not the form object', () => {
-    const { component, close } = setup({ id: 'greeting', reservedIds: ['other'] });
-    component.form.patchValue({ id: 'renamed' });
+    const { component, close } = setup({ key: 'greeting', reservedKeys: ['other'] });
+    component.form.patchValue({ key: 'renamed' });
 
     component.save();
 

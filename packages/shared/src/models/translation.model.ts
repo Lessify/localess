@@ -10,7 +10,10 @@ export enum TranslationType {
 }
 
 export interface Translation {
+  /** Row id (UUIDv7), used by the App API only. */
   id: string;
+  /** The translation key, unique per space: what the public API, the SDK, the CLI and export files use. */
+  key: string;
   type: TranslationType;
   locales: Record<string, string>;
   labels?: string[];
@@ -27,12 +30,12 @@ export interface PublishTranslationsData {
   spaceId: string;
 }
 
-// Import and Export
-export type TranslationExport = Omit<Translation, 'createdAt' | 'updatedAt'>;
+// Import and Export: a translation is identified by its key, carried as `id`; the row UUID never leaves the App API.
+export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt' | 'updatedBy'> & { /** The key. */ id: string };
 
 // App API requests
 export interface TranslationCreate {
-  id: string;
+  key: string;
   type: TranslationType;
   labels?: string[];
   description?: string;
@@ -49,7 +52,7 @@ export type TranslationManageUpdate = z.infer<typeof zTranslationManageUpdateSch
 
 export interface TranslationUpdateResponse {
   message: string;
-  /** Translation ids the request's `type` wrote (or, on a dry run, would write). */
+  /** Translation keys the request's `type` wrote (or, on a dry run, would write). */
   ids: string[];
   dryRun?: boolean;
 }

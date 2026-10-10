@@ -9,7 +9,8 @@ const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
 function translation(overrides: Partial<Translation> = {}): Translation {
-  return { id: 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+  // The key follows the id unless given, so tests can name translations by either.
+  return { id: 't1', key: overrides.id ?? 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
 describe('TranslationListComponent', () => {
@@ -91,6 +92,13 @@ describe('TranslationListComponent', () => {
   });
 
   describe('buildTranslationTree', () => {
+    it('builds the tree from keys, not from the row ids', () => {
+      const { component } = setup();
+      const items = [translation({ id: '0190a3b4-0000-7000-8000-000000000001', key: 'nav.home' })];
+
+      expect(component.buildTranslationTree(items)).toEqual([{ name: 'nav', key: 'nav', children: [{ name: 'home', key: 'nav.home' }] }]);
+    });
+
     it('groups dotted ids into a nested tree', () => {
       const { component } = setup();
       const items = [translation({ id: 'home.title' }), translation({ id: 'home.subtitle' }), translation({ id: 'footer' })];

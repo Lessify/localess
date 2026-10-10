@@ -77,8 +77,8 @@ describe('task worker: exports and imports', () => {
       { spaceId: SPACE_A, id: 'about', kind: 'DOCUMENT', name: 'About', slug: 'about', parentSlug: '', fullSlug: 'about', schema: 'page' },
     ]);
     await t.db.insert(translations).values([
-      { spaceId: SPACE_A, id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
-      { spaceId: SPACE_A, id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
+      { id: newUuid(), spaceId: SPACE_A, key: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
+      { id: newUuid(), spaceId: SPACE_A, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
     ]);
     await t.db.insert(assets).values([
       { spaceId: SPACE_A, id: 'photos', kind: 'FOLDER', name: 'Photos', parentPath: '' },
@@ -301,7 +301,7 @@ describe('task worker: exports and imports', () => {
       ]);
       const before = (await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion;
       expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', await download(SPACE_A, exported.id))).status).toBe('FINISHED');
-      expect((await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B))).map(it => it.id).sort()).toEqual([
+      expect((await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B))).map(it => it.key).sort()).toEqual([
         'farewell',
         'greeting',
       ]);
@@ -317,8 +317,8 @@ describe('task worker: exports and imports', () => {
       const edited = Buffer.from(JSON.stringify({ greeting: 'Servus', brandNew: 'Neu' }));
       expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', edited, { locale: 'de' })).status).toBe('FINISHED');
       const b = await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B));
-      expect(b.find(it => it.id === 'greeting')?.locales).toEqual({ en: 'Hello', de: 'Servus' });
-      expect(b.find(it => it.id === 'brandNew')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
+      expect(b.find(it => it.key === 'greeting')?.locales).toEqual({ en: 'Hello', de: 'Servus' });
+      expect(b.find(it => it.key === 'brandNew')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
     });
   });
 

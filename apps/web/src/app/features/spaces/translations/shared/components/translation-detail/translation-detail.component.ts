@@ -89,7 +89,8 @@ export class TranslationDetailComponent {
   readonly spaceId = input.required<string>();
   readonly availableLocales = input.required<Locale[]>();
   readonly localeFallback = input<Locale | undefined>(undefined);
-  readonly reservedIds = input<string[]>([]);
+  /** Keys already taken, for the rename dialog. */
+  readonly reservedKeys = input<string[]>([]);
   readonly selectedLabels = input<string[]>([]);
   readonly isLocaleUpdateLoading = input(false);
 
@@ -189,8 +190,8 @@ export class TranslationDetailComponent {
     this.dialog
       .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
         context: {
-          id: translation.id,
-          reservedIds: this.reservedIds(),
+          key: translation.key,
+          reservedKeys: this.reservedKeys(),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -198,7 +199,7 @@ export class TranslationDetailComponent {
         take(1),
         filter(it => it !== undefined),
         switchMap(it => {
-          return this.translationService.updateId(this.spaceId(), translation, it!);
+          return this.translationService.updateKey(this.spaceId(), translation, it!);
         }),
       )
       .subscribe({
@@ -244,7 +245,7 @@ export class TranslationDetailComponent {
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Translation',
-          content: `Are you sure about deleting Translation with ID '${element.id}'.`,
+          content: `Are you sure about deleting Translation with Key '${element.key}'.`,
           variant: 'destructive',
         },
         contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,

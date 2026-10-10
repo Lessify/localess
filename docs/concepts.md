@@ -144,10 +144,13 @@ than reaching the API:
 A **Translation** is a key/value localisation entry. It is **not** tied to a Schema — it is a flat key store for UI strings.
 
 ```
-Postgres: translations (space_id, id)          ← id is the translation key; locales jsonb; drafts built on read
+Postgres: translations (id uuid, space_id, key)   ← key: the translation key, unique per space; locales jsonb; drafts built on read
           translation_published (space_id, locale) ← published flat key/value map
           spaces.translation_version             ← cv
 ```
+
+`id` is a UUIDv7 the App API uses to address the row; the public API, the SDK, the CLI and export files use the
+**key** (export files carry it as `id`). Renaming changes only `key`.
 
 Three translation types:
 | Type | Structure |

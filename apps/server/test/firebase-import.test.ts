@@ -285,6 +285,11 @@ describe('import:firebase', () => {
     }
     expect(importedSchemas.map(it => it.name)).toContain(posts[0].schema);
 
+    // The Firestore translation id is the key.
+    const [greeting] = await db.select().from(schema.translations);
+    expect(greeting).toMatchObject({ key: 'greeting', spaceId: space.id, locales: { en: 'Hello', de: 'Hallo' } });
+    expect(greeting.id).toMatch(UUID_V7);
+
     // The Firestore token id is the secret customers use: it stays the token value, under a new UUID.
     const [token] = await db.select().from(schema.tokens);
     expect(token).toMatchObject({ token: TOKEN, spaceId: space.id });

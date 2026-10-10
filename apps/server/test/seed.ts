@@ -141,9 +141,9 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
 
 export async function seedTranslations(t: TestApp, spaceId = S1): Promise<void> {
   await t.db.insert(translations).values([
-    { spaceId, id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' } },
-    { spaceId, id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
-    { spaceId, id: 'new.key', type: 'STRING', locales: { en: 'New (draft only)' } },
+    { id: newUuid(), spaceId, key: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' } },
+    { id: newUuid(), spaceId, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
+    { id: newUuid(), spaceId, key: 'new.key', type: 'STRING', locales: { en: 'New (draft only)' } },
   ]);
   await t.db.insert(translationPublished).values([
     { spaceId, locale: 'en', data: { farewell: 'Bye', greeting: 'Hello' } },

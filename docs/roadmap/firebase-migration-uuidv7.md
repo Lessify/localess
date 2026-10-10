@@ -84,8 +84,10 @@ be the secret: it has only 74 random bits and leaks its creation time. `validate
 
 ### Translations and schemas as values
 
-- `translations.key`: renaming a translation becomes `UPDATE … SET key`, the row id stays. The publish step
-  builds `{ [key]: value }`, so the public payload is unchanged.
+- `translations.key` (✅ 2026-10-10): `id` is a UUIDv7 for the App API; `key` is unique per space and is what the
+  public API, the SDK, the CLI push and export files (as `id`) use. Renaming (`PUT /translations/:id/key`) changes
+  only `key`. The publish step builds `{ [key]: value }`, so the public payload is unchanged. Imported translations
+  keep their Firestore id as `key`, no `legacy_id`.
 - `schemas.name` (✅ 2026-10-10): `id` is a UUIDv7 used only as the row identity in the App API (`/schemas/:id`,
   change events). **Every reference keeps the name**, unique per space, because it is the human-readable key
   content, the SDK (localess-js) and Code as Source work with:
@@ -225,7 +227,7 @@ deleted once per block).
 | 1 | Admin | `users`, `spaces` (+ `legacy_id`); every `user_id` / `space_id` column becomes `uuid` | ✅ 2026-10-10 |
 | 2 | Space settings | `tokens` (+ `token`, unique; regenerate updates it in place), `webhooks` (+ `legacy_id`, unique per space, not in the DTO), `webhook_logs` (UUIDv7 too) | ✅ 2026-10-10 |
 | 3 | Schemas | `schemas` (`id` uuid + `name`, unique per space); references stay names | ✅ 2026-10-10 |
-| 4 | Translations | `translations` (+ `key`), `translation_published` | planned |
+| 4 | Translations | `translations` (`id` uuid + `key`, unique per space); `translation_published` unchanged | ✅ 2026-10-10 |
 | 5 | Assets | `assets` (+ `legacy_id`, `parent_path`) | planned |
 | 6 | Contents | `contents` (+ `legacy_id`, `schema_id`), `content_published`, references | planned |
 | 7 | Tasks | `tasks`, `task_logs`, Export/Import id mapping | planned |

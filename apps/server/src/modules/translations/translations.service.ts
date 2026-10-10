@@ -2,6 +2,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from '@nestj
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
+import { isUuid, newUuid } from '../../infra/database/id.js';
 import { spaces, translationPublished, translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { buildTranslationMap } from './translation-delivery.service.js';
@@ -18,7 +19,7 @@ const isUniqueViolation = (error: unknown) =>
   (error as { cause?: { code?: string } })?.cause?.code === '23505' || (error as { code?: string })?.code === '23505';
 
 /**
- * Translation keys of a space. Every write bumps the translation version and fires
+ * Translation keys of a space. Routes use the UUID `id`; `key` is the translation key, unique per space. Every write bumps the translation version and fires
  * `translation.changed` after commit — what the SPA's `translation-publishdraft` call after each
  * write used to do (draft translations are now built from these rows on read).
  */
@@ -32,7 +33,7 @@ export class TranslationsService {
   ) {}
 
   list(spaceId: string): Promise<TranslationRow[]> {
-    return this.db.select().from(translations).where(eq(translations.spaceId, spaceId)).orderBy(asc(translations.id));
+    return this.db.select().from(translations).where(eq(translations.spaceId, spaceId)).orderBy(asc(translations.key));
   }
 
   async count(spaceId: string): Promise<number> {
@@ -41,6 +42,7 @@ export class TranslationsService {
   }
 
   async get(spaceId: string, id: string): Promise<TranslationRow> {
+    if (!isUuid(id)) throw new NotFoundException('Translation not found');
     const [row] = await this.db
       .select()
       .from(translations)
@@ -63,7 +65,7 @@ export class TranslationsService {
         return outcome.result;
       });
     } catch (error) {
-      if (isUniqueViolation(error)) throw new ConflictException('A translation with this id already exists');
+      if (isUniqueViolation(error)) throw new ConflictException('A translation with this key already exists');
       throw error;
     }
     this.webhooks.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
@@ -76,13 +78,14 @@ export class TranslationsService {
 
   create(
     spaceId: string,
-    input: { id: string; type: string; locales: Record<string, string>; labels?: string[]; description?: string },
+    input: { key: string; type: string; locales: Record<string, string>; labels?: string[]; description?: string },
     user: UserRow,
   ): Promise<TranslationRow> {
     return this.write(spaceId, async tx => {
       const [row] = await tx
         .insert(translations)
         .values({
+          id: newUuid(),
           spaceId,
           ...input,
           labels: input.labels?.length ? input.labels : null,
@@ -127,21 +130,16 @@ export class TranslationsService {
     });
   }
 
-  rename(spaceId: string, id: string, newId: string, user: UserRow): Promise<TranslationRow> {
+  /** Changes the key; the id stays. */
+  rename(spaceId: string, id: string, key: string, user: UserRow): Promise<TranslationRow> {
     return this.write(spaceId, async tx => {
       const [row] = await tx
         .update(translations)
-        .set({ id: newId, updatedBy: updatedByOf(user), updatedAt: new Date() })
+        .set({ key, updatedBy: updatedByOf(user), updatedAt: new Date() })
         .where(this.where(spaceId, id))
         .returning();
       if (!row) throw new NotFoundException('Translation not found');
-      return {
-        result: row,
-        changed: [
-          { id, op: 'deleted' },
-          { id: newId, op: 'created' },
-        ],
-      };
+      return { result: row, changed: [{ id, op: 'updated' }] };
     });
   }
 
@@ -169,10 +167,10 @@ export class TranslationsService {
     await this.db.transaction(async tx => {
       const space = await requireSpace(tx, spaceId);
       const rows = await tx
-        .select({ id: translations.id, locales: translations.locales })
+        .select({ key: translations.key, locales: translations.locales })
         .from(translations)
         .where(eq(translations.spaceId, spaceId))
-        .orderBy(sql`${translations.id} collate "C"`);
+        .orderBy(sql`${translations.key} collate "C"`);
       const progress: Record<string, number> = {};
       const publishedAt = new Date();
       for (const locale of space.locales) {

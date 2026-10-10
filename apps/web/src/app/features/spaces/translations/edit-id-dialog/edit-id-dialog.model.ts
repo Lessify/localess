@@ -1,7 +1,8 @@
+/** Edits a translation's key, not the row id. */
 export interface EditIdDialogContext {
-  id: string;
-  reservedIds: string[];
+  key: string;
+  reservedKeys: string[];
 }
 
-/** The new id on its own, not the form object. */
+/** The new key on its own, not the form object. */
 export type EditIdDialogResult = string;
