@@ -24,7 +24,7 @@ apps/web/src/app/features/spaces/schemas/
   edit-comp/                         ← component/root schema field editor (routed)
   edit-enum/                         ← enum values editor (routed)
   add-dialog/                        ← create new schema
-  edit-id-dialog/                    ← rename schema ID
+  edit-id-dialog/                    ← rename schema ID (its `name`)
   export-dialog/
   import-dialog/
   shared/
@@ -45,7 +45,7 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 - `dataSource.filterPredicate` — set once in `ngOnInit` via `FilterPredicateUtils.create()` (search across id/displayName/description + array-overlap on `labels`)
 - `onRowSelect(schema)` — navigates to `edit-comp` or `edit-enum` based on schema type
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)
-- `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID (propagates to content that uses it)
+- `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID: changes the schema's `name` (shown as its ID), addressed by its UUID `id`; content, fields and code referring to the old name are not updated
 - `openDeleteDialog(event, schema)` — same `MouseEvent` handling; delete schema (with content impact warning)
 - `openExportDialog()` / `openImportDialog()` — creates Tasks
 

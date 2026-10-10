@@ -68,8 +68,8 @@
         <th llHeaderCell *llHeaderCellDef>Schema</th>
         <td llCell *llCellDef="let element">
           @if (element.kind === 'DOCUMENT') {
-            @if (schemasMapById().get(element.schema); as schema) {
-              {{ schema.displayName || schema.id }}
+            @if (schemasMapByName().get(element.schema); as schema) {
+              {{ schema.displayName || schema.name }}
             } @else {
               unknown...
             }

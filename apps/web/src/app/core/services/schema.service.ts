@@ -31,12 +31,12 @@ export class SchemaService {
   }
 
   create(spaceId: string, entity: SchemaCreate): Observable<void> {
-    return this.http.post<void>(this.base(spaceId), { id: entity.id, type: entity.type, displayName: entity.displayName });
+    return this.http.post<void>(this.base(spaceId), { name: entity.name, type: entity.type, displayName: entity.displayName });
   }
 
-  /** Renames in one server transaction (fields and timestamps are kept). */
-  updateId(spaceId: string, entity: Schema, newId: string): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/id`, { id: newId });
+  /** Changes the name; the id, fields and timestamps are kept. References to the old name are not rewritten. */
+  updateName(spaceId: string, entity: Schema, name: string): Observable<void> {
+    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/name`, { name });
   }
 
   updateComponent(spaceId: string, id: string, entity: SchemaComponentUpdate): Observable<void> {

@@ -38,14 +38,14 @@ describe('ReferencesSelectDialogComponent', () => {
 
   it('loads root schemas and content on init', () => {
     const items = [folder({ id: 'f1' })];
-    const schemas = [{ id: 's1', type: SchemaType.ROOT } as Schema];
+    const schemas = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema];
     const { component, findAllSchemas, findAllContents } = setup({ spaceId: 'space-1' }, items, schemas);
 
     expect(findAllSchemas).toHaveBeenCalledWith('space-1', SchemaType.ROOT);
     expect(findAllContents).toHaveBeenCalledWith('space-1', '');
     expect(component.schemas()).toEqual(schemas);
     expect(component.dataSource.filteredData()).toEqual(items);
-    expect(component.schemasMapById().get('s1')).toEqual(schemas[0]);
+    expect(component.schemasMapByName().get('s1')).toEqual(schemas[0]);
     expect(component.isLoading()).toBe(false);
   });
 

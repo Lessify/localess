@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { Schema, SchemaExport } from '@localess/shared';
+import { SchemaExport } from '@localess/shared';
 import { zSchemaPushSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
@@ -13,7 +13,7 @@ import { sendV1Error } from '../../infra/http/v1/v1-response.js';
 import { SpacesService } from '../spaces/spaces.service.js';
 import { generateOpenApi } from './open-api.service.js';
 import { applySchemaPushPlan } from './schema-push.js';
-import { schemaFromRow } from './schema-row.js';
+import { schemaFromRow, schemasByName } from './schema-row.js';
 import { docSchemaToExport, planSchemaPush } from './schema.utils.js';
 
 /**
@@ -36,7 +36,7 @@ export class SchemasPublicController {
       .select()
       .from(schemas)
       .where(eq(schemas.spaceId, spaceId))
-      .orderBy(sql`${schemas.id} collate "C"`);
+      .orderBy(sql`${schemas.name} collate "C"`);
   }
 
   @Get('open-api')
@@ -47,8 +47,7 @@ export class SchemasPublicController {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE) });
       return;
     }
-    const schemaById = new Map<string, Schema>((await this.schemaRows(spaceId)).map(row => [row.id, schemaFromRow(row)]));
-    void reply.send(generateOpenApi(schemaById));
+    void reply.send(generateOpenApi(schemasByName(await this.schemaRows(spaceId))));
   }
 
   @Get('schemas')
@@ -60,7 +59,7 @@ export class SchemasPublicController {
       return;
     }
     const rows = await this.schemaRows(spaceId);
-    void reply.send(rows.map(row => docSchemaToExport(row.id, schemaFromRow(row))));
+    void reply.send(rows.map(row => docSchemaToExport(row.name, schemaFromRow(row))));
   }
 
   @Post('schemas')
@@ -79,7 +78,7 @@ export class SchemasPublicController {
       return;
     }
     const rows = await this.db.select().from(schemas).where(eq(schemas.spaceId, spaceId));
-    const existing = new Map<string, Schema>(rows.map(row => [row.id, schemaFromRow(row)]));
+    const existing = schemasByName(rows);
     const plan = planSchemaPush(existing, pushed as SchemaExport[], type);
     if (plan.errors.length > 0) {
       sendV1Error(reply, 400, 'failed-precondition', 'Referential integrity check failed', { details: { errors: plan.errors } });

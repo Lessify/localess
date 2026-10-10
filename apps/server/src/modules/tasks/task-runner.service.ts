@@ -27,7 +27,7 @@ import { DATABASE, type Database } from '../../infra/database/database.module.js
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
 import { isAssetChanged, isContentChanged, isTranslationChanged } from './import-diff.js';
 import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
-import { schemaFromRow } from '../schemas/schema-row.js';
+import { schemaFromRow, schemasByName } from '../schemas/schema-row.js';
 import { translationFromRow } from '../translations/translation-row.js';
 import { applySchemaPushPlan } from '../schemas/schema-push.js';
 import { EventsService } from '../../infra/events/events.service.js';
@@ -468,10 +468,10 @@ export class TaskRunner {
       .select()
       .from(schemas)
       .where(eq(schemas.spaceId, task.spaceId))
-      .orderBy(sql`${schemas.id} collate "C"`);
+      .orderBy(sql`${schemas.name} collate "C"`);
     await this.log(task, 'INFO', `exporting all ${rows.length} schemas`);
     const size = await writeZip(this.storage, taskFileKey(task), [
-      { name: 'schemas.json', content: JSON.stringify(rows.map(row => docSchemaToExport(row.id, schemaFromRow(row)))) },
+      { name: 'schemas.json', content: JSON.stringify(rows.map(row => docSchemaToExport(row.name, schemaFromRow(row)))) },
       { name: 'metadata.json', content: JSON.stringify({ kind: 'SCHEMA' } satisfies TaskExportMetadata) },
     ]);
     return { status: 'FINISHED', file: { name: `schema-export-${task.id}.lls.zip`, size } };
@@ -485,7 +485,7 @@ export class TaskRunner {
     if (!parse.success) return this.invalid(task, 'SCHEMA', parse.error);
     await this.log(task, 'INFO', `valid=${parse.data.length}`);
     const rows = await this.db.select().from(schemas).where(eq(schemas.spaceId, task.spaceId));
-    const plan = planSchemaPush(new Map(rows.map(row => [row.id, schemaFromRow(row)])), parse.data as SchemaExport[], 'upsert');
+    const plan = planSchemaPush(schemasByName(rows), parse.data as SchemaExport[], 'upsert');
     await this.db.transaction(async tx => {
       await applySchemaPushPlan(tx, task.spaceId, plan);
       if (plan.creates.length || plan.updates.length) {

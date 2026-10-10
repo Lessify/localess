@@ -23,75 +23,75 @@ describe('AddDialogComponent', () => {
   }
 
   it('starts with a NODE type and an empty id', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedNames: [] });
 
     expect(component.form.value.type).toBe(SchemaType.NODE);
-    expect(component.form.value.id).toBe('');
+    expect(component.form.value.name).toBe('');
     expect(component.type).toBe(SchemaType.NODE);
   });
 
   it('lists every schema type', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedNames: [] });
 
     expect(component.types).toEqual(Object.keys(SchemaType));
   });
 
   it('auto-generates the id from the display name while untouched', () => {
-    const { component, fixture } = setup({ reservedIds: [] });
+    const { component, fixture } = setup({ reservedNames: [] });
 
     component.form.controls['displayName'].setValue('my schema name');
     fixture.detectChanges();
 
-    expect(component.form.value.id).toBe('MySchemaName');
+    expect(component.form.value.name).toBe('MySchemaName');
   });
 
   it('stops auto-generating the id once the id field is touched', () => {
-    const { component, fixture } = setup({ reservedIds: [] });
+    const { component, fixture } = setup({ reservedNames: [] });
 
-    component.form.controls['id'].markAsTouched();
+    component.form.controls['name'].markAsTouched();
     component.form.controls['displayName'].setValue('my schema name');
     fixture.detectChanges();
 
-    expect(component.form.value.id).toBe('');
+    expect(component.form.value.name).toBe('');
   });
 
   it('rejects an id that collides with a reserved id', () => {
-    const { component } = setup({ reservedIds: ['Existing'] });
+    const { component } = setup({ reservedNames: ['Existing'] });
 
-    component.form.controls['id'].setValue('Existing');
+    component.form.controls['name'].setValue('Existing');
 
-    expect(component.form.controls['id'].errors).toEqual({ reservedName: true });
+    expect(component.form.controls['name'].errors).toEqual({ reservedName: true });
   });
 
   it('normalizeId() reformats the current id value', () => {
-    const { component } = setup({ reservedIds: [] });
-    component.form.controls['id'].setValue('my schema');
+    const { component } = setup({ reservedNames: [] });
+    component.form.controls['name'].setValue('my schema');
 
     component.normalizeId();
 
-    expect(component.form.value.id).toBe('MySchema');
+    expect(component.form.value.name).toBe('MySchema');
   });
 
   it('normalizeId() does nothing when the id is empty', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedNames: [] });
 
     component.normalizeId();
 
-    expect(component.form.value.id).toBe('');
+    expect(component.form.value.name).toBe('');
   });
 
   it('typeItemToString() shows the friendly type name, or falls back to the raw value', () => {
-    const { component } = setup({ reservedIds: [] });
+    const { component } = setup({ reservedNames: [] });
 
     expect(component['typeItemToString'](SchemaType.ROOT)).toBe('Root');
     expect(component['typeItemToString']('unknown')).toBe('unknown');
   });
   it('closes with the form value when saved', () => {
-    const { component, close } = setup({ reservedIds: [] });
-    component.form.patchValue({ displayName: 'My Schema', id: 'my-schema' });
+    const { component, close } = setup({ reservedNames: [] });
+    component.form.patchValue({ displayName: 'My Schema', name: 'my-schema' });
 
     component.save();
 
-    expect(close).toHaveBeenCalledWith(expect.objectContaining({ displayName: 'My Schema', id: 'my-schema' }));
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ displayName: 'My Schema', name: 'my-schema' }));
   });
 });

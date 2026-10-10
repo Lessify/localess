@@ -5,24 +5,24 @@
   <div hlmField>
     <label hlmFieldLabel for="id">Id</label>
     <div hlmInputGroup>
-      <input hlmInputGroupInput id="id" type="text" formControlName="id" maxlength="50" autocomplete="off" />
+      <input hlmInputGroupInput id="id" type="text" formControlName="name" maxlength="50" autocomplete="off" />
       <hlm-input-group-addon align="inline-end">
         <button hlmBtn size="icon" variant="ghost" type="button" (click)="normalizeId()">
           <ng-icon hlm size="sm" name="lucideWand2" />
         </button>
-        <span class="text-muted-foreground text-xs">{{ form.controls['id'].value?.length || 0 }}/50</span>
+        <span class="text-muted-foreground text-xs">{{ form.controls['name'].value?.length || 0 }}/50</span>
       </hlm-input-group-addon>
     </div>
     <hlm-field-description>Will be used in OpenAPI Schema Name.</hlm-field-description>
-    @if (form.controls['id'].errors; as errors) {
+    @if (form.controls['name'].errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
     }
   </div>
 </form>
 <p class="text-destructive text-sm">
   <strong>Warning:</strong>
-  Changing the ID will affect the relation between other Schema and OpenAPI Schema Name. It will also affect the API endpoint and the data
-  stored in the database.
+  Content, other Schemas and your code (SDK, Code as Source) refer to a Schema by this ID. They are not updated, so references to the old ID
+  stop resolving until they are changed too. It is also the OpenAPI Schema Name.
 </p>
 <hlm-dialog-footer>
   <button hlmBtn variant="ghost" hlmDialogClose>Cancel</button>

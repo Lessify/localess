@@ -51,7 +51,7 @@ export class AddDialogComponent {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<SchemaCreate>>(BrnDialogRef);
 
-  /** Required: the caller always passes the ids already taken, which the id validator needs. */
+  /** Required: the caller always passes the names already taken, which the name validator needs. */
   private readonly context = injectBrnDialogContext<AddDialogContext>();
 
   schemaTypeDescriptions = schemaTypeDescriptions;
@@ -59,7 +59,8 @@ export class AddDialogComponent {
 
   form: FormGroup = this.fb.group({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),
-    id: this.fb.control<string | undefined>('', [...SchemaValidator.ID, CommonValidator.reservedName(this.context.reservedIds)]),
+    // The schema's name (shown as its ID): what content, fields, the SDK and Code as Source refer to.
+    name: this.fb.control<string | undefined>('', [...SchemaValidator.ID, CommonValidator.reservedName(this.context.reservedNames)]),
     type: this.fb.control<SchemaType>(SchemaType.NODE, SchemaValidator.TYPE),
   });
 
@@ -67,8 +68,8 @@ export class AddDialogComponent {
 
   constructor() {
     effect(() => {
-      if (!this.form.controls['id'].touched) {
-        this.form.controls['id'].setValue(NameUtils.schemaId(this.formDisplayNameValue() || ''));
+      if (!this.form.controls['name'].touched) {
+        this.form.controls['name'].setValue(NameUtils.schemaId(this.formDisplayNameValue() || ''));
       }
     });
   }
@@ -82,8 +83,8 @@ export class AddDialogComponent {
   };
 
   normalizeId(): void {
-    if (this.form.value.id) {
-      this.form.controls['id'].setValue(NameUtils.schemaId(this.form.value.id));
+    if (this.form.value.name) {
+      this.form.controls['name'].setValue(NameUtils.schemaId(this.form.value.name));
     }
   }
 

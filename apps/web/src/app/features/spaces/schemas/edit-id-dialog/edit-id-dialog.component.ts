@@ -28,24 +28,24 @@ export class EditIdDialogComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<EditIdDialogResult>>(BrnDialogRef);
 
-  /** Required: the caller always passes the current id and the ids already taken. */
+  /** Required: the caller always passes the current name and the names already taken. */
   private readonly context = injectBrnDialogContext<EditIdDialogContext>();
 
   form: FormGroup = this.fb.group({
-    id: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.context.reservedIds)]),
+    name: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.context.reservedNames)]),
   });
 
   ngOnInit(): void {
-    this.form.patchValue({ id: this.context.id });
+    this.form.patchValue({ name: this.context.name });
   }
 
   normalizeId() {
-    if (this.form.value.slug) {
-      this.form.controls['id'].setValue(NameUtils.schemaId(this.form.value.id));
+    if (this.form.value.name) {
+      this.form.controls['name'].setValue(NameUtils.schemaId(this.form.value.name));
     }
   }
 
   save(): void {
-    this.dialogRef.close(this.form.value.id as EditIdDialogResult);
+    this.dialogRef.close(this.form.value.name as EditIdDialogResult);
   }
 }

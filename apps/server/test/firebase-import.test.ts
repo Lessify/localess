@@ -276,6 +276,15 @@ describe('import:firebase', () => {
     expect(posts[0].spaceId).toBe(space.id);
     expect(space.overview).toEqual({ contentsCount: 2, updatedAt: '2026-02-01T00:00:00.000Z' });
 
+    // The Firestore schema id is the name content refers to; the row gets a UUID.
+    const importedSchemas = await db.select().from(schema.schemas);
+    expect(importedSchemas.length).toBeGreaterThan(0);
+    for (const row of importedSchemas) {
+      expect(row.id).toMatch(UUID_V7);
+      expect(row.spaceId).toBe(space.id);
+    }
+    expect(importedSchemas.map(it => it.name)).toContain(posts[0].schema);
+
     // The Firestore token id is the secret customers use: it stays the token value, under a new UUID.
     const [token] = await db.select().from(schema.tokens);
     expect(token).toMatchObject({ token: TOKEN, spaceId: space.id });

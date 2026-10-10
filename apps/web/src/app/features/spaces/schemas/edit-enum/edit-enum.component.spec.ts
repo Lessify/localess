@@ -12,6 +12,7 @@ import { EditEnumComponent } from './edit-enum.component';
 function enumSchema(overrides: Partial<Schema> = {}): Schema {
   return {
     id: 'enum1',
+    name: 'enum1',
     type: SchemaType.ENUM,
     displayName: 'Enum',
     values: [],

@@ -7,15 +7,16 @@ const schemas = new Map<string, Schema>(
   [
     {
       id: 'page',
+      name: 'page',
       type: SchemaType.ROOT,
       fields: [
         { name: 'hero', kind: SchemaFieldKind.SCHEMA },
         { name: 'body', kind: SchemaFieldKind.SCHEMAS },
       ],
     },
-    { id: 'section', type: SchemaType.NODE, fields: [{ name: 'cards', kind: SchemaFieldKind.SCHEMAS }] },
-    { id: 'card', type: SchemaType.NODE, fields: [] },
-  ].map(it => [it.id, it as unknown as Schema]),
+    { id: 'section', name: 'section', type: SchemaType.NODE, fields: [{ name: 'cards', kind: SchemaFieldKind.SCHEMAS }] },
+    { id: 'card', name: 'card', type: SchemaType.NODE, fields: [] },
+  ].map(it => [it.name, it as unknown as Schema]),
 );
 
 function page(): ContentData {

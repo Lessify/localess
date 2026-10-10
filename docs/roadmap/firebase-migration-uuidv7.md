@@ -28,7 +28,7 @@ tasks). This document is only about the one-off Firebase → self-hosted move.
 | R2 | All ids are migrated to UUIDv7 and every reference is updated to the new ids. |
 | R3 | API tokens: `id` = UUIDv7, a separate `token` column holds the Firestore token value; the value customers use stays exactly the same. |
 | R4 | Translations: `id` = UUIDv7, separate `key` column holds the translation key. |
-| R5 | Schemas: `id` = UUIDv7, separate `name` column holds the schema name (today's schema id). |
+| R5 | Schemas: `id` = UUIDv7, separate `name` column holds the schema name (today's schema id). Every reference keeps using the name (decided 2026-10-10). |
 | R6 | Content data references (assets, links/references to other contents) are rewritten to the new UUIDs. |
 
 Derived requirements (needed for R1–R6 to be safe):
@@ -86,23 +86,17 @@ be the secret: it has only 74 random bits and leaks its creation time. `validate
 
 - `translations.key`: renaming a translation becomes `UPDATE … SET key`, the row id stays. The publish step
   builds `{ [key]: value }`, so the public payload is unchanged.
-- `schemas.name`: everything that pointed at a schema id now points at its UUID:
-  - `contents.schema_id uuid` (FK to `schemas.id`, replaces `contents.schema text`);
-  - `_schema` inside content data nodes;
-  - `schemas` arrays of `SCHEMA` / `SCHEMAS` fields;
-  - `source` of `OPTION` / `OPTIONS` fields (enum schema).
+- `schemas.name` (✅ 2026-10-10): `id` is a UUIDv7 used only as the row identity in the App API (`/schemas/:id`,
+  change events). **Every reference keeps the name**, unique per space, because it is the human-readable key
+  content, the SDK (localess-js) and Code as Source work with:
+  - `contents.schema` and `_schema` inside content data (draft and published) — the content model is unchanged;
+  - `schemas` arrays of `SCHEMA` / `SCHEMAS` fields and `source` of `OPTION` / `OPTIONS` fields;
+  - exports, imports, space templates, the DEV_TOOLS `schemas` endpoint and MANAGE schema push, where a schema
+    is identified by its name carried as `id` (`SchemaExport`), and the OpenAPI component names.
 
-  Renaming a schema then needs no rewrite. Today `rename` only changes the schema row and leaves those
-  references pointing at the old name — this design fixes that as a side effect.
-- **Boundary mapping (D1):** the public API and published snapshots must keep `_schema: "<name>"`, because
-  customer code switches on it. Publishing (`content-extract.ts`) maps `_schema` UUID → name when it writes
-  `content_published`, and the draft content endpoint does the same on read. The DEV_TOOLS `schemas`
-  endpoint, the OpenAPI generator and MANAGE schema push work with names and translate at the edge.
-- The App API and the Angular app can use UUIDs internally. The frontend already resolves schemas by
-  id from `SpaceStore`, so only the display (`name`) changes.
-
-Open question Q1 below: whether `_schema` in *draft* data stores the UUID (consistent, rename-safe) or
-the name (simpler, matches published data).
+  So no boundary mapping and no data rewrite. Renaming (`PUT /schemas/:id/name`) changes only `name`; references
+  to the old name are not rewritten, as before (a cascade is a possible later feature). Imported schemas keep
+  their Firestore id as `name`, with no `legacy_id`: the import is expected to run once.
 
 ## References to rewrite
 
@@ -110,17 +104,17 @@ The migration builds an id map first (pass 1), then rewrites every reference wit
 
 | Where | Shape | Rewrite |
 |---|---|---|
-| `contents.schema` | schema name | → `schema_id` (schema UUID) |
+| `contents.schema` | schema name | **kept** (Q1) |
 | `contents.assets[]`, `links[]`, `references[]` | asset / content ids | map each id |
 | `contents.data` (any depth, every locale) | `{ kind: 'ASSET', uri }` | `uri` → asset UUID |
 | | `{ kind: 'LINK', type: 'content', uri }` | `uri` → content UUID (`type: 'url'` untouched) |
 | | `{ kind: 'REFERENCE', uri }` | `uri` → content UUID |
-| | `_schema` on every node | → schema UUID (or name, Q1) |
+| | `_schema` on every node | **kept**: the name (Q1) |
 | | `_id` on every node | **kept**: node ids are local to the document, not references |
 | | RICH_TEXT / MARKDOWN strings containing `/api/v1/spaces/{space}/assets/{asset}` URLs | rewritten (optional, Q3) |
 | `content_published.data` | same shapes as above, already locale-extracted | rewritten with the same walker; the snapshot is still copied, not rebuilt, because it may differ from the draft |
 | `assets.parent_path` | `a/b/c` folder ids | map each segment |
-| schema `fields[]` | `schemas[]`, `source` | schema names → schema UUIDs |
+| schema `fields[]` | `schemas[]`, `source` | **kept**: names (Q1) |
 | schema `fields[]` | `path` on REFERENCE(S) | **kept**: it's a slug path, not an id |
 | `tokens` | Firestore doc id | `token` = doc id, `id` = new UUID |
 | `webhooks` | — | new id, secret and headers copied |
@@ -230,7 +224,7 @@ deleted once per block).
 |---|---|---|---|
 | 1 | Admin | `users`, `spaces` (+ `legacy_id`); every `user_id` / `space_id` column becomes `uuid` | ✅ 2026-10-10 |
 | 2 | Space settings | `tokens` (+ `token`, unique; regenerate updates it in place), `webhooks` (+ `legacy_id`, unique per space, not in the DTO), `webhook_logs` (UUIDv7 too) | ✅ 2026-10-10 |
-| 3 | Schemas | `schemas` (+ `name`) | planned |
+| 3 | Schemas | `schemas` (`id` uuid + `name`, unique per space); references stay names | ✅ 2026-10-10 |
 | 4 | Translations | `translations` (+ `key`), `translation_published` | planned |
 | 5 | Assets | `assets` (+ `legacy_id`, `parent_path`) | planned |
 | 6 | Contents | `contents` (+ `legacy_id`, `schema_id`), `content_published`, references | planned |
@@ -262,7 +256,7 @@ The implementation steps below are what the blocks add up to.
 
 | # | Question | Leaning |
 |---|---|---|
-| Q1 | Draft `_schema`: store schema UUID or name? | UUID — rename-safe, matches R2; map to name at the API edge. |
+| Q1 | Draft `_schema`: store schema UUID or name? | Name — decided 2026-10-10: every schema reference stays the human-readable name (SDK, Code as Source). |
 | Q2 | Old content id on `contents/:contentId`: resolve or 301? | 301, same as assets. |
 | Q3 | Rewrite asset URLs found inside RICH_TEXT / MARKDOWN strings? | Yes, if the URL matches this install's `/api/v1/spaces/{space}/assets/{asset}`; with D2 they'd still work anyway. |
 | Q4 | Resolve old UI deep links (`/features/spaces/<old id>`)? | No — decided 2026-10-10: the SPA works only with UUIDs (it shows `legacyId`, never resolves by it); an old link falls back to the first available space. |

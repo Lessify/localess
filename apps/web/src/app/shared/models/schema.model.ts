@@ -6,7 +6,7 @@ export function sortSchema(a: Schema, b: Schema): number {
   if (a.displayName && b.displayName) {
     return a.displayName.localeCompare(b.displayName);
   } else {
-    return a.id.localeCompare(b.id);
+    return a.name.localeCompare(b.name);
   }
 }
 

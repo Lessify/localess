@@ -177,22 +177,22 @@ export class EditDocumentSchemaComponent {
       .find(it => it.id == this.data()?._schema),
   );
   documentId = computed(() => this.data()._id);
-  schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
+  schemaMapByName = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.name, it])));
   schemaCompNodeList = computed(() =>
     this.schemas()
       .filter(it => it.type === SchemaType.NODE)
       .map(it => it as SchemaComponent),
   );
-  schemaCompNodeById = computed(
+  schemaCompNodeByName = computed(
     () =>
       new Map<string, SchemaComponent>(
         this.schemas()
           .filter(it => it.type === SchemaType.NODE)
           .map(it => it as SchemaComponent)
-          .map(it => [it.id, it]),
+          .map(it => [it.name, it]),
       ),
   );
-  schemaEnumMapById = computed(
+  schemaEnumMapByName = computed(
     () =>
       new Map<string, SchemaEnum>(
         this.schemas()
@@ -202,12 +202,12 @@ export class EditDocumentSchemaComponent {
             it.values?.sort(sortSchemaEnumValue);
             return it;
           })
-          .map(it => [it.id, it]),
+          .map(it => [it.name, it]),
       ),
   );
   optionItemToStringMap = computed(() => {
     const map = new Map<string, (v: string | string[]) => string>();
-    for (const [id, schema] of this.schemaEnumMapById()) {
+    for (const [id, schema] of this.schemaEnumMapByName()) {
       const values = schema.values ?? [];
       const toLabel = (v: string) => values.find(o => o.value === v)?.name ?? v;
       map.set(id, (value: string | string[]) => (Array.isArray(value) ? value.map(toLabel).join(', ') : toLabel(value)));
@@ -365,7 +365,7 @@ export class EditDocumentSchemaComponent {
 
   filterSchema(ids: string[]): SchemaComponent[] {
     return ids
-      .map(id => this.schemaCompNodeById().get(id))
+      .map(id => this.schemaCompNodeByName().get(id))
       .filter(it => it !== undefined)
       .sort((a, b) => {
         if (a.displayName) {
@@ -387,15 +387,15 @@ export class EditDocumentSchemaComponent {
     if (sch) {
       this.data()[field.name] = {
         _id: v4(),
-        _schema: schema.id,
+        _schema: schema.name,
       };
     } else {
       this.data()[field.name] = {
         _id: v4(),
-        _schema: schema.id,
+        _schema: schema.name,
       };
     }
-    this.structureChange.emit(`addSchemaOne ${field.name} ${schema.id}`);
+    this.structureChange.emit(`addSchemaOne ${field.name} ${schema.name}`);
   }
 
   removeSchemaOne(field: SchemaField): void {
@@ -410,23 +410,23 @@ export class EditDocumentSchemaComponent {
         // add at index
         fieldData.splice(index, 0, {
           _id: v4(),
-          _schema: schema.id,
+          _schema: schema.name,
         });
       } else {
         fieldData.push({
           _id: v4(),
-          _schema: schema.id,
+          _schema: schema.name,
         });
       }
     } else {
       this.data()[field.name] = [
         {
           _id: v4(),
-          _schema: schema.id,
+          _schema: schema.name,
         },
       ];
     }
-    this.structureChange.emit(`addSchemaMany ${field.name} ${schema.id}`);
+    this.structureChange.emit(`addSchemaMany ${field.name} ${schema.name}`);
   }
 
   duplicateSchemaMany(field: SchemaField, item: ContentData, idx: number): void {

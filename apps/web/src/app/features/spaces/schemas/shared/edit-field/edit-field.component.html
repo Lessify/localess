@@ -161,8 +161,8 @@
               </hlm-select-trigger>
               <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
                 @for (schema of enumSchemas(); track schema.id) {
-                  <hlm-select-item [value]="schema.id" [hlmTooltip]="schema.description || ''">
-                    {{ schema.id }}
+                  <hlm-select-item [value]="schema.name" [hlmTooltip]="schema.description || ''">
+                    {{ schema.name }}
                     @if (schema.displayName) {
                       ({{ schema.displayName }})
                     }
@@ -192,8 +192,8 @@
                 <hlm-combobox-empty>No schemas found.</hlm-combobox-empty>
                 <div hlmComboboxList>
                   @for (schema of nodeSchemas(); track schema.id) {
-                    <hlm-combobox-item [value]="schema.id" [hlmTooltip]="schema.description || ''">
-                      {{ schema.displayName || schema.id }}
+                    <hlm-combobox-item [value]="schema.name" [hlmTooltip]="schema.description || ''">
+                      {{ schema.displayName || schema.name }}
                     </hlm-combobox-item>
                   }
                 </div>

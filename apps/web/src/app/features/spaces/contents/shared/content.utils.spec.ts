@@ -8,7 +8,7 @@ function field(partial: Partial<SchemaField> & Pick<SchemaField, 'name' | 'kind'
 }
 
 function rootSchema(fields: SchemaField[], id = 'root-1'): SchemaComponent {
-  return { id, type: SchemaType.ROOT, fields } as SchemaComponent;
+  return { id, name: id, type: SchemaType.ROOT, fields } as SchemaComponent;
 }
 
 describe('content utils', () => {
@@ -171,7 +171,7 @@ describe('content utils', () => {
 
   describe('collectTranslatableFields', () => {
     function nodeSchema(fields: SchemaField[], id: string): SchemaComponent {
-      return { id, type: SchemaType.NODE, fields } as SchemaComponent;
+      return { id, name: id, type: SchemaType.NODE, fields } as SchemaComponent;
     }
 
     it('collects a translatable TEXT field whose target is empty', () => {

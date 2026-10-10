@@ -276,7 +276,7 @@ export class ContentsService {
                 )
             ).filter(doc => !(doc.publishedAt && doc.publishedAt > doc.updatedAt));
       const schemaRows = await tx.select().from(schemas).where(eq(schemas.spaceId, spaceId));
-      const schemaById = new Map(schemaRows.map(row => [row.id, row as unknown as Schema]));
+      const schemaById = new Map(schemaRows.map(row => [row.name, row as unknown as Schema]));
       const publishedAt = new Date();
       const localeIds = space.locales.map(it => it.id);
       for (const document of documents) {

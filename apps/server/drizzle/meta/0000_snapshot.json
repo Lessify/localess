@@ -1,5 +1,5 @@
 {
-  "id": "740670b2-bbbb-4a58-a29e-0e102ae4974f",
+  "id": "a8ba1d7f-f056-4366-8554-17a5d8b4a863",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -583,14 +583,20 @@
       "name": "schemas",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
         "space_id": {
           "name": "space_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "id": {
-          "name": "id",
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -653,6 +659,27 @@
         }
       },
       "indexes": {
+        "schemas_name_idx": {
+          "name": "schemas_name_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "schemas_type_idx": {
           "name": "schemas_type_idx",
           "columns": [
@@ -696,15 +723,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "schemas_space_id_id_pk": {
-          "name": "schemas_space_id_id_pk",
-          "columns": [
-            "space_id",
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},

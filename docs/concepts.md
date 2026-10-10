@@ -24,8 +24,12 @@ Key properties:
 A **Schema** defines the structure of a Content document — it is the content type definition.
 
 ```
-Postgres: schemas (space_id, id)          ← id is the user-chosen schema name
+Postgres: schemas (id uuid, space_id, name)   ← name: user-chosen, unique per space
 ```
+
+`id` is a UUIDv7 the App API uses to address the row. Everything else refers to a schema by its **name**:
+`contents.schema`, `_schema` in content data, `schemas`/`source` of fields, exports, the SDK and Code as Source
+(where the name is carried as `id`). Renaming changes only `name`; references to the old name are not rewritten.
 
 Three schema types:
 | Type | Purpose |

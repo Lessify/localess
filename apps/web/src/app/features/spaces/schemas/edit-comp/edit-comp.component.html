@@ -5,7 +5,7 @@
     </button>
     <div>
       <div class="line-clamp-1 text-lg">{{ entity?.displayName }}</div>
-      <div class="text-muted-foreground line-clamp-1">#{{ entity?.id }}</div>
+      <div class="text-muted-foreground line-clamp-1">#{{ entity?.name }}</div>
     </div>
   </div>
   @if ('SCHEMA_UPDATE' | canUserPerform | async) {

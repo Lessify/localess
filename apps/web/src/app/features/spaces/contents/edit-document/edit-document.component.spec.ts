@@ -20,11 +20,12 @@ const de: Locale = { id: 'de', name: 'German' };
 
 const rootSchema: Schema = {
   id: 'root1',
+  name: 'root1',
   type: SchemaType.ROOT,
   fields: [{ name: 'child', kind: SchemaFieldKind.SCHEMA } as never],
 } as unknown as Schema;
 
-const childSchema: Schema = { id: 'child1', type: SchemaType.NODE, fields: [] } as unknown as Schema;
+const childSchema: Schema = { id: 'child1', name: 'child1', type: SchemaType.NODE, fields: [] } as unknown as Schema;
 
 function space(overrides: Partial<Space> = {}): Space {
   return { id: 'space-1', name: 'Space 1', locales: [en, de], localeFallback: en, environments: [], ...overrides } as Space;
@@ -212,7 +213,7 @@ describe('EditDocumentComponent', () => {
 
     it('notifies an error and does not save when content is invalid', () => {
       const requiredField = { name: 'title', kind: SchemaFieldKind.TEXT, required: true } as never;
-      const invalidRootSchema: Schema = { id: 'root1', type: SchemaType.ROOT, fields: [requiredField] } as unknown as Schema;
+      const invalidRootSchema: Schema = { id: 'root1', name: 'root1', type: SchemaType.ROOT, fields: [requiredField] } as unknown as Schema;
       const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }), {
         schemas: [invalidRootSchema],
       });
@@ -512,6 +513,7 @@ describe('EditDocumentComponent', () => {
   describe('preview block actions', () => {
     const listSchema: Schema = {
       id: 'root1',
+      name: 'root1',
       type: SchemaType.ROOT,
       fields: [{ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never],
     } as unknown as Schema;
@@ -625,6 +627,7 @@ describe('EditDocumentComponent', () => {
   describe('openTranslateLocaleDialog', () => {
     const translatableSchema = {
       id: 'root1',
+      name: 'root1',
       type: SchemaType.ROOT,
       fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true } as never],
     } as unknown as Schema;

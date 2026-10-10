@@ -124,7 +124,7 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 | Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }` |
 | Spaces | `/api/app/spaces` CRUD, `POST …/:id/overview`, `POST/DELETE …/:id/locales[/:locale]`, `PUT …/:id/locale-fallback` |
 | Settings | `GET /api/app/settings`, `PATCH /api/app/settings/ui` |
-| Schemas | `/api/app/spaces/:s/schemas` CRUD, `PUT …/:id/id` (rename), `POST …/template` |
+| Schemas | `/api/app/spaces/:s/schemas` CRUD (`:id` = UUID), `PUT …/:id/name` (rename), `POST …/template` |
 | Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
 | Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:id/locales/:locale`, `PUT …/:id/id`, `POST …/publish`, `POST …/translate-locale`, `DELETE` (all) |
 | Machine translation | `POST /api/app/translate` (`content` or `items`), `GET /api/app/translate/status` |

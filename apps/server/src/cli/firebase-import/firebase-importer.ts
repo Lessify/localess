@@ -272,7 +272,8 @@ export class FirebaseImporter {
       const d = doc.data;
       const values = {
         spaceId,
-        id: doc.id,
+        // The Firestore id is the schema's name, which content and fields refer to.
+        name: doc.id,
         type: str(d['type']) ?? 'ROOT',
         displayName: str(d['displayName']),
         description: str(d['description']),
@@ -282,13 +283,13 @@ export class FirebaseImporter {
         values: Array.isArray(d['values']) ? (d['values'] as { name: string; value: string }[]) : null,
         ...timestamps(d),
       };
-      const { spaceId: _s, id: _i, ...update } = values;
+      const { spaceId: _s, name: _n, ...update } = values;
       void _s;
-      void _i;
+      void _n;
       await this.db
         .insert(schemas)
-        .values(values)
-        .onConflictDoUpdate({ target: [schemas.spaceId, schemas.id], set: update });
+        .values({ id: newUuid(values.createdAt), ...values })
+        .onConflictDoUpdate({ target: [schemas.spaceId, schemas.name], set: update });
       this.report.schemas++;
     }
   }

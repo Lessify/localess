@@ -1,6 +1,7 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
+import { isUuid, newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
@@ -15,7 +16,10 @@ type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 const isUniqueViolation = (error: unknown) =>
   (error as { cause?: { code?: string }; code?: string })?.cause?.code === '23505' || (error as { code?: string })?.code === '23505';
 
-/** Schemas of a space. Every write bumps the content version: drafts are rendered through schemas. */
+/**
+ * Schemas of a space. Routes use the UUID `id`; `name` is what content and fields refer to, unique per space.
+ * Every write bumps the content version: drafts are rendered through schemas.
+ */
 @Injectable()
 export class SchemasService {
   constructor(
@@ -28,10 +32,11 @@ export class SchemasService {
       .select()
       .from(schemas)
       .where(type ? and(eq(schemas.spaceId, spaceId), eq(schemas.type, type)) : eq(schemas.spaceId, spaceId))
-      .orderBy(asc(schemas.id));
+      .orderBy(asc(schemas.name));
   }
 
   async get(spaceId: string, id: string): Promise<SchemaRow> {
+    if (!isUuid(id)) throw new NotFoundException('Schema not found');
     const [row] = await this.db
       .select()
       .from(schemas)
@@ -54,36 +59,34 @@ export class SchemasService {
         return result;
       });
     } catch (error) {
-      if (isUniqueViolation(error)) throw new ConflictException('A schema with this id already exists');
+      if (isUniqueViolation(error)) throw new ConflictException('A schema with this name already exists');
       throw error;
     }
   }
 
-  create(spaceId: string, input: { id: string } & SchemaColumns): Promise<SchemaRow> {
+  create(spaceId: string, input: { name: string } & SchemaColumns): Promise<SchemaRow> {
+    const id = newUuid();
     return this.write(
       spaceId,
       async tx =>
         (
           await tx
             .insert(schemas)
-            .values({ spaceId, ...input })
+            .values({ id, spaceId, ...input })
             .returning()
         )[0],
-      [{ id: input.id, op: 'created' }],
+      [{ id, op: 'created' }],
     );
   }
 
   /** Several schemas at once, all or nothing (was the space-template `writeBatch`). */
-  createMany(spaceId: string, inputs: ({ id: string } & SchemaColumns)[]): Promise<SchemaRow[]> {
+  createMany(spaceId: string, inputs: ({ name: string } & SchemaColumns)[]): Promise<SchemaRow[]> {
     if (!inputs.length) return Promise.resolve([]);
+    const rows = inputs.map(input => ({ id: newUuid(), spaceId, ...input }));
     return this.write(
       spaceId,
-      tx =>
-        tx
-          .insert(schemas)
-          .values(inputs.map(input => ({ spaceId, ...input })))
-          .returning(),
-      inputs.map(it => ({ id: it.id, op: 'created' as const })),
+      tx => tx.insert(schemas).values(rows).returning(),
+      rows.map(it => ({ id: it.id, op: 'created' as const })),
     );
   }
 
@@ -112,23 +115,23 @@ export class SchemasService {
     );
   }
 
-  /** Renames in one statement (the UI used to copy the document and delete the old one, non-atomically). */
-  rename(spaceId: string, id: string, newId: string): Promise<SchemaRow> {
+  /**
+   * Changes the name; the id stays. Content and fields referring to the old name are not rewritten (as before):
+   * they keep the old name until edited.
+   */
+  rename(spaceId: string, id: string, name: string): Promise<SchemaRow> {
     return this.write(
       spaceId,
       async tx => {
         const [row] = await tx
           .update(schemas)
-          .set({ id: newId, updatedAt: new Date() })
+          .set({ name, updatedAt: new Date() })
           .where(and(eq(schemas.spaceId, spaceId), eq(schemas.id, id)))
           .returning();
         if (!row) throw new NotFoundException('Schema not found');
         return row;
       },
-      [
-        { id, op: 'deleted' },
-        { id: newId, op: 'created' },
-      ],
+      [{ id, op: 'updated' }],
     );
   }
 

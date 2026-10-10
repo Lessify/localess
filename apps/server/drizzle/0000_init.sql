@@ -55,8 +55,9 @@ CREATE TABLE "password_reset_tokens" (
 );
 --> statement-breakpoint
 CREATE TABLE "schemas" (
+	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
-	"id" text NOT NULL,
+	"name" text NOT NULL,
 	"type" text NOT NULL,
 	"display_name" text,
 	"description" text,
@@ -65,8 +66,7 @@ CREATE TABLE "schemas" (
 	"fields" jsonb,
 	"values" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "schemas_space_id_id_pk" PRIMARY KEY("space_id","id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -248,6 +248,7 @@ CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","full_slug" text_pattern_ops);--> statement-breakpoint
 CREATE INDEX "contents_parent_slug_prefix_idx" ON "contents" USING btree ("space_id","parent_slug" text_pattern_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "schemas_name_idx" ON "schemas" USING btree ("space_id","name");--> statement-breakpoint
 CREATE INDEX "schemas_type_idx" ON "schemas" USING btree ("space_id","type","display_name");--> statement-breakpoint
 CREATE INDEX "sessions_user_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "spaces_name_idx" ON "spaces" USING btree ("name");--> statement-breakpoint

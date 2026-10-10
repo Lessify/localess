@@ -1,18 +1,17 @@
-import { SchemaComponent, SchemaEnum } from '@localess/shared';
+import { SchemaComponentExport, SchemaEnumExport } from '@localess/shared';
 
 export type SpaceTemplateId = 'EMPTY' | 'ECOMMERCE' | 'BLOG' | 'MARKETING';
 
 /**
- * A schema as a template declares it: everything but the timestamps, which the server sets.
+ * A schema as a template declares it: the export format, where `id` is the schema's name (as in exports, the SDK
+ * and Code as Source); the server gives each one a UUID.
  *
- * Deliberately NOT `SchemaCreate`. That is `Omit<Schema, 'createdAt' | 'updatedAt'>`, and `Omit` is
- * not distributive over a union - it collapses `SchemaComponent | SchemaEnum` into one object type
- * carrying only the keys the two share, silently dropping `fields`, `values` and `previewField`.
- * Worse, it dissolves the discriminated union, which is what makes a field's shape checkable at
- * all. Omitting from each member separately keeps both.
+ * Kept per member rather than one `Omit` over the `Schema` union: `Omit` is not distributive, so it would collapse
+ * `SchemaComponent | SchemaEnum` into the keys the two share, dropping `fields`, `values` and `previewField` and
+ * dissolving the discriminated union that makes a field's shape checkable at all.
  */
-export type SpaceTemplateComponent = Omit<SchemaComponent, 'createdAt' | 'updatedAt'>;
-export type SpaceTemplateEnum = Omit<SchemaEnum, 'createdAt' | 'updatedAt'>;
+export type SpaceTemplateComponent = SchemaComponentExport;
+export type SpaceTemplateEnum = SchemaEnumExport;
 export type SpaceTemplateSchema = SpaceTemplateComponent | SpaceTemplateEnum;
 
 /**

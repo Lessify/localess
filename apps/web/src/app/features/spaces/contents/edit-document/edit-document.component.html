@@ -222,13 +222,13 @@
                     </button>
                   } @else if (isLast) {
                     <span hlmBreadcrumbPage>
-                      @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                      @if (schemaMapByName().get(schemaPathItem.schemaName); as sch) {
                         {{ sch.displayName || sch.id }}
                       }
                     </span>
                   } @else {
                     <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
-                      @if (schemaMapById().get(schemaPathItem.schemaName); as sch) {
+                      @if (schemaMapByName().get(schemaPathItem.schemaName); as sch) {
                         {{ sch.displayName || sch.id }}
                       }
                     </button>

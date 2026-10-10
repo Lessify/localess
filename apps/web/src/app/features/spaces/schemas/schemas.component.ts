@@ -117,7 +117,8 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
   schemas = signal<Schema[]>([]);
   readonly dataSource = new TableDataSource<Schema>(this.schemas, this.injector);
-  schemaIds = computed(() => this.schemas().map(it => it.id));
+  /** Names (shown as IDs) already taken; content and fields refer to schemas by name. */
+  schemaNames = computed(() => this.schemas().map(it => it.name));
   schemasInUse = computed(() => this.inUseSchema(this.schemas()));
 
   private destroyRef = inject(DestroyRef);
@@ -143,7 +144,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.dataSource.filterPredicate = FilterPredicateUtils.create<Schema>({
-      searchFields: schema => [schema.id, schema.displayName, schema.description],
+      searchFields: schema => [schema.name, schema.displayName, schema.description],
       filterFields: [{ key: 'labels', accessor: schema => schema.labels }],
     });
     this.loadData(this.spaceId());
@@ -175,7 +176,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     this.dialog
       .open<SchemaCreate, AddDialogContext>(AddDialogComponent, {
         context: {
-          reservedIds: this.schemaIds(),
+          reservedNames: this.schemaNames(),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -201,15 +202,15 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     this.dialog
       .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
         context: {
-          id: element.id,
-          reservedIds: this.schemaIds(),
+          name: element.name,
+          reservedNames: this.schemaNames(),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.schemaService.updateId(this.spaceId(), element, it!)),
+        switchMap(it => this.schemaService.updateName(this.spaceId(), element, it!)),
       )
       .subscribe({
         next: () => {
@@ -237,7 +238,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Delete Schema',
-          content: `Are you sure about deleting Schema with name '${element.id}'.\n Any Content document associated with the Schema will not work anymore.`,
+          content: `Are you sure about deleting Schema with name '${element.name}'.\n Any Content document associated with the Schema will not work anymore.`,
           variant: 'destructive',
         },
         contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
@@ -249,11 +250,11 @@ export class SchemasComponent implements OnInit, AfterViewInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success(`Schema '${element.id}' has been deleted.`);
+          this.notificationService.success(`Schema '${element.name}' has been deleted.`);
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(`Schema '${element.id}' can not be deleted.`);
+          this.notificationService.error(`Schema '${element.name}' can not be deleted.`);
         },
       });
   }
@@ -323,17 +324,17 @@ export class SchemasComponent implements OnInit, AfterViewInit {
           if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) {
             for (const fieldSchema of field.schemas || []) {
               if (result[fieldSchema]) {
-                result[fieldSchema].push(schema.id);
+                result[fieldSchema].push(schema.name);
               } else {
-                result[fieldSchema] = [schema.id];
+                result[fieldSchema] = [schema.name];
               }
             }
           } else if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) {
             const fieldEnum = field.source;
             if (result[fieldEnum]) {
-              result[fieldEnum].push(schema.id);
+              result[fieldEnum].push(schema.name);
             } else {
-              result[fieldEnum] = [schema.id];
+              result[fieldEnum] = [schema.name];
             }
           }
         }

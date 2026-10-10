@@ -11,7 +11,7 @@ import { vi } from 'vitest';
 import { SchemasComponent } from './schemas.component';
 
 function schema(overrides: Partial<Schema> = {}): Schema {
-  return { id: 's1', type: SchemaType.NODE, displayName: 'S1', ...overrides } as unknown as Schema;
+  return { id: 's1', name: 's1', type: SchemaType.NODE, displayName: 'S1', ...overrides } as unknown as Schema;
 }
 
 describe('SchemasComponent', () => {
@@ -22,7 +22,7 @@ describe('SchemasComponent', () => {
   function setup(schemas: Schema[] = []) {
     const findAll = vi.fn().mockReturnValue(of(schemas));
     const create = vi.fn().mockReturnValue(of(undefined));
-    const updateId = vi.fn().mockReturnValue(of(undefined));
+    const updateName = vi.fn().mockReturnValue(of(undefined));
     const deleteSchema = vi.fn().mockReturnValue(of(undefined));
     const createSchemaImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const createSchemaExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
@@ -36,7 +36,7 @@ describe('SchemasComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll, create, updateId, delete: deleteSchema } },
+        { provide: SchemaService, useValue: { findAll, create, updateName, delete: deleteSchema } },
         { provide: TaskService, useValue: { createSchemaImportTask, createSchemaExportTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
@@ -50,7 +50,7 @@ describe('SchemasComponent', () => {
       component: fixture.componentInstance,
       findAll,
       create,
-      updateId,
+      updateName,
       deleteSchema,
       createSchemaImportTask,
       createSchemaExportTask,
@@ -66,8 +66,8 @@ describe('SchemasComponent', () => {
   }
 
   it('loads and sorts schemas on init', () => {
-    const b = schema({ id: 'b', displayName: 'B' });
-    const a = schema({ id: 'a', displayName: 'A' });
+    const b = schema({ id: 'b', name: 'b', displayName: 'B' });
+    const a = schema({ id: 'a', name: 'a', displayName: 'A' });
     const { component, findAll } = setup([b, a]);
 
     expect(findAll).toHaveBeenCalledWith('space-1');
@@ -93,20 +93,20 @@ describe('SchemasComponent', () => {
   });
 
   it('openAddDialog() creates the schema and notifies success when confirmed', () => {
-    const { component, open, create, success } = setup([schema({ id: 'existing' })]);
-    open.mockReturnValue({ closed$: of({ id: 'new', type: SchemaType.NODE }) });
+    const { component, open, create, success } = setup([schema({ id: 'uuid-existing', name: 'existing' })]);
+    open.mockReturnValue({ closed$: of({ name: 'new', type: SchemaType.NODE }) });
 
     component.openAddDialog();
 
-    expect(open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ context: { reservedIds: ['existing'] } }));
-    expect(create).toHaveBeenCalledWith('space-1', { id: 'new', type: SchemaType.NODE });
+    expect(open).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ context: { reservedNames: ['existing'] } }));
+    expect(create).toHaveBeenCalledWith('space-1', { name: 'new', type: SchemaType.NODE });
     expect(success).toHaveBeenCalledWith('Schema has been created.');
   });
 
   it('openAddDialog() notifies an error on failure', () => {
     const { component, open, create, error } = setup();
     create.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ closed$: of({ id: 'new', type: SchemaType.NODE }) });
+    open.mockReturnValue({ closed$: of({ name: 'new', type: SchemaType.NODE }) });
 
     component.openAddDialog();
 
@@ -114,7 +114,7 @@ describe('SchemasComponent', () => {
   });
 
   it('openEditIdDialog() prevents default, updates the id, and notifies success', () => {
-    const { component, open, updateId, success } = setup();
+    const { component, open, updateName, success } = setup();
     const event = fakeEvent();
     open.mockReturnValue({ closed$: of('new-id') });
     const element = schema({ id: 's1' });
@@ -123,13 +123,13 @@ describe('SchemasComponent', () => {
 
     expect(event.preventDefault).toHaveBeenCalled();
     expect(event.stopImmediatePropagation).toHaveBeenCalled();
-    expect(updateId).toHaveBeenCalledWith('space-1', element, 'new-id');
+    expect(updateName).toHaveBeenCalledWith('space-1', element, 'new-id');
     expect(success).toHaveBeenCalledWith('Schema ID has been updated.');
   });
 
   it('openEditIdDialog() notifies an error on failure', () => {
-    const { component, open, updateId, error } = setup();
-    updateId.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, open, updateName, error } = setup();
+    updateName.mockReturnValue(throwError(() => new Error('boom')));
     open.mockReturnValue({ closed$: of('new-id') });
 
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1' }));
@@ -140,7 +140,7 @@ describe('SchemasComponent', () => {
   it('onRowSelect() navigates to the component editor for ROOT/NODE schemas', () => {
     const { component, navigate } = setup();
 
-    component.onRowSelect(schema({ id: 's1', type: SchemaType.ROOT }));
+    component.onRowSelect(schema({ id: 's1', name: 's1', type: SchemaType.ROOT }));
 
     expect(navigate).toHaveBeenCalledWith(['features', 'spaces', 'space-1', 'schemas', 'comp', 's1']);
   });
@@ -148,7 +148,7 @@ describe('SchemasComponent', () => {
   it('onRowSelect() navigates to the enum editor for ENUM schemas', () => {
     const { component, navigate } = setup();
 
-    component.onRowSelect(schema({ id: 's1', type: SchemaType.ENUM }));
+    component.onRowSelect(schema({ id: 's1', name: 's1', type: SchemaType.ENUM }));
 
     expect(navigate).toHaveBeenCalledWith(['features', 'spaces', 'space-1', 'schemas', 'enum', 's1']);
   });
@@ -200,6 +200,7 @@ describe('SchemasComponent', () => {
       const { component } = setup();
       const owner: SchemaComponent = {
         id: 'owner',
+        name: 'owner',
         type: SchemaType.NODE,
         fields: [{ name: 'ref', kind: SchemaFieldKind.SCHEMA, schemas: ['target'] } as never],
       } as unknown as SchemaComponent;
@@ -213,6 +214,7 @@ describe('SchemasComponent', () => {
       const { component } = setup();
       const owner: SchemaComponent = {
         id: 'owner',
+        name: 'owner',
         type: SchemaType.NODE,
         fields: [{ name: 'opt', kind: SchemaFieldKind.OPTION, source: 'my-enum' } as never],
       } as unknown as SchemaComponent;
@@ -226,11 +228,13 @@ describe('SchemasComponent', () => {
       const { component } = setup();
       const ownerA: SchemaComponent = {
         id: 'a',
+        name: 'a',
         type: SchemaType.NODE,
         fields: [{ name: 'ref', kind: SchemaFieldKind.SCHEMA, schemas: ['target'] } as never],
       } as unknown as SchemaComponent;
       const ownerB: SchemaComponent = {
         id: 'b',
+        name: 'b',
         type: SchemaType.NODE,
         fields: [{ name: 'ref', kind: SchemaFieldKind.SCHEMAS, schemas: ['target'] } as never],
       } as unknown as SchemaComponent;
@@ -242,7 +246,7 @@ describe('SchemasComponent', () => {
 
     it('ignores ENUM schemas and fields without schema/option references', () => {
       const { component } = setup();
-      const enumSchema = schema({ id: 'e1', type: SchemaType.ENUM });
+      const enumSchema = schema({ id: 'e1', name: 'e1', type: SchemaType.ENUM });
 
       const result = component.inUseSchema([enumSchema]);
 

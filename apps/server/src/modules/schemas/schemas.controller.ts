@@ -5,12 +5,13 @@ import { zSchemaTemplateSchema } from '@localess/shared/zod';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { toDto } from '../../infra/http/dto.js';
+import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { zLabels } from '../../infra/http/zod.js';
 import { SchemaRow, SchemasService } from './schemas.service.js';
 
-const schemaId = z.string().regex(/^[A-Za-z0-9_-]{1,120}$/, 'Schema ids are letters, digits, - and _');
-const createSchema = z.object({ id: schemaId, type: z.enum(['ROOT', 'NODE', 'ENUM']), displayName: z.string().max(200).optional() });
-const renameSchema = z.object({ id: schemaId });
+const schemaName = z.string().regex(/^[A-Za-z0-9_-]{1,120}$/, 'Schema names are letters, digits, - and _');
+const createSchema = z.object({ name: schemaName, type: z.enum(['ROOT', 'NODE', 'ENUM']), displayName: z.string().max(200).optional() });
+const renameSchema = z.object({ name: schemaName });
 const updateSchema = z.object({
   displayName: z.string().max(200).optional(),
   description: z.string().max(2000).optional(),
@@ -23,7 +24,7 @@ const updateSchema = z.object({
 
 const dto = (row: SchemaRow) => toDto(row);
 
-/** Schemas (was direct `spaces/{s}/schemas` access from the SPA). */
+/** Schemas (was direct `spaces/{s}/schemas` access from the SPA). `:id` is the UUID; references use `name`. */
 @Controller('api/app/spaces/:spaceId/schemas')
 export class SchemasController {
   constructor(private readonly schemas: SchemasService) {}
@@ -36,7 +37,7 @@ export class SchemasController {
 
   @Get(':id')
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
-  async get(@Param('spaceId') spaceId: string, @Param('id') id: string) {
+  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return dto(await this.schemas.get(spaceId, id));
   }
 
@@ -55,8 +56,9 @@ export class SchemasController {
   ) {
     const rows = await this.schemas.createMany(
       spaceId,
+      // Templates are in the export format, where `id` is the name.
       body.schemas.map(schema => ({
-        id: schema.id,
+        name: schema.id,
         type: schema.type,
         displayName: schema.displayName,
         description: schema.description,
@@ -73,26 +75,26 @@ export class SchemasController {
   @RequirePermission(UserPermission.SCHEMA_UPDATE)
   async update(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
   ) {
     return dto(await this.schemas.update(spaceId, id, body));
   }
 
-  @Put(':id/id')
+  @Put(':id/name')
   @RequirePermission(UserPermission.SCHEMA_UPDATE)
   async rename(
     @Param('spaceId') spaceId: string,
-    @Param('id') id: string,
+    @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(renameSchema)) body: z.infer<typeof renameSchema>,
   ) {
-    return dto(await this.schemas.rename(spaceId, id, body.id));
+    return dto(await this.schemas.rename(spaceId, id, body.name));
   }
 
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.SCHEMA_DELETE)
-  async delete(@Param('spaceId') spaceId: string, @Param('id') id: string): Promise<void> {
+  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.schemas.delete(spaceId, id);
   }
 }

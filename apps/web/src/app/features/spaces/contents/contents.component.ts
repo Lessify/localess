@@ -138,7 +138,7 @@ export class ContentsComponent implements AfterViewInit {
   displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
   schemas: Schema[] = [];
-  schemasMapById: Map<string, Schema> = new Map<string, Schema>();
+  schemasMapByName: Map<string, Schema> = new Map<string, Schema>();
 
   get parentPath(): string {
     const contentPath = this.spaceStore.contentPath();
@@ -167,7 +167,7 @@ export class ContentsComponent implements AfterViewInit {
       .subscribe({
         next: ([schemas, contents]) => {
           this.schemas = schemas.sort(sortSchema);
-          this.schemasMapById = new Map(this.schemas.map(it => [it.id, it]));
+          this.schemasMapByName = new Map(this.schemas.map(it => [it.name, it]));
           this.contents.set(contents.sort(sortContent));
           this.isLoading.set(false);
         },
@@ -426,7 +426,7 @@ export class ContentsComponent implements AfterViewInit {
   onRowSelect(element: Content): void {
     this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
-      if (this.schemasMapById.has(element.schema)) {
+      if (this.schemasMapByName.has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
         this.notificationService.error(`Content Schema can not be found.`);

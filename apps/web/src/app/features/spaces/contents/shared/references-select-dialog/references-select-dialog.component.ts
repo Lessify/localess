@@ -80,7 +80,7 @@ export class ReferencesSelectDialogComponent implements OnInit, AfterViewInit, O
   paginator = viewChild.required(Paginator);
 
   schemas = signal<Schema[]>([]);
-  schemasMapById = computed(() => new Map(this.schemas().map(it => [it.id, it])));
+  schemasMapByName = computed(() => new Map(this.schemas().map(it => [it.name, it])));
   contents = signal<Content[]>([]);
   readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
   displayedColumns: string[] = ['select', 'status', 'name', 'schema', 'updatedAt'];

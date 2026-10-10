@@ -50,7 +50,7 @@
         <td llCell *llCellDef="let element">
           <div [title]="element.displayName">
             <div class="line-clamp-1">{{ element.displayName }}</div>
-            <div class="text-muted-foreground line-clamp-1">#{{ element.id }}</div>
+            <div class="text-muted-foreground line-clamp-1">#{{ element.name }}</div>
           </div>
         </td>
       </ng-container>
@@ -81,7 +81,7 @@
             <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
           </button>
           <ng-template #actionsMenu>
-            @let inUse = schemasInUse()[element.id];
+            @let inUse = schemasInUse()[element.name];
             <hlm-dropdown-menu [hlmTooltip]="inUse ? 'Used by : \n' + inUse.join('\n ') : ''">
               @if ('SCHEMA_UPDATE' | canUserPerform | async) {
                 <hlm-dropdown-menu-group>

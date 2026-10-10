@@ -3,7 +3,7 @@ import { Schema, SchemaExport, SchemaField, SchemaFieldKind, SchemaType } from '
 import { docSchemaToExport, isSchemaChanged, planSchemaPush } from './schema.utils.js';
 
 // What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.
-const stored = { id: 'stored', createdAt: {} as never, updatedAt: {} as never };
+const stored = { id: 'stored', name: 'stored', createdAt: {} as never, updatedAt: {} as never };
 
 describe('isSchemaChanged', () => {
   it('returns false for an identical component', () => {

@@ -28,8 +28,9 @@ export interface SchemaPushPlan {
 }
 
 /**
- * Convert a stored schema document into its export representation (no timestamps, no absent optionals).
- * @param {string} id schema document id
+ * Convert a stored schema into its export representation (no timestamps, no absent optionals). Exports, the SDK
+ * and Code as Source identify a schema by its name, carried as `id`.
+ * @param {string} id the schema's name
  * @param {Schema} schema stored schema document data
  * @return {SchemaExport} export representation
  */

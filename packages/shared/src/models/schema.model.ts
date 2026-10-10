@@ -9,7 +9,13 @@ export enum SchemaType {
 export type Schema = SchemaComponent | SchemaEnum;
 
 export interface SchemaBase {
+  /** Row id (UUIDv7), used by the App API only. */
   id: string;
+  /**
+   * Unique per space; what content (`schema`, `_schema`), fields (`schemas`, `source`), the SDK and Code as Source
+   * refer to. Exports carry it as `id`.
+   */
+  name: string;
   type: SchemaType;
   displayName?: string;
   description?: string;
@@ -214,18 +220,23 @@ export enum AssetFileType {
   APPLICATION = 'APPLICATION',
 }
 
-// Export and Import
+// Export and Import (files, the public API, the SDK and Code as Source): a schema is identified by its name,
+// carried as `id`; the row UUID never leaves the App API.
 export type SchemaExport = SchemaComponentExport | SchemaEnumExport;
-export type SchemaComponentExport = Omit<SchemaComponent, 'createdAt' | 'updatedAt'>;
+export type SchemaComponentExport = Omit<SchemaComponent, 'id' | 'name' | 'createdAt' | 'updatedAt'> & { /** The name. */ id: string };
 
-export type SchemaEnumExport = Omit<SchemaEnum, 'createdAt' | 'updatedAt'>;
+export type SchemaEnumExport = Omit<SchemaEnum, 'id' | 'name' | 'createdAt' | 'updatedAt'> & { /** The name. */ id: string };
 
 // App API requests
-export type SchemaCreate = Omit<Schema, 'createdAt' | 'updatedAt'>;
+export interface SchemaCreate {
+  name: string;
+  type: SchemaType;
+  displayName?: string;
+}
 
-export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
+export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
 
-export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'type' | 'createdAt' | 'updatedAt'>;
+export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
 
 /** Field kinds whose value is an array. */
 export function isSchemaArray(schema: SchemaField): boolean {

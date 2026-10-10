@@ -34,7 +34,7 @@ describe('ContentsComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(contents: Content[] = [], schemas: Schema[] = [{ id: 's1', type: SchemaType.ROOT } as Schema]) {
+  function setup(contents: Content[] = [], schemas: Schema[] = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema]) {
     const findAllSchemas = vi.fn().mockReturnValue(of(schemas));
     const findAllContents = vi.fn().mockReturnValue(of(contents));
     const createDocument = vi.fn().mockReturnValue(of(undefined));
@@ -290,11 +290,20 @@ describe('ContentsComponent', () => {
 
   describe('onRowSelect', () => {
     it('navigates to the document editor when its schema is known', () => {
-      const { component, navigate } = setup([], [{ id: 's1', type: SchemaType.ROOT } as Schema]);
+      const { component, navigate } = setup([], [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema]);
 
       component.onRowSelect(doc({ id: 'c1', schema: 's1' }));
 
       expect(navigate).toHaveBeenCalledWith(['features', 'spaces', 'space-1', 'contents', 'c1']);
+    });
+
+    it('resolves the document schema by name, not by the schema row id', () => {
+      const { component, navigate, error } = setup([], [{ id: '0190a3b4-0000-7000-8000-000000000001', name: 'page', type: SchemaType.ROOT } as Schema]);
+
+      component.onRowSelect(doc({ id: 'c1', schema: 'page' }));
+
+      expect(navigate).toHaveBeenCalledWith(['features', 'spaces', 'space-1', 'contents', 'c1']);
+      expect(error).not.toHaveBeenCalled();
     });
 
     it('notifies an error when the schema can not be found', () => {

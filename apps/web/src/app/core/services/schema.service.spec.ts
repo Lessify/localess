@@ -62,20 +62,20 @@ describe('SchemaService', () => {
     expect(await result).toEqual({ id: 'page' });
   });
 
-  it('create() posts id, type and display name', async () => {
+  it('create() posts name, type and display name', async () => {
     const service = setup();
-    const done = firstValueFrom(service.create('space-1', { id: 'page', type: SchemaType.ROOT, displayName: 'Page' } as never));
+    const done = firstValueFrom(service.create('space-1', { name: 'page', type: SchemaType.ROOT, displayName: 'Page' }));
     const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/space-1/schemas' });
-    expect(request.request.body).toEqual({ id: 'page', type: 'ROOT', displayName: 'Page' });
+    expect(request.request.body).toEqual({ name: 'page', type: 'ROOT', displayName: 'Page' });
     request.flush({});
     await done;
   });
 
-  it('updateId() renames on the server', async () => {
+  it('updateName() renames on the server, addressing the schema by id', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateId('space-1', { id: 'old' } as Schema, 'new'));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/schemas/old/id' });
-    expect(request.request.body).toEqual({ id: 'new' });
+    const done = firstValueFrom(service.updateName('space-1', { id: 'uuid-1', name: 'old' } as Schema, 'new'));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/schemas/uuid-1/name' });
+    expect(request.request.body).toEqual({ name: 'new' });
     request.flush({});
     await done;
   });

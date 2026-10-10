@@ -181,11 +181,11 @@ describe('v1 dev tools and manage API', () => {
         ids: { created: ['card', 'color'], updated: ['page'], deleted: [] },
       });
       const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, S1));
-      expect(rows.find(it => it.id === 'page')).toMatchObject({
+      expect(rows.find(it => it.name === 'page')).toMatchObject({
         displayName: 'Page',
         fields: [{ name: 'title', kind: 'TEXT', translatable: true }],
       });
-      expect(rows.find(it => it.id === 'color')).toMatchObject({ type: 'ENUM', values: [{ name: 'Red', value: 'red' }], fields: null });
+      expect(rows.find(it => it.name === 'color')).toMatchObject({ type: 'ENUM', values: [{ name: 'Red', value: 'red' }], fields: null });
       expect((await space()).contentVersion).toBe(before.contentVersion + 1);
     });
 
@@ -208,8 +208,8 @@ describe('v1 dev tools and manage API', () => {
     it('syncs: deletes schemas absent from the payload', async () => {
       const response = await push({ type: 'sync', schemas: [card] });
       expect(response.json().ids.deleted.sort()).toEqual(['color', 'page']);
-      const rows = await t.db.select({ id: schemas.id }).from(schemas).where(eq(schemas.spaceId, S1));
-      expect(rows.map(it => it.id)).toEqual(['card']);
+      const rows = await t.db.select({ name: schemas.name }).from(schemas).where(eq(schemas.spaceId, S1));
+      expect(rows.map(it => it.name)).toEqual(['card']);
     });
 
     it('validates the body', async () => {

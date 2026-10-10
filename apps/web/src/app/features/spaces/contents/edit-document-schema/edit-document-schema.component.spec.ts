@@ -10,7 +10,7 @@ import { UserStore } from '@core/stores/user.store';
 import { EditDocumentSchemaComponent } from './edit-document-schema.component';
 
 function schema(fields: SchemaComponent['fields'], id = 'root-1'): SchemaComponent {
-  return { id, type: SchemaType.ROOT, fields } as SchemaComponent;
+  return { id, name: id, type: SchemaType.ROOT, fields } as SchemaComponent;
 }
 
 function setup(config: { schemas?: Schema[]; data?: ContentData; locale?: Locale } = {}) {
@@ -185,16 +185,16 @@ describe('EditDocumentSchemaComponent', () => {
 
   describe('filterSchema', () => {
     it('resolves node schemas by id and sorts by displayName, falling back to id', () => {
-      const nodeB = { id: 'b', type: SchemaType.NODE, displayName: 'Bravo' } as SchemaComponent;
-      const nodeA = { id: 'a', type: SchemaType.NODE, displayName: 'Alpha' } as SchemaComponent;
-      const nodeC = { id: 'c', type: SchemaType.NODE } as SchemaComponent;
+      const nodeB = { id: 'b', name: 'b', type: SchemaType.NODE, displayName: 'Bravo' } as SchemaComponent;
+      const nodeA = { id: 'a', name: 'a', type: SchemaType.NODE, displayName: 'Alpha' } as SchemaComponent;
+      const nodeC = { id: 'c', name: 'c', type: SchemaType.NODE } as SchemaComponent;
       const { component } = setup({ schemas: [nodeB, nodeA, nodeC] });
 
       expect(component.filterSchema(['b', 'a', 'c']).map(s => s.id)).toEqual(['a', 'b', 'c']);
     });
 
     it('drops ids that do not resolve to a node schema', () => {
-      const nodeA = { id: 'a', type: SchemaType.NODE, displayName: 'Alpha' } as SchemaComponent;
+      const nodeA = { id: 'a', name: 'a', type: SchemaType.NODE, displayName: 'Alpha' } as SchemaComponent;
       const { component } = setup({ schemas: [nodeA] });
       expect(component.filterSchema(['a', 'missing'])).toEqual([nodeA]);
     });

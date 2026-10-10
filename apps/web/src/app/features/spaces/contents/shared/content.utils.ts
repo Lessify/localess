@@ -105,13 +105,13 @@ export function extractReferences(
   const inUseAssets = new Set<string>();
   const inUseLinks = new Set<string>();
   const inUseReferences = new Set<string>();
-  const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
+  const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
   if (data === undefined) return [inUseAssets, inUseLinks, inUseReferences];
   const contentIteration = [data];
   // Iterative traversing content and extracting references.
   let selectedContent = contentIteration.pop();
   while (selectedContent) {
-    const schema = schemasById.get(selectedContent._schema);
+    const schema = schemasByName.get(selectedContent._schema);
     if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
       const schemaContent = extractSchemaContent(selectedContent, schema, locale, true);
       // handle array like Asset/Reference Array
@@ -188,14 +188,14 @@ export function collectTranslatableFields(
   options: { overwrite?: boolean } = {},
 ): TranslatableField[] {
   const fields: TranslatableField[] = [];
-  const schemasById = new Map<string, Schema>(schemas.map(it => [it.id, it]));
+  const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
   const richTextExtensions = createRichTextExtensions();
   const contentIteration = [data];
   let selectedContent = contentIteration.pop();
 
   while (selectedContent) {
     const node = selectedContent;
-    const schema = schemasById.get(node._schema);
+    const schema = schemasByName.get(node._schema);
     if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
       for (const field of (schema as SchemaComponent).fields || []) {
         if (field.kind === SchemaFieldKind.SCHEMA) {

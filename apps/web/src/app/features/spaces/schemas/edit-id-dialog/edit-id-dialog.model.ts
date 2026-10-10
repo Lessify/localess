@@ -1,7 +1,8 @@
+/** Edits a schema's name (shown as its ID), not the row id. */
 export interface EditIdDialogContext {
-  id: string;
-  reservedIds: string[];
+  name: string;
+  reservedNames: string[];
 }
 
-/** The new id on its own, not the form object. */
+/** The new name on its own, not the form object. */
 export type EditIdDialogResult = string;

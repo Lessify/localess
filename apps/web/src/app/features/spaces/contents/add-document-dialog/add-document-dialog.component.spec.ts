@@ -8,7 +8,7 @@ import { AddDocumentDialogContext } from './add-document-dialog.model';
 import { AddDocumentDialogComponent } from './add-document-dialog.component';
 
 describe('AddDocumentDialogComponent', () => {
-  const schemas: Schema[] = [{ id: 's1', displayName: 'Page' } as Schema];
+  const schemas: Schema[] = [{ id: 's1', name: 's1', displayName: 'Page' } as Schema];
 
   function setup(context: AddDocumentDialogContext) {
     const close = vi.fn();

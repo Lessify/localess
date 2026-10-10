@@ -59,7 +59,7 @@ export class AddDocumentDialogComponent {
   }
 
   protected readonly schemaItemToString = (value: string): string => {
-    return this.context.schemas.find(s => s.id === value)?.displayName || value;
+    return this.context.schemas.find(s => s.name === value)?.displayName || value;
   };
 
   normalizeSlug(): void {

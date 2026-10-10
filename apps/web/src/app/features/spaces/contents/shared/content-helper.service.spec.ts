@@ -9,7 +9,7 @@ function field(partial: Partial<SchemaField> & Pick<SchemaField, 'name' | 'kind'
 }
 
 function rootSchema(fields: SchemaField[], id = 'root-1'): SchemaComponent {
-  return { id, type: SchemaType.ROOT, fields } as SchemaComponent;
+  return { id, name: id, type: SchemaType.ROOT, fields } as SchemaComponent;
 }
 
 function setup() {

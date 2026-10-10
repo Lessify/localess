@@ -49,7 +49,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     await t.db
       .insert(spaces)
       .values({ id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], localeFallback: { id: 'en', name: 'English' } });
-    await t.db.insert(schemas).values({ spaceId: S1, id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
+    await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
     manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] }));
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {

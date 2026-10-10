@@ -132,14 +132,15 @@ export class EditFieldComponent {
       .sort(sortSchema),
   );
 
-  schemaIdToString = (id: string): string => {
-    const schema = this.nodeSchemas().find(s => s.id === id);
-    return schema?.displayName || schema?.id || id;
+  // Fields refer to schemas by name (`schemas`, `source`).
+  schemaIdToString = (name: string): string => {
+    const schema = this.nodeSchemas().find(s => s.name === name);
+    return schema?.displayName || schema?.name || name;
   };
 
   enumSchemaIdToString = (id: string): string => {
-    const schema = this.enumSchemas().find(s => s.id === id);
-    return schema?.displayName ? `${schema.id} (${schema.displayName})` : (schema?.id ?? id);
+    const schema = this.enumSchemas().find(s => s.name === id);
+    return schema?.displayName ? `${schema.name} (${schema.displayName})` : (schema?.name ?? id);
   };
 
   settingsStore = inject(LocalSettingsStore);

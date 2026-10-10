@@ -21,23 +21,23 @@ describe('EditIdDialogComponent', () => {
     return { component: fixture.componentInstance, close };
   }
 
-  it('patches the form with the current id', () => {
-    const { component } = setup({ id: 'MySchema', reservedIds: ['Other'] });
+  it('patches the form with the current name', () => {
+    const { component } = setup({ name: 'MySchema', reservedNames: ['Other'] });
 
-    expect(component.form.value).toEqual({ id: 'MySchema' });
+    expect(component.form.value).toEqual({ name: 'MySchema' });
     expect(component.form.valid).toBe(true);
   });
 
-  it('rejects an id that collides with a reserved id', () => {
-    const { component } = setup({ id: 'MySchema', reservedIds: ['Other'] });
+  it('rejects a name that collides with a reserved name', () => {
+    const { component } = setup({ name: 'MySchema', reservedNames: ['Other'] });
 
-    component.form.controls['id'].setValue('Other');
+    component.form.controls['name'].setValue('Other');
 
-    expect(component.form.controls['id'].errors).toEqual({ reservedName: true });
+    expect(component.form.controls['name'].errors).toEqual({ reservedName: true });
   });
-  it('closes with the bare id, not the form object', () => {
-    const { component, close } = setup({ id: 'MySchema', reservedIds: ['Other'] });
-    component.form.patchValue({ id: 'Renamed' });
+  it('closes with the bare name, not the form object', () => {
+    const { component, close } = setup({ name: 'MySchema', reservedNames: ['Other'] });
+    component.form.patchValue({ name: 'Renamed' });
 
     component.save();
 

@@ -1,6 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { SchemaExport, SchemaType } from '@localess/shared';
 import type { Database } from '../../infra/database/database.module.js';
+import { newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
 import type { SchemaPushPlan } from './schema.utils.js';
 
@@ -23,15 +24,18 @@ function schemaColumns(schema: SchemaExport) {
 /** Writes a `planSchemaPush` result (CLI schema push, schema import task). */
 export async function applySchemaPushPlan(tx: Transaction, spaceId: string, plan: SchemaPushPlan): Promise<void> {
   if (plan.creates.length) {
-    await tx.insert(schemas).values(plan.creates.map(schema => ({ spaceId, id: schema.id, ...schemaColumns(schema) })));
+    // Exports carry the name as `id`.
+    await tx
+      .insert(schemas)
+      .values(plan.creates.map(schema => ({ id: newUuid(), spaceId, name: schema.id, ...schemaColumns(schema) })));
   }
   for (const schema of plan.updates) {
     await tx
       .update(schemas)
       .set({ ...schemaColumns(schema), updatedAt: new Date() })
-      .where(and(eq(schemas.spaceId, spaceId), eq(schemas.id, schema.id)));
+      .where(and(eq(schemas.spaceId, spaceId), eq(schemas.name, schema.id)));
   }
   if (plan.deletes.length) {
-    await tx.delete(schemas).where(and(eq(schemas.spaceId, spaceId), inArray(schemas.id, plan.deletes)));
+    await tx.delete(schemas).where(and(eq(schemas.spaceId, spaceId), inArray(schemas.name, plan.deletes)));
   }
 }

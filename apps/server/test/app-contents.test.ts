@@ -36,7 +36,7 @@ describe('app API: contents', () => {
     });
     await t.db
       .insert(schemas)
-      .values({ spaceId: S1, id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
+      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
     await t.db.insert(tokens).values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
     editor = api(
       t,

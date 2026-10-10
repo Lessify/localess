@@ -48,8 +48,9 @@ export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
  */
 export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
   await t.db.insert(schemas).values({
+    id: newUuid(),
     spaceId,
-    id: 'page',
+    name: 'page',
     type: 'ROOT',
     fields: [
       { name: 'title', kind: 'TEXT', translatable: true },

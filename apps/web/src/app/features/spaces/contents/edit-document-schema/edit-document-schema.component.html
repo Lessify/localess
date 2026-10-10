@@ -272,7 +272,7 @@
                   }
                 </hlm-select-trigger>
                 <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
-                  @if (schemaEnumMapById().get(field.source); as source) {
+                  @if (schemaEnumMapByName().get(field.source); as source) {
                     @for (option of source.values; track option.value) {
                       <hlm-select-item [value]="option.value"> {{ option.name }}</hlm-select-item>
                     }
@@ -315,7 +315,7 @@
                   }
                 </hlm-select-trigger>
                 <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
-                  @if (schemaEnumMapById().get(field.source); as source) {
+                  @if (schemaEnumMapByName().get(field.source); as source) {
                     @for (option of source.values; track option.value) {
                       <hlm-select-item [value]="option.value"> {{ option.name }}</hlm-select-item>
                     }
@@ -410,7 +410,7 @@
                       (click)="navigationTo(item._id, field.name, item._schema)"
                       (keydown)="navigationTo(item._id, field.name, item._schema)">
                       <div hlmItemContent class="min-w-0 overflow-hidden">
-                        @if (schemaCompNodeById().get(item._schema); as sch) {
+                        @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
                             {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
                           </div>
@@ -473,7 +473,7 @@
                       (click)="navigationTo(item._id, field.name, item._schema)"
                       (keydown)="navigationTo(item._id, field.name, item._schema)">
                       <div hlmItemContent class="min-w-0 overflow-hidden">
-                        @if (schemaCompNodeById().get(item._schema); as sch) {
+                        @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
                             {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
                           </div>

@@ -177,7 +177,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   documents = computed(() => this.spaceStore.documents());
   schemas = computed(() => this.spaceStore.schemas());
   // Computed out of inputs
-  rootSchema = computed(() => this.schemas().find(it => it.id === this.document().schema));
+  rootSchema = computed(() => this.schemas().find(it => it.name === this.document().schema));
   documentUpdatedAt = linkedSignal(() => this.document().updatedAt);
   documentPublishedAt = linkedSignal(() => this.document().publishedAt);
   //Store
@@ -233,7 +233,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     const uiPath = this.schemaPath().map(it => it.contentId);
     return ObjectUtils.isEqual(uiPath, this.hoverSchemaPath());
   });
-  schemaMapById = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.id, it])));
+  schemaMapByName = computed(() => new Map<string, Schema>(this.schemas().map(it => [it.name, it])));
 
   documentData: ContentData = { _id: '', _schema: '' };
   /** Bumped to rebuild the schema form after a bulk translation mutates the document in place. */
@@ -507,7 +507,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     let node = nodeIterator.shift();
     while (node) {
       this.documentIdsTree.set(node.data._id, node.path);
-      const schema = this.schemaMapById().get(node.data._schema);
+      const schema = this.schemaMapByName().get(node.data._schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         for (const field of schema.fields || []) {
           if (field.kind === SchemaFieldKind.SCHEMA) {
@@ -551,7 +551,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     let selectedContentId = contentIdIteration.shift();
     // check Root Schema
     if (this.documentData._id === selectedContentId) {
-      const rootSchema = this.schemaMapById().get(this.documentData._schema);
+      const rootSchema = this.schemaMapByName().get(this.documentData._schema);
       if (rootSchema) {
         this.navigateToSchemaBackwards({
           contentId: this.documentData._id,
@@ -569,7 +569,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
     // Navigate to child
     while (selectedContentId) {
-      const schema = this.schemaMapById().get(this.selectedDocumentData._schema);
+      const schema = this.schemaMapByName().get(this.selectedDocumentData._schema);
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         schemaFieldsLoop: for (const schemaField of schema.fields || []) {
           if (schemaField.kind === SchemaFieldKind.SCHEMA) {
@@ -625,7 +625,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   onPreviewBlockAction(event: { id: string; action: BlockAction }): void {
     const path = this.schemaPath();
     if (path.length < 2 || path.at(-1)?.contentId !== event.id) return;
-    const location = findBlock(this.documentData, event.id, this.schemaMapById());
+    const location = findBlock(this.documentData, event.id, this.schemaMapByName());
     if (!location || !blockActions(location).includes(event.action)) return;
     if (event.action === 'remove') {
       removeBlock(location);
@@ -646,12 +646,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   onFormChange(): void {
-    const data = extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    const data = extractContent(this.documentData, this.schemaMapByName(), this.selectedLocale().id);
     this.previewComponent()?.sendEvent({ type: 'input', documentId: this.contentId(), data });
   }
 
   onStructureChange(): void {
-    const data = extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    const data = extractContent(this.documentData, this.schemaMapByName(), this.selectedLocale().id);
     this.generateDocumentIdsTree();
     this.previewComponent()?.sendEvent({ type: 'change', documentId: this.contentId(), data });
   }
@@ -665,7 +665,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   private sendCurrentContentToApp(): void {
-    const data = extractContent(this.documentData, this.schemaMapById(), this.selectedLocale().id);
+    const data = extractContent(this.documentData, this.schemaMapByName(), this.selectedLocale().id);
     this.previewComponent()?.sendEvent({ type: 'change', documentId: this.contentId(), data });
   }
 

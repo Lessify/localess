@@ -12,6 +12,7 @@ import { EditCompComponent } from './edit-comp.component';
 function rootSchema(overrides: Partial<Schema> = {}): Schema {
   return {
     id: 'root1',
+    name: 'root1',
     type: SchemaType.ROOT,
     displayName: 'Root',
     fields: [],

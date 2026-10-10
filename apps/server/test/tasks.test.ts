@@ -57,8 +57,8 @@ describe('task worker: exports and imports', () => {
       .toBuffer();
     for (const id of [SPACE_A, SPACE_B]) await t.db.insert(spaces).values({ id, name: id, locales: [en, de], localeFallback: en });
     await t.db.insert(schemas).values([
-      { spaceId: SPACE_A, id: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] },
-      { spaceId: SPACE_A, id: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
+      { id: newUuid(), spaceId: SPACE_A, name: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] },
+      { id: newUuid(), spaceId: SPACE_A, name: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
     ]);
     await t.db.insert(contents).values([
       { spaceId: SPACE_A, id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
@@ -153,7 +153,7 @@ describe('task worker: exports and imports', () => {
 
       const imported = await importTask(SPACE_B, 'SCHEMA_IMPORT', bytes);
       expect(imported.status).toBe('FINISHED');
-      expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, SPACE_B))).map(s => s.id).sort()).toEqual(['colors', 'page']);
+      expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, SPACE_B))).map(s => s.name).sort()).toEqual(['colors', 'page']);
       expect(await logs(SPACE_B, imported.id)).toEqual(
         expect.arrayContaining(['Starting SCHEMA_IMPORT processing', 'total changes : 2', 'Task finished successfully']),
       );

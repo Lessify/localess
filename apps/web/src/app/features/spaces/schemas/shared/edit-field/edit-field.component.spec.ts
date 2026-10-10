@@ -6,10 +6,10 @@ import { describe, expect, it } from 'vitest';
 import { EditFieldComponent } from './edit-field.component';
 
 const SCHEMAS: Schema[] = [
-  { id: 'node-b', type: SchemaType.NODE, displayName: 'Bravo' } as Schema,
-  { id: 'node-a', type: SchemaType.NODE, displayName: 'Alpha' } as Schema,
-  { id: 'node-c', type: SchemaType.NODE } as Schema,
-  { id: 'enum-a', type: SchemaType.ENUM, displayName: 'Colors' } as Schema,
+  { id: 'node-b', name: 'node-b', type: SchemaType.NODE, displayName: 'Bravo' } as Schema,
+  { id: 'node-a', name: 'node-a', type: SchemaType.NODE, displayName: 'Alpha' } as Schema,
+  { id: 'node-c', name: 'node-c', type: SchemaType.NODE } as Schema,
+  { id: 'enum-a', name: 'enum-a', type: SchemaType.ENUM, displayName: 'Colors' } as Schema,
 ];
 
 function baseForm(fb: FormBuilder): FormGroup {

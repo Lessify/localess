@@ -50,7 +50,7 @@ export class ContentDeliveryService {
 
   private async schemaMap(spaceId: string): Promise<Map<string, Schema>> {
     const rows = await this.db.select().from(schemas).where(eq(schemas.spaceId, spaceId));
-    return new Map(rows.map(row => [row.id, row as unknown as Schema]));
+    return new Map(rows.map(row => [row.name, row as unknown as Schema]));
   }
 
   /** Locale documents for `ids` (published snapshot, or draft built from the row). Missing ones are absent. */

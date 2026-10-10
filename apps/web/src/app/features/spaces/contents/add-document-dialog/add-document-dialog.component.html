@@ -38,8 +38,8 @@
         <hlm-select-value placeholder="Select schema..." />
       </hlm-select-trigger>
       <hlm-select-content *hlmSelectPortal>
-        @for (schema of context.schemas; track schema.id) {
-          <hlm-select-item [value]="schema.id">{{ schema.displayName || schema.id }}</hlm-select-item>
+        @for (schema of context.schemas; track schema.name) {
+          <hlm-select-item [value]="schema.name">{{ schema.displayName || schema.name }}</hlm-select-item>
         }
       </hlm-select-content>
     </hlm-select>
