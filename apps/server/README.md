@@ -37,10 +37,10 @@ src/
   infra/        config, database (Drizzle schema, migrations, embedded Postgres), storage, mail,
                 events (pg_notify → SSE), static (SPA), health, http (App API helpers; v1/ public API plumbing)
   auth/         sessions, OAuth, guard and decorators; users/ (users, me, first admin); api-tokens/ (v1 token check)
-  modules/      one folder per feature: <feature>.module.ts, <feature>.service.ts,
-                <feature>.controller.ts (/api/app) and <feature>.public.controller.ts (/api/v1), plus its logic
-                — spaces, settings, schemas (+ OpenAPI), contents, translations (+ translate/), assets,
-                tokens, webhooks, tasks, plugins
+  modules/      one folder per feature, a folder per layer inside (controllers/, services/, repositories/,
+                transformers/, utils/, workers/: docs/server-architecture.md) — spaces, settings, schemas
+                (+ OpenAPI), contents, translations, assets, tokens, webhooks, tasks, plugins
+                (translations is layered; the others move one by one)
   cli/          commands, check, firebase-import/
 ```
 

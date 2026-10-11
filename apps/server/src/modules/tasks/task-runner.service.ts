@@ -21,14 +21,14 @@ import {
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { folderPath } from '../assets/assets.service.js';
 import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
-import { dropDraftSnapshots } from '../translations/translation-snapshots.js';
+import { TranslationSnapshotsRepository } from '../translations/repositories/translation-snapshots.repository.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
 import { isAssetChanged, isContentChanged, isTranslationChanged } from './import-diff.js';
 import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
 import { schemaFromRow, schemasByName } from '../schemas/schema-row.js';
-import { translationsByKey } from '../translations/translation-row.js';
+import { translationsByKey } from '../translations/transformers/translation.transformer.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { applySchemaPushPlan } from '../schemas/schema-push.js';
 import { EventsService } from '../../infra/events/events.service.js';
@@ -122,6 +122,7 @@ export class TaskRunner {
     private readonly metadata: AssetMetadataService,
     private readonly events: EventsService,
     private readonly webhooks: WebhookDispatcher,
+    private readonly translationSnapshots: TranslationSnapshotsRepository,
   ) {}
 
   /** A step visible in the Tasks UI (`task_logs`) and in the server log. */
@@ -590,7 +591,7 @@ export class TaskRunner {
         total++;
       }
       if (total) {
-        await dropDraftSnapshots(tx, spaceId);
+        await this.translationSnapshots.dropDrafts(spaceId, tx);
         await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
       }
       return total;
@@ -637,7 +638,7 @@ export class TaskRunner {
         total++;
       }
       if (total) {
-        await dropDraftSnapshots(tx, spaceId);
+        await this.translationSnapshots.dropDrafts(spaceId, tx);
         await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
       }
       return total;

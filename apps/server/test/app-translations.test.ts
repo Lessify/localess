@@ -114,7 +114,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
 
   describe('keys', () => {
     it('creates keys with a UUIDv7 id, refusing duplicates, with translation.changed, dropping the draft maps', async () => {
-      await buildDrafts(t.db, S1);
+      await buildDrafts(t, S1);
       const response = await editor.post(base, { key: 'home.title', type: 'STRING', locales: { en: 'Welcome' }, labels: ['home'] });
       expect(response.statusCode).toBe(201);
       ids['home.title'] = response.json().id;

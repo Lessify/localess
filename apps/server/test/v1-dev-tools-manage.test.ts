@@ -140,7 +140,7 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('reports a dry run without writing, with status 200 like the Express endpoint', async () => {
-      await buildDrafts(t.db, S1);
+      await buildDrafts(t, S1);
       const response = await push({ type: 'add-missing', values: { 'brand.new': 'Neu' }, dryRun: true });
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({ message: '[DryRun] Would add 1 translation', ids: ['brand.new'], dryRun: true });
@@ -150,7 +150,7 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('adds missing keys and drops the draft maps', async () => {
-      await buildDrafts(t.db, S1);
+      await buildDrafts(t, S1);
       const response = await push({ type: 'add-missing', values: { 'brand.new': 'Neu', greeting: 'ignored, exists' } });
       expect(response.json()).toEqual({ message: 'Added 1 translation', ids: ['brand.new'] });
       expect(await translation('brand.new')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });

@@ -67,3 +67,17 @@ export function storedLocaleValues(translations: Map<string, Translation>, local
   }
   return values;
 }
+
+/**
+ * The flat `{key: value}` map for one locale, filling gaps from the default locale — the rule of
+ * `saveTranslationFiles` in functions/src/services/translation.service.ts.
+ */
+export function buildTranslationMap(
+  rows: { key: string; locales: Record<string, string> }[],
+  locale: string,
+  defaultLocale: string,
+): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const row of rows) values[row.key] = row.locales[locale] || row.locales[defaultLocale];
+  return values;
+}

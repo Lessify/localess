@@ -4,10 +4,11 @@ import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, o
 import { Schema, WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { contentPublished, contents, keepUpdatedAt, schemas, UpdatedBy } from '../../infra/database/schema.js';
+import { contentPublished, contents, keepUpdatedAt, schemas } from '../../infra/database/schema.js';
 import { buildDocumentStorage } from './content-extract.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
+import { updatedByOf } from '../../auth/users/updated-by.transformer.js';
 import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
 import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
 
@@ -33,10 +34,6 @@ interface WriteResult<T> {
 const startsWith = (prefix: string) => `${prefix.replace(/[\\%_]/g, m => `\\${m}`)}%`;
 const joinSlug = (parentSlug: string, slug: string) => (parentSlug ? `${parentSlug}/${slug}` : slug);
 const randomSuffix = () => Array.from({ length: 5 }, () => 'abcdefghijklmnopqrstuvwxyz0123456789'[randomInt(36)]).join('');
-
-export function updatedByOf(user: UserRow): UpdatedBy {
-  return { name: user.displayName || user.email, email: user.email };
-}
 
 /**
  * Content tree of a space. Replaces the SPA's direct Firestore writes and what the content triggers

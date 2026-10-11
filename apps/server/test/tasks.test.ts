@@ -336,7 +336,7 @@ describe('task worker: exports and imports', () => {
         { id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
         { id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
       ]);
-      await buildDrafts(t.db, SPACE_B);
+      await buildDrafts(t, SPACE_B);
       expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', await download(SPACE_A, exported.id))).status).toBe('FINISHED');
       expect((await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B))).map(it => it.key).sort()).toEqual([
         'farewell',

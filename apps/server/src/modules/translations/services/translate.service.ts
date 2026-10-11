@@ -11,8 +11,8 @@ import {
   TranslateItem,
 } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
-import { translateItems } from './translate-batch.js';
-import { deeplTranslateOptions, googleMimeType } from './translate-format.utils.js';
+import { translateItems } from '../utils/translate-batch.js';
+import { deeplTranslateOptions, googleMimeType } from '../utils/translate-format.utils.js';
 
 /** 424 like the callable's `failed-precondition`: the provider rejected the request (key, quota, API off). */
 /** 412: the request is fine, the environment lacks the provider (DeepL or Google Cloud Translation). */

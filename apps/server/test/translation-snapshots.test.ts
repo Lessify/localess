@@ -2,8 +2,8 @@ import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { translations, translationSnapshots } from '../src/infra/database/schema.js';
 import { SpacesService } from '../src/modules/spaces/spaces.service.js';
-import { lockTranslations } from '../src/modules/translations/translation-snapshots.js';
-import { TranslationsService } from '../src/modules/translations/translations.service.js';
+import { TranslationSnapshotsRepository } from '../src/modules/translations/repositories/translation-snapshots.repository.js';
+import { TranslationsService } from '../src/modules/translations/services/translations.service.js';
 import { seedSpace, seedTranslations, TOKEN_DEV, TOKEN_DRAFT, TOKEN_V1 } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
@@ -132,7 +132,7 @@ describe('translation snapshots', () => {
     let served: Promise<unknown> | undefined;
     let settled = false;
     await t.db.transaction(async tx => {
-      await lockTranslations(tx, S1);
+      await t.app.get(TranslationSnapshotsRepository).lock(S1, tx);
       served = follow(draftUrl('de')).finally(() => (settled = true));
       await tx
         .update(translations)

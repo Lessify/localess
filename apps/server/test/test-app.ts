@@ -10,7 +10,8 @@ import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
 import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
-import { buildDraftSnapshots } from '../src/modules/translations/translation-snapshots.js';
+import { TranslationSnapshotsRepository } from '../src/modules/translations/repositories/translation-snapshots.repository.js';
+
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {
@@ -134,6 +135,6 @@ export function draftSnapshots(db: TestApp['db'], spaceId: string) {
 }
 
 /** Builds the space's draft maps, as the first draft request after a write does. */
-export async function buildDrafts(db: TestApp['db'], spaceId: string): Promise<void> {
-  await buildDraftSnapshots(db, spaceId);
+export async function buildDrafts(t: TestApp, spaceId: string): Promise<void> {
+  await t.app.get(TranslationSnapshotsRepository).buildDrafts(spaceId);
 }
