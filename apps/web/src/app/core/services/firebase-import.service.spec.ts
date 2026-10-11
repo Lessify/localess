@@ -29,6 +29,14 @@ describe('FirebaseImportService', () => {
     expect(await started).toMatchObject({ id: 'r1' });
   });
 
+  it('cancels a run', async () => {
+    const service = setup();
+    const cancelled = firstValueFrom(service.cancel('r1'));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/r1/cancel` });
+    request.flush({ id: 'r1', status: 'FAILED' });
+    expect(await cancelled).toMatchObject({ id: 'r1', status: 'FAILED' });
+  });
+
   it('polls every 2 s until the run is no longer RUNNING', async () => {
     vi.useFakeTimers();
     const service = setup();

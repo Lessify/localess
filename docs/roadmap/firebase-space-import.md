@@ -149,6 +149,10 @@ On an error the current stage becomes `FAILED` with the message, the run becomes
 space reads as failed. Stored files stay until the space is deleted (deleting a space removes its
 files).
 
+**Cancel** (`POST /:id/cancel`, admins): a `RUNNING` run becomes `FAILED` at the stage it reached, with
+"Cancelled by `<email>`" (409 when it already ended). Its runner stops at its next save, which finds the run no longer
+`RUNNING`, the same way a run failed as interrupted stops; the space then reads as failed like any other.
+
 ### Reference rewrite
 
 A pure function `rewriteReferences(document, maps)` walks `data` by shape, at any depth, including every locale
@@ -174,8 +178,9 @@ through D6; otherwise they keep pointing at the Firebase environment.
   2. The environment's spaces; already imported ones are disabled with "Imported as `<name>`". Pick one, **Import**.
   3. Progress: each stage with its status, `count` (and `count / total` for assets), warnings expandable, and the
      error of a failed stage. Polls `GET /:id` every 2 s while `RUNNING`.
+     **Cancel import** while `RUNNING`.
 - **Imports** lists past runs (origin, source space, new space, status, started by, times); a row opens the same
-  progress view.
+  progress view, with **Cancel import** while `RUNNING`.
 - Spaces being imported show *Importing*; a failed one shows *Import failed* and "Delete the space and import it again", and can be deleted from the list. A failed run in **Imports** says the same (or "start the import again" when it failed before creating the space); the public API's `503` for a failed space too.
 - Space settings show "Imported from Firebase: `<legacy id>`" for imported spaces.
 

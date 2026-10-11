@@ -136,4 +136,37 @@ describe('app API: import from Firebase', () => {
     expect(run).toMatchObject({ status: 'FAILED', error: { stage: 'locales', message: 'Interrupted: the server running it stopped' } });
     expect((await selectSpaces(t.db).where(eq(spaces.id, spaceId)))[0].importStatus).toBe('FAILED');
   });
+
+  describe('cancel', () => {
+    const running = async (status: 'RUNNING' | 'FINISHED' = 'RUNNING') => {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: fake.url, sourceSpaceId: 'fbB', sourceSpaceName: 'Site B', status, heartbeatAt: new Date(),
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: stage === 'space' ? ('DONE' as const) : stage === 'locales' ? ('RUNNING' as const) : ('PENDING' as const), count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      return id;
+    };
+
+    it('fails a running import at the stage it reached, naming who cancelled it', async () => {
+      const id = await running();
+      const response = await admin.post(`${base}/${id}/cancel`, {});
+      expect(response.statusCode).toBe(200);
+      const message = 'Cancelled by admin@example.com';
+      expect(response.json()).toMatchObject({ id, status: 'FAILED', error: { stage: 'locales', message } });
+      expect(response.json().finishedAt).toEqual(expect.any(String));
+      expect(response.json().stages).toEqual(expect.arrayContaining([{ stage: 'locales', status: 'FAILED', count: 0, error: message }]));
+      await t.db.delete(firebaseImports).where(eq(firebaseImports.id, id));
+    });
+
+    it('answers 409 for an import that is no longer running, 404 for an unknown one, 403 for non-admins', async () => {
+      const id = await running('FINISHED');
+      const ended = await admin.post(`${base}/${id}/cancel`, {});
+      expect(ended.statusCode).toBe(409);
+      expect(ended.json().message).toBe('The import is not running');
+      expect((await admin.post(`${base}/${newUuid()}/cancel`, {})).statusCode).toBe(404);
+      expect((await manager.post(`${base}/${id}/cancel`, {})).statusCode).toBe(403);
+      await t.db.delete(firebaseImports).where(eq(firebaseImports.id, id));
+    });
+  });
 });

@@ -23,6 +23,11 @@ export class FirebaseImportService {
     return this.http.get<FirebaseImport[]>(this.base);
   }
 
+  /** Stops a running import: it fails at the stage it reached (409 when it already ended). */
+  cancel(id: string): Observable<FirebaseImport> {
+    return this.http.post<FirebaseImport>(`${this.base}/${id}/cancel`, {});
+  }
+
   /** The run every 2 s while RUNNING; completes after the first FINISHED or FAILED value. */
   poll(id: string): Observable<FirebaseImport> {
     return timer(0, POLL_MS).pipe(

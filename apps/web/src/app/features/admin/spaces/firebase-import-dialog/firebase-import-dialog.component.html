@@ -3,6 +3,9 @@
 </hlm-dialog-header>
 @if (run(); as current) {
   <p class="text-sm">{{ current.sourceSpaceName }}: {{ current.status }}</p>
+  @if (current.status === 'RUNNING') {
+    <button hlmBtn variant="outline" size="sm" class="self-start" (click)="cancel()">Cancel import</button>
+  }
   <ll-firebase-import-progress [run]="current" />
 } @else {
   <form [formGroup]="form" class="flex flex-col gap-3" (ngSubmit)="connect()">

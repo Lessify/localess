@@ -127,7 +127,7 @@ export class FirebaseImportRunner {
       await this.space.announce(sid);
     } catch (error) {
       if (error instanceof RunAbandoned) {
-        this.logger.warn(`Import ${runId} was failed elsewhere while running; stopped`);
+        this.logger.warn(`Import ${runId} ended elsewhere while running (cancelled, or failed as interrupted); stopped`);
         return;
       }
       const failedStage = error instanceof StageFailure ? error.stage : current;

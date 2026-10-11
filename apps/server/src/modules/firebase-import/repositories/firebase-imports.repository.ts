@@ -78,13 +78,22 @@ export class FirebaseImportsRepository {
     });
   }
 
-  /** Fails a run cut off by a stopped instance, unless it ended meanwhile. */
-  failInterrupted(id: string, values: Required<Pick<NewFirebaseImport, 'stages' | 'error'>>, tx?: Transaction): Promise<void> {
+  /**
+   * Fails a running run (cut off by a stopped instance, or cancelled); its runner stops at its next save. `undefined`
+   * when it ended meanwhile.
+   */
+  fail(
+    id: string,
+    values: Required<Pick<NewFirebaseImport, 'stages' | 'error'>>,
+    tx?: Transaction,
+  ): Promise<FirebaseImportEntity | undefined> {
     return transaction(this.db, tx, async t => {
-      await t
+      const [run] = await t
         .update(firebaseImports)
         .set({ status: 'FAILED', ...values, finishedAt: new Date() })
-        .where(and(eq(firebaseImports.id, id), eq(firebaseImports.status, 'RUNNING')));
+        .where(and(eq(firebaseImports.id, id), eq(firebaseImports.status, 'RUNNING')))
+        .returning();
+      return run;
     });
   }
 

@@ -39,6 +39,22 @@ describe('FirebaseImportDialogComponent', () => {
     expect(component.run()).toMatchObject({ id: 'r1', status: 'FINISHED' });
   });
 
+  it('cancels the running import and shows the failed run', () => {
+    const cancel = vi.fn().mockReturnValue(of({ id: 'r1', status: 'FAILED', stages: [] }));
+    const component = setup({ cancel });
+    component.run.set({ id: 'r1', status: 'RUNNING', stages: [] } as never);
+    component.cancel();
+    expect(cancel).toHaveBeenCalledWith('r1');
+    expect(component.run()).toMatchObject({ id: 'r1', status: 'FAILED' });
+  });
+
+  it('shows why a cancel was refused', () => {
+    const component = setup({ cancel: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'The import is not running' } }))) });
+    component.run.set({ id: 'r1', status: 'RUNNING', stages: [] } as never);
+    component.cancel();
+    expect(component.error()).toBe('The import is not running');
+  });
+
   it('shows the connection error', () => {
     const component = setup({ sourceSpaces: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'The migration token was refused' } }))) });
     component.form.setValue({ origin: 'https://cms.example.com', token: 'bad' });

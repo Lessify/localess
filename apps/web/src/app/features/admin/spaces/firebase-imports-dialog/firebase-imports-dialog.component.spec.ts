@@ -12,9 +12,11 @@ describe('FirebaseImportsDialogComponent', () => {
     { id: 'r1', sourceSpaceName: 'A', status: 'FINISHED', stages: [] },
   ] as unknown as FirebaseImport[];
 
-  function setup() {
+  function setup(cancel = vi.fn()) {
     TestBed.overrideComponent(FirebaseImportsDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: FirebaseImportService, useValue: { findAll: vi.fn().mockReturnValue(of(runs)) } }] });
+    TestBed.configureTestingModule({
+      providers: [{ provide: FirebaseImportService, useValue: { findAll: vi.fn().mockReturnValue(of(runs)), cancel } }],
+    });
     const fixture = TestBed.createComponent(FirebaseImportsDialogComponent);
     fixture.detectChanges();
     return fixture.componentInstance;
@@ -35,5 +37,16 @@ describe('FirebaseImportsDialogComponent', () => {
     );
     expect(component.failureHint({ status: 'FAILED' } as FirebaseImport)).toBe('Nothing was created: start the import again.');
     expect(component.failureHint({ status: 'FINISHED', spaceId: 's1' } as FirebaseImport)).toBeUndefined();
+  });
+
+  it('cancels a running run, in the list and in the open view', () => {
+    const cancelled = { id: 'r2', sourceSpaceName: 'B', status: 'FAILED', stages: [] } as unknown as FirebaseImport;
+    const cancel = vi.fn().mockReturnValue(of(cancelled));
+    const component = setup(cancel);
+    component.select({ ...runs[0], status: 'RUNNING' });
+    component.cancel(component.selectedRun()!);
+    expect(cancel).toHaveBeenCalledWith('r2');
+    expect(component.selectedRun()).toBe(cancelled);
+    expect(component.runs()[0]).toBe(cancelled);
   });
 });

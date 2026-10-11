@@ -63,4 +63,15 @@ export class FirebaseImportDialogComponent {
       error: err => this.error.set(err?.error?.message ?? 'The import could not be started'),
     });
   }
+
+  /** The poll stops by itself once it sees the run FAILED. */
+  cancel(): void {
+    const run = this.run();
+    if (!run) return;
+    this.error.set(undefined);
+    this.imports.cancel(run.id).subscribe({
+      next: cancelled => this.run.set(cancelled),
+      error: err => this.error.set(err?.error?.message ?? 'The import could not be cancelled'),
+    });
+  }
 }

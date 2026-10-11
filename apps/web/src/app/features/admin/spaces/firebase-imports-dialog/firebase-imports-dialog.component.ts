@@ -28,6 +28,14 @@ export class FirebaseImportsDialogComponent implements OnInit {
     this.selectedRun.set(run);
   }
 
+  /** Stops a running run; it shows as failed, in the list and in the open view. */
+  cancel(run: FirebaseImport): void {
+    this.imports.cancel(run.id).subscribe(cancelled => {
+      this.runs.update(runs => runs.map(it => (it.id === cancelled.id ? cancelled : it)));
+      if (this.selectedRun()?.id === cancelled.id) this.selectedRun.set(cancelled);
+    });
+  }
+
   /** A failed run is not resumed: its space (if it got that far) is deleted, then the space imported again. */
   failureHint(run: FirebaseImport): string | undefined {
     if (run.status !== 'FAILED') return undefined;

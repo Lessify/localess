@@ -14,7 +14,7 @@ import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { toFirebaseImport } from '../../../shared/transformers/firebase-import.transformer.js';
-import { FirebaseImportsRepository } from '../repositories/firebase-imports.repository.js';
+import { type FirebaseImportEntity, FirebaseImportsRepository } from '../repositories/firebase-imports.repository.js';
 import { FirebaseClient, FirebaseConnectionError } from '../utils/firebase-client.js';
 import { HEARTBEAT_MS } from '../utils/firebase-import.utils.js';
 import { FirebaseImportRunner } from '../workers/firebase-import.runner.js';
@@ -49,12 +49,23 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   async failInterrupted(): Promise<void> {
     const stale = new Date(Date.now() - 4 * HEARTBEAT_MS);
     const running = await this.runs.findStale(stale);
-    for (const run of running) {
-      const current = run.stages.find(it => it.status === 'RUNNING') ?? run.stages.find(it => it.status === 'PENDING') ?? run.stages[0];
-      const message = 'Interrupted: the server running it stopped';
-      const stages = run.stages.map(it => (it.stage === current.stage ? { ...it, status: 'FAILED' as const, error: message } : it));
-      await this.runs.failInterrupted(run.id, { stages, error: { stage: current.stage, message } });
-    }
+    for (const run of running) await this.failAtCurrentStage(run, 'Interrupted: the server running it stopped');
+  }
+
+  /** Stops a running import: failed at the stage it reached; the half-imported space is deleted like any failed one. */
+  async cancel(id: string, user: UserRow): Promise<FirebaseImport> {
+    const run = isUuid(id) ? await this.runs.findById(id) : undefined;
+    if (!run) throw new NotFoundException('Import not found');
+    const cancelled = run.status === 'RUNNING' ? await this.failAtCurrentStage(run, `Cancelled by ${user.email}`) : undefined;
+    if (!cancelled) throw new ConflictException('The import is not running');
+    return toFirebaseImport(cancelled);
+  }
+
+  /** `undefined` when the run ended meanwhile. */
+  private failAtCurrentStage(run: FirebaseImportEntity, message: string): Promise<FirebaseImportEntity | undefined> {
+    const current = run.stages.find(it => it.status === 'RUNNING') ?? run.stages.find(it => it.status === 'PENDING') ?? run.stages[0];
+    const stages = run.stages.map(it => (it.stage === current.stage ? { ...it, status: 'FAILED' as const, error: message } : it));
+    return this.runs.fail(run.id, { stages, error: { stage: current.stage, message } });
   }
 
   private client(origin: string, token: string): FirebaseClient {

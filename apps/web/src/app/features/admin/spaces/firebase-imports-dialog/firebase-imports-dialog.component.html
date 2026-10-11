@@ -4,6 +4,9 @@
 @if (selectedRun(); as run) {
   <button hlmBtn variant="ghost" size="sm" class="self-start" (click)="select(undefined)">Back</button>
   <p class="text-sm">{{ run.sourceSpaceName }} from {{ run.origin }}: {{ run.status }}</p>
+  @if (run.status === 'RUNNING') {
+    <button hlmBtn variant="outline" size="sm" class="self-start" (click)="cancel(run)">Cancel import</button>
+  }
   @if (run.error; as error) {
     <p class="text-destructive text-sm">Failed at {{ error.stage }}: {{ error.message }}</p>
   }

@@ -11,6 +11,8 @@ Spaces move one at a time from a running Firebase-era Localess environment, from
    documents, unreadable data, locales this install does not know, which are skipped) are listed per stage.
 3. Repeat for each space. A space can be imported once; to repeat an import, delete the imported space first.
    A failed import leaves its space flagged *Import failed* with the failing stage; delete it and import again.
+   A running import can be stopped with *Cancel import* (in the import dialog or in **Imports**): it ends as failed
+   at the stage it reached ("Cancelled by <email>"), and its space is deleted and imported again like any failed one.
 4. **After each import:** publish the space's content and translations, re-invite users, re-enable the webhooks
    (they are imported disabled), and update your SDK configuration: the new origin and the new space id. API tokens
    keep their values.

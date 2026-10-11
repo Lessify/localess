@@ -37,4 +37,10 @@ export class FirebaseImportController {
   get(@Param('id', UuidParamPipe) id: string) {
     return this.imports.get(id);
   }
+
+  @Post(':id/cancel')
+  @HttpCode(200)
+  cancel(@Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow) {
+    return this.imports.cancel(id, user);
+  }
 }
