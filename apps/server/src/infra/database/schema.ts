@@ -27,6 +27,7 @@ import {
   foreignKey,
   index,
   integer,
+  json,
   jsonb,
   pgTable,
   primaryKey,
@@ -47,7 +48,8 @@ import {
  *
  * A column with a fixed set of values is `text({ enum })` over the list in @localess/shared (typed in TypeScript) plus a
  * CHECK from the same list (refused by the database): UPPERCASE values, except identifiers of external things (OAuth
- * providers, the password hash algorithm, file formats). Adding a value is a generated migration.
+ * providers, the password hash algorithm, file formats) and values the public API spells lowercase (translation snapshot
+ * versions, as in `?version=draft`). Adding a value is a generated migration.
  *
  * Content and asset keys are (space_id, id): the export/import tasks reuse the ids of an export in another space.
  */
@@ -214,9 +216,9 @@ export const spaces = pgTable(
     defaultLocaleId: text('default_locale_id')
       .notNull()
       .references(() => locales.id),
-    // Cache-busters for the public API `cv` redirect (were the GCS generations of `cache.json`).
+    // Cache-buster for the content `cv` redirect (was the GCS generation of `cache.json`). Translations answer to
+    // their snapshot's `built_at` instead (translation_snapshots).
     contentVersion: bigint('content_version', { mode: 'number' }).notNull().default(1),
-    translationVersion: bigint('translation_version', { mode: 'number' }).notNull().default(1),
     ...timestamps,
   },
 );
@@ -391,16 +393,31 @@ export const translations = pgTable(
   t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key), oneOf('translations_type_check', t.type, values(TranslationType))],
 );
 
-/** Published flat `{key: value}` maps (were `spaces/{s}/translations/{locale}.json` in Storage). */
-export const translationPublished = pgTable(
-  'translation_published',
+/** The stages the public API serves translations in: `?version=draft`, or published (lowercase, as the API names them). */
+export const TRANSLATION_SNAPSHOT_VERSIONS = ['draft', 'published'] as const;
+export type TranslationSnapshotVersion = (typeof TRANSLATION_SNAPSHOT_VERSIONS)[number];
+
+/**
+ * The flat `{key: value}` map the public API serves per stage and locale, gaps filled from the default locale (were
+ * `spaces/{s}/translations/{locale}.json` in Storage). Published maps are written by a publish; draft maps are built on
+ * the first draft request after a translation or locale change, which drops them (translation-snapshots.ts). A map
+ * answers to `cv` = `built_at` in epoch milliseconds, so an edit never moves the published `cv`, a publish never
+ * moves the draft one, and a `cv` always names the same data, even after a backup restore.
+ */
+export const translationSnapshots = pgTable(
+  'translation_snapshots',
   {
     spaceId: spaceId(),
+    version: text('version', { enum: TRANSLATION_SNAPSHOT_VERSIONS }).notNull(),
     locale: text('locale').notNull(),
-    data: jsonb('data').$type<Record<string, string>>().notNull(),
-    publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
+    // json, not jsonb: jsonb reorders keys (by length), the map keeps them in byte order. Never queried inside.
+    data: json('data').$type<Record<string, string>>().notNull(),
+    builtAt: timestamp('built_at', { withTimezone: true, precision: 3 }).notNull(),
   },
-  t => [primaryKey({ columns: [t.spaceId, t.locale] })],
+  t => [
+    primaryKey({ columns: [t.spaceId, t.version, t.locale] }),
+    oneOf('translation_snapshots_version_check', t.version, TRANSLATION_SNAPSHOT_VERSIONS),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------

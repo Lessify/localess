@@ -15,7 +15,8 @@ Key properties:
   which migrations seed and change (the API only reads it, `GET /api/app/locales`)
 - `defaultLocale` — `default_locale_id`: new translations are created in it, content stores its values in the bare field,
   and a locale with no value falls back to it (one of the space's locales, checked by the API)
-- `content_version` / `translation_version` — counters bumped on every change; the public API's [`cv`](cdn-caching.md)
+- `content_version` — counter bumped on every content change: the content [`cv`](cdn-caching.md). Translations answer to
+  their snapshot's `built_at` instead (`translation_snapshots`, below)
 
 ---
 
@@ -144,9 +145,9 @@ than reaching the API:
 A **Translation** is a key/value localisation entry. It is **not** tied to a Schema — it is a flat key store for UI strings.
 
 ```
-Postgres: translations (id uuid, space_id, key)   ← key: the translation key, unique per space; locales jsonb; drafts built on read
-          translation_published (space_id, locale) ← published flat key/value map
-          spaces.translation_version             ← cv
+Postgres: translations (id uuid, space_id, key)   ← key: the translation key, unique per space; locales jsonb
+          translation_snapshots (space_id, version, locale) ← flat key/value map per stage ('draft' | 'published'),
+                                                  gaps filled from the default locale; cv = built_at (epoch ms)
 ```
 
 `id` is a UUIDv7 the App API uses to address the row; the public API, the SDK, the CLI and export files use the
@@ -208,13 +209,13 @@ users                             role, permissions, lock, disabled
   user_identities                 Google / Microsoft sign-in links
   sessions, password_reset_tokens
 locales                           every locale a space can use (seeded by migrations, read-only API)
-spaces                            default_locale_id, content/translation_version
+spaces                            default_locale_id, content_version
   space_locales     (space_id, locale_id)   position, created_at
   space_environments (id)                   Visual Editor previews: name, url, position
   contents          (space_id, id)
     content_published (space_id, content_id, locale)
   translations      (space_id, id)
-  translation_published (space_id, locale)
+  translation_snapshots (space_id, version, locale)
   schemas           (space_id, id)
   assets            (space_id, id)
   tasks             (id)

@@ -5,7 +5,7 @@ import {
   contents,
   schemas,
   tokens,
-  translationPublished,
+  translationSnapshots,
   translations,
 } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
@@ -26,7 +26,7 @@ const at = new Date('2026-01-01T00:00:00Z');
 
 /** A space `s1` (en fallback, de) with one token per permission profile. */
 export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
-  await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en, contentVersion: 7, translationVersion: 3 });
+  await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en, contentVersion: 7 });
   await t.db.insert(tokens).values([
     { id: newUuid(), token: TOKEN_V1, spaceId, name: 'legacy v1' },
     { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', version: 2, permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
@@ -142,9 +142,10 @@ export async function seedTranslations(t: TestApp, spaceId = S1): Promise<void> 
     { id: newUuid(), spaceId, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
     { id: newUuid(), spaceId, key: 'new.key', type: 'STRING', locales: { en: 'New (draft only)' } },
   ]);
-  await t.db.insert(translationPublished).values([
-    { spaceId, locale: 'en', data: { farewell: 'Bye', greeting: 'Hello' } },
-    { spaceId, locale: 'de', data: { farewell: 'Bye', greeting: 'Hallo' } },
+  // Published at epoch millisecond 3: their `cv`.
+  await t.db.insert(translationSnapshots).values([
+    { spaceId, version: 'published', locale: 'en', data: { farewell: 'Bye', greeting: 'Hello' }, builtAt: new Date(3) },
+    { spaceId, version: 'published', locale: 'de', data: { farewell: 'Bye', greeting: 'Hallo' }, builtAt: new Date(3) },
   ]);
 }
 

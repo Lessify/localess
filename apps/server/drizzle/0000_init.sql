@@ -133,7 +133,6 @@ CREATE TABLE "spaces" (
 	"name" text NOT NULL,
 	"default_locale_id" text NOT NULL,
 	"content_version" bigint DEFAULT 1 NOT NULL,
-	"translation_version" bigint DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -182,12 +181,14 @@ CREATE TABLE "tokens" (
 	CONSTRAINT "tokens_permissions_check" CHECK ("tokens"."permissions" <@ array['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT', 'DEV_TOOLS']::text[])
 );
 --> statement-breakpoint
-CREATE TABLE "translation_published" (
+CREATE TABLE "translation_snapshots" (
 	"space_id" uuid NOT NULL,
+	"version" text NOT NULL,
 	"locale" text NOT NULL,
-	"data" jsonb NOT NULL,
-	"published_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "translation_published_space_id_locale_pk" PRIMARY KEY("space_id","locale")
+	"data" json NOT NULL,
+	"built_at" timestamp (3) with time zone NOT NULL,
+	CONSTRAINT "translation_snapshots_space_id_version_locale_pk" PRIMARY KEY("space_id","version","locale"),
+	CONSTRAINT "translation_snapshots_version_check" CHECK ("translation_snapshots"."version" in ('draft', 'published'))
 );
 --> statement-breakpoint
 CREATE TABLE "translations" (
@@ -286,7 +287,7 @@ ALTER TABLE "spaces" ADD CONSTRAINT "spaces_default_locale_id_locales_id_fk" FOR
 ALTER TABLE "task_logs" ADD CONSTRAINT "task_logs_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "translation_published" ADD CONSTRAINT "translation_published_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "translation_snapshots" ADD CONSTRAINT "translation_snapshots_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "translations" ADD CONSTRAINT "translations_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_credentials" ADD CONSTRAINT "user_credentials_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_identities" ADD CONSTRAINT "user_identities_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -22,7 +22,7 @@ const EXPECTED_TABLES = [
   'task_logs',
   'tasks',
   'tokens',
-  'translation_published',
+  'translation_snapshots',
   'translations',
   'user_credentials',
   'user_identities',

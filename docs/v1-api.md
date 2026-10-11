@@ -23,7 +23,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 
 **Notable behaviors:**
 
-- **Published vs draft** — Published documents and translations are read from the `content_published` / `translation_published` tables written on publish. `?version=draft` is built on every request from the live `contents` / `translations` rows (locale extraction against the current schemas), so a draft always exists, even for a document that was never saved after import.
+- **Published vs draft** — Published documents and translations are read from the `content_published` / `translation_snapshots` tables written on publish. A content `?version=draft` is built on every request from the live `contents` rows (locale extraction against the current schemas), so a draft always exists, even for a document that was never saved after import. A translation draft is a `translation_snapshots` row built from the `translations` rows on the first draft request after a change; its `cv` is its build time, separate from the published one ([CDN & Caching](cdn-caching.md#translation-cv-the-snapshots-built_at)).
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
@@ -155,7 +155,7 @@ Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMA
 }
 ```
 
-Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations bump the space's `translation_version`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/modules/schemas/schema-push.ts`) and bumps `content_version`, because schemas shape the draft output. Drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
+Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/modules/schemas/schema-push.ts`) and bumps `content_version`, because schemas shape the draft output; content drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
 
 ---
 

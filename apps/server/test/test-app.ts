@@ -3,13 +3,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
 import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
 import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
+import { buildDraftSnapshots } from '../src/modules/translations/translation-snapshots.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {
@@ -122,4 +123,17 @@ export async function setImport(
     stages: [],
     startedBy: { name: 'Admin', email: 'admin@example.com' },
   });
+}
+
+/** The draft maps built for the space's translations (`translation_snapshots`); every translation write drops them. */
+export function draftSnapshots(db: TestApp['db'], spaceId: string) {
+  return db
+    .select()
+    .from(schema.translationSnapshots)
+    .where(and(eq(schema.translationSnapshots.spaceId, spaceId), eq(schema.translationSnapshots.version, 'draft')));
+}
+
+/** Builds the space's draft maps, as the first draft request after a write does. */
+export async function buildDrafts(db: TestApp['db'], spaceId: string): Promise<void> {
+  await buildDraftSnapshots(db, spaceId);
 }

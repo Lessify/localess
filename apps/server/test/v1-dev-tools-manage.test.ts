@@ -5,7 +5,7 @@ import { schemas, spaces, translations } from '../src/infra/database/schema.js';
 import { EventsService } from '../src/infra/events/events.service.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { buildDrafts, createTestApp, draftSnapshots, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
 
 describe('v1 dev tools and manage API', () => {
@@ -140,22 +140,22 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('reports a dry run without writing, with status 200 like the Express endpoint', async () => {
-      const before = await space();
+      await buildDrafts(t.db, S1);
       const response = await push({ type: 'add-missing', values: { 'brand.new': 'Neu' }, dryRun: true });
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({ message: '[DryRun] Would add 1 translation', ids: ['brand.new'], dryRun: true });
       expect(await translation('brand.new')).toBeUndefined();
-      expect((await space()).translationVersion).toBe(before.translationVersion);
+      expect(await draftSnapshots(t.db, S1)).not.toEqual([]);
       expectNotified(false);
     });
 
-    it('adds missing keys and bumps the translation version', async () => {
-      const before = await space();
+    it('adds missing keys and drops the draft maps', async () => {
+      await buildDrafts(t.db, S1);
       const response = await push({ type: 'add-missing', values: { 'brand.new': 'Neu', greeting: 'ignored, exists' } });
       expect(response.json()).toEqual({ message: 'Added 1 translation', ids: ['brand.new'] });
       expect(await translation('brand.new')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
       expect((await translation('greeting')).locales).toEqual({ en: 'Hello', de: 'Hallo' });
-      expect((await space()).translationVersion).toBeGreaterThan(before.translationVersion);
+      expect(await draftSnapshots(t.db, S1)).toEqual([]);
       expectNotified(true);
     });
 
@@ -168,8 +168,8 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('is visible immediately in draft translations', async () => {
-      const { translationVersion } = await space();
-      const response = await get(`/api/v1/spaces/${S1}/translations/de?cv=${translationVersion}&version=draft&token=${TOKEN_DEV}`);
+      const redirect = await get(`/api/v1/spaces/${S1}/translations/de?version=draft&token=${TOKEN_DEV}`);
+      const response = await get(redirect.headers.location as string);
       expect(response.json()).toMatchObject({ greeting: 'Servus', 'brand.new': 'Neu' });
     });
 

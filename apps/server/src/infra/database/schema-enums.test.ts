@@ -20,7 +20,7 @@ import {
 import { createTestDatabase, TestDatabase } from '../../../test/database.js';
 import { OAUTH_PROVIDERS } from '../../auth/oauth-providers.js';
 import { migrateDatabase } from './migrate.js';
-import { HASH_ALGORITHMS } from './schema.js';
+import { HASH_ALGORITHMS, TRANSLATION_SNAPSHOT_VERSIONS } from './schema.js';
 
 /** Every column with a fixed set of values, and the values (from @localess/shared or the server) it accepts. */
 const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][] = [
@@ -32,6 +32,7 @@ const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][]
   ['assets', 'kind', Object.values(AssetKind)],
   ['schemas', 'type', Object.values(SchemaType)],
   ['translations', 'type', Object.values(TranslationType)],
+  ['translation_snapshots', 'version', TRANSLATION_SNAPSHOT_VERSIONS],
   ['tasks', 'kind', Object.values(TaskKind)],
   ['tasks', 'status', Object.values(TaskStatus)],
   ['tasks', 'type', TRANSLATION_IMPORT_FORMATS],

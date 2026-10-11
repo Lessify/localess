@@ -163,7 +163,9 @@ describe('v1 CDN API', () => {
     });
 
     it('builds drafts from the live rows, filling gaps from the fallback locale', async () => {
-      const response = await translations('de?version=draft');
+      // A draft answers to the time it was built, not to the published cv.
+      const redirect = await get(`/api/v1/spaces/${S1}/translations/de?version=draft&token=${TOKEN_V1}`);
+      const response = await get(redirect.headers.location as string);
       expect(response.json()).toEqual({ farewell: 'Bye', greeting: 'Hallo', 'new.key': 'New (draft only)' });
       expect(Object.keys(response.json())).toEqual(['farewell', 'greeting', 'new.key']);
     });

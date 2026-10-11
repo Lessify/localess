@@ -1,20 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { translationPublished, translations } from '../../infra/database/schema.js';
+import { translations } from '../../infra/database/schema.js';
+import { buildDraftSnapshots, findSnapshot, type TranslationSnapshot } from './translation-snapshots.js';
 
-/** Translation reads for the public v1 API: the snapshots published per locale, or drafts built from the rows. */
+/** Translation reads for the public v1 API: the maps per stage and locale (translation_snapshots), or the rows. */
 @Injectable()
 export class TranslationDeliveryService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  /** Published translation map for a locale (fallback-filled at publish time). */
-  async findPublishedTranslations(spaceId: string, locale: string): Promise<Record<string, string> | undefined> {
-    const [row] = await this.db
-      .select({ data: translationPublished.data })
-      .from(translationPublished)
-      .where(and(eq(translationPublished.spaceId, spaceId), eq(translationPublished.locale, locale)));
-    return row?.data;
+  /** The published map of a space locale; a locale published never (added since) gets the default locale's map. */
+  async findPublished(spaceId: string, locale: string, defaultLocale: string): Promise<TranslationSnapshot | undefined> {
+    return (
+      (await findSnapshot(this.db, spaceId, 'published', locale)) ??
+      (locale !== defaultLocale ? await findSnapshot(this.db, spaceId, 'published', defaultLocale) : undefined)
+    );
+  }
+
+  /** The draft map of a space locale, building every locale's when a write dropped them. */
+  async findDraft(spaceId: string, locale: string): Promise<TranslationSnapshot | undefined> {
+    return (
+      (await findSnapshot(this.db, spaceId, 'draft', locale)) ??
+      (await buildDraftSnapshots(this.db, spaceId)).find(it => it.locale === locale)
+    );
   }
 
   /** Every translation of the space, ordered like Firestore returned documents (by key, byte order). */
@@ -25,18 +33,4 @@ export class TranslationDeliveryService {
       .where(eq(translations.spaceId, spaceId))
       .orderBy(asc(sql`${translations.key} collate "C"`));
   }
-}
-
-/**
- * The flat `{key: value}` map for one locale, filling gaps from the default locale — the rule of
- * `saveTranslationFiles` in functions/src/services/translation.service.ts.
- */
-export function buildTranslationMap(
-  rows: { key: string; locales: Record<string, string> }[],
-  locale: string,
-  defaultLocale: string,
-): { values: Record<string, string> } {
-  const values: Record<string, string> = {};
-  for (const row of rows) values[row.key] = row.locales[locale] || row.locales[defaultLocale];
-  return { values };
 }

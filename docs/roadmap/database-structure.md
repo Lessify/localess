@@ -13,7 +13,8 @@ keep, what to move. Decisions are listed per table; open items are under [To do]
 | `locale_fallback` jsonb | **Replaced** by `default_locale_id` (below). |
 | `environments` jsonb | **Replaced** by `space_environments` (below). |
 | `overview`, `progress` jsonb | **Dropped**: the dashboard numbers are computed on request ([Overview](#overview)). |
-| `content_version`, `translation_version` | Kept for now; to be reviewed ([To do](#to-do)). |
+| `content_version` | Kept for now; to be reviewed ([To do](#to-do)). |
+| `translation_version` | **Dropped**: translations answer to their snapshot's `built_at` ([Translation snapshots](#translation-snapshots)). |
 | `spaces_name_idx` | **Dropped**: it serves only the admin list, a handful of rows. |
 
 Spaces are listed by `lower(name), id`: case-insensitive whatever the database collation, stable for equal names.
@@ -87,6 +88,29 @@ keys, asset files, content documents, schemas), storage (the sum of `assets.size
 and translation progress per locale against the number of keys, on the current values. Tasks and the sizes of the
 published JSON are no longer shown. See [dashboard.md](../features/spaces/dashboard.md).
 
+## Translation snapshots
+
+```
+translation_snapshots (space_id → spaces CASCADE, version 'draft' | 'published', locale, data json, built_at)
+                      PK (space_id, version, locale)
+```
+
+Replaces `translation_published` and `spaces.translation_version`. One table for both stages of the flat `{key: value}`
+map the public API serves per locale (gaps filled from the default locale):
+
+- **`cv` = `built_at`** in epoch milliseconds (`timestamp(3)`). No counter: a `built_at` always names the same data, so
+  a backup restore never makes a cached `cv` serve other data.
+- **Published:** a publish replaces every locale's map, all with one `built_at`.
+- **Draft:** built lazily. A translation write, a change of the space's locales or of its default locale drops the
+  space's draft maps; the first draft request after it builds every locale at once. An edit therefore never moves the
+  published `cv` (published URLs stay cached while a team edits), and a publish never moves the draft one.
+- **Lock:** writes, publishes and draft builds of one space take `pg_advisory_xact_lock` named for the space's
+  translations (not the `spaces` row: renaming a space or a content write doesn't wait on it). Without it a build could
+  read the rows, an edit commit and drop the drafts, and the build then store the map read before the edit.
+- **Removed locale:** both of its maps are deleted; requests for it get the default locale's.
+- **`data` is `json`, not `jsonb`:** jsonb reorders keys (by length); the map keeps them in byte order. Never queried
+  inside.
+
 ## Timestamps
 
 Tables with the standard pair spread `...timestamps` (`created_at`, `updated_at`: `timestamptz not null default now()`);
@@ -119,12 +143,14 @@ server-only lists), plus a CHECK built from the same list:
 | `tasks.kind`, `tasks.status`, `tasks.type`, `task_logs.level` | `TaskKind`, `TaskStatus`, `TRANSLATION_IMPORT_FORMATS`, `TaskLogLevel` |
 | `tokens.permissions`, `webhooks.events` | `TokenPermission`, `WebHookEvent` (every element) |
 | `webhook_logs.status`, `webhook_logs.error_type`, `firebase_imports.status` | `WebHookStatus`, `WebHookErrorType`, `FIREBASE_IMPORT_STATUSES` |
+| `translation_snapshots.version` | `TRANSLATION_SNAPSHOT_VERSIONS` (server) |
 
 **Casing:** UPPERCASE, the same value in the database, TypeScript and both APIs, never mapped between layers. The
 role (`admin`/`custom` → `ADMIN`/`CUSTOM`) and webhook log values (`success`/`failure`, `timeout`/`network`/`http`)
 were lowercase and now follow the rule. Exceptions, because they name external things rather than states of ours:
 OAuth providers (`google`, `microsoft`: also in `/api/auth/google`), the password hash algorithm (`argon2id`), import
-file formats (`flat-json`), and webhook event names (`content.published`: part of the webhook contract).
+file formats (`flat-json`), webhook event names (`content.published`: part of the webhook contract), and translation
+snapshot versions (`draft`, `published`: as the public API spells them, `?version=draft`).
 
 ## To do
 
@@ -132,5 +158,6 @@ file formats (`flat-json`), and webhook event names (`content.published`: part o
   purge, or archive).
 - **Changing the default locale of a space with content:** move the values (bare ↔ `_i18n_<locale>`, published
   snapshots included) instead of only warning.
-- **`content_version` / `translation_version`:** review.
+- **`content_version`:** review; content drafts could follow the [translation snapshots](#translation-snapshots)
+  pattern, so content edits stop moving the published content `cv`.
 - **Table names:** singular instead of plural (`space`, `content`, …); `user` is a reserved word in Postgres.

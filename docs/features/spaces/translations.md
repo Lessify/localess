@@ -51,7 +51,7 @@ locales of the selected space.
 
 - `ngOnInit()` — loads all translations for the space via `translationService.findAll(spaceId)` (a live query over `GET /api/app/spaces/:s/translations`, refetched on `translations` change events)
 - Inline editing — clicking a row opens `TranslationDetailComponent` (see below) for the key
-- `publish()` — publishes all translations (`POST /api/app/spaces/:s/translations/publish`), which writes one `translation_published` row per locale (see [Publish Flow](../../publish-flow.md))
+- `publish()` — publishes all translations (`POST /api/app/spaces/:s/translations/publish`), which writes one published `translation_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
 - `openImportDialog()` — opens import dialog → creates a **Task** for background processing
 - `openExportDialog()` — opens export dialog → creates a **Task** for background processing
 - `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` (`POST /api/app/spaces/:s/translations/translate-locale`) to bulk-translate one locale into another with the configured machine-translation provider, in a single transaction
@@ -111,9 +111,9 @@ locale, see [Space Settings → Translation support](settings.md#translation-sup
 
 ## Draft Generation
 
-There is no separate draft publish. Draft translations (`?version=draft` on the public API) are computed on read from the
-`translations` table, and every translation write bumps the space's `translation_version` and emits a change event in the same
-transaction. `updatedBy` is set by the server from the session, not sent by the client.
+There is no separate draft publish. Draft translations (`?version=draft` on the public API) are draft `translation_snapshots`
+built from the `translations` table on the first draft request after a change: every translation write drops them and emits
+a change event in the same transaction (see [Publish Flow](../../publish-flow.md#translation-drafts)). `updatedBy` is set by the server from the session, not sent by the client.
 
 ## Values only for the space's locales
 

@@ -9,7 +9,7 @@ import { buildDocumentStorage } from './content-extract.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
 import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
-import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
+import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
 
 export type ContentRow = typeof contents.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -94,7 +94,7 @@ export class ContentsService {
     const { result, webhooks } = await this.db.transaction(async tx => {
       await requireSpace(tx, spaceId);
       const outcome = await work(tx);
-      await bumpVersion(tx, spaceId, 'content');
+      await bumpContentVersion(tx, spaceId);
       for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'contents', ...it }, tx);
       return outcome;
     });

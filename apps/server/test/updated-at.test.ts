@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contents, spaceEnvironments, spaces, translations } from '../src/infra/database/schema.js';
-import { bumpVersion } from '../src/infra/http/space-access.js';
+import { bumpContentVersion } from '../src/infra/http/space-access.js';
 import { ContentsService } from '../src/modules/contents/contents.service.js';
 import { SpacesService } from '../src/modules/spaces/spaces.service.js';
 import { C, S1 } from './ids.js';
@@ -37,10 +37,9 @@ describe('updated_at', () => {
     expect(await updatedAt()).toEqual(PAST);
   });
 
-  it('stays on the space when its cv versions move', async () => {
+  it('stays on the space when its content cv moves', async () => {
     await t.db.update(spaces).set({ updatedAt: PAST }).where(eq(spaces.id, S1));
-    await bumpVersion(t.db, S1, 'content');
-    await bumpVersion(t.db, S1, 'translation');
+    await bumpContentVersion(t.db, S1);
     expect((await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].updatedAt).toEqual(PAST);
   });
 

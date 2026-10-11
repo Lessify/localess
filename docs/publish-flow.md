@@ -4,9 +4,9 @@
 
 ## Overview
 
-Publishing takes a snapshot of content/translations into the `content_published` / `translation_published` Postgres tables. The public API serves published requests from those rows; drafts (`?version=draft`) are built from the live rows on every request. Publishing is the only way to make content visible to `*_PUBLIC` tokens.
+Publishing takes a snapshot of content into `content_published`, and of translations into `translation_snapshots` (`version = 'published'`). The public API serves published requests from those rows. Content drafts (`?version=draft`) are built from the live rows on every request; translation drafts are snapshots too (`version = 'draft'`), built on the first draft request after a change. Publishing is the only way to make content visible to `*_PUBLIC` tokens.
 
-Every write follows the same shape on the server: one transaction that changes the rows, bumps the space's version counter (`content_version` / `translation_version`, the [`cv`](cdn-caching.md)) and queues change events (`pg_notify`, delivered to the UI over SSE). Webhooks are dispatched only **after** the transaction commits, so a receiver that fetches the API sees the new state.
+Every write follows the same shape on the server: one transaction that changes the rows, moves what the [`cv`](cdn-caching.md) names (content: bumps `spaces.content_version`; translations: drops the draft snapshots, under the space's translations lock) and queues change events (`pg_notify`, delivered to the UI over SSE). Webhooks are dispatched only **after** the transaction commits, so a receiver that fetches the API sees the new state.
 
 ---
 
@@ -54,11 +54,12 @@ There are no draft files any more. `GET /api/v1/.../contents/...?version=draft` 
 ```
 1. User clicks "Publish Translations" in the UI
 2. Angular TranslationService → POST /api/app/spaces/:spaceId/translations/publish   (TRANSLATION_PUBLISH)
-3. TranslationsService.publish(), in one transaction:
-   a. reads every translation row of the space
-   b. per space locale, builds the flat key/value map, filled from the default locale
-      (buildTranslationMap), and upserts a translation_published row
-   c. bumps spaces.translation_version (new cv)
+3. TranslationsService.publish() → publishSnapshots(), in one transaction:
+   a. takes the space's translations lock (translation-snapshots.ts)
+   b. reads every translation row of the space
+   c. per space locale, builds the flat key/value map, filled from the default locale
+      (buildTranslationMap), and replaces the space's published snapshots with them, all with one
+      built_at: the new published cv. Draft snapshots and their cv are untouched.
 4. After commit: TRANSLATION_PUBLISHED webhook
 ```
 
@@ -68,33 +69,35 @@ Publishing a space with no translations is allowed and serves `{}`.
 
 ## Translation Drafts
 
-Draft translations are built on read from the `translations` rows (`buildTranslationMap()` in `apps/server/src/modules/translations/translation-delivery.service.ts`), so there is nothing to keep in sync. The Firebase-era `translation-publishdraft` callable that the UI fired after every edit is gone.
+Draft translations are snapshots built from the `translations` rows (`apps/server/src/modules/translations/translation-snapshots.ts`). A write that changes what a draft would hold drops the space's draft snapshots in its own transaction; the first draft request after it builds every locale at once (one `built_at`, the new draft `cv`). The published `cv` doesn't move. Writes, publishes and draft builds of one space take the same lock (`pg_advisory_xact_lock` named for the space's translations), so a build never stores a map read before an edit that has since committed. The Firebase-era `translation-publishdraft` callable that the UI fired after every edit is gone.
+
+Writes that drop the drafts: every translation save, delete all, machine translation, the import task, the CLI push, and adding or removing a space locale or changing the default locale (a removed locale also loses its published snapshot).
 
 ### Frontend saves (add / edit / rename / delete)
 
 ```
 1. User saves a translation key in the UI
 2. Angular TranslationService → /api/app/spaces/:spaceId/translations[...]   (POST / PATCH / PUT / DELETE)
-3. TranslationsService.write(), in one transaction: row change + translation_version bump + change events
+3. TranslationsService.write(), in one transaction: row change + draft snapshots dropped + change events
 4. After commit: TRANSLATION_CHANGED webhook
 ```
 
 ### Import Task (TRANSLATION_IMPORT)
 
-A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set; without `task.locale` it is a full import. Both run in the task worker (`apps/server/src/modules/tasks/task-runner.service.ts`), write all rows in one transaction and bump `translation_version`.
+A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set; without `task.locale` it is a full import. Both run in the task worker (`apps/server/src/modules/tasks/task-runner.service.ts`), write all rows in one transaction and drop the draft snapshots.
 
 ### CLI Manage API (POST /api/v1/spaces/:spaceId/translations/:locale)
 
 ```
 1. Manage endpoint writes all rows in one transaction
-2. The same transaction bumps translation_version
+2. The same transaction drops the draft snapshots
 ```
 
 ---
 
 ## Cache Invalidation
 
-The `cv` is the space's version counter — `spaces.content_version` for content/links, `spaces.translation_version` for translations. A redirect to the current `cv` is what invalidates caches in front of the API:
+The `cv` is `spaces.content_version` for content/links, and the snapshot's `built_at` (epoch milliseconds) for translations, separately for draft and published. A redirect to the current `cv` is what invalidates caches in front of the API:
 
 ```
 Old cv = 41  →  request redirects to ?cv=41  →  CDN/proxy has it cached ✓
@@ -110,8 +113,8 @@ After the first cache miss for the new cv, a CDN or caching proxy keeps the resp
 
 ```
 content_published      PK (space_id, content_id, locale)  data jsonb, published_at
-translation_published  PK (space_id, locale)              data jsonb, published_at
-spaces                 content_version, translation_version (the cv)
+translation_snapshots  PK (space_id, version, locale)     data json, built_at (the translation cv)
+spaces                 content_version (the content cv)
 ```
 
 Only binary files are in storage (`$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/...` and task files). The Firebase-era `contents/{id}/{locale}.json`, `draft/` and `cache.json` files are gone; an import from Firebase brings drafts only; the space is published again after the import.

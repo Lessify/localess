@@ -3,14 +3,14 @@ import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { TranslationType, WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { translationPublished, translations } from '../../infra/database/schema.js';
+import { translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
-import { buildTranslationMap } from './translation-delivery.service.js';
+import { dropDraftSnapshots, publishSnapshots } from './translation-snapshots.js';
 import { TranslateService } from './translate/translate.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
 import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
 import { updatedByOf } from '../contents/contents.service.js';
-import { bumpVersion, requireSpace, SpaceRow } from '../../infra/http/space-access.js';
+import { requireSpace, SpaceRow } from '../../infra/http/space-access.js';
 
 export type TranslationRow = typeof translations.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -25,9 +25,9 @@ const isUniqueViolation = (error: unknown) =>
   (error as { cause?: { code?: string } })?.cause?.code === '23505' || (error as { code?: string })?.code === '23505';
 
 /**
- * Translation keys of a space. Routes use the UUID `id`; `key` is the translation key, unique per space. Every write bumps the translation version and fires
- * `translation.changed` after commit — what the SPA's `translation-publishdraft` call after each
- * write used to do (draft translations are now built from these rows on read).
+ * Translation keys of a space. Routes use the UUID `id`; `key` is the translation key, unique per space. Every write
+ * drops the draft maps (the next draft request builds them, under a new cv) and fires `translation.changed` after
+ * commit — what the SPA's `translation-publishdraft` call after each write used to do.
  */
 @Injectable()
 export class TranslationsService {
@@ -66,7 +66,7 @@ export class TranslationsService {
       result = await this.db.transaction(async tx => {
         const space = await requireSpace(tx, spaceId);
         const outcome = await work(tx, space);
-        await bumpVersion(tx, spaceId, 'translation');
+        await dropDraftSnapshots(tx, spaceId);
         for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'translations', ...it }, tx);
         return outcome.result;
       });
@@ -167,27 +167,11 @@ export class TranslationsService {
   }
 
   /**
-   * Snapshot of every locale, filled from the default locale (was the
-   * `translation-publish` callable). Publishing an empty space is allowed and serves `{}`.
+   * The published map of every locale, filled from the default locale (was the `translation-publish` callable); the
+   * new `built_at` is the published cv. Publishing an empty space is allowed and serves `{}`.
    */
   async publish(spaceId: string): Promise<void> {
-    await this.db.transaction(async tx => {
-      const space = await requireSpace(tx, spaceId);
-      const rows = await tx
-        .select({ key: translations.key, locales: translations.locales })
-        .from(translations)
-        .where(eq(translations.spaceId, spaceId))
-        .orderBy(sql`${translations.key} collate "C"`);
-      const publishedAt = new Date();
-      for (const locale of space.locales) {
-        const { values } = buildTranslationMap(rows, locale.id, space.defaultLocaleId);
-        await tx
-          .insert(translationPublished)
-          .values({ spaceId, locale: locale.id, data: values, publishedAt })
-          .onConflictDoUpdate({ target: [translationPublished.spaceId, translationPublished.locale], set: { data: values, publishedAt } });
-      }
-      await bumpVersion(tx, spaceId, 'translation');
-    });
+    await this.db.transaction(tx => publishSnapshots(tx, spaceId));
     this.webhooks.dispatch(spaceId, WebHookEvent.TRANSLATION_PUBLISHED);
   }
 

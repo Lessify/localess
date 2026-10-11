@@ -20,7 +20,8 @@ import {
 } from '@localess/shared/zod';
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { folderPath } from '../assets/assets.service.js';
-import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
+import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
+import { dropDraftSnapshots } from '../translations/translation-snapshots.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
@@ -324,7 +325,7 @@ export class TaskRunner {
           total++;
         }
         if (total) {
-          await bumpVersion(tx, spaceId, 'content');
+          await bumpContentVersion(tx, spaceId);
           await this.events.publish({ spaceId, entity: 'assets', op: 'updated' }, tx);
         }
         return total;
@@ -361,7 +362,7 @@ export class TaskRunner {
         .where(and(eq(assets.spaceId, task.spaceId), eq(assets.id, file.id)));
       if (++count % PROGRESS_INTERVAL === 0) await this.log(task, 'INFO', `regenerated ${count}/${files.length}`);
     }
-    await bumpVersion(this.db, task.spaceId, 'content');
+    await bumpContentVersion(this.db, task.spaceId);
     await this.events.publish({ spaceId: task.spaceId, entity: 'assets', op: 'updated' });
     await this.log(task, 'INFO', `total regenerated : ${count}`);
     return { status: 'FINISHED' };
@@ -460,7 +461,7 @@ export class TaskRunner {
         changes++;
       }
       if (changes) {
-        await bumpVersion(tx, spaceId, 'content');
+        await bumpContentVersion(tx, spaceId);
         await this.events.publish({ spaceId, entity: 'contents', op: 'updated' }, tx);
       }
       return changes;
@@ -498,7 +499,7 @@ export class TaskRunner {
     await this.db.transaction(async tx => {
       await applySchemaPushPlan(tx, task.spaceId, plan);
       if (plan.creates.length || plan.updates.length) {
-        await bumpVersion(tx, task.spaceId, 'content');
+        await bumpContentVersion(tx, task.spaceId);
         await this.events.publish({ spaceId: task.spaceId, entity: 'schemas', op: 'updated' }, tx);
       }
     });
@@ -589,7 +590,7 @@ export class TaskRunner {
         total++;
       }
       if (total) {
-        await bumpVersion(tx, spaceId, 'translation');
+        await dropDraftSnapshots(tx, spaceId);
         await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
       }
       return total;
@@ -636,7 +637,7 @@ export class TaskRunner {
         total++;
       }
       if (total) {
-        await bumpVersion(tx, spaceId, 'translation');
+        await dropDraftSnapshots(tx, spaceId);
         await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
       }
       return total;

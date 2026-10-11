@@ -5,7 +5,7 @@ import { isUuid, newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
 import type { SchemaType } from '@localess/shared';
 import { EventsService } from '../../infra/events/events.service.js';
-import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
+import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
 
 export type SchemaRow = typeof schemas.$inferSelect;
 type SchemaColumns = Pick<
@@ -55,7 +55,7 @@ export class SchemasService {
       return await this.db.transaction(async tx => {
         await requireSpace(tx, spaceId);
         const result = await work(tx);
-        await bumpVersion(tx, spaceId, 'content');
+        await bumpContentVersion(tx, spaceId);
         for (const it of event) await this.events.publish({ spaceId, entity: 'schemas', ...it }, tx);
         return result;
       });

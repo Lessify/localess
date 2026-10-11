@@ -6,7 +6,7 @@ import { isUuid, newUuid } from '../../infra/database/id.js';
 import { assets } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
+import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
 import { AssetMetadataService } from './asset-metadata.service.js';
 
 export type AssetRow = typeof assets.$inferSelect;
@@ -118,7 +118,7 @@ export class AssetsService {
       await requireSpace(tx, spaceId);
       const { result, changed, bump } = await work(tx);
       // Resolved content embeds asset name/alt/metadata, so changes to them move the content cache version.
-      if (bump) await bumpVersion(tx, spaceId, 'content');
+      if (bump) await bumpContentVersion(tx, spaceId);
       for (const it of changed) await this.events.publish({ spaceId, entity: 'assets', ...it }, tx);
       return result;
     });

@@ -3,16 +3,17 @@ import { and, asc, count, eq, max, sql } from 'drizzle-orm';
 import { DEFAULT_LOCALE, type SpaceOverview } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { assets, contents, keepUpdatedAt, locales, schemas, spaceEnvironments, spaceLocales, spaces, translations } from '../../infra/database/schema.js';
+import { assets, contents, keepUpdatedAt, locales, schemas, spaceEnvironments, spaceLocales, spaces, translations, translationSnapshots } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { toDto } from '../../infra/http/dto.js';
 import { requireSpace, selectSpaces, SpaceRow } from '../../infra/http/space-access.js';
+import { dropDraftSnapshots } from '../translations/translation-snapshots.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /** `Space` as the SPA reads it; the cache versions are an API-internal detail, the default locale comes as `defaultLocale`. */
-export const spaceDto = (space: SpaceRow) => toDto(space, ['contentVersion', 'translationVersion', 'defaultLocaleId']);
+export const spaceDto = (space: SpaceRow) => toDto(space, ['contentVersion', 'defaultLocaleId']);
 
 @Injectable()
 export class SpacesService {
@@ -137,6 +138,7 @@ export class SpacesService {
         .from(spaceLocales)
         .where(eq(spaceLocales.spaceId, spaceId));
       await tx.insert(spaceLocales).values({ spaceId, localeId, position: (last ?? -1) + 1 });
+      await dropDraftSnapshots(tx, spaceId);
     });
   }
 
@@ -146,6 +148,11 @@ export class SpacesService {
         throw new BadRequestException('The default locale cannot be removed; make another locale the default first');
       }
       await tx.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
+      await dropDraftSnapshots(tx, spaceId);
+      // Its published map goes too: requests for it get the default locale's.
+      await tx
+        .delete(translationSnapshots)
+        .where(and(eq(translationSnapshots.spaceId, spaceId), eq(translationSnapshots.locale, localeId)));
     });
   }
 
@@ -166,8 +173,10 @@ export class SpacesService {
   }
 
   setDefaultLocale(spaceId: string, localeId: string): Promise<SpaceRow> {
-    return this.update(spaceId, async space => {
+    return this.update(spaceId, async (space, tx) => {
       if (!space.locales.some(it => it.id === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
+      // Draft maps fill gaps from the default locale; published ones keep the fill of their publish.
+      await dropDraftSnapshots(tx, spaceId);
       return { defaultLocaleId: localeId };
     });
   }

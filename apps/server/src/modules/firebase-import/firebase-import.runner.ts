@@ -371,7 +371,6 @@ export class FirebaseImportRunner {
         .update(spaces)
         .set({
           contentVersion: nextVersion(spaces.contentVersion),
-          translationVersion: nextVersion(spaces.translationVersion),
           ...keepUpdatedAt(spaces),
         })
         .where(eq(spaces.id, sid));

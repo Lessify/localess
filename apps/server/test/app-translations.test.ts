@@ -2,9 +2,9 @@ import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
+import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -101,7 +101,6 @@ describe('app API: translations, machine translation, Unsplash', () => {
     await t.app.get(WebhookDispatcher).whenIdle();
     return hooks.requests.map(it => JSON.parse(it.body).event);
   };
-  const space = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0];
   const stored = async (key: string) =>
     (
       await t.db
@@ -114,8 +113,8 @@ describe('app API: translations, machine translation, Unsplash', () => {
   const url = (key: string) => `${base}/${ids[key]}`;
 
   describe('keys', () => {
-    it('creates keys with a UUIDv7 id, refusing duplicates, with translation.changed and a version bump', async () => {
-      const before = (await space()).translationVersion;
+    it('creates keys with a UUIDv7 id, refusing duplicates, with translation.changed, dropping the draft maps', async () => {
+      await buildDrafts(t.db, S1);
       const response = await editor.post(base, { key: 'home.title', type: 'STRING', locales: { en: 'Welcome' }, labels: ['home'] });
       expect(response.statusCode).toBe(201);
       ids['home.title'] = response.json().id;
@@ -126,7 +125,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
         labels: ['home'],
         updatedBy: { email: 'editor@example.com' },
       });
-      expect((await space()).translationVersion).toBeGreaterThan(before);
+      expect(await draftSnapshots(t.db, S1)).toEqual([]);
       expect(await events()).toEqual(['translation.changed']);
       expect((await editor.post(base, { key: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);
       expect((await reader.post(base, { key: 'x', type: 'STRING', locales: {} })).statusCode).toBe(403);

@@ -6,9 +6,10 @@ import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { keepUpdatedAt, spaces, translations } from '../../infra/database/schema.js';
+import { translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import {
+  identifySpaceLocale,
   isDraft,
   needsRedirect,
   Params,
@@ -21,11 +22,11 @@ import {
 import { q, sendV1Error } from '../../infra/http/v1/v1-response.js';
 import { SpacesService } from '../spaces/spaces.service.js';
 import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
-import { buildTranslationMap, TranslationDeliveryService } from './translation-delivery.service.js';
+import { TranslationDeliveryService } from './translation-delivery.service.js';
+import { dropDraftSnapshots } from './translation-snapshots.js';
 import { translationsByKey } from './translation-row.js';
 import { newUuid } from '../../infra/database/id.js';
 import { planTranslationUpdate, storedLocaleValues } from './translation.utils.js';
-import { nextVersion } from '../../infra/http/space-access.js';
 
 /** Per-type verb labels used for response messages. */
 const TRANSLATION_UPDATE_VERBS: Record<
@@ -82,30 +83,24 @@ export class TranslationsPublicController {
 
     const space = await this.spaces.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
-    if (needsRedirect(cv, space.translationVersion)) {
-      let url = `/api/v1/spaces/${spaceId}/translations/${q(locale)}?cv=${space.translationVersion}`;
+    const actualLocale = identifySpaceLocale(space, locale);
+    const snapshot = isDraft(version)
+      ? await this.delivery.findDraft(spaceId, actualLocale)
+      : await this.delivery.findPublished(spaceId, actualLocale, space.defaultLocaleId);
+    if (!snapshot) {
+      sendV1Error(reply, 404, 'not-found', 'File not found, Publish first.');
+      return;
+    }
+    // Each map answers to its own build time: an edit never moves the published cv, a publish never the draft one.
+    const current = snapshot.builtAt.getTime();
+    if (needsRedirect(cv, current)) {
+      let url = `/api/v1/spaces/${spaceId}/translations/${q(locale)}?cv=${current}`;
       if (version) url += `&version=${q(version)}`;
       url += `&token=${q(tokenId)}`;
       redirectToVersion(reply, url, token);
       return;
     }
-
-    const actualLocale = space.locales.some(it => it.id === locale) ? locale : space.defaultLocaleId;
-    let values: Record<string, string> | undefined;
-    if (isDraft(version)) {
-      values = buildTranslationMap(await this.delivery.findTranslations(spaceId), actualLocale, space.defaultLocaleId).values;
-    } else {
-      values =
-        (await this.delivery.findPublishedTranslations(spaceId, actualLocale)) ??
-        (actualLocale !== space.defaultLocaleId
-          ? await this.delivery.findPublishedTranslations(spaceId, space.defaultLocaleId)
-          : undefined);
-    }
-    if (!values) {
-      sendV1Error(reply, 404, 'not-found', 'File not found, Publish first.');
-      return;
-    }
-    sendJson(reply, values);
+    sendJson(reply, snapshot.data);
   }
 
   /**
@@ -214,11 +209,8 @@ export class TranslationsPublicController {
       } else {
         await tx.delete(translations).where(inSpace(actionable));
       }
-      // Draft translations are built from these rows on read; the new version moves clients past cached copies.
-      await tx
-        .update(spaces)
-        .set({ translationVersion: nextVersion(spaces.translationVersion), ...keepUpdatedAt(spaces) })
-        .where(eq(spaces.id, spaceId));
+      // The next draft request builds new maps from these rows, under a new cv.
+      await dropDraftSnapshots(tx, spaceId);
       await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
     });
     // Same as an edit in the app (and the Firebase endpoint): hooks that rebuild on translation.changed fire after a push.

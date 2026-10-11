@@ -1,5 +1,5 @@
 {
-  "id": "faac5ca4-6d9d-41e7-8f26-4ff43a0dc02c",
+  "id": "4f289ceb-21f4-49c4-b482-f9ab16a69645",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1280,13 +1280,6 @@
           "notNull": true,
           "default": 1
         },
-        "translation_version": {
-          "name": "translation_version",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1712,13 +1705,19 @@
       },
       "isRLSEnabled": false
     },
-    "public.translation_published": {
-      "name": "translation_published",
+    "public.translation_snapshots": {
+      "name": "translation_snapshots",
       "schema": "",
       "columns": {
         "space_id": {
           "name": "space_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1730,23 +1729,22 @@
         },
         "data": {
           "name": "data",
-          "type": "jsonb",
+          "type": "json",
           "primaryKey": false,
           "notNull": true
         },
-        "published_at": {
-          "name": "published_at",
-          "type": "timestamp with time zone",
+        "built_at": {
+          "name": "built_at",
+          "type": "timestamp (3) with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "translation_published_space_id_spaces_id_fk": {
-          "name": "translation_published_space_id_spaces_id_fk",
-          "tableFrom": "translation_published",
+        "translation_snapshots_space_id_spaces_id_fk": {
+          "name": "translation_snapshots_space_id_spaces_id_fk",
+          "tableFrom": "translation_snapshots",
           "tableTo": "spaces",
           "columnsFrom": [
             "space_id"
@@ -1759,17 +1757,23 @@
         }
       },
       "compositePrimaryKeys": {
-        "translation_published_space_id_locale_pk": {
-          "name": "translation_published_space_id_locale_pk",
+        "translation_snapshots_space_id_version_locale_pk": {
+          "name": "translation_snapshots_space_id_version_locale_pk",
           "columns": [
             "space_id",
+            "version",
             "locale"
           ]
         }
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "translation_snapshots_version_check": {
+          "name": "translation_snapshots_version_check",
+          "value": "\"translation_snapshots\".\"version\" in ('draft', 'published')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.translations": {

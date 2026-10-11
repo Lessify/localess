@@ -4,10 +4,10 @@ import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import unzipper from 'unzipper';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, schemas, spaces, tasks, tokens, translations } from '../src/infra/database/schema.js';
+import { assets, contents, schemas, tasks, tokens, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
-import { createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
+import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { SPACE_A, SPACE_B, SPACE_S, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -336,13 +336,13 @@ describe('task worker: exports and imports', () => {
         { id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
         { id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
       ]);
-      const before = (await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion;
+      await buildDrafts(t.db, SPACE_B);
       expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', await download(SPACE_A, exported.id))).status).toBe('FINISHED');
       expect((await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B))).map(it => it.key).sort()).toEqual([
         'farewell',
         'greeting',
       ]);
-      expect((await t.db.select().from(spaces).where(eq(spaces.id, SPACE_B)))[0].translationVersion).toBeGreaterThan(before);
+      expect(await draftSnapshots(t.db, SPACE_B)).toEqual([]);
     });
 
     it('exports one locale as flat JSON and imports it into a locale, creating missing keys', async () => {

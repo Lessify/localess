@@ -104,9 +104,10 @@ Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` val
 [docs/v1-api.md](../../docs/v1-api.md)). Code: each feature's
 `src/modules/<feature>/<feature>.public.controller.ts`, with shared plumbing in `src/infra/http/v1/`.
 
-- `cv` is the space's `content_version` / `translation_version`, bumped on every change.
-- Published documents and translations are read from `content_published` / `translation_published`;
-  `?version=draft` is built from the live rows on every request.
+- `cv` is the space's `content_version` for content, bumped on every change; for translations, the `built_at` of the
+  `translation_snapshots` row served (draft and published separately).
+- Published documents and translations are read from `content_published` / `translation_snapshots`; a content
+  `?version=draft` is built from the live rows on every request, a translation draft on the first request after a change.
 - Assets stream from storage with `Range` support; generated renditions are cached under
   `spaces/{s}/assets/{id}/renditions/` and deleted with the asset. There is no CDN in front any more —
   put one (or a caching reverse proxy) in front for production; the headers are CDN-ready.

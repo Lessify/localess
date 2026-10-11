@@ -22,18 +22,37 @@ Client request (no cv or stale cv)
   → Server returns actual JSON                     ← cached 7 days (browser and shared CDN)
 ```
 
-The `cv` value is a **version counter on the space row** (`spaces` table):
-- Content:     `spaces.content_version`
-- Translation: `spaces.translation_version`
+The `cv` value is:
+- Content:     `spaces.content_version`, a version counter on the space row
+- Translation: the `built_at` of the map served (`translation_snapshots`), in epoch milliseconds, separately per stage
+  (draft / published) and locale. See [Translations](#translation-cv-the-snapshots-built_at).
 
-Each bump sets the version to `greatest(current + 1, now in epoch milliseconds)` (`nextVersion()` in `apps/server/src/infra/http/space-access.ts`), so values are 13-digit numbers that only ever grow, even across a **database restore**: a plain counter would go back with the backup and reuse `cv` numbers that browsers and CDNs still cache with the discarded content for 7 days. (This relies on the server clock moving forward, as the Firebase-era storage `generation` did.)
+Each content bump sets the version to `greatest(current + 1, now in epoch milliseconds)` (`nextVersion()` in `apps/server/src/infra/http/space-access.ts`), so values are 13-digit numbers that only ever grow, even across a **database restore**: a plain counter would go back with the backup and reuse `cv` numbers that browsers and CDNs still cache with the discarded content for 7 days. (This relies on the server clock moving forward, as the Firebase-era storage `generation` did.)
 
-The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpVersion()` in `apps/server/src/infra/http/space-access.ts`):
+The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpContentVersion()` in `apps/server/src/infra/http/space-access.ts`):
 
 - `content_version` — every content create/update/move/delete/publish/unpublish, every schema write (drafts are rendered through schemas), asset updates and deletes, content/schema/asset imports, and `POST /api/v1/.../schemas` (schema push).
-- `translation_version` — every translation write (drafts are built from the live rows), translation publish, translation imports, and `POST /api/v1/.../translations/:locale`.
 
-So content and translation drafts never go stale, and all existing `cv` values become stale at once — the next request from any client triggers a redirect to the new `cv`. See [Publish Flow](publish-flow.md). (The Firebase-era `cv` was the GCS generation number of a `cache.json` marker file; values changed once at migration, which only costs each client one extra redirect.)
+So content drafts never go stale, and all existing content `cv` values become stale at once — the next request from any client triggers a redirect to the new `cv`. See [Publish Flow](publish-flow.md). (The Firebase-era `cv` was the GCS generation number of a `cache.json` marker file; values changed once at migration, which only costs each client one extra redirect.)
+
+### Translation `cv`: the snapshot's `built_at`
+
+Translations have no counter. Each map the API serves is a row of `translation_snapshots` (`space_id, version, locale`,
+`version` = `'draft' | 'published'`), and its `cv` is the row's `built_at` in epoch milliseconds:
+
+- A **publish** replaces the published maps of every locale, all with one new `built_at`: the published `cv` moves, the
+  draft `cv` doesn't.
+- A **translation write** (or a change of the space's locales or default locale) drops the draft maps. The first draft
+  request after it builds every locale at once, with one new `built_at`: the draft `cv` moves, the published `cv`
+  doesn't, so published URLs stay cached while a team edits.
+- The redirect names the `built_at` of the row that will be served: for an unknown locale, or a space locale never
+  published, the default locale's row and its `cv`.
+- A `built_at` always names the same data, so a **database restore** never makes a `cv` that caches still hold serve
+  other data.
+
+Writes, publishes and draft builds of one space take the same lock (`lockTranslations()` in
+`apps/server/src/modules/translations/translation-snapshots.ts`), so a build never stores a map read before an edit
+that has since committed.
 ---
 
 ## Cache-Control TTLs
@@ -78,7 +97,7 @@ Content, translation and links JSON responses carry no `ETag` and never answer `
 
 | Endpoint | Auth | cv source |
 |----------|------|-----------|
-| `GET /api/v1/spaces/:spaceId/translations/:locale` | Token (TRANSLATION_PUBLIC or DRAFT) | `translation_version` |
+| `GET /api/v1/spaces/:spaceId/translations/:locale` | Token (TRANSLATION_PUBLIC or DRAFT) | `translation_snapshots.built_at` of the map served |
 | `GET /api/v1/spaces/:spaceId/links` | Token (CONTENT_PUBLIC, CONTENT_DRAFT or DEV_TOOLS) | `content_version` |
 | `GET /api/v1/spaces/:spaceId/contents/slugs/*slug` | Token (CONTENT_PUBLIC or DRAFT) | `content_version` |
 | `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (CONTENT_PUBLIC or DRAFT) | `content_version` |
@@ -181,7 +200,7 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 | | Published | Draft |
 |-|-----------|-------|
 | `version` query param | absent | `version=draft` |
-| Source | `content_published` / `translation_published` rows (snapshot taken on publish) | built on every request from the live `contents` / `translations` rows |
+| Source | `content_published` rows / `translation_snapshots` (`published`), taken on publish | content: built on every request from the live rows; translations: `translation_snapshots` (`draft`), built on the first request after a change |
 | Redirect TTL | 60s default (overridable via token `cacheTtl`) | 60s default (overridable via token `cacheTtl`) |
 | Required permission | `*_PUBLIC` or `*_DRAFT` | `*_DRAFT` or `DEV_TOOLS` |
 
@@ -194,4 +213,5 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
 - `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth per request
 - `apps/server/src/modules/assets/asset-delivery.service.ts` — asset streaming, Range, rendition cache
-- `apps/server/src/infra/http/space-access.ts` — `bumpVersion()`
+- `apps/server/src/infra/http/space-access.ts` — `bumpContentVersion()`
+- `apps/server/src/modules/translations/translation-snapshots.ts` — translation snapshots: publish, draft build and drop, the translations lock
