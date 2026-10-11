@@ -8,7 +8,7 @@ keep, what to move. Decisions are listed per table; open items are under [To do]
 | Column | Decision |
 |---|---|
 | `id`, `name`, `created_at`, `updated_at` | Keep. |
-| `legacy_id`, `import_status` | Keep (Firebase import: old asset URLs, 503 while importing). |
+| `legacy_id`, `import_status` | **Moved** to the space's `firebase_imports` row ([Firebase import](#firebase-import)). |
 | `locales` jsonb | **Replaced** by `locales` + `space_locales` (below). |
 | `locale_fallback` jsonb | **Replaced** by `default_locale_id` (below). |
 | `environments` jsonb | **Replaced** by `space_environments` (below). |
@@ -17,6 +17,24 @@ keep, what to move. Decisions are listed per table; open items are under [To do]
 | `spaces_name_idx` | **Dropped**: it serves only the admin list, a handful of rows. |
 
 Spaces are listed by `lower(name), id`: case-insensitive whatever the database collation, stable for equal names.
+
+### Firebase import
+
+```
+firebase_imports (…, source_space_id, space_id → spaces CASCADE, UNIQUE (space_id),
+                  UNIQUE (source_space_id) WHERE space_id IS NOT NULL)
+```
+
+A space imported from Firebase is linked to its one run (one-to-one); the space has no import columns of its own.
+
+- **Import status:** the run's `status`, joined in: the space reads `IMPORTING` while the run is `RUNNING`,
+  `FAILED` after a failed run, nothing once it finished. The public API's space lookup joins the run in the same
+  query (503 while importing or failed).
+- **Legacy id:** the run's `source_space_id` (the Firestore id) resolves the old asset URLs; one local space per
+  Firebase space. `assets.legacy_id` stays: it is per asset.
+- **Deleting the space deletes its run**, so the Firebase space can be imported again. A run that failed before
+  creating its space stays in the history.
+- A failed space is not resumed: the UI says to delete it and import again.
 
 ### Locales
 

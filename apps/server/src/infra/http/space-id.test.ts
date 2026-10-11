@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { SpaceIdResolver } from './space-id.js';
 
-type Row = { id: string; importStatus: string | null };
+type Row = { id: string; importStatus: 'IMPORTING' | 'FAILED' | null };
 
-/** Stands in for `db.select(...).from(spaces).where(id = ? | legacy_id = ?)`, answering from a mutable row. */
+/**
+ * Stands in for `db.select(...).from(spaces).leftJoin(firebase_imports).where(id = ? | source_space_id = ?)`, answering
+ * from a mutable row.
+ */
 function fakeDb(state: { row: Row | undefined }) {
-  return { select: () => ({ from: () => ({ where: async () => (state.row ? [state.row] : []) }) }) } as never;
+  const where = async () => (state.row ? [state.row] : []);
+  return { select: () => ({ from: () => ({ leftJoin: () => ({ where }) }) }) } as never;
 }
 
 describe('SpaceIdResolver', () => {
   it('looks UUIDs up with their import status, and refuses malformed ids', async () => {
-    const row = { id: '00000000-0000-7000-8000-000000000001', importStatus: 'IMPORTING' };
+    const row: Row = { id: '00000000-0000-7000-8000-000000000001', importStatus: 'IMPORTING' };
     const resolver = new SpaceIdResolver(fakeDb({ row }));
     expect(await resolver.resolve(row.id)).toEqual(row);
     expect(await resolver.resolve('a/b')).toBeUndefined();

@@ -145,10 +145,7 @@ export const spaces = pgTable(
   'spaces',
   {
     id: uuid('id').primaryKey(),
-    // Firestore id of a space imported from Firebase: one import per Firebase space; its old asset URLs keep working.
-    legacyId: text('legacy_id').unique(),
-    // 'IMPORTING' while an import from Firebase fills the space, 'FAILED' after a failed one, null otherwise.
-    importStatus: text('import_status'),
+    // A space imported from Firebase has its `firebase_imports` row (one at most): its Firestore id and import status.
     name: text('name').notNull(),
     // The default locale: new translations are created in it, content stores its values in the bare field, and a
     // locale with no value falls back to it. That it is one of the space's locales is checked by the API.
@@ -469,9 +466,12 @@ export const firebaseImports = pgTable(
   {
     id: uuid('id').primaryKey(),
     origin: text('origin').notNull(),
+    // Firestore id of the source space: the imported space's old asset URLs keep working with it.
     sourceSpaceId: text('source_space_id').notNull(),
     sourceSpaceName: text('source_space_name').notNull(),
-    spaceId: uuid('space_id').references(() => spaces.id, { onDelete: 'set null' }),
+    // The space the run created (one run per space); deleting the space deletes its run. Null until the space exists,
+    // and for a run that failed before creating it.
+    spaceId: uuid('space_id').references(() => spaces.id, { onDelete: 'cascade' }),
     // 'RUNNING' | 'FINISHED' | 'FAILED'
     status: text('status').notNull(),
     stages: jsonb('stages').$type<FirebaseImportStage[]>().notNull(),
@@ -488,5 +488,10 @@ export const firebaseImports = pgTable(
       .on(t.status)
       .where(sql`${t.status} = 'RUNNING'`),
     index('firebase_imports_started_idx').on(t.startedAt.desc()),
+    uniqueIndex('firebase_imports_space_idx').on(t.spaceId),
+    // One local space per Firebase space: its legacy id resolves to one space.
+    uniqueIndex('firebase_imports_source_idx')
+      .on(t.sourceSpaceId)
+      .where(sql`${t.spaceId} is not null`),
   ],
 );

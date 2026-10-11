@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { type AnyColumn, eq, getTableColumns, type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.module.js';
 import { isUuid } from '../database/id.js';
-import { type Locale, locales, spaceEnvironments, spaceLocales, spaces } from '../database/schema.js';
+import { firebaseImports, type Locale, locales, spaceEnvironments, spaceLocales, spaces } from '../database/schema.js';
 
 type Executor = Pick<Database, 'select' | 'update'>;
 
@@ -12,11 +12,25 @@ export interface SpaceEnvironment {
   url: string;
 }
 
+/** `IMPORTING` while the space's import from Firebase runs, `FAILED` once it failed; null otherwise. */
+export type SpaceImportStatus = 'IMPORTING' | 'FAILED';
+
+/** The import status of a space from its `firebase_imports` row's `status`, given as SQL (null: no row, or finished). */
+export const importStatusOf = (status: SQL | AnyColumn) =>
+  sql<SpaceImportStatus | null>`case ${status} when 'RUNNING' then 'IMPORTING' when 'FAILED' then 'FAILED' end`;
+
 /**
- * A space with its locales (by `position`) and its default locale, read from `space_locales` and `locales`, and its
- * environments (by `position`) from `space_environments`.
+ * A space with its locales (by `position`) and its default locale, read from `space_locales` and `locales`, its
+ * environments (by `position`) from `space_environments`, and for a space imported from Firebase its Firestore id
+ * (`legacyId`) and import status from `firebase_imports`.
  */
-export type SpaceRow = typeof spaces.$inferSelect & { locales: Locale[]; defaultLocale: Locale; environments: SpaceEnvironment[] };
+export type SpaceRow = typeof spaces.$inferSelect & {
+  locales: Locale[];
+  defaultLocale: Locale;
+  environments: SpaceEnvironment[];
+  legacyId: string | null;
+  importStatus: SpaceImportStatus | null;
+};
 
 // Columns of the outer `spaces` are written qualified: drizzle renders `${spaces.id}` unqualified in a one-table select,
 // which inside these subqueries would resolve to `space_locales` / `locales`.
@@ -33,6 +47,8 @@ const spaceColumns = {
     from ${spaceEnvironments} e
     where e.space_id = "spaces"."id"
   ), '[]'::jsonb)`,
+  legacyId: sql<string | null>`(select fi.source_space_id from ${firebaseImports} fi where fi.space_id = "spaces"."id")`,
+  importStatus: sql<SpaceImportStatus | null>`(select ${importStatusOf(sql`fi.status`)} from ${firebaseImports} fi where fi.space_id = "spaces"."id")`,
 };
 
 /** `select … from spaces` with the locales and environments joined in; add `where` / `orderBy` as needed. */

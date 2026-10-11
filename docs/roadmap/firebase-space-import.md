@@ -23,8 +23,8 @@ reachable under the old custom domain keeps serving old asset URLs. Everything e
 | D2 | Not imported: users and global settings (admins re-invite users), published content and translation snapshots (users publish after the import), webhook logs, tasks. |
 | D3 | One space per import. Only one import runs per install at a time. |
 | D4 | An import always creates a new space; it never merges into an existing one. |
-| D5 | `spaces.legacy_id` holds the Firebase space id and is **unique**: a Firebase space can be imported once. To import it again, delete the imported space first. |
-| D6 | `assets.legacy_id` holds the Firebase asset id (unique per space). With `spaces.legacy_id` it keeps old asset URLs working: `/api/v1/spaces/{old space}/assets/{old asset}[/original|/download]` answers `301` to the UUID URL. No other `/api/v1` route accepts old ids. |
+| D5 | The run's `firebase_imports` row links the space (`space_id`, one run per space) to the Firebase space id (`source_space_id`), which is **unique** among runs that have a space: a Firebase space can be imported once. Deleting the space deletes its run; it can then be imported again. |
+| D6 | `assets.legacy_id` holds the Firebase asset id (unique per space). With the run's `source_space_id` it keeps old asset URLs working: `/api/v1/spaces/{old space}/assets/{old asset}[/original|/download]` answers `301` to the UUID URL. No other `/api/v1` route accepts old ids. |
 | D7 | No `legacy_id` on users, webhooks or contents. References inside a space are rewritten during the import; there is no later migration and no fallback lookup. |
 | D8 | Tokens keep their Firebase values (`token`), unique per install as today. |
 | D9 | Webhooks are imported **disabled**, so the two environments never both deliver. |
@@ -85,7 +85,7 @@ New table `firebase_imports`, one row per run:
 | `origin` | text | URL of the Firebase environment, e.g. `https://cms.example.com` |
 | `source_space_id` | text | Firebase space id |
 | `source_space_name` | text | |
-| `space_id` | uuid, nullable | the new space; `on delete set null` |
+| `space_id` | uuid, nullable, unique | the new space; `on delete cascade`: deleting the space deletes its run. Null until the space exists, and for a run that failed before creating it |
 | `status` | text | `RUNNING` \| `FINISHED` \| `FAILED` |
 | `stages` | jsonb | `[{ stage, status, count, total?, warnings?, warningCount?, error? }]` in run order |
 | `error` | jsonb, nullable | `{ stage, message }` |
@@ -94,19 +94,18 @@ New table `firebase_imports`, one row per run:
 
 - A partial unique index on `status` where `status = 'RUNNING'` allows one running import per install, across
   instances.
+- A partial unique index on `source_space_id` where `space_id is not null`: one local space per Firebase space.
 - A running import moves `heartbeat_at` on every progress write and every 30 s; all its writes require the row to
   still be `RUNNING`, so a run failed elsewhere stops without writing. At boot and every minute, any instance sets a
   `RUNNING` run whose heartbeat is older than 2 minutes to `FAILED` with
-  `{ stage: <current>, message: 'Interrupted: the server running it stopped' }`, and its space gets
-  `import_status = 'FAILED'`. A run another instance is still executing is left alone.
+  `{ stage: <current>, message: 'Interrupted: the server running it stopped' }`. A run another instance is still executing is left alone.
 - The migration token is never stored: it comes with the request that starts the run and lives in memory for the run.
 
-Changes to `spaces`:
-
-- `legacy_id` becomes unique.
-- New `import_status` text, nullable: `IMPORTING` while a run fills the space, `FAILED` after a failed run, `null`
-  otherwise. A space with an `import_status` shows a badge in Admin → Spaces and cannot be opened. A `FAILED` space
-  can be deleted; deleting an `IMPORTING` one answers `409` (the run owns it until it ends).
+`spaces` has no import columns: a space's import status and Firebase id come from its run (joined in). The space
+reads `importStatus: 'IMPORTING'` while its run is `RUNNING`, `'FAILED'` once it failed, nothing once it finished; its
+`legacyId` is the run's `source_space_id`. A space with an import status shows a badge in Admin → Spaces and cannot be
+opened. A failed space is not resumed: it is deleted (which deletes its run) and imported again; deleting a space
+whose run is `RUNNING` answers `409` (the run owns it until it ends).
 
 ### Import API
 
@@ -114,8 +113,8 @@ Admin only (`role: admin`), under `/api/app/admin/firebase-import`:
 
 | Endpoint | Behaviour |
 |---|---|
-| `POST /spaces` `{ origin, token }` | Calls `GET {origin}/api/migration/spaces` and answers `[{ id, name, createdAt, importedAs: { id, name } \| null }]`. `importedAs` is the local space whose `legacy_id` is that id. Connection errors answer `502` with the reason (unreachable, `401`, `404` = migration not enabled). |
-| `POST /` `{ origin, token, spaceId }` | Starts a run and answers `202` with it. `409` if a run is `RUNNING`, or if a local space already has that `legacy_id`. |
+| `POST /spaces` `{ origin, token }` | Calls `GET {origin}/api/migration/spaces` and answers `[{ id, name, createdAt, importedAs: { id, name } \| null }]`. `importedAs` is the local space of the run with that `source_space_id`. Connection errors answer `502` with the reason (unreachable, `401`, `404` = migration not enabled). |
+| `POST /` `{ origin, token, spaceId }` | Starts a run and answers `202` with it. `409` if a run is `RUNNING`, or if a local space was already imported from that space. |
 | `GET /` | Runs, newest first. |
 | `GET /:id` | One run with its stages; the UI polls it while `RUNNING`. |
 
@@ -133,7 +132,7 @@ every 50 files, so polling shows movement.
 
 | # | Stage | What it does |
 |---|---|---|
-| 1 | `space` | Reads the space document. Creates the space: new UUIDv7, `legacy_id` = Firebase id, `name`, `import_status = 'IMPORTING'`. Sets the run's `space_id`. |
+| 1 | `space` | Reads the space document. Creates the space (new UUIDv7, `name`) and sets the run's `space_id` in the same transaction, so the space is never seen without its import status. |
 | 2 | `locales` | Keeps the locales found in the `locales` table, in their order; others are skipped with a warning (their values stay in the data, unused). `localeFallback` becomes the default locale when kept, else the first kept locale, else `en`. Count: kept locales. |
 | 3 | `environments` | Creates the space's `space_environments` rows, in order; one without a name or URL is skipped with a warning. Count: environments. |
 | 4 | `tokens` | Inserts each token: new UUIDv7 `id`, `token` = Firebase id, name, version, permissions, cacheTtl, timestamps. A `token` that already exists in another space fails the stage: "Token `<name>` already exists in space `<space name>`". |
@@ -144,10 +143,10 @@ every 50 files, so polling shows movement.
 | 9 | `contents` | Reads every page; gives each document a UUIDv7 dated to its `createdAt`. Inserts rows as stored (`data` parsed if it is a string), `published_at = null`, references not yet rewritten. |
 | 10 | `contentMigration` | Rewrites every document's references with the asset and content id maps (below). Count: documents changed. |
 
-Then: `import_status = null`, the content and translation versions are bumped, the run is `FINISHED`.
+Then the content and translation versions are bumped and the run is `FINISHED`.
 
 On an error the current stage becomes `FAILED` with the message, the run becomes `FAILED` with `error`, and the
-space keeps `import_status = 'FAILED'`. Stored files stay until the space is deleted (deleting a space removes its
+space reads as failed. Stored files stay until the space is deleted (deleting a space removes its
 files).
 
 ### Reference rewrite
@@ -177,7 +176,7 @@ through D6; otherwise they keep pointing at the Firebase environment.
      error of a failed stage. Polls `GET /:id` every 2 s while `RUNNING`.
 - **Imports** lists past runs (origin, source space, new space, status, started by, times); a row opens the same
   progress view.
-- Spaces with `import_status` show *Importing* or *Import failed*; a failed one can be deleted from the list.
+- Spaces being imported show *Importing*; a failed one shows *Import failed* and can be deleted from the list.
 - Space settings show "Imported from Firebase: `<legacy id>`" for imported spaces.
 
 ## Changes to the current branch
@@ -187,7 +186,7 @@ The UUIDv7 work on `refactor/monorepo-structure` added legacy ids broadly. This 
 | Area | Change |
 |---|---|
 | CLI | Remove `import:firebase`, `firebase-source`, `firebase-importer`, Firebase password-hash support (`firebase-scrypt`, `FIREBASE_SCRYPT_*`) and the `firebase-admin` dependency. `check`, `db:migrate`, `admin:create` stay. |
-| Schema | Drop `users.legacy_id`, `webhooks.legacy_id`, `contents.legacy_id` and their indexes. Make `spaces.legacy_id` unique; add `spaces.import_status`; add `firebase_imports`. |
+| Schema | Drop `users.legacy_id`, `webhooks.legacy_id`, `contents.legacy_id` and their indexes. Add `firebase_imports`; later, `spaces.legacy_id` and `spaces.import_status` moved onto it (see [database-structure.md](database-structure.md)). |
 | Public API | Old space ids are resolved only on the three asset routes, which answer `301` to the UUID URL. Remove the `/contents/<old id>` redirect and the old space id resolution on every other route. |
 | Delivery | `resolveAssets`, `resolveLinks`, `resolveReferences` match ids exactly; remove `legacy-ids.ts`. |
 | App API / web | `?ids=` on assets and contents matches ids exactly; remove the `legacyId` fallback from the asset, references and link pickers; remove `legacyId` from the shared `Content` model. `Space.legacyId` and `Asset.legacyId` stay (display). |
@@ -201,12 +200,12 @@ The UUIDv7 work on `refactor/monorepo-structure` added legacy ids broadly. This 
   reference, V1 and V2 tokens, a webhook, translations over two pages.
 - An import runs end to end: every stage `DONE` with its counts; tokens authenticate on the public API; webhooks are
   disabled; files are served under the UUID; references point at the new UUIDs; warnings for the missing file and
-  the dangling reference; the space is unpublished and has no `import_status`.
+  the dangling reference; the space is unpublished and has no import status.
 - `rewriteReferences` unit tests per shape, depth, locale variant and unmatched id.
 - Guards: `409` while a run is `RUNNING` and for an already imported space; `403` for non-admins; `502` for an
   unreachable origin, a wrong token and a disabled migration API; the token is in no row or log.
 - Failure: the fixture server fails during assets; the run is `FAILED` at `assets` with the message, earlier stages
-  `DONE`, the space has `import_status = 'FAILED'`, and deleting it removes its rows and files.
+  `DONE`, the space reads as failed, and deleting it (and its run) removes its rows and files.
 - Restart: a `RUNNING` run left in the table is marked `FAILED` on boot.
 - Old asset URLs: `/spaces/{old space}/assets/{old asset}` answers `301` to the UUID URL; `/spaces/{old space}/contents/…`
   answers `404`.

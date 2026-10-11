@@ -3,10 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
 import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
+import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 
@@ -97,4 +99,27 @@ type SpaceInsert = Omit<typeof schema.spaces.$inferInsert, 'defaultLocaleId'> & 
 export async function insertSpace(db: TestApp['db'], { locales, defaultLocale, ...space }: SpaceInsert): Promise<void> {
   await db.insert(schema.spaces).values({ ...space, defaultLocaleId: (defaultLocale ?? locales[0]).id });
   await db.insert(schema.spaceLocales).values(locales.map((it, position) => ({ spaceId: space.id, localeId: it.id, position })));
+}
+
+/**
+ * Makes `spaceId` a space imported from the Firebase space `legacyId`: its `firebase_imports` row, in `status`
+ * (`FINISHED` by default). `null` removes the row: the space was created here.
+ */
+export async function setImport(
+  db: TestApp['db'],
+  spaceId: string,
+  imported: { legacyId: string; status?: 'RUNNING' | 'FINISHED' | 'FAILED' } | null,
+): Promise<void> {
+  await db.delete(schema.firebaseImports).where(eq(schema.firebaseImports.spaceId, spaceId));
+  if (!imported) return;
+  await db.insert(schema.firebaseImports).values({
+    id: newUuid(),
+    origin: 'https://firebase.example.com',
+    sourceSpaceId: imported.legacyId,
+    sourceSpaceName: imported.legacyId,
+    spaceId,
+    status: imported.status ?? 'FINISHED',
+    stages: [],
+    startedBy: { name: 'Admin', email: 'admin@example.com' },
+  });
 }

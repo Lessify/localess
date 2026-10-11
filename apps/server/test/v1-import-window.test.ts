@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, spaces } from '../src/infra/database/schema.js';
+import { assets } from '../src/infra/database/schema.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { seedAsset, seedContent, seedSpace, seedTranslations, TOKEN_PUBLIC } from './seed.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { createTestApp, setImport, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
 
 /**
@@ -27,8 +27,7 @@ describe('v1 API while a space is being imported from Firebase', () => {
   afterAll(() => t?.close());
 
   const get = (url: string) => t.request({ method: 'GET', url });
-  const setSpace = (values: { legacyId?: string | null; importStatus?: string | null }) =>
-    t.db.update(spaces).set(values).where(eq(spaces.id, S1));
+  const setSpace = (imported: Parameters<typeof setImport>[2]) => setImport(t.db, S1, imported);
 
   it('answers an unknown old space id with an uncached 404, so it works once the import has run', async () => {
     const response = await get('/api/v1/spaces/FirestoreSpace/assets/FirestoreAsset000001/original');
@@ -37,11 +36,11 @@ describe('v1 API while a space is being imported from Firebase', () => {
   });
 
   for (const [status, message] of [
-    ['IMPORTING', 'This space is being imported'],
+    ['RUNNING', 'This space is being imported'],
     ['FAILED', 'The import of this space failed'],
   ] as const) {
-    it(`answers 503 (no-store, Retry-After) on every space route while ${status}`, async () => {
-      await setSpace({ legacyId: 'FirestoreSpace', importStatus: status });
+    it(`answers 503 (no-store, Retry-After) on every space route while the import is ${status}`, async () => {
+      await setSpace({ legacyId: 'FirestoreSpace', status });
       try {
         for (const url of [
           '/api/v1/spaces/FirestoreSpace/assets/FirestoreAsset000001/original',
@@ -58,20 +57,20 @@ describe('v1 API while a space is being imported from Firebase', () => {
           expect(response.json().message, url).toBe(message);
         }
       } finally {
-        await setSpace({ legacyId: null, importStatus: null });
+        await setSpace(null);
       }
     });
   }
 
   it('serves the old URL as usual once the import has finished', async () => {
-    await setSpace({ legacyId: 'FirestoreSpace', importStatus: null });
+    await setSpace({ legacyId: 'FirestoreSpace' });
     try {
       const response = await get('/api/v1/spaces/FirestoreSpace/assets/FirestoreAsset000001/original');
       expect(response.statusCode).toBe(301);
       expect(response.headers.location).toBe(`/api/v1/spaces/FirestoreSpace/assets/${assetId}/original`);
       expect((await get(response.headers.location as string)).statusCode).toBe(200);
     } finally {
-      await setSpace({ legacyId: null });
+      await setSpace(null);
     }
   });
 

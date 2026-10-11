@@ -2,11 +2,11 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, schemas, spaces, translations } from '../src/infra/database/schema.js';
+import { assets, contents, firebaseImports, schemas, spaces, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, setImport, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: spaces, locales, settings', () => {
   let t: TestApp;
@@ -65,11 +65,11 @@ describe('app API: spaces, locales, settings', () => {
     it('takes only UUIDs, not the Firestore id of an imported space, which it shows as legacyId', async () => {
       await insertSpace(t.db, {
         id: S2,
-        legacyId: 'Firestore20charsId01',
         name: 'Imported',
         locales: [{ id: 'en', name: 'English' }],
         defaultLocale: { id: 'en', name: 'English' },
       });
+      await setImport(t.db, S2, { legacyId: 'Firestore20charsId01' });
       expect((await reader.get('/api/app/spaces/Firestore20charsId01')).statusCode).toBe(404);
       expect((await admin.get('/api/app/spaces/Firestore20charsId01/tokens')).statusCode).toBe(404);
       const response = await reader.get(`/api/app/spaces/${S2}`);
@@ -77,19 +77,44 @@ describe('app API: spaces, locales, settings', () => {
       await t.db.delete(spaces).where(eq(spaces.id, S2));
     });
 
-    it('refuses to delete a space while it is being imported, allows it once the import failed', async () => {
+    it('refuses to delete a space while it is being imported, allows it once the import failed, and deletes the import with it', async () => {
       const id = newUuid();
       await insertSpace(t.db, {
         id,
         name: 'Importing',
         locales: [{ id: 'en', name: 'English' }],
         defaultLocale: { id: 'en', name: 'English' },
-        importStatus: 'IMPORTING',
       });
+      await setImport(t.db, id, { legacyId: 'FirestoreImporting01', status: 'RUNNING' });
       expect((await admin.get(`/api/app/spaces/${id}`)).json()).toMatchObject({ importStatus: 'IMPORTING' });
       expect((await admin.delete(`/api/app/spaces/${id}`)).statusCode).toBe(409);
-      await t.db.update(spaces).set({ importStatus: 'FAILED' }).where(eq(spaces.id, id));
+      await setImport(t.db, id, { legacyId: 'FirestoreImporting01', status: 'FAILED' });
+      expect((await admin.get(`/api/app/spaces/${id}`)).json()).toMatchObject({ importStatus: 'FAILED' });
       expect((await admin.delete(`/api/app/spaces/${id}`)).statusCode).toBe(204);
+      expect(await t.db.select().from(firebaseImports).where(eq(firebaseImports.sourceSpaceId, 'FirestoreImporting01'))).toEqual([]);
+    });
+
+    it('shows no import fields on a space created here or whose import finished', async () => {
+      const id = newUuid();
+      await insertSpace(t.db, { id, name: 'Done', locales: [{ id: 'en', name: 'English' }] });
+      expect((await admin.get(`/api/app/spaces/${id}`)).json()).not.toHaveProperty('legacyId');
+      await setImport(t.db, id, { legacyId: 'FirestoreFinished001' });
+      const body = (await admin.get(`/api/app/spaces/${id}`)).json();
+      expect(body).toMatchObject({ legacyId: 'FirestoreFinished001' });
+      expect(body).not.toHaveProperty('importStatus');
+      await t.db.delete(spaces).where(eq(spaces.id, id));
+    });
+
+    it('links a space to one import at most', async () => {
+      const id = newUuid();
+      await insertSpace(t.db, { id, name: 'Once', locales: [{ id: 'en', name: 'English' }] });
+      await setImport(t.db, id, { legacyId: 'FirestoreOnce0000001' });
+      const again = t.db.insert(firebaseImports).values({
+        id: newUuid(), origin: 'https://firebase.example.com', sourceSpaceId: 'FirestoreOnce0000002', sourceSpaceName: 'x',
+        spaceId: id, status: 'FINISHED', stages: [], startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await expect(again).rejects.toThrow();
+      await t.db.delete(spaces).where(eq(spaces.id, id));
     });
 
     it('renames', async () => {

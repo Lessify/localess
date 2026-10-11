@@ -64,12 +64,10 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
       const current = run.stages.find(it => it.status === 'RUNNING') ?? run.stages.find(it => it.status === 'PENDING') ?? run.stages[0];
       const message = 'Interrupted: the server running it stopped';
       const stages = run.stages.map(it => (it.stage === current.stage ? { ...it, status: 'FAILED' as const, error: message } : it));
-      const failed = await this.db
+      await this.db
         .update(firebaseImports)
         .set({ status: 'FAILED', stages, error: { stage: current.stage, message }, finishedAt: new Date() })
-        .where(and(eq(firebaseImports.id, run.id), eq(firebaseImports.status, 'RUNNING')))
-        .returning({ id: firebaseImports.id });
-      if (failed.length && run.spaceId) await this.db.update(spaces).set({ importStatus: 'FAILED' }).where(eq(spaces.id, run.spaceId));
+        .where(and(eq(firebaseImports.id, run.id), eq(firebaseImports.status, 'RUNNING')));
     }
   }
 
@@ -90,12 +88,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
       if (error instanceof FirebaseConnectionError) throw new BadGatewayException(error.message);
       throw error;
     }
-    const imported = remote.length
-      ? await this.db
-          .select({ id: spaces.id, name: spaces.name, legacyId: spaces.legacyId })
-          .from(spaces)
-          .where(inArray(spaces.legacyId, remote.map(it => it.id)))
-      : [];
+    const imported = remote.length ? await this.importedAs(remote.map(it => it.id)) : [];
     return remote.map(it => {
       const local = imported.find(row => row.legacyId === it.id);
       return { id: it.id, name: it.name, ...(it.createdAt ? { createdAt: it.createdAt } : {}), importedAs: local ? { id: local.id, name: local.name } : null };
@@ -104,7 +97,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
 
   async start(origin: string, token: string, sourceSpaceId: string, user: UserRow): Promise<FirebaseImport> {
     const client = this.client(origin, token);
-    const [existing] = await this.db.select({ name: spaces.name }).from(spaces).where(eq(spaces.legacyId, sourceSpaceId));
+    const [existing] = await this.importedAs([sourceSpaceId]);
     if (existing) throw new ConflictException(`This space is already imported as '${existing.name}'`);
     let source: { id: string; name: string } | undefined;
     try {
@@ -132,6 +125,15 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     // In the background: the caller polls GET /:id. The runner records every outcome itself.
     void this.runner.execute(id, client, sourceSpaceId).catch(error => this.logger.error(error));
     return this.get(id);
+  }
+
+  /** The local spaces imported from these Firebase spaces (finished or failed; a deleted space takes its run along). */
+  private importedAs(sourceSpaceIds: string[]): Promise<{ id: string; name: string; legacyId: string }[]> {
+    return this.db
+      .select({ id: spaces.id, name: spaces.name, legacyId: firebaseImports.sourceSpaceId })
+      .from(firebaseImports)
+      .innerJoin(spaces, eq(spaces.id, firebaseImports.spaceId))
+      .where(inArray(firebaseImports.sourceSpaceId, sourceSpaceIds));
   }
 
   async list(): Promise<FirebaseImport[]> {

@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { isUuid } from '../database/id.js';
 import type { Database } from '../database/database.module.js';
-import { spaces } from '../database/schema.js';
+import { firebaseImports, spaces } from '../database/schema.js';
+import { importStatusOf, type SpaceImportStatus } from './space-access.js';
 import { isValidId } from './v1/id-param.js';
 import { CONTENT_CACHE } from './v1/v1-request.js';
 import { sendV1Error } from './v1/v1-response.js';
@@ -10,7 +11,7 @@ import { sendV1Error } from './v1/v1-response.js';
 /** A space as the public API sees it before any controller: its UUID and whether an import is running or failed. */
 export interface ResolvedSpace {
   id: string;
-  importStatus: string | null;
+  importStatus: SpaceImportStatus | null;
 }
 
 /**
@@ -22,15 +23,17 @@ export class SpaceIdResolver {
   constructor(private readonly db: Pick<Database, 'select'>) {}
 
   /**
-   * The space for a UUID or a legacy id; `undefined` when no space has it (or the id is malformed). Not cached: a
-   * Firebase space can be deleted and imported again under a new UUID, and `import_status` changes while it imports.
+   * The space for a UUID or a legacy id (the `source_space_id` of its `firebase_imports` row); `undefined` when no
+   * space has it (or the id is malformed). Not cached: a Firebase space can be deleted and imported again under a new
+   * UUID, and its import status changes while it imports.
    */
   async resolve(spaceId: string): Promise<ResolvedSpace | undefined> {
     if (!isUuid(spaceId) && !isValidId(spaceId)) return undefined;
     const [space] = await this.db
-      .select({ id: spaces.id, importStatus: spaces.importStatus })
+      .select({ id: spaces.id, importStatus: importStatusOf(firebaseImports.status) })
       .from(spaces)
-      .where(isUuid(spaceId) ? eq(spaces.id, spaceId) : eq(spaces.legacyId, spaceId));
+      .leftJoin(firebaseImports, eq(firebaseImports.spaceId, spaces.id))
+      .where(isUuid(spaceId) ? eq(spaces.id, spaceId) : eq(firebaseImports.sourceSpaceId, spaceId));
     return space;
   }
 }
@@ -45,7 +48,7 @@ const ASSET_ROUTE = /^\/api\/v1\/spaces\/[^/]+\/assets\//;
  * A space being imported from Firebase (or whose import failed) is half there: answer 503 and let nothing cache it, or
  * a missing asset would be cached as gone for a week, long after the import has finished.
  */
-function sendImportInProgress(reply: FastifyReply, importStatus: string): void {
+function sendImportInProgress(reply: FastifyReply, importStatus: SpaceImportStatus): void {
   void reply.header('retry-after', '60');
   sendV1Error(reply, 503, 'unavailable', importStatus === 'FAILED' ? 'The import of this space failed' : 'This space is being imported', {
     cacheControl: 'no-store',

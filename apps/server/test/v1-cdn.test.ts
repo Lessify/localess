@@ -13,7 +13,7 @@ import {
   TOKEN_PUBLIC,
   TOKEN_V1,
 } from './seed.js';
-import { createTestApp, insertSpace, TestApp } from './test-app.js';
+import { createTestApp, insertSpace, setImport, TestApp } from './test-app.js';
 import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -234,10 +234,10 @@ describe('v1 CDN API', () => {
 
   describe('old Firebase ids', () => {
     it('are not accepted for documents, nor for the space outside asset routes', async () => {
-      await t.db.update(spaces).set({ legacyId: 'FirestoreSpace' }).where(eq(spaces.id, S1));
+      await setImport(t.db, S1, { legacyId: 'FirestoreSpace' });
       expect((await get(`/api/v1/spaces/FirestoreSpace/contents/${C.home}?cv=7&token=${TOKEN_DRAFT}`)).statusCode).toBe(404);
       expect((await get(`/api/v1/spaces/${S1}/contents/FirestoreHome?cv=7&token=${TOKEN_DRAFT}`)).statusCode).toBe(404);
-      await t.db.update(spaces).set({ legacyId: null }).where(eq(spaces.id, S1));
+      await setImport(t.db, S1, null);
     });
   });
 

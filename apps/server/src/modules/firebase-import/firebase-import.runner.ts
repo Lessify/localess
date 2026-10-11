@@ -32,8 +32,8 @@ class StageFailure extends Error {
 
 /**
  * Executes one import run (Admin → Spaces → Import from Firebase): the stages of the spec in order, each recorded on
- * the `firebase_imports` row as it progresses. The space is created first and flagged `IMPORTING`; a failure leaves it
- * flagged `FAILED` for inspection and records the failing stage.
+ * the `firebase_imports` row as it progresses. The space is created first, linked to the run: it reads as importing
+ * while the run is RUNNING, and a failure leaves it failed (for inspection, then deletion) with the failing stage.
  */
 @Injectable()
 export class FirebaseImportRunner {
@@ -51,7 +51,6 @@ export class FirebaseImportRunner {
     if (!run || run.status !== 'RUNNING') return;
     const stages: FirebaseImportStage[] = run.stages.map(it => ({ ...it }));
     let current: FirebaseImportStageName = 'space';
-    let spaceId: string | undefined;
     const running = and(eq(firebaseImports.id, runId), eq(firebaseImports.status, 'RUNNING'));
     // Every write is conditional on the run still being RUNNING, so a run failed elsewhere cannot come back.
     const save = async (extra: Partial<typeof firebaseImports.$inferInsert> = {}) => {
@@ -89,8 +88,7 @@ export class FirebaseImportRunner {
       // 1 space
       await begin('space');
       const source = await client.space(sourceSpaceId);
-      spaceId = newUuid(timestamps(source).createdAt);
-      const sid = spaceId;
+      const sid = newUuid(timestamps(source).createdAt);
       // Only locales in the `locales` table are kept; the default falls back to the first kept one, else English.
       const known = new Set((await this.db.select({ id: locales.id }).from(locales)).map(it => it.id));
       const sourceLocales = (Array.isArray(source['locales']) ? source['locales'] : []) as Locale[];
@@ -99,18 +97,17 @@ export class FirebaseImportRunner {
       const sourceDefault = obj<Locale>(source['localeFallback'])?.id;
       const defaultLocaleId = sourceDefault && keptLocales.includes(sourceDefault) ? sourceDefault : (keptLocales[0] ?? DEFAULT_LOCALE.id);
       if (!keptLocales.length) keptLocales.push(defaultLocaleId);
+      // The space and its link to this RUNNING run in one transaction: nothing sees the space without its import status.
       await this.db.transaction(async tx => {
-        await tx.insert(spaces).values({
-          id: sid,
-          legacyId: sourceSpaceId,
-          name: str(source['name']) ?? sourceSpaceId,
-          defaultLocaleId,
-          importStatus: 'IMPORTING',
-          ...timestamps(source),
-        });
+        await tx.insert(spaces).values({ id: sid, name: str(source['name']) ?? sourceSpaceId, defaultLocaleId, ...timestamps(source) });
         await tx.insert(spaceLocales).values(keptLocales.map((localeId, position) => ({ spaceId: sid, localeId, position })));
+        const linked = await tx
+          .update(firebaseImports)
+          .set({ spaceId: sid, stages, heartbeatAt: new Date() })
+          .where(running)
+          .returning({ id: firebaseImports.id });
+        if (!linked.length) throw new RunAbandoned();
       });
-      await save({ spaceId });
       await done('space', 1);
 
       // 2 locales, 3 environments (set with the space; counted separately for the progress view)
@@ -353,7 +350,7 @@ export class FirebaseImportRunner {
 
       await this.db
         .update(spaces)
-        .set({ importStatus: null, contentVersion: nextVersion(spaces.contentVersion), translationVersion: nextVersion(spaces.translationVersion) })
+        .set({ contentVersion: nextVersion(spaces.contentVersion), translationVersion: nextVersion(spaces.translationVersion) })
         .where(eq(spaces.id, sid));
       await save({ status: 'FINISHED', finishedAt: new Date() });
       await this.events.publish({ spaceId: null, entity: 'spaces', id: sid, op: 'created' });
@@ -367,7 +364,6 @@ export class FirebaseImportRunner {
       this.logger.warn(`Import ${runId} failed at ${failedStage}: ${message}`);
       Object.assign(stage(failedStage), { status: 'FAILED', error: message });
       await save({ status: 'FAILED', error: { stage: failedStage, message }, finishedAt: new Date() }).catch(() => undefined);
-      if (spaceId) await this.db.update(spaces).set({ importStatus: 'FAILED' }).where(eq(spaces.id, spaceId));
     } finally {
       clearInterval(heartbeat);
     }

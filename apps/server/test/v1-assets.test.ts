@@ -5,10 +5,10 @@ import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { assets, spaces } from '../src/infra/database/schema.js';
+import { assets } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { seedAsset, seedSpace, SeededAsset } from './seed.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { createTestApp, setImport, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
@@ -89,12 +89,12 @@ describe('v1 asset routes', () => {
       }
       expect((await get(`/api/v1/spaces/${S1}/assets/UnknownFirestoreId/original`)).statusCode).toBe(404);
       // An imported space's old id still reaches its old asset URLs, and only those.
-      await t.db.update(spaces).set({ legacyId: 'FirestoreSpace' }).where(eq(spaces.id, S1));
+      await setImport(t.db, S1, { legacyId: 'FirestoreSpace' });
       const viaOldSpace = await get(`/api/v1/spaces/FirestoreSpace/assets/FirestoreAsset000002/original`);
       expect(viaOldSpace.statusCode).toBe(301);
       expect(viaOldSpace.headers.location).toBe(`/api/v1/spaces/FirestoreSpace/assets/${id}/original`);
       expect((await get(viaOldSpace.headers.location as string)).statusCode).toBe(200);
-      await t.db.update(spaces).set({ legacyId: null }).where(eq(spaces.id, S1));
+      await setImport(t.db, S1, null);
     });
   });
 

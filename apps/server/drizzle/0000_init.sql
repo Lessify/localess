@@ -126,15 +126,12 @@ CREATE TABLE "space_locales" (
 --> statement-breakpoint
 CREATE TABLE "spaces" (
 	"id" uuid PRIMARY KEY NOT NULL,
-	"legacy_id" text,
-	"import_status" text,
 	"name" text NOT NULL,
 	"default_locale_id" text NOT NULL,
 	"content_version" bigint DEFAULT 1 NOT NULL,
 	"translation_version" bigint DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "spaces_legacy_id_unique" UNIQUE("legacy_id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "task_logs" (
@@ -261,7 +258,7 @@ CREATE TABLE "webhooks" (
 ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_published" ADD CONSTRAINT "content_published_space_id_content_id_contents_space_id_id_fk" FOREIGN KEY ("space_id","content_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contents" ADD CONSTRAINT "contents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "schemas" ADD CONSTRAINT "schemas_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -288,6 +285,8 @@ CREATE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","ful
 CREATE INDEX "contents_parent_slug_prefix_idx" ON "contents" USING btree ("space_id","parent_slug" text_pattern_ops);--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_running_idx" ON "firebase_imports" USING btree ("status") WHERE "firebase_imports"."status" = 'RUNNING';--> statement-breakpoint
 CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("started_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE UNIQUE INDEX "firebase_imports_space_idx" ON "firebase_imports" USING btree ("space_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "firebase_imports_source_idx" ON "firebase_imports" USING btree ("source_space_id") WHERE "firebase_imports"."space_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "schemas_name_idx" ON "schemas" USING btree ("space_id","name");--> statement-breakpoint
 CREATE INDEX "schemas_type_idx" ON "schemas" USING btree ("space_id","type","display_name");--> statement-breakpoint
 CREATE INDEX "sessions_user_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint

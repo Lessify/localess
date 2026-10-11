@@ -1,5 +1,5 @@
 {
-  "id": "4c2950e9-8666-4a79-948b-79b474efb1ca",
+  "id": "75f18ed2-87f8-4f85-b859-f8e901740499",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -658,6 +658,37 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "firebase_imports_space_idx": {
+          "name": "firebase_imports_space_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "firebase_imports_source_idx": {
+          "name": "firebase_imports_source_idx",
+          "columns": [
+            {
+              "expression": "source_space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"firebase_imports\".\"space_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -671,7 +702,7 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "set null",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1210,18 +1241,6 @@
           "primaryKey": true,
           "notNull": true
         },
-        "legacy_id": {
-          "name": "legacy_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "import_status": {
-          "name": "import_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "name": {
           "name": "name",
           "type": "text",
@@ -1280,15 +1299,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "spaces_legacy_id_unique": {
-          "name": "spaces_legacy_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "legacy_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -234,7 +234,7 @@ describe('Firebase import run', () => {
     expect(run.stages.find(it => it.stage === 'translations')!.status).toBe('DONE');
     expect(run.stages.find(it => it.stage === 'assets')!.status).toBe('FAILED');
     expect(run.stages.find(it => it.stage === 'contents')!.status).toBe('PENDING');
-    const [space] = await t.db.select().from(spaces).where(eq(spaces.id, run.spaceId!));
-    expect(space.importStatus).toBe('FAILED');
+    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    expect(space).toMatchObject({ legacyId: 'fbFail', importStatus: 'FAILED' });
   });
 });

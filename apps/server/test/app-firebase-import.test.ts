@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
 import { firebaseImports, spaces } from '../src/infra/database/schema.js';
+import { selectSpaces } from '../src/infra/http/space-access.js';
 import { FirebaseClient } from '../src/modules/firebase-import/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/firebase-import.runner.js';
 import { FirebaseImportService } from '../src/modules/firebase-import/firebase-import.service.js';
@@ -74,6 +75,16 @@ describe('app API: import from Firebase', () => {
     expect(JSON.stringify(rows)).not.toContain('migration-secret');
   });
 
+  it('deleting the imported space deletes its import, and the Firebase space can be imported again', async () => {
+    const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.sourceSpaceId, 'fbA'));
+    expect((await admin.delete(`/api/app/spaces/${run.spaceId}`)).statusCode).toBe(204);
+    expect(await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, run.id))).toEqual([]);
+    expect((await admin.post(`${base}/spaces`, connection())).json()[0].importedAs).toBeNull();
+    const again = await waitFor((await admin.post(base, { ...connection(), spaceId: 'fbA' })).json().id);
+    expect(again).toMatchObject({ status: 'FINISHED', sourceSpaceId: 'fbA' });
+    expect(again.spaceId).not.toBe(run.spaceId);
+  });
+
   it('refuses a second import while one is running', async () => {
     const id = newUuid();
     await t.db.insert(firebaseImports).values({
@@ -106,13 +117,13 @@ describe('app API: import from Firebase', () => {
     });
     await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(fake.url, 'migration-secret', { allowInternal: true }), 'fbB');
     expect((await admin.get(`${base}/${id}`)).json()).toMatchObject({ status: 'FAILED', stages: expect.arrayContaining([{ stage: 'space', status: 'PENDING', count: 0 }]) });
-    expect(await t.db.select().from(spaces).where(eq(spaces.legacyId, 'fbB'))).toEqual([]);
+    expect((await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id)))[0].spaceId).toBeNull();
   });
 
   it('marks a run interrupted by a restart as failed', async () => {
     const id = newUuid();
     const spaceId = newUuid();
-    await insertSpace(t.db, { id: spaceId, name: 'Half', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' }, importStatus: 'IMPORTING' });
+    await insertSpace(t.db, { id: spaceId, name: 'Half', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     await t.db.insert(firebaseImports).values({
       id, origin: fake.url, sourceSpaceId: 'fbB', sourceSpaceName: 'Site B', spaceId, status: 'RUNNING',
       // Its instance stopped long ago.
@@ -123,6 +134,6 @@ describe('app API: import from Firebase', () => {
     await t.app.get(FirebaseImportService).failInterrupted();
     const run = (await admin.get(`${base}/${id}`)).json();
     expect(run).toMatchObject({ status: 'FAILED', error: { stage: 'locales', message: 'Interrupted: the server running it stopped' } });
-    expect((await t.db.select().from(spaces).where(eq(spaces.id, spaceId)))[0].importStatus).toBe('FAILED');
+    expect((await selectSpaces(t.db).where(eq(spaces.id, spaceId)))[0].importStatus).toBe('FAILED');
   });
 });
