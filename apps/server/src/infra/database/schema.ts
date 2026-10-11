@@ -1,8 +1,29 @@
-import { sql } from 'drizzle-orm';
-import type { FirebaseImportStage, FirebaseImportStageName } from '@localess/shared';
+import { type SQL, sql } from 'drizzle-orm';
 import {
+  AssetKind,
+  ContentKind,
+  FIREBASE_IMPORT_STATUSES,
+  type FirebaseImportStage,
+  type FirebaseImportStageName,
+  SchemaType,
+  TaskKind,
+  TaskLogLevel,
+  TaskStatus,
+  TokenPermission,
+  TRANSLATION_IMPORT_FORMATS,
+  TranslationType,
+  USER_ROLES,
+  UserPermission,
+  WebHookErrorType,
+  WebHookEvent,
+  WebHookStatus,
+} from '@localess/shared';
+import { OAUTH_PROVIDERS } from '../../auth/oauth-providers.js';
+import {
+  type AnyPgColumn,
   bigint,
   boolean,
+  check,
   foreignKey,
   index,
   integer,
@@ -20,12 +41,33 @@ import {
  * the SDK and Code as Source refer to stays human readable where it always was: a schema's `name`, a translation's
  * `key`, a token's secret `token`.
  *
- * A space imported from Firebase keeps its Firestore id in `legacy_id` (unique: one import per Firebase space), and
- * so do its assets, so that the space's old asset URLs keep working (docs/roadmap/firebase-space-import.md). The
- * import rewrites every other reference to the new UUIDs.
+ * A space imported from Firebase keeps its Firestore id on its `firebase_imports` row (one import per Firebase space),
+ * and its assets in `legacy_id`, so that the space's old asset URLs keep working (docs/roadmap/firebase-space-import.md).
+ * The import rewrites every other reference to the new UUIDs.
+ *
+ * A column with a fixed set of values is `text({ enum })` over the list in @localess/shared (typed in TypeScript) plus a
+ * CHECK from the same list (refused by the database): UPPERCASE values, except identifiers of external things (OAuth
+ * providers, the password hash algorithm, file formats). Adding a value is a generated migration.
  *
  * Content and asset keys are (space_id, id): the export/import tasks reuse the ids of an export in another space.
  */
+
+/** The values of a string enum (or a value list), as `text({ enum })` takes them. */
+const values = <T extends string>(list: Record<string, T> | readonly T[]): [`${T}`, ...`${T}`[]] =>
+  (Array.isArray(list) ? [...list] : Object.values(list)) as [`${T}`, ...`${T}`[]];
+
+/** `'A', 'B'` for a CHECK: the values are constants of the code, never input. */
+const quoted = (list: readonly string[]): SQL => sql.raw(list.map(it => `'${it}'`).join(', '));
+
+/** CHECK that `column` is one of `list` (null passes, as in any CHECK). */
+const oneOf = (name: string, column: AnyPgColumn, list: readonly string[]) =>
+  check(name, sql`${column} in (${quoted(list)})`);
+
+/** CHECK that every element of the array `column` is one of `list`. */
+const allOf = (name: string, column: AnyPgColumn, list: readonly string[]) =>
+  check(name, sql`${column} <@ array[${quoted(list)}]::text[]`);
+
+export const HASH_ALGORITHMS = ['argon2id'] as const;
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -55,27 +97,34 @@ export const users = pgTable(
     displayName: text('display_name'),
     photoUrl: text('photo_url'),
     disabled: boolean('disabled').notNull().default(false),
-    // 'admin' | 'custom' | null (null = signed up, no access yet)
-    role: text('role'),
-    permissions: text('permissions')
+    // null = signed up, no access yet
+    role: text('role', { enum: values(USER_ROLES) }),
+    permissions: text('permissions', { enum: values(UserPermission) })
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
     lock: boolean('lock').notNull().default(false),
     ...timestamps,
   },
-  t => [uniqueIndex('users_email_idx').on(sql`lower(${t.email})`)],
+  t => [
+    uniqueIndex('users_email_idx').on(sql`lower(${t.email})`),
+    oneOf('users_role_check', t.role, USER_ROLES),
+    allOf('users_permissions_check', t.permissions, values(UserPermission)),
+  ],
 );
 
-export const userCredentials = pgTable('user_credentials', {
-  userId: uuid('user_id')
-    .primaryKey()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  passwordHash: text('password_hash').notNull(),
-  // 'argon2id'
-  hashAlgo: text('hash_algo').notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const userCredentials = pgTable(
+  'user_credentials',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    passwordHash: text('password_hash').notNull(),
+    hashAlgo: text('hash_algo', { enum: values(HASH_ALGORITHMS) }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [oneOf('user_credentials_hash_algo_check', t.hashAlgo, HASH_ALGORITHMS)],
+);
 
 export const userIdentities = pgTable(
   'user_identities',
@@ -83,12 +132,15 @@ export const userIdentities = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    // 'google' | 'microsoft'
-    provider: text('provider').notNull(),
+    provider: text('provider', { enum: values(OAUTH_PROVIDERS) }).notNull(),
     providerSubject: text('provider_subject').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  t => [primaryKey({ columns: [t.provider, t.providerSubject] }), index('user_identities_user_idx').on(t.userId)],
+  t => [
+    primaryKey({ columns: [t.provider, t.providerSubject] }),
+    index('user_identities_user_idx').on(t.userId),
+    oneOf('user_identities_provider_check', t.provider, OAUTH_PROVIDERS),
+  ],
 );
 
 export const sessions = pgTable(
@@ -201,8 +253,7 @@ export const contents = pgTable(
   {
     id: uuid('id').notNull(),
     spaceId: spaceId(),
-    // 'FOLDER' | 'DOCUMENT'
-    kind: text('kind').notNull(),
+    kind: text('kind', { enum: values(ContentKind) }).notNull(),
     name: text('name').notNull(),
     slug: text('slug').notNull(),
     parentSlug: text('parent_slug').notNull().default(''),
@@ -217,6 +268,7 @@ export const contents = pgTable(
     ...timestamps,
   },
   t => [
+    oneOf('contents_kind_check', t.kind, values(ContentKind)),
     // Kept per space: the content import task reuses the ids of an export in another space.
     primaryKey({ columns: [t.spaceId, t.id] }),
     index('contents_parent_idx').on(t.spaceId, t.parentSlug, t.kind.desc(), t.name),
@@ -253,8 +305,7 @@ export const assets = pgTable(
     spaceId: spaceId(),
     // Firestore id of an imported asset: its old URL redirects (301) to the UUID one.
     legacyId: text('legacy_id'),
-    // 'FOLDER' | 'FILE'
-    kind: text('kind').notNull(),
+    kind: text('kind', { enum: values(AssetKind) }).notNull(),
     name: text('name').notNull(),
     // Slash-joined ancestor folder ids (UUIDs; the import rewrites Firestore ones), '' for root.
     parentPath: text('parent_path').notNull().default(''),
@@ -275,6 +326,7 @@ export const assets = pgTable(
     uniqueIndex('assets_legacy_idx').on(t.spaceId, t.legacyId),
     index('assets_parent_idx').on(t.spaceId, t.parentPath, t.kind.desc(), t.name),
     index('assets_kind_idx').on(t.spaceId, t.kind, t.name),
+    oneOf('assets_kind_check', t.kind, values(AssetKind)),
     index('assets_parent_path_prefix_idx').on(t.spaceId, sql`${t.parentPath} text_pattern_ops`),
   ],
 );
@@ -291,8 +343,7 @@ export const schemas = pgTable(
     // What every reference uses (contents.schema, `_schema` in content data, fields' `schemas`/`source`, the SDK and
     // Code as Source), so it is unique per space and human readable. An imported schema keeps its Firestore id here.
     name: text('name').notNull(),
-    // 'ROOT' | 'NODE' | 'ENUM'
-    type: text('type').notNull(),
+    type: text('type', { enum: values(SchemaType) }).notNull(),
     displayName: text('display_name'),
     description: text('description'),
     labels: text('labels').array(),
@@ -301,7 +352,11 @@ export const schemas = pgTable(
     values: jsonb('values').$type<{ name: string; value: string }[]>(),
     ...timestamps,
   },
-  t => [uniqueIndex('schemas_name_idx').on(t.spaceId, t.name), index('schemas_type_idx').on(t.spaceId, t.type, t.displayName)],
+  t => [
+    uniqueIndex('schemas_name_idx').on(t.spaceId, t.name),
+    index('schemas_type_idx').on(t.spaceId, t.type, t.displayName),
+    oneOf('schemas_type_check', t.type, values(SchemaType)),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -316,15 +371,14 @@ export const translations = pgTable(
     // The translation key: what the public API, the SDK, the CLI and export files use, so unique per space. An
     // imported translation keeps its Firestore id here.
     key: text('key').notNull(),
-    // 'STRING' | 'PLURAL' | 'ARRAY'
-    type: text('type').notNull(),
+    type: text('type', { enum: values(TranslationType) }).notNull(),
     locales: jsonb('locales').$type<Record<string, string>>().notNull().default({}),
     labels: text('labels').array(),
     description: text('description'),
     updatedBy: jsonb('updated_by').$type<UpdatedBy>(),
     ...timestamps,
   },
-  t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key)],
+  t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key), oneOf('translations_type_check', t.type, values(TranslationType))],
 );
 
 /** Published flat `{key: value}` maps (were `spaces/{s}/translations/{locale}.json` in Storage). */
@@ -348,15 +402,14 @@ export const tasks = pgTable(
   {
     id: uuid('id').primaryKey(),
     spaceId: spaceId(),
-    kind: text('kind').notNull(),
-    // 'INITIATED' | 'IN_PROGRESS' | 'ERROR' | 'FINISHED'
-    status: text('status').notNull(),
+    kind: text('kind', { enum: values(TaskKind) }).notNull(),
+    status: text('status', { enum: values(TaskStatus) }).notNull(),
     message: text('message'),
     trace: text('trace'),
     path: text('path'),
     locale: text('locale'),
-    // Translation import format: 'full' | 'flat-json' | 'nested-json'
-    type: text('type'),
+    // Translation import format
+    type: text('type', { enum: values(TRANSLATION_IMPORT_FORMATS) }),
     file: jsonb('file').$type<{ name: string; size: number }>(),
     lockedBy: text('locked_by'),
     lockedAt: timestamp('locked_at', { withTimezone: true }),
@@ -367,6 +420,9 @@ export const tasks = pgTable(
     index('tasks_queue_idx')
       .on(t.createdAt)
       .where(sql`${t.status} = 'INITIATED'`),
+    oneOf('tasks_kind_check', t.kind, values(TaskKind)),
+    oneOf('tasks_status_check', t.status, values(TaskStatus)),
+    oneOf('tasks_type_check', t.type, TRANSLATION_IMPORT_FORMATS),
   ],
 );
 
@@ -377,13 +433,12 @@ export const taskLogs = pgTable(
     taskId: uuid('task_id')
       .notNull()
       .references(() => tasks.id, { onDelete: 'cascade' }),
-    // 'INFO' | 'WARN' | 'ERROR'
-    level: text('level').notNull(),
+    level: text('level', { enum: values(TaskLogLevel) }).notNull(),
     message: text('message').notNull(),
     trace: text('trace'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  t => [index('task_logs_task_idx').on(t.taskId, t.createdAt)],
+  t => [index('task_logs_task_idx').on(t.taskId, t.createdAt), oneOf('task_logs_level_check', t.level, values(TaskLogLevel))],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -401,11 +456,15 @@ export const tokens = pgTable(
     name: text('name').notNull(),
     // null = V1 (implicit permissions), 2 = V2
     version: integer('version'),
-    permissions: text('permissions').array(),
+    permissions: text('permissions', { enum: values(TokenPermission) }).array(),
     cacheTtl: integer('cache_ttl'),
     ...timestamps,
   },
-  t => [index('tokens_space_idx').on(t.spaceId, t.createdAt.desc()), index('tokens_permissions_idx').using('gin', t.permissions)],
+  t => [
+    index('tokens_space_idx').on(t.spaceId, t.createdAt.desc()),
+    index('tokens_permissions_idx').using('gin', t.permissions),
+    allOf('tokens_permissions_check', t.permissions, values(TokenPermission)),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -420,7 +479,7 @@ export const webhooks = pgTable(
     name: text('name').notNull(),
     url: text('url').notNull(),
     enabled: boolean('enabled').notNull().default(true),
-    events: text('events').array().notNull(),
+    events: text('events', { enum: values(WebHookEvent) }).array().notNull(),
     headers: jsonb('headers').$type<Record<string, string>>(),
     secret: text('secret'),
     ...timestamps,
@@ -428,6 +487,7 @@ export const webhooks = pgTable(
   t => [
     index('webhooks_space_idx').on(t.spaceId, t.name),
     index('webhooks_events_idx').using('gin', t.events),
+    allOf('webhooks_events_check', t.events, values(WebHookEvent)),
   ],
 );
 
@@ -440,11 +500,10 @@ export const webhookLogs = pgTable(
       .references(() => webhooks.id, { onDelete: 'cascade' }),
     event: text('event').notNull(),
     url: text('url').notNull(),
-    // 'success' | 'failure'
-    status: text('status').notNull(),
+    status: text('status', { enum: values(WebHookStatus) }).notNull(),
     statusCode: integer('status_code'),
     statusText: text('status_text'),
-    errorType: text('error_type'),
+    errorType: text('error_type', { enum: values(WebHookErrorType) }),
     errorMessage: text('error_message'),
     requestSize: integer('request_size').notNull(),
     data: jsonb('data').$type<Record<string, unknown>>().notNull(),
@@ -454,7 +513,11 @@ export const webhookLogs = pgTable(
     responseBodyTruncated: boolean('response_body_truncated'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  t => [index('webhook_logs_webhook_idx').on(t.webhookId, t.createdAt.desc())],
+  t => [
+    index('webhook_logs_webhook_idx').on(t.webhookId, t.createdAt.desc()),
+    oneOf('webhook_logs_status_check', t.status, values(WebHookStatus)),
+    oneOf('webhook_logs_error_type_check', t.errorType, values(WebHookErrorType)),
+  ],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -472,8 +535,7 @@ export const firebaseImports = pgTable(
     // The space the run created (one run per space); deleting the space deletes its run. Null until the space exists,
     // and for a run that failed before creating it.
     spaceId: uuid('space_id').references(() => spaces.id, { onDelete: 'cascade' }),
-    // 'RUNNING' | 'FINISHED' | 'FAILED'
-    status: text('status').notNull(),
+    status: text('status', { enum: values(FIREBASE_IMPORT_STATUSES) }).notNull(),
     stages: jsonb('stages').$type<FirebaseImportStage[]>().notNull(),
     error: jsonb('error').$type<{ stage: FirebaseImportStageName; message: string }>(),
     startedBy: jsonb('started_by').$type<UpdatedBy>().notNull(),
@@ -488,6 +550,7 @@ export const firebaseImports = pgTable(
       .on(t.status)
       .where(sql`${t.status} = 'RUNNING'`),
     index('firebase_imports_started_idx').on(t.startedAt.desc()),
+    oneOf('firebase_imports_status_check', t.status, FIREBASE_IMPORT_STATUSES),
     uniqueIndex('firebase_imports_space_idx').on(t.spaceId),
     // One local space per Firebase space: its legacy id resolves to one space.
     uniqueIndex('firebase_imports_source_idx')

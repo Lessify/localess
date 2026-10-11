@@ -69,7 +69,7 @@ export class UserInviteDialogComponent {
   }
 
   protected readonly roleItemToString = (value: string): string => {
-    const labels: Record<string, string> = { custom: 'Custom', admin: 'Admin' };
+    const labels: Record<string, string> = { CUSTOM: 'Custom', ADMIN: 'Admin' };
     return labels[value] ?? value;
   };
 

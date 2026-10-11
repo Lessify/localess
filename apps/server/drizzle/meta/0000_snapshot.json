@@ -1,5 +1,5 @@
 {
-  "id": "75f18ed2-87f8-4f85-b859-f8e901740499",
+  "id": "faac5ca4-6d9d-41e7-8f26-4ff43a0dc02c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -239,7 +239,12 @@
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "assets_kind_check": {
+          "name": "assets_kind_check",
+          "value": "\"assets\".\"kind\" in ('FOLDER', 'FILE')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.content_published": {
@@ -545,7 +550,12 @@
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "contents_kind_check": {
+          "name": "contents_kind_check",
+          "value": "\"contents\".\"kind\" in ('FOLDER', 'DOCUMENT')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.firebase_imports": {
@@ -709,7 +719,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "firebase_imports_status_check": {
+          "name": "firebase_imports_status_check",
+          "value": "\"firebase_imports\".\"status\" in ('RUNNING', 'FINISHED', 'FAILED')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.locales": {
@@ -942,7 +957,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "schemas_type_check": {
+          "name": "schemas_type_check",
+          "value": "\"schemas\".\"type\" in ('ROOT', 'NODE', 'ENUM')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.sessions": {
@@ -1387,7 +1407,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "task_logs_level_check": {
+          "name": "task_logs_level_check",
+          "value": "\"task_logs\".\"level\" in ('INFO', 'WARN', 'ERROR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.tasks": {
@@ -1538,7 +1563,20 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "tasks_kind_check": {
+          "name": "tasks_kind_check",
+          "value": "\"tasks\".\"kind\" in ('ASSET_EXPORT', 'ASSET_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT')"
+        },
+        "tasks_status_check": {
+          "name": "tasks_status_check",
+          "value": "\"tasks\".\"status\" in ('INITIATED', 'IN_PROGRESS', 'ERROR', 'FINISHED')"
+        },
+        "tasks_type_check": {
+          "name": "tasks_type_check",
+          "value": "\"tasks\".\"type\" in ('full', 'flat-json', 'nested-json')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.tokens": {
@@ -1666,7 +1704,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "tokens_permissions_check": {
+          "name": "tokens_permissions_check",
+          "value": "\"tokens\".\"permissions\" <@ array['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT', 'DEV_TOOLS']::text[]"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.translation_published": {
@@ -1838,7 +1881,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "translations_type_check": {
+          "name": "translations_type_check",
+          "value": "\"translations\".\"type\" in ('STRING', 'PLURAL', 'ARRAY')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.user_credentials": {
@@ -1890,7 +1938,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "user_credentials_hash_algo_check": {
+          "name": "user_credentials_hash_algo_check",
+          "value": "\"user_credentials\".\"hash_algo\" in ('argon2id')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.user_identities": {
@@ -1966,7 +2019,12 @@
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "user_identities_provider_check": {
+          "name": "user_identities_provider_check",
+          "value": "\"user_identities\".\"provider\" in ('google', 'microsoft')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.users": {
@@ -2067,7 +2125,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "users_role_check": {
+          "name": "users_role_check",
+          "value": "\"users\".\"role\" in ('ADMIN', 'CUSTOM')"
+        },
+        "users_permissions_check": {
+          "name": "users_permissions_check",
+          "value": "\"users\".\"permissions\" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'SETTINGS_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[]"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.webhook_logs": {
@@ -2213,7 +2280,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "webhook_logs_status_check": {
+          "name": "webhook_logs_status_check",
+          "value": "\"webhook_logs\".\"status\" in ('SUCCESS', 'FAILURE')"
+        },
+        "webhook_logs_error_type_check": {
+          "name": "webhook_logs_error_type_check",
+          "value": "\"webhook_logs\".\"error_type\" in ('TIMEOUT', 'NETWORK', 'HTTP')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.webhooks": {
@@ -2340,7 +2416,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "webhooks_events_check": {
+          "name": "webhooks_events_check",
+          "value": "\"webhooks\".\"events\" <@ array['content.published', 'content.unpublished', 'content.changed', 'translation.published', 'translation.changed']::text[]"
+        }
+      },
       "isRLSEnabled": false
     }
   },

@@ -62,7 +62,7 @@ describe('task worker: exports and imports', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    cookie = await userWithAccess(t, 'admin@example.com', { role: 'admin' });
+    cookie = await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' });
     jpeg = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#336699' } })
       .jpeg()
       .toBuffer();

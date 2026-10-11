@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
-import { UserPermission } from '@localess/shared';
+import { TranslationType, UserPermission } from '@localess/shared';
 import { RequireAllPermissions, RequirePermission } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
@@ -14,7 +14,7 @@ import { TranslationRow, TranslationsService } from './translations.service.js';
 const translationKey = z.string().min(1).max(500);
 const createSchema = z.object({
   key: translationKey,
-  type: z.enum(['STRING', 'PLURAL', 'ARRAY']),
+  type: z.enum(TranslationType),
   locales: z.record(z.string(), z.string()),
   labels: zLabels.optional(),
   description: z.string().max(2000).optional(),

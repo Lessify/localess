@@ -12,11 +12,11 @@ describe('authentication', () => {
   beforeAll(async () => {
     t = await createTestApp();
     usersService = t.app.get(UsersService);
-    await usersService.create({ email: 'admin@example.com', password: 'admin-pass', role: 'admin' });
+    await usersService.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
     await usersService.create({
       email: 'Editor@Example.com',
       password: 'editor-pass',
-      role: 'custom',
+      role: 'CUSTOM',
       permissions: [UserPermission.CONTENT_READ],
     });
   });
@@ -38,7 +38,7 @@ describe('authentication', () => {
       payload: { email: 'admin@example.com', password: 'admin-pass' },
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json().user).toMatchObject({ email: 'admin@example.com', role: 'admin', providers: ['password'] });
+    expect(response.json().user).toMatchObject({ email: 'admin@example.com', role: 'ADMIN', providers: ['password'] });
     expect(response.json().user).not.toHaveProperty('permissions');
 
     const cookie = response.cookies.find(it => it.name === 'localess_session');
@@ -49,7 +49,7 @@ describe('authentication', () => {
   it('matches emails case-insensitively', async () => {
     const cookie = await login(t, 'editor@example.com', 'editor-pass');
     const response = await me(cookie);
-    expect(response.json().user).toMatchObject({ email: 'Editor@Example.com', role: 'custom', permissions: ['CONTENT_READ'], lock: false });
+    expect(response.json().user).toMatchObject({ email: 'Editor@Example.com', role: 'CUSTOM', permissions: ['CONTENT_READ'], lock: false });
   });
 
   it('answers wrong passwords and unknown emails with the same 401', async () => {
@@ -112,7 +112,7 @@ describe('authentication', () => {
   });
 
   it('blocks disabled users, including their existing sessions', async () => {
-    const user = await usersService.create({ email: 'leaver@example.com', password: 'leaver-pass', role: 'custom' });
+    const user = await usersService.create({ email: 'leaver@example.com', password: 'leaver-pass', role: 'CUSTOM' });
     const cookie = await login(t, 'leaver@example.com', 'leaver-pass');
     await t.db.update(users).set({ disabled: true }).where(eq(users.id, user.id));
     expect((await me(cookie)).statusCode).toBe(401);
@@ -126,10 +126,10 @@ describe('authentication', () => {
   });
 
   it('applies role changes immediately, without signing in again', async () => {
-    const user = await usersService.create({ email: 'promoted@example.com', password: 'promo-pass', role: 'custom', permissions: [] });
+    const user = await usersService.create({ email: 'promoted@example.com', password: 'promo-pass', role: 'CUSTOM', permissions: [] });
     const cookie = await login(t, 'promoted@example.com', 'promo-pass');
     expect((await t.request({ method: 'GET', url: '/api/app/users', headers: { cookie } })).statusCode).toBe(403);
-    await usersService.updateAccess(user.id, { role: 'custom', permissions: [UserPermission.USER_MANAGEMENT] });
+    await usersService.updateAccess(user.id, { role: 'CUSTOM', permissions: [UserPermission.USER_MANAGEMENT] });
     expect((await t.request({ method: 'GET', url: '/api/app/users', headers: { cookie } })).statusCode).toBe(200);
   });
 

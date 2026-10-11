@@ -1,10 +1,10 @@
 import { canGrantAdmin, canGrantPermission, canManageUser, ManagedUser, UserManager } from './user-management';
 
-const admin: UserManager = { id: 'adm', role: 'admin', permissions: undefined };
-const manager: UserManager = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+const admin: UserManager = { id: 'adm', role: 'ADMIN', permissions: undefined };
+const manager: UserManager = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
 const target = (overrides: Partial<ManagedUser>): ManagedUser => ({
   id: 'other',
-  role: 'custom',
+  role: 'CUSTOM',
   permissions: ['CONTENT_READ'],
   ...overrides,
 });
@@ -12,8 +12,8 @@ const target = (overrides: Partial<ManagedUser>): ManagedUser => ({
 describe('user-management', () => {
   describe('canManageUser', () => {
     it('lets admins manage anyone, including themselves and other admins', () => {
-      expect(canManageUser(admin, target({ id: 'adm', role: 'admin' }))).toBe(true);
-      expect(canManageUser(admin, target({ role: 'admin' }))).toBe(true);
+      expect(canManageUser(admin, target({ id: 'adm', role: 'ADMIN' }))).toBe(true);
+      expect(canManageUser(admin, target({ role: 'ADMIN' }))).toBe(true);
     });
 
     it('lets a user manager manage users they outrank', () => {
@@ -24,12 +24,12 @@ describe('user-management', () => {
 
     it('stops a user manager at themselves, admins and users with more permissions', () => {
       expect(canManageUser(manager, target({ id: 'mgr' }))).toBe(false);
-      expect(canManageUser(manager, target({ role: 'admin' }))).toBe(false);
+      expect(canManageUser(manager, target({ role: 'ADMIN' }))).toBe(false);
       expect(canManageUser(manager, target({ permissions: ['SETTINGS_MANAGEMENT'] }))).toBe(false);
     });
 
     it('refuses users without USER_MANAGEMENT', () => {
-      expect(canManageUser({ id: 'x', role: 'custom', permissions: ['CONTENT_READ'] }, target({ permissions: [] }))).toBe(false);
+      expect(canManageUser({ id: 'x', role: 'CUSTOM', permissions: ['CONTENT_READ'] }, target({ permissions: [] }))).toBe(false);
       expect(canManageUser({ id: 'x', role: undefined, permissions: undefined }, target({ permissions: [] }))).toBe(false);
     });
   });

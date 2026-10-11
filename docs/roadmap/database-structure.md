@@ -87,6 +87,34 @@ keys, asset files, content documents, schemas), storage (the sum of `assets.size
 and translation progress per locale against the number of keys, on the current values. Tasks and the sizes of the
 published JSON are no longer shown. See [dashboard.md](../features/spaces/dashboard.md).
 
+## Columns with a fixed set of values
+
+Every such column is `text('…', { enum: values(LIST) })` over the list in `@localess/shared` (or the server, for
+server-only lists), plus a CHECK built from the same list:
+
+- **TypeScript** types the column as the union of its values; writes accept the literal (`'FOLDER'`) or the enum
+  member (`AssetKind.FOLDER`). Untrusted strings (request bodies, Firebase documents) must be validated first: the
+  controllers use `z.enum(…)`, the Firebase import keeps known values and warns about the rest.
+- **The database** refuses anything else (`23514`). A contract test (`schema-enums.test.ts`) checks every CHECK
+  against its list, so the two cannot drift.
+- **Not a Postgres enum type:** values can't be removed or renamed without recreating the type. Adding a value is a
+  generated migration that replaces the CHECK.
+
+| Column | Values |
+|---|---|
+| `users.role`, `users.permissions` | `USER_ROLES` (`ADMIN`, `CUSTOM`), `UserPermission` |
+| `user_credentials.hash_algo`, `user_identities.provider` | `HASH_ALGORITHMS`, `OAUTH_PROVIDERS` |
+| `contents.kind`, `assets.kind`, `schemas.type`, `translations.type` | `ContentKind`, `AssetKind`, `SchemaType`, `TranslationType` |
+| `tasks.kind`, `tasks.status`, `tasks.type`, `task_logs.level` | `TaskKind`, `TaskStatus`, `TRANSLATION_IMPORT_FORMATS`, `TaskLogLevel` |
+| `tokens.permissions`, `webhooks.events` | `TokenPermission`, `WebHookEvent` (every element) |
+| `webhook_logs.status`, `webhook_logs.error_type`, `firebase_imports.status` | `WebHookStatus`, `WebHookErrorType`, `FIREBASE_IMPORT_STATUSES` |
+
+**Casing:** UPPERCASE, the same value in the database, TypeScript and both APIs, never mapped between layers. The
+role (`admin`/`custom` → `ADMIN`/`CUSTOM`) and webhook log values (`success`/`failure`, `timeout`/`network`/`http`)
+were lowercase and now follow the rule. Exceptions, because they name external things rather than states of ours:
+OAuth providers (`google`, `microsoft`: also in `/api/auth/google`), the password hash algorithm (`argon2id`), import
+file formats (`flat-json`), and webhook event names (`content.published`: part of the webhook contract).
+
 ## To do
 
 - **Removing a locale from a space:** decide what happens to its values in translations and contents (keep as today,

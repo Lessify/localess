@@ -21,7 +21,7 @@ export function canManageUser(manager: UserManager, target: ManagedUser): boolea
 
 /** Only admins may make someone an admin. */
 export function canGrantAdmin(manager: UserManager): boolean {
-  return canGrant(manager, 'admin', []);
+  return canGrant(manager, 'ADMIN', []);
 }
 
 /** Admins may grant anything; a user manager only permissions they hold themselves. */

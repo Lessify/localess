@@ -5,11 +5,11 @@ import type { ChangeEvent } from './events.service.js';
 
 const S = '00000000-0000-7000-8000-000000000001';
 const event = (entity: string, spaceId: string | null = S, id?: string): ChangeEvent => ({ spaceId, entity, id, op: 'updated' });
-const custom = (...permissions: UserPermission[]) => ({ id: 'me', role: 'custom' as const, permissions });
+const custom = (...permissions: UserPermission[]) => ({ id: 'me', role: 'CUSTOM' as const, permissions });
 
 describe('canReceive', () => {
   it('lets admins receive every event, unknown entities included', () => {
-    const admin = { id: 'a', role: 'admin' as const };
+    const admin = { id: 'a', role: 'ADMIN' as const };
     for (const entity of ['contents', 'tokens', 'users', 'webhook_logs', 'something-new']) {
       expect(canReceive(admin, event(entity)), entity).toBe(true);
     }

@@ -58,7 +58,7 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
   const doc = (name: keyof typeof C, slug: string, parentSlug: string, data: Record<string, unknown>, extra: object = {}) => ({
     id: C[name],
     spaceId,
-    kind: 'DOCUMENT',
+    kind: 'DOCUMENT' as const,
     name,
     slug,
     parentSlug,

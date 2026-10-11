@@ -56,7 +56,7 @@ export class FirstAdminService implements OnApplicationBootstrap {
           email: admin.email,
           emailVerified: true,
           displayName: admin.displayName ?? DEFAULT_ADMIN_NAME,
-          role: 'admin',
+          role: 'ADMIN',
         })
         .returning({ id: users.id });
       await tx.insert(userCredentials).values({ userId: user.id, passwordHash, hashAlgo: 'argon2id' });

@@ -44,7 +44,7 @@ export class AuthGuard implements CanActivate {
     const principal = toPrincipal(session.user);
     const allowed =
       access.kind === 'admin'
-        ? principal.role === 'admin'
+        ? principal.role === 'ADMIN'
         : access.kind === 'anyRole'
           ? hasAnyRole(principal)
           : access.kind === 'anyOf'

@@ -55,7 +55,7 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     await t.app.listen(0, '127.0.0.1');
     origin = await t.app.getUrl();
     origin = origin.replace('[::1]', '127.0.0.1');
-    cookie = await userWithAccess(t, 'admin@example.com', { role: 'admin' });
+    cookie = await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
@@ -82,7 +82,7 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
   });
 
   it('sends a custom user only the events it may read', async () => {
-    const reader = await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['TRANSLATION_READ'] });
+    const reader = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
     const events = t.app.get(EventsService);
     const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 2, async () => {
       await events.publish({ spaceId: S1, entity: 'tokens', id: 'tok', op: 'updated' });

@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
-import { WebHookEvent } from '@localess/shared';
+import { TranslationType, WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { translationPublished, translations } from '../../infra/database/schema.js';
@@ -84,7 +84,7 @@ export class TranslationsService {
 
   create(
     spaceId: string,
-    input: { key: string; type: string; locales: Record<string, string>; labels?: string[]; description?: string },
+    input: { key: string; type: TranslationType; locales: Record<string, string>; labels?: string[]; description?: string },
     user: UserRow,
   ): Promise<TranslationRow> {
     return this.write(spaceId, async (tx, space) => {

@@ -8,8 +8,8 @@ describe('own profile', () => {
   beforeAll(async () => {
     t = await createTestApp();
     const users = t.app.get(UsersService);
-    await users.create({ email: 'me@example.com', password: 'old-pass', role: 'custom' });
-    await users.create({ email: 'taken@example.com', password: 'whatever', role: 'custom' });
+    await users.create({ email: 'me@example.com', password: 'old-pass', role: 'CUSTOM' });
+    await users.create({ email: 'taken@example.com', password: 'whatever', role: 'CUSTOM' });
   });
 
   afterAll(() => t?.close());

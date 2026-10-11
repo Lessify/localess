@@ -3,6 +3,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
+import type { SchemaType } from '@localess/shared';
 import { EventsService } from '../../infra/events/events.service.js';
 import { bumpVersion, requireSpace } from '../../infra/http/space-access.js';
 
@@ -27,7 +28,7 @@ export class SchemasService {
     private readonly events: EventsService,
   ) {}
 
-  async list(spaceId: string, type?: string): Promise<SchemaRow[]> {
+  async list(spaceId: string, type?: SchemaType): Promise<SchemaRow[]> {
     return this.db
       .select()
       .from(schemas)

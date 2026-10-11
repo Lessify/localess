@@ -10,9 +10,9 @@
       </hlm-select-trigger>
       <hlm-select-content *hlmSelectPortal>
         <hlm-select-item [value]="null">None</hlm-select-item>
-        <hlm-select-item value="custom">Custom</hlm-select-item>
+        <hlm-select-item value="CUSTOM">Custom</hlm-select-item>
         @if (canGrantAdmin()) {
-          <hlm-select-item value="admin">Admin</hlm-select-item>
+          <hlm-select-item value="ADMIN">Admin</hlm-select-item>
         }
       </hlm-select-content>
     </hlm-select>
@@ -21,7 +21,7 @@
     }
   </div>
 
-  @if (form.value.role === 'custom') {
+  @if (form.value.role === 'CUSTOM') {
     <div class="flex items-center gap-3">
       <hlm-switch
         formControlName="lock"

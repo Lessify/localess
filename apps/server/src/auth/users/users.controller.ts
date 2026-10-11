@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { canGrant, canManageUser, USER_PERMISSIONS, UserPermission } from '@localess/shared';
+import { canGrant, canManageUser, USER_PERMISSIONS, USER_ROLES, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../decorators.js';
 import { PASSWORD_MIN_LENGTH } from '../password.js';
 import { PasswordResetService } from '../password-reset.service.js';
@@ -13,7 +13,7 @@ import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { toPrincipal, UserDto, type UserRow, UsersService } from './users.service.js';
 
-const roleSchema = z.enum(['admin', 'custom']).nullish();
+const roleSchema = z.enum(USER_ROLES).nullish();
 const permissionsSchema = z.array(z.enum(USER_PERMISSIONS as [UserPermission, ...UserPermission[]])).optional();
 
 const inviteSchema = z.object({

@@ -117,7 +117,7 @@ export const UserStore = signalStore(
   }),
   withComputed(state => {
     return {
-      isRoleAdmin: computed(() => state.role() === 'admin'),
+      isRoleAdmin: computed(() => state.role() === 'ADMIN'),
       isLocked: computed(() => state.lock() === true),
     };
   }),

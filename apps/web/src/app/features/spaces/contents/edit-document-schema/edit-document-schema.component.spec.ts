@@ -22,7 +22,7 @@ function setup(config: { schemas?: Schema[]; data?: ContentData; locale?: Locale
       { provide: Router, useValue: {} },
       // On a non-default locale the translate menu renders, and its canUserPerform pipe reads
       // UserStore, which would otherwise read the session.
-      { provide: UserStore, useValue: { role: signal('admin'), permissions: signal([]) } },
+      { provide: UserStore, useValue: { role: signal('ADMIN'), permissions: signal([]) } },
     ],
   });
   const fixture = TestBed.createComponent(EditDocumentSchemaComponent);

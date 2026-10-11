@@ -68,7 +68,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'custom',
+        role: 'CUSTOM',
         permissions: [
           'TRANSLATION_READ',
           'TRANSLATION_CREATE',
@@ -82,7 +82,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     );
     reader = api(
       t,
-      await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'] }),
+      await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'] }),
     );
   });
 
@@ -258,7 +258,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     it('deletes one key, or all keys with SPACE_MANAGEMENT', async () => {
       expect((await editor.delete(url('taken'))).statusCode).toBe(204);
       expect((await editor.delete(base)).statusCode).toBe(403);
-      const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
+      const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
       expect((await admin.delete(base)).statusCode).toBe(204);
       expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 0 });
     });
@@ -284,7 +284,7 @@ describe('app API: without a translation provider or Unsplash key', () => {
   afterAll(() => t?.close());
 
   it('answers 412 with an explanation, so the UI can tell the user why', async () => {
-    const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
+    const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
     expect((await admin.get('/api/app/translate/status')).json()).toEqual({ enabled: false, provider: 'none' });
     const single = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' });
     expect(single.statusCode).toBe(412);

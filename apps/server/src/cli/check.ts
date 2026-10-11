@@ -29,7 +29,7 @@ export async function runChecks(config: AppConfig, db: Database, storage: Storag
       : `embedded Postgres in ${config.database.embedded.dataDir}, migrations applied`,
   );
 
-  const [{ admins }] = await db.select({ admins: count() }).from(users).where(eq(users.role, 'admin'));
+  const [{ admins }] = await db.select({ admins: count() }).from(users).where(eq(users.role, 'ADMIN'));
   add(
     'admin user',
     admins > 0 ? 'ok' : 'fail',

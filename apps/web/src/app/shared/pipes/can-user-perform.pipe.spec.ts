@@ -5,7 +5,7 @@ import { UserStore } from '@core/stores/user.store';
 import { CanUserPerformPipe } from './can-user-perform.pipe';
 
 describe('CanUserPerformPipe', () => {
-  function createPipe(role: 'admin' | 'custom' | undefined, permissions?: string[]): CanUserPerformPipe {
+  function createPipe(role: 'ADMIN' | 'CUSTOM' | undefined, permissions?: string[]): CanUserPerformPipe {
     const fakeUserStore = {
       role: signal(role),
       permissions: signal(permissions),
@@ -34,32 +34,32 @@ describe('CanUserPerformPipe', () => {
   });
 
   it('is true for the admin role regardless of the single permission requested', () => {
-    const pipe = createPipe('admin');
+    const pipe = createPipe('ADMIN');
     expect(transformSync(pipe, 'contents:read')).toBe(true);
   });
 
   it('is true for a custom role that has the exact permission', () => {
-    const pipe = createPipe('custom', ['contents:read']);
+    const pipe = createPipe('CUSTOM', ['contents:read']);
     expect(transformSync(pipe, 'contents:read')).toBe(true);
   });
 
   it('is false for a custom role missing the permission', () => {
-    const pipe = createPipe('custom', ['contents:write']);
+    const pipe = createPipe('CUSTOM', ['contents:write']);
     expect(transformSync(pipe, 'contents:read')).toBe(false);
   });
 
   it('is true for the admin role regardless of the permission array requested', () => {
-    const pipe = createPipe('admin');
+    const pipe = createPipe('ADMIN');
     expect(transformSync(pipe, ['contents:read', 'contents:write'])).toBe(true);
   });
 
   it('is true for a custom role that has at least one of the requested permissions', () => {
-    const pipe = createPipe('custom', ['contents:write']);
+    const pipe = createPipe('CUSTOM', ['contents:write']);
     expect(transformSync(pipe, ['contents:read', 'contents:write'])).toBe(true);
   });
 
   it('is false for a custom role with none of the requested permissions', () => {
-    const pipe = createPipe('custom', ['assets:read']);
+    const pipe = createPipe('CUSTOM', ['assets:read']);
     expect(transformSync(pipe, ['contents:read', 'contents:write'])).toBe(false);
   });
 });

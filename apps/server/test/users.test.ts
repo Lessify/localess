@@ -16,23 +16,23 @@ describe('user management', () => {
   beforeAll(async () => {
     t = await createTestApp();
     usersService = t.app.get(UsersService);
-    const admin = await usersService.create({ email: 'admin@example.com', password: 'secret1', role: 'admin' });
+    const admin = await usersService.create({ email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
     const manager = await usersService.create({
       email: 'manager@example.com',
       password: 'secret1',
-      role: 'custom',
+      role: 'CUSTOM',
       permissions: [USER_MANAGEMENT, CONTENT_READ, CONTENT_UPDATE],
     });
     const reader = await usersService.create({
       email: 'reader@example.com',
       password: 'secret1',
-      role: 'custom',
+      role: 'CUSTOM',
       permissions: [CONTENT_READ],
     });
     const powerful = await usersService.create({
       email: 'powerful@example.com',
       password: 'secret1',
-      role: 'custom',
+      role: 'CUSTOM',
       permissions: [SETTINGS_MANAGEMENT],
     });
     ids = { admin: admin.id, manager: manager.id, reader: reader.id, powerful: powerful.id };
@@ -64,13 +64,13 @@ describe('user management', () => {
         email: 'new-admin@example.com',
         password: 'secret1',
         displayName: 'New Admin',
-        role: 'admin',
+        role: 'ADMIN',
       });
       expect(response.statusCode).toBe(201);
       expect(response.json()).toMatchObject({
         email: 'new-admin@example.com',
         displayName: 'New Admin',
-        role: 'admin',
+        role: 'ADMIN',
         providers: ['password'],
       });
       await expect(login(t, 'new-admin@example.com', 'secret1')).resolves.toContain('localess_session=');
@@ -88,7 +88,7 @@ describe('user management', () => {
           await call(adminCookie, 'POST', '/api/app/users', {
             email: 'a@example.com',
             password: 'secret1',
-            role: 'custom',
+            role: 'CUSTOM',
             permissions: ['GOD_MODE'],
           })
         ).statusCode,
@@ -99,19 +99,19 @@ describe('user management', () => {
       const ok = await call(managerCookie, 'POST', '/api/app/users', {
         email: 'helper@example.com',
         password: 'secret1',
-        role: 'custom',
+        role: 'CUSTOM',
         permissions: [CONTENT_READ],
       });
       expect(ok.statusCode).toBe(201);
       expect(
-        (await call(managerCookie, 'POST', '/api/app/users', { email: 'x1@example.com', password: 'secret1', role: 'admin' })).statusCode,
+        (await call(managerCookie, 'POST', '/api/app/users', { email: 'x1@example.com', password: 'secret1', role: 'ADMIN' })).statusCode,
       ).toBe(403);
       expect(
         (
           await call(managerCookie, 'POST', '/api/app/users', {
             email: 'x2@example.com',
             password: 'secret1',
-            role: 'custom',
+            role: 'CUSTOM',
             permissions: [SETTINGS_MANAGEMENT],
           })
         ).statusCode,
@@ -122,39 +122,39 @@ describe('user management', () => {
   describe('update access', () => {
     it('lets a manager change a user they outrank, within their own permissions', async () => {
       const response = await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, {
-        role: 'custom',
+        role: 'CUSTOM',
         permissions: [CONTENT_READ, CONTENT_UPDATE],
         lock: true,
       });
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toMatchObject({ role: 'custom', permissions: [CONTENT_READ, CONTENT_UPDATE], lock: true });
+      expect(response.json()).toMatchObject({ role: 'CUSTOM', permissions: [CONTENT_READ, CONTENT_UPDATE], lock: true });
     });
 
     it('stops a manager from editing themselves, admins, or users with permissions they lack', async () => {
-      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.manager}`, { role: 'custom', permissions: [] })).statusCode).toBe(
+      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.manager}`, { role: 'CUSTOM', permissions: [] })).statusCode).toBe(
         403,
       );
-      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: 'custom', permissions: [] })).statusCode).toBe(403);
-      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.powerful}`, { role: 'custom', permissions: [] })).statusCode).toBe(
+      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: 'CUSTOM', permissions: [] })).statusCode).toBe(403);
+      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.powerful}`, { role: 'CUSTOM', permissions: [] })).statusCode).toBe(
         403,
       );
     });
 
     it('stops a manager from granting admin or permissions they lack', async () => {
-      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'admin' })).statusCode).toBe(403);
+      expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'ADMIN' })).statusCode).toBe(403);
       expect(
-        (await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'custom', permissions: [SETTINGS_MANAGEMENT] }))
+        (await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'CUSTOM', permissions: [SETTINGS_MANAGEMENT] }))
           .statusCode,
       ).toBe(403);
     });
 
     it('clears permissions and lock when promoting to admin or removing the role', async () => {
       const promoted = await call(adminCookie, 'PATCH', `/api/app/users/${ids.powerful}`, {
-        role: 'admin',
+        role: 'ADMIN',
         permissions: [CONTENT_READ],
         lock: true,
       });
-      expect(promoted.json()).toMatchObject({ role: 'admin' });
+      expect(promoted.json()).toMatchObject({ role: 'ADMIN' });
       expect(promoted.json()).not.toHaveProperty('permissions');
       const demoted = await call(adminCookie, 'PATCH', `/api/app/users/${ids.powerful}`, { role: null });
       expect(demoted.json()).not.toHaveProperty('role');
@@ -172,7 +172,7 @@ describe('user management', () => {
     const me = (cookie: string) => t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
 
     it('disables a user: their sessions end and sign-in is refused; enabling lets them back in', async () => {
-      const user = await usersService.create({ email: 'leaver@example.com', password: 'secret1', role: 'custom', permissions: [CONTENT_READ] });
+      const user = await usersService.create({ email: 'leaver@example.com', password: 'secret1', role: 'CUSTOM', permissions: [CONTENT_READ] });
       const cookie = await login(t, 'leaver@example.com', 'secret1');
 
       const disabled = await call(managerCookie, 'PATCH', `/api/app/users/${user.id}/status`, { disabled: true });
@@ -213,7 +213,7 @@ describe('user management', () => {
       const victim = await usersService.create({
         email: 'victim@example.com',
         password: 'secret1',
-        role: 'custom',
+        role: 'CUSTOM',
         permissions: [CONTENT_READ],
       });
       const victimCookie = await login(t, 'victim@example.com', 'secret1');

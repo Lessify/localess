@@ -109,7 +109,7 @@ whose run is `RUNNING` answers `409` (the run owns it until it ends).
 
 ### Import API
 
-Admin only (`role: admin`), under `/api/app/admin/firebase-import`:
+Admin only (`role: ADMIN`), under `/api/app/admin/firebase-import`:
 
 | Endpoint | Behaviour |
 |---|---|

@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { UserPermission } from './models/user.model.js';
 import { canGrant, canManageUser, canPerform, hasAnyRole, Principal } from './permissions.js';
 
-const admin: Principal = { id: 'admin', role: 'admin', permissions: [] };
+const admin: Principal = { id: 'admin', role: 'ADMIN', permissions: [] };
 const manager: Principal = {
   id: 'manager',
-  role: 'custom',
+  role: 'CUSTOM',
   permissions: [UserPermission.USER_MANAGEMENT, UserPermission.CONTENT_READ, UserPermission.CONTENT_UPDATE],
 };
-const reader: Principal = { id: 'reader', role: 'custom', permissions: [UserPermission.CONTENT_READ] };
+const reader: Principal = { id: 'reader', role: 'CUSTOM', permissions: [UserPermission.CONTENT_READ] };
 const noRole: Principal = { id: 'new', role: null, permissions: [UserPermission.CONTENT_READ] };
 
 describe('canPerform', () => {
@@ -31,22 +31,22 @@ describe('canPerform', () => {
 
 describe('canGrant', () => {
   it('lets admins grant anything, including the admin role', () => {
-    expect(canGrant(admin, 'admin', [])).toBe(true);
+    expect(canGrant(admin, 'ADMIN', [])).toBe(true);
   });
 
   it('lets a manager grant the custom role with permissions they hold', () => {
-    expect(canGrant(manager, 'custom', [UserPermission.CONTENT_READ])).toBe(true);
+    expect(canGrant(manager, 'CUSTOM', [UserPermission.CONTENT_READ])).toBe(true);
     expect(canGrant(manager, undefined, undefined)).toBe(true);
     expect(canGrant(manager, null, [])).toBe(true);
   });
 
   it('never lets a manager grant admin or a permission they lack', () => {
-    expect(canGrant(manager, 'admin', [])).toBe(false);
-    expect(canGrant(manager, 'custom', [UserPermission.SETTINGS_MANAGEMENT])).toBe(false);
+    expect(canGrant(manager, 'ADMIN', [])).toBe(false);
+    expect(canGrant(manager, 'CUSTOM', [UserPermission.SETTINGS_MANAGEMENT])).toBe(false);
   });
 
   it('requires USER_MANAGEMENT', () => {
-    expect(canGrant(reader, 'custom', [UserPermission.CONTENT_READ])).toBe(false);
+    expect(canGrant(reader, 'CUSTOM', [UserPermission.CONTENT_READ])).toBe(false);
   });
 });
 
@@ -68,7 +68,7 @@ describe('canManageUser', () => {
   it('never lets a manager manage themselves, an admin, or someone with more permissions', () => {
     expect(canManageUser(manager, manager)).toBe(false);
     expect(canManageUser(manager, admin)).toBe(false);
-    expect(canManageUser(manager, { id: 'x', role: 'custom', permissions: [UserPermission.SETTINGS_MANAGEMENT] })).toBe(false);
+    expect(canManageUser(manager, { id: 'x', role: 'CUSTOM', permissions: [UserPermission.SETTINGS_MANAGEMENT] })).toBe(false);
   });
 
   it('denies users without USER_MANAGEMENT', () => {

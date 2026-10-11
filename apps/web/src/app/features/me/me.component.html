@@ -12,7 +12,7 @@
         <div><b>Email:</b> {{ user.email() }}</div>
         <div><b>Email Verified:</b> {{ user.emailVerified() ? 'Yes' : 'No' }}</div>
         <div><b>Role:</b> {{ user.role() | uppercase }}</div>
-        @if (user.role() === 'custom') {
+        @if (user.role() === 'CUSTOM') {
           <div>
             <b>Permissions:</b>
             <ul class="ml-4 list-disc">

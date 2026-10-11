@@ -49,7 +49,7 @@ describe('CLI', () => {
     expect(await run(['admin:create', '--email', 'root@example.com', '--name', 'Root'], { LOCALESS_ADMIN_PASSWORD: 'env-pass' })).toBe(0);
     expect(output.join('\n')).toMatch(/Created admin root@example.com/);
     expect(await query(`select email, role, display_name from users`)).toEqual([
-      { email: 'root@example.com', role: 'admin', display_name: 'Root' },
+      { email: 'root@example.com', role: 'ADMIN', display_name: 'Root' },
     ]);
     expect(await query(`select name from spaces`)).toEqual([{ name: 'Hello World' }]);
   });

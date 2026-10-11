@@ -54,7 +54,9 @@ export interface UserUpdate {
   lock?: boolean;
 }
 
-export type UserRole = 'admin' | 'custom';
+/** `ADMIN` may do everything; `CUSTOM` holds the permissions listed on the user. No role: signed up, no access yet. */
+export const USER_ROLES = ['ADMIN', 'CUSTOM'] as const;
+export type UserRole = (typeof USER_ROLES)[number];
 
 export enum UserPermission {
   USER_MANAGEMENT = 'USER_MANAGEMENT',

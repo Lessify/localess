@@ -16,7 +16,7 @@ describe('first admin', () => {
     t = await createTestApp({ LOCALESS_ADMIN_EMAIL: 'root@example.com', LOCALESS_ADMIN_PASSWORD: 'root-pass' });
     const rows = await t.db.select().from(users);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ email: 'root@example.com', role: 'admin', emailVerified: true, displayName: 'Admin' });
+    expect(rows[0]).toMatchObject({ email: 'root@example.com', role: 'ADMIN', emailVerified: true, displayName: 'Admin' });
     const spaceRows = await selectSpaces(t.db);
     expect(spaceRows).toHaveLength(1);
     expect(spaceRows[0]).toMatchObject({

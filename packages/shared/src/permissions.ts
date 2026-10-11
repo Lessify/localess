@@ -17,15 +17,15 @@ export interface Principal {
   permissions?: readonly string[];
 }
 
-/** A user with any role: the minimum to use the app at all (was "role in ['admin','custom']"). */
+/** A user with any role: the minimum to use the app at all (was "role in ['admin','custom']" in Firebase). */
 export function hasAnyRole(principal: Principal | undefined): boolean {
-  return principal?.role === 'admin' || principal?.role === 'custom';
+  return principal?.role === 'ADMIN' || principal?.role === 'CUSTOM';
 }
 
 /** Admins can do everything; custom users need the permission. Same as `canPerform` in functions. */
 export function canPerform(principal: Principal | undefined, permission: UserPermission): boolean {
-  if (principal?.role === 'admin') return true;
-  if (principal?.role === 'custom') return (principal.permissions ?? []).includes(permission);
+  if (principal?.role === 'ADMIN') return true;
+  if (principal?.role === 'CUSTOM') return (principal.permissions ?? []).includes(permission);
   return false;
 }
 
@@ -39,9 +39,9 @@ function holdsAll(principal: Principal, permissions: readonly string[] | undefin
  * managing users can never be used to gain more access than the manager already has.
  */
 export function canGrant(caller: Principal, role: UserRole | null | undefined, permissions: readonly string[] | undefined): boolean {
-  if (caller.role === 'admin') return true;
+  if (caller.role === 'ADMIN') return true;
   if (!canPerform(caller, UserPermission.USER_MANAGEMENT)) return false;
-  if (role !== undefined && role !== null && role !== 'custom') return false;
+  if (role !== undefined && role !== null && role !== 'CUSTOM') return false;
   return holdsAll(caller, permissions);
 }
 
@@ -51,11 +51,11 @@ export function canGrant(caller: Principal, role: UserRole | null | undefined, p
  * never an admin, never someone holding a permission they lack.
  */
 export function canManageUser(caller: Principal, target: Principal): boolean {
-  if (caller.role === 'admin') return true;
+  if (caller.role === 'ADMIN') return true;
   return (
     canPerform(caller, UserPermission.USER_MANAGEMENT) &&
     caller.id !== target.id &&
-    target.role !== 'admin' &&
+    target.role !== 'ADMIN' &&
     holdsAll(caller, target.permissions)
   );
 }

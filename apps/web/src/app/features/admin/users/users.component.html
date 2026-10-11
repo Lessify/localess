@@ -62,7 +62,7 @@
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="role">Role</th>
         <td llCell *llCellDef="let element" class="flex gap-1">
           {{ element.role || 'none' | uppercase }}
-          @if (element.role === 'custom') {
+          @if (element.role === 'CUSTOM') {
             <ng-icon name="lucideInfo" [hlmTooltip]="element.permissions?.join('\n')" position="right" />
             @if (element.lock) {
               <ng-icon name="lucideLock" hlmTooltip="The user is not be able to change his password and other personal data." />

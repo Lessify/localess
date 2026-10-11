@@ -24,19 +24,19 @@ describe('permissionGuard', () => {
   }
 
   it('lets admins through', async () => {
-    expect(await firstValueFrom(run({ role: 'admin' }, UserPermission.USER_MANAGEMENT).result)).toBe(true);
+    expect(await firstValueFrom(run({ role: 'ADMIN' }, UserPermission.USER_MANAGEMENT).result)).toBe(true);
   });
 
   it('needs one of the permissions for custom users', async () => {
     expect(
       await firstValueFrom(
-        run({ role: 'custom', permissions: ['ASSET_EXPORT'] }, UserPermission.CONTENT_EXPORT, UserPermission.ASSET_EXPORT).result,
+        run({ role: 'CUSTOM', permissions: ['ASSET_EXPORT'] }, UserPermission.CONTENT_EXPORT, UserPermission.ASSET_EXPORT).result,
       ),
     ).toBe(true);
   });
 
   it('redirects users without the permission, or without a role', async () => {
-    const denied = run({ role: 'custom', permissions: ['CONTENT_READ'] }, UserPermission.SCHEMA_READ);
+    const denied = run({ role: 'CUSTOM', permissions: ['CONTENT_READ'] }, UserPermission.SCHEMA_READ);
     expect(await firstValueFrom(denied.result)).toBe(denied.redirect);
     TestBed.resetTestingModule();
     const noRole = run({ permissions: ['SCHEMA_READ'] }, UserPermission.SCHEMA_READ);
@@ -44,7 +44,7 @@ describe('permissionGuard', () => {
   });
 
   it('waits for the session check before deciding', async () => {
-    const { result, loaded } = run({ role: 'admin', loaded: false }, UserPermission.SCHEMA_READ);
+    const { result, loaded } = run({ role: 'ADMIN', loaded: false }, UserPermission.SCHEMA_READ);
     let decided: boolean | UrlTree | undefined;
     const subscription = result.subscribe(it => (decided = it));
     TestBed.tick();

@@ -24,7 +24,7 @@ apps/web/src/app/features/me/
 
 ## MeComponent
 
-Displays the current user's profile card — avatar, name, email, email-verified status, role, and (for `custom` role) the permission list. Reads all data from `UserStore`.
+Displays the current user's profile card — avatar, name, email, email-verified status, role, and (for `CUSTOM` role) the permission list. Reads all data from `UserStore`.
 
 **Injected services:** `HlmDialogService`, `NotificationService`, `MeService`, `UserStore`
 

@@ -7,9 +7,9 @@ import { UserStore } from '@core/stores/user.store';
 
 import { WelcomeComponent } from './welcome.component';
 
-type Role = 'admin' | 'custom' | undefined;
+type Role = 'ADMIN' | 'CUSTOM' | undefined;
 
-async function setup(hasNoSpaces: boolean, role: Role = 'admin', permissions: string[] = []) {
+async function setup(hasNoSpaces: boolean, role: Role = 'ADMIN', permissions: string[] = []) {
   await TestBed.configureTestingModule({
     imports: [WelcomeComponent],
     providers: [
@@ -51,14 +51,14 @@ describe('WelcomeComponent', () => {
   });
 
   it('offers creation to a custom user who may manage spaces', async () => {
-    const { fixture } = await setup(true, 'custom', [UserPermission.SPACE_MANAGEMENT]);
+    const { fixture } = await setup(true, 'CUSTOM', [UserPermission.SPACE_MANAGEMENT]);
     expect(el(fixture, 'create-first-space')).not.toBeNull();
   });
 
   it('explains itself to a user who has no spaces and may not create one', async () => {
     // The server requires SPACE_MANAGEMENT, so the button would fail. Hiding it without
     // saying anything would leave this user on a blank page with no reason given.
-    const { fixture } = await setup(true, 'custom', [UserPermission.TRANSLATION_READ]);
+    const { fixture } = await setup(true, 'CUSTOM', [UserPermission.TRANSLATION_READ]);
 
     expect(el(fixture, 'create-first-space')).toBeNull();
     expect(el(fixture, 'no-space-access')).not.toBeNull();

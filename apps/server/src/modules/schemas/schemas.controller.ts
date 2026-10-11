@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
-import { UserPermission } from '@localess/shared';
+import { SchemaType, UserPermission } from '@localess/shared';
 import { zSchemaTemplateSchema } from '@localess/shared/zod';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
@@ -31,7 +31,7 @@ export class SchemasController {
 
   @Get()
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query('type') type?: string) {
+  async list(@Param('spaceId') spaceId: string, @Query('type', new ZodValidationPipe(z.enum(SchemaType).optional())) type?: SchemaType) {
     return (await this.schemas.list(spaceId, type)).map(dto);
   }
 

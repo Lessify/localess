@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { asc, eq, inArray, sql } from 'drizzle-orm';
-import { Principal, UserRole } from '@localess/shared';
+import { Principal, UserPermission, UserRole } from '@localess/shared';
 import { hashPassword } from '../password.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
@@ -17,7 +17,7 @@ export interface UserDto {
   photoURL?: string;
   disabled: boolean;
   role?: UserRole;
-  permissions?: string[];
+  permissions?: `${UserPermission}`[];
   lock?: boolean;
   /** Firebase provider ids, kept for UI compatibility: 'password', 'google.com', 'microsoft.com'. */
   providers: string[];
@@ -31,29 +31,29 @@ export interface CreateUser {
   displayName?: string;
   emailVerified?: boolean;
   role?: UserRole | null;
-  permissions?: string[];
+  permissions?: `${UserPermission}`[];
   lock?: boolean;
 }
 
 export interface AccessUpdate {
   role?: UserRole | null;
-  permissions?: string[];
+  permissions?: `${UserPermission}`[];
   lock?: boolean;
 }
 
 const PROVIDER_IDS: Record<string, string> = { google: 'google.com', microsoft: 'microsoft.com' };
 
 export function toPrincipal(user: Pick<UserRow, 'id' | 'role' | 'permissions'>): Principal {
-  return { id: user.id, role: (user.role as UserRole | null) ?? null, permissions: user.permissions };
+  return { id: user.id, role: user.role ?? null, permissions: user.permissions };
 }
 
 /** Same normalisation the UI applied before writing `users/{uid}`: admins carry no permissions or lock. */
-export function normalizeAccess(update: AccessUpdate): { role: UserRole | null; permissions: string[]; lock: boolean } {
+export function normalizeAccess(update: AccessUpdate): { role: UserRole | null; permissions: `${UserPermission}`[]; lock: boolean } {
   switch (update.role) {
-    case 'admin':
-      return { role: 'admin', permissions: [], lock: false };
-    case 'custom':
-      return { role: 'custom', permissions: [...new Set(update.permissions ?? [])], lock: update.lock ?? false };
+    case 'ADMIN':
+      return { role: 'ADMIN', permissions: [], lock: false };
+    case 'CUSTOM':
+      return { role: 'CUSTOM', permissions: [...new Set(update.permissions ?? [])], lock: update.lock ?? false };
     default:
       return { role: null, permissions: [], lock: false };
   }
@@ -215,7 +215,7 @@ export class UsersService {
       ...(user.photoUrl ? { photoURL: user.photoUrl } : {}),
       disabled: user.disabled,
       ...(user.role ? { role: user.role as UserRole } : {}),
-      ...(user.role === 'custom' ? { permissions: user.permissions, lock: user.lock } : {}),
+      ...(user.role === 'CUSTOM' ? { permissions: user.permissions, lock: user.lock } : {}),
       providers: providers.get(user.id) ?? [],
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),

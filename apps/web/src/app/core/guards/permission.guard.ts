@@ -18,7 +18,7 @@ export function permissionGuard(...permissions: UserPermission[]): CanActivateFn
       take(1),
       map(() => {
         const role = userStore.role();
-        const granted = role === 'admin' || (role === 'custom' && permissions.some(it => userStore.permissions()?.includes(it)));
+        const granted = role === 'ADMIN' || (role === 'CUSTOM' && permissions.some(it => userStore.permissions()?.includes(it)));
         return granted || router.createUrlTree(['features']);
       }),
     );

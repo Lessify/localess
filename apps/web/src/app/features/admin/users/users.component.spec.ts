@@ -20,8 +20,8 @@ interface CurrentUser {
   permissions: string[] | undefined;
 }
 
-const ADMIN: CurrentUser = { id: 'adm', role: 'admin', permissions: undefined };
-const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN', permissions: undefined };
+const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
 
 function userStoreOf(user: CurrentUser) {
   return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
@@ -117,18 +117,18 @@ describe('UsersComponent', () => {
 
   it('openEditDialog() updates the user and notifies success when confirmed', () => {
     const { component, open, update, success } = setup();
-    open.mockReturnValue({ closed$: of({ role: 'admin' }) });
+    open.mockReturnValue({ closed$: of({ role: 'ADMIN' }) });
 
     component.openEditDialog(user({ id: 'u1' }));
 
-    expect(update).toHaveBeenCalledWith('u1', { role: 'admin' });
+    expect(update).toHaveBeenCalledWith('u1', { role: 'ADMIN' });
     expect(success).toHaveBeenCalledWith('User has been updated.');
   });
 
   it('openEditDialog() notifies an error on failure', () => {
     const { component, open, update, error } = setup();
     update.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ closed$: of({ role: 'admin' }) });
+    open.mockReturnValue({ closed$: of({ role: 'ADMIN' }) });
 
     component.openEditDialog(user({ id: 'u1' }));
 
@@ -236,17 +236,17 @@ describe('UsersComponent', () => {
     it('lets an admin manage every user', () => {
       const { component } = setup();
 
-      expect(component.canManage(user({ role: 'admin' }))).toBe(true);
-      expect(component.canManage(user({ id: 'adm', role: 'admin' }))).toBe(true);
+      expect(component.canManage(user({ role: 'ADMIN' }))).toBe(true);
+      expect(component.canManage(user({ id: 'adm', role: 'ADMIN' }))).toBe(true);
     });
 
     it('stops a user manager at themselves, admins and users with more permissions', () => {
       const { component } = setup([], undefined, USER_MANAGER);
 
-      expect(component.canManage(user({ role: 'custom', permissions: ['CONTENT_READ'] as User['permissions'] }))).toBe(true);
-      expect(component.canManage(user({ id: 'mgr', role: 'custom' }))).toBe(false);
-      expect(component.canManage(user({ role: 'admin' }))).toBe(false);
-      expect(component.canManage(user({ role: 'custom', permissions: ['SETTINGS_MANAGEMENT'] as User['permissions'] }))).toBe(false);
+      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['CONTENT_READ'] as User['permissions'] }))).toBe(true);
+      expect(component.canManage(user({ id: 'mgr', role: 'CUSTOM' }))).toBe(false);
+      expect(component.canManage(user({ role: 'ADMIN' }))).toBe(false);
+      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['SETTINGS_MANAGEMENT'] as User['permissions'] }))).toBe(false);
     });
   });
 });

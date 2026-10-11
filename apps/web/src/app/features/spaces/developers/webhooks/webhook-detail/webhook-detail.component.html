@@ -169,7 +169,7 @@
                       hlm
                       size="xs"
                       name="lucideInfo"
-                      hlmTooltip="The category of failure: 'http' means the server replied with an error code, 'timeout' means no response was received in time, 'network' means the request could not be sent (e.g. DNS failure, connection refused)." />
+                      hlmTooltip="The category of failure: HTTP means the server replied with an error code, TIMEOUT means no response was received in time, NETWORK means the request could not be sent (e.g. DNS failure, connection refused)." />
                   </dt>
                   <dd>
                     @if (element.errorType) {
@@ -186,7 +186,7 @@
                       hlm
                       size="xs"
                       name="lucideInfo"
-                      hlmTooltip="The HTTP status code and reason phrase returned by the target server. Only present for 'http' error type or successful deliveries." />
+                      hlmTooltip="The HTTP status code and reason phrase returned by the target server. Only present for the HTTP error type or successful deliveries." />
                   </dt>
                   <dd>{{ element.statusCode ?? '—' }}{{ element.statusText ? ' ' + element.statusText : '' }}</dd>
                 </div>
@@ -270,7 +270,7 @@
                       hlm
                       size="xs"
                       name="lucideInfo"
-                      hlmTooltip="A human-readable error message describing why the delivery failed. Present for 'timeout' and 'network' failures; absent when the server returned an HTTP error code." />
+                      hlmTooltip="A human-readable error message describing why the delivery failed. Present for TIMEOUT and NETWORK failures; absent when the server returned an HTTP error code." />
                   </dt>
                   @if (element.errorMessage) {
                     <dd class="text-destructive bg-destructive/10 mt-1 rounded-md p-2 font-mono text-xs break-all whitespace-pre-wrap">

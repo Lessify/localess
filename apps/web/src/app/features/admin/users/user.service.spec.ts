@@ -60,9 +60,9 @@ describe('UserService', () => {
 
   it('update() patches role, permissions and lock', async () => {
     const service = setup();
-    const done = firstValueFrom(service.update('u1', { role: 'custom', permissions: [UserPermission.CONTENT_READ], lock: true }));
+    const done = firstValueFrom(service.update('u1', { role: 'CUSTOM', permissions: [UserPermission.CONTENT_READ], lock: true }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
-    expect(request.request.body).toEqual({ role: 'custom', permissions: ['CONTENT_READ'], lock: true });
+    expect(request.request.body).toEqual({ role: 'CUSTOM', permissions: ['CONTENT_READ'], lock: true });
     request.flush({});
     await done;
   });
@@ -94,7 +94,7 @@ describe('UserService', () => {
 
   it('invite() posts the invite', async () => {
     const service = setup();
-    const invite = { email: 'new@example.com', password: 'secret1', role: 'admin' as const };
+    const invite = { email: 'new@example.com', password: 'secret1', role: 'ADMIN' as const };
     const done = firstValueFrom(service.invite(invite));
     const request = http.expectOne({ method: 'POST', url: '/api/app/users' });
     expect(request.request.body).toEqual(invite);

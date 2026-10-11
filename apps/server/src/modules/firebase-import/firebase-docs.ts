@@ -12,6 +12,12 @@ export function toDate(value: unknown): Date | undefined {
 export const str = (value: unknown): string | null => (typeof value === 'string' && value !== '' ? value : null);
 export const strings = (value: unknown): string[] | null =>
   Array.isArray(value) ? value.filter((it): it is string => typeof it === 'string') : null;
+/** The elements of a string array found in `list`, and the others (unknown values of a newer or older version). */
+export const knownValues = <T extends string>(list: Record<string, T>, value: unknown): { kept: T[]; dropped: string[] } => {
+  const values: readonly string[] = Object.values(list);
+  const all = strings(value) ?? [];
+  return { kept: all.filter((it): it is T => values.includes(it)), dropped: all.filter(it => !values.includes(it)) };
+};
 export const obj = <T>(value: unknown): T | null => (value && typeof value === 'object' && !Array.isArray(value) ? (value as T) : null);
 
 export function timestamps(data: Record<string, unknown>): { createdAt: Date; updatedAt: Date } {

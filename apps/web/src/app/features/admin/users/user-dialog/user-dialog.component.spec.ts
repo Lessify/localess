@@ -16,8 +16,8 @@ interface CurrentUser {
   permissions: string[] | undefined;
 }
 
-const ADMIN: CurrentUser = { id: 'adm', role: 'admin', permissions: undefined };
-const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN', permissions: undefined };
+const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
 
 function userStoreOf(user: CurrentUser) {
   return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
@@ -69,16 +69,16 @@ describe('UserDialogComponent', () => {
   });
 
   it('patches the role when provided', () => {
-    const { component } = setup({ role: 'admin' });
+    const { component } = setup({ role: 'ADMIN' });
 
-    expect(component.form.value.role).toBe('admin');
+    expect(component.form.value.role).toBe('ADMIN');
   });
 
   it('roleItemToString() maps known roles and falls back to the raw value', () => {
     const { component } = setup(null);
 
-    expect(component['roleItemToString']('admin')).toBe('Admin');
-    expect(component['roleItemToString']('custom')).toBe('Custom');
+    expect(component['roleItemToString']('ADMIN')).toBe('Admin');
+    expect(component['roleItemToString']('CUSTOM')).toBe('Custom');
     expect(component['roleItemToString']('other')).toBe('other');
   });
 
@@ -105,10 +105,10 @@ describe('UserDialogComponent', () => {
     expect(component.form.value.permissions).toEqual(['SPACE_MANAGEMENT']);
   });
   it('closes with the form value when saved', () => {
-    const { component, close } = setup({ role: 'admin' });
+    const { component, close } = setup({ role: 'ADMIN' });
 
     component.save();
 
-    expect(close).toHaveBeenCalledWith({ role: 'admin', permissions: null, lock: null });
+    expect(close).toHaveBeenCalledWith({ role: 'ADMIN', permissions: null, lock: null });
   });
 });

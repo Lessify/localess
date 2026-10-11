@@ -21,8 +21,8 @@ Two roles exist, stored in the `users.role` column (`null` = no access):
 
 | Role | Access |
 |------|--------|
-| `admin` | Full access to everything — bypasses all permission checks |
-| `custom` | Granular access — only what's listed in `users.permissions` |
+| `ADMIN` | Full access to everything — bypasses all permission checks |
+| `CUSTOM` | Granular access — only what's listed in `users.permissions` |
 
 Role and permissions are read from the `users` row on **every request** (the session resolves to the current row), so a change applies immediately on the server — there are no token claims to refresh.
 
@@ -30,7 +30,7 @@ A `lock: true` flag (`users.lock`) does **not** block login. Its only consumer i
 
 ---
 
-## User Permissions (granular, `custom` role only)
+## User Permissions (granular, `CUSTOM` role only)
 
 ```typescript
 enum UserPermission {
@@ -92,7 +92,7 @@ Every `/api/app/**` and `/api/auth/**` route goes through the global `AuthGuard`
 | Decorator | Passes when |
 |---|---|
 | `@Public()` | always (login, OAuth, `/api/config`, the public `/api/v1` API, health) |
-| `@RequireAnyRole()` | role is `admin` or `custom` (e.g. reading spaces) |
+| `@RequireAnyRole()` | role is `ADMIN` or `CUSTOM` (e.g. reading spaces) |
 | `@RequirePermission(a, b, …)` | admin, or holds **any** of the permissions (e.g. `SCHEMA_READ` or `CONTENT_READ` for schemas) |
 | `@RequireAllPermissions(a, b, …)` | admin, or holds **all** of them (e.g. machine translation needs `TRANSLATION_UPDATE` + `CONTENT_UPDATE`) |
 | *(none)* | any signed-in session, even without a role (e.g. `/api/app/me`) |
@@ -111,10 +111,10 @@ No session → `401`; insufficient access → `403`. Checks that depend on the r
 }
 ```
 
-The guard waits until `UserStore.loaded()` (the `GET /api/auth/me` check has answered), so a deep link opened in a new tab is decided on the real permissions. Admins pass; `custom` users need **any** of the listed permissions; otherwise it redirects to `/features`.
+The guard waits until `UserStore.loaded()` (the `GET /api/auth/me` check has answered), so a deep link opened in a new tab is decided on the real permissions. Admins pass; `CUSTOM` users need **any** of the listed permissions; otherwise it redirects to `/features`.
 
 ```typescript
-role === 'admin' || (role === 'custom' && permissions.some(it => userStore.permissions()?.includes(it)))
+role === 'ADMIN' || (role === 'CUSTOM' && permissions.some(it => userStore.permissions()?.includes(it)))
 ```
 
 The `tasks` route requires any `*_EXPORT` / `*_IMPORT` permission (the Firebase-era guard checked `TRANSLATION_READ` by mistake).
@@ -132,7 +132,7 @@ The main template gating mechanism is `CanUserPerformPipe` (`apps/web/src/app/sh
 @if (item.permission | canUserPerform | async) { ... }   <!-- string | string[] | undefined -->
 ```
 
-`admin` → always `true`; `custom` → `permissions` includes the value (or any of the array); `undefined` permission → `true`; no role → `false`.
+`ADMIN` → always `true`; `CUSTOM` → `permissions` includes the value (or any of the array); `undefined` permission → `true`; no role → `false`.
 
 ### `UserStore` signals (component code)
 
@@ -166,8 +166,8 @@ Writing a user's `role` and `permissions` grants access. So `USER_MANAGEMENT` al
 
 | Caller | May manage |
 |---|---|
-| `admin` | Any user, including admins and themselves. May grant any role and permission. |
-| `custom` with `USER_MANAGEMENT` | Only users they fully outrank: not themselves, not an admin, and not anyone holding a permission they lack. They may set the role only to `custom` or none, grant only permissions they hold, and change only `role`, `permissions` and `lock`. |
+| `ADMIN` | Any user, including admins and themselves. May grant any role and permission. |
+| `CUSTOM` with `USER_MANAGEMENT` | Only users they fully outrank: not themselves, not an admin, and not anyone holding a permission they lack. They may set the role only to `CUSTOM` or none, grant only permissions they hold, and change only `role`, `permissions` and `lock`. |
 
 Two managers holding the same permissions can manage each other. A manager can never make anyone, including themselves, an admin. Only admins can.
 

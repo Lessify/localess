@@ -64,7 +64,7 @@ export const taskKey = (spaceId: string, id: string) => `spaces/${spaceId}/tasks
 /** Creating or deleting a task needs the permission its kind names (firestore.rules `canManageTaskKind`). */
 function assertCanManage(user: UserRow, kind: string): void {
   const principal = toPrincipal(user);
-  const allowed = kind === 'ASSET_REGEN_METADATA' ? principal.role === 'admin' : canPerform(principal, kind as UserPermission);
+  const allowed = kind === 'ASSET_REGEN_METADATA' ? principal.role === 'ADMIN' : canPerform(principal, kind as UserPermission);
   if (!allowed) throw new ForbiddenException();
 }
 

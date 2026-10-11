@@ -21,14 +21,14 @@ export enum WebHookEvent {
 }
 
 export enum WebHookStatus {
-  SUCCESS = 'success',
-  FAILURE = 'failure',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
 }
 
 export enum WebHookErrorType {
-  TIMEOUT = 'timeout',
-  NETWORK = 'network',
-  HTTP = 'http',
+  TIMEOUT = 'TIMEOUT',
+  NETWORK = 'NETWORK',
+  HTTP = 'HTTP',
 }
 
 export interface WebHookPayload {

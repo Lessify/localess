@@ -25,6 +25,10 @@ export enum TaskLogLevel {
   ERROR = 'ERROR',
 }
 
+/** Translation import formats: the whole file (`full`), or one locale as a flat or nested JSON map. */
+export const TRANSLATION_IMPORT_FORMATS = ['full', 'flat-json', 'nested-json'] as const;
+export type TranslationImportFormat = (typeof TRANSLATION_IMPORT_FORMATS)[number];
+
 export interface TaskLog {
   id: string;
   level: TaskLogLevel;
@@ -100,7 +104,7 @@ export interface TaskSchemaImport extends TaskBase {
 
 export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
-  type: 'full' | 'flat-json' | 'nested-json';
+  type: TranslationImportFormat;
   // Export locale
   locale?: string;
   // Exported file
@@ -109,7 +113,7 @@ export interface TaskTranslationExport extends TaskBase {
 
 export interface TaskTranslationImport extends TaskBase {
   kind: TaskKind.TRANSLATION_IMPORT;
-  type: 'full' | 'flat-json' | 'nested-json';
+  type: TranslationImportFormat;
   // Imported locale
   locale?: string;
   // Where Import Archive is located temporarily

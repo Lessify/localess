@@ -19,9 +19,9 @@ export class CanUserPerformPipe implements PipeTransform {
       return this.role$.pipe(
         map(role => {
           if (role) {
-            if (role === 'admin') return true;
+            if (role === 'ADMIN') return true;
             const userPermissions = this.userStore.permissions();
-            if (role === 'custom' && userPermissions) {
+            if (role === 'CUSTOM' && userPermissions) {
               return userPermissions.includes(permission);
             }
           }
@@ -33,9 +33,9 @@ export class CanUserPerformPipe implements PipeTransform {
       return this.role$.pipe(
         map(role => {
           if (role) {
-            if (role === 'admin') return true;
+            if (role === 'ADMIN') return true;
             const userPermissions = this.userStore.permissions();
-            if (role === 'custom' && userPermissions) {
+            if (role === 'CUSTOM' && userPermissions) {
               return permission.some(it => userPermissions.includes(it));
             }
           }

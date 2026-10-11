@@ -65,7 +65,7 @@ ceremony. The param exists for the two entry points that are not.
 
 No new route was added: `admin/spaces` already exists and is already guarded by
 `permissionGuard(UserPermission.SPACE_MANAGEMENT)` (`features-routing.module.ts`). That guard is what keeps the flow
-honest — the server requires `admin` or `SPACE_MANAGEMENT` to write a space (`@RequirePermission` on
+honest — the server requires `ADMIN` or `SPACE_MANAGEMENT` to write a space (`@RequirePermission` on
 `POST /api/app/spaces`), so an
 unpermitted user must not reach the dialog at all. The CTAs carry the same check so they don't link
 somewhere the guard will bounce.
@@ -184,7 +184,7 @@ enforces.
 ### Permissions
 
 The template choice appears only when **creating** a space, and only for users who may create
-schemas — role `admin`, or `custom` with `SCHEMA_CREATE`. `POST /api/app/spaces/:s/schemas/template`
+schemas — role `ADMIN`, or `CUSTOM` with `SCHEMA_CREATE`. `POST /api/app/spaces/:s/schemas/template`
 requires that permission, so the server would reject the template otherwise. A user without it sees no template control and
 creates empty spaces normally.
 

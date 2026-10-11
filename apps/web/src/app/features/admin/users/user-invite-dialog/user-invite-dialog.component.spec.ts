@@ -13,8 +13,8 @@ interface CurrentUser {
   permissions: string[] | undefined;
 }
 
-const ADMIN: CurrentUser = { id: 'adm', role: 'admin', permissions: undefined };
-const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'custom', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN', permissions: undefined };
+const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
 
 function userStoreOf(user: CurrentUser) {
   return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
@@ -70,8 +70,8 @@ describe('UserInviteDialogComponent', () => {
   it('roleItemToString() maps known roles and falls back to the raw value', () => {
     const { component } = setup();
 
-    expect(component['roleItemToString']('admin')).toBe('Admin');
-    expect(component['roleItemToString']('custom')).toBe('Custom');
+    expect(component['roleItemToString']('ADMIN')).toBe('Admin');
+    expect(component['roleItemToString']('CUSTOM')).toBe('Custom');
     expect(component['roleItemToString']('other')).toBe('other');
   });
 

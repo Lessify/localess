@@ -1,7 +1,7 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { and, arrayContains, eq } from 'drizzle-orm';
-import { WebHookEvent } from '@localess/shared';
+import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
@@ -98,8 +98,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       const ok = response.status >= 200 && response.status < 300;
       log = {
         ...base,
-        status: ok ? 'success' : 'failure',
-        errorType: ok ? null : 'http',
+        status: ok ? WebHookStatus.SUCCESS : WebHookStatus.FAILURE,
+        errorType: ok ? null : WebHookErrorType.HTTP,
         statusCode: response.status,
         statusText: response.statusText,
         duration: Date.now() - startTime,
@@ -110,8 +110,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
       log = {
         ...base,
-        status: 'failure',
-        errorType: isTimeout ? 'timeout' : 'network',
+        status: WebHookStatus.FAILURE,
+        errorType: isTimeout ? WebHookErrorType.TIMEOUT : WebHookErrorType.NETWORK,
         errorMessage: err.message,
         duration: Date.now() - startTime,
       };

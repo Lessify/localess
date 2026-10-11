@@ -44,7 +44,7 @@ The list is live: `UserService.findAll()` is a `liveQuery` that refetches on `us
 ### UserInviteDialogComponent
 Creates a new user (row in `users`, argon2id password in `user_credentials`) with initial role and permissions via `POST /api/app/users`.
 
-Form fields: `email`, `password`, `displayName`, `role` (`admin` | `custom`; `admin` offered to admins only), `permissions[]`, `lock`
+Form fields: `email`, `password`, `displayName`, `role` (`ADMIN` | `CUSTOM`; `ADMIN` offered to admins only), `permissions[]`, `lock`
 
 ### UserDialogComponent
 Edits an existing user's role, granular permissions, and lock status.

@@ -20,11 +20,11 @@ describe('app API: spaces, locales, settings', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    adminCookie = await userWithAccess(t, 'admin@example.com', { role: 'admin' });
+    adminCookie = await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' });
     admin = api(t, adminCookie);
-    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] });
+    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] });
     manager = api(t, managerCookie);
-    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['CONTENT_READ'] });
+    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] });
     reader = api(t, readerCookie);
     noRole = api(t, await userWithAccess(t, 'new@example.com', { role: null }));
   });

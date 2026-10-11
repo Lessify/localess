@@ -1,6 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, asc, eq, gt } from 'drizzle-orm';
-import { DEFAULT_LOCALE, type FirebaseImportStage, type FirebaseImportStageName, type Locale } from '@localess/shared';
+import {
+  DEFAULT_LOCALE,
+  type FirebaseImportStage,
+  type FirebaseImportStageName,
+  type Locale,
+  SchemaType,
+  TokenPermission,
+  TranslationType,
+  WebHookEvent,
+} from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
 import { assets, contents, firebaseImports, locales, schemas, spaceEnvironments, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
@@ -8,7 +17,7 @@ import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { FirebaseClient, type FirebaseDoc } from './firebase-client.js';
-import { obj, parseData, str, strings, timestamps } from './firebase-docs.js';
+import { knownValues, obj, parseData, str, strings, timestamps } from './firebase-docs.js';
 import { ReferenceMaps, rewriteData, rewriteIds } from './rewrite-references.js';
 import { nextVersion } from '../../infra/http/space-access.js';
 
@@ -140,13 +149,15 @@ export class FirebaseImportRunner {
           .innerJoin(spaces, eq(spaces.id, tokens.spaceId))
           .where(eq(tokens.token, doc.id));
         if (taken) throw new StageFailure('tokens', `Token '${str(doc['name']) ?? doc.id}' already exists in space '${taken.space}'`);
+        const permissions = knownValues(TokenPermission, doc['permissions']);
+        for (const it of permissions.dropped) warn('tokens', `${str(doc['name']) ?? doc.id}: unknown permission ${it}, dropped`);
         await this.db.insert(tokens).values({
           id: newUuid(timestamps(doc).createdAt),
           spaceId: sid,
           token: doc.id,
           name: str(doc['name']) ?? 'Token',
           version: typeof doc['version'] === 'number' ? doc['version'] : null,
-          permissions: strings(doc['permissions']),
+          permissions: Array.isArray(doc['permissions']) ? permissions.kept : null,
           cacheTtl: typeof doc['cacheTtl'] === 'number' ? doc['cacheTtl'] : null,
           ...timestamps(doc),
         });
@@ -157,13 +168,15 @@ export class FirebaseImportRunner {
       await begin('webhooks');
       const hookDocs = await client.list(sourceSpaceId, 'webhooks');
       for (const doc of hookDocs) {
+        const events = knownValues(WebHookEvent, doc['events']);
+        for (const it of events.dropped) warn('webhooks', `${str(doc['name']) ?? doc.id}: unknown event ${it}, dropped`);
         await this.db.insert(webhooks).values({
           id: newUuid(timestamps(doc).createdAt),
           spaceId: sid,
           name: str(doc['name']) ?? 'Webhook',
           url: str(doc['url']) ?? '',
           enabled: false,
-          events: strings(doc['events']) ?? [],
+          events: events.kept,
           headers: obj<Record<string, string>>(doc['headers']),
           secret: str(doc['secret']),
           ...timestamps(doc),
@@ -180,7 +193,7 @@ export class FirebaseImportRunner {
             id: newUuid(timestamps(doc).createdAt),
             spaceId: sid,
             key: doc.id,
-            type: str(doc['type']) ?? 'STRING',
+            type: this.typeOf(TranslationType, TranslationType.STRING, doc, warning => warn('translations', warning)),
             locales: obj<Record<string, string>>(doc['locales']) ?? {},
             labels: strings(doc['labels']),
             description: str(doc['description']),
@@ -202,7 +215,7 @@ export class FirebaseImportRunner {
             id: newUuid(timestamps(doc).createdAt),
             spaceId: sid,
             name: doc.id,
-            type: str(doc['type']) ?? 'ROOT',
+            type: this.typeOf(SchemaType, SchemaType.ROOT, doc, warning => warn('schemas', warning)),
             displayName: str(doc['displayName']),
             description: str(doc['description']),
             labels: strings(doc['labels']),
@@ -292,7 +305,7 @@ export class FirebaseImportRunner {
           return {
             id,
             spaceId: sid,
-            kind: isDocument ? 'DOCUMENT' : 'FOLDER',
+            kind: isDocument ? ('DOCUMENT' as const) : ('FOLDER' as const),
             name: str(doc['name']) ?? slug,
             slug,
             parentSlug,
@@ -367,5 +380,14 @@ export class FirebaseImportRunner {
     } finally {
       clearInterval(heartbeat);
     }
+  }
+
+  /** The document's `type` when it is one of `list`; a missing one is `fallback`, an unknown one too, with a warning. */
+  private typeOf<T extends string>(list: Record<string, T>, fallback: T, doc: FirebaseDoc, warn: (message: string) => void): T {
+    const type = str(doc['type']);
+    if (type === null || type === undefined) return fallback;
+    if ((Object.values(list) as string[]).includes(type)) return type as T;
+    warn(`${doc.id}: unknown type ${type}, imported as ${fallback}`);
+    return fallback;
   }
 }

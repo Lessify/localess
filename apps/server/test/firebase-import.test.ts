@@ -161,6 +161,43 @@ describe('Firebase import run', () => {
     expect(space).toMatchObject({ locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
+  it('keeps only known enum values (token permissions, webhook events, translation and schema types), with a warning', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbValues',
+        name: 'Values',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        tokens: [{ id: 'TOKENV3000000000000C', name: 'odd', version: 2, permissions: ['CONTENT_PUBLIC', 'SOMETHING_NEW'] }],
+        webhooks: [{ id: 'w9', name: 'Odd', url: 'https://example.com/hook', events: ['content.published', 'space.renamed'] }],
+        translations: [{ id: 'odd', type: 'MAP', locales: { en: 'x' } }],
+        schemas: [{ id: 'odd', type: 'WIDGET' }],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: odd.url, sourceSpaceId: 'fbValues', sourceSpaceName: 'Values', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbValues');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const sid = run.spaceId!;
+      expect((await t.db.select().from(tokens).where(eq(tokens.spaceId, sid)))[0].permissions).toEqual(['CONTENT_PUBLIC']);
+      expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, sid)))[0].events).toEqual(['content.published']);
+      expect((await t.db.select().from(translations).where(eq(translations.spaceId, sid)))[0].type).toBe('STRING');
+      expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, sid)))[0].type).toBe('ROOT');
+      const warnings = (name: string) => run.stages.find(it => it.stage === name)!.warnings?.join('\n');
+      expect(warnings('tokens')).toMatch(/odd: unknown permission SOMETHING_NEW, dropped/);
+      expect(warnings('webhooks')).toMatch(/Odd: unknown event space.renamed, dropped/);
+      expect(warnings('translations')).toMatch(/odd: unknown type MAP, imported as STRING/);
+      expect(warnings('schemas')).toMatch(/odd: unknown type WIDGET, imported as ROOT/);
+    } finally {
+      await odd.close();
+    }
+  });
+
   it('keeps known locales in their order and skips the others (and broken environments), with a warning', async () => {
     const odd = await fakeFirebase([
       {

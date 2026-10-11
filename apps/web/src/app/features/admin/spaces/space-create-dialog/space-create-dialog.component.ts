@@ -56,8 +56,8 @@ export class SpaceCreateDialogComponent {
    */
   readonly canChooseTemplate = computed(() => {
     const role = this.userStore.role();
-    if (role === 'admin') return true;
-    return role === 'custom' && (this.userStore.permissions() ?? []).includes(UserPermission.SCHEMA_CREATE);
+    if (role === 'ADMIN') return true;
+    return role === 'CUSTOM' && (this.userStore.permissions() ?? []).includes(UserPermission.SCHEMA_CREATE);
   });
 
   // `template` is always present and always defaulted, so the caller never has to handle undefined.

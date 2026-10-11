@@ -12,7 +12,7 @@ import { SpaceCreateDialogComponent } from './space-create-dialog.component';
 let close: ReturnType<typeof vi.fn>;
 
 function userStoreStub(role: string, permissions: string[] = []) {
-  return { role: signal(role), permissions: signal(permissions), isRoleAdmin: signal(role === 'admin') };
+  return { role: signal(role), permissions: signal(permissions), isRoleAdmin: signal(role === 'ADMIN') };
 }
 
 async function setup(store: ReturnType<typeof userStoreStub>) {
@@ -35,36 +35,36 @@ function cards(fixture: ComponentFixture<SpaceCreateDialogComponent>): number {
 
 describe('SpaceCreateDialogComponent', () => {
   it('offers every template to an admin', async () => {
-    expect(cards(await setup(userStoreStub('admin')))).toBe(SPACE_TEMPLATES.length);
+    expect(cards(await setup(userStoreStub('ADMIN')))).toBe(SPACE_TEMPLATES.length);
   });
 
   it('defaults the selection to EMPTY', async () => {
-    const fixture = await setup(userStoreStub('admin'));
+    const fixture = await setup(userStoreStub('ADMIN'));
     expect(fixture.componentInstance.form.value.template).toBe('EMPTY');
   });
 
   it('starts with an empty name', async () => {
-    const fixture = await setup(userStoreStub('admin'));
+    const fixture = await setup(userStoreStub('ADMIN'));
     expect(fixture.componentInstance.form.value.name).toBe('');
   });
 
   it('offers templates to a custom user holding SCHEMA_CREATE', async () => {
-    expect(cards(await setup(userStoreStub('custom', ['SPACE_MANAGEMENT', 'SCHEMA_CREATE'])))).toBe(SPACE_TEMPLATES.length);
+    expect(cards(await setup(userStoreStub('CUSTOM', ['SPACE_MANAGEMENT', 'SCHEMA_CREATE'])))).toBe(SPACE_TEMPLATES.length);
   });
 
   it('shows no template control at all without SCHEMA_CREATE', async () => {
     // The branch a permissions regression would silently break open, so it is asserted directly
     // rather than inferred from the admin case.
-    expect(cards(await setup(userStoreStub('custom', ['SPACE_MANAGEMENT'])))).toBe(0);
+    expect(cards(await setup(userStoreStub('CUSTOM', ['SPACE_MANAGEMENT'])))).toBe(0);
   });
 
   it('still submits EMPTY when the template control is hidden', async () => {
     // An absent choice must mean EMPTY, not undefined - the caller looks the value up by id.
-    const fixture = await setup(userStoreStub('custom', ['SPACE_MANAGEMENT']));
+    const fixture = await setup(userStoreStub('CUSTOM', ['SPACE_MANAGEMENT']));
     expect(fixture.componentInstance.form.value.template).toBe('EMPTY');
   });
   it('closes with the form value when saved', async () => {
-    const fixture = await setup(userStoreStub('admin'));
+    const fixture = await setup(userStoreStub('ADMIN'));
     fixture.componentInstance.form.patchValue({ name: 'New Space' });
 
     fixture.componentInstance.save();

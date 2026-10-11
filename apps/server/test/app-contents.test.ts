@@ -41,11 +41,11 @@ describe('app API: contents', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'custom',
+        role: 'CUSTOM',
         permissions: ['CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH'],
       }),
     );
-    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['CONTENT_READ'] }));
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
 
     received = [];
     receiver = createServer((request, response) => {
@@ -164,7 +164,7 @@ describe('app API: contents', () => {
         .select()
         .from(webhookLogs)
         .where(eq(webhookLogs.deliveryId, delivery.headers['x-webhook-delivery'] as string));
-      expect(logs).toEqual([expect.objectContaining({ status: 'success', statusCode: 200, event: 'content.changed', responseBody: 'ok' })]);
+      expect(logs).toEqual([expect.objectContaining({ status: 'SUCCESS', statusCode: 200, event: 'content.changed', responseBody: 'ok' })]);
     });
 
     it('renames a folder and rewrites every descendant slug in one go', async () => {

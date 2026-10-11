@@ -1,5 +1,6 @@
 /** Admin → Spaces → Import from Firebase: one run imports one space of a Firebase environment, stage by stage. */
-export type FirebaseImportStatus = 'RUNNING' | 'FINISHED' | 'FAILED';
+export const FIREBASE_IMPORT_STATUSES = ['RUNNING', 'FINISHED', 'FAILED'] as const;
+export type FirebaseImportStatus = (typeof FIREBASE_IMPORT_STATUSES)[number];
 export type FirebaseImportStageName =
   | 'space' | 'locales' | 'environments' | 'tokens' | 'webhooks'
   | 'translations' | 'schemas' | 'assets' | 'contents' | 'contentMigration';

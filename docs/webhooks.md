@@ -16,7 +16,7 @@ webhook_logs   (id uuid, webhook_id → webhooks on delete cascade, delivery fie
 
 Postgres tables defined in `apps/server/src/infra/database/schema.ts`. Enabled webhooks for an event are found with a GIN index on `events` (`events @> array[event]`).
 
-**Access control:** `SPACE_MANAGEMENT` (or `admin`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhooksController`). Logs are read-only through the API; only the server's dispatcher writes them.
+**Access control:** `SPACE_MANAGEMENT` (or `ADMIN`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhooksController`). Logs are read-only through the API; only the server's dispatcher writes them.
 
 App API (`apps/server/src/modules/webhooks/webhooks.controller.ts`):
 
@@ -91,7 +91,7 @@ Body: JSON-serialised WebHookPayload (without `signature`)
 
 - Timeout: **30 seconds**
 - Retries: **none**
-- Redirects: **not followed.** A 3xx is logged as an `http` failure with its status code.
+- Redirects: **not followed.** A 3xx is logged as an `HTTP` failure with its status code.
 - Response body: at most 4 KB is read, which is all that gets logged.
 - All enabled webhooks for an event fire concurrently via `Promise.allSettled()` (one failure does not block others). Each webhook signs its own copy of the payload, so no webhook ever sees another's signature.
 
@@ -104,7 +104,7 @@ Delivery runs from the Localess server, inside your network, and the URL and hea
 - **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` header. Those are dropped.
 - **Local development** (`LOCALESS_WEBHOOK_ALLOW_INTERNAL=true`, default `false`): `http:` and local or private targets are allowed, and the resolved-address check is skipped, so a local receiver can be used. Never enable it in production.
 
-A refused delivery sends nothing. It is logged as a `network` failure with `errorMessage` "Webhook URL is not allowed: …".
+A refused delivery sends nothing. It is logged as a `NETWORK` failure with `errorMessage` "Webhook URL is not allowed: …".
 
 ---
 
@@ -128,14 +128,14 @@ Every delivery — success or failure — inserts a `webhook_logs` row and emits
 
 ```typescript
 enum WebHookStatus {
-  SUCCESS = 'success',
-  FAILURE = 'failure',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
 }
 
 enum WebHookErrorType {
-  TIMEOUT = 'timeout',
-  NETWORK = 'network',
-  HTTP = 'http',
+  TIMEOUT = 'TIMEOUT',
+  NETWORK = 'NETWORK',
+  HTTP = 'HTTP',
 }
 
 interface WebHookLogBase {

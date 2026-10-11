@@ -70,7 +70,7 @@ export async function login(t: TestApp, email: string, password: string): Promis
 export async function userWithAccess(
   t: TestApp,
   email: string,
-  access: { role: 'admin' | 'custom' | null; permissions?: string[] },
+  access: { role: 'ADMIN' | 'CUSTOM' | null; permissions?: string[] },
 ): Promise<string> {
   const { UsersService } = await import('../src/auth/users/users.service.js');
   await t.app.get(UsersService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });

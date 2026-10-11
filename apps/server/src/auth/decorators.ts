@@ -16,7 +16,7 @@ export const Public = () => SetMetadata(IS_PUBLIC, true);
 /** The `admin` role only — e.g. importing spaces from a Firebase environment. */
 export const RequireAdmin = () => SetMetadata(REQUIRED_ACCESS, { kind: 'admin' } satisfies RequiredAccess);
 
-/** Signed in with any role (`admin` or `custom`) — e.g. reading spaces. */
+/** Signed in with any role (`ADMIN` or `CUSTOM`) — e.g. reading spaces. */
 export const RequireAnyRole = () => SetMetadata(REQUIRED_ACCESS, { kind: 'anyRole' } satisfies RequiredAccess);
 
 /** At least one of the permissions (admins always pass) — e.g. `SCHEMA_READ` or `CONTENT_READ`. */

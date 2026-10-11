@@ -29,7 +29,7 @@ Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The r
 // Key state
 {
   id, displayName, initials, email, emailVerified, photoURL,
-  role: 'admin' | 'custom' | undefined,
+  role: 'ADMIN' | 'CUSTOM' | undefined,
   permissions: string[] | undefined,
   lock: boolean | undefined,
   isAuthenticated: boolean,
@@ -38,7 +38,7 @@ Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The r
 }
 
 // Key computed
-isRoleAdmin: computed(() => role() === 'admin')
+isRoleAdmin: computed(() => role() === 'ADMIN')
 isLocked:    computed(() => lock() === true)
 
 // Key methods

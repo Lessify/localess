@@ -15,7 +15,8 @@ CREATE TABLE "assets" (
 	"in_progress" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "assets_space_id_id_pk" PRIMARY KEY("space_id","id")
+	CONSTRAINT "assets_space_id_id_pk" PRIMARY KEY("space_id","id"),
+	CONSTRAINT "assets_kind_check" CHECK ("assets"."kind" in ('FOLDER', 'FILE'))
 );
 --> statement-breakpoint
 CREATE TABLE "content_published" (
@@ -44,7 +45,8 @@ CREATE TABLE "contents" (
 	"updated_by" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "contents_space_id_id_pk" PRIMARY KEY("space_id","id")
+	CONSTRAINT "contents_space_id_id_pk" PRIMARY KEY("space_id","id"),
+	CONSTRAINT "contents_kind_check" CHECK ("contents"."kind" in ('FOLDER', 'DOCUMENT'))
 );
 --> statement-breakpoint
 CREATE TABLE "firebase_imports" (
@@ -59,7 +61,8 @@ CREATE TABLE "firebase_imports" (
 	"started_by" jsonb NOT NULL,
 	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"heartbeat_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"finished_at" timestamp with time zone
+	"finished_at" timestamp with time zone,
+	CONSTRAINT "firebase_imports_status_check" CHECK ("firebase_imports"."status" in ('RUNNING', 'FINISHED', 'FAILED'))
 );
 --> statement-breakpoint
 CREATE TABLE "locales" (
@@ -87,7 +90,8 @@ CREATE TABLE "schemas" (
 	"fields" jsonb,
 	"values" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "schemas_type_check" CHECK ("schemas"."type" in ('ROOT', 'NODE', 'ENUM'))
 );
 --> statement-breakpoint
 CREATE TABLE "sessions" (
@@ -140,7 +144,8 @@ CREATE TABLE "task_logs" (
 	"level" text NOT NULL,
 	"message" text NOT NULL,
 	"trace" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "task_logs_level_check" CHECK ("task_logs"."level" in ('INFO', 'WARN', 'ERROR'))
 );
 --> statement-breakpoint
 CREATE TABLE "tasks" (
@@ -157,7 +162,10 @@ CREATE TABLE "tasks" (
 	"locked_by" text,
 	"locked_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "tasks_kind_check" CHECK ("tasks"."kind" in ('ASSET_EXPORT', 'ASSET_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT')),
+	CONSTRAINT "tasks_status_check" CHECK ("tasks"."status" in ('INITIATED', 'IN_PROGRESS', 'ERROR', 'FINISHED')),
+	CONSTRAINT "tasks_type_check" CHECK ("tasks"."type" in ('full', 'flat-json', 'nested-json'))
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
@@ -170,7 +178,8 @@ CREATE TABLE "tokens" (
 	"cache_ttl" integer,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "tokens_token_unique" UNIQUE("token")
+	CONSTRAINT "tokens_token_unique" UNIQUE("token"),
+	CONSTRAINT "tokens_permissions_check" CHECK ("tokens"."permissions" <@ array['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT', 'DEV_TOOLS']::text[])
 );
 --> statement-breakpoint
 CREATE TABLE "translation_published" (
@@ -191,14 +200,16 @@ CREATE TABLE "translations" (
 	"description" text,
 	"updated_by" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "translations_type_check" CHECK ("translations"."type" in ('STRING', 'PLURAL', 'ARRAY'))
 );
 --> statement-breakpoint
 CREATE TABLE "user_credentials" (
 	"user_id" uuid PRIMARY KEY NOT NULL,
 	"password_hash" text NOT NULL,
 	"hash_algo" text NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "user_credentials_hash_algo_check" CHECK ("user_credentials"."hash_algo" in ('argon2id'))
 );
 --> statement-breakpoint
 CREATE TABLE "user_identities" (
@@ -206,7 +217,8 @@ CREATE TABLE "user_identities" (
 	"provider" text NOT NULL,
 	"provider_subject" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "user_identities_provider_provider_subject_pk" PRIMARY KEY("provider","provider_subject")
+	CONSTRAINT "user_identities_provider_provider_subject_pk" PRIMARY KEY("provider","provider_subject"),
+	CONSTRAINT "user_identities_provider_check" CHECK ("user_identities"."provider" in ('google', 'microsoft'))
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -220,7 +232,9 @@ CREATE TABLE "users" (
 	"permissions" text[] DEFAULT '{}'::text[] NOT NULL,
 	"lock" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "users_role_check" CHECK ("users"."role" in ('ADMIN', 'CUSTOM')),
+	CONSTRAINT "users_permissions_check" CHECK ("users"."permissions" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'SETTINGS_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[])
 );
 --> statement-breakpoint
 CREATE TABLE "webhook_logs" (
@@ -239,7 +253,9 @@ CREATE TABLE "webhook_logs" (
 	"duration" integer NOT NULL,
 	"response_body" text,
 	"response_body_truncated" boolean,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "webhook_logs_status_check" CHECK ("webhook_logs"."status" in ('SUCCESS', 'FAILURE')),
+	CONSTRAINT "webhook_logs_error_type_check" CHECK ("webhook_logs"."error_type" in ('TIMEOUT', 'NETWORK', 'HTTP'))
 );
 --> statement-breakpoint
 CREATE TABLE "webhooks" (
@@ -252,7 +268,8 @@ CREATE TABLE "webhooks" (
 	"headers" jsonb,
 	"secret" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "webhooks_events_check" CHECK ("webhooks"."events" <@ array['content.published', 'content.unpublished', 'content.changed', 'translation.published', 'translation.changed']::text[])
 );
 --> statement-breakpoint
 ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -48,14 +48,14 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
-    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] }));
+    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
+    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {
-      role: 'custom',
+      role: 'CUSTOM',
       permissions: ['CONTENT_EXPORT', 'CONTENT_IMPORT', 'DEV_OPEN_API'],
     });
     exporter = api(t, exporterCookie);
-    nobody = api(t, await userWithAccess(t, 'nobody@example.com', { role: 'custom', permissions: ['CONTENT_READ'] }));
+    nobody = api(t, await userWithAccess(t, 'nobody@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
   });
 
   afterAll(() => t?.close());
@@ -173,7 +173,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
         webhookId: hook.id,
         event: 'content.published',
         url: 'https://example.com/v2',
-        status: 'success',
+        status: 'SUCCESS' as const,
         requestSize: 10,
         data: {},
         deliveryId: 'd',

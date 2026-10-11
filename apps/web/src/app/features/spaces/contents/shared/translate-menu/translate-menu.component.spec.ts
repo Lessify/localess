@@ -19,7 +19,7 @@ describe('TranslateMenuComponent', () => {
     // Faked the same way the pipe's own spec does it.
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserStore, useValue: { role: signal('admin'), permissions: signal([]) } },
+        { provide: UserStore, useValue: { role: signal('ADMIN'), permissions: signal([]) } },
         // The real LocaleService (over a testing HttpClient): what the menu offers should be decided
         // by the actual supported-locale lists, not by a hand-written stub of them.
         provideHttpClient(),

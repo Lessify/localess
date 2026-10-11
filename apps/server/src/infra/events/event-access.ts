@@ -35,7 +35,7 @@ const READ_ACCESS: Record<string, readonly UserPermission[] | 'anyRole'> = {
 /** Whether `principal` may receive `event` on the change stream (the same rule Firestore rules applied to listeners). */
 export function canReceive(principal: Principal, event: ChangeEvent): boolean {
   if (!hasAnyRole(principal)) return false;
-  if (principal.role === 'admin') return true;
+  if (principal.role === 'ADMIN') return true;
   // Everyone hears about their own account, so a changed role or permission set reaches their UI.
   if (event.entity === 'users' && event.id === principal.id) return true;
   const access = READ_ACCESS[event.entity];

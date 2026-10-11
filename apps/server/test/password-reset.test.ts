@@ -16,12 +16,12 @@ describe('password reset', () => {
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_SMTP_URL: 'smtp://127.0.0.1:2525', LOCALESS_PUBLIC_URL: 'https://cms.example.com' });
     const users = t.app.get(UsersService);
-    admin = await users.create({ email: 'admin@example.com', password: 'admin-pass', role: 'admin' });
-    target = await users.create({ email: 'forgetful@example.com', password: 'old-pass', role: 'custom' });
+    admin = await users.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
+    target = await users.create({ email: 'forgetful@example.com', password: 'old-pass', role: 'CUSTOM' });
     await users.create({
       email: 'manager@example.com',
       password: 'manager-pass',
-      role: 'custom',
+      role: 'CUSTOM',
       permissions: [UserPermission.USER_MANAGEMENT],
     });
     send = vi.spyOn(t.app.get(MailService), 'send').mockResolvedValue();
@@ -102,7 +102,7 @@ describe('password reset without SMTP', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.app.get(UsersService).create({ email: 'someone@example.com', password: 'secret1', role: 'custom' });
+    await t.app.get(UsersService).create({ email: 'someone@example.com', password: 'secret1', role: 'CUSTOM' });
   });
 
   afterAll(() => t?.close());

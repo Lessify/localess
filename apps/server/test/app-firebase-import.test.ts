@@ -25,8 +25,8 @@ describe('app API: import from Firebase', () => {
     ]);
     // The fake Firebase environment runs on 127.0.0.1.
     t = await createTestApp({ LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true' });
-    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'admin' }));
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'custom', permissions: ['SPACE_MANAGEMENT'] }));
+    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
+    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
   });
   afterAll(async () => {
     await t?.close();

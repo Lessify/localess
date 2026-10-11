@@ -12,7 +12,7 @@ const user: User = {
   emailVerified: true,
   displayName: 'Ada Lovelace',
   disabled: false,
-  role: 'custom',
+  role: 'CUSTOM',
   permissions: ['CONTENT_READ'],
   lock: true,
   providers: ['password', 'google.com'],
@@ -39,7 +39,7 @@ describe('UserStore', () => {
     expect(store.loaded()).toBe(true);
     expect(store.isAuthenticated()).toBe(true);
     expect(store.initials()).toBe('AL');
-    expect(store.role()).toBe('custom');
+    expect(store.role()).toBe('CUSTOM');
     expect(store.permissions()).toEqual(['CONTENT_READ']);
     expect(store.isLocked()).toBe(true);
     expect(store.isRoleAdmin()).toBe(false);

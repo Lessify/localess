@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import type { LogLevel } from '@nestjs/common';
 import { z } from 'zod';
+import type { OAuthProviderId } from '../../auth/oauth-providers.js';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
@@ -101,7 +102,7 @@ export interface AppConfig {
   smtp: { url: string; from: string } | undefined;
 }
 
-export type OAuthProviderId = 'google' | 'microsoft';
+export type { OAuthProviderId };
 
 export interface OAuthProviderConfig {
   issuer: string;

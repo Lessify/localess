@@ -17,12 +17,12 @@ describe('app API: schemas', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'custom',
+        role: 'CUSTOM',
         permissions: ['SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE'],
       }),
     );
-    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'custom', permissions: ['CONTENT_READ'] }));
-    other = api(t, await userWithAccess(t, 'other@example.com', { role: 'custom', permissions: ['TRANSLATION_READ'] }));
+    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    other = api(t, await userWithAccess(t, 'other@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] }));
   });
 
   afterAll(() => t?.close());
