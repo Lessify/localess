@@ -211,7 +211,7 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 - `apps/server/src/modules/{contents,translations,assets}/controllers/*.public.controller.ts` — the CDN route handlers
 - `apps/server/src/infra/http/v1/v1-request.ts` — `cv` redirects (`needsRedirect`, `redirectToVersion`), `validIdParams`, `isDraft`
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
-- `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth per request
+- `apps/server/src/auth/services/token-auth.service.ts` — token auth per request
 - `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/assets.public.controller.ts` — ETag/304, Range, Cache-Control
 - `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
 - `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build

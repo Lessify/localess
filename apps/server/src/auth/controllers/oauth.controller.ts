@@ -1,11 +1,11 @@
 import { Controller, Get, Inject, NotFoundException, Param, Query, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { APP_CONFIG, type AppConfig } from '../infra/config/config.js';
-import { Public } from './decorators.js';
-import { OAuthError, OAuthFlow, OAuthService, safeReturnTo } from './oauth.service.js';
-import { publicOrigin } from './public-url.js';
-import { setSessionCookie } from './session-cookie.js';
-import { SessionService } from './session.service.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { Public } from '../decorators.js';
+import { OAuthError, OAuthFlow, OAuthService, safeReturnTo } from '../services/oauth.service.js';
+import { publicOrigin } from '../utils/public-url.js';
+import { setSessionCookie } from '../utils/session-cookie.js';
+import { SessionService } from '../services/session.service.js';
 
 const FLOW_COOKIE = 'localess_oauth';
 const FLOW_COOKIE_PATH = '/api/auth/oauth';

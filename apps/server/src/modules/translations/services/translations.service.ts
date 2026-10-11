@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Translation, TranslationType, WebHookEvent } from '@localess/shared';
-import type { UserRow } from '../../../auth/users/users.service.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import { updatedByOf } from '../../../shared/transformers/updated-by.transformer.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';

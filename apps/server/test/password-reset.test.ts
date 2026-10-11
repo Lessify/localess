@@ -2,7 +2,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi
 import { UserPermission } from '@localess/shared';
 import { passwordResetTokens } from '../src/infra/database/schema.js';
 import { MailMessage, MailService } from '../src/shared/services/mail.service.js';
-import { UserRow, UsersService } from '../src/auth/users/users.service.js';
+import type { UserRow } from '../src/shared/models/user.js';
+import { UsersService } from '../src/modules/users/services/users.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 const tokenFrom = (url: string) => new URL(url).searchParams.get('token') as string;

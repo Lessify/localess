@@ -36,11 +36,12 @@ src/
   main.ts · cli.ts · app.module.ts · app.factory.ts
   infra/        config, database (Drizzle schema, migrations, embedded Postgres), storage,
                 events (pg_notify → SSE), static (SPA), health, http (App API helpers; v1/ public API plumbing)
-  auth/         sessions, OAuth, guard and decorators; users/ (users, me, first admin); api-tokens/ (v1 token check)
+  auth/         sign-in, layered like a module (controllers/, services/, repositories/, utils/): sessions, OAuth,
+                password reset, the guard and decorators, ApiTokensModule (v1 token check)
   shared/       SharedModule (global): mail, webhook delivery; transformers, data rules, shared utils
   modules/      independent features, a folder per layer inside (controllers/, services/, repositories/,
                 utils/, workers/: docs/server-architecture.md) — spaces, settings, schemas (+ OpenAPI),
-                contents, translations, assets, tokens, webhooks, tasks, plugins
+                contents, translations, assets, tokens, webhooks, tasks, plugins, users (+ me, first admin)
                 (translations is layered; the others move one by one)
   cli/          commands, check, firebase-import/
 ```

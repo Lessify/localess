@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import { z } from 'zod';
 import { RequireAdmin } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
-import type { UserRow } from '../../auth/users/users.service.js';
+import type { UserRow } from '../../shared/models/user.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { FirebaseImportService } from './firebase-import.service.js';

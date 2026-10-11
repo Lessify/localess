@@ -2,7 +2,8 @@ import { Controller, MessageEvent, Query, Sse } from '@nestjs/common';
 import { filter, interval, map, merge, Observable } from 'rxjs';
 import { RequireAnyRole } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
-import { toPrincipal, type UserRow } from '../../auth/users/users.service.js';
+import type { UserRow } from '../../shared/models/user.js';
+import { toPrincipal } from '../../shared/transformers/user.transformer.js';
 import { canReceive } from './event-access.js';
 import { EventsService } from './events.service.js';
 

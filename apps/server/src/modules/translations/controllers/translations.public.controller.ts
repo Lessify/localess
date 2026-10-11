@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { TokenPermission } from '@localess/shared';
 import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
-import { TokenAuthService } from '../../../auth/api-tokens/token-auth.service.js';
+import { TokenAuthService } from '../../../auth/services/token-auth.service.js';
 import { Public } from '../../../auth/decorators.js';
 import {
   identifySpaceLocale,

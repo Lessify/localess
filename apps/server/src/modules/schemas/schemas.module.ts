@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ApiTokensModule } from '../../auth/api-tokens/api-tokens.module.js';
+import { ApiTokensModule } from '../../auth/api-tokens.module.js';
 import { OpenApiController } from './controllers/open-api.controller.js';
 import { SchemasController } from './controllers/schemas.controller.js';
 import { SchemasPublicController } from './controllers/schemas.public.controller.js';

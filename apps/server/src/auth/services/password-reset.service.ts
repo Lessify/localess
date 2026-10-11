@@ -1,24 +1,23 @@
-import { createHash, randomBytes } from 'node:crypto';
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
-import { and, eq, gt, isNull } from 'drizzle-orm';
-import { DATABASE, type Database } from '../infra/database/database.module.js';
-import { passwordResetTokens } from '../infra/database/schema.js';
-import { MailService } from '../shared/services/mail.service.js';
-import { UserRow, UsersService } from './users/users.service.js';
+import { randomBytes } from 'node:crypto';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import type { UserRow } from '../../shared/models/user.js';
+import { MailService } from '../../shared/services/mail.service.js';
+import { AuthUsersRepository } from '../repositories/auth-users.repository.js';
+import { PasswordResetTokensRepository } from '../repositories/password-reset-tokens.repository.js';
+import { hashPassword } from '../utils/password.js';
+import { hashToken } from '../utils/token-hash.js';
 import { SessionService } from './session.service.js';
 
 export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 export const RESET_PATH = '/auth/reset/confirm';
-
-const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
 
 @Injectable()
 export class PasswordResetService {
   private readonly logger = new Logger(PasswordResetService.name);
 
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
-    private readonly users: UsersService,
+    private readonly resetTokens: PasswordResetTokensRepository,
+    private readonly users: AuthUsersRepository,
     private readonly sessions: SessionService,
     private readonly mail: MailService,
   ) {}
@@ -27,7 +26,7 @@ export class PasswordResetService {
   async createLink(user: UserRow, origin: string): Promise<{ url: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
-    await this.db.insert(passwordResetTokens).values({ tokenHash: hashToken(token), userId: user.id, expiresAt });
+    await this.resetTokens.create({ tokenHash: hashToken(token), userId: user.id, expiresAt });
     return { url: `${origin}${RESET_PATH}?token=${token}`, expiresAt };
   }
 
@@ -52,20 +51,9 @@ export class PasswordResetService {
 
   /** Sets the new password, burns the token, and signs the user out everywhere. */
   async confirm(token: string, password: string): Promise<void> {
-    const now = new Date();
-    const [row] = await this.db
-      .update(passwordResetTokens)
-      .set({ usedAt: now })
-      .where(
-        and(
-          eq(passwordResetTokens.tokenHash, hashToken(token)),
-          isNull(passwordResetTokens.usedAt),
-          gt(passwordResetTokens.expiresAt, now),
-        ),
-      )
-      .returning({ userId: passwordResetTokens.userId });
-    if (!row) throw new BadRequestException('This reset link is invalid or has expired');
-    await this.users.setPassword(row.userId, password);
-    await this.sessions.revokeAllForUser(row.userId);
+    const userId = await this.resetTokens.consume(hashToken(token), new Date());
+    if (!userId) throw new BadRequestException('This reset link is invalid or has expired');
+    await this.users.setPasswordHash(userId, await hashPassword(password));
+    await this.sessions.revokeAllForUser(userId);
   }
 }

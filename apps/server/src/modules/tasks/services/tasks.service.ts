@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream';
 import { Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import type { Task, TaskLog } from '@localess/shared';
-import type { UserRow } from '../../../auth/users/users.service.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { toTask, toTaskLog } from '../../../shared/transformers/task.transformer.js';

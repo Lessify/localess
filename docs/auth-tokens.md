@@ -61,7 +61,7 @@ Same pattern applies to translation endpoints with `TRANSLATION_*` permissions.
 To avoid a database read per request during traffic spikes, query-param tokens are cached in memory inside each server instance (header tokens on `MANAGE` are always read fresh):
 
 ```typescript
-// apps/server/src/auth/api-tokens/token-auth.service.ts
+// apps/server/src/auth/services/token-auth.service.ts
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 ```
 
@@ -80,6 +80,7 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 ## Implementation Files
 
 - `packages/shared/src/models/token.model.ts` — `TokenPermission`, token types and `TOKEN_V1_IMPLICIT_PERMISSIONS` (shared by server and web)
-- `apps/server/src/auth/api-tokens/token-auth.service.ts` — `validateToken`, `canPerform` / `canPerformAny`, `authorize()`, the token cache and its invalidation
+- `apps/server/src/auth/services/token-auth.service.ts` — `authorize()`, the token cache and its invalidation; the lookup in `auth/repositories/api-tokens.repository.ts`
+- `apps/server/src/auth/utils/api-token.ts` — `ApiToken`, `validateToken`, `canPerform` / `canPerformAny`
 - `apps/server/src/modules/tokens/tokens.controller.ts` — token management for the app
 - `apps/server/src/infra/events/events.service.ts` — change events (`LISTEN/NOTIFY`)

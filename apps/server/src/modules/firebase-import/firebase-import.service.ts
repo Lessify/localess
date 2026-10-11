@@ -1,7 +1,7 @@
 import { BadGatewayException, BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { and, desc, eq, inArray, lt } from 'drizzle-orm';
 import { FIREBASE_IMPORT_STAGES, type FirebaseImport, type FirebaseSourceSpace } from '@localess/shared';
-import type { UserRow } from '../../auth/users/users.service.js';
+import type { UserRow } from '../../shared/models/user.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';

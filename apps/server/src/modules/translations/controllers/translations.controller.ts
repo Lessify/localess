@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { TranslationType, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
-import type { UserRow } from '../../../auth/users/users.service.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { zLabels } from '../../../infra/http/zod.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';

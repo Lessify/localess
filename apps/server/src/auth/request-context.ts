@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import type { UserRow } from './users/users.service.js';
+import type { UserRow } from '../shared/models/user.js';
 
 declare module 'fastify' {
   interface FastifyRequest {

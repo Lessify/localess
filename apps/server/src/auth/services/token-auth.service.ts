@@ -1,37 +1,14 @@
-import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { filter, Subscription } from 'rxjs';
-import { and, eq } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
-import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { tokens } from '../../infra/database/schema.js';
+import { TokenPermission } from '@localess/shared';
 import { EventsService } from '../../infra/events/events.service.js';
 import { Params, Query, validIdParams } from '../../infra/http/v1/v1-request.js';
 import { sendV1Error } from '../../infra/http/v1/v1-response.js';
-
-/** A space API token as the v1 API sees it. V1 tokens (no `version`) carry implicit permissions. */
-export interface ApiToken {
-  /** The row's UUID, not the secret. */
-  id: string;
-  version: number | null;
-  permissions: TokenPermission[];
-  cacheTtl: number | null;
-}
+import { ApiTokensRepository } from '../repositories/api-tokens.repository.js';
+import { type ApiToken, canPerformAny, validateToken } from '../utils/api-token.js';
 
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
-
-/** The shape of every token value: 20 alphanumerics (`newTokenSecret()`, or a Firestore id for imported tokens). */
-export function validateToken(token?: unknown): token is string {
-  return typeof token === 'string' && /^[A-Za-z0-9]{20}$/.test(token);
-}
-
-export function canPerform(permission: TokenPermission, token: ApiToken): boolean {
-  if (token.version === null) return TOKEN_V1_IMPLICIT_PERMISSIONS.includes(permission);
-  if (token.version === 2) return token.permissions.includes(permission);
-  return false;
-}
-
-export const canPerformAny = (permissions: TokenPermission[], token: ApiToken) => permissions.some(it => canPerform(it, token));
 
 /**
  * Query-string (`?token=`) and header (`X-API-KEY`) token checks for /api/v1, ported from
@@ -44,7 +21,7 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
   private subscription?: Subscription;
 
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
+    private readonly tokens: ApiTokensRepository,
     private readonly events: EventsService,
   ) {}
 
@@ -61,12 +38,8 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** The token whose secret is `token` in this space. */
-  async find(spaceId: string, token: string): Promise<ApiToken | undefined> {
-    const [row] = await this.db
-      .select({ id: tokens.id, version: tokens.version, permissions: tokens.permissions, cacheTtl: tokens.cacheTtl })
-      .from(tokens)
-      .where(and(eq(tokens.spaceId, spaceId), eq(tokens.token, token)));
-    return row ? { ...row, permissions: (row.permissions ?? []) as TokenPermission[] } : undefined;
+  find(spaceId: string, token: string): Promise<ApiToken | undefined> {
+    return this.tokens.find(spaceId, token);
   }
 
   /** Cached by secret; entries remember the row UUID so change events can drop them. */

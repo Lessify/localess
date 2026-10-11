@@ -2,17 +2,18 @@ import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs
 import { RouteConfig } from '@nestjs/platform-fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { ZodValidationPipe } from '../infra/http/zod-validation.pipe.js';
-import { APP_CONFIG, type AppConfig } from '../infra/config/config.js';
-import { UserDto, type UserRow, UsersService } from './users/users.service.js';
-import { AuthService } from './auth.service.js';
-import { Public } from './decorators.js';
-import { PASSWORD_MIN_LENGTH } from './password.js';
-import { PasswordResetService } from './password-reset.service.js';
-import { publicOrigin } from './public-url.js';
-import { CurrentUser } from './request-context.js';
-import { clearSessionCookie, setSessionCookie } from './session-cookie.js';
-import { SESSION_COOKIE, SessionService } from './session.service.js';
+import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import type { UserRow } from '../../shared/models/user.js';
+import type { UserDto } from '../../shared/transformers/user.transformer.js';
+import { AuthService } from '../services/auth.service.js';
+import { Public } from '../decorators.js';
+import { PASSWORD_MIN_LENGTH } from '../utils/password.js';
+import { PasswordResetService } from '../services/password-reset.service.js';
+import { publicOrigin } from '../utils/public-url.js';
+import { CurrentUser } from '../request-context.js';
+import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from '../utils/session-cookie.js';
+import { SessionService } from '../services/session.service.js';
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
@@ -30,7 +31,6 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
-    private readonly users: UsersService,
     private readonly passwordReset: PasswordResetService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
@@ -47,7 +47,7 @@ export class AuthController {
     const user = await this.auth.verifyCredentials(body.email, body.password);
     const { token, expiresAt } = await this.sessions.create(user.id, { userAgent: request.headers['user-agent'], ip: request.ip });
     setSessionCookie(request, reply, token, expiresAt);
-    return { user: await this.users.toDto(user) };
+    return { user: await this.auth.toUser(user) };
   }
 
   @Public()
@@ -81,6 +81,6 @@ export class AuthController {
   /** The signed-in user, including role and permissions (replaces `getIdTokenResult().claims`). */
   @Get('me')
   async me(@CurrentUser() user: UserRow): Promise<{ user: UserDto }> {
-    return { user: await this.users.toDto(user) };
+    return { user: await this.auth.toUser(user) };
   }
 }

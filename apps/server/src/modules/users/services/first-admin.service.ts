@@ -1,11 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { DEFAULT_LOCALE } from '@localess/shared';
-import { hashPassword, PASSWORD_MIN_LENGTH } from '../password.js';
-import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
-import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { newUuid } from '../../infra/database/id.js';
-import { spaceLocales, spaces, userCredentials, users } from '../../infra/database/schema.js';
-import { UsersService } from './users.service.js';
+import { hashPassword, PASSWORD_MIN_LENGTH } from '../../../auth/utils/password.js';
+import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import { FirstAdminRepository } from '../repositories/first-admin.repository.js';
 
 export const DEFAULT_ADMIN_NAME = 'Admin';
 
@@ -28,14 +24,13 @@ export class FirstAdminService implements OnApplicationBootstrap {
   private readonly logger = new Logger(FirstAdminService.name);
 
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly users: UsersService,
+    private readonly firstAdmin: FirstAdminRepository,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     const admin = this.config.firstAdmin;
-    if (!admin || (await this.users.count()) > 0) return;
+    if (!admin || (await this.firstAdmin.countUsers()) > 0) return;
     await this.create(admin);
     this.logger.log(`Created the first admin ${admin.email} and the "Hello World" space`);
   }
@@ -44,26 +39,14 @@ export class FirstAdminService implements OnApplicationBootstrap {
     if (admin.password.length < PASSWORD_MIN_LENGTH) {
       throw new Error(`The admin password must be at least ${PASSWORD_MIN_LENGTH} characters`);
     }
-    if (await this.users.findByEmail(admin.email)) {
+    if (await this.firstAdmin.existsEmail(admin.email)) {
       throw new ConflictException(`A user with the email ${admin.email} already exists`);
     }
     const passwordHash = await hashPassword(admin.password);
-    return this.db.transaction(async tx => {
-      const [user] = await tx
-        .insert(users)
-        .values({
-          id: newUuid(),
-          email: admin.email,
-          emailVerified: true,
-          displayName: admin.displayName ?? DEFAULT_ADMIN_NAME,
-          role: 'ADMIN',
-        })
-        .returning({ id: users.id });
-      await tx.insert(userCredentials).values({ userId: user.id, passwordHash, hashAlgo: 'argon2id' });
-      const spaceId = newUuid();
-      await tx.insert(spaces).values({ id: spaceId, name: 'Hello World', defaultLocaleId: DEFAULT_LOCALE.id });
-      await tx.insert(spaceLocales).values({ spaceId, localeId: DEFAULT_LOCALE.id, position: 0 });
-      return { userId: user.id, spaceId };
+    return this.firstAdmin.createWithStarterSpace({
+      email: admin.email,
+      displayName: admin.displayName ?? DEFAULT_ADMIN_NAME,
+      passwordHash,
     });
   }
 }

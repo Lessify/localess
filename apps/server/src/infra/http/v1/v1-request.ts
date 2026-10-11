@@ -1,5 +1,5 @@
 import type { FastifyReply } from 'fastify';
-import type { ApiToken } from '../../../auth/api-tokens/token-auth.service.js';
+import type { ApiToken } from '../../../auth/utils/api-token.js';
 import {
   CACHE_BAD_REQUEST_MAX_AGE,
   CACHE_MAX_AGE,

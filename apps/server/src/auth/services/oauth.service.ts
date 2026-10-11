@@ -1,10 +1,8 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
 import * as client from 'openid-client';
-import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../infra/config/config.js';
-import { DATABASE, type Database } from '../infra/database/database.module.js';
-import { userIdentities } from '../infra/database/schema.js';
-import { UserRow, UsersService } from './users/users.service.js';
+import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../../infra/config/config.js';
+import type { UserRow } from '../../shared/models/user.js';
+import { AuthUsersRepository } from '../repositories/auth-users.repository.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {
@@ -46,8 +44,7 @@ export class OAuthService implements OnModuleInit {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    @Inject(DATABASE) private readonly db: Database,
-    private readonly users: UsersService,
+    private readonly users: AuthUsersRepository,
   ) {}
 
   onModuleInit(): void {
@@ -153,12 +150,9 @@ export class OAuthService implements OnModuleInit {
 
   private async resolveUser(provider: OAuthProviderId, claims: client.IDToken): Promise<UserRow> {
     const subject = claims.sub;
-    const [identity] = await this.db
-      .select({ userId: userIdentities.userId })
-      .from(userIdentities)
-      .where(and(eq(userIdentities.provider, provider), eq(userIdentities.providerSubject, subject)));
+    const identityUserId = await this.users.findIdentityUserId(provider, subject);
 
-    let user = identity ? await this.users.findById(identity.userId) : undefined;
+    let user = identityUserId ? await this.users.findById(identityUserId) : undefined;
     if (!user) {
       const email = this.verifiedEmail(provider, claims);
       user = await this.users.findByEmail(email);
@@ -167,10 +161,10 @@ export class OAuthService implements OnModuleInit {
         user = await this.users.create({
           email,
           emailVerified: true,
-          displayName: typeof claims['name'] === 'string' ? claims['name'] : undefined,
+          displayName: typeof claims['name'] === 'string' ? claims['name'] || null : null,
         });
       }
-      await this.db.insert(userIdentities).values({ userId: user.id, provider, providerSubject: subject }).onConflictDoNothing();
+      await this.users.linkIdentity(user.id, provider, subject);
     } else if (provider === 'google') {
       // Re-check the domain on every sign-in, not just the first.
       this.verifiedEmail(provider, claims);

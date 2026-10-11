@@ -1,7 +1,8 @@
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ContentDocumentApi, ContentKind, TokenPermission } from '@localess/shared';
-import { ApiToken, TokenAuthService } from '../../../auth/api-tokens/token-auth.service.js';
+import { TokenAuthService } from '../../../auth/services/token-auth.service.js';
+import type { ApiToken } from '../../../auth/utils/api-token.js';
 import { Public } from '../../../auth/decorators.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { publicCache, TEN_MINUTES } from '../../../infra/http/v1/cache-control.js';

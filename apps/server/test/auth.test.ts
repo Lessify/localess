@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { UserPermission } from '@localess/shared';
 import { sessions, users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/auth/users/users.service.js';
+import { UsersService } from '../src/modules/users/services/users.service.js';
 import { createTestApp, login, sessionCookie, TestApp, XHR } from './test-app.js';
 
 describe('authentication', () => {

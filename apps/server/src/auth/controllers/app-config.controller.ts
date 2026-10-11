@@ -1,7 +1,7 @@
 import { Controller, Get, Inject } from '@nestjs/common';
-import { Public } from './decorators.js';
-import { OAuthService } from './oauth.service.js';
-import { APP_CONFIG, type AppConfig } from '../infra/config/config.js';
+import { Public } from '../decorators.js';
+import { OAuthService } from '../services/oauth.service.js';
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 
 export interface PublicAppConfig {
   auth: {

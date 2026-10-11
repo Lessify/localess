@@ -1,12 +1,11 @@
 import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
 import { z } from 'zod';
-import { AuthService } from '../auth.service.js';
-import { PASSWORD_MIN_LENGTH } from '../password.js';
-import { CurrentSessionId, CurrentUser } from '../request-context.js';
-import { SessionService } from '../session.service.js';
-import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { EventsService } from '../../infra/events/events.service.js';
-import { UserDto, type UserRow, UsersService } from './users.service.js';
+import { PASSWORD_MIN_LENGTH } from '../../../auth/utils/password.js';
+import { CurrentSessionId, CurrentUser } from '../../../auth/request-context.js';
+import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import type { UserRow } from '../../../shared/models/user.js';
+import type { UserDto } from '../../../shared/transformers/user.transformer.js';
+import { MeService } from '../services/me.service.js';
 
 const profileSchema = z.object({
   displayName: z.string().trim().max(200).nullish(),
@@ -26,16 +25,11 @@ const passwordSchema = z.object({
 /** The signed-in user's own profile (was `updateProfile` / `updateEmail` / `updatePassword` on Firebase Auth). */
 @Controller('api/app/me')
 export class MeController {
-  constructor(
-    private readonly users: UsersService,
-    private readonly auth: AuthService,
-    private readonly sessions: SessionService,
-    private readonly events: EventsService,
-  ) {}
+  constructor(private readonly me: MeService) {}
 
   @Get()
   async get(@CurrentUser() user: UserRow): Promise<UserDto> {
-    return this.users.toDto(user);
+    return this.me.get(user);
   }
 
   @Patch()
@@ -43,9 +37,7 @@ export class MeController {
     @CurrentUser() user: UserRow,
     @Body(new ZodValidationPipe(profileSchema)) body: z.infer<typeof profileSchema>,
   ): Promise<UserDto> {
-    const updated = await this.users.updateProfile(user.id, body);
-    await this.events.publish({ spaceId: null, entity: 'users', id: user.id, op: 'updated' });
-    return this.users.toDto(updated);
+    return this.me.updateProfile(user, body);
   }
 
   @Put('email')
@@ -53,10 +45,7 @@ export class MeController {
     @CurrentUser() user: UserRow,
     @Body(new ZodValidationPipe(emailSchema)) body: z.infer<typeof emailSchema>,
   ): Promise<UserDto> {
-    await this.auth.confirmCurrentPassword(user, body.currentPassword);
-    const updated = await this.users.updateEmail(user.id, body.email);
-    await this.events.publish({ spaceId: null, entity: 'users', id: user.id, op: 'updated' });
-    return this.users.toDto(updated);
+    return this.me.updateEmail(user, body.email, body.currentPassword);
   }
 
   /** Changing the password signs out every other session. */
@@ -67,8 +56,6 @@ export class MeController {
     @CurrentSessionId() sessionId: string,
     @Body(new ZodValidationPipe(passwordSchema)) body: z.infer<typeof passwordSchema>,
   ): Promise<void> {
-    await this.auth.confirmCurrentPassword(user, body.currentPassword);
-    await this.users.setPassword(user.id, body.newPassword);
-    await this.sessions.revokeAllForUser(user.id, sessionId);
+    await this.me.updatePassword(user, sessionId, body.currentPassword, body.newPassword);
   }
 }

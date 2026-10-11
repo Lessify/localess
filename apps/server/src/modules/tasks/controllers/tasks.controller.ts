@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
-import type { UserRow } from '../../../auth/users/users.service.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';

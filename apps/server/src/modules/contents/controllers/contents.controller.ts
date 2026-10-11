@@ -4,7 +4,7 @@ import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
-import type { UserRow } from '../../../auth/users/users.service.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ContentsService } from '../services/contents.service.js';
 

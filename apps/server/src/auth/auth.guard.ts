@@ -2,9 +2,10 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable, Unauthor
 import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
 import { canPerform, hasAnyRole } from '@localess/shared';
-import { toPrincipal } from './users/users.service.js';
+import { toPrincipal } from '../shared/transformers/user.transformer.js';
 import { IS_PUBLIC, REQUIRED_ACCESS, RequiredAccess } from './decorators.js';
-import { SESSION_COOKIE, SessionService } from './session.service.js';
+import { SessionService } from './services/session.service.js';
+import { SESSION_COOKIE } from './utils/session-cookie.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export const CSRF_HEADER = 'x-requested-with';

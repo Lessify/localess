@@ -1,6 +1,6 @@
 import { parseArgs } from 'node:util';
 import { NestFactory } from '@nestjs/core';
-import { FirstAdminService } from '../auth/users/first-admin.service.js';
+import { FirstAdminService } from '../modules/users/services/first-admin.service.js';
 import { DATABASE, Database } from '../infra/database/database.module.js';
 import { STORAGE_DRIVER, StorageDriver } from '../infra/storage/storage.driver.js';
 import { runChecks } from './check.js';

@@ -18,7 +18,7 @@ import {
   WebHookEvent,
   WebHookStatus,
 } from '@localess/shared';
-import { OAUTH_PROVIDERS } from '../../auth/oauth-providers.js';
+import { OAUTH_PROVIDERS } from '../../auth/utils/oauth-providers.js';
 import {
   type AnyPgColumn,
   bigint,

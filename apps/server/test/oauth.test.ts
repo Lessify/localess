@@ -3,7 +3,7 @@ import type { LightMyRequestResponse } from 'fastify';
 import { OAuth2Server } from 'oauth2-mock-server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { userIdentities, users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/auth/users/users.service.js';
+import { UsersService } from '../src/modules/users/services/users.service.js';
 import { freePort } from './free-port.js';
 import { createTestApp, sessionCookie, TestApp } from './test-app.js';
 

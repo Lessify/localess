@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ApiTokensModule } from '../../auth/api-tokens/api-tokens.module.js';
+import { ApiTokensModule } from '../../auth/api-tokens.module.js';
 import { ContentsController } from './controllers/contents.controller.js';
 import { ContentsPublicController } from './controllers/contents.public.controller.js';
 import { ContentDeliveryRepository } from './repositories/content-delivery.repository.js';

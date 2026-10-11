@@ -1,29 +1,34 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { FirstAdminService } from './users/first-admin.service.js';
-import { MeController } from './users/me.controller.js';
-import { UsersController } from './users/users.controller.js';
-import { UsersService } from './users/users.service.js';
-import { PasswordResetService } from './password-reset.service.js';
-import { AppConfigController } from './app-config.controller.js';
-import { AuthController } from './auth.controller.js';
-import { OAuthController } from './oauth.controller.js';
-import { OAuthService } from './oauth.service.js';
+import { AppConfigController } from './controllers/app-config.controller.js';
+import { AuthController } from './controllers/auth.controller.js';
+import { OAuthController } from './controllers/oauth.controller.js';
+import { AuthUsersRepository } from './repositories/auth-users.repository.js';
+import { PasswordResetTokensRepository } from './repositories/password-reset-tokens.repository.js';
+import { SessionsRepository } from './repositories/sessions.repository.js';
+import { AuthService } from './services/auth.service.js';
+import { OAuthService } from './services/oauth.service.js';
+import { PasswordResetService } from './services/password-reset.service.js';
+import { SessionService } from './services/session.service.js';
 import { AuthGuard } from './auth.guard.js';
-import { AuthService } from './auth.service.js';
-import { SessionService } from './session.service.js';
 
+/**
+ * Sign-in for the App API (docs/server-architecture.md): sessions, email + password, OAuth, password reset, and the
+ * global `AuthGuard`. Exports what feature modules build on (the users module: re-checking a password, signing a
+ * user out, reset links).
+ */
 @Module({
-  controllers: [AuthController, OAuthController, AppConfigController, MeController, UsersController],
+  controllers: [AuthController, OAuthController, AppConfigController],
   providers: [
     AuthService,
     SessionService,
-    UsersService,
-    FirstAdminService,
     PasswordResetService,
     OAuthService,
+    SessionsRepository,
+    PasswordResetTokensRepository,
+    AuthUsersRepository,
     { provide: APP_GUARD, useClass: AuthGuard },
   ],
-  exports: [AuthService, SessionService, UsersService, FirstAdminService],
+  exports: [AuthService, SessionService, PasswordResetService],
 })
 export class AuthModule {}

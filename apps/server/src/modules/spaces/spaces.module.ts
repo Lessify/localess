@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ApiTokensModule } from '../../auth/api-tokens/api-tokens.module.js';
+import { ApiTokensModule } from '../../auth/api-tokens.module.js';
 import { LocalesController } from './controllers/locales.controller.js';
 import { SpacesController } from './controllers/spaces.controller.js';
 import { SpacesPublicController } from './controllers/spaces.public.controller.js';

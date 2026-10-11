@@ -18,7 +18,7 @@ import {
   WebHookStatus,
 } from '@localess/shared';
 import { createTestDatabase, TestDatabase } from '../../../test/database.js';
-import { OAUTH_PROVIDERS } from '../../auth/oauth-providers.js';
+import { OAUTH_PROVIDERS } from '../../auth/utils/oauth-providers.js';
 import { migrateDatabase } from './migrate.js';
 import { HASH_ALGORITHMS, TRANSLATION_SNAPSHOT_VERSIONS } from './schema.js';
 

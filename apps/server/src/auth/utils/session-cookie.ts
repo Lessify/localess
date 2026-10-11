@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { SESSION_COOKIE } from './session.service.js';
+
+export const SESSION_COOKIE = 'localess_session';
 
 export function setSessionCookie(request: FastifyRequest, reply: FastifyReply, token: string, expires: Date): void {
   void reply.setCookie(SESSION_COOKIE, token, {

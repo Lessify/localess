@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SchemaExport } from '@localess/shared';
 import { zSchemaPushSchema } from '@localess/shared/zod';
-import { TokenAuthService } from '../../../auth/api-tokens/token-auth.service.js';
+import { TokenAuthService } from '../../../auth/services/token-auth.service.js';
 import { Public } from '../../../auth/decorators.js';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from '../../../infra/http/v1/cache-control.js';
 import { Params } from '../../../infra/http/v1/v1-request.js';

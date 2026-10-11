@@ -260,7 +260,7 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 | `apps/server/src/modules/contents/services/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |
 | `apps/server/src/modules/translations/services/translation-delivery.service.ts` | Published and draft translation maps                                                      |
 | `apps/server/src/modules/assets/utils/`                                  | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing, Range |
-| `apps/server/src/auth/api-tokens/token-auth.service.ts`            | Query-param and header token auth, 5-min token cache invalidated by change events         |
+| `apps/server/src/auth/services/token-auth.service.ts`              | Query-param and header token auth, 5-min token cache invalidated by change events         |
 | `apps/server/src/modules/assets/services/asset-delivery.service.ts` | Transform decisions, transforms, rendition cache                                       |
 | `apps/server/src/infra/http/v1/cache-control.ts`                 | Cache TTL constants                                                                       |
 | `apps/server/src/infra/http/v1/v1-response.ts`                   | `sendV1Error()` error bodies                                                              |

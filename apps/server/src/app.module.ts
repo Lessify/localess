@@ -17,6 +17,7 @@ import { SpacesModule } from './modules/spaces/spaces.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { TokensModule } from './modules/tokens/tokens.module.js';
 import { TranslationsModule } from './modules/translations/translations.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 import { WebhooksModule } from './modules/webhooks/webhooks.module.js';
 
 @Module({})
@@ -33,6 +34,7 @@ export class AppModule {
         WebhooksModule,
         AuthModule,
         // Features: each owns its App API (/api/app) and public API (/api/v1) controllers.
+        UsersModule,
         SpacesModule,
         SettingsModule,
         SchemasModule,

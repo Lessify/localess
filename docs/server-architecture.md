@@ -9,9 +9,9 @@ yet moved are listed under [Status](#status).
 ```
 src/
   infra/     technical plumbing: config, database (connection, schema, migrations, transaction()), storage, events, http
-  shared/    what every module may use: services (mail, webhook delivery), transformers, data rules, utils
+  shared/    what every module may use: services (mail, webhook delivery), models, transformers, data rules, utils
   modules/   independent features, each with its own layers
-  auth/      sessions, OAuth, guards, token checks
+  auth/      sessions, OAuth, password reset, guard, decorators, token checks: cross-cutting, layered like a module
 ```
 
 ## Modules are independent
@@ -20,7 +20,28 @@ src/
 - **No module imports another feature module.** What it needs from elsewhere, it reads with its own query.
 - **Tables are shared, queries are not.** Several modules may read and write the same table, each with the queries its
   own job needs (translations reads a space's locales with its `SpaceLocalesRepository`; spaces has its own).
-- A module may use `infra/` and `shared/`.
+- A module may use `infra/`, `shared/` and `auth/`.
+
+## Auth
+
+`auth/` is not a feature but what every feature relies on: the global `AuthGuard`, the `@Public` / `@Require*`
+decorators (`decorators.ts`), `CurrentUser` / `CurrentSessionId` (`request-context.ts`), and `ApiTokensModule`
+(`TokenAuthService`, the `/api/v1` token check every module with a public controller imports). Inside it is layered
+like a module, and it imports no feature module:
+
+```
+auth/
+  auth.module.ts  api-tokens.module.ts  auth.guard.ts  decorators.ts  request-context.ts
+  controllers/   auth.controller.ts  oauth.controller.ts  app-config.controller.ts
+  services/      auth.service.ts  session.service.ts  password-reset.service.ts  oauth.service.ts  token-auth.service.ts
+  repositories/  sessions.repository.ts  password-reset-tokens.repository.ts  auth-users.repository.ts  api-tokens.repository.ts
+  utils/         password.ts  session-cookie.ts  token-hash.ts  public-url.ts  oauth-providers.ts  api-token.ts
+```
+
+`AuthModule` exports `AuthService` (re-checking a password), `SessionService` (signing a user out) and
+`PasswordResetService` (reset links) for the users module. Auth reads and writes `users`, `user_credentials` and
+`user_identities` with its own `AuthUsersRepository` (sign-in, OAuth, reset); Admin → Users and the own profile are the
+users module's, with their own `UsersRepository`.
 
 ## Layers
 
@@ -92,10 +113,12 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 |---|---|---|
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher`, `AssetMetadataService` (size, duration, orientation, embedded alt of a stored file: assets, the asset import and metadata tasks, the Firebase import) |
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository` |
-| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `contentToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks) |
+| `shared/models/` | Entity types that auth and every module name, without importing a module | `user.ts`: `UserRow` (the signed-in user, `CurrentUser`) |
+| `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `contentToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
 | | | `content-version.ts`: `bumpContentVersion` (every write that changes what the content API serves: contents, schemas, assets, the import tasks) |
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
+| | | `user.query.ts`: `findUserLogins` (how each user signs in: password, OAuth providers), for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction |
 | `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports |
 | `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client) |
@@ -115,8 +138,8 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 
 | Module | Layered |
 |---|---|
-| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets, tasks | ✅ |
-| users (in `auth/`), firebase-import | not yet |
+| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets, tasks, users (and `auth/`) | ✅ |
+| firebase-import | not yet |
 
 Until a module is moved it may still query in its services, but it already follows the data rules and imports no
 moved module.
