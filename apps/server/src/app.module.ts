@@ -1,4 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module.js';
 import { AppConfig } from './infra/config/config.js';
 import { ConfigModule } from './infra/config/config.module.js';
@@ -27,6 +28,7 @@ export class AppModule {
       module: AppModule,
       imports: [
         ConfigModule.forRoot(config),
+        ScheduleModule.forRoot(),
         DatabaseModule,
         StorageModule,
         EventsModule,

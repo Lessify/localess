@@ -2,10 +2,11 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, like, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
-import { assets } from '../../../infra/database/schema.js';
+import { assets, contents } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
+import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { folderPath } from '../../../shared/utils/asset-path.utils.js';
 
@@ -110,13 +111,24 @@ export class AssetsRepository {
     });
   }
 
-  /** The row of a file already in storage (the upload checked its parent path before storing it). */
+  /** Before an upload stores a new asset's file: queued for deletion in an hour unless its row is created. */
+  async guardUpload(spaceId: string, id: string): Promise<void> {
+    await guardUpload(this.db, spaceId, id);
+  }
+
+  /** After an upload cleaned up its own file: its guard is no longer needed. */
+  async releaseUploadGuard(spaceId: string, id: string): Promise<void> {
+    await releaseUploadGuards(this.db, spaceId, [id]);
+  }
+
+  /** The row of a file already in storage (the upload checked its parent path before storing it), releasing its guard. */
   createFile(spaceId: string, values: NewAssetFile, tx?: Transaction): Promise<AssetEntity> {
     return this.write(spaceId, tx, async t => {
       const [row] = await t
         .insert(assets)
         .values({ ...values, spaceId, kind: 'FILE' })
         .returning();
+      await releaseUploadGuards(t, spaceId, [values.id]);
       return { result: row, changed: [{ id: values.id, op: 'created' }] };
     });
   }
@@ -126,6 +138,7 @@ export class AssetsRepository {
     return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
+      if (current.kind !== 'FILE' && values.alt !== undefined) throw new BadRequestException('Only files have alt text');
       const [row] = await t
         .update(assets)
         .set({
@@ -150,7 +163,7 @@ export class AssetsRepository {
     });
   }
 
-  /** Deletes a file, or a folder with every row under it. Answers the deleted rows, for the caller to drop their files. */
+  /** Deletes a file, or a folder with every row under it, queueing their stored files for deletion. Answers the deleted rows. */
   delete(spaceId: string, id: string, tx?: Transaction): Promise<{ id: string; kind: string }[] | undefined> {
     return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
@@ -164,6 +177,12 @@ export class AssetsRepository {
         .delete(assets)
         .where(and(eq(assets.spaceId, spaceId), scope))
         .returning({ id: assets.id, kind: assets.kind });
+      // Their stored files go through the queue: the sweeper deletes them after the commit.
+      await scheduleAssetFilesDeletion(
+        t,
+        spaceId,
+        rows.filter(it => it.kind === 'FILE').map(it => it.id),
+      );
       return { result: rows, changed: rows.map(it => ({ id: it.id, op: 'deleted' as const })), bump: true };
     });
   }
@@ -193,6 +212,47 @@ export class AssetsRepository {
       for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'assets', ...it }, t);
       return outcome.result;
     });
+  }
+
+  /** The file itself, or every file under a folder (at any depth); `undefined` when there is no asset `id`. */
+  async findFileIdsWithin(spaceId: string, id: string): Promise<string[] | undefined> {
+    const current = await this.find(this.db, spaceId, id);
+    if (!current) return undefined;
+    if (current.kind === 'FILE') return [current.id];
+    const path = folderPath(current);
+    const files = await this.db
+      .select({ id: assets.id })
+      .from(assets)
+      .where(
+        and(
+          eq(assets.spaceId, spaceId),
+          eq(assets.kind, 'FILE'),
+          or(eq(assets.parentPath, path), like(assets.parentPath, `${escapeLike(path)}/%`)),
+        ),
+      );
+    return files.map(it => it.id);
+  }
+
+  /**
+   * How many contents use one of `assetIds`: their draft data holds `{ kind: 'ASSET', uri: <id> }` at any depth, in
+   * any locale variant. Read from the data itself, the source of truth (not the `assets` array the editor sends).
+   */
+  async countContentsUsing(spaceId: string, assetIds: string[]): Promise<number> {
+    if (!assetIds.length) return 0;
+    const ids = sql.join(
+      assetIds.map(id => sql`${id}`),
+      sql`, `,
+    );
+    const [{ value }] = await this.db
+      .select({ value: count() })
+      .from(contents)
+      .where(
+        and(
+          eq(contents.spaceId, spaceId),
+          sql`exists (select 1 from jsonb_path_query(${contents.data}, 'lax $.** ? (@.kind == "ASSET").uri') as ref(uri) where ref.uri #>> '{}' in (${ids}))`,
+        ),
+      );
+    return Number(value);
   }
 
   /** '' (root) or the path of an existing folder. */

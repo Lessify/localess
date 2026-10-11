@@ -28,7 +28,6 @@ export interface AssetFolder extends AssetBase {
 
 export interface AssetFile extends AssetBase {
   kind: AssetKind.FILE;
-  inProgress?: boolean;
   extension: string;
   type: string;
   size: number;
@@ -94,6 +93,6 @@ export function isFile(asset: Asset): asset is AssetFile {
 // Import and Export
 export type AssetFolderExport = Omit<AssetFolder, 'createdAt' | 'updatedAt'>;
 
-export type AssetFileExport = Omit<AssetFile, 'createdAt' | 'updatedAt' | 'inProgress'>;
+export type AssetFileExport = Omit<AssetFile, 'createdAt' | 'updatedAt'>;
 
 export type AssetExport = AssetFileExport | AssetFolderExport;

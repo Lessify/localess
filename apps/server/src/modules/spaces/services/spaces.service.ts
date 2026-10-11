@@ -1,7 +1,7 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DEFAULT_LOCALE, type SpaceOverview } from '@localess/shared';
-import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
+import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
@@ -20,7 +20,7 @@ export class SpacesService {
     private readonly spaces: SpacesRepository,
     private readonly locales: LocalesRepository,
     private readonly overviews: SpaceOverviewRepository,
-    @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
+    private readonly sweeper: StorageSweeperService,
   ) {}
 
   async list() {
@@ -112,12 +112,12 @@ export class SpacesService {
     return toSpace(await this.spaces.setDefaultLocale(spaceId, localeId));
   }
 
-  /** Everything in the space goes with it: rows by FK cascade, files by prefix. */
+  /** Everything in the space goes with it: rows by FK cascade; its stored files are queued and swept right after. */
   async delete(spaceId: string): Promise<void> {
     const space = await this.require(spaceId);
     if (space.importStatus === 'IMPORTING') throw new ConflictException('The space is being imported');
     await this.spaces.delete(spaceId);
-    await this.storage.deletePrefix(`spaces/${spaceId}/`);
+    this.sweeper.kick();
   }
 
   /** Dashboard numbers, computed on request (were stored on the space by the `space-calculateoverview` callable). */

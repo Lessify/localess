@@ -67,7 +67,6 @@ export class AssetImportService {
         alt: str(doc['alt']) ?? extracted?.alt ?? null,
         source: str(doc['source']),
         metadata: obj<Record<string, unknown>>(doc['metadata']) ?? extracted?.metadata ?? null,
-        inProgress: false,
         ...timestamps(doc),
       });
       assetCount++;

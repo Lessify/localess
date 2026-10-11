@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import unzipper from 'unzipper';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, schemas, tasks, tokens, translations } from '../src/infra/database/schema.js';
+import { assets, contents, schemas, tasks, tokens, translations, storageDeletions } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/workers/task-worker.service.js';
 import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
@@ -259,6 +259,8 @@ describe('task worker: exports and imports', () => {
       });
       const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/${PIC}/original` });
       expect(served.rawPayload.equals(jpeg)).toBe(true);
+      // The guards of the stored files went with their rows.
+      expect(await t.db.select().from(storageDeletions)).toEqual([]);
     });
 
     it('gives Firestore ids of a Firebase-era export UUIDs, kept as legacy_id; folders paths follow; a re-import reuses them', async () => {

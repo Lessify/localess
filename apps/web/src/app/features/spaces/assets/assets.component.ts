@@ -86,7 +86,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY, Subject } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 import { catchError, concatMap, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -404,6 +404,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       });
   }
 
+  /** Asks first, saying how many contents use it: they keep pointing at it and show it as missing. */
   openDeleteDialog(element: Asset): void {
     let title = '';
     let content = '';
@@ -414,17 +415,25 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       title = 'Delete Asset';
       content = `Are you sure about deleting Asset with name: ${element.name}.`;
     }
-    this.dialog
-      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
-        context: {
-          title: title,
-          content: content,
-          variant: 'destructive',
-        },
-        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
-      })
-      .closed$.pipe(
-        take(1),
+    this.assetService
+      .usage(this.spaceId(), element.id)
+      .pipe(
+        // Without the count, the delete is still offered.
+        catchError(() => of({ contents: 0 })),
+        switchMap(({ contents }) =>
+          this.dialog
+            .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+              context: {
+                title: title,
+                content: contents
+                  ? `${content}\n It is used by ${contents} ${contents === 1 ? 'content' : 'contents'}, which will show it as missing.`
+                  : content,
+                variant: 'destructive',
+              },
+              contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+            })
+            .closed$.pipe(take(1)),
+        ),
         filter(it => it || false),
         switchMap(() => this.assetService.delete(this.spaceId(), element.id)),
       )

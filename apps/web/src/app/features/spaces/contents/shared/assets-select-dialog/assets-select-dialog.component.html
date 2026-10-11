@@ -85,21 +85,14 @@
           <th llHeaderCell *llHeaderCellDef>Preview</th>
           <td llCell *llCellDef="let element">
             @if (element.kind === 'FILE' && filePreview(element.type)) {
-              @if (element.inProgress) {
-                <div class="flex aspect-square w-full flex-col place-items-center justify-center">
-                  <hlm-spinner />
-                  <span>Processing ...</span>
-                </div>
-              } @else {
-                <img
-                  class="image-bg rounded-sm border object-contain"
-                  width="200"
-                  height="200"
-                  alt="thumbnail"
-                  loading="lazy"
-                  [loaderParams]="{ thumbnail: true }"
-                  ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ element.id }}" />
-              }
+              <img
+                class="image-bg rounded-sm border object-contain"
+                width="200"
+                height="200"
+                alt="thumbnail"
+                loading="lazy"
+                [loaderParams]="{ thumbnail: true }"
+                ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ element.id }}" />
             }
           </td>
         </ng-container>

@@ -4,6 +4,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { assets } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
+import { guardUpload, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
 import { escapeLike } from '../utils/escape-like.js';
 
@@ -61,8 +62,20 @@ export class AssetTransferRepository {
    * Writes an import in one transaction, in the file's order; when anything was written, the content version is bumped
    * and an `assets` change event published. Answers the number of rows written.
    */
-  applyImport(spaceId: string, writes: AssetImportWrite[], tx?: Transaction): Promise<number> {
+  /** Before the import stores a file: queued for deletion in an hour unless its row is written (see storage-deletions.ts). */
+  async guardUpload(spaceId: string, id: string): Promise<void> {
+    await guardUpload(this.db, spaceId, id);
+  }
+
+  /** After the import removed the files it stored: their guards are no longer needed. */
+  async releaseUploadGuards(spaceId: string, ids: string[]): Promise<void> {
+    await releaseUploadGuards(this.db, spaceId, ids);
+  }
+
+  /** The import's rows in one transaction; the guards of the files it stored (`storedIds`) go with them. */
+  applyImport(spaceId: string, writes: AssetImportWrite[], storedIds: string[] = [], tx?: Transaction): Promise<number> {
     return transaction(this.db, tx, async t => {
+      await releaseUploadGuards(t, spaceId, storedIds);
       for (const write of writes) {
         if (write.op === 'update') {
           await t
@@ -94,7 +107,6 @@ export class AssetTransferRepository {
         .set({
           ...(values.metadata ? { metadata: values.metadata } : {}),
           ...(values.alt ? { alt: values.alt } : {}),
-          inProgress: false,
         })
         .where(and(eq(assets.spaceId, spaceId), eq(assets.id, id)));
     });

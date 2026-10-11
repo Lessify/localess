@@ -5,6 +5,7 @@ import { newUuid } from '../../../infra/database/id.js';
 import { keepUpdatedAt, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
+import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/data-rules/translation-drafts.js';
 import { findSpace, requireSpace, selectSpaces, type SpaceRow } from '../../../shared/queries/space.query.js';
 
@@ -138,10 +139,11 @@ export class SpacesRepository {
     });
   }
 
-  /** Everything in the space goes with it, by FK cascade. */
+  /** Everything in the space goes with it: rows by FK cascade, stored files queued for the sweeper. */
   delete(spaceId: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.delete(spaces).where(eq(spaces.id, spaceId));
+      await scheduleSpaceFilesDeletion(t, spaceId);
       await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'deleted' }, t);
     });
   }

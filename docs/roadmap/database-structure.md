@@ -45,7 +45,7 @@ space_locales  (space_id → spaces CASCADE, locale_id → locales RESTRICT,
                 position int, created_at, PK (space_id, locale_id))
 ```
 
-- `locales` is pure database data: seeded and changed only by migrations. The App API only reads it
+- `locales` is pure database data: seeded and changed only by migrations (the seed is the end of `0000_init.sql`). The App API only reads it
   (`GET /api/app/locales`); nothing creates, edits or deletes a locale through the API. It replaces `AVAILABLE_LOCALES`
   in `@localess/shared` (the Google/DeepL support lists stay there: they describe the providers, not the list).
 - A space adds a locale by id; an id not in `locales` is refused. `position` orders a space's locales (users can
@@ -111,6 +111,44 @@ map the public API serves per locale (gaps filled from the default locale):
 - **`data` is `json`, not `jsonb`:** jsonb reorders keys (by length); the map keeps them in byte order. Never queried
   inside.
 
+## `assets`
+
+```
+assets PK (space_id, id): kind FOLDER|FILE, name, parent_path (ancestor folder ids), extension, type, size, md5,
+       alt, source, metadata, legacy_id
+```
+
+| Column / rule | Decision |
+|---|---|
+| `in_progress` | **Dropped**: an upload stores the file, then creates the row, and answers the asset DTO; nothing was ever in progress. |
+| `legacy_id` | **Kept** on the table: old (Firestore) asset URLs answer 301 to the UUID one, and the asset export/import task carries it. |
+| `parent_path` | **Kept** (materialized path of folder ids). Folders can't be moved yet ([To do](#to-do)). |
+| File vs folder fields | **Enforced by the API**, not a CHECK: a new folder takes `parentPath` and `name` only (file fields → 400), a folder takes no alt text, and every uploaded file has a name, a `type` and an `extension` (`''` when the name has none). `size` / `md5` stay nullable: files imported without their bytes have none. |
+| Deleting a used asset | **Allowed, with a warning**: `GET …/assets/:id/usage` counts the contents whose draft data references the file (or any file under the folder); the delete dialog shows it. Refusing is a [To do](#to-do). |
+
+## Storage deletions
+
+```
+storage_deletions (prefix PK, space_id, asset_id null, not_before, attempts, last_error, created_at)
+```
+
+Stored files are never deleted inline: a delete queues their prefixes in its own transaction and the sweeper removes
+them, so a crash or a storage failure between the row and the files never leaves files no row points at
+(`shared/data-rules/storage-deletions.ts`, `shared/services/storage-sweeper.service.ts`).
+
+- **Queued by:** an asset delete (one entry per deleted file, folders included), a space delete (`spaces/{s}/`, all of
+  it).
+- **Uploads** store the file before the row: they first queue their own prefix due in an hour (a guard), and the row's
+  transaction drops it. A request that dies in between leaves only the guard, which the sweeper clears an hour later.
+  The asset import task does the same; the Firebase import does not need it (its space is new, and deleting a failed
+  one queues the whole space).
+- **The sweeper** runs at start, then every hour (`@nestjs/schedule`), and a delete kicks it right after its commit,
+  so files normally go at once. It takes one due entry at a time (`FOR UPDATE SKIP LOCKED`: several instances never
+  take the same one), deletes the prefix only when nothing owns it any more (no asset row, or no space row; otherwise
+  the entry just goes), and on a storage failure keeps the entry with its error, retried after 1 min, 5 min, 30 min,
+  then 6 h.
+- **No foreign keys:** the space or asset is already gone when its files are deleted.
+
 ## Timestamps
 
 Tables with the standard pair spread `...timestamps` (`created_at`, `updated_at`: `timestamptz not null default now()`);
@@ -161,3 +199,15 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
 - **`content_version`:** review; content drafts could follow the [translation snapshots](#translation-snapshots)
   pattern, so content edits stop moving the published content `cv`.
 - **Table names:** singular instead of plural (`space`, `content`, …); `user` is a reserved word in Postgres.
+- **Assets — moving folders:** rewrite the descendants' `parent_path` prefix in one transaction (after checking the
+  target is not inside the folder), instead of refusing; or switch to `parent_id` with recursive queries.
+- **Assets — deleting what content uses:** refuse to delete a file (or a folder with such a file) while contents
+  reference it, instead of the warning; decide how the published snapshots count.
+- **Task files through the storage queue:** task files (`spaces/{s}/tasks/{id}`) are still deleted after the commit;
+  move them to `storage_deletions` (owner check against `tasks`) once the application is stable.
+- **Scheduler for the other timers:** the task worker's polling and the Firebase import's recovery check still use
+  `setInterval`; move them to `@nestjs/schedule` like the storage sweeper.
+- **Assets — `assets_kind_idx`:** check whether `(space_id, kind, name)` still serves a query next to the parent
+  index (the kind count and filter); drop it if not.
+- **Assets — duplicate names in a folder:** allowed today (like a drive); decide whether to keep it.
+- **Assets — alt text per locale:** `alt` has one language; decide whether it becomes localised like content fields.

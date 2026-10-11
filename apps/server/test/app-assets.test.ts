@@ -1,12 +1,14 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, spaces } from '../src/infra/database/schema.js';
+import { assets, contents, spaces } from '../src/infra/database/schema.js';
+import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 /** A multipart body with the fields first, then the file — the order the endpoint expects. */
 function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
@@ -78,6 +80,38 @@ describe('app API: assets', () => {
     });
   });
 
+  describe('what a folder and a file carry', () => {
+    it('refuses file fields on a new folder, and alt text on a folder', async () => {
+      const withFileFields = await editor.post(`${base}/folders`, { parentPath: '', name: 'Docs', type: 'image/png', extension: '.png' });
+      expect(withFileFields.statusCode).toBe(400);
+      const folder = (await editor.post(`${base}/folders`, { parentPath: '', name: 'Docs' })).json();
+      expect(folder).not.toHaveProperty('type');
+      expect(folder).not.toHaveProperty('extension');
+      const alt = await editor.patch(`${base}/${folder.id}`, { alt: 'Folders have no alt text' });
+      expect(alt.statusCode).toBe(400);
+      expect(alt.json().message).toBe('Only files have alt text');
+      await editor.delete(`${base}/${folder.id}`);
+    });
+
+    it('gives every uploaded file a name, a type and an extension (empty when the name has none)', async () => {
+      const readme = await upload({}, { filename: 'README', type: 'application/octet-stream', bytes: Buffer.from('hello') });
+      expect(readme.statusCode).toBe(201);
+      expect(readme.json()).toMatchObject({ kind: 'FILE', name: 'README', extension: '', type: 'application/octet-stream', size: 5 });
+      await editor.delete(`${base}/${readme.json().id}`);
+      await t.app.get(StorageSweeperService).whenIdle();
+    });
+
+    it('refuses an extension without its dot, and a file with no name', async () => {
+      const files = await storedFiles();
+      const noDot = await upload({ extension: 'png' }, { filename: 'logo.png', type: 'image/png', bytes: Buffer.from('x') });
+      expect(noDot.statusCode).toBe(400);
+      const nameless = await upload({}, { filename: '', type: 'text/plain', bytes: Buffer.from('x') });
+      expect(nameless.statusCode).toBe(400);
+      expect(nameless.json().message).toBe('The file needs a name');
+      expect(await storedFiles()).toEqual(files);
+    });
+  });
+
   describe('uploads', () => {
     let photo: Record<string, unknown>;
 
@@ -104,7 +138,8 @@ describe('app API: assets', () => {
         alt: 'Sunset over the bay',
         metadata: { type: 'image', format: 'jpg', width: 300, height: 400, orientation: 'portrait' },
       });
-      expect(photo).not.toHaveProperty('inProgress', true);
+      // The response is the stored asset: there is no in-progress state.
+      expect(photo).not.toHaveProperty('inProgress');
     });
 
     it('is served by the public API straight away, with an ETag built from the stored md5', async () => {
@@ -181,7 +216,10 @@ describe('app API: assets', () => {
       expect(first.id).toMatch(UUID_V7);
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, first.id));
       expect((await contentReader.get(`${base}?ids=FirestoreAsset000001`)).json()).toEqual([]);
-      expect((await contentReader.get(`${base}?ids=${first.id}`)).json()[0]).toMatchObject({ id: first.id, legacyId: 'FirestoreAsset000001' });
+      expect((await contentReader.get(`${base}?ids=${first.id}`)).json()[0]).toMatchObject({
+        id: first.id,
+        legacyId: 'FirestoreAsset000001',
+      });
     });
   });
 
@@ -203,10 +241,50 @@ describe('app API: assets', () => {
   });
 
   describe('deleting', () => {
+    it('tells how many contents use a file, or any file under a folder, before it is deleted', async () => {
+      const [sunset] = await t.db
+        .select()
+        .from(assets)
+        .where(and(eq(assets.spaceId, S1), eq(assets.name, 'Sunset.Final')));
+      const [loader] = await t.db
+        .select()
+        .from(assets)
+        .where(and(eq(assets.spaceId, S1), eq(assets.name, 'Loader')));
+      const doc = (slug: string, data: Record<string, unknown>) => ({
+        id: newUuid(),
+        spaceId: S1,
+        kind: 'DOCUMENT' as const,
+        name: slug,
+        slug,
+        fullSlug: slug,
+        schema: 'page',
+        data,
+      });
+      await t.db.insert(contents).values([
+        // At any depth, in any locale variant.
+        doc('hero', { _id: 'r', _schema: 'page', image: { kind: 'ASSET', uri: sunset.id } }),
+        doc('gallery', {
+          _id: 'r',
+          _schema: 'page',
+          body: [{ _id: 'b', _schema: 'card', image_i18n_de: { kind: 'ASSET', uri: sunset.id } }],
+        }),
+        // Not a reference: another asset, and the id outside an ASSET node.
+        doc('other', { _id: 'r', _schema: 'page', image: { kind: 'ASSET', uri: newUuid() }, note: sunset.id }),
+      ]);
+      const usage = (id: string) => editor.get(`${base}/${id}/usage`);
+      expect((await usage(sunset.id)).json()).toEqual({ contents: 2 });
+      expect((await usage(photos.id)).json()).toEqual({ contents: 2 });
+      expect((await usage(loader.id)).json()).toEqual({ contents: 0 });
+      expect((await usage(newUuid())).statusCode).toBe(404);
+      await t.db.delete(contents).where(eq(contents.spaceId, S1));
+    });
+
     it('deletes a folder with everything under it, rows and files', async () => {
       const filesBefore = await storedFiles();
       expect(filesBefore).toHaveLength(3);
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(204);
+      // Their files are queued in the delete and swept right after the commit.
+      await t.app.get(StorageSweeperService).whenIdle();
       expect((await editor.get(`${base}?parentPath=`)).json().map((a: { name: string }) => a.name)).toEqual(['Loader']);
       // The photo (nested two levels down) and the moved PDF are gone from storage too.
       expect(await storedFiles()).toHaveLength(1);

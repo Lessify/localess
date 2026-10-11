@@ -1,8 +1,10 @@
 import { Global, Module } from '@nestjs/common';
 import { EventsController } from './http/events.controller.js';
+import { StorageDeletionsRepository } from './repositories/storage-deletions.repository.js';
 import { WebhookDeliveryRepository } from './repositories/webhook-delivery.repository.js';
 import { AssetMetadataService } from './services/asset-metadata.service.js';
 import { MailService } from './services/mail.service.js';
+import { StorageSweeperService } from './services/storage-sweeper.service.js';
 import { WebhookDispatcher } from './services/webhook-dispatcher.service.js';
 
 /**
@@ -12,7 +14,14 @@ import { WebhookDispatcher } from './services/webhook-dispatcher.service.js';
 @Global()
 @Module({
   controllers: [EventsController],
-  providers: [MailService, WebhookDispatcher, WebhookDeliveryRepository, AssetMetadataService],
-  exports: [MailService, WebhookDispatcher, AssetMetadataService],
+  providers: [
+    MailService,
+    WebhookDispatcher,
+    WebhookDeliveryRepository,
+    AssetMetadataService,
+    StorageDeletionsRepository,
+    StorageSweeperService,
+  ],
+  exports: [MailService, WebhookDispatcher, AssetMetadataService, StorageSweeperService],
 })
 export class SharedModule {}

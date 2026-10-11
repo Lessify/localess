@@ -38,13 +38,17 @@ const listSchema = z.object({
     .optional(),
   limit: z.coerce.number().int().min(1).max(1000).optional(),
 });
-const folderSchema = z.object({ parentPath, name });
+// A folder is a name in a place: file fields are refused, not ignored.
+const folderSchema = z.object({ parentPath, name }).strict();
 const updateSchema = z.object({ name: name.optional(), alt: z.string().max(2000).optional() });
 const moveSchema = z.object({ parentPath });
 const uploadFields = z.object({
   parentPath: parentPath.default(''),
   name: name.optional(),
-  extension: z.string().max(32).optional(),
+  extension: z
+    .string()
+    .regex(/^(\.[^./\\\s]{1,31})?$/, 'extension is empty or starts with a dot (.png)')
+    .optional(),
   alt: z.string().max(2000).optional(),
   source: z.string().max(2048).optional(),
 });
@@ -81,6 +85,13 @@ export class AssetsController {
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.assets.get(spaceId, id);
+  }
+
+  /** How many contents use it (a folder: any file under it), for the warning before a delete. */
+  @Get(':id/usage')
+  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  usage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.assets.usage(spaceId, id);
   }
 
   @Post('folders')

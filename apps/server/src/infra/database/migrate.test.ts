@@ -19,6 +19,7 @@ const EXPECTED_TABLES = [
   'space_environments',
   'space_locales',
   'spaces',
+  'storage_deletions',
   'task_logs',
   'tasks',
   'tokens',
@@ -73,7 +74,7 @@ describe('migrateDatabase', () => {
     }
     expect(await tables()).toEqual(EXPECTED_TABLES);
     const applied = await pool.query('select count(*)::int as n from drizzle.__drizzle_migrations');
-    expect(applied.rows[0].n).toBe(2);
+    expect(applied.rows[0].n).toBe(1);
   });
 
   it('seeds the locales', async () => {

@@ -123,21 +123,14 @@
             <th llHeaderCell *llHeaderCellDef>Preview</th>
             <td llCell *llCellDef="let element">
               @if (element.kind === 'FILE' && filePreview(element.type)) {
-                @if (element.inProgress) {
-                  <div class="flex aspect-square w-full flex-col place-items-center justify-center">
-                    <hlm-spinner />
-                    <span>Processing ...</span>
-                  </div>
-                } @else {
-                  <img
-                    class="image-bg rounded-sm border object-contain"
-                    width="200"
-                    height="200"
-                    loading="lazy"
-                    alt="thumbnail"
-                    [loaderParams]="{ thumbnail: true }"
-                    ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ element.id }}" />
-                }
+                <img
+                  class="image-bg rounded-sm border object-contain"
+                  width="200"
+                  height="200"
+                  loading="lazy"
+                  alt="thumbnail"
+                  [loaderParams]="{ thumbnail: true }"
+                  ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ element.id }}" />
               }
             </td>
           </ng-container>
@@ -203,7 +196,7 @@
                 <hlm-dropdown-menu>
                   @if (element.kind === 'FILE') {
                     <hlm-dropdown-menu-group>
-                      <button hlmDropdownMenuItem (click)="onDownload(element)" [disabled]="element.inProgress === true">
+                      <button hlmDropdownMenuItem (click)="onDownload(element)">
                         <ng-icon hlm size="sm" name="lucideDownload" />
                         Download
                       </button>
@@ -212,7 +205,7 @@
                   }
                   @if ('ASSET_UPDATE' | canUserPerform | async) {
                     <hlm-dropdown-menu-group>
-                      <button hlmDropdownMenuItem (click)="openEditDialog(element)" [disabled]="element.inProgress === true">
+                      <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                         <ng-icon hlm size="sm" name="lucidePencil" />
                         Edit
                       </button>
@@ -259,24 +252,12 @@
         @for (item of dataSource.renderedData(); track item.id) {
           <ll-asset-card [item]="item" [spaceId]="spaceId()" [zoomCursor]="true" (assetSelect)="onAssetSelect($event)">
             @if (item.kind === 'FILE') {
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="onDownload(item)"
-                [disabled]="item.inProgress === true"
-                hlmTooltip="Download">
+              <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />
               </button>
             }
             @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                (click)="openEditDialog(item)"
-                [disabled]="item.inProgress === true"
-                hlmTooltip="Edit">
+              <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(item)" hlmTooltip="Edit">
                 <ng-icon hlm size="sm" name="lucidePencil" />
               </button>
             }

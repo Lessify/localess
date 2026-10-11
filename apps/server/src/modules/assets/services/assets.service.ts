@@ -4,6 +4,7 @@ import type { Asset } from '@localess/shared';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
+import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toAsset } from '../../../shared/transformers/asset.transformer.js';
 import { type AssetQuery, AssetsRepository } from '../repositories/assets.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
@@ -39,6 +40,7 @@ export class AssetsService {
     private readonly spaces: SpaceRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly metadata: AssetMetadataService,
+    private readonly sweeper: StorageSweeperService,
   ) {}
 
   async list(spaceId: string, query: AssetQuery): Promise<Asset[]> {
@@ -59,24 +61,33 @@ export class AssetsService {
 
   /**
    * Streams the file into storage, reads its metadata, then creates the row — so there is never a
-   * row without its file (the old flow created the row first, `inProgress`, and let a trigger finish it).
+   * row without its file: the response is the stored asset (the Firebase flow created the row first and let a
+   * trigger finish it).
    */
   async upload(spaceId: string, input: UploadInput): Promise<Asset> {
     if (!(await this.spaces.find(spaceId))) throw new NotFoundException('Space not found');
     if (!(await this.assets.isFolderPath(spaceId, input.parentPath))) throw new BadRequestException(`No folder at '${input.parentPath}'`);
+    // Every file has a name, a type and an extension ('' when its name has none).
+    const derived = splitFilename(input.filename);
+    const name = input.name || derived.name;
+    if (!name) {
+      input.file.resume();
+      throw new BadRequestException('The file needs a name');
+    }
     const id = newUuid();
     const key = originalKey(spaceId, id);
+    // If this request dies before the row exists, the guard lets the sweeper remove the file in an hour.
+    await this.assets.guardUpload(spaceId, id);
     try {
       const stored = await this.storage.put(key, input.file);
       // @fastify/multipart ends a piped stream at the size limit rather than erroring, so a cut-off
       // file would otherwise be stored as if it were complete.
       if (input.truncated?.()) throw new PayloadTooLargeException('File is too large');
-      const derived = splitFilename(input.filename);
       const type = input.mimetype || 'application/octet-stream';
       const extracted = await this.metadata.extract(key, type, input.alt);
       const row = await this.assets.createFile(spaceId, {
         id,
-        name: input.name || derived.name,
+        name,
         extension: input.extension ?? derived.extension,
         type,
         size: stored.size,
@@ -88,7 +99,12 @@ export class AssetsService {
       });
       return toAsset(row);
     } catch (error) {
-      await this.storage.deletePrefix(assetPrefix(spaceId, id));
+      // Cleaned up at once when storage allows; otherwise the guard stays and the sweeper does it.
+      const cleaned = await this.storage.deletePrefix(assetPrefix(spaceId, id)).then(
+        () => true,
+        () => false,
+      );
+      if (cleaned) await this.assets.releaseUploadGuard(spaceId, id);
       throw error;
     }
   }
@@ -98,17 +114,27 @@ export class AssetsService {
     return toAsset(found(await this.assets.update(spaceId, id, input)));
   }
 
+  /**
+   * How many contents use the file, or any file under the folder: shown before a delete, which leaves those contents
+   * pointing at a missing asset.
+   */
+  async usage(spaceId: string, id: string): Promise<{ contents: number }> {
+    const files = found(await this.assets.findFileIdsWithin(spaceId, id));
+    return { contents: await this.assets.countContentsUsing(spaceId, files) };
+  }
+
   /** Files only: a folder's descendants carry its path, so moving one would orphan them. */
   async move(spaceId: string, id: string, parentPath: string): Promise<Asset> {
     return toAsset(found(await this.assets.move(spaceId, id, parentPath)));
   }
 
-  /** Deletes a file, or a folder with everything under it, rows and stored files alike. */
+  /**
+   * Deletes a file, or a folder with everything under it. The rows go in the transaction, which queues their stored
+   * files; the sweeper deletes those right after the commit (and retries if storage fails), so a row never points at a
+   * missing file and no file is left without a row.
+   */
   async delete(spaceId: string, id: string): Promise<void> {
-    const deleted = found(await this.assets.delete(spaceId, id));
-    // After the commit: a failed delete must not leave rows pointing at missing files.
-    for (const row of deleted) {
-      if (row.kind === 'FILE') await this.storage.deletePrefix(assetPrefix(spaceId, row.id));
-    }
+    found(await this.assets.delete(spaceId, id));
+    this.sweeper.kick();
   }
 }

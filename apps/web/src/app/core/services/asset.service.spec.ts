@@ -153,6 +153,13 @@ describe('AssetService', () => {
     expect((await result).id).toBe('f2');
   });
 
+  it('usage() reads how many contents use an asset', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.usage('space-1', 'a1'));
+    http.expectOne({ method: 'GET', url: `${BASE}/a1/usage` }).flush({ contents: 3 });
+    expect(await result).toEqual({ contents: 3 });
+  });
+
   it('updateFolder() and updateFile() patch the editable fields, an empty alt removing it', async () => {
     const service = setup();
     const folder = firstValueFrom(service.updateFolder('space-1', 'f1', { name: 'Pics' }));

@@ -91,12 +91,6 @@ describe('AssetCardComponent', () => {
     expect(fixture.nativeElement.querySelector('hlm-card-footer')).toBeNull();
   });
 
-  it('renders a processing spinner while a file is in progress', () => {
-    const { fixture } = setup(file({ inProgress: true }));
-
-    expect(fixture.nativeElement.textContent).toContain('Processing');
-  });
-
   it('renders a file-type icon and extension badge for non-previewable files', () => {
     const { fixture } = setup(file({ type: 'application/pdf', extension: '.pdf' }));
 

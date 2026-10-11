@@ -101,6 +101,8 @@ export class AssetTransferService {
         if (existing.has(asset.id) || asset.kind !== 'FILE') continue;
         const entry = opened.zip.open(`assets/${fileIds.get(asset.id)}`, this.config.uploadMaxBytes);
         if (!entry) continue; // as before: a file asset without its bytes is skipped
+        // If the task dies before the rows are written, the guard lets the sweeper remove the file in an hour.
+        await this.assets.guardUpload(spaceId, asset.id);
         const stored = await this.storage.put(assetFileKey(spaceId, asset.id), entry);
         const extracted = asset.metadata ? undefined : await this.metadata.extract(assetFileKey(spaceId, asset.id), asset.type, asset.alt);
         storedFiles.set(asset.id, { ...stored, metadata: extracted?.metadata, alt: extracted?.alt });
@@ -157,11 +159,19 @@ export class AssetTransferService {
           });
         }
       }
-      const changes = await this.assets.applyImport(spaceId, writes);
+      const changes = await this.assets.applyImport(spaceId, writes, [...storedFiles.keys()]);
       await this.log.log(task, 'INFO', `total changes : ${changes}`);
       return { status: 'FINISHED' };
     } catch (error) {
-      for (const id of storedFiles.keys()) await this.storage.deletePrefix(`spaces/${spaceId}/assets/${id}/`);
+      // Cleaned up at once when storage allows; a file it can't remove keeps its guard, and the sweeper does it.
+      const cleaned: string[] = [];
+      for (const id of storedFiles.keys()) {
+        await this.storage.deletePrefix(`spaces/${spaceId}/assets/${id}/`).then(
+          () => cleaned.push(id),
+          () => undefined,
+        );
+      }
+      await this.assets.releaseUploadGuards(spaceId, cleaned);
       throw error;
     }
   }

@@ -119,6 +119,11 @@ export class AssetService {
     return this.http.put<void>(`${this.base(spaceId)}/${id}/parent`, { parentPath: parentPath === '~' ? '' : parentPath });
   }
 
+  /** How many contents use the asset (a folder: any file under it). */
+  usage(spaceId: string, id: string): Observable<{ contents: number }> {
+    return this.http.get<{ contents: number }>(`${this.base(spaceId)}/${id}/usage`);
+  }
+
   delete(spaceId: string, id: string): Observable<void> {
     return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }

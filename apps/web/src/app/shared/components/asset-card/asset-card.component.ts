@@ -17,7 +17,6 @@ import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
 @Component({
@@ -33,7 +32,6 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
     HlmCardImports,
     HlmBadgeImports,
     HlmIconImports,
-    HlmSpinnerImports,
     HlmTooltipImports,
   ],
   providers: [

@@ -329,7 +329,6 @@ export const assets = pgTable(
     alt: text('alt'),
     source: text('source'),
     metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-    inProgress: boolean('in_progress').notNull().default(false),
     ...timestamps,
   },
   t => [
@@ -341,6 +340,28 @@ export const assets = pgTable(
     oneOf('assets_kind_check', t.kind, values(AssetKind)),
     index('assets_parent_path_prefix_idx').on(t.spaceId, sql`${t.parentPath} text_pattern_ops`),
   ],
+);
+
+/**
+ * Stored files waiting to be deleted (shared/data-rules/storage-deletions.ts): a delete queues them in its own
+ * transaction and the sweeper removes them, so a crash or a storage failure between the two never leaves files that no
+ * row points at. An upload queues its own files due in an hour (a guard) and drops the entry with its row.
+ * No foreign keys: the space or asset is already gone when its files are deleted.
+ */
+export const storageDeletions = pgTable(
+  'storage_deletions',
+  {
+    // `spaces/{s}/assets/{a}/` (one asset) or `spaces/{s}/` (a whole space).
+    prefix: text('prefix').primaryKey(),
+    spaceId: uuid('space_id').notNull(),
+    // Null: the entry is for the whole space.
+    assetId: uuid('asset_id'),
+    notBefore: timestamp('not_before', { withTimezone: true }).notNull().defaultNow(),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  t => [index('storage_deletions_due_idx').on(t.notBefore)],
 );
 
 // ---------------------------------------------------------------------------------------------------

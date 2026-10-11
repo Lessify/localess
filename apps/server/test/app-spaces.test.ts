@@ -6,6 +6,7 @@ import { assets, contents, firebaseImports, schemas, spaces, translations } from
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
+import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { api, createTestApp, insertSpace, setImport, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: spaces, locales, settings', () => {
@@ -309,6 +310,8 @@ describe('app API: spaces, locales, settings', () => {
     it('deletes a space with all its rows and files', async () => {
       expect((await reader.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(403);
       expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(204);
+      // Its files are queued in the delete and swept right after the commit.
+      await t.app.get(StorageSweeperService).whenIdle();
       expect(await t.db.select().from(spaces).where(eq(spaces.id, spaceId))).toEqual([]);
       expect(await t.db.select().from(contents).where(eq(contents.spaceId, spaceId))).toEqual([]);
       await expect(readdir(join(t.storageDir, 'spaces', spaceId))).rejects.toThrow();
