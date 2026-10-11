@@ -14,7 +14,7 @@ To turn it back on, set `importExport: true` once the items below are fixed.
 
 ### 1. Re-importing a Firebase-era content export duplicates every entry (High)
 
-`TaskRunnerService.contentsImport()` (`apps/server/src/modules/tasks/task-runner.service.ts`) gives every entry whose id is not a UUID (every Firestore id) a new UUIDv7, so nothing matches the space's existing rows:
+`ContentTransferService.import()` (`apps/server/src/modules/tasks/services/content-transfer.service.ts`) gives every entry whose id is not a UUID (every Firestore id) a new UUIDv7, so nothing matches the space's existing rows:
 
 - every folder and document is inserted again at the same `full_slug` (no unique index stops it), and the v1 slug lookup then returns either copy;
 - every re-run adds another full copy. On Firebase the import matched by id, so re-running a file changed nothing;

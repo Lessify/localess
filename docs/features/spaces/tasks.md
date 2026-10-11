@@ -64,7 +64,7 @@ Most tasks are created by other modules' import/export actions and processed by 
 
 ### Who can create a task
 
-The server (`assertCanManage` in `apps/server/src/modules/tasks/tasks.controller.ts`) treats the task type as the permission required to create or delete it: a `CONTENT_IMPORT` task needs `CONTENT_IMPORT`, and so on. `ASSET_REGEN_METADATA` is not a permission, so only admins can create it. Request bodies are validated per kind (zod), and the server always creates the task as `INITIATED`. There is no update endpoint; only the task worker writes status, results and errors. A task still `IN_PROGRESS` after an hour is treated as interrupted and marked `ERROR` (not re-run, because an import may be half applied).
+The server (`assertCanManage` in `apps/server/src/modules/tasks/utils/task-permissions.ts`) treats the task type as the permission required to create or delete it: a `CONTENT_IMPORT` task needs `CONTENT_IMPORT`, and so on. `ASSET_REGEN_METADATA` is not a permission, so only admins can create it. Request bodies are validated per kind (zod), and the server always creates the task as `INITIATED`. There is no update endpoint; only the task worker writes status, results and errors. A task still `IN_PROGRESS` after an hour is treated as interrupted and marked `ERROR` (not re-run, because an import may be half applied).
 
 Reading tasks, their logs and their files requires any one of the eight import/export permissions. The task list is not filtered per kind.
 

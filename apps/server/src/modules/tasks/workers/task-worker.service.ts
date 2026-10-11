@@ -1,13 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { hostname } from 'node:os';
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
-import { and, eq, lt, sql } from 'drizzle-orm';
 import { filter, Subscription } from 'rxjs';
-import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
-import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { tasks } from '../../infra/database/schema.js';
-import { EventsService } from '../../infra/events/events.service.js';
-import { TaskOutcome, TaskRow, TaskRunner } from './task-runner.service.js';
+import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import { EventsService } from '../../../infra/events/events.service.js';
+import { type TaskEntity, TasksRepository } from '../repositories/tasks.repository.js';
+import { TaskLogService } from '../services/task-log.service.js';
+import type { TaskOutcome } from '../utils/task.utils.js';
+import { TaskRunner } from './task-runner.service.js';
 
 const POLL_INTERVAL_MS = 30_000;
 /** A task still IN_PROGRESS after this long was interrupted (crash, deploy); nothing runs this long. */
@@ -29,9 +29,10 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
   private stopped = false;
 
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly tasks: TasksRepository,
     private readonly runner: TaskRunner,
+    private readonly log: TaskLogService,
     private readonly events: EventsService,
   ) {}
 
@@ -87,44 +88,23 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
   }
 
   /** Takes the oldest INITIATED task no one else holds, marking it IN_PROGRESS for this worker. */
-  async claim(): Promise<TaskRow | undefined> {
-    const { rows } = (await this.db.execute(sql`
-      update ${tasks} set status = 'IN_PROGRESS', locked_by = ${this.workerId}, locked_at = now(), updated_at = now()
-      where id = (
-        select id from ${tasks} where status = 'INITIATED' order by created_at, id for update skip locked limit 1
-      )
-      returning id`)) as unknown as { rows: { id: string }[] };
-    if (!rows.length) return undefined;
-    const [task] = await this.db.select().from(tasks).where(eq(tasks.id, rows[0].id));
-    if (task) await this.events.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' });
-    return task;
+  claim(): Promise<TaskEntity | undefined> {
+    return this.tasks.claim(this.workerId);
   }
 
-  private async process(task: TaskRow): Promise<void> {
+  private async process(task: TaskEntity): Promise<void> {
     let outcome: TaskOutcome;
-    await this.runner.log(task, 'INFO', `Starting ${task.kind} processing`);
+    await this.log.log(task, 'INFO', `Starting ${task.kind} processing`);
     try {
       outcome = await this.runner.run(task);
-      if (outcome.status === 'FINISHED') await this.runner.log(task, 'INFO', 'Task finished successfully');
+      if (outcome.status === 'FINISHED') await this.log.log(task, 'INFO', 'Task finished successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       outcome = { status: 'ERROR', message: err.message, trace: err.stack };
-      await this.runner.log(task, 'ERROR', err.message, err.stack);
+      await this.log.log(task, 'ERROR', err.message, err.stack);
     }
     // The row may have been deleted meanwhile; then there is nothing to report.
-    const updated = await this.db
-      .update(tasks)
-      .set({
-        status: outcome.status,
-        message: outcome.message ?? null,
-        trace: outcome.trace ?? null,
-        ...(outcome.file ? { file: outcome.file } : {}),
-        lockedBy: null,
-        lockedAt: null,
-      })
-      .where(and(eq(tasks.id, task.id), eq(tasks.lockedBy, this.workerId)))
-      .returning({ id: tasks.id });
-    if (updated.length) await this.events.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' });
+    await this.tasks.finish(task, this.workerId, outcome);
   }
 
   /**
@@ -132,19 +112,10 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
    * applied, and running it again is the user's call.
    */
   async failStale(): Promise<void> {
-    const stale = await this.db
-      .update(tasks)
-      .set({
-        status: 'ERROR',
-        message: 'The task was interrupted (the server stopped while it ran). Run it again.',
-        lockedBy: null,
-        lockedAt: null,
-      })
-      .where(and(eq(tasks.status, 'IN_PROGRESS'), lt(tasks.lockedAt, new Date(Date.now() - STALE_AFTER_MS))))
-      .returning({ id: tasks.id, spaceId: tasks.spaceId });
-    for (const task of stale) {
-      this.logger.warn(`Task ${task.id} was interrupted and marked as failed`);
-      await this.events.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' });
-    }
+    const stale = await this.tasks.failStale(
+      new Date(Date.now() - STALE_AFTER_MS),
+      'The task was interrupted (the server stopped while it ran). Run it again.',
+    );
+    for (const task of stale) this.logger.warn(`Task ${task.id} was interrupted and marked as failed`);
   }
 }

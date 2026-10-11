@@ -84,7 +84,7 @@ Writes that drop the drafts: every translation save, delete all, machine transla
 
 ### Import Task (TRANSLATION_IMPORT)
 
-A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set; without `task.locale` it is a full import. Both run in the task worker (`apps/server/src/modules/tasks/task-runner.service.ts`), write all rows in one transaction and drop the draft snapshots.
+A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale` set; without `task.locale` it is a full import. Both run in the task worker (`apps/server/src/modules/tasks/services/translation-transfer.service.ts`), write all rows in one transaction and drop the draft snapshots (`repositories/translation-transfer.repository.ts`).
 
 ### CLI Manage API (POST /api/v1/spaces/:spaceId/translations/:locale)
 
@@ -152,5 +152,5 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 - `apps/server/src/modules/contents/utils/content-extract.ts` — locale extraction (`buildDocumentStorage`)
 - `apps/server/src/modules/contents/services/content-delivery.service.ts` — published/draft document reads, link/reference/asset resolution (queries in `repositories/content-delivery.repository.ts`)
 - `apps/server/src/modules/translations/services/translation-delivery.service.ts` — published/draft translation reads and the CLI push; `buildTranslationMap` in `utils/translation.utils.ts`
-- `apps/server/src/modules/tasks/task-runner.service.ts` — imports (bump versions at the end of their transaction)
+- `apps/server/src/modules/tasks/services/*-transfer.service.ts` — imports; their `repositories/*-transfer.repository.ts` write each import in one transaction and bump versions at its end
 - `apps/server/src/modules/translations/translations.public.controller.ts` — CLI translation push endpoint

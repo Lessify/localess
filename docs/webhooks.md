@@ -182,7 +182,7 @@ Logs are **not capped on write** — every delivery adds a row and nothing prune
 | `apps/server/src/modules/contents/services/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
 | `apps/server/src/modules/translations/services/translations.service.ts` — `publish()` | `TRANSLATION_PUBLISHED` |
 | `apps/server/src/modules/translations/services/translations.service.ts` — writes   | `TRANSLATION_CHANGED`   |
-| `apps/server/src/modules/tasks/task-runner.service.ts` — content / translation imports    | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
+| `apps/server/src/modules/tasks/services/content-transfer.service.ts`, `translation-transfer.service.ts` — imports | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
 
 All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/src/shared/services/webhook-dispatcher.service.ts`.
 

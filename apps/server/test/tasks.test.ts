@@ -6,7 +6,7 @@ import unzipper from 'unzipper';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, schemas, tasks, tokens, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/task-worker.service.js';
+import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/workers/task-worker.service.js';
 import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { SPACE_A, SPACE_B, SPACE_S, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';

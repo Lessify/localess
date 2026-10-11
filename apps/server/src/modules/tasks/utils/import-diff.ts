@@ -13,7 +13,7 @@ import {
   Translation,
   TranslationExport,
 } from '@localess/shared';
-import { isLabelsEqual } from '../../shared/utils/labels.utils.js';
+import { isLabelsEqual } from '../../../shared/utils/labels.utils.js';
 
 /*
  * "Did the imported item change?" — moved unchanged from functions/src/services/{asset,content,translation}.service.ts.

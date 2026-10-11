@@ -147,6 +147,8 @@ The `tasks` row is the queue: `TaskWorker` claims the oldest INITIATED task with
 every 30 s, and runs one task at a time. Exports stream the zip into storage; imports read only the
 expected entries from the stored zip, each size-capped, never extracting to disk. A task still
 IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: imports may be half applied).
+`workers/` holds `TaskWorker` (the queue loop) and `TaskRunner` (dispatch by kind); each kind's job is a
+`services/*-transfer.service.ts` with its own `repositories/*-transfer.repository.ts`.
 
 ## Migrating from a Firebase install
 
