@@ -101,6 +101,8 @@ function extractVideoFrame(videoPath: string, dir: string, time = '00:00:01'): P
 @Injectable()
 export class AssetDeliveryService {
   private readonly logger = new Logger(AssetDeliveryService.name);
+  /** LOCALESS_RENDITION_CACHE=disk: generated renditions are stored next to the original and served from there. */
+  private readonly cacheRenditions: boolean;
 
   constructor(
     private readonly assets: AssetsRepository,
@@ -108,6 +110,7 @@ export class AssetDeliveryService {
     @Inject(APP_CONFIG) config: AppConfig,
   ) {
     if (config.ffmpegPath) ffmpeg.setFfmpegPath(config.ffmpegPath);
+    this.cacheRenditions = config.renditionCache === 'disk';
   }
 
   /**
@@ -241,7 +244,7 @@ export class AssetDeliveryService {
     let generated = false;
     /** The cached rendition, or `source()` transformed (only then is the original read). */
     const transform = async (source: () => Sharp | Promise<Sharp>): Promise<Buffer> => {
-      if (await this.storage.stat(cacheKey)) return this.storage.read(cacheKey);
+      if (await this.cachedRendition(cacheKey)) return this.storage.read(cacheKey);
       generated = true;
       return applySharpTransforms(await source(), { width, height, quality, format: encodeAs, fit }).toBuffer();
     };
@@ -292,7 +295,7 @@ export class AssetDeliveryService {
     } else if (assetType.startsWith('video/') && width !== undefined && thumbnail) {
       overwriteType = format ? FORMAT_MIME[format] : 'image/webp';
       filename = `${name}-${suffix || `w${width}`}-thumbnail${format ? FORMAT_EXT[format] : '.webp'}`;
-      if (await this.storage.stat(cacheKey)) {
+      if (await this.cachedRendition(cacheKey)) {
         output = await this.storage.read(cacheKey);
       } else {
         output = await this.videoThumbnail(key, { width, height, quality, format: encodeAs, fit });
@@ -300,11 +303,16 @@ export class AssetDeliveryService {
       }
     }
 
-    if (output && generated) {
+    if (output && generated && this.cacheRenditions) {
       // Best effort: a failed cache write must not fail the response.
       await this.storage.put(cacheKey, output).catch(error => this.logger.warn(`Rendition cache write failed for ${cacheKey}: ${error}`));
     }
     return { kind: 'rendition', output, contentType: overwriteType || assetType, filename };
+  }
+
+  /** Whether a cached rendition can be served (never, with the cache off: it is generated in the request). */
+  private async cachedRendition(cacheKey: string): Promise<boolean> {
+    return this.cacheRenditions && (await this.storage.stat(cacheKey)) !== undefined;
   }
 
   private async videoThumbnail(key: string, options: Parameters<typeof applySharpTransforms>[1]): Promise<Buffer> {

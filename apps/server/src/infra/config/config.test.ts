@@ -33,6 +33,12 @@ describe('loadConfig', () => {
     expect(loadConfig({ LOCALESS_LOG_LEVEL: 'error' }).logLevels).toEqual(['fatal', 'error']);
   });
 
+  it('keeps a disk cache of image renditions unless turned off', () => {
+    expect(loadConfig({}).renditionCache).toBe('disk');
+    expect(loadConfig({ LOCALESS_RENDITION_CACHE: 'off' }).renditionCache).toBe('off');
+    expect(() => loadConfig({ LOCALESS_RENDITION_CACHE: 'memory' })).toThrow();
+  });
+
   it('rejects an invalid DATABASE_URL', () => {
     expect(() => loadConfig({ DATABASE_URL: 'not a url' })).toThrow();
   });

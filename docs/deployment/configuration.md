@@ -38,6 +38,7 @@ same time. `db:migrate` runs them without starting the server.
 |----------|---------|---------|
 | `LOCALESS_STORAGE_DIR` | `$LOCALESS_DATA_DIR/storage` | Asset originals, generated image renditions, task archives |
 | `LOCALESS_UPLOAD_MAX_MB` | `1024` | Largest asset or import upload; larger uploads get `413` |
+| `LOCALESS_RENDITION_CACHE` | `disk` | `disk` keeps generated image renditions (resized, re-encoded, thumbnails) in storage next to the original, so a repeat is not transformed again; `off` transforms on every request and stores nothing beyond the original. Use `off` behind a CDN or caching proxy, which caches the responses (365 days, versioned URLs) |
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on the `PATH` | ffmpeg binary for video thumbnails |
 
 Only a filesystem storage driver exists today. For more than one instance the directory must be

@@ -61,6 +61,10 @@ const envSchema = z.object({
   // Unsplash plugin (asset picker); disabled without a key.
   UNSPLASH_API_KEY: z.string().optional(),
   LOCALESS_UNSPLASH_API_URL: z.string().url().default('https://api.unsplash.com'),
+  // Generated image renditions (resized, re-encoded, thumbnails) kept in storage next to the original, so a repeat is
+  // not transformed again: `disk` (default; for installs without a CDN), or `off` (transform on every request and
+  // store nothing, for installs behind a CDN or caching proxy).
+  LOCALESS_RENDITION_CACHE: z.enum(['disk', 'off']).default('disk'),
   // Largest accepted asset/import upload, in megabytes.
   LOCALESS_UPLOAD_MAX_MB: z.coerce.number().int().positive().default(1024),
   // Run export/import tasks on this instance (turn off on API-only replicas).
@@ -86,6 +90,7 @@ export interface AppConfig {
     | { provider: 'none' };
   unsplash: { apiKey: string; apiUrl: string } | undefined;
   uploadMaxBytes: number;
+  renditionCache: 'disk' | 'off';
   taskWorker: boolean;
   staticDir: string | undefined;
   logLevels: LogLevel[];
@@ -171,6 +176,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
           ? { provider: 'google', projectId: parsed.GOOGLE_CLOUD_PROJECT, location: parsed.LOCALESS_GOOGLE_TRANSLATE_LOCATION }
           : { provider: 'none' },
     uploadMaxBytes: parsed.LOCALESS_UPLOAD_MAX_MB * 1024 * 1024,
+    renditionCache: parsed.LOCALESS_RENDITION_CACHE,
     taskWorker: parsed.LOCALESS_TASK_WORKER,
     unsplash: parsed.UNSPLASH_API_KEY ? { apiKey: parsed.UNSPLASH_API_KEY, apiUrl: parsed.LOCALESS_UNSPLASH_API_URL } : undefined,
     storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),

@@ -211,3 +211,5 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
   index (the kind count and filter); drop it if not.
 - **Assets — duplicate names in a folder:** allowed today (like a drive); decide whether to keep it.
 - **Assets — alt text per locale:** `alt` has one language; decide whether it becomes localised like content fields.
+- **Assets — rendition cache size:** with `LOCALESS_RENDITION_CACHE=disk` generated renditions are kept until their
+  asset is deleted; add a size limit or age-based eviction.

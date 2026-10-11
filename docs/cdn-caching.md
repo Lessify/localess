@@ -6,7 +6,7 @@
 
 The public API (`/api/v1/**`) is served by the NestJS server (each feature's `*.public.controller.ts` under `apps/server/src/modules/`, shared plumbing in `apps/server/src/infra/http/v1/`). All CDN endpoints use a **cache-version redirect pattern** so that browsers and shared caches can keep responses long-term while still supporting instant invalidation after publish.
 
-**There is no CDN in front of Localess by default.** The Firebase era got Firebase Hosting's edge CDN for free; a self-hosted server answers every request itself. For production, put a CDN or a caching reverse proxy (Cloudflare, Fastly, CloudFront, nginx/Varnish `proxy_cache`, …) in front of at least `/api/v1/**`. The responses are already CDN-ready: every cacheable response carries `public, max-age, s-maxage`, URLs are versioned by `cv`, and asset responses carry ETags. The proxy should key on the full URL including the query string, and honour `Vary: Accept-Encoding`. Without one, browsers still cache per client, and image transforms are still cached on disk (see [Rendition cache](#rendition-cache)), but every redirect and JSON response is served by the Node process.
+**There is no CDN in front of Localess by default.** The Firebase era got Firebase Hosting's edge CDN for free; a self-hosted server answers every request itself. For production, put a CDN or a caching reverse proxy (Cloudflare, Fastly, CloudFront, nginx/Varnish `proxy_cache`, …) in front of at least `/api/v1/**`. The responses are already CDN-ready: every cacheable response carries `public, max-age, s-maxage`, URLs are versioned by `cv`, and asset responses carry ETags. The proxy should key on the full URL including the query string, and honour `Vary: Accept-Encoding`. Without one, browsers still cache per client, and image transforms are still cached on disk by default (see [Rendition cache](#rendition-cache)), but every redirect and JSON response is served by the Node process.
 
 ---
 
@@ -145,8 +145,9 @@ rendition can never collide with the `orig` tag the passthrough routes use.
 
 ## Rendition cache
 
-Without an edge CDN every transform would run sharp on each request, so the server keeps its own
-cache of generated renditions in storage, next to the original:
+Without an edge CDN every transform would run sharp on each request, so by default
+(`LOCALESS_RENDITION_CACHE=disk`) the server keeps its own cache of generated renditions in storage, next to the
+original:
 
 ```
 $LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/original
@@ -155,7 +156,10 @@ $LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/{etagSuffix|o
 
 The key is the ETag suffix, i.e. the effective encode, so two spellings producing identical bytes
 share one file. Renditions are deleted with the asset. Cache writes are best-effort (a failed write
-is logged, the response still goes out). `AssetDeliveryService` in
+is logged, the response still goes out). With `LOCALESS_RENDITION_CACHE=off` every transform runs in the request, as
+the Firebase function did, and nothing is stored beyond the original: for installs behind a CDN or caching proxy,
+which caches the 365-day responses. The cache has no size limit or eviction yet (renditions go with their asset).
+`AssetDeliveryService` in
 `apps/server/src/modules/assets/services/asset-delivery.service.ts` owns this.
 
 Passthrough routes (`/original`, `/download`) and untransformed files stream from storage with

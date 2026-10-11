@@ -67,6 +67,7 @@ is read with its own query); infrastructure modules (database, storage, events) 
 | `LOCALESS_STORAGE_DIR` | `$LOCALESS_DATA_DIR/storage` | Uploaded files and generated image renditions |
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |
 | `LOCALESS_UPLOAD_MAX_MB` | `1024` | Largest asset / import upload |
+| `LOCALESS_RENDITION_CACHE` | `disk` | `disk`: keep generated image renditions in storage; `off`: transform every request, store nothing (behind a CDN) |
 | `DEEPL_API_KEY` | – | Machine translation via DeepL (preferred) |
 | `GOOGLE_CLOUD_PROJECT` / `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | – / `global` | Machine translation via Google Cloud Translation (credentials from ADC) |
 | `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes inputs (development) |
