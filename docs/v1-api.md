@@ -155,7 +155,7 @@ Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMA
 }
 ```
 
-Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/modules/schemas/schema-push.ts`) and bumps `content_version`, because schemas shape the draft output; content drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
+Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemasRepository.applyPushPlan` and bumps `content_version`, because schemas shape the draft output; content drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
 
 ---
 
@@ -254,7 +254,7 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 | `apps/server/src/modules/contents/contents.public.controller.ts`         | CDN — links, documents by slug and id, `resolve*` options                                  |
 | `apps/server/src/modules/translations/translations.public.controller.ts` | CDN translations, DEV_TOOLS stored values, MANAGE translation push                        |
 | `apps/server/src/modules/assets/assets.public.controller.ts`             | CDN — asset delivery (transformed, original, download)                                    |
-| `apps/server/src/modules/schemas/schemas.public.controller.ts`           | DEV_TOOLS OpenAPI and schema export, MANAGE schema push                                   |
+| `apps/server/src/modules/schemas/controllers/schemas.public.controller.ts` | DEV_TOOLS OpenAPI and schema export, MANAGE schema push                                   |
 | `apps/server/src/modules/spaces/spaces.public.controller.ts`             | DEV_TOOLS space metadata                                                                  |
 | `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`validIdParams`, `cv` redirects, `isDraft`), responses, Cache-Control, ID checks |
 | `apps/server/src/modules/contents/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |

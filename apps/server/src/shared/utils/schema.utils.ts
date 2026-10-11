@@ -8,7 +8,7 @@ import {
   SchemaFieldKind,
   SchemaType,
 } from '@localess/shared';
-import { isLabelsEqual } from './import-utils.js';
+import { isLabelsEqual } from './labels.utils.js';
 import { stableStringify } from './stable-json.js';
 
 /**

@@ -27,11 +27,11 @@ import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
 import { isAssetChanged, isContentChanged, isTranslationChanged } from './import-diff.js';
-import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
-import { schemaFromRow, schemasByName } from '../schemas/schema-row.js';
+import { docSchemaToExport, planSchemaPush } from '../../shared/utils/schema.utils.js';
+import { schemasByName, toSchema } from '../../shared/transformers/schema.transformer.js';
 import { translationsByKey } from '../../shared/transformers/translation.transformer.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { applySchemaPushPlan } from '../schemas/schema-push.js';
+import { applySchemaPushPlan } from '../../shared/queries/schema.query.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
@@ -482,7 +482,7 @@ export class TaskRunner {
       .orderBy(sql`${schemas.name} collate "C"`);
     await this.log(task, 'INFO', `exporting all ${rows.length} schemas`);
     const size = await writeZip(this.storage, taskFileKey(task), [
-      { name: 'schemas.json', content: JSON.stringify(rows.map(row => docSchemaToExport(row.name, schemaFromRow(row)))) },
+      { name: 'schemas.json', content: JSON.stringify(rows.map(row => docSchemaToExport(row.name, toSchema(row)))) },
       { name: 'metadata.json', content: JSON.stringify({ kind: 'SCHEMA' } satisfies TaskExportMetadata) },
     ]);
     return { status: 'FINISHED', file: { name: `schema-export-${task.id}.lls.zip`, size } };

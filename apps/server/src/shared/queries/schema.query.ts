@@ -1,11 +1,14 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { SchemaExport, SchemaType } from '@localess/shared';
-import type { Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
-import type { SchemaPushPlan } from './schema.utils.js';
+import type { Transaction } from '../../infra/database/transaction.js';
+import type { SchemaPushPlan } from '../utils/schema.utils.js';
 
-type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+/*
+ * The write of a schema push: the CLI push (schemas) and the schema import task (tasks) apply the same plan, each in
+ * its own transaction with its own content `cv` bump and events.
+ */
 
 /** Columns written for a pushed schema; absent fields are cleared, like `FieldValue.delete()` did. */
 function schemaColumns(schema: SchemaExport) {
@@ -25,9 +28,7 @@ function schemaColumns(schema: SchemaExport) {
 export async function applySchemaPushPlan(tx: Transaction, spaceId: string, plan: SchemaPushPlan): Promise<void> {
   if (plan.creates.length) {
     // Exports carry the name as `id`.
-    await tx
-      .insert(schemas)
-      .values(plan.creates.map(schema => ({ id: newUuid(), spaceId, name: schema.id, ...schemaColumns(schema) })));
+    await tx.insert(schemas).values(plan.creates.map(schema => ({ id: newUuid(), spaceId, name: schema.id, ...schemaColumns(schema) })));
   }
   for (const schema of plan.updates) {
     await tx

@@ -4,7 +4,7 @@ export function withoutNulls<T extends object>(row: T): T {
 }
 
 /*
- * Row → shared model mappers (`schemaFromRow`, `translationFromRow`) rely on this: the shared models describe the
+ * Row → shared model mappers (`toSchema`, `toTranslation`) rely on this: the shared models describe the
  * JSON wire format, where timestamps are ISO strings; rows carry `Date`, which serialises to exactly that, so the
  * mappers only cast. Nothing on the server reads those timestamps.
  */

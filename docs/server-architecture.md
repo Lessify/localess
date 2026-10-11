@@ -39,7 +39,7 @@ Two folders for what is none of the four:
 | `workers/` | Background work outside a request (the task worker, the Firebase import runner) |
 
 A module creates only the folders it needs. The `<feature>.module.ts` stays at the module root. Unit tests sit next
-to the file they test (`utils/stable-json.test.ts`); integration tests stay in `apps/server/test/`.
+to the file they test (`utils/chunk-by-size.test.ts`); integration tests stay in `apps/server/test/`.
 
 ```
 modules/translations/
@@ -92,12 +92,14 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 |---|---|---|
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher` |
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository` |
-| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `updatedByOf` |
+| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf` |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
 | | | `content-version.ts`: `bumpContentVersion` (every write that changes what the content API serves: contents, schemas, assets, the import tasks) |
-| `shared/queries/` | Read queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
+| `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
+| | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction |
 | `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports |
 | `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client) |
+| | | `schema.utils.ts` (`planSchemaPush`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
 
 A new shared service (a queue, a message broker) goes in `shared/services/` and is added to `SharedModule`. `infra/`
 stays technical (database connection, storage drivers, events, HTTP plumbing) and knows no domain.
@@ -112,8 +114,8 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 
 | Module | Layered |
 |---|---|
-| translations, settings, tokens, webhooks, plugins, spaces | ✅ |
-| schemas, contents, assets, tasks, users (in `auth/`), firebase-import | not yet |
+| translations, settings, tokens, webhooks, plugins, spaces, schemas | ✅ |
+| contents, assets, tasks, users (in `auth/`), firebase-import | not yet |
 
 Until a module is moved it may still query in its services, but it already follows the data rules and imports no
 moved module.

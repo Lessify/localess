@@ -1,21 +1,14 @@
-import { findSpace } from '../../shared/queries/space.query.js';
-import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SchemaExport } from '@localess/shared';
 import { zSchemaPushSchema } from '@localess/shared/zod';
-import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
-import { Public } from '../../auth/decorators.js';
-import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { keepUpdatedAt, schemas, spaces } from '../../infra/database/schema.js';
-import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from '../../infra/http/v1/cache-control.js';
-import { Params } from '../../infra/http/v1/v1-request.js';
-import { sendV1Error } from '../../infra/http/v1/v1-response.js';
-import { generateOpenApi } from './open-api.service.js';
-import { applySchemaPushPlan } from './schema-push.js';
-import { schemaFromRow, schemasByName } from './schema-row.js';
-import { docSchemaToExport, planSchemaPush } from './schema.utils.js';
-import { nextVersion } from '../../shared/data-rules/content-version.js';
+import { TokenAuthService } from '../../../auth/api-tokens/token-auth.service.js';
+import { Public } from '../../../auth/decorators.js';
+import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from '../../../infra/http/v1/cache-control.js';
+import { Params } from '../../../infra/http/v1/v1-request.js';
+import { sendV1Error } from '../../../infra/http/v1/v1-response.js';
+import { OpenApiService } from '../services/open-api.service.js';
+import { SchemasService } from '../services/schemas.service.js';
 
 /**
  * Schemas on the public API, for developers and the CLI: the OpenAPI document and the schema export
@@ -26,40 +19,33 @@ import { nextVersion } from '../../shared/data-rules/content-version.js';
 @Controller('api/v1/spaces/:spaceId')
 export class SchemasPublicController {
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
+    private readonly schemas: SchemasService,
+    private readonly openApiService: OpenApiService,
     private readonly tokens: TokenAuthService,
   ) {}
-
-  private async schemaRows(spaceId: string) {
-    // Firestore returned documents ordered by id (byte order); exports keep that order.
-    return this.db
-      .select()
-      .from(schemas)
-      .where(eq(schemas.spaceId, spaceId))
-      .orderBy(sql`${schemas.name} collate "C"`);
-  }
 
   @Get('open-api')
   async openApi(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (!(await this.tokens.authorizeDevTools(request, reply))) return;
     const spaceId = (request.params as Params)['spaceId'];
-    if (!(await findSpace(this.db, spaceId))) {
+    const document = await this.openApiService.find(spaceId);
+    if (!document) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE) });
       return;
     }
-    void reply.send(generateOpenApi(schemasByName(await this.schemaRows(spaceId))));
+    void reply.send(document);
   }
 
   @Get('schemas')
   async schemaExport(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (!(await this.tokens.authorizeDevTools(request, reply))) return;
     const spaceId = (request.params as Params)['spaceId'];
-    if (!(await findSpace(this.db, spaceId))) {
+    const exported = await this.schemas.export(spaceId);
+    if (!exported) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE) });
       return;
     }
-    const rows = await this.schemaRows(spaceId);
-    void reply.send(rows.map(row => docSchemaToExport(row.name, schemaFromRow(row))));
+    void reply.send(exported);
   }
 
   @Post('schemas')
@@ -73,13 +59,11 @@ export class SchemasPublicController {
       return;
     }
     const { dryRun, type, schemas: pushed } = body.data;
-    if (!(await findSpace(this.db, spaceId))) {
+    const plan = await this.schemas.planPush(spaceId, pushed as SchemaExport[], type);
+    if (!plan) {
       sendV1Error(reply, 404, 'not-found', 'Not found');
       return;
     }
-    const rows = await this.db.select().from(schemas).where(eq(schemas.spaceId, spaceId));
-    const existing = schemasByName(rows);
-    const plan = planSchemaPush(existing, pushed as SchemaExport[], type);
     if (plan.errors.length > 0) {
       sendV1Error(reply, 400, 'failed-precondition', 'Referential integrity check failed', { details: { errors: plan.errors } });
       return;
@@ -100,14 +84,8 @@ export class SchemasPublicController {
       });
       return;
     }
-    await this.db.transaction(async tx => {
-      await applySchemaPushPlan(tx, spaceId, plan);
-      // Schemas shape the draft output (locale extraction), so content drafts change too.
-      await tx
-        .update(spaces)
-        .set({ contentVersion: nextVersion(spaces.contentVersion), ...keepUpdatedAt(spaces) })
-        .where(eq(spaces.id, spaceId));
-    });
+    // Schemas shape the draft output (locale extraction), so content drafts change too: the content version moves.
+    await this.schemas.applyPush(spaceId, plan);
     void reply.send({
       message: `Created ${counts.created}, updated ${counts.updated}, deleted ${counts.deleted} schemas (${counts.unchanged} unchanged)`,
       counts,
