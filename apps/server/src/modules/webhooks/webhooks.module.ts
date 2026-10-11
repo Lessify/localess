@@ -1,8 +1,6 @@
-import { Global, Module } from '@nestjs/common';
-import { WebhookDispatcher } from './webhook-dispatcher.service.js';
+import { Module } from '@nestjs/common';
 import { WebhooksController } from './webhooks.controller.js';
 
-/** Global: content and translation writes in other modules dispatch webhooks after commit. */
-@Global()
-@Module({ controllers: [WebhooksController], providers: [WebhookDispatcher], exports: [WebhookDispatcher] })
+/** Webhook CRUD and their logs; delivery is shared (SharedModule's WebhookDispatcher). */
+@Module({ controllers: [WebhooksController] })
 export class WebhooksModule {}

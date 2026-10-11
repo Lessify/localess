@@ -6,7 +6,7 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { translations, type UpdatedBy } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
-import { TranslationSnapshotsRepository } from './translation-snapshots.repository.js';
+import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 
 export type TranslationEntity = typeof translations.$inferSelect;
 export type NewTranslation = Pick<TranslationEntity, 'key' | 'type' | 'locales' | 'labels' | 'description' | 'updatedBy'>;
@@ -23,7 +23,6 @@ type Change = { id?: string; op: 'created' | 'updated' | 'deleted' };
 export class TranslationsRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly snapshots: TranslationSnapshotsRepository,
     private readonly events: EventsService,
   ) {}
 
@@ -133,17 +132,15 @@ export class TranslationsRepository {
   /** New `STRING` translations with a value for `locale`. */
   addKeys(spaceId: string, locale: string, values: Record<string, string>, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
-      await t
-        .insert(translations)
-        .values(
-          Object.entries(values).map(([key, value]) => ({
-            id: newUuid(),
-            spaceId,
-            key,
-            type: TranslationType.STRING,
-            locales: { [locale]: value },
-          })),
-        );
+      await t.insert(translations).values(
+        Object.entries(values).map(([key, value]) => ({
+          id: newUuid(),
+          spaceId,
+          key,
+          type: TranslationType.STRING,
+          locales: { [locale]: value },
+        })),
+      );
       return { result: undefined, changed: [{ op: 'updated' }] };
     });
   }
@@ -186,7 +183,7 @@ export class TranslationsRepository {
       return await transaction(this.db, tx, async t => {
         const { result, changed } = await work(t);
         if (changed.length) {
-          await this.snapshots.dropDrafts(spaceId, t);
+          await dropTranslationDrafts(t, spaceId);
           for (const it of changed) await this.events.publish({ spaceId, entity: 'translations', ...it }, t);
         }
         return result;

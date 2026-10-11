@@ -1,13 +1,10 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
-import { and, arrayContains, eq } from 'drizzle-orm';
 import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
-import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
-import { webhookLogs, webhooks } from '../../infra/database/schema.js';
-import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from './webhook-request.js';
-import { EventsService } from '../../infra/events/events.service.js';
+import { type NewWebhookLog, type WebhookEntity, WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
+import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
@@ -18,8 +15,6 @@ export interface WebhookPayload {
   timestamp: string;
   data: { id: string; fullSlug: string } | Record<string, never>;
 }
-
-type WebhookRow = typeof webhooks.$inferSelect;
 
 export function generateSignature(secret: string, payload: string): string {
   return 'sha256=' + createHmac('sha256', secret).update(payload).digest('hex');
@@ -37,9 +32,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
   private readonly inFlight = new Set<Promise<void>>();
 
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly events: EventsService,
+    private readonly deliveries: WebhookDeliveryRepository,
   ) {}
 
   /** Fire-and-forget: never throws, never delays the caller. */
@@ -61,14 +55,11 @@ export class WebhookDispatcher implements OnApplicationShutdown {
   }
 
   private async deliverAll(payload: WebhookPayload): Promise<void> {
-    const targets = await this.db
-      .select()
-      .from(webhooks)
-      .where(and(eq(webhooks.spaceId, payload.spaceId), eq(webhooks.enabled, true), arrayContains(webhooks.events, [payload.event])));
+    const targets = await this.deliveries.findTargets(payload.spaceId, payload.event);
     await Promise.allSettled(targets.map(webhook => this.deliver(webhook, payload)));
   }
 
-  private async deliver(webhook: WebhookRow, payload: WebhookPayload): Promise<void> {
+  private async deliver(webhook: WebhookEntity, payload: WebhookPayload): Promise<void> {
     const startTime = Date.now();
     const deliveryId = randomUUID();
     const payloadJson = JSON.stringify(payload);
@@ -81,9 +72,17 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       'X-Webhook-Delivery': deliveryId,
     };
     if (webhook.secret) headers['X-Webhook-Signature'] = generateSignature(webhook.secret, payloadJson);
-    const base = { id: newUuid(), webhookId: webhook.id, event: payload.event, url: webhook.url, requestSize, deliveryId, data: payload.data };
+    const base = {
+      id: newUuid(),
+      webhookId: webhook.id,
+      event: payload.event,
+      url: webhook.url,
+      requestSize,
+      deliveryId,
+      data: payload.data,
+    };
 
-    let log: typeof webhookLogs.$inferInsert;
+    let log: NewWebhookLog;
     try {
       const checked = checkWebhookUrl(webhook.url, this.config.webhookAllowInternal);
       if (!checked.ok) throw Object.assign(new Error(`Webhook URL is not allowed: ${checked.reason}`), { code: 'EBLOCKEDURL' });
@@ -117,8 +116,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       };
     }
     try {
-      await this.db.insert(webhookLogs).values(log);
-      await this.events.publish({ spaceId: payload.spaceId, entity: 'webhook_logs', id: webhook.id, op: 'created' });
+      await this.deliveries.saveLog(payload.spaceId, log);
     } catch (error) {
       this.logger.error(`Could not log webhook delivery ${deliveryId}: ${error}`);
     }

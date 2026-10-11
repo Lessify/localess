@@ -8,7 +8,7 @@ import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { toDto } from '../../infra/http/dto.js';
 import { requireSpace, selectSpaces, SpaceRow } from '../../infra/http/space-access.js';
-import { TranslationSnapshotsRepository } from '../translations/repositories/translation-snapshots.repository.js';
+import { dropTranslationDrafts, dropTranslationLocale } from '../../shared/data-rules/translation-drafts.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -21,7 +21,6 @@ export class SpacesService {
     @Inject(DATABASE) private readonly db: Database,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly events: EventsService,
-    private readonly translationSnapshots: TranslationSnapshotsRepository,
   ) {}
 
   /** By name, case-insensitive whatever the database collation; the id keeps equal names in a stable order. */
@@ -139,7 +138,7 @@ export class SpacesService {
         .from(spaceLocales)
         .where(eq(spaceLocales.spaceId, spaceId));
       await tx.insert(spaceLocales).values({ spaceId, localeId, position: (last ?? -1) + 1 });
-      await this.translationSnapshots.dropDrafts(spaceId, tx);
+      await dropTranslationDrafts(tx, spaceId);
     });
   }
 
@@ -149,8 +148,8 @@ export class SpacesService {
         throw new BadRequestException('The default locale cannot be removed; make another locale the default first');
       }
       await tx.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
-      await this.translationSnapshots.dropDrafts(spaceId, tx);
-      await this.translationSnapshots.dropLocale(spaceId, localeId, tx);
+      await dropTranslationDrafts(tx, spaceId);
+      await dropTranslationLocale(tx, spaceId, localeId);
     });
   }
 
@@ -174,7 +173,7 @@ export class SpacesService {
     return this.update(spaceId, async (space, tx) => {
       if (!space.locales.some(it => it.id === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
       // Draft maps fill gaps from the default locale; published ones keep the fill of their publish.
-      await this.translationSnapshots.dropDrafts(spaceId, tx);
+      await dropTranslationDrafts(tx, spaceId);
       return { defaultLocaleId: localeId };
     });
   }

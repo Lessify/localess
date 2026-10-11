@@ -16,7 +16,6 @@ import {
   validIdParams,
 } from '../../../infra/http/v1/v1-request.js';
 import { q, sendV1Error } from '../../../infra/http/v1/v1-response.js';
-import { SpacesService } from '../../spaces/spaces.service.js';
 import { TranslationDeliveryService } from '../services/translation-delivery.service.js';
 
 /**
@@ -28,7 +27,6 @@ import { TranslationDeliveryService } from '../services/translation-delivery.ser
 @Controller('api/v1/spaces/:spaceId')
 export class TranslationsPublicController {
   constructor(
-    private readonly spaces: SpacesService,
     private readonly delivery: TranslationDeliveryService,
     private readonly tokens: TokenAuthService,
   ) {}
@@ -56,7 +54,7 @@ export class TranslationsPublicController {
     );
     if (!token) return;
 
-    const space = await this.spaces.findSpace(spaceId);
+    const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const actualLocale = identifySpaceLocale(space, locale);
     const snapshot = isDraft(version)
@@ -86,7 +84,7 @@ export class TranslationsPublicController {
   async translationValues(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (!(await this.tokens.authorizeDevTools(request, reply))) return;
     const { spaceId, locale } = request.params as Params;
-    const space = await this.spaces.findSpace(spaceId);
+    const space = await this.delivery.findSpace(spaceId);
     if (!space) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: 'no-cache' });
       return;
@@ -113,7 +111,7 @@ export class TranslationsPublicController {
       return;
     }
     const { dryRun, type, values } = body.data;
-    const space = await this.spaces.findSpace(spaceId);
+    const space = await this.delivery.findSpace(spaceId);
     if (!space || !space.locales.some(it => it.id === locale)) {
       sendV1Error(reply, 400, 'invalid-argument', 'Locale not supported by this space', {
         details: `Locale ${locale} is not in space locales`,

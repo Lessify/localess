@@ -4,7 +4,7 @@ import { AppConfig } from './infra/config/config.js';
 import { ConfigModule } from './infra/config/config.module.js';
 import { DatabaseModule } from './infra/database/database.module.js';
 import { EventsModule } from './infra/events/events.module.js';
-import { RepositoriesModule } from './infra/database/repositories.module.js';
+import { SharedModule } from './shared/shared.module.js';
 import { HealthController } from './infra/health/health.controller.js';
 import { StorageModule } from './infra/storage/storage.module.js';
 import { AssetsModule } from './modules/assets/assets.module.js';
@@ -29,7 +29,7 @@ export class AppModule {
         DatabaseModule,
         StorageModule,
         EventsModule,
-        RepositoriesModule,
+        SharedModule,
         WebhooksModule,
         AuthModule,
         // Features: each owns its App API (/api/app) and public API (/api/v1) controllers.

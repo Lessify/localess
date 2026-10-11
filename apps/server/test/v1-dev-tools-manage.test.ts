@@ -3,7 +3,7 @@ import { WebHookEvent } from '@localess/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { schemas, spaces, translations } from '../src/infra/database/schema.js';
 import { EventsService } from '../src/infra/events/events.service.js';
-import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
+import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
 import { buildDrafts, createTestApp, draftSnapshots, TestApp } from './test-app.js';
 import { S1 } from './ids.js';

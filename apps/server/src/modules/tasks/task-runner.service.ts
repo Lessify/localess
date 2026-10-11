@@ -21,20 +21,20 @@ import {
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { folderPath } from '../assets/assets.service.js';
 import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
-import { TranslationSnapshotsRepository } from '../translations/repositories/translation-snapshots.repository.js';
+import { dropTranslationDrafts } from '../../shared/data-rules/translation-drafts.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, contents, schemas, taskLogs, tasks, translations } from '../../infra/database/schema.js';
 import { isAssetChanged, isContentChanged, isTranslationChanged } from './import-diff.js';
 import { docSchemaToExport, planSchemaPush } from '../schemas/schema.utils.js';
 import { schemaFromRow, schemasByName } from '../schemas/schema-row.js';
-import { translationsByKey } from '../translations/transformers/translation.transformer.js';
+import { translationsByKey } from '../../shared/transformers/translation.transformer.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { applySchemaPushPlan } from '../schemas/schema-push.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
+import { WebhookDispatcher } from '../../shared/services/webhook-dispatcher.service.js';
 import { openZip, writeZip, ZipReader } from './zip.js';
 
 export type TaskRow = typeof tasks.$inferSelect;
@@ -122,7 +122,6 @@ export class TaskRunner {
     private readonly metadata: AssetMetadataService,
     private readonly events: EventsService,
     private readonly webhooks: WebhookDispatcher,
-    private readonly translationSnapshots: TranslationSnapshotsRepository,
   ) {}
 
   /** A step visible in the Tasks UI (`task_logs`) and in the server log. */
@@ -591,7 +590,7 @@ export class TaskRunner {
         total++;
       }
       if (total) {
-        await this.translationSnapshots.dropDrafts(spaceId, tx);
+        await dropTranslationDrafts(tx, spaceId);
         await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
       }
       return total;
@@ -638,7 +637,7 @@ export class TaskRunner {
         total++;
       }
       if (total) {
-        await this.translationSnapshots.dropDrafts(spaceId, tx);
+        await dropTranslationDrafts(tx, spaceId);
         await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
       }
       return total;

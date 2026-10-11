@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Translation, TranslationType, WebHookEvent } from '@localess/shared';
 import type { UserRow } from '../../../auth/users/users.service.js';
-import { updatedByOf } from '../../../auth/users/updated-by.transformer.js';
+import { updatedByOf } from '../../../shared/transformers/updated-by.transformer.js';
 import type { SpaceRow } from '../../../infra/http/space-access.js';
-import { SpacesService } from '../../spaces/spaces.service.js';
-import { WebhookDispatcher } from '../../webhooks/webhook-dispatcher.service.js';
+import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
+import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
 import { TranslationSnapshotsRepository } from '../repositories/translation-snapshots.repository.js';
 import { type TranslationEntity, TranslationsRepository } from '../repositories/translations.repository.js';
-import { toTranslation } from '../transformers/translation.transformer.js';
+import { toTranslation } from '../../../shared/transformers/translation.transformer.js';
 import { TranslateService } from './translate.service.js';
 
 /** Values are written only for the space's locales (removing one is allowed for any locale). */
@@ -31,7 +31,7 @@ export class TranslationsService {
   constructor(
     private readonly translations: TranslationsRepository,
     private readonly snapshots: TranslationSnapshotsRepository,
-    private readonly spaces: SpacesService,
+    private readonly spaces: SpaceLocalesRepository,
     private readonly webhooks: WebhookDispatcher,
     private readonly translate: TranslateService,
   ) {}
@@ -53,7 +53,7 @@ export class TranslationsService {
     input: { key: string; type: TranslationType; locales: Record<string, string>; labels?: string[]; description?: string },
     user: UserRow,
   ): Promise<Translation> {
-    requireSpaceLocales(await this.spaces.get(spaceId), Object.keys(input.locales));
+    requireSpaceLocales(await this.spaces.require(spaceId), Object.keys(input.locales));
     const entity = await this.translations.create(spaceId, {
       ...input,
       labels: input.labels?.length ? input.labels : null,
@@ -64,7 +64,7 @@ export class TranslationsService {
   }
 
   async update(spaceId: string, id: string, input: { labels?: string[]; description?: string }, user: UserRow): Promise<Translation> {
-    await this.spaces.get(spaceId);
+    await this.spaces.require(spaceId);
     const entity = await this.translations.update(spaceId, id, {
       labels: input.labels?.length ? input.labels : null,
       description: input.description || null,
@@ -75,26 +75,26 @@ export class TranslationsService {
 
   /** One locale's value, for a locale of the space; an empty string removes it (for any locale: leftovers of a removed locale). */
   async updateLocale(spaceId: string, id: string, locale: string, value: string, user: UserRow): Promise<Translation> {
-    const space = await this.spaces.get(spaceId);
+    const space = await this.spaces.require(spaceId);
     if (value) requireSpaceLocales(space, [locale]);
     return this.changed(spaceId, found(await this.translations.setLocale(spaceId, id, locale, value, updatedByOf(user))));
   }
 
   /** Changes the key; the id stays. */
   async rename(spaceId: string, id: string, key: string, user: UserRow): Promise<Translation> {
-    await this.spaces.get(spaceId);
+    await this.spaces.require(spaceId);
     return this.changed(spaceId, found(await this.translations.update(spaceId, id, { key, updatedBy: updatedByOf(user) })));
   }
 
   async delete(spaceId: string, id: string): Promise<void> {
-    await this.spaces.get(spaceId);
+    await this.spaces.require(spaceId);
     if (!(await this.translations.delete(spaceId, id))) throw new NotFoundException('Translation not found');
     this.changed(spaceId, undefined);
   }
 
   /** Removes every key (the published maps stay until the next publish, as before). */
   async deleteAll(spaceId: string): Promise<void> {
-    await this.spaces.get(spaceId);
+    await this.spaces.require(spaceId);
     await this.translations.deleteAll(spaceId);
     this.changed(spaceId, undefined);
   }
@@ -120,7 +120,7 @@ export class TranslationsService {
     user: UserRow,
   ): Promise<{ translated: number; failed: number }> {
     this.translate.requireProvider();
-    requireSpaceLocales(await this.spaces.get(spaceId), [sourceLocale, targetLocale]);
+    requireSpaceLocales(await this.spaces.require(spaceId), [sourceLocale, targetLocale]);
     const candidates = (await this.translations.findAll(spaceId)).filter(
       row => row.locales[sourceLocale] && (overwrite || !row.locales[targetLocale]),
     );

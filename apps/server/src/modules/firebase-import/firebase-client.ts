@@ -1,7 +1,7 @@
 import http, { IncomingMessage } from 'node:http';
 import https from 'node:https';
 import { Readable } from 'node:stream';
-import { checkWebhookUrl, guardedLookup } from '../webhooks/webhook-request.js';
+import { checkWebhookUrl, guardedLookup } from '../../shared/utils/webhook-request.js';
 
 export type FirebaseDoc = { id: string } & Record<string, unknown>;
 

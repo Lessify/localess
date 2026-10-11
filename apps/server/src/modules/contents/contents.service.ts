@@ -8,8 +8,8 @@ import { contentPublished, contents, keepUpdatedAt, schemas } from '../../infra/
 import { buildDocumentStorage } from './content-extract.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
-import { updatedByOf } from '../../auth/users/updated-by.transformer.js';
-import { WebhookDispatcher } from '../webhooks/webhook-dispatcher.service.js';
+import { updatedByOf } from '../../shared/transformers/updated-by.transformer.js';
+import { WebhookDispatcher } from '../../shared/services/webhook-dispatcher.service.js';
 import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
 
 export type ContentRow = typeof contents.$inferSelect;

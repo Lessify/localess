@@ -97,7 +97,7 @@ Body: JSON-serialised WebHookPayload (without `signature`)
 
 ### Destination restrictions (SSRF protection)
 
-Delivery runs from the Localess server, inside your network, and the URL and headers are chosen by a space manager. So `apps/server/src/modules/webhooks/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach internal services or a cloud metadata server (`169.254.169.254`, which on most clouds issues instance credentials) and the reply would show up in the webhook log.
+Delivery runs from the Localess server, inside your network, and the URL and headers are chosen by a space manager. So `apps/server/src/shared/utils/webhook-request.ts` limits where a webhook can go. Without these limits, a webhook, or a redirect from one, could reach internal services or a cloud metadata server (`169.254.169.254`, which on most clouds issues instance credentials) and the reply would show up in the webhook log.
 
 - **URL** (`checkWebhookUrl`): `https:` only, on the default port, with no credentials in the URL. `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal` and private IP literals are refused. The WHATWG URL parser normalises shorthand forms such as `0x7f.1` and `2130706433` before the check.
 - **Resolved address** (`isBlockedAddress`, applied in the socket's DNS `lookup`): the connection is refused if the host resolves to any loopback, private, link-local, CGNAT, multicast, reserved or documentation range, IPv4 or IPv6, including IPv4-mapped IPv6. The check runs on the exact address being connected to, so DNS rebinding can't get around it.
@@ -184,7 +184,7 @@ Logs are **not capped on write** — every delivery adds a row and nothing prune
 | `apps/server/src/modules/translations/services/translations.service.ts` — writes   | `TRANSLATION_CHANGED`   |
 | `apps/server/src/modules/tasks/task-runner.service.ts` — content / translation imports    | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
 
-All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/src/modules/webhooks/webhook-dispatcher.service.ts`.
+All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/src/shared/services/webhook-dispatcher.service.ts`.
 
 > Translation pushes through the public MANAGE API (`POST /api/v1/.../translations/:locale`) do not dispatch webhooks.
 
@@ -224,8 +224,8 @@ Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list 
 | `apps/server/src/infra/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
 | `packages/shared/src/models/webhook.model.ts`         | Types — `WebHookEvent` and friends (server and web)                       |
 | `apps/server/src/modules/webhooks/webhooks.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
-| `apps/server/src/modules/webhooks/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
-| `apps/server/src/modules/webhooks/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
+| `apps/server/src/shared/services/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
+| `apps/server/src/shared/utils/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
 | `apps/web/src/app/features/spaces/developers/webhooks/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |
 | `apps/web/src/app/features/spaces/developers/webhooks/webhook.validator.ts` | Form validators                                                           |
 | `apps/web/src/app/features/spaces/developers/webhooks/`   | UI — list (`webhooks.component`), create/edit (`webhook-dialog/`), detail + log history (`webhook-detail/`) |

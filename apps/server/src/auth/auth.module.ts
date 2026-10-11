@@ -4,7 +4,6 @@ import { FirstAdminService } from './users/first-admin.service.js';
 import { MeController } from './users/me.controller.js';
 import { UsersController } from './users/users.controller.js';
 import { UsersService } from './users/users.service.js';
-import { MailService } from '../infra/mail/mail.service.js';
 import { PasswordResetService } from './password-reset.service.js';
 import { AppConfigController } from './app-config.controller.js';
 import { AuthController } from './auth.controller.js';
@@ -21,7 +20,6 @@ import { SessionService } from './session.service.js';
     SessionService,
     UsersService,
     FirstAdminService,
-    MailService,
     PasswordResetService,
     OAuthService,
     { provide: APP_GUARD, useClass: AuthGuard },

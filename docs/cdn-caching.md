@@ -50,8 +50,8 @@ Translations have no counter. Each map the API serves is a row of `translation_s
 - A `built_at` always names the same data, so a **database restore** never makes a `cv` that caches still hold serve
   other data.
 
-Writes, publishes and draft builds of one space take the same lock (`TranslationSnapshotsRepository.lock()` in
-`apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts`), so a build never stores a map read before an edit
+Writes, publishes and draft builds of one space take the same lock (`lockTranslations()` in
+`apps/server/src/shared/data-rules/translation-drafts.ts`), so a build never stores a map read before an edit
 that has since committed.
 ---
 
@@ -214,4 +214,5 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 - `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth per request
 - `apps/server/src/modules/assets/asset-delivery.service.ts` — asset streaming, Range, rendition cache
 - `apps/server/src/infra/http/space-access.ts` — `bumpContentVersion()`
-- `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build and drop, the translations lock
+- `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build
+- `apps/server/src/shared/data-rules/translation-drafts.ts` — the translations lock, dropping the drafts (every module that writes translations or a space's locales)

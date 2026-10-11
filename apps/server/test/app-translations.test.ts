@@ -3,7 +3,7 @@ import { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
-import { WebhookDispatcher } from '../src/modules/webhooks/webhook-dispatcher.service.js';
+import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';

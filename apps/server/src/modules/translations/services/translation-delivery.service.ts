@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
-import { WebhookDispatcher } from '../../webhooks/webhook-dispatcher.service.js';
+import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
+import type { SpaceRow } from '../../../infra/http/space-access.js';
+import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
 import { type TranslationSnapshotEntity, TranslationSnapshotsRepository } from '../repositories/translation-snapshots.repository.js';
 import { TranslationsRepository } from '../repositories/translations.repository.js';
-import { translationsByKey } from '../transformers/translation.transformer.js';
+import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
 import { planTranslationUpdate, storedLocaleValues } from '../utils/translation.utils.js';
 
 export type TranslationPushType = 'add-missing' | 'update-existing' | 'delete-missing-key' | 'delete-missing-value';
@@ -28,7 +30,12 @@ export class TranslationDeliveryService {
     private readonly translations: TranslationsRepository,
     private readonly snapshots: TranslationSnapshotsRepository,
     private readonly webhooks: WebhookDispatcher,
+    private readonly spaces: SpaceLocalesRepository,
   ) {}
+
+  findSpace(spaceId: string): Promise<SpaceRow | undefined> {
+    return this.spaces.find(spaceId);
+  }
 
   /** The published map of a space locale; a locale published never (added since) gets the default locale's map. */
   async findPublished(spaceId: string, locale: string, defaultLocale: string): Promise<TranslationSnapshotEntity | undefined> {
