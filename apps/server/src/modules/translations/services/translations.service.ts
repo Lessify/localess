@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { type Translation, TranslationType, WebHookEvent } from '@localess/shared';
 import type { UserRow } from '../../../auth/users/users.service.js';
 import { updatedByOf } from '../../../shared/transformers/updated-by.transformer.js';
-import type { SpaceRow } from '../../../infra/http/space-access.js';
+import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
 import { TranslationSnapshotsRepository } from '../repositories/translation-snapshots.repository.js';

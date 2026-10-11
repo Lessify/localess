@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spaces } from '../src/infra/database/schema.js';
-import { bumpContentVersion } from '../src/infra/http/space-access.js';
+import { bumpContentVersion } from '../src/shared/data-rules/content-version.js';
 import { seedContent, seedSpace, TOKEN_PUBLIC } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { C, S1 } from './ids.js';

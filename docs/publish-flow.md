@@ -147,7 +147,7 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 
 - `apps/server/src/modules/contents/contents.service.ts` — content `publish`/`unpublish`, `write()` (version bump, change events, webhooks after commit)
 - `apps/server/src/modules/translations/services/translations.service.ts` — translation `publish` and the app's writes; `repositories/translations.repository.ts` — the write transaction (row change, draft snapshots dropped, change events)
-- `apps/server/src/infra/http/space-access.ts` — `bumpVersion()`
+- `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
 - `apps/server/src/modules/contents/content-extract.ts` — locale extraction (`buildDocumentStorage`)
 - `apps/server/src/modules/contents/content-delivery.service.ts` — published/draft document reads, link/reference/asset resolution
 - `apps/server/src/modules/translations/services/translation-delivery.service.ts` — published/draft translation reads and the CLI push; `buildTranslationMap` in `utils/translation.utils.ts`

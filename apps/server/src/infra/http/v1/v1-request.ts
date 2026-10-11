@@ -1,6 +1,5 @@
 import type { FastifyReply } from 'fastify';
 import type { ApiToken } from '../../../auth/api-tokens/token-auth.service.js';
-import type { SpaceRow } from '../space-access.js';
 import {
   CACHE_BAD_REQUEST_MAX_AGE,
   CACHE_MAX_AGE,
@@ -25,7 +24,7 @@ export const CONTENT_CACHE = publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE);
 export const isDraft = (version: unknown): boolean => version === 'draft';
 
 /** Same rule as functions `identifySpaceLocale`: unknown or missing locales use the default locale. */
-export function identifySpaceLocale(space: Pick<SpaceRow, 'locales' | 'defaultLocaleId'>, locale: unknown): string {
+export function identifySpaceLocale(space: { locales: { id: string }[]; defaultLocaleId: string }, locale: unknown): string {
   if (typeof locale === 'string' && space.locales.some(it => it.id === locale)) return locale;
   return space.defaultLocaleId;
 }
@@ -55,7 +54,7 @@ export function sendJson(reply: FastifyReply, body: unknown): void {
 }
 
 /** Answers 404 (cached like content) when the space doesn't exist; narrows `space` when it does. */
-export function requireV1Space(reply: FastifyReply, space: SpaceRow | undefined, cacheControl = CONTENT_CACHE): space is SpaceRow {
+export function requireV1Space<T>(reply: FastifyReply, space: T | undefined, cacheControl = CONTENT_CACHE): space is T {
   if (!space) sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl });
   return space !== undefined;
 }

@@ -31,7 +31,7 @@ import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.
 import { toPrincipal, type UserRow } from '../../auth/users/users.service.js';
 import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
-import { requireSpace } from '../../infra/http/space-access.js';
+import { requireSpace } from '../../shared/queries/space.query.js';
 
 const READ_PERMISSIONS = [
   UserPermission.ASSET_EXPORT,

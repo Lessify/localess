@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contents, spaceEnvironments, spaces, translations } from '../src/infra/database/schema.js';
-import { bumpContentVersion } from '../src/infra/http/space-access.js';
+import { bumpContentVersion } from '../src/shared/data-rules/content-version.js';
 import { ContentsService } from '../src/modules/contents/contents.service.js';
-import { SpacesService } from '../src/modules/spaces/spaces.service.js';
+import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
 import { C, S1 } from './ids.js';
 import { seedContent, seedSpace, seedTranslations } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';

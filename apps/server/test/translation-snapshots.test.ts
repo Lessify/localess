@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { translations, translationSnapshots } from '../src/infra/database/schema.js';
-import { SpacesService } from '../src/modules/spaces/spaces.service.js';
+import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
 import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
 import { TranslationsService } from '../src/modules/translations/services/translations.service.js';
 import { seedSpace, seedTranslations, TOKEN_DEV, TOKEN_DRAFT, TOKEN_V1 } from './seed.js';

@@ -3,7 +3,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { translations, translationSnapshots, type TranslationSnapshotVersion } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { requireSpace } from '../../../infra/http/space-access.js';
+import { requireSpace } from '../../../shared/queries/space.query.js';
 import { lockTranslations } from '../../../shared/data-rules/translation-drafts.js';
 import { buildTranslationMap } from '../utils/translation.utils.js';
 

@@ -6,7 +6,7 @@ import { DATABASE, type Database } from '../../infra/database/database.module.js
 import { schemas } from '../../infra/database/schema.js';
 import { generateOpenApi } from './open-api.service.js';
 import { schemasByName } from './schema-row.js';
-import { requireSpace } from '../../infra/http/space-access.js';
+import { requireSpace } from '../../shared/queries/space.query.js';
 
 /** OpenAPI document of a space's schemas (was the `openapi-generate` callable). */
 @Controller('api/app/spaces/:spaceId/open-api')

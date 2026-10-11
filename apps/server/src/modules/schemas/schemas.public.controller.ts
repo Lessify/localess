@@ -1,3 +1,4 @@
+import { findSpace } from '../../shared/queries/space.query.js';
 import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -10,12 +11,11 @@ import { keepUpdatedAt, schemas, spaces } from '../../infra/database/schema.js';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from '../../infra/http/v1/cache-control.js';
 import { Params } from '../../infra/http/v1/v1-request.js';
 import { sendV1Error } from '../../infra/http/v1/v1-response.js';
-import { SpacesService } from '../spaces/spaces.service.js';
 import { generateOpenApi } from './open-api.service.js';
 import { applySchemaPushPlan } from './schema-push.js';
 import { schemaFromRow, schemasByName } from './schema-row.js';
 import { docSchemaToExport, planSchemaPush } from './schema.utils.js';
-import { nextVersion } from '../../infra/http/space-access.js';
+import { nextVersion } from '../../shared/data-rules/content-version.js';
 
 /**
  * Schemas on the public API, for developers and the CLI: the OpenAPI document and the schema export
@@ -27,7 +27,6 @@ import { nextVersion } from '../../infra/http/space-access.js';
 export class SchemasPublicController {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly spaces: SpacesService,
     private readonly tokens: TokenAuthService,
   ) {}
 
@@ -44,7 +43,7 @@ export class SchemasPublicController {
   async openApi(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (!(await this.tokens.authorizeDevTools(request, reply))) return;
     const spaceId = (request.params as Params)['spaceId'];
-    if (!(await this.spaces.findSpace(spaceId))) {
+    if (!(await findSpace(this.db, spaceId))) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE) });
       return;
     }
@@ -55,7 +54,7 @@ export class SchemasPublicController {
   async schemaExport(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     if (!(await this.tokens.authorizeDevTools(request, reply))) return;
     const spaceId = (request.params as Params)['spaceId'];
-    if (!(await this.spaces.findSpace(spaceId))) {
+    if (!(await findSpace(this.db, spaceId))) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE) });
       return;
     }
@@ -74,7 +73,7 @@ export class SchemasPublicController {
       return;
     }
     const { dryRun, type, schemas: pushed } = body.data;
-    if (!(await this.spaces.findSpace(spaceId))) {
+    if (!(await findSpace(this.db, spaceId))) {
       sendV1Error(reply, 404, 'not-found', 'Not found');
       return;
     }

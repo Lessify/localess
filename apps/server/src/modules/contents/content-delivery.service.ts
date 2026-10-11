@@ -4,7 +4,7 @@ import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind,
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid } from '../../infra/database/id.js';
 import { assets, contentPublished, contents, schemas } from '../../infra/database/schema.js';
-import { SpaceRow } from '../../infra/http/space-access.js';
+import { SpaceRow } from '../../shared/queries/space.query.js';
 import { isDraft } from '../../infra/http/v1/v1-request.js';
 import { buildDocumentStorage } from './content-extract.js';
 import { stripStorageIds } from './strip-storage-ids.js';

@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid } from '../../../infra/database/id.js';
 import { spaces } from '../../../infra/database/schema.js';
-import { selectSpaces, type SpaceRow } from '../../../infra/http/space-access.js';
+import { selectSpaces, type SpaceRow } from '../../../shared/queries/space.query.js';
 
 /** The space as translations need it: which locales values may be written for, and the default locale gaps fill from. */
 @Injectable()

@@ -19,7 +19,7 @@ import { AssetMetadataService } from '../assets/asset-metadata.service.js';
 import { FirebaseClient, type FirebaseDoc } from './firebase-client.js';
 import { knownValues, obj, parseData, str, strings, timestamps } from './firebase-docs.js';
 import { ReferenceMaps, rewriteData, rewriteIds } from './rewrite-references.js';
-import { nextVersion } from '../../infra/http/space-access.js';
+import { nextVersion } from '../../shared/data-rules/content-version.js';
 
 const MAX_WARNINGS = 50;
 /** Rows of the space read at once by the content migration. */

@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import { isUuid } from '../database/id.js';
-import type { Database } from '../database/database.module.js';
-import { firebaseImports, spaces } from '../database/schema.js';
-import { importStatusOf, type SpaceImportStatus } from './space-access.js';
-import { isValidId } from './v1/id-param.js';
-import { CONTENT_CACHE } from './v1/v1-request.js';
-import { sendV1Error } from './v1/v1-response.js';
+import { isUuid } from '../../infra/database/id.js';
+import type { Database } from '../../infra/database/database.module.js';
+import { firebaseImports, spaces } from '../../infra/database/schema.js';
+import { importStatusOf, type SpaceImportStatus } from '../queries/space.query.js';
+import { isValidId } from '../../infra/http/v1/id-param.js';
+import { CONTENT_CACHE } from '../../infra/http/v1/v1-request.js';
+import { sendV1Error } from '../../infra/http/v1/v1-response.js';
 
 /** A space as the public API sees it before any controller: its UUID and whether an import is running or failed. */
 export interface ResolvedSpace {
@@ -50,9 +50,15 @@ const ASSET_ROUTE = /^\/api\/v1\/spaces\/[^/]+\/assets\//;
  */
 function sendImportInProgress(reply: FastifyReply, importStatus: SpaceImportStatus): void {
   void reply.header('retry-after', '60');
-  sendV1Error(reply, 503, 'unavailable', importStatus === 'FAILED' ? 'The import of this space failed: delete the space and import it again' : 'This space is being imported', {
-    cacheControl: 'no-store',
-  });
+  sendV1Error(
+    reply,
+    503,
+    'unavailable',
+    importStatus === 'FAILED' ? 'The import of this space failed: delete the space and import it again' : 'This space is being imported',
+    {
+      cacheControl: 'no-store',
+    },
+  );
 }
 
 export function registerSpaceIdResolution(fastify: FastifyInstance, resolver: SpaceIdResolver): void {

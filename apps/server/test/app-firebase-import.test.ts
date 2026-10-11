@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
 import { firebaseImports, spaces } from '../src/infra/database/schema.js';
-import { selectSpaces } from '../src/infra/http/space-access.js';
+import { selectSpaces } from '../src/shared/queries/space.query.js';
 import { FirebaseClient } from '../src/modules/firebase-import/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/firebase-import.runner.js';
 import { FirebaseImportService } from '../src/modules/firebase-import/firebase-import.service.js';

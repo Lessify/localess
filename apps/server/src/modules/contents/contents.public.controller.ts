@@ -1,9 +1,10 @@
-import { Controller, Get, Req, Res } from '@nestjs/common';
+import { Controller, Get, Inject, Req, Res } from '@nestjs/common';
+import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ContentDocumentApi, ContentKind, TokenPermission } from '@localess/shared';
 import { ApiToken, TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
-import { SpaceRow } from '../../infra/http/space-access.js';
+import { findSpace, SpaceRow } from '../../shared/queries/space.query.js';
 import { publicCache, TEN_MINUTES } from '../../infra/http/v1/cache-control.js';
 import {
   identifySpaceLocale,
@@ -16,7 +17,6 @@ import {
   validIdParams,
 } from '../../infra/http/v1/v1-request.js';
 import { q, sendV1Error } from '../../infra/http/v1/v1-response.js';
-import { SpacesService } from '../spaces/spaces.service.js';
 import { ContentDeliveryService } from './content-delivery.service.js';
 
 const TEN_MINUTE_CACHE = publicCache(TEN_MINUTES);
@@ -31,7 +31,7 @@ const FILE_NOT_FOUND = 'File not found, on path. Please Publish again. The conte
 @Controller('api/v1/spaces/:spaceId')
 export class ContentsPublicController {
   constructor(
-    private readonly spaces: SpacesService,
+    @Inject(DATABASE) private readonly db: Database,
     private readonly delivery: ContentDeliveryService,
     private readonly tokens: TokenAuthService,
   ) {}
@@ -51,7 +51,7 @@ export class ContentsPublicController {
     );
     if (!token) return;
 
-    const space = await this.spaces.findSpace(spaceId);
+    const space = await findSpace(this.db, spaceId);
     if (!requireV1Space(reply, space)) return;
     const validKind = kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER ? kind : undefined;
     if (needsRedirect(cv, space.contentVersion)) {
@@ -75,7 +75,7 @@ export class ContentsPublicController {
     const { spaceId } = params;
     const fullSlug = params['*'] ?? '';
 
-    const space = await this.spaces.findSpace(spaceId);
+    const space = await findSpace(this.db, spaceId);
     if (!requireV1Space(reply, space)) return;
     const contentId = await this.delivery.findContentIdByFullSlug(spaceId, fullSlug);
     if (!contentId) {
@@ -94,7 +94,7 @@ export class ContentsPublicController {
     if (!token) return;
     const { spaceId, contentId } = params;
 
-    const space = await this.spaces.findSpace(spaceId);
+    const space = await findSpace(this.db, spaceId);
     if (!requireV1Space(reply, space)) return;
     await this.sendContent(request, reply, token, space, contentId, `/api/v1/spaces/${spaceId}/contents/${q(contentId)}`);
   }

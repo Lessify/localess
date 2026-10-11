@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
-import { RequireAnyRole, RequirePermission } from '../../auth/decorators.js';
-import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
-import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { zPreviewUrl } from '../../infra/http/zod.js';
-import { spaceDto, SpacesService } from './spaces.service.js';
+import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
+import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import { zPreviewUrl } from '../../../infra/http/zod.js';
+import { SpacesService } from '../services/spaces.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(200) });
 const updateSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
@@ -21,26 +21,26 @@ export class SpacesController {
 
   @Get()
   @RequireAnyRole()
-  async list() {
-    return (await this.spaces.list()).map(spaceDto);
+  list() {
+    return this.spaces.list();
   }
 
   @Get(':spaceId')
   @RequireAnyRole()
-  async get(@Param('spaceId') spaceId: string) {
-    return spaceDto(await this.spaces.get(spaceId));
+  get(@Param('spaceId') spaceId: string) {
+    return this.spaces.get(spaceId);
   }
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
-    return spaceDto(await this.spaces.create(body.name));
+  create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
+    return this.spaces.create(body.name);
   }
 
   @Patch(':spaceId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async update(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>) {
-    return spaceDto(await this.spaces.rename(spaceId, body.name));
+  update(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>) {
+    return this.spaces.rename(spaceId, body.name);
   }
 
   @Delete(':spaceId')
@@ -59,65 +59,62 @@ export class SpacesController {
 
   @Post(':spaceId/environments')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async createEnvironment(
+  createEnvironment(
     @Param('spaceId') spaceId: string,
     @Body(new ZodValidationPipe(environmentSchema)) body: z.infer<typeof environmentSchema>,
   ) {
-    return spaceDto(await this.spaces.createEnvironment(spaceId, body));
+    return this.spaces.createEnvironment(spaceId, body);
   }
 
   @Put(':spaceId/environments/order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async reorderEnvironments(
+  reorderEnvironments(
     @Param('spaceId') spaceId: string,
     @Body(new ZodValidationPipe(environmentOrderSchema)) body: z.infer<typeof environmentOrderSchema>,
   ) {
-    return spaceDto(await this.spaces.reorderEnvironments(spaceId, body.ids));
+    return this.spaces.reorderEnvironments(spaceId, body.ids);
   }
 
   @Patch(':spaceId/environments/:environmentId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async updateEnvironment(
+  updateEnvironment(
     @Param('spaceId') spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,
     @Body(new ZodValidationPipe(environmentSchema)) body: z.infer<typeof environmentSchema>,
   ) {
-    return spaceDto(await this.spaces.updateEnvironment(spaceId, environmentId, body));
+    return this.spaces.updateEnvironment(spaceId, environmentId, body);
   }
 
   @Delete(':spaceId/environments/:environmentId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async deleteEnvironment(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string) {
-    return spaceDto(await this.spaces.deleteEnvironment(spaceId, environmentId));
+  deleteEnvironment(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string) {
+    return this.spaces.deleteEnvironment(spaceId, environmentId);
   }
 
   @Post(':spaceId/locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async addLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>) {
-    return spaceDto(await this.spaces.addLocale(spaceId, body.id));
+  addLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>) {
+    return this.spaces.addLocale(spaceId, body.id);
   }
 
   @Put(':spaceId/locales/order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async reorderLocales(
+  reorderLocales(
     @Param('spaceId') spaceId: string,
     @Body(new ZodValidationPipe(localeOrderSchema)) body: z.infer<typeof localeOrderSchema>,
   ) {
-    return spaceDto(await this.spaces.reorderLocales(spaceId, body.ids));
+    return this.spaces.reorderLocales(spaceId, body.ids);
   }
 
   @Delete(':spaceId/locales/:localeId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async removeLocale(@Param('spaceId') spaceId: string, @Param('localeId') localeId: string) {
-    return spaceDto(await this.spaces.removeLocale(spaceId, localeId));
+  removeLocale(@Param('spaceId') spaceId: string, @Param('localeId') localeId: string) {
+    return this.spaces.removeLocale(spaceId, localeId);
   }
 
   @Put(':spaceId/default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async setDefaultLocale(
-    @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>,
-  ) {
-    return spaceDto(await this.spaces.setDefaultLocale(spaceId, body.id));
+  setDefaultLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>) {
+    return this.spaces.setDefaultLocale(spaceId, body.id);
   }
 }

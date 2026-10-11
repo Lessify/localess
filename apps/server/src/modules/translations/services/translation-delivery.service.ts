@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
-import type { SpaceRow } from '../../../infra/http/space-access.js';
+import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
 import { type TranslationSnapshotEntity, TranslationSnapshotsRepository } from '../repositories/translation-snapshots.repository.js';
 import { TranslationsRepository } from '../repositories/translations.repository.js';

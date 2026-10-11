@@ -6,7 +6,8 @@ import { isUuid, newUuid } from '../../infra/database/id.js';
 import { assets } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
+import { requireSpace } from '../../shared/queries/space.query.js';
+import { bumpContentVersion } from '../../shared/data-rules/content-version.js';
 import { AssetMetadataService } from './asset-metadata.service.js';
 
 export type AssetRow = typeof assets.$inferSelect;

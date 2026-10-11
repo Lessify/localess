@@ -27,9 +27,9 @@ The `cv` value is:
 - Translation: the `built_at` of the map served (`translation_snapshots`), in epoch milliseconds, separately per stage
   (draft / published) and locale. See [Translations](#translation-cv-the-snapshots-built_at).
 
-Each content bump sets the version to `greatest(current + 1, now in epoch milliseconds)` (`nextVersion()` in `apps/server/src/infra/http/space-access.ts`), so values are 13-digit numbers that only ever grow, even across a **database restore**: a plain counter would go back with the backup and reuse `cv` numbers that browsers and CDNs still cache with the discarded content for 7 days. (This relies on the server clock moving forward, as the Firebase-era storage `generation` did.)
+Each content bump sets the version to `greatest(current + 1, now in epoch milliseconds)` (`nextVersion()` in `apps/server/src/shared/data-rules/content-version.ts`), so values are 13-digit numbers that only ever grow, even across a **database restore**: a plain counter would go back with the backup and reuse `cv` numbers that browsers and CDNs still cache with the discarded content for 7 days. (This relies on the server clock moving forward, as the Firebase-era storage `generation` did.)
 
-The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpContentVersion()` in `apps/server/src/infra/http/space-access.ts`):
+The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpContentVersion()` in `apps/server/src/shared/data-rules/content-version.ts`):
 
 - `content_version` — every content create/update/move/delete/publish/unpublish, every schema write (drafts are rendered through schemas), asset updates and deletes, content/schema/asset imports, and `POST /api/v1/.../schemas` (schema push).
 
@@ -213,6 +213,6 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
 - `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth per request
 - `apps/server/src/modules/assets/asset-delivery.service.ts` — asset streaming, Range, rendition cache
-- `apps/server/src/infra/http/space-access.ts` — `bumpContentVersion()`
+- `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
 - `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build
 - `apps/server/src/shared/data-rules/translation-drafts.ts` — the translations lock, dropping the drafts (every module that writes translations or a space's locales)

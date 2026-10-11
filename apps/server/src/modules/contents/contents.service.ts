@@ -10,7 +10,8 @@ import { EventsService } from '../../infra/events/events.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
 import { updatedByOf } from '../../shared/transformers/updated-by.transformer.js';
 import { WebhookDispatcher } from '../../shared/services/webhook-dispatcher.service.js';
-import { bumpContentVersion, requireSpace } from '../../infra/http/space-access.js';
+import { requireSpace } from '../../shared/queries/space.query.js';
+import { bumpContentVersion } from '../../shared/data-rules/content-version.js';
 
 export type ContentRow = typeof contents.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
