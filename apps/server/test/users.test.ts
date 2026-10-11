@@ -222,4 +222,47 @@ describe('user management', () => {
       expect((await call(adminCookie, 'GET', `/api/app/users/${victim.id}`)).statusCode).toBe(404);
     });
   });
+
+  // Last: these change who is an admin.
+  describe('the last active admin', () => {
+    const LAST_ADMIN = { message: 'At least one active admin must remain', statusCode: 409 };
+    const role = async (id: string) => (await usersService.getById(id)).role;
+
+    // Earlier cases invited other admins: `admin` becomes the only one.
+    beforeAll(async () => {
+      for (const user of await usersService.list()) {
+        if (user.role === 'ADMIN' && user.id !== ids.admin) await usersService.updateAccess(user.id, { role: null });
+      }
+    });
+
+    it('cannot remove their own role or delete themselves', async () => {
+      const demoted = await call(adminCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: 'CUSTOM', permissions: [] });
+      expect(demoted.statusCode).toBe(409);
+      expect(demoted.json()).toMatchObject(LAST_ADMIN);
+      expect((await call(adminCookie, 'DELETE', `/api/app/users/${ids.admin}`)).statusCode).toBe(409);
+      expect(await role(ids.admin)).toBe('ADMIN');
+    });
+
+    it('counts only enabled admins', async () => {
+      const second = await usersService.create({ email: 'second-admin@example.com', password: 'secret1', role: 'ADMIN' });
+      expect((await call(adminCookie, 'PATCH', `/api/app/users/${second.id}/status`, { disabled: true })).statusCode).toBe(200);
+      expect((await call(adminCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: null })).statusCode).toBe(409);
+
+      expect((await call(adminCookie, 'PATCH', `/api/app/users/${second.id}/status`, { disabled: false })).statusCode).toBe(200);
+      const secondCookie = await login(t, 'second-admin@example.com', 'secret1');
+      expect((await call(secondCookie, 'PATCH', `/api/app/users/${second.id}`, { role: null })).statusCode).toBe(200);
+      expect(await role(second.id)).toBeNull();
+    });
+
+    it('survives two admins demoting each other at the same time', async () => {
+      const other = await usersService.create({ email: 'other-admin@example.com', password: 'secret1', role: 'ADMIN' });
+      const otherCookie = await login(t, 'other-admin@example.com', 'secret1');
+      const answers = await Promise.all([
+        call(adminCookie, 'PATCH', `/api/app/users/${other.id}`, { role: null }),
+        call(otherCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: null }),
+      ]);
+      expect(answers.map(it => it.statusCode).sort()).toEqual([200, 409]);
+      expect([await role(ids.admin), await role(other.id)].filter(it => it === 'ADMIN')).toHaveLength(1);
+    });
+  });
 });

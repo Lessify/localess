@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -202,7 +203,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
           this.notificationService.success('User has been updated.');
         },
         error: error => {
-          this.notificationService.error('User can not be updated.');
+          this.notifyError('User can not be updated.', error);
           console.error(error);
         },
       });
@@ -227,8 +228,8 @@ export class UsersComponent implements OnInit, AfterViewInit {
         next: () => {
           this.notificationService.success(`User '${element.email}' has been deleted.`);
         },
-        error: () => {
-          this.notificationService.error(`User '${element.email}' can not be deleted.`);
+        error: error => {
+          this.notifyError(`User '${element.email}' can not be deleted.`, error);
         },
       });
   }
@@ -264,8 +265,8 @@ export class UsersComponent implements OnInit, AfterViewInit {
             : `User '${element.email}' has been enabled.`,
         );
       },
-      error: () => {
-        this.notificationService.error(`User '${element.email}' can not be ${disabled ? 'disabled' : 'enabled'}.`);
+      error: error => {
+        this.notifyError(`User '${element.email}' can not be ${disabled ? 'disabled' : 'enabled'}.`, error);
       },
     });
   }
@@ -282,5 +283,14 @@ export class UsersComponent implements OnInit, AfterViewInit {
           this.notificationService.error(`Password reset link for '${element.email}' can not be created.`);
         },
       });
+  }
+
+  /** A 409 is the server refusing the change (e.g. the last active admin): its message says why. */
+  private notifyError(message: string, error: unknown): void {
+    if (error instanceof HttpErrorResponse && error.status === 409 && typeof error.error?.message === 'string') {
+      this.notificationService.error(message, { description: error.error.message });
+    } else {
+      this.notificationService.error(message);
+    }
   }
 }

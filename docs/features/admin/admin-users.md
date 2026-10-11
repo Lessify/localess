@@ -53,6 +53,8 @@ Form fields: `role`, `permissions[]`, `lock`
 
 Both dialogs render `permissions[]` as grouped checkboxes rather than a plain multiselect: permissions are organized into categories via `USER_PERMISSION_GROUPS` (`user-permissions.ts`), with `isPermissionSelected()` / `togglePermission()` toggling individual entries into the underlying `permissions` form control (in both `user-dialog.component.ts` and `user-invite-dialog.component.ts`).
 
+**The last active admin stays.** At least one user with the Admin role who is not disabled always remains: removing the role from the last one (their own included), disabling them or deleting them is refused with 409 *At least one active admin must remain*, which the list shows under the error toast. Disabled admins don't count. The server checks this with the active admins' rows locked (`UsersRepository`), so two admins removing each other at once can't both succeed.
+
 **Limits for non-admin user managers.** The users list shows the actions menu only for users the signed-in user may manage (`canManage()`). Otherwise the actions button is disabled, with the tooltip "Only an admin can manage this user." For non-admin callers, both dialogs hide the **Admin** role and disable permissions the caller doesn't hold (`canGrantAdmin`, `canGrantPermission()`). All three use the helpers in `user-management.ts`, which call the same `canGrant` / `canManageUser` functions the server enforces (`packages/shared/src/permissions.ts`, enforced in `apps/server/src/modules/users/services/users.service.ts`). See [Who Can Manage Users](../../frontend-permissions.md#who-can-manage-users).
 
 > See [User Roles & Permissions](../../frontend-permissions.md) for the full `UserPermission` enum and how role and permissions are stored and checked.

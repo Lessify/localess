@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -133,6 +134,36 @@ describe('UsersComponent', () => {
     component.openEditDialog(user({ id: 'u1' }));
 
     expect(error).toHaveBeenCalledWith('User can not be updated.');
+  });
+
+  describe('a refusal of the server (409)', () => {
+    const lastAdmin = () =>
+      throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'At least one active admin must remain', status: 409 } }));
+    const reason = { description: 'At least one active admin must remain' };
+
+    it('is shown on a failed update', () => {
+      const { component, open, update, error } = setup();
+      update.mockReturnValue(lastAdmin());
+      open.mockReturnValue({ closed$: of({ role: null }) });
+      component.openEditDialog(user());
+      expect(error).toHaveBeenCalledWith('User can not be updated.', reason);
+    });
+
+    it('is shown on a failed delete', () => {
+      const { component, open, deleteUser, error } = setup();
+      deleteUser.mockReturnValue(lastAdmin());
+      open.mockReturnValue({ closed$: of(true) });
+      component.openDeleteDialog(user());
+      expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be deleted.", reason);
+    });
+
+    it('is shown on a failed disable', () => {
+      const { component, open, setDisabled, error } = setup();
+      setDisabled.mockReturnValue(lastAdmin());
+      open.mockReturnValue({ closed$: of(true) });
+      component.toggleDisabled(user());
+      expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be disabled.", reason);
+    });
   });
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
