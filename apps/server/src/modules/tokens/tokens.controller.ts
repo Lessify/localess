@@ -8,7 +8,7 @@ import { DATABASE, type Database } from '../../infra/database/database.module.js
 import { newTokenSecret, newUuid } from '../../infra/database/id.js';
 import { tokens } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
-import { toDto } from '../../infra/http/dto.js';
+import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { requireSpace } from '../../infra/http/space-access.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 

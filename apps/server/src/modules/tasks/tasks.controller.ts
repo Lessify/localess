@@ -29,7 +29,7 @@ import { EventsService } from '../../infra/events/events.service.js';
 import { buildContentDisposition } from '../../infra/http/content-disposition.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { toPrincipal, type UserRow } from '../../auth/users/users.service.js';
-import { toDto } from '../../infra/http/dto.js';
+import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { requireSpace } from '../../infra/http/space-access.js';
 

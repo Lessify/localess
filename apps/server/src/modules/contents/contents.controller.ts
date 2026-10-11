@@ -5,7 +5,7 @@ import { RequirePermission } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import type { UserRow } from '../../auth/users/users.service.js';
-import { toDto } from '../../infra/http/dto.js';
+import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { ContentRow, ContentsService } from './contents.service.js';
 

@@ -6,7 +6,7 @@ import { isUuid, newUuid } from '../../infra/database/id.js';
 import { assets, contents, keepUpdatedAt, locales, schemas, spaceEnvironments, spaceLocales, spaces, translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { toDto } from '../../infra/http/dto.js';
+import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { requireSpace, selectSpaces, SpaceRow } from '../../infra/http/space-access.js';
 import { dropTranslationDrafts, dropTranslationLocale } from '../../shared/data-rules/translation-drafts.js';
 

@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { toDto } from '../../infra/http/dto.js';
+import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { AssetRow, AssetsService } from './assets.service.js';
 

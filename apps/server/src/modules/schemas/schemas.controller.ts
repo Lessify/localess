@@ -4,7 +4,7 @@ import { SchemaType, UserPermission } from '@localess/shared';
 import { zSchemaTemplateSchema } from '@localess/shared/zod';
 import { RequirePermission } from '../../auth/decorators.js';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { toDto } from '../../infra/http/dto.js';
+import { toDto } from '../../shared/transformers/dto.transformer.js';
 import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
 import { zLabels } from '../../infra/http/zod.js';
 import { SchemaRow, SchemasService } from './schemas.service.js';
