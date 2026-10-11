@@ -27,7 +27,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
-- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `ContentDeliveryService.resolveAssets()` (`apps/server/src/modules/contents/content-delivery.service.ts`). References are asset UUIDs (an import from Firebase rewrites them).
+- **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `ContentDeliveryService.resolveAssets()` (`apps/server/src/modules/contents/services/content-delivery.service.ts`). References are asset UUIDs (an import from Firebase rewrites them).
 
 Space, document and asset ids are UUIDv7s; `GET /links` is keyed by UUID.
 
@@ -251,13 +251,13 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 
 | File                                                     | Purpose                                                                                   |
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `apps/server/src/modules/contents/contents.public.controller.ts`         | CDN — links, documents by slug and id, `resolve*` options                                  |
+| `apps/server/src/modules/contents/controllers/contents.public.controller.ts`         | CDN — links, documents by slug and id, `resolve*` options                                  |
 | `apps/server/src/modules/translations/translations.public.controller.ts` | CDN translations, DEV_TOOLS stored values, MANAGE translation push                        |
 | `apps/server/src/modules/assets/assets.public.controller.ts`             | CDN — asset delivery (transformed, original, download)                                    |
 | `apps/server/src/modules/schemas/controllers/schemas.public.controller.ts` | DEV_TOOLS OpenAPI and schema export, MANAGE schema push                                   |
 | `apps/server/src/modules/spaces/spaces.public.controller.ts`             | DEV_TOOLS space metadata                                                                  |
 | `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`validIdParams`, `cv` redirects, `isDraft`), responses, Cache-Control, ID checks |
-| `apps/server/src/modules/contents/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |
+| `apps/server/src/modules/contents/services/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |
 | `apps/server/src/modules/translations/services/translation-delivery.service.ts` | Published and draft translation maps                                                      |
 | `apps/server/src/modules/assets/`                                        | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing   |
 | `apps/server/src/auth/api-tokens/token-auth.service.ts`            | Query-param and header token auth, 5-min token cache invalidated by change events         |

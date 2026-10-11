@@ -135,7 +135,7 @@ Resolution is done at request time with batched `where id = any(...)` queries: l
 `links`/`references`/`assets` exist on the **stored** document but are never returned to a consumer:
 
 - **Top level** — the CDN handlers destructure them out and replace them with resolved maps, or omit the keys entirely when the corresponding `resolve*` flag is absent.
-- **Inside a `references` map** — `stripStorageIds()` (`apps/server/src/modules/contents/strip-storage-ids.ts`) removes them, so a resolved reference carries only its metadata, `locale` and `data`.
+- **Inside a `references` map** — `stripStorageIds()` (`apps/server/src/modules/contents/utils/strip-storage-ids.ts`) removes them, so a resolved reference carries only its metadata, `locale` and `data`.
 
 They are redundant on the wire: each one is a denormalized index of edges that already exist in `data`, since a `REFERENCE` field value is `{ kind: 'REFERENCE', uri }`. A consumer follows a further reference by reading that `uri` and looking it up in the same map — which is also why reference resolution can stay one level deep without losing information.
 
@@ -145,11 +145,12 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 
 ## Implementation Files
 
-- `apps/server/src/modules/contents/contents.service.ts` — content `publish`/`unpublish`, `write()` (version bump, change events, webhooks after commit)
+- `apps/server/src/modules/contents/services/contents.service.ts` — content `publish`/`unpublish`, webhooks after commit
+- `apps/server/src/modules/contents/repositories/contents.repository.ts` — the writes and their transaction: `write()` (version bump, change events), the publish snapshots
 - `apps/server/src/modules/translations/services/translations.service.ts` — translation `publish` and the app's writes; `repositories/translations.repository.ts` — the write transaction (row change, draft snapshots dropped, change events)
 - `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
-- `apps/server/src/modules/contents/content-extract.ts` — locale extraction (`buildDocumentStorage`)
-- `apps/server/src/modules/contents/content-delivery.service.ts` — published/draft document reads, link/reference/asset resolution
+- `apps/server/src/modules/contents/utils/content-extract.ts` — locale extraction (`buildDocumentStorage`)
+- `apps/server/src/modules/contents/services/content-delivery.service.ts` — published/draft document reads, link/reference/asset resolution (queries in `repositories/content-delivery.repository.ts`)
 - `apps/server/src/modules/translations/services/translation-delivery.service.ts` — published/draft translation reads and the CLI push; `buildTranslationMap` in `utils/translation.utils.ts`
 - `apps/server/src/modules/tasks/task-runner.service.ts` — imports (bump versions at the end of their transaction)
 - `apps/server/src/modules/translations/translations.public.controller.ts` — CLI translation push endpoint

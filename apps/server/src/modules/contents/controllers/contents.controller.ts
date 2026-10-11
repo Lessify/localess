@@ -1,13 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
-import { RequirePermission } from '../../auth/decorators.js';
-import { CurrentUser } from '../../auth/request-context.js';
-import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import type { UserRow } from '../../auth/users/users.service.js';
-import { toDto } from '../../shared/transformers/dto.transformer.js';
-import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
-import { ContentRow, ContentsService } from './contents.service.js';
+import { RequirePermission } from '../../../auth/decorators.js';
+import { CurrentUser } from '../../../auth/request-context.js';
+import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import type { UserRow } from '../../../auth/users/users.service.js';
+import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import { ContentsService } from '../services/contents.service.js';
 
 /** No `/` (it separates path segments) and nothing that needs URL encoding. */
 const slug = z
@@ -38,8 +37,6 @@ const listSchema = z.object({
   limit: z.coerce.number().int().min(1).max(1000).optional(),
 });
 
-const dto = (row: ContentRow) => toDto(row);
-
 /** Contents (was direct `spaces/{s}/contents` access plus the `content-publish`/`-unpublish` callables). */
 @Controller('api/app/spaces/:spaceId/contents')
 export class ContentsController {
@@ -49,7 +46,7 @@ export class ContentsController {
   @Get()
   @RequirePermission(UserPermission.CONTENT_READ)
   async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
-    return (await this.contents.list(spaceId, query)).map(dto);
+    return this.contents.list(spaceId, query);
   }
 
   @Get('count')
@@ -61,7 +58,7 @@ export class ContentsController {
   @Get(':id')
   @RequirePermission(UserPermission.CONTENT_READ)
   async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return dto(await this.contents.get(spaceId, id));
+    return this.contents.get(spaceId, id);
   }
 
   @Post()
@@ -71,13 +68,13 @@ export class ContentsController {
     @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>,
     @CurrentUser() user: UserRow,
   ) {
-    return dto(await this.contents.create(spaceId, body, user));
+    return this.contents.create(spaceId, body, user);
   }
 
   @Post(':id/clone')
   @RequirePermission(UserPermission.CONTENT_CREATE)
   async clone(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow) {
-    return dto(await this.contents.clone(spaceId, id, user));
+    return this.contents.clone(spaceId, id, user);
   }
 
   /** Rename and/or move (`parentSlug`; '' is the root). */
@@ -89,7 +86,7 @@ export class ContentsController {
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
     @CurrentUser() user: UserRow,
   ) {
-    return dto(await this.contents.update(spaceId, id, body, user));
+    return this.contents.update(spaceId, id, body, user);
   }
 
   @Put(':id/data')
@@ -100,7 +97,7 @@ export class ContentsController {
     @Body(new ZodValidationPipe(dataSchema)) body: z.infer<typeof dataSchema>,
     @CurrentUser() user: UserRow,
   ) {
-    return dto(await this.contents.updateData(spaceId, id, body, user));
+    return this.contents.updateData(spaceId, id, body, user);
   }
 
   @Delete(':id')

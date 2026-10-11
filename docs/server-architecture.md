@@ -92,7 +92,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 |---|---|---|
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher` |
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository` |
-| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf` |
+| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
 | | | `content-version.ts`: `bumpContentVersion` (every write that changes what the content API serves: contents, schemas, assets, the import tasks) |
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
@@ -114,8 +114,8 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 
 | Module | Layered |
 |---|---|
-| translations, settings, tokens, webhooks, plugins, spaces, schemas | ✅ |
-| contents, assets, tasks, users (in `auth/`), firebase-import | not yet |
+| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents | ✅ |
+| assets, tasks, users (in `auth/`), firebase-import | not yet |
 
 Until a module is moved it may still query in its services, but it already follows the data rules and imports no
 moved module.

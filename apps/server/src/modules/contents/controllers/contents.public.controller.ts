@@ -1,11 +1,10 @@
-import { Controller, Get, Inject, Req, Res } from '@nestjs/common';
-import { DATABASE, type Database } from '../../infra/database/database.module.js';
+import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { ContentDocumentApi, ContentKind, TokenPermission } from '@localess/shared';
-import { ApiToken, TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
-import { Public } from '../../auth/decorators.js';
-import { findSpace, SpaceRow } from '../../shared/queries/space.query.js';
-import { publicCache, TEN_MINUTES } from '../../infra/http/v1/cache-control.js';
+import { ApiToken, TokenAuthService } from '../../../auth/api-tokens/token-auth.service.js';
+import { Public } from '../../../auth/decorators.js';
+import type { SpaceRow } from '../../../shared/queries/space.query.js';
+import { publicCache, TEN_MINUTES } from '../../../infra/http/v1/cache-control.js';
 import {
   identifySpaceLocale,
   needsRedirect,
@@ -15,9 +14,9 @@ import {
   requireV1Space,
   sendJson,
   validIdParams,
-} from '../../infra/http/v1/v1-request.js';
-import { q, sendV1Error } from '../../infra/http/v1/v1-response.js';
-import { ContentDeliveryService } from './content-delivery.service.js';
+} from '../../../infra/http/v1/v1-request.js';
+import { q, sendV1Error } from '../../../infra/http/v1/v1-response.js';
+import { ContentDeliveryService } from '../services/content-delivery.service.js';
 
 const TEN_MINUTE_CACHE = publicCache(TEN_MINUTES);
 const FILE_NOT_FOUND = 'File not found, on path. Please Publish again. The content is cached for 10 minutes.';
@@ -31,7 +30,6 @@ const FILE_NOT_FOUND = 'File not found, on path. Please Publish again. The conte
 @Controller('api/v1/spaces/:spaceId')
 export class ContentsPublicController {
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
     private readonly delivery: ContentDeliveryService,
     private readonly tokens: TokenAuthService,
   ) {}
@@ -51,7 +49,7 @@ export class ContentsPublicController {
     );
     if (!token) return;
 
-    const space = await findSpace(this.db, spaceId);
+    const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const validKind = kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER ? kind : undefined;
     if (needsRedirect(cv, space.contentVersion)) {
@@ -75,7 +73,7 @@ export class ContentsPublicController {
     const { spaceId } = params;
     const fullSlug = params['*'] ?? '';
 
-    const space = await findSpace(this.db, spaceId);
+    const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const contentId = await this.delivery.findContentIdByFullSlug(spaceId, fullSlug);
     if (!contentId) {
@@ -94,7 +92,7 @@ export class ContentsPublicController {
     if (!token) return;
     const { spaceId, contentId } = params;
 
-    const space = await findSpace(this.db, spaceId);
+    const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     await this.sendContent(request, reply, token, space, contentId, `/api/v1/spaces/${spaceId}/contents/${q(contentId)}`);
   }

@@ -177,9 +177,9 @@ Logs are **not capped on write** — every delivery adds a row and nothing prune
 
 | File                                                                         | Event                   |
 |------------------------------------------------------------------------------|-------------------------|
-| `apps/server/src/modules/contents/contents.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
-| `apps/server/src/modules/contents/contents.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
-| `apps/server/src/modules/contents/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
+| `apps/server/src/modules/contents/services/contents.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
+| `apps/server/src/modules/contents/services/contents.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
+| `apps/server/src/modules/contents/services/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
 | `apps/server/src/modules/translations/services/translations.service.ts` — `publish()` | `TRANSLATION_PUBLISHED` |
 | `apps/server/src/modules/translations/services/translations.service.ts` — writes   | `TRANSLATION_CHANGED`   |
 | `apps/server/src/modules/tasks/task-runner.service.ts` — content / translation imports    | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |

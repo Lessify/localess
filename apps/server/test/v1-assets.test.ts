@@ -323,7 +323,7 @@ describe('v1 asset routes', () => {
         extension: '.jpg',
         metadata: { width: 400, height: 300, format: 'jpeg' },
       });
-      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      const { ContentDeliveryService } = await import('../src/modules/contents/services/content-delivery.service.js');
       const resolved = await t.app.get(ContentDeliveryService).resolveAssets(S1, [id, 'missing']);
       expect(resolved).toEqual({
         [id]: {
@@ -342,14 +342,14 @@ describe('v1 asset routes', () => {
     it('skips folders', async () => {
       const folder = newUuid();
       await t.db.insert(assets).values({ id: folder, spaceId: S1, kind: 'FOLDER', name: 'Folder' });
-      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      const { ContentDeliveryService } = await import('../src/modules/contents/services/content-delivery.service.js');
       expect(await t.app.get(ContentDeliveryService).resolveAssets(S1, [folder])).toEqual({});
     });
 
     it('resolves asset references by UUID only (the import rewrites Firestore ids)', async () => {
       const { id } = await given({ bytes: Buffer.from('x'), type: 'text/plain', extension: '.txt' });
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, id));
-      const { ContentDeliveryService } = await import('../src/modules/contents/content-delivery.service.js');
+      const { ContentDeliveryService } = await import('../src/modules/contents/services/content-delivery.service.js');
       const resolved = await t.app.get(ContentDeliveryService).resolveAssets(S1, ['FirestoreAsset000001', id]);
       expect(Object.keys(resolved)).toEqual([id]);
     });
