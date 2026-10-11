@@ -27,4 +27,12 @@ export class FirebaseImportsDialogComponent implements OnInit {
   select(run: FirebaseImport | undefined): void {
     this.selectedRun.set(run);
   }
+
+  /** A failed run is not resumed: its space (if it got that far) is deleted, then the space imported again. */
+  failureHint(run: FirebaseImport): string | undefined {
+    if (run.status !== 'FAILED') return undefined;
+    return run.spaceId
+      ? 'The space it created is kept as it is: delete it in Admin → Spaces, then import again.'
+      : 'Nothing was created: start the import again.';
+  }
 }

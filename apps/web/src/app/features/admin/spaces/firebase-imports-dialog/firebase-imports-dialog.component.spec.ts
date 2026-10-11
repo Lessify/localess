@@ -27,4 +27,13 @@ describe('FirebaseImportsDialogComponent', () => {
     component.select(runs[1]);
     expect(component.selectedRun()?.id).toBe('r1');
   });
+
+  it('tells what to do after a failed run', () => {
+    const component = setup();
+    expect(component.failureHint({ status: 'FAILED', spaceId: 's1' } as FirebaseImport)).toBe(
+      'The space it created is kept as it is: delete it in Admin → Spaces, then import again.',
+    );
+    expect(component.failureHint({ status: 'FAILED' } as FirebaseImport)).toBe('Nothing was created: start the import again.');
+    expect(component.failureHint({ status: 'FINISHED', spaceId: 's1' } as FirebaseImport)).toBeUndefined();
+  });
 });

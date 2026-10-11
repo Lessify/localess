@@ -245,6 +245,13 @@ describe('SpacesComponent', () => {
     expect(component.importLabel({} as Space)).toBeUndefined();
   });
 
+  it('tells what to do with a space whose import failed', () => {
+    const { component } = setup();
+    expect(component.importHint({ importStatus: 'FAILED' } as Space)).toBe('Delete the space and import it again');
+    expect(component.importHint({ importStatus: 'IMPORTING' } as Space)).toBe('It opens once the import has finished');
+    expect(component.importHint({} as Space)).toBeUndefined();
+  });
+
   it('openEditDialog() updates the space and notifies success when confirmed', () => {
     const { component, open, update, success } = setup();
     open.mockReturnValue(closesWith({ name: 'Renamed' }));

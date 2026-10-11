@@ -160,6 +160,13 @@ export class SpacesComponent implements OnInit, AfterViewInit {
     return undefined;
   }
 
+  /** What to do about it: a failed import is not retried into its space. */
+  importHint(space: Space): string | undefined {
+    if (space.importStatus === 'IMPORTING') return 'It opens once the import has finished';
+    if (space.importStatus === 'FAILED') return 'Delete the space and import it again';
+    return undefined;
+  }
+
   openAddDialog(): void {
     this.dialog
       .open<SpaceCreateDialogResult>(SpaceCreateDialogComponent, {

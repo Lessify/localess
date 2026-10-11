@@ -176,7 +176,7 @@ through D6; otherwise they keep pointing at the Firebase environment.
      error of a failed stage. Polls `GET /:id` every 2 s while `RUNNING`.
 - **Imports** lists past runs (origin, source space, new space, status, started by, times); a row opens the same
   progress view.
-- Spaces being imported show *Importing*; a failed one shows *Import failed* and can be deleted from the list.
+- Spaces being imported show *Importing*; a failed one shows *Import failed* and "Delete the space and import it again", and can be deleted from the list. A failed run in **Imports** says the same (or "start the import again" when it failed before creating the space); the public API's `503` for a failed space too.
 - Space settings show "Imported from Firebase: `<legacy id>`" for imported spaces.
 
 ## Changes to the current branch

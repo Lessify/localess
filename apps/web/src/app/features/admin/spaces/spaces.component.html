@@ -24,7 +24,12 @@
         <td llCell *llCellDef="let element">
           {{ element.name }}
           @if (importLabel(element); as label) {
-            <span hlmBadge [variant]="element.importStatus === 'FAILED' ? 'destructive' : 'secondary'">{{ label }}</span>
+            <span hlmBadge [variant]="element.importStatus === 'FAILED' ? 'destructive' : 'secondary'" [hlmTooltip]="importHint(element)">{{
+              label
+            }}</span>
+            @if (element.importStatus === 'FAILED') {
+              <span class="text-muted-foreground block text-xs">{{ importHint(element) }}</span>
+            }
           }
         </td>
       </ng-container>

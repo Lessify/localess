@@ -50,7 +50,7 @@ const ASSET_ROUTE = /^\/api\/v1\/spaces\/[^/]+\/assets\//;
  */
 function sendImportInProgress(reply: FastifyReply, importStatus: SpaceImportStatus): void {
   void reply.header('retry-after', '60');
-  sendV1Error(reply, 503, 'unavailable', importStatus === 'FAILED' ? 'The import of this space failed' : 'This space is being imported', {
+  sendV1Error(reply, 503, 'unavailable', importStatus === 'FAILED' ? 'The import of this space failed: delete the space and import it again' : 'This space is being imported', {
     cacheControl: 'no-store',
   });
 }

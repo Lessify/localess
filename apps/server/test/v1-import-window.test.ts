@@ -37,7 +37,7 @@ describe('v1 API while a space is being imported from Firebase', () => {
 
   for (const [status, message] of [
     ['RUNNING', 'This space is being imported'],
-    ['FAILED', 'The import of this space failed'],
+    ['FAILED', 'The import of this space failed: delete the space and import it again'],
   ] as const) {
     it(`answers 503 (no-store, Retry-After) on every space route while the import is ${status}`, async () => {
       await setSpace({ legacyId: 'FirestoreSpace', status });

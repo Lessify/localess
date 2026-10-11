@@ -21,6 +21,8 @@ Spaces move one at a time from a running Firebase-era Localess environment, from
    an old space id this install doesn't know yet answers `404` with `Cache-Control: no-cache`, and every
    `/api/v1/spaces/…` request of a space that is importing (or whose import failed) answers `503` with
    `Retry-After: 60` and `Cache-Control: no-store`, until the import has finished.
+   A failed import is not resumed: delete the space it created (Admin → Spaces, marked *Import failed*), which also
+   removes the run, then import the space again.
 6. Revoke the migration token in the Firebase environment when you are done.
 
 Not imported: users, global settings, published snapshots (publish again), webhook logs, tasks.

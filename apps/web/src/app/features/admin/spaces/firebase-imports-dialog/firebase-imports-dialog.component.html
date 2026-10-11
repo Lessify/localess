@@ -7,6 +7,9 @@
   @if (run.error; as error) {
     <p class="text-destructive text-sm">Failed at {{ error.stage }}: {{ error.message }}</p>
   }
+  @if (failureHint(run); as hint) {
+    <p class="text-muted-foreground text-sm">{{ hint }}</p>
+  }
   <ll-firebase-import-progress [run]="run" />
 } @else {
   @if (runs().length) {
