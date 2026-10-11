@@ -45,7 +45,7 @@ space_locales  (space_id → spaces CASCADE, locale_id → locales RESTRICT,
                 position int, created_at, PK (space_id, locale_id))
 ```
 
-- `locales` is pure database data: seeded and changed only by migrations (the seed is the end of `0000_init.sql`). The App API only reads it
+- `locales` is pure database data: seeded and changed only by migrations (the seed is `drizzle/0001_locales.sql`, applied on a new database's first boot). The App API only reads it
   (`GET /api/app/locales`); nothing creates, edits or deletes a locale through the API. It replaces `AVAILABLE_LOCALES`
   in `@localess/shared` (the Google/DeepL support lists stay there: they describe the providers, not the list).
 - A space adds a locale by id; an id not in `locales` is refused. `position` orders a space's locales (users can

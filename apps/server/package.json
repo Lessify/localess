@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
+    "db:regenerate": "node scripts/db-regenerate.mjs",
     "cli": "node dist/cli.js"
   },
   "dependencies": {

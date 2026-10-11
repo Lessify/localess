@@ -74,7 +74,7 @@ describe('migrateDatabase', () => {
     }
     expect(await tables()).toEqual(EXPECTED_TABLES);
     const applied = await pool.query('select count(*)::int as n from drizzle.__drizzle_migrations');
-    expect(applied.rows[0].n).toBe(1);
+    expect(applied.rows[0].n).toBe(2);
   });
 
   it('seeds the locales', async () => {
