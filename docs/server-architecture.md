@@ -3,8 +3,7 @@
 > Related: [apps/server/README.md](../apps/server/README.md) · [Database structure](roadmap/database-structure.md)
 
 How server code is organised: independent feature modules (`apps/server/src/modules/<feature>/`), one folder per layer
-inside each, and a `shared/` module for what every module uses. Every new or changed module follows it; modules not
-yet moved are listed under [Status](#status).
+inside each, and a `shared/` module for what every module uses. Every module follows it, and every new one must.
 
 ```
 src/
@@ -114,13 +113,13 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher`, `AssetMetadataService` (size, duration, orientation, embedded alt of a stored file: assets, the asset import and metadata tasks, the Firebase import) |
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository` |
 | `shared/models/` | Entity types that auth and every module name, without importing a module | `user.ts`: `UserRow` (the signed-in user, `CurrentUser`) |
-| `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `contentToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks) |
+| `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `contentToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks), `toFirebaseImport` (firebase-import.transformer.ts) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
 | | | `content-version.ts`: `bumpContentVersion` (every write that changes what the content API serves: contents, schemas, assets, the import tasks) |
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
 | | | `user.query.ts`: `findUserLogins` (how each user signs in: password, OAuth providers), for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction |
-| `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports |
+| `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `events.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |
 | `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client) |
 | | | `schema.utils.ts` (`planSchemaPush`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
 | | | `asset-path.utils.ts` (`folderPath`): assets and the asset import task; `embedded-alt.ts`, `media-duration.ts`, `media-orientation.ts`, `media-pages.ts` (`isAnimatedPages`, also asset delivery): `AssetMetadataService` |
@@ -138,8 +137,26 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 
 | Module | Layered |
 |---|---|
-| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets, tasks, users (and `auth/`) | ✅ |
-| firebase-import | not yet |
+| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets, tasks, users, firebase-import (and `auth/`) | ✅ |
 
-Until a module is moved it may still query in its services, but it already follows the data rules and imports no
-moved module.
+Every module is layered.
+
+**firebase-import is deliberately self-contained.** It writes every table of a space (spaces, space locales and
+environments, tokens, webhooks, translations, schemas, assets and their files, contents, its `firebase_imports` runs)
+with its own repositories, written for the import (bulk inserts, the space created with its run link in one
+transaction), and borrows no other module's repository or service. It still follows the shared data rules (the
+content `cv` bump when the import finished) and uses the shared `AssetMetadataService` for imported files:
+
+```
+modules/firebase-import/
+  firebase-import.module.ts
+  controllers/   firebase-import.controller.ts
+  services/      firebase-import.service.ts  space-import.service.ts  token-import.service.ts  webhook-import.service.ts
+                 translation-import.service.ts  schema-import.service.ts  asset-import.service.ts
+                 content-import.service.ts  reference-rewrite.service.ts
+  workers/       firebase-import.runner.ts
+  repositories/  firebase-imports.repository.ts  space-import.repository.ts  token-import.repository.ts
+                 webhook-import.repository.ts  translation-import.repository.ts  schema-import.repository.ts
+                 asset-import.repository.ts  content-import.repository.ts
+  utils/         firebase-client.ts  firebase-docs.ts  rewrite-references.ts  firebase-import.utils.ts
+```

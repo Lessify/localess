@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { EventsController } from './http/events.controller.js';
 import { WebhookDeliveryRepository } from './repositories/webhook-delivery.repository.js';
 import { AssetMetadataService } from './services/asset-metadata.service.js';
 import { MailService } from './services/mail.service.js';
@@ -10,6 +11,7 @@ import { WebhookDispatcher } from './services/webhook-dispatcher.service.js';
  */
 @Global()
 @Module({
+  controllers: [EventsController],
   providers: [MailService, WebhookDispatcher, WebhookDeliveryRepository, AssetMetadataService],
   exports: [MailService, WebhookDispatcher, AssetMetadataService],
 })

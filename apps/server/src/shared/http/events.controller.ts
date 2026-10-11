@@ -2,10 +2,10 @@ import { Controller, MessageEvent, Query, Sse } from '@nestjs/common';
 import { filter, interval, map, merge, Observable } from 'rxjs';
 import { RequireAnyRole } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
-import type { UserRow } from '../../shared/models/user.js';
-import { toPrincipal } from '../../shared/transformers/user.transformer.js';
+import type { UserRow } from '../models/user.js';
+import { toPrincipal } from '../transformers/user.transformer.js';
 import { canReceive } from './event-access.js';
-import { EventsService } from './events.service.js';
+import { EventsService } from '../../infra/events/events.service.js';
 
 const HEARTBEAT_MS = 25_000;
 

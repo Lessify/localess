@@ -6,7 +6,7 @@ import { userCredentials, userIdentities, users } from '../../infra/database/sch
 import { transaction, type Transaction } from '../../infra/database/transaction.js';
 import type { UserRow } from '../../shared/models/user.js';
 import { findUserLogins } from '../../shared/queries/user.query.js';
-import type { OAuthProviderId } from '../utils/oauth-providers.js';
+import type { OAuthProviderId } from '../../infra/config/oauth-providers.js';
 
 export type CredentialEntity = typeof userCredentials.$inferSelect;
 

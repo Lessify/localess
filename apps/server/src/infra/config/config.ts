@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import type { LogLevel } from '@nestjs/common';
 import { z } from 'zod';
-import type { OAuthProviderId } from '../../auth/utils/oauth-providers.js';
+import type { OAuthProviderId } from './oauth-providers.js';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 

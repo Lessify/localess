@@ -41,14 +41,14 @@ src/
   shared/       SharedModule (global): mail, webhook delivery; transformers, data rules, shared utils
   modules/      independent features, a folder per layer inside (controllers/, services/, repositories/,
                 utils/, workers/: docs/server-architecture.md) — spaces, settings, schemas (+ OpenAPI),
-                contents, translations, assets, tokens, webhooks, tasks, plugins, users (+ me, first admin)
-                (translations is layered; the others move one by one)
-  cli/          commands, check, firebase-import/
+                contents, translations, assets, tokens, webhooks, tasks, plugins, users (+ me, first admin),
+                firebase-import
+  cli/          commands, check
 ```
 
 Domain types, permission rules and validators come from `@localess/shared` (`packages/shared`). A feature
-module imports `ApiTokensModule` when it has a public controller and `SpacesModule` when it needs
-`SpacesService.findSpace`; infrastructure modules (database, storage, events, webhooks) are global.
+module imports `ApiTokensModule` when it has a public controller and no other feature module (a space it needs
+is read with its own query); infrastructure modules (database, storage, events) and `SharedModule` are global.
 
 ## Environment
 
@@ -123,7 +123,7 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 
 | Area | Endpoints |
 |---|---|
-| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`infra/events/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
+| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`shared/http/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
 | Spaces | `/api/app/spaces` CRUD, `GET …/:id/overview` (computed on request), `POST/DELETE …/:id/locales[/:locale]`, `PUT …/:id/locales/order`, `PUT …/:id/default-locale`, `POST …/:id/environments`, `PATCH/DELETE …/:id/environments/:environmentId`, `PUT …/:id/environments/order`; `GET /api/app/locales` (read-only) |
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
 | Settings | `GET /api/app/settings`, `PATCH /api/app/settings/ui` |
@@ -154,6 +154,9 @@ IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: impor
 ## Migrating from a Firebase install
 
 Spaces are imported from a running Firebase-era environment in the admin UI, one at a time: Admin → Spaces →
-*Import from Firebase* (`src/modules/firebase-import/`, App API `/api/app/admin/firebase-import`). See
+*Import from Firebase* (`src/modules/firebase-import/`, App API `/api/app/admin/firebase-import`). The module is
+self-contained: `workers/firebase-import.runner.ts` runs the stages, one `services/*-import.service.ts` per stage
+writes through its own `repositories/*-import.repository.ts`, and `utils/` holds the migration API client and the
+reference rewrite. See
 [docs/deployment/migrate-from-firebase.md](../../docs/deployment/migrate-from-firebase.md) and the design in
 [docs/roadmap/firebase-space-import.md](../../docs/roadmap/firebase-space-import.md).
