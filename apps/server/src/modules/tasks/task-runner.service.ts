@@ -18,8 +18,8 @@ import {
   zTranslationExportArraySchema,
   zTranslationFlatExportSchema,
 } from '@localess/shared/zod';
-import { AssetMetadataService } from '../assets/asset-metadata.service.js';
-import { folderPath } from '../assets/assets.service.js';
+import { AssetMetadataService } from '../../shared/services/asset-metadata.service.js';
+import { folderPath } from '../../shared/utils/asset-path.utils.js';
 import { requireSpace } from '../../shared/queries/space.query.js';
 import { bumpContentVersion } from '../../shared/data-rules/content-version.js';
 import { dropTranslationDrafts } from '../../shared/data-rules/translation-drafts.js';

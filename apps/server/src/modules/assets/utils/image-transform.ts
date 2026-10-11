@@ -1,6 +1,6 @@
 import type { ResizeOptions, Sharp } from 'sharp';
 
-import { isFlagSet } from '../../infra/http/v1/query-flag.js';
+import { isFlagSet } from '../../../infra/http/v1/query-flag.js';
 
 export const VALID_FORMATS = ['webp', 'jpeg', 'png', 'avif'] as const;
 export type ImageFormat = (typeof VALID_FORMATS)[number];
@@ -169,19 +169,6 @@ export const MAX_ANIMATED_PIXELS = 12_000_000;
  */
 export function decodedAnimationPixels(width?: number, frameHeight?: number, pages?: number): number {
   return (width ?? 0) * (frameHeight ?? 0) * (pages ?? 0);
-}
-
-/**
- * Whether sharp's reported page count means a genuine animation.
- *
- * Not `pages !== undefined`, which is what this used to be and is wrong: a **static GIF reports
- * `pages: 1`**, so every still GIF was treated as animated and passed through untransformed —
- * `?w=400` on one silently did nothing. Only a static WebP reports `undefined`.
- * @param {number} [pages] `pages` from sharp metadata
- * @return {boolean} true when the image has more than one frame
- */
-export function isAnimatedPages(pages?: number): boolean {
-  return (pages ?? 1) > 1;
 }
 
 /**

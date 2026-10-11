@@ -6,10 +6,10 @@ import { pipeline } from 'node:stream/promises';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { exiftool } from 'exiftool-vendored';
 import sharp from 'sharp';
-import { pickEmbeddedAlt } from './embedded-alt.js';
-import { normaliseDuration } from './media-duration.js';
-import { resolveOrientedDimensions, resolveRotatedDimensions } from './media-orientation.js';
-import { isAnimatedPages } from './image-transform.js';
+import { pickEmbeddedAlt } from '../utils/embedded-alt.js';
+import { normaliseDuration } from '../utils/media-duration.js';
+import { resolveOrientedDimensions, resolveRotatedDimensions } from '../utils/media-orientation.js';
+import { isAnimatedPages } from '../utils/media-pages.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 
 export interface ExtractedMetadata {

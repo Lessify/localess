@@ -15,7 +15,7 @@ import { newUuid } from '../../infra/database/id.js';
 import { assets, contents, firebaseImports, keepUpdatedAt, locales, schemas, spaceEnvironments, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { AssetMetadataService } from '../assets/asset-metadata.service.js';
+import { AssetMetadataService } from '../../shared/services/asset-metadata.service.js';
 import { FirebaseClient, type FirebaseDoc } from './firebase-client.js';
 import { knownValues, obj, parseData, str, strings, timestamps } from './firebase-docs.js';
 import { ReferenceMaps, rewriteData, rewriteIds } from './rewrite-references.js';

@@ -146,7 +146,7 @@ shared/           ← reusable UI only (`@shared/*`)
 
 ## Security Headers
 
-The server sets browser security headers on every non-API response (`apps/server/src/infra/static/static-site.ts`, an `onSend` hook skipped for `/api/**`). That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`apps/server/src/modules/assets/asset-headers.ts`). The same file gives hashed bundles `public,max-age=31536000,immutable` and `index.html` / `ngsw*` `no-cache`; `SpaFallbackFilter` serves `index.html` for unknown non-API GETs.
+The server sets browser security headers on every non-API response (`apps/server/src/infra/static/static-site.ts`, an `onSend` hook skipped for `/api/**`). That's on purpose: `/api/v1` assets must stay embeddable on customer sites, and they send their own sandbox CSP (`apps/server/src/modules/assets/utils/asset-headers.ts`). The same file gives hashed bundles `public,max-age=31536000,immutable` and `index.html` / `ngsw*` `no-cache`; `SpaFallbackFilter` serves `index.html` for unknown non-API GETs.
 
 | Header | Value |
 |---|---|

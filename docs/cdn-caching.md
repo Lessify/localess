@@ -156,7 +156,7 @@ $LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/{etagSuffix|o
 The key is the ETag suffix, i.e. the effective encode, so two spellings producing identical bytes
 share one file. Renditions are deleted with the asset. Cache writes are best-effort (a failed write
 is logged, the response still goes out). `AssetDeliveryService` in
-`apps/server/src/modules/assets/asset-delivery.service.ts` owns this.
+`apps/server/src/modules/assets/services/asset-delivery.service.ts` owns this.
 
 Passthrough routes (`/original`, `/download`) and untransformed files stream from storage with
 `Accept-Ranges: bytes` and honour a single `Range` request (`206`, or `416` when unsatisfiable), which
@@ -208,11 +208,11 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 
 ## Implementation Files
 
-- `apps/server/src/modules/{contents,translations,assets}/*.public.controller.ts` — the CDN route handlers
+- `apps/server/src/modules/{contents,translations,assets}/controllers/*.public.controller.ts` — the CDN route handlers
 - `apps/server/src/infra/http/v1/v1-request.ts` — `cv` redirects (`needsRedirect`, `redirectToVersion`), `validIdParams`, `isDraft`
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
 - `apps/server/src/auth/api-tokens/token-auth.service.ts` — token auth per request
-- `apps/server/src/modules/assets/asset-delivery.service.ts` — asset streaming, Range, rendition cache
+- `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/assets.public.controller.ts` — ETag/304, Range, Cache-Control
 - `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
 - `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build
 - `apps/server/src/shared/data-rules/translation-drafts.ts` — the translations lock, dropping the drafts (every module that writes translations or a space's locales)

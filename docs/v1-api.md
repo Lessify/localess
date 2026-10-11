@@ -253,15 +253,15 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | `apps/server/src/modules/contents/controllers/contents.public.controller.ts`         | CDN — links, documents by slug and id, `resolve*` options                                  |
 | `apps/server/src/modules/translations/translations.public.controller.ts` | CDN translations, DEV_TOOLS stored values, MANAGE translation push                        |
-| `apps/server/src/modules/assets/assets.public.controller.ts`             | CDN — asset delivery (transformed, original, download)                                    |
+| `apps/server/src/modules/assets/controllers/assets.public.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
 | `apps/server/src/modules/schemas/controllers/schemas.public.controller.ts` | DEV_TOOLS OpenAPI and schema export, MANAGE schema push                                   |
 | `apps/server/src/modules/spaces/spaces.public.controller.ts`             | DEV_TOOLS space metadata                                                                  |
 | `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`validIdParams`, `cv` redirects, `isDraft`), responses, Cache-Control, ID checks |
 | `apps/server/src/modules/contents/services/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |
 | `apps/server/src/modules/translations/services/translation-delivery.service.ts` | Published and draft translation maps                                                      |
-| `apps/server/src/modules/assets/`                                        | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing   |
+| `apps/server/src/modules/assets/utils/`                                  | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing, Range |
 | `apps/server/src/auth/api-tokens/token-auth.service.ts`            | Query-param and header token auth, 5-min token cache invalidated by change events         |
-| `apps/server/src/modules/assets/asset-delivery.service.ts`        | Asset streaming (Range), transforms, rendition cache                                      |
+| `apps/server/src/modules/assets/services/asset-delivery.service.ts` | Transform decisions, transforms, rendition cache                                       |
 | `apps/server/src/infra/http/v1/cache-control.ts`                 | Cache TTL constants                                                                       |
 | `apps/server/src/infra/http/v1/v1-response.ts`                   | `sendV1Error()` error bodies                                                              |
 | `packages/shared/src/` (`@localess/shared`, `@localess/shared/zod`) | `TokenPermission` enum, token types and zod request models                                |

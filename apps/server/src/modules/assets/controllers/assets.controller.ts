@@ -17,11 +17,10 @@ import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
-import { RequirePermission } from '../../auth/decorators.js';
-import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
-import { toDto } from '../../shared/transformers/dto.transformer.js';
-import { UuidParamPipe } from '../../infra/http/uuid-param.pipe.js';
-import { AssetRow, AssetsService } from './assets.service.js';
+import { RequirePermission } from '../../../auth/decorators.js';
+import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import { AssetsService } from '../services/assets.service.js';
 
 const parentPath = z
   .string()
@@ -50,8 +49,6 @@ const uploadFields = z.object({
   source: z.string().max(2048).optional(),
 });
 
-const dto = (row: AssetRow) => toDto(row);
-
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
   const values: Record<string, string> = {};
@@ -71,7 +68,7 @@ export class AssetsController {
   @Get()
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
-    return (await this.assets.list(spaceId, query)).map(dto);
+    return this.assets.list(spaceId, query);
   }
 
   @Get('count')
@@ -83,13 +80,13 @@ export class AssetsController {
   @Get(':id')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return dto(await this.assets.get(spaceId, id));
+    return this.assets.get(spaceId, id);
   }
 
   @Post('folders')
   @RequirePermission(UserPermission.ASSET_CREATE)
   async createFolder(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(folderSchema)) body: z.infer<typeof folderSchema>) {
-    return dto(await this.assets.createFolder(spaceId, body.parentPath, body.name));
+    return this.assets.createFolder(spaceId, body.parentPath, body.name);
   }
 
   /**
@@ -108,15 +105,13 @@ export class AssetsController {
       throw new BadRequestException(fields.error.issues.map(it => `${it.path.join('.')}: ${it.message}`).join('; '));
     }
     try {
-      return dto(
-        await this.assets.upload(spaceId, {
-          ...fields.data,
-          file: file.file,
-          filename: file.filename,
-          mimetype: file.mimetype,
-          truncated: () => file.file.truncated,
-        }),
-      );
+      return await this.assets.upload(spaceId, {
+        ...fields.data,
+        file: file.file,
+        filename: file.filename,
+        mimetype: file.mimetype,
+        truncated: () => file.file.truncated,
+      });
     } catch (error) {
       if ((error as { code?: string }).code === 'FST_REQ_FILE_TOO_LARGE') throw new PayloadTooLargeException('File is too large');
       throw error;
@@ -130,7 +125,7 @@ export class AssetsController {
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
   ) {
-    return dto(await this.assets.update(spaceId, id, body));
+    return this.assets.update(spaceId, id, body);
   }
 
   @Put(':id/parent')
@@ -140,7 +135,7 @@ export class AssetsController {
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(moveSchema)) body: z.infer<typeof moveSchema>,
   ) {
-    return dto(await this.assets.move(spaceId, id, body.parentPath));
+    return this.assets.move(spaceId, id, body.parentPath);
   }
 
   @Delete(':id')

@@ -75,7 +75,7 @@ a transform parameter on either is rejected with `400` rather than ignored. They
 
 **Which types are served inline.** Assets are served from the same origin as the admin app, and
 their MIME type comes from the uploader. So every asset route passes the type through
-`assetResponsePolicy` (`apps/server/src/modules/assets/asset-headers.ts`), which decides how the response is
+`assetResponsePolicy` (`apps/server/src/modules/assets/utils/asset-headers.ts`), which decides how the response is
 delivered:
 
 | Type | Delivery |

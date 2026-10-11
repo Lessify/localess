@@ -90,9 +90,9 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 
 | Folder | What goes there | Today |
 |---|---|---|
-| `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher` |
+| `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher`, `AssetMetadataService` (size, duration, orientation, embedded alt of a stored file: assets, the asset import and metadata tasks, the Firebase import) |
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository` |
-| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts) |
+| `shared/transformers/` | Every transformer | `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata`, `documentSchemas` (content.transformer.ts), `toAsset` (asset.transformer.ts) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
 | | | `content-version.ts`: `bumpContentVersion` (every write that changes what the content API serves: contents, schemas, assets, the import tasks) |
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
@@ -100,6 +100,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports |
 | `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client) |
 | | | `schema.utils.ts` (`planSchemaPush`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
+| | | `asset-path.utils.ts` (`folderPath`): assets and the asset import task; `embedded-alt.ts`, `media-duration.ts`, `media-orientation.ts`, `media-pages.ts` (`isAnimatedPages`, also asset delivery): `AssetMetadataService` |
 
 A new shared service (a queue, a message broker) goes in `shared/services/` and is added to `SharedModule`. `infra/`
 stays technical (database connection, storage drivers, events, HTTP plumbing) and knows no domain.
@@ -114,8 +115,8 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 
 | Module | Layered |
 |---|---|
-| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents | ✅ |
-| assets, tasks, users (in `auth/`), firebase-import | not yet |
+| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets | ✅ |
+| tasks, users (in `auth/`), firebase-import | not yet |
 
 Until a module is moved it may still query in its services, but it already follows the data rules and imports no
 moved module.
