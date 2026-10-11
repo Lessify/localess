@@ -12,7 +12,7 @@ import {
 } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { newUuid } from '../../infra/database/id.js';
-import { assets, contents, firebaseImports, locales, schemas, spaceEnvironments, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
+import { assets, contents, firebaseImports, keepUpdatedAt, locales, schemas, spaceEnvironments, spaceLocales, spaces, tokens, translations, webhooks } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../assets/asset-metadata.service.js';
@@ -350,7 +350,13 @@ export class FirebaseImportRunner {
           if (data.changed || assetRefs.changed || links.changed || references.changed) {
             await this.db
               .update(contents)
-              .set({ data: data.value as Record<string, unknown> | null, assets: assetRefs.value, links: links.value, references: references.value })
+              .set({
+                data: data.value as Record<string, unknown> | null,
+                assets: assetRefs.value,
+                links: links.value,
+                references: references.value,
+                ...keepUpdatedAt(contents),
+              })
               .where(and(eq(contents.spaceId, sid), eq(contents.id, row.id)));
             rewritten++;
           }
@@ -363,7 +369,11 @@ export class FirebaseImportRunner {
 
       await this.db
         .update(spaces)
-        .set({ contentVersion: nextVersion(spaces.contentVersion), translationVersion: nextVersion(spaces.translationVersion) })
+        .set({
+          contentVersion: nextVersion(spaces.contentVersion),
+          translationVersion: nextVersion(spaces.translationVersion),
+          ...keepUpdatedAt(spaces),
+        })
         .where(eq(spaces.id, sid));
       await save({ status: 'FINISHED', finishedAt: new Date() });
       await this.events.publish({ spaceId: null, entity: 'spaces', id: sid, op: 'created' });

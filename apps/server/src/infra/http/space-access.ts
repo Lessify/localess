@@ -2,7 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { type AnyColumn, eq, getTableColumns, type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.module.js';
 import { isUuid } from '../database/id.js';
-import { firebaseImports, type Locale, locales, spaceEnvironments, spaceLocales, spaces } from '../database/schema.js';
+import { firebaseImports, keepUpdatedAt, type Locale, locales, spaceEnvironments, spaceLocales, spaces } from '../database/schema.js';
 
 type Executor = Pick<Database, 'select' | 'update'>;
 
@@ -81,8 +81,8 @@ export async function bumpVersion(db: Executor, spaceId: string, which: 'content
     .update(spaces)
     .set(
       which === 'content'
-        ? { contentVersion: nextVersion(spaces.contentVersion) }
-        : { translationVersion: nextVersion(spaces.translationVersion) },
+        ? { contentVersion: nextVersion(spaces.contentVersion), ...keepUpdatedAt(spaces) }
+        : { translationVersion: nextVersion(spaces.translationVersion), ...keepUpdatedAt(spaces) },
     )
     .where(eq(spaces.id, spaceId));
 }

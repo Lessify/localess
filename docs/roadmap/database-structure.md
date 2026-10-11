@@ -87,6 +87,17 @@ keys, asset files, content documents, schemas), storage (the sum of `assets.size
 and translation progress per locale against the number of keys, on the current values. Tasks and the sizes of the
 published JSON are no longer shown. See [dashboard.md](../features/spaces/dashboard.md).
 
+## Timestamps
+
+Tables with the standard pair spread `...timestamps` (`created_at`, `updated_at`: `timestamptz not null default now()`);
+a table that differs (only `created_at`, or other dates) writes its columns out, so the spread means "standard".
+
+`updated_at` has drizzle's `$onUpdate`: every `.update().set()` that does not name it moves it, so no write can forget
+it. A write that is not an edit of the row keeps it with `...keepUpdatedAt(table)`: publishing and unpublishing a
+document (its status compares `updated_at` with `published_at`), the `cv` version bumps of a space, reordering
+environments, and the Firebase import's reference rewrite (imported dates are kept). `$onUpdate` does not apply to
+upserts (`onConflictDoUpdate`) or raw SQL: those name `updatedAt` themselves.
+
 ## Columns with a fixed set of values
 
 Every such column is `text('…', { enum: values(LIST) })` over the list in `@localess/shared` (or the server, for

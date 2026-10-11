@@ -44,6 +44,7 @@ const site: FakeFirebaseSpace = {
       fullSlug: 'blog/post',
       schema: 'page',
       publishedAt: '2025-03-01T00:00:00.000Z',
+      updatedAt: '2025-02-15T00:00:00.000Z',
       data: JSON.stringify({ _id: 'r', _schema: 'page', title: 'Hi', hero: { kind: 'ASSET', uri: 'a1' }, next: { kind: 'LINK', type: 'content', uri: 'home' }, lost: { kind: 'REFERENCE', uri: 'deleted' } }),
       assets: ['a1'],
       links: ['home'],
@@ -123,6 +124,8 @@ describe('Firebase import run', () => {
     const post = docs.find(it => it.fullSlug === 'blog/post')!;
     const home = docs.find(it => it.fullSlug === 'home')!;
     expect(post.publishedAt).toBeNull();
+    // Rewriting its references is not an edit: it keeps the date it had in Firebase.
+    expect(post.updatedAt).toEqual(new Date('2025-02-15T00:00:00.000Z'));
     expect(post.data).toMatchObject({ hero: { kind: 'ASSET', uri: file.id }, next: { kind: 'LINK', type: 'content', uri: home.id }, lost: { kind: 'REFERENCE', uri: 'deleted' } });
     expect(post).toMatchObject({ assets: [file.id], links: [home.id], references: ['deleted'] });
 

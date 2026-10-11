@@ -32,7 +32,7 @@ export async function applySchemaPushPlan(tx: Transaction, spaceId: string, plan
   for (const schema of plan.updates) {
     await tx
       .update(schemas)
-      .set({ ...schemaColumns(schema), updatedAt: new Date() })
+      .set({ ...schemaColumns(schema) })
       .where(and(eq(schemas.spaceId, spaceId), eq(schemas.name, schema.id)));
   }
   if (plan.deletes.length) {

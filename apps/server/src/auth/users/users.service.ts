@@ -120,7 +120,7 @@ export class UsersService {
   async updateAccess(id: string, update: AccessUpdate): Promise<UserRow> {
     const [user] = await this.db
       .update(users)
-      .set({ ...normalizeAccess(update), updatedAt: new Date() })
+      .set({ ...normalizeAccess(update) })
       .where(eq(users.id, id))
       .returning();
     if (!user) throw new NotFoundException('User not found');
@@ -130,7 +130,7 @@ export class UsersService {
   /** Sets `disabled`; disabling also deletes the user's sessions, so they are signed out at once. */
   async setDisabled(id: string, disabled: boolean): Promise<UserRow> {
     return this.db.transaction(async tx => {
-      const [user] = await tx.update(users).set({ disabled, updatedAt: new Date() }).where(eq(users.id, id)).returning();
+      const [user] = await tx.update(users).set({ disabled }).where(eq(users.id, id)).returning();
       if (!user) throw new NotFoundException('User not found');
       if (disabled) await tx.delete(sessions).where(eq(sessions.userId, id));
       return user;
@@ -143,7 +143,6 @@ export class UsersService {
       .set({
         ...(profile.displayName !== undefined ? { displayName: profile.displayName || null } : {}),
         ...(profile.photoURL !== undefined ? { photoUrl: profile.photoURL || null } : {}),
-        updatedAt: new Date(),
       })
       .where(eq(users.id, id))
       .returning();
@@ -158,7 +157,7 @@ export class UsersService {
     }
     const [user] = await this.db
       .update(users)
-      .set({ email, emailVerified: false, updatedAt: new Date() })
+      .set({ email, emailVerified: false })
       .where(eq(users.id, id))
       .returning();
     if (!user) throw new NotFoundException('User not found');

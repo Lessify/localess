@@ -184,7 +184,6 @@ export class AssetsService {
         .set({
           name: input.name ?? current.name,
           ...(current.kind === 'FILE' && input.alt !== undefined ? { alt: input.alt || null } : {}),
-          updatedAt: new Date(),
         })
         .where(and(eq(assets.spaceId, spaceId), eq(assets.id, id)))
         .returning();
@@ -200,7 +199,7 @@ export class AssetsService {
       await this.checkParentPath(tx, spaceId, parentPath);
       const [row] = await tx
         .update(assets)
-        .set({ parentPath, updatedAt: new Date() })
+        .set({ parentPath })
         .where(and(eq(assets.spaceId, spaceId), eq(assets.id, id)))
         .returning();
       return { result: row, changed: [{ id, op: 'updated' }] };

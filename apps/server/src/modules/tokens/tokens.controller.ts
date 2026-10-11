@@ -92,7 +92,7 @@ export class TokensController {
     return this.db.transaction(async tx => {
       const [row] = await tx
         .update(tokens)
-        .set({ version: 2, name: body.name, permissions: body.permissions, cacheTtl: body.cacheTtl ?? null, updatedAt: new Date() })
+        .set({ version: 2, name: body.name, permissions: body.permissions, cacheTtl: body.cacheTtl ?? null })
         .where(and(eq(tokens.spaceId, spaceId), eq(tokens.id, id)))
         .returning();
       if (!row) throw new NotFoundException('Token not found');
@@ -118,7 +118,6 @@ export class TokensController {
           version: 2,
           permissions: old.version === 2 ? old.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
           cacheTtl: old.version === 2 ? old.cacheTtl : null,
-          updatedAt: new Date(),
         })
         .where(eq(tokens.id, id))
         .returning();

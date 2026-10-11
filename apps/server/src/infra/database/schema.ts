@@ -69,10 +69,20 @@ const allOf = (name: string, column: AnyPgColumn, list: readonly string[]) =>
 
 export const HASH_ALGORITHMS = ['argon2id'] as const;
 
+/**
+ * The standard pair. `updated_at` moves on every drizzle update that does not set it: a write that is not an edit of
+ * the row (publishing, cv versions, reordering, the import's reference rewrite) keeps it with `keepUpdatedAt`.
+ */
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 };
+
+/** `set({ ...keepUpdatedAt(table) })`: an update that leaves the row's `updated_at` as it is. */
+export const keepUpdatedAt = (table: { updatedAt: AnyPgColumn }) => ({ updatedAt: sql<Date>`${table.updatedAt}` });
 
 export interface Locale {
   id: string;

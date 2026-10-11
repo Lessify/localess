@@ -296,7 +296,6 @@ export class TaskRunner {
                       metadata: (file.metadata as Record<string, unknown>) ?? null,
                     }
                   : {}),
-                updatedAt: new Date(),
               })
               .where(and(eq(assets.spaceId, spaceId), eq(assets.id, asset.id)));
           } else if (file) {
@@ -358,7 +357,6 @@ export class TaskRunner {
           ...(extracted.metadata ? { metadata: extracted.metadata } : {}),
           ...(extracted.alt ? { alt: extracted.alt } : {}),
           inProgress: false,
-          updatedAt: new Date(),
         })
         .where(and(eq(assets.spaceId, task.spaceId), eq(assets.id, file.id)));
       if (++count % PROGRESS_INTERVAL === 0) await this.log(task, 'INFO', `regenerated ${count}/${files.length}`);
@@ -452,7 +450,7 @@ export class TaskRunner {
           if (!isContentChanged(current, data !== undefined ? ({ ...content, data } as ContentExport) : content)) continue;
           await tx
             .update(contents)
-            .set({ ...columns, updatedAt: new Date() })
+            .set(columns)
             .where(and(eq(contents.spaceId, spaceId), eq(contents.id, content.id)));
           // As the update trigger did: an edited document is a `content.changed`.
           if (document) changedDocuments.push({ id: content.id, fullSlug: content.fullSlug });
@@ -583,7 +581,7 @@ export class TaskRunner {
           if (!isTranslationChanged(current, translation)) continue;
           await tx
             .update(translations)
-            .set({ ...columns, updatedAt: new Date() })
+            .set(columns)
             .where(and(eq(translations.spaceId, spaceId), eq(translations.key, translation.id)));
         } else {
           await tx.insert(translations).values({ id: newUuid(), spaceId, key: translation.id, ...columns });
@@ -630,7 +628,6 @@ export class TaskRunner {
             .update(translations)
             .set({
               locales: sql`jsonb_set(${translations.locales}, ${`{${locale}}`}::text[], ${JSON.stringify(value)}::jsonb)`,
-              updatedAt: new Date(),
             })
             .where(and(eq(translations.spaceId, spaceId), eq(translations.key, key)));
         } else {

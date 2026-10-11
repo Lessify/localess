@@ -112,7 +112,6 @@ export class WebhooksController {
           events: body.events,
           ...(body.headers ? { headers: body.headers } : {}),
           ...(body.secret ? { secret: body.secret } : {}),
-          updatedAt: new Date(),
         })
         .where(and(eq(webhooks.spaceId, spaceId), eq(webhooks.id, id)))
         .returning();
@@ -129,7 +128,7 @@ export class WebhooksController {
     return this.change(spaceId, id, 'updated', async tx => {
       const [row] = await tx
         .update(webhooks)
-        .set({ enabled: body.enabled, updatedAt: new Date() })
+        .set({ enabled: body.enabled })
         .where(and(eq(webhooks.spaceId, spaceId), eq(webhooks.id, id)))
         .returning();
       return row;

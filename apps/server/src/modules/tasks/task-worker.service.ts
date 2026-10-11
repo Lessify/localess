@@ -121,7 +121,6 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
         ...(outcome.file ? { file: outcome.file } : {}),
         lockedBy: null,
         lockedAt: null,
-        updatedAt: new Date(),
       })
       .where(and(eq(tasks.id, task.id), eq(tasks.lockedBy, this.workerId)))
       .returning({ id: tasks.id });
@@ -140,7 +139,6 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
         message: 'The task was interrupted (the server stopped while it ran). Run it again.',
         lockedBy: null,
         lockedAt: null,
-        updatedAt: new Date(),
       })
       .where(and(eq(tasks.status, 'IN_PROGRESS'), lt(tasks.lockedAt, new Date(Date.now() - STALE_AFTER_MS))))
       .returning({ id: tasks.id, spaceId: tasks.spaceId });

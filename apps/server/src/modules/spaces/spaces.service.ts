@@ -3,16 +3,7 @@ import { and, asc, count, eq, max, sql } from 'drizzle-orm';
 import { DEFAULT_LOCALE, type SpaceOverview } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import {
-  assets,
-  contents,
-  locales,
-  schemas,
-  spaceEnvironments,
-  spaceLocales,
-  spaces,
-  translations,
-} from '../../infra/database/schema.js';
+import { assets, contents, keepUpdatedAt, locales, schemas, spaceEnvironments, spaceLocales, spaces, translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { toDto } from '../../infra/http/dto.js';
@@ -70,6 +61,7 @@ export class SpacesService {
       const values = (await change(space, tx)) ?? {};
       await tx
         .update(spaces)
+        // Named: a change of locales or environments alone still touches the space.
         .set({ ...values, updatedAt: new Date() })
         .where(eq(spaces.id, spaceId));
       await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'updated' }, tx);
@@ -96,7 +88,7 @@ export class SpacesService {
     return this.update(spaceId, async (_, tx) => {
       const [updated] = await tx
         .update(spaceEnvironments)
-        .set({ ...environment, updatedAt: new Date() })
+        .set(environment)
         .where(this.environment(spaceId, environmentId))
         .returning({ id: spaceEnvironments.id });
       if (!updated) throw new NotFoundException('Environment not found');
@@ -125,7 +117,7 @@ export class SpacesService {
         throw new BadRequestException("The new order must list each of the space's environments once");
       }
       for (const [position, id] of environmentIds.entries()) {
-        await tx.update(spaceEnvironments).set({ position }).where(this.environment(spaceId, id));
+        await tx.update(spaceEnvironments).set({ position, ...keepUpdatedAt(spaceEnvironments) }).where(this.environment(spaceId, id));
       }
     });
   }

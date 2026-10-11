@@ -105,7 +105,6 @@ export class SchemasService {
             previewField: input.previewField || null,
             fields: input.fields ?? null,
             values: input.values ?? null,
-            updatedAt: new Date(),
           })
           .where(and(eq(schemas.spaceId, spaceId), eq(schemas.id, id)))
           .returning();
@@ -126,7 +125,7 @@ export class SchemasService {
       async tx => {
         const [row] = await tx
           .update(schemas)
-          .set({ name, updatedAt: new Date() })
+          .set({ name })
           .where(and(eq(schemas.spaceId, spaceId), eq(schemas.id, id)))
           .returning();
         if (!row) throw new NotFoundException('Schema not found');

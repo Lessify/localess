@@ -6,7 +6,7 @@ import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { spaces, translations } from '../../infra/database/schema.js';
+import { keepUpdatedAt, spaces, translations } from '../../infra/database/schema.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import {
   isDraft,
@@ -203,14 +203,13 @@ export class TranslationsPublicController {
             .update(translations)
             .set({
               locales: sql`jsonb_set(${translations.locales}, ${`{${locale}}`}::text[], ${JSON.stringify(values[id])}::jsonb)`,
-              updatedAt: new Date(),
             })
             .where(inSpace([id]));
         }
       } else if (type === 'delete-missing-value') {
         await tx
           .update(translations)
-          .set({ locales: sql`${translations.locales} - ${locale}::text`, updatedAt: new Date() })
+          .set({ locales: sql`${translations.locales} - ${locale}::text` })
           .where(inSpace(actionable));
       } else {
         await tx.delete(translations).where(inSpace(actionable));
@@ -218,7 +217,7 @@ export class TranslationsPublicController {
       // Draft translations are built from these rows on read; the new version moves clients past cached copies.
       await tx
         .update(spaces)
-        .set({ translationVersion: nextVersion(spaces.translationVersion) })
+        .set({ translationVersion: nextVersion(spaces.translationVersion), ...keepUpdatedAt(spaces) })
         .where(eq(spaces.id, spaceId));
       await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, tx);
     });

@@ -6,7 +6,7 @@ import { zSchemaPushSchema } from '@localess/shared/zod';
 import { TokenAuthService } from '../../auth/api-tokens/token-auth.service.js';
 import { Public } from '../../auth/decorators.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { schemas, spaces } from '../../infra/database/schema.js';
+import { keepUpdatedAt, schemas, spaces } from '../../infra/database/schema.js';
 import { CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE, publicCache } from '../../infra/http/v1/cache-control.js';
 import { Params } from '../../infra/http/v1/v1-request.js';
 import { sendV1Error } from '../../infra/http/v1/v1-response.js';
@@ -106,7 +106,7 @@ export class SchemasPublicController {
       // Schemas shape the draft output (locale extraction), so content drafts change too.
       await tx
         .update(spaces)
-        .set({ contentVersion: nextVersion(spaces.contentVersion) })
+        .set({ contentVersion: nextVersion(spaces.contentVersion), ...keepUpdatedAt(spaces) })
         .where(eq(spaces.id, spaceId));
     });
     void reply.send({

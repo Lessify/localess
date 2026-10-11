@@ -4,7 +4,7 @@ import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, o
 import { Schema, WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
-import { contentPublished, contents, schemas, UpdatedBy } from '../../infra/database/schema.js';
+import { contentPublished, contents, keepUpdatedAt, schemas, UpdatedBy } from '../../infra/database/schema.js';
 import { buildDocumentStorage } from './content-extract.js';
 import { EventsService } from '../../infra/events/events.service.js';
 import type { UserRow } from '../../auth/users/users.service.js';
@@ -183,7 +183,7 @@ export class ContentsService {
       }
       const [row] = await tx
         .update(contents)
-        .set({ name: input.name ?? current.name, slug, parentSlug, fullSlug, updatedBy: updatedByOf(user), updatedAt: new Date() })
+        .set({ name: input.name ?? current.name, slug, parentSlug, fullSlug, updatedBy: updatedByOf(user) })
         .where(and(eq(contents.spaceId, spaceId), eq(contents.id, id)))
         .returning();
       const changed: { id: string; op: 'updated' }[] = [{ id, op: 'updated' }];
@@ -194,7 +194,6 @@ export class ContentsService {
           .set({
             fullSlug: sql`${fullSlug} || substr(${contents.fullSlug}, ${old.length + 1})`,
             parentSlug: sql`${fullSlug} || substr(${contents.parentSlug}, ${old.length + 1})`,
-            updatedAt: new Date(),
           })
           .where(
             and(eq(contents.spaceId, spaceId), or(eq(contents.parentSlug, old), sql`${contents.parentSlug} like ${startsWith(`${old}/`)}`)),
@@ -220,7 +219,7 @@ export class ContentsService {
       if (current.kind !== 'DOCUMENT') throw new BadRequestException('Only documents have data');
       const [row] = await tx
         .update(contents)
-        .set({ ...input, updatedBy: updatedByOf(user), updatedAt: new Date() })
+        .set({ ...input, updatedBy: updatedByOf(user) })
         .where(and(eq(contents.spaceId, spaceId), eq(contents.id, id)))
         .returning();
       return {
@@ -306,7 +305,7 @@ export class ContentsService {
           );
         await tx
           .update(contents)
-          .set({ publishedAt })
+          .set({ publishedAt, ...keepUpdatedAt(contents) })
           .where(and(eq(contents.spaceId, spaceId), eq(contents.id, document.id)));
       }
       return {
@@ -330,7 +329,7 @@ export class ContentsService {
             );
       const unpublished = await tx
         .update(contents)
-        .set({ publishedAt: null })
+        .set({ publishedAt: null, ...keepUpdatedAt(contents) })
         .where(and(eq(contents.spaceId, spaceId), isNotNull(contents.publishedAt), scope))
         .returning({ id: contents.id });
       if (unpublished.length) {

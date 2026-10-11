@@ -112,7 +112,6 @@ export class TranslationsService {
           labels: input.labels?.length ? input.labels : null,
           description: input.description || null,
           updatedBy: updatedByOf(user),
-          updatedAt: new Date(),
         })
         .where(this.where(spaceId, id))
         .returning();
@@ -130,7 +129,7 @@ export class TranslationsService {
         : sql`${translations.locales} - ${locale}::text`;
       const [row] = await tx
         .update(translations)
-        .set({ locales, updatedBy: updatedByOf(user), updatedAt: new Date() })
+        .set({ locales, updatedBy: updatedByOf(user) })
         .where(this.where(spaceId, id))
         .returning();
       if (!row) throw new NotFoundException('Translation not found');
@@ -143,7 +142,7 @@ export class TranslationsService {
     return this.write(spaceId, async tx => {
       const [row] = await tx
         .update(translations)
-        .set({ key, updatedBy: updatedByOf(user), updatedAt: new Date() })
+        .set({ key, updatedBy: updatedByOf(user) })
         .where(this.where(spaceId, id))
         .returning();
       if (!row) throw new NotFoundException('Translation not found');
@@ -221,7 +220,6 @@ export class TranslationsService {
             .set({
               locales: sql`jsonb_set(${translations.locales}, ${`{${targetLocale}}`}::text[], ${JSON.stringify(item.content)}::jsonb)`,
               updatedBy: updatedByOf(user),
-              updatedAt: new Date(),
             })
             .where(and(eq(translations.spaceId, spaceId), inArray(translations.id, [item.id])));
         }
