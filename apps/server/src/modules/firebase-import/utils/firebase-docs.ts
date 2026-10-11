@@ -1,3 +1,5 @@
+import type { FirebaseDoc } from './firebase-client.js';
+
 /** Firestore values as the migration API returns them (ISO strings), or `{ seconds }` objects in older data. */
 export function toDate(value: unknown): Date | undefined {
   if (value instanceof Date) return value;
@@ -35,4 +37,13 @@ export function parseData(value: unknown): { data: Record<string, unknown> | nul
     }
   }
   return { data: obj<Record<string, unknown>>(value), invalid: false };
+}
+
+/** The document's `type` when it is one of `list`; a missing one is `fallback`, an unknown one too, with a warning. */
+export function typeOf<T extends string>(list: Record<string, T>, fallback: T, doc: FirebaseDoc, warn: (message: string) => void): T {
+  const type = str(doc['type']);
+  if (type === null || type === undefined) return fallback;
+  if ((Object.values(list) as string[]).includes(type)) return type as T;
+  warn(`${doc.id}: unknown type ${type}, imported as ${fallback}`);
+  return fallback;
 }

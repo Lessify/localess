@@ -23,7 +23,7 @@ To turn it back on, set `importExport: true` once the items below are fixed.
 Proposed fix (not yet approved):
 
 1. Match by id, then by `full_slug`: a UUID found in the space updates that row; otherwise an entry with an existing `full_slug` updates that row and keeps its UUID; only unmatched entries get a new UUID.
-2. Rewrite references in `data` with `rewriteData` (`apps/server/src/modules/firebase-import/rewrite-references.ts`): content ids from the file → the UUIDs chosen in step 1; asset Firestore ids → UUIDs via `assets.legacy_id`. Unresolved references are kept and counted.
+2. Rewrite references in `data` with `rewriteData` (`apps/server/src/modules/firebase-import/utils/rewrite-references.ts`): content ids from the file → the UUIDs chosen in step 1; asset Firestore ids → UUIDs via `assets.legacy_id`. Unresolved references are kept and counted.
 3. Log `matched by slug`, `created`, rewritten and unresolved reference counts in the task log.
 4. Open question: when a slug matches but the id differs, overwrite (what an import implies) or skip.
 

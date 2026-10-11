@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { fakeFirebase } from '../../../test/fake-firebase.js';
+import { fakeFirebase } from '../../../../test/fake-firebase.js';
 import { FirebaseClient, FirebaseConnectionError, normalizeOrigin } from './firebase-client.js';
 
 let fake: Awaited<ReturnType<typeof fakeFirebase>>;
