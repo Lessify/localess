@@ -63,7 +63,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - `navigateToSlug(slug)` — path breadcrumb navigation
 - `openAddDocumentDialog()` — pick schema → creates `ContentDocument` with `kind: DOCUMENT`
 - `openAddFolderDialog()` — creates `ContentFolder` with `kind: FOLDER`
-- `openEditDialog(element)` — edit document/folder name and slug. Full slugs must be unique per space (the server answers a clash with an error), and renaming a folder rewrites the full slug of every descendant in the same transaction
+- `openEditDialog(element)` — edit document/folder name and slug. Full slugs are unique per space (`contents_full_slug_idx`; a clash, even with a write that commits at the same moment, is a 409 "'x' is already used"), and renaming a folder rewrites the full slug of every descendant in the same transaction
 - `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
 - `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:id/publish`), which writes one published `content_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
 - `openUnpublishDialog()` — removes the published snapshot (`POST …/:id/unpublish` deletes the published `content_snapshots` rows)

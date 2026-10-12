@@ -198,6 +198,28 @@ describe('task worker: exports and imports', () => {
       expect(await logs(SPACE_B, again.id)).toContain('total changes : 0');
     });
 
+    it('refuses paths used twice, in the file or by another content item, without writing anything', async () => {
+      const count = async () => (await t.db.select().from(contents).where(eq(contents.spaceId, SPACE_B))).length;
+      const before = await count();
+      const folder = (fullSlug: string) => ({ id: newUuid(), kind: 'FOLDER', name: fullSlug, slug: fullSlug, parentSlug: '', fullSlug });
+      const inFile = await zipOf({
+        'metadata.json': JSON.stringify({ kind: 'CONTENT' }),
+        'contents.json': JSON.stringify([folder('fresh'), folder('twice'), folder('twice')]),
+      });
+      const task = await importTask(SPACE_B, 'CONTENT_IMPORT', inFile);
+      expect(task).toMatchObject({ status: 'ERROR', message: 'Content data is invalid.' });
+      expect(JSON.parse(task.trace as string)).toEqual(["Path 'twice' is used twice in the file"]);
+
+      const taken = await zipOf({
+        'metadata.json': JSON.stringify({ kind: 'CONTENT' }),
+        'contents.json': JSON.stringify([folder('fresh'), folder('blog')]),
+      });
+      const refused = await importTask(SPACE_B, 'CONTENT_IMPORT', taken);
+      expect(refused).toMatchObject({ status: 'ERROR', message: 'Content data is invalid.' });
+      expect(JSON.parse(refused.trace as string)).toEqual(["Path 'blog' is used by another content item"]);
+      expect(await count()).toBe(before);
+    });
+
     it('exports one document with the folders leading to it', async () => {
       const exported = await exportTask(SPACE_A, { kind: 'CONTENT_EXPORT', path: TC.post });
       const files = await readZip(await download(SPACE_A, exported.id));

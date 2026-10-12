@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, inArray, like } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { contents } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { escapeLike } from '../utils/escape-like.js';
@@ -59,9 +59,19 @@ export class ContentTransferRepository {
 
   /**
    * Writes an import in one transaction, in the file's order; when anything was written, the drafts of the updated
-   * documents and the `/links` lists are dropped and a `contents` change event published. Answers the number of rows written.
+   * documents and the `/links` lists are dropped and a `contents` change event published. Answers the number of rows written,
+   * or `undefined` (nothing written) when a path was taken meanwhile.
    */
-  applyImport(spaceId: string, writes: ContentImportWrite[], tx?: Transaction): Promise<number> {
+  async applyImport(spaceId: string, writes: ContentImportWrite[], tx?: Transaction): Promise<number | undefined> {
+    try {
+      return await this.write(spaceId, writes, tx);
+    } catch (error) {
+      if (isUniqueViolation(error)) return undefined;
+      throw error;
+    }
+  }
+
+  private write(spaceId: string, writes: ContentImportWrite[], tx?: Transaction): Promise<number> {
     return transaction(this.db, tx, async t => {
       for (const write of writes) {
         if (write.op === 'update') {

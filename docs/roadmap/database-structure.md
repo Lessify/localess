@@ -111,6 +111,19 @@ map the public API serves per locale (gaps filled from the default locale):
 - **`data` is `json`, not `jsonb`:** jsonb reorders keys (by length); the map keeps them in byte order. Never queried
   inside.
 
+## `contents`
+
+```
+contents PK (space_id, id): kind FOLDER|DOCUMENT, name, slug, parent_slug, full_slug, schema, data, assets[], links[],
+         references[], published_at, created_at, updated_at
+```
+
+The tree is built by text: `parent_slug` is the parent folder's `full_slug` ('' for the root), no foreign key.
+
+| Column / rule | Decision |
+|---|---|
+| `full_slug` | **Unique per space** (`contents_full_slug_idx`, `text_pattern_ops` so the subtree `LIKE 'a/%'` queries use it too). The app checks first for the usual case; a write that loses a race to an uncommitted one is refused by the index with the same 409. A folder rename or move rewrites the descendants in one statement, refused as a whole on a clash. The content import task refuses a file with a path used twice, or used by another item of the space (task `ERROR`, nothing written); the Firebase import suffixes a repeated path's slug with a warning. |
+
 ## Content snapshots
 
 ```

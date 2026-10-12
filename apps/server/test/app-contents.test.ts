@@ -6,6 +6,10 @@ import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { contents, contentSnapshots, schemas, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
+import { ContentsRepository } from '../src/modules/contents/repositories/contents.repository.js';
+import { ContentsService } from '../src/modules/contents/services/contents.service.js';
+import { transaction } from '../src/infra/database/transaction.js';
+import { ConflictException } from '@nestjs/common';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
@@ -110,6 +114,39 @@ describe('app API: contents', () => {
       });
       expect(post).not.toHaveProperty('publishedAt');
       expect(post).not.toHaveProperty('updatedBy');
+    });
+
+    it('refuses a path a concurrent write took after the check (unique index)', async () => {
+      const repository = t.app.get(ContentsRepository);
+      let release!: () => void;
+      const held = new Promise<void>(resolve => (release = resolve));
+      let inserted!: () => void;
+      const insertedYet = new Promise<void>(resolve => (inserted = resolve));
+      // The first write inserts `race` and holds its transaction open.
+      const first = transaction(t.db, undefined, async tx => {
+        await repository.create(S1, { kind: 'FOLDER', parentSlug: '', name: 'Race', slug: 'race' }, tx);
+        inserted();
+        await held;
+      });
+      await insertedYet;
+      // The second one's check does not see the uncommitted row; its insert waits on the index, then fails.
+      const second = t.app.get(ContentsService).create(S1, { kind: 'FOLDER', parentSlug: '', name: 'Race 2', slug: 'race' });
+      const settled = second.then(
+        () => 'created',
+        (error: unknown) => error,
+      );
+      await new Promise(resolve => setTimeout(resolve, 100));
+      release();
+      await first;
+      const outcome = await settled;
+      expect(outcome).toBeInstanceOf(ConflictException);
+      expect((outcome as ConflictException).message).toBe("'race' is already used");
+      const raced = await t.db
+        .select()
+        .from(contents)
+        .where(and(eq(contents.spaceId, S1), eq(contents.fullSlug, 'race')));
+      expect(raced).toHaveLength(1);
+      await editor.delete(`${base}/${raced[0].id}`);
     });
 
     it('refuses a missing parent folder, a taken slug, and slugs with slashes', async () => {

@@ -8,6 +8,7 @@ import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.s
 import { contentToExport } from '../../../shared/transformers/transfer.transformer.js';
 import { type ContentEntity, type ContentImportWrite, ContentTransferRepository } from '../repositories/content-transfer.repository.js';
 import type { TaskEntity } from '../repositories/tasks.repository.js';
+import { contentPathProblems } from '../utils/content-paths.js';
 import { isContentChanged } from '../utils/import-diff.js';
 import { MAX_JSON_BYTES, taskFileKey, type TaskOutcome } from '../utils/task.utils.js';
 import { writeZip } from '../utils/zip.js';
@@ -70,6 +71,8 @@ export class ContentTransferService {
     // Exports from the Firebase era carry Firestore ids: each becomes a new UUID (references in the data are not
     // rewritten; spaces from Firebase are imported with Admin → Spaces → Import from Firebase instead).
     const imported = entries.map(it => ({ ...it, id: isUuid(it.id) ? it.id : newUuid() }));
+    const problems = contentPathProblems(rows, imported);
+    if (problems.length) return this.invalid(task, problems);
     const changedDocuments: { id: string; fullSlug: string }[] = [];
     const writes: ContentImportWrite[] = [];
     for (const content of imported) {
@@ -95,8 +98,15 @@ export class ContentTransferService {
       }
     }
     const total = await this.contents.applyImport(spaceId, writes);
+    if (total === undefined) return this.invalid(task, ['A path of the file was taken meanwhile']);
     for (const it of changedDocuments) this.webhooks.dispatch(spaceId, WebHookEvent.CONTENT_CHANGED, it);
     await this.log.log(task, 'INFO', `total changes : ${total}`);
     return { status: 'FINISHED' };
+  }
+
+  /** Nothing written: the task fails with the problems as its trace. */
+  private async invalid(task: TaskEntity, problems: string[]): Promise<TaskOutcome> {
+    for (const problem of problems) await this.log.log(task, 'WARN', problem);
+    return { status: 'ERROR', message: 'Content data is invalid.', trace: JSON.stringify(problems.slice(0, 100)) };
   }
 }

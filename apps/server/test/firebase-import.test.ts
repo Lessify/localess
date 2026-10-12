@@ -257,6 +257,41 @@ describe('Firebase import run', () => {
     }
   });
 
+  it('imports a path used twice with a suffixed slug, with a warning', async () => {
+    const twice = await fakeFirebase([
+      {
+        id: 'fbTwice',
+        name: 'Twice',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] }],
+        contents: [
+          { id: 'c1', kind: 'DOCUMENT', name: 'First', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{}' },
+          { id: 'c2', kind: 'DOCUMENT', name: 'Second', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{}' },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: twice.url, sourceSpaceId: 'fbTwice', sourceSpaceName: 'Twice', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(twice.url, 'migration-secret', { allowInternal: true }), 'fbTwice');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const rows = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
+      const first = rows.find(it => it.name === 'First')!;
+      const second = rows.find(it => it.name === 'Second')!;
+      expect(first).toMatchObject({ slug: 'post', fullSlug: 'post' });
+      expect(second.slug).toMatch(/^post-[a-z0-9]{5}$/);
+      expect(second.fullSlug).toBe(second.slug);
+      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual([`post: path used twice, imported as ${second.fullSlug}`]);
+    } finally {
+      await twice.close();
+    }
+  });
+
   it('fixes what breaks a rule across fields, with a warning', async () => {
     const odd = await fakeFirebase([
       {

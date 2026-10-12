@@ -317,7 +317,7 @@ CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name"
 CREATE INDEX "assets_parent_path_prefix_idx" ON "assets" USING btree ("space_id","parent_path" text_pattern_ops);--> statement-breakpoint
 CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_slug","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
-CREATE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","full_slug" text_pattern_ops);--> statement-breakpoint
+CREATE UNIQUE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","full_slug" text_pattern_ops);--> statement-breakpoint
 CREATE INDEX "contents_parent_slug_prefix_idx" ON "contents" USING btree ("space_id","parent_slug" text_pattern_ops);--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_running_idx" ON "firebase_imports" USING btree ("status") WHERE "firebase_imports"."status" = 'RUNNING';--> statement-breakpoint
 CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("started_at" DESC NULLS LAST);--> statement-breakpoint

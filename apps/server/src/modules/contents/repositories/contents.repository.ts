@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, or, sql, SQL 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { contents, contentSnapshots, keepUpdatedAt, schemas } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
@@ -106,9 +106,8 @@ export class ContentsRepository {
       }
       const fullSlug = joinSlug(values.parentSlug, values.slug);
       await this.checkPlacement(t, spaceId, values.parentSlug, fullSlug);
-      const [row] = await t
-        .insert(contents)
-        .values({
+      const [row] = await this.claimPath(fullSlug, () =>
+        t.insert(contents).values({
           id: newUuid(),
           spaceId,
           kind: values.kind,
@@ -118,8 +117,8 @@ export class ContentsRepository {
           fullSlug,
           schema: values.kind === 'DOCUMENT' ? values.schema : null,
           data: values.kind === 'DOCUMENT' ? (values.data ?? null) : null,
-        })
-        .returning();
+        }).returning(),
+      );
       return { result: row, changed: [{ id: row.id, op: 'created' }] };
     });
   }
@@ -147,24 +146,24 @@ export class ContentsRepository {
         }
         await this.checkPlacement(t, spaceId, parentSlug, fullSlug, id);
       }
-      const [row] = await t
-        .update(contents)
-        .set({ name: values.name ?? current.name, slug, parentSlug, fullSlug })
-        .where(this.byId(spaceId, id))
-        .returning();
+      const [row] = await this.claimPath(fullSlug, () =>
+        t.update(contents).set({ name: values.name ?? current.name, slug, parentSlug, fullSlug }).where(this.byId(spaceId, id)).returning(),
+      );
       const changed: { id: string; op: 'updated' }[] = [{ id, op: 'updated' }];
       if (moved && current.kind === 'FOLDER') {
         const old = current.fullSlug;
-        const descendants = await t
-          .update(contents)
-          .set({
-            fullSlug: sql`${fullSlug} || substr(${contents.fullSlug}, ${old.length + 1})`,
-            parentSlug: sql`${fullSlug} || substr(${contents.parentSlug}, ${old.length + 1})`,
-          })
-          .where(
-            and(eq(contents.spaceId, spaceId), or(eq(contents.parentSlug, old), sql`${contents.parentSlug} like ${startsWith(`${old}/`)}`)),
-          )
-          .returning({ id: contents.id });
+        const descendants = await this.claimPath(fullSlug, () =>
+          t
+            .update(contents)
+            .set({
+              fullSlug: sql`${fullSlug} || substr(${contents.fullSlug}, ${old.length + 1})`,
+              parentSlug: sql`${fullSlug} || substr(${contents.parentSlug}, ${old.length + 1})`,
+            })
+            .where(
+              and(eq(contents.spaceId, spaceId), or(eq(contents.parentSlug, old), sql`${contents.parentSlug} like ${startsWith(`${old}/`)}`)),
+            )
+            .returning({ id: contents.id }),
+        );
         changed.push(...descendants.map(it => ({ id: it.id, op: 'updated' as const })));
       }
       return { result: { content: row, moved }, changed };
@@ -332,6 +331,19 @@ export class ContentsRepository {
       .from(contents)
       .where(and(eq(contents.spaceId, spaceId), eq(contents.fullSlug, fullSlug), ...(selfId ? [ne(contents.id, selfId)] : [])));
     if (taken) throw new ConflictException(`'${fullSlug}' is already used`);
+  }
+
+  /**
+   * Runs a write that puts something at `fullSlug` (or under it). The check before it can not see a write that has not
+   * committed yet; the unique index then refuses this one, with the same 409 as the check.
+   */
+  private async claimPath<T>(fullSlug: string, write: () => Promise<T>): Promise<T> {
+    try {
+      return await write();
+    } catch (error) {
+      if (isUniqueViolation(error)) throw new ConflictException(`'${fullSlug}' is already used`);
+      throw error;
+    }
   }
 
   private async find(executor: Pick<Database, 'select'>, spaceId: string, id: string): Promise<ContentEntity | undefined> {

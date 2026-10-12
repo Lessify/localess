@@ -284,7 +284,8 @@ export const contents = pgTable(
     primaryKey({ columns: [t.spaceId, t.id] }),
     index('contents_parent_idx').on(t.spaceId, t.parentSlug, t.kind.desc(), t.name),
     index('contents_kind_idx').on(t.spaceId, t.kind, t.name),
-    index('contents_full_slug_idx').on(t.spaceId, sql`${t.fullSlug} text_pattern_ops`),
+    // The path the public API finds a document by: unique per space. text_pattern_ops also serves the subtree LIKE 'a/%'.
+    uniqueIndex('contents_full_slug_idx').on(t.spaceId, sql`${t.fullSlug} text_pattern_ops`),
     index('contents_parent_slug_prefix_idx').on(t.spaceId, sql`${t.parentSlug} text_pattern_ops`),
   ],
 );

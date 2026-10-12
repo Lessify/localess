@@ -140,10 +140,10 @@ every 50 files, so polling shows movement.
 | 6 | `translations` | Pages through translations; `key` = Firebase id; type, locales, labels, description, timestamps. |
 | 7 | `schemas` | Inserts schemas; `name` = Firebase id; fields and enum values checked one by one as the app checks them (they reference schemas by name): an invalid one is dropped with a warning (`"<schema>: field '<name>' is not valid, dropped"`), and a schema keeps only what its type has (fields and preview field for ROOT/NODE, values for ENUM). Then the rules across fields, once every schema is read: a repeated field name drops the later field, a block that is not a NODE leaves `schemas`, an option field whose `source` is not an ENUM is dropped, a preview that is not a previewable field is cleared, each with a warning. |
 | 8 | `assets` | Reads every page; gives each asset a UUIDv7 dated to its `createdAt`. Inserts rows with `legacy_id` and `parent_path` mapped segment by segment to folder UUIDs. Streams each file from `{origin}/api/v1/spaces/{source}/assets/{id}/original` into `spaces/{space}/assets/{uuid}/original` and records size and md5; extracts metadata when the document carries none. A file that answers `404` is a warning, the row is kept. `total`: files. |
-| 9 | `contents` | Reads every page; gives each document a UUIDv7 dated to its `createdAt`. Inserts rows as stored (`data` parsed if it is a string), `published_at = null`, references not yet rewritten. |
+| 9 | `contents` | Reads every page; gives each document a UUIDv7 dated to its `createdAt`. Inserts rows as stored (`data` parsed if it is a string), `published_at = null`, references not yet rewritten. Paths are unique here but were not in Firestore: the first item imported keeps a `full_slug`, a later one gets its slug suffixed (`post-x7k2q`, as a clone does) with a warning (`"<path>: path used twice, imported as <new path>"`); a suffixed folder's children stay under the first. |
 | 10 | `contentMigration` | Rewrites every document's references with the asset and content id maps (below). Count: documents changed. |
 
-Then the content and translation versions are bumped and the run is `FINISHED`.
+Then any content draft or `/links` list served while the run went is dropped, and the run is `FINISHED`.
 
 On an error the current stage becomes `FAILED` with the message, the run becomes `FAILED` with `error`, and the
 space reads as failed. Stored files stay until the space is deleted (deleting a space removes its
