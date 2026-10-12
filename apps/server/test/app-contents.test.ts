@@ -125,6 +125,15 @@ describe('app API: contents', () => {
       expect((await reader.post(base, { kind: 'FOLDER', parentSlug: '', name: 'X', slug: 'x' })).statusCode).toBe(403);
     });
 
+    it('creates a document only for a ROOT schema of the space', async () => {
+      await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'hero', type: 'NODE' });
+      const missing = await editor.post(base, { kind: 'DOCUMENT', parentSlug: '', name: 'X', slug: 'x', schema: 'nope' });
+      expect(missing.statusCode).toBe(400);
+      expect(missing.json().message).toBe("No ROOT schema 'nope' in the space");
+      expect((await editor.post(base, { kind: 'DOCUMENT', parentSlug: '', name: 'X', slug: 'x', schema: 'hero' })).statusCode).toBe(400);
+      await t.db.delete(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'hero')));
+    });
+
     it('lists by parent (folders first, then by name), by name prefix, by ids, and counts', async () => {
       await create({ kind: 'DOCUMENT', parentSlug: '', name: 'About', slug: 'about', schema: 'page' });
       expect((await reader.get(`${base}?parentSlug=`)).json().map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);

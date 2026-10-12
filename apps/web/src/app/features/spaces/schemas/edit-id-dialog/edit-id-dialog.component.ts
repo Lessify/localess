@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NameUtils } from '@core/utils/name-utils.service';
@@ -13,6 +13,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
 import { SchemaValidator } from '../shared/schema.validator';
+import { describeSchemaUsage } from '../shared/schema-usage';
 import { EditIdDialogContext, EditIdDialogResult } from './edit-id-dialog.model';
 
 @Component({
@@ -34,6 +35,12 @@ export class EditIdDialogComponent implements OnInit {
   form: FormGroup = this.fb.group({
     name: this.fb.control('', [...SchemaValidator.ID, CommonValidator.reservedName(this.context.reservedNames)]),
   });
+
+  /** Where the schema is in use, which forbids a rename; `undefined` when unused or when the usage could not be read. */
+  readonly inUse = computed(() => (this.context.usage ? describeSchemaUsage(this.context.usage) : undefined));
+
+  /** A schema in use keeps its name (the server refuses too). */
+  readonly canSave = computed(() => this.inUse() === undefined);
 
   ngOnInit(): void {
     this.form.patchValue({ name: this.context.name });

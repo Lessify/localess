@@ -238,6 +238,27 @@ export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'name' | 'type'
 
 export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
 
+/**
+ * App API `GET …/schemas/:id/usage`: what uses a schema by name. A schema in use can be neither renamed nor deleted.
+ */
+export interface SchemaUsage {
+  /** The fields of other schemas that allow it (`schemas`) or take their options from it (`source`). */
+  fields: SchemaFieldRef[];
+  /** The contents whose document schema it is (`contents.schema`): how many, and the first five by full slug. */
+  contents: { count: number; first: { name: string; fullSlug: string }[] };
+}
+
+export interface SchemaFieldRef {
+  /** The referring schema's name. */
+  schema: string;
+  field: string;
+}
+
+/** Whether anything uses the schema. */
+export function isSchemaInUse(usage: SchemaUsage): boolean {
+  return usage.fields.length > 0 || usage.contents.count > 0;
+}
+
 /** Field kinds whose value is an array. */
 export function isSchemaArray(schema: SchemaField): boolean {
   return (

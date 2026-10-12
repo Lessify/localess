@@ -236,11 +236,18 @@ describe('v1 dev tools and manage API', () => {
       });
     });
 
-    it('syncs: deletes schemas absent from the payload', async () => {
+    it('refuses a sync that would delete the schema of contents', async () => {
       const response = await push({ type: 'sync', schemas: [card] });
-      expect(response.json().ids.deleted.sort()).toEqual(['color', 'page']);
+      expect(response.statusCode).toBe(400);
+      expect(response.json().details).toEqual({ errors: ["Cannot delete schema 'page': used by 4 contents"] });
+    });
+
+    it('syncs: deletes schemas absent from the payload', async () => {
+      const page = { id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] };
+      const response = await push({ type: 'sync', schemas: [page, card] });
+      expect(response.json().ids.deleted).toEqual(['color']);
       const rows = await t.db.select({ name: schemas.name }).from(schemas).where(eq(schemas.spaceId, S1));
-      expect(rows.map(it => it.name)).toEqual(['card']);
+      expect(rows.map(it => it.name).sort()).toEqual(['card', 'page']);
     });
 
     it('validates the body', async () => {

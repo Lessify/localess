@@ -1,4 +1,3 @@
-import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -8,6 +7,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
+import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 import { joinSlug, startsWith } from '../utils/slug.utils.js';
 
@@ -90,8 +90,20 @@ export class ContentsRepository {
     return this.find(this.db, spaceId, id);
   }
 
-  create(spaceId: string, values: NewContent, tx?: Transaction): Promise<ContentEntity> {
+  /**
+   * `undefined` when a document's schema is not a ROOT schema of the space. That schema row is locked (shared) until
+   * the commit, so a rename or delete of it waits and then sees the new document, or runs first and this finds none.
+   */
+  create(spaceId: string, values: NewContent, tx?: Transaction): Promise<ContentEntity | undefined> {
     return this.write(spaceId, tx, async t => {
+      if (values.kind === 'DOCUMENT') {
+        const [schema] = await t
+          .select({ type: schemas.type })
+          .from(schemas)
+          .where(and(eq(schemas.spaceId, spaceId), eq(schemas.name, values.schema ?? '')))
+          .for('share');
+        if (schema?.type !== 'ROOT') return undefined;
+      }
       const fullSlug = joinSlug(values.parentSlug, values.slug);
       await this.checkPlacement(t, spaceId, values.parentSlug, fullSlug);
       const [row] = await t

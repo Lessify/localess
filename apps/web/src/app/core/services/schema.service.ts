@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { Schema, SchemaComponentUpdate, SchemaCreate, SchemaEnumUpdate, SchemaType } from '@localess/shared';
+import { Schema, SchemaComponentUpdate, SchemaCreate, SchemaEnumUpdate, SchemaType, SchemaUsage } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -34,7 +34,12 @@ export class SchemaService {
     return this.http.post<void>(this.base(spaceId), { name: entity.name, type: entity.type, displayName: entity.displayName });
   }
 
-  /** Changes the name; the id, fields and timestamps are kept. References to the old name are not rewritten. */
+  /** What uses the schema by name (other schemas' fields, contents): while anything does, no rename or delete. */
+  usage(spaceId: string, id: string): Observable<SchemaUsage> {
+    return this.http.get<SchemaUsage>(`${this.base(spaceId)}/${id}/usage`);
+  }
+
+  /** Changes the name; the id, fields and timestamps are kept. Refused (409) while the schema is in use. */
   updateName(spaceId: string, entity: Schema, name: string): Observable<void> {
     return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/name`, { name });
   }

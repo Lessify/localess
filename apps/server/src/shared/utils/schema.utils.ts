@@ -5,11 +5,19 @@ import {
   SchemaEnum,
   SchemaEnumExport,
   SchemaExport,
+  SchemaField,
   SchemaFieldKind,
   SchemaType,
 } from '@localess/shared';
 import { isLabelsEqual } from './labels.utils.js';
 import { stableStringify } from './stable-json.js';
+
+/** Whether `field` refers to schema `name`: allows it as a block (`schemas`) or takes its options from it (`source`). */
+export function fieldRefersTo(field: SchemaField, name: string): boolean {
+  if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) return field.schemas?.includes(name) ?? false;
+  if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) return field.source === name;
+  return false;
+}
 
 /**
  * Result of planSchemaPush: the classified changes a schema push would apply.
@@ -109,19 +117,11 @@ export function planSchemaPush(existing: Map<string, Schema>, incoming: SchemaEx
     for (const id of existing.keys()) {
       if (!incomingIds.has(id)) deletes.push(id);
     }
-    const deleteSet = new Set(deletes);
     for (const schema of incoming) {
-      if (schema.type !== SchemaType.ROOT && schema.type !== SchemaType.NODE) continue;
+      if (schema.type === SchemaType.ENUM) continue;
       for (const field of (schema as SchemaComponentExport).fields ?? []) {
-        if ((field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) && field.schemas) {
-          for (const ref of field.schemas) {
-            if (deleteSet.has(ref)) {
-              errors.push(`Cannot delete schema '${ref}': still referenced by '${schema.id}' field '${field.name}'`);
-            }
-          }
-        }
-        if ((field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) && deleteSet.has(field.source)) {
-          errors.push(`Cannot delete schema '${field.source}': still referenced by '${schema.id}' field '${field.name}'`);
+        for (const name of deletes.filter(it => fieldRefersTo(field, it))) {
+          errors.push(`Cannot delete schema '${name}': still referenced by '${schema.id}' field '${field.name}'`);
         }
       }
     }

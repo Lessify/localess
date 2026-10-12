@@ -71,6 +71,14 @@ describe('SchemaService', () => {
     await done;
   });
 
+  it('usage() reads what uses the schema by name', async () => {
+    const service = setup();
+    const usage = firstValueFrom(service.usage('space-1', 'uuid-1'));
+    const body = { fields: [{ schema: 'page', field: 'items' }], contents: { count: 1, first: [{ name: 'Home', fullSlug: 'home' }] } };
+    http.expectOne('/api/app/spaces/space-1/schemas/uuid-1/usage').flush(body);
+    expect(await usage).toEqual(body);
+  });
+
   it('updateName() renames on the server, addressing the schema by id', async () => {
     const service = setup();
     const done = firstValueFrom(service.updateName('space-1', { id: 'uuid-1', name: 'old' } as Schema, 'new'));

@@ -19,12 +19,21 @@
     }
   </div>
 </form>
-<p class="text-destructive text-sm">
-  <strong>Warning:</strong>
-  Content, other Schemas and your code (SDK, Code as Source) refer to a Schema by this ID. They are not updated, so references to the old ID
-  stop resolving until they are changed too. It is also the OpenAPI Schema Name.
-</p>
+@if (inUse(); as usage) {
+  <p class="text-destructive text-sm">
+    <strong class="block">The ID can not be changed while the Schema is in use.</strong>
+    @for (line of usage.split('\n'); track $index) {
+      <span class="block">{{ line }}</span>
+    }
+  </p>
+} @else {
+  <p class="text-destructive text-sm">
+    <strong>Warning:</strong>
+    Your code (SDK, Code as Source) refers to a Schema by this ID and keeps the old one until you change it. It is also the OpenAPI Schema
+    Name.
+  </p>
+}
 <hlm-dialog-footer>
   <button hlmBtn variant="ghost" hlmDialogClose>Cancel</button>
-  <button hlmBtn [disabled]="!form.valid" (click)="save()">Save</button>
+  <button hlmBtn [disabled]="!form.valid || !canSave()" (click)="save()">Save</button>
 </hlm-dialog-footer>

@@ -44,6 +44,20 @@ describe('ConfirmationDialogComponent', () => {
     expect(close).toHaveBeenCalledWith(true);
   });
 
+  it('offers OK and Cancel by default', () => {
+    const buttons = [...setup(base).nativeElement.querySelectorAll('button')].map((it: HTMLElement) => it.textContent?.trim());
+
+    expect(buttons).toEqual(['Cancel', 'OK']);
+  });
+
+  it('offers only Close when the action is not possible (`confirmable: false`)', () => {
+    const buttons = [...setup({ ...base, confirmable: false }).nativeElement.querySelectorAll('button')].map((it: HTMLElement) =>
+      it.textContent?.trim(),
+    );
+
+    expect(buttons).toEqual(['Close']);
+  });
+
   describe('confirming button variant', () => {
     /** Spartan calls its primary button `default`, so a caller asking for `primary` gets that. */
     it('defaults to primary when the context says nothing', () => {

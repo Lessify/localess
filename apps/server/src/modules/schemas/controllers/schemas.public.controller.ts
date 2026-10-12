@@ -85,7 +85,11 @@ export class SchemasPublicController {
       return;
     }
     // Schemas shape the draft output (locale extraction), so content drafts change too: the content version moves.
-    await this.schemas.applyPush(spaceId, plan);
+    const errors = await this.schemas.applyPush(spaceId, plan);
+    if (errors.length > 0) {
+      sendV1Error(reply, 400, 'failed-precondition', 'Referential integrity check failed', { details: { errors } });
+      return;
+    }
     void reply.send({
       message: `Created ${counts.created}, updated ${counts.updated}, deleted ${counts.deleted} schemas (${counts.unchanged} unchanged)`,
       counts,

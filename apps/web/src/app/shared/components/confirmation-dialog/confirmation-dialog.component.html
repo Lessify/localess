@@ -3,6 +3,10 @@
   <p hlmDialogDescription class="whitespace-pre-wrap">{{ context.content }}</p>
 </hlm-dialog-header>
 <hlm-dialog-footer>
-  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
-  <button hlmBtn [variant]="okVariant" (click)="confirm()">OK</button>
+  @if (context.confirmable === false) {
+    <button hlmBtn variant="outline" hlmDialogClose>Close</button>
+  } @else {
+    <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+    <button hlmBtn [variant]="okVariant" (click)="confirm()">OK</button>
+  }
 </hlm-dialog-footer>

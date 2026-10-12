@@ -142,7 +142,7 @@ Synchronous schema write used by `@localess/cli`'s `schema push`. Requires `DEV_
 }
 ```
 
-Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMAS` field whose `schemas` list is missing or empty — the editor could add no block to it. Imports still accept such fields, since existing spaces and their exports may hold them. Returns `404 not-found` when the space does not exist. Upserts reuse the import Task's change detection (`isSchemaChanged`, key-order-insensitive), preserve `createdAt`, and clear absent optionals. `sync` mode refuses (400 `failed-precondition`, listing offenders) to delete a schema still referenced by a surviving schema's `SCHEMA`/`SCHEMAS` refs or `OPTION`/`OPTIONS` source.
+Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMAS` field whose `schemas` list is missing or empty — the editor could add no block to it. Imports still accept such fields, since existing spaces and their exports may hold them. Returns `404 not-found` when the space does not exist. Upserts reuse the import Task's change detection (`isSchemaChanged`, key-order-insensitive), preserve `createdAt`, and clear absent optionals. `sync` mode refuses (400 `failed-precondition`, listing offenders) to delete a schema still referenced by a surviving schema's `SCHEMA`/`SCHEMAS` refs or `OPTION`/`OPTIONS` source, or one that contents use as their document schema (`Cannot delete schema 'page': used by 4 contents`; checked again under lock when applied).
 
 **Response:**
 

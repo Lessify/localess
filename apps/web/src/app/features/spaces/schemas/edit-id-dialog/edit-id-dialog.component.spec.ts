@@ -43,4 +43,26 @@ describe('EditIdDialogComponent', () => {
 
     expect(close).toHaveBeenCalledWith('Renamed');
   });
+
+  it('refuses to save while the schema is in use, saying where', () => {
+    const { component } = setup({
+      name: 'card',
+      reservedNames: [],
+      usage: { fields: [{ schema: 'page', field: 'items' }], contents: { count: 0, first: [] } },
+    });
+
+    expect(component.inUse()).toBe('Referenced by the fields:\n• page › items');
+    expect(component.canSave()).toBe(false);
+  });
+
+  it('saves when nothing uses the schema', () => {
+    expect(setup({ name: 'card', reservedNames: [], usage: { fields: [], contents: { count: 0, first: [] } } }).component.canSave()).toBe(true);
+  });
+
+  it('saves when the usage could not be read: the server still checks', () => {
+    const { component } = setup({ name: 'card', reservedNames: [] });
+
+    expect(component.inUse()).toBeUndefined();
+    expect(component.canSave()).toBe(true);
+  });
 });

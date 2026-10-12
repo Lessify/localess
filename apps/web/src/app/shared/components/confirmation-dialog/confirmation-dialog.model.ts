@@ -11,6 +11,11 @@ export interface ConfirmationDialogContext {
    * red button is what tells them apart from an ordinary confirmation.
    */
   variant?: ConfirmationDialogVariant;
+  /**
+   * `false` when the action is not possible and the dialog only says why: no OK, and Cancel becomes Close. Defaults to
+   * `true`.
+   */
+  confirmable?: boolean;
 }
 
 export type ConfirmationDialogVariant = 'primary' | 'destructive';

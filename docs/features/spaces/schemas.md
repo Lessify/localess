@@ -47,8 +47,8 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 - `dataSource.filterPredicate` — set once in `ngOnInit` via `FilterPredicateUtils.create()` (search across id/displayName/description + array-overlap on `labels`)
 - `onRowSelect(schema)` — navigates to `edit-comp` or `edit-enum` based on schema type
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)
-- `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID: changes the schema's `name` (shown as its ID), addressed by its UUID `id`; content, fields and code referring to the old name are not updated
-- `openDeleteDialog(event, schema)` — same `MouseEvent` handling; delete schema (with content impact warning)
+- `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID: changes the schema's `name` (shown as its ID), addressed by its UUID `id`. Before opening the dialog it reads `GET …/schemas/:id/usage` (`{ fields, contents }`, see [Schemas](../../roadmap/database-structure.md#schemas)); while the schema is in use the dialog lists where (`describeSchemaUsage`, `shared/schema-usage.ts`) and Save stays disabled. A failed read opens the dialog without it; the server refuses a rename of a schema in use with a 409, whose message the error toast shows
+- `openDeleteDialog(event, schema)` — same `MouseEvent` handling; reads the usage first: in use → a `ConfirmationDialog` with `confirmable: false` (only Close) listing where; unused → the usual destructive confirmation. A 409 from the server shows its message in the error toast
 - `openExportDialog()` / `openImportDialog()` — creates Tasks
 
 ## EditCompComponent (routed)

@@ -37,13 +37,18 @@ export class ContentsService {
     return toContent(found(await this.contents.findById(spaceId, id)));
   }
 
-  /** The parent must be an existing folder ('' is the root), and the full slug must be free. */
+  /**
+   * The parent must be an existing folder ('' is the root), the full slug must be free, and a document's schema must
+   * be a ROOT schema of the space.
+   */
   async create(
     spaceId: string,
     input: { kind: 'FOLDER' | 'DOCUMENT'; parentSlug: string; name: string; slug: string; schema?: string; data?: Record<string, unknown> },
     user: UserRow,
   ): Promise<Content> {
-    return toContent(await this.contents.create(spaceId, { ...input, updatedBy: updatedByOf(user) }));
+    const entity = await this.contents.create(spaceId, { ...input, updatedBy: updatedByOf(user) });
+    if (!entity) throw new BadRequestException(`No ROOT schema '${input.schema}' in the space`);
+    return toContent(entity);
   }
 
   /** A copy next to the original with a random suffix, never published. */

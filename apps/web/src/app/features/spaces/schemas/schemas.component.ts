@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   AfterViewInit,
   ChangeDetectionStrategy,
@@ -57,7 +58,8 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
 import { AddDialogComponent } from './add-dialog/add-dialog.component';
 import { AddDialogContext } from './add-dialog/add-dialog.model';
@@ -66,6 +68,7 @@ import { ExportDialogComponent } from './export-dialog/export-dialog.component';
 import { ExportDialogResult } from './export-dialog/export-dialog.model';
 import { ImportDialogComponent } from './import-dialog/import-dialog.component';
 import { ImportDialogResult } from './import-dialog/import-dialog.model';
+import { describeSchemaUsage } from './shared/schema-usage';
 
 @Component({
   selector: 'll-schemas',
@@ -201,16 +204,23 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog
-      .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
-        context: {
-          name: element.name,
-          reservedNames: this.schemaNames(),
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
+    this.schemaService
+      .usage(this.spaceId(), element.id)
+      .pipe(
+        // Without the usage, the rename is still offered.
+        catchError(() => of(undefined)),
+        switchMap(usage =>
+          this.dialog
+            .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
+              context: {
+                name: element.name,
+                reservedNames: this.schemaNames(),
+                usage,
+              },
+              contentClass: DIALOG_WIDTH_SM,
+            })
+            .closed$.pipe(take(1)),
+        ),
         filter(it => it !== undefined),
         switchMap(it => this.schemaService.updateName(this.spaceId(), element, it!)),
       )
@@ -218,9 +228,9 @@ export class SchemasComponent implements OnInit, AfterViewInit {
         next: () => {
           this.notificationService.success('Schema ID has been updated.');
         },
-        error: err => {
+        error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('Schema ID can not be updated.');
+          this.notifyError('Schema ID can not be updated.', err);
         },
       });
   }
@@ -233,20 +243,34 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     }
   }
 
+  /** While the schema is in use the dialog only says where (the server refuses too); otherwise it asks first. */
   openDeleteDialog(event: MouseEvent, element: Schema): void {
     event.preventDefault();
     event.stopImmediatePropagation();
-    this.dialog
-      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
-        context: {
-          title: 'Delete Schema',
-          content: `Are you sure about deleting Schema with name '${element.name}'.\n Any Content document associated with the Schema will not work anymore.`,
-          variant: 'destructive',
-        },
-        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
-      })
-      .closed$.pipe(
-        take(1),
+    this.schemaService
+      .usage(this.spaceId(), element.id)
+      .pipe(
+        // Without the usage, the delete is still offered; the server refuses it if the schema is in use.
+        map(usage => describeSchemaUsage(usage)),
+        catchError(() => of(undefined)),
+        switchMap(inUse =>
+          this.dialog
+            .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+              context: inUse
+                ? {
+                    title: 'Delete Schema',
+                    content: `Schema '${element.name}' can not be deleted while it is in use.\n${inUse}`,
+                    confirmable: false,
+                  }
+                : {
+                    title: 'Delete Schema',
+                    content: `Are you sure about deleting Schema with name '${element.name}'.`,
+                    variant: 'destructive',
+                  },
+              contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+            })
+            .closed$.pipe(take(1)),
+        ),
         filter(it => it || false),
         switchMap(() => this.schemaService.delete(this.spaceId(), element.id)),
       )
@@ -256,7 +280,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error(`Schema '${element.name}' can not be deleted.`);
+          this.notifyError(`Schema '${element.name}' can not be deleted.`, err);
         },
       });
   }
@@ -343,5 +367,14 @@ export class SchemasComponent implements OnInit, AfterViewInit {
       }
     }
     return result;
+  }
+
+  /** A refusal (409, e.g. a schema in use) carries the server's reason as the description. */
+  private notifyError(message: string, error: unknown): void {
+    if (error instanceof HttpErrorResponse && error.status === 409 && typeof error.error?.message === 'string') {
+      this.notificationService.error(message, { description: error.error.message });
+    } else {
+      this.notificationService.error(message);
+    }
   }
 }

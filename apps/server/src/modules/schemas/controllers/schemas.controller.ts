@@ -38,6 +38,12 @@ export class SchemasController {
     return this.schemas.get(spaceId, id);
   }
 
+  @Get(':id/usage')
+  @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
+  usage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.schemas.usage(spaceId, id);
+  }
+
   @Post()
   @RequirePermission(UserPermission.SCHEMA_CREATE)
   create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {

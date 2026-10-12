@@ -165,9 +165,13 @@ schemas PK id: space_id (FK, cascade), name (unique per space), type ROOT|NODE|E
 | `fields`, `values` | **Validated on every write path** with the shared zod schemas (`schemaFieldSchema`, `schemaEnumValueSchema`): the app's update, templates, the CLI push, the schema import task. Keys a field kind does not have are dropped. The columns are typed `SchemaField[]` / `SchemaEnumValue[]`, and `toSchema` maps them without a cast. |
 | Columns of the other type | **Not stored:** ROOT/NODE keep `fields` and `preview_field`, ENUM keeps `values`; what does not belong to the type is cleared on write (the type never changes). |
 | Firebase import | An invalid field or enum value is **dropped with a warning**, the rest of the schema is imported. |
+| Schema in use | **No rename, no delete** (409, saying where) while the schema is in use, in either of two ways: **(1)** a field of another schema refers to it, `schemas` (SCHEMA/SCHEMAS: mostly a NODE) or `source` (OPTION/OPTIONS: an ENUM); a schema referring to itself goes with it and does not count; **(2)** contents use it as their document schema, `contents.schema` (a ROOT). `contents.data` is not looked at. `GET …/schemas/:id/usage` answers `{ fields: [{ schema, field }], contents: { count, first } }` (the first five by full slug); the rename and delete dialogs show it. The CLI push (sync) refuses the same deletes. |
+| Checks and races | The service decides and words the 409; the repository locks the schema row (`FOR UPDATE`) and reads its usage in the write's transaction, answering it instead of writing. A document is created only for a ROOT schema of the space (400 otherwise), whose row it locks `FOR SHARE`: a rename or delete waits for that insert and then sees the content, or runs first and the insert finds no schema. The push re-checks its deletes under the same lock. |
+| Known gap | A NODE whose blocks sit in contents but that no field allows any more (removed from a field's `schemas`) counts as unused: deleting or renaming it leaves those blocks unresolved. |
 
-Still to discuss: renaming a schema in use (references keep the old name), deleting a schema in use (the app does not
-check; the push does for fields), rules across fields (duplicate field names, `preview_field` naming no field,
+Renaming a used schema everywhere is a [To do](#to-do).
+
+Still to discuss: rules across fields (duplicate field names, `preview_field` naming no field,
 `schemas` / `source` pointing at a schema of the wrong type), `schemas_type_idx` carrying an unused `display_name`,
 an `updated_by` column.
 
@@ -233,5 +237,12 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
   index (the kind count and filter); drop it if not.
 - **Assets — duplicate names in a folder:** allowed today (like a drive); decide whether to keep it.
 - **Assets — alt text per locale:** `alt` has one language; decide whether it becomes localised like content fields.
+- **Schemas — renaming everywhere:** rename a used schema in one transaction under the content lock: `schemas.name`,
+  other schemas' `fields[].schemas[]` and `source`, `contents.schema`, and every `_schema` (and legacy `schema`) in
+  `contents.data`, rewritten with a tree walker over the rows the usage query matches, page by page. Rewritten contents
+  keep `updated_at` (`keepUpdatedAt`), the content `cv` is bumped and a `contents` event is published per row.
+  Published snapshots are not rewritten: they keep the old name, which the customer's frontend (SDK component map,
+  Code as Source) still uses until it is deployed with the new one; the next publish switches them. The dialog says so.
+  Open: content import tasks of an export made before the rename still carry the old name.
 - **Assets — rendition cache size:** with `LOCALESS_RENDITION_CACHE=disk` generated renditions are kept until their
   asset is deleted; add a size limit or age-based eviction.

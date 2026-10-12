@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces } from '../src/infra/database/schema.js';
+import { newUuid } from '../src/infra/database/id.js';
+import { contents, spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 
@@ -130,6 +131,73 @@ describe('app API: schemas', () => {
     expect(created.map((s: { name: string }) => s.name)).toEqual(['hero', 'sizes']);
     for (const schema of created) expect(schema.id).toMatch(UUID_V7);
     ids['hero'] = created[0].id;
+  });
+
+  describe('in use: referred to by another schema\'s fields, or the schema of contents', () => {
+    let card: string;
+    let blocks: string;
+    const doc = (name: string) => ({
+      spaceId: S1, id: newUuid(), kind: 'DOCUMENT' as const, name, slug: name, fullSlug: `docs/${name}`, schema: 'blocks', data: { _id: name, _schema: 'blocks' },
+    });
+
+    beforeAll(async () => {
+      card = (await editor.post(base, { name: 'card', type: 'NODE' })).json().id;
+      blocks = (await editor.post(base, { name: 'blocks', type: 'ROOT' })).json().id;
+      await editor.put(`${base}/${blocks}`, {
+        fields: [
+          { name: 'items', kind: 'SCHEMAS', schemas: ['card', 'blocks'] },
+          { name: 'color', kind: 'OPTION', source: 'colors' },
+          { name: 'tint', kind: 'OPTIONS', source: 'colors' },
+        ],
+      });
+      // Blocks inside content data are not looked at: only `contents.schema`.
+      await t.db.insert(contents).values([
+        ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
+        { ...doc('nested'), schema: 'other', data: { _id: 'n', _schema: 'other', items: [{ _id: 'n1', _schema: 'card' }] } },
+      ]);
+    });
+
+    it('reports the fields that refer to a schema and the contents using it, the first five by full slug', async () => {
+      expect((await contentReader.get(`${base}/${card}/usage`)).json()).toEqual({
+        fields: [{ schema: 'blocks', field: 'items' }],
+        contents: { count: 0, first: [] },
+      });
+      expect((await contentReader.get(`${base}/${ids['colors']}/usage`)).json()).toEqual({
+        fields: [
+          { schema: 'blocks', field: 'color' },
+          { schema: 'blocks', field: 'tint' },
+        ],
+        contents: { count: 0, first: [] },
+      });
+      // Its own `items` field allowing it is no use: it goes with the schema.
+      expect((await contentReader.get(`${base}/${blocks}/usage`)).json()).toEqual({
+        fields: [],
+        contents: { count: 6, first: ['a', 'b', 'c', 'd', 'e'].map(name => ({ name, fullSlug: `docs/${name}` })) },
+      });
+      expect((await contentReader.get(`${base}/${newUuid()}/usage`)).statusCode).toBe(404);
+      expect((await other.get(`${base}/${card}/usage`)).statusCode).toBe(403);
+    });
+
+    it('refuses to rename or delete a schema in use, saying where it is used', async () => {
+      const rename = await editor.put(`${base}/${card}/name`, { name: 'tile' });
+      expect(rename.statusCode).toBe(409);
+      expect(rename.json().message).toBe("Schema 'card' is in use: referenced by 'blocks' field 'items'");
+      const removal = await editor.delete(`${base}/${blocks}`);
+      expect(removal.statusCode).toBe(409);
+      expect(removal.json().message).toBe("Schema 'blocks' is in use: used by 6 contents: a (docs/a), b (docs/b), c (docs/c), d (docs/d), e (docs/e) and 1 more");
+      expect((await editor.delete(`${base}/${ids['colors']}`)).json().message).toBe(
+        "Schema 'colors' is in use: referenced by 'blocks' field 'color', 'blocks' field 'tint'",
+      );
+      expect((await editor.get(`${base}/${card}`)).json().name).toBe('card');
+      expect((await editor.get(`${base}/${blocks}`)).statusCode).toBe(200);
+    });
+
+    it('renames and deletes once nothing uses it any more', async () => {
+      await t.db.delete(contents).where(eq(contents.spaceId, S1));
+      expect((await editor.delete(`${base}/${blocks}`)).statusCode).toBe(204);
+      expect((await editor.put(`${base}/${card}/name`, { name: 'tile' })).json().name).toBe('tile');
+      expect((await editor.delete(`${base}/${card}`)).statusCode).toBe(204);
+    });
   });
 
   it('deletes', async () => {
