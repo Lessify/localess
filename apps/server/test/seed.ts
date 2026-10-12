@@ -14,7 +14,7 @@ import { C, S1 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { insertSpace, type TestApp } from './test-app.js';
 
-export const TOKEN_V1 = 'AAAAAAAAAAAAAAAAAAAA';
+export const TOKEN_READ = 'AAAAAAAAAAAAAAAAAAAA';
 export const TOKEN_PUBLIC = 'BBBBBBBBBBBBBBBBBBBB';
 export const TOKEN_DRAFT = 'CCCCCCCCCCCCCCCCCCCC';
 export const TOKEN_DEV = 'DDDDDDDDDDDDDDDDDDDD';
@@ -29,12 +29,19 @@ const at = new Date('2026-01-01T00:00:00Z');
 export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
   await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en });
   await t.db.insert(tokens).values([
-    { id: newUuid(), token: TOKEN_V1, spaceId, name: 'legacy v1' },
-    { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', version: 2, permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
-    { id: newUuid(), token: TOKEN_DRAFT, spaceId, name: 'draft', version: 2, permissions: ['CONTENT_DRAFT', 'TRANSLATION_DRAFT'], cacheTtl: 30 },
-    { id: newUuid(), token: TOKEN_DEV, spaceId, name: 'dev', version: 2, permissions: ['DEV_TOOLS'] },
-    { id: newUuid(), token: TOKEN_NO_CACHE, spaceId, name: 'no cache', version: 2, permissions: ['CONTENT_PUBLIC'], cacheTtl: 0 },
-    { id: newUuid(), token: TOKEN_NONE, spaceId, name: 'none', version: 2, permissions: [] },
+    // What a token imported from Firebase V1 holds: read translations and content, published and draft.
+    {
+      id: newUuid(),
+      token: TOKEN_READ,
+      spaceId,
+      name: 'read',
+      permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT'],
+    },
+    { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
+    { id: newUuid(), token: TOKEN_DRAFT, spaceId, name: 'draft', permissions: ['CONTENT_DRAFT', 'TRANSLATION_DRAFT'], cacheTtl: 30 },
+    { id: newUuid(), token: TOKEN_DEV, spaceId, name: 'dev', permissions: ['DEV_TOOLS'] },
+    { id: newUuid(), token: TOKEN_NO_CACHE, spaceId, name: 'no cache', permissions: ['CONTENT_PUBLIC'], cacheTtl: 0 },
+    { id: newUuid(), token: TOKEN_NONE, spaceId, name: 'none', permissions: [] },
   ]);
 }
 

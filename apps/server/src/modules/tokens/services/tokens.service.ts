@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TOKEN_V1_IMPLICIT_PERMISSIONS, type TokenPermission } from '@localess/shared';
+import type { TokenPermission } from '@localess/shared';
 import { newTokenSecret } from '../../../infra/database/id.js';
 import { toToken } from '../../../shared/transformers/token.transformer.js';
 import { type TokenEntity, TokensRepository } from '../repositories/tokens.repository.js';
@@ -31,7 +31,6 @@ export class TokensService {
   async create(spaceId: string, input: TokenInput) {
     const entity = await this.tokens.create(spaceId, {
       token: newTokenSecret(),
-      version: 2,
       name: input.name,
       permissions: input.permissions,
       cacheTtl: input.cacheTtl ?? null,
@@ -43,24 +42,16 @@ export class TokensService {
   async update(spaceId: string, id: string, input: TokenInput) {
     return found(
       await this.tokens.update(spaceId, id, () => ({
-        version: 2,
-        name: input.name,
+          name: input.name,
         permissions: input.permissions,
         cacheTtl: input.cacheTtl ?? null,
       })),
     );
   }
 
-  /** Same token (same id) under a new secret; a V1 token becomes V2 with its implicit permissions spelled out. */
+  /** Same token (same id, name and permissions) under a new secret. */
   async regenerate(spaceId: string, id: string) {
-    return found(
-      await this.tokens.update(spaceId, id, old => ({
-        token: newTokenSecret(),
-        version: 2,
-        permissions: old.version === 2 ? old.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
-        cacheTtl: old.version === 2 ? old.cacheTtl : null,
-      })),
-    );
+    return found(await this.tokens.update(spaceId, id, () => ({ token: newTokenSecret() })));
   }
 
   async delete(spaceId: string, id: string): Promise<void> {

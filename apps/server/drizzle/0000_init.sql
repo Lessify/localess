@@ -184,8 +184,7 @@ CREATE TABLE "tokens" (
 	"space_id" uuid NOT NULL,
 	"token" text NOT NULL,
 	"name" text NOT NULL,
-	"version" integer,
-	"permissions" text[],
+	"permissions" text[] DEFAULT '{}' NOT NULL,
 	"cache_ttl" integer,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -324,7 +323,6 @@ CREATE INDEX "task_logs_task_idx" ON "task_logs" USING btree ("task_id","created
 CREATE INDEX "tasks_space_idx" ON "tasks" USING btree ("space_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "tasks_queue_idx" ON "tasks" USING btree ("created_at") WHERE "tasks"."status" = 'INITIATED';--> statement-breakpoint
 CREATE INDEX "tokens_space_idx" ON "tokens" USING btree ("space_id","created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "tokens_permissions_idx" ON "tokens" USING gin ("permissions");--> statement-breakpoint
 CREATE UNIQUE INDEX "translations_key_idx" ON "translations" USING btree ("space_id","key");--> statement-breakpoint
 CREATE INDEX "user_identities_user_idx" ON "user_identities" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint

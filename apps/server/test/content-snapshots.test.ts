@@ -4,7 +4,7 @@ import { contentLinkSnapshots, contentSnapshots, schemas } from '../src/infra/da
 import { ContentsService } from '../src/modules/contents/services/contents.service.js';
 import { SchemasService } from '../src/modules/schemas/services/schemas.service.js';
 import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
-import { seedContent, seedSpace, TOKEN_DRAFT, TOKEN_PUBLIC, TOKEN_V1 } from './seed.js';
+import { seedContent, seedSpace, TOKEN_DRAFT, TOKEN_PUBLIC, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { C, contentName, S1 } from './ids.js';
 
@@ -164,7 +164,7 @@ describe('content snapshots', () => {
         'post1',
         'post2',
       ]);
-      expect((await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_V1}&version=draft`)).statusCode).toBe(302);
+      expect((await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_READ}&version=draft`)).statusCode).toBe(302);
     });
 
     it('stores one list per version, each answering to its built_at, keeping version in the redirect', async () => {

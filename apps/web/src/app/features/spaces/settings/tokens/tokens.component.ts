@@ -6,7 +6,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { TokenService } from '@core/services/token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { isTokenV2, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
+import { Token, TokenPermission } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideSquareTerminal, lucideTrash } from '@ng-icons/lucide';
 import {
@@ -73,7 +73,7 @@ export class TokensComponent implements AfterViewInit {
 
   private readonly tokens = signal<Token[]>([]);
   readonly dataSource = new TableDataSource<Token>(this.tokens, this.injector);
-  displayedColumns: string[] = ['id', 'name', 'version', 'permissions', 'usage', 'cacheTtl', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['id', 'name', 'permissions', 'usage', 'cacheTtl', 'updatedAt', 'actions'];
 
   private destroyRef = inject(DestroyRef);
 
@@ -132,9 +132,8 @@ export class TokensComponent implements AfterViewInit {
       .open<TokenForm, TokenForm>(TokenDialogComponent, {
         context: {
           name: element.name,
-          // A v1 token implicitly grants these; pre-tick them so saving doesn't silently narrow its access.
-          permissions: isTokenV2(element) ? element.permissions : [...TOKEN_V1_IMPLICIT_PERMISSIONS],
-          cacheTtl: isTokenV2(element) ? element.cacheTtl : undefined,
+          permissions: element.permissions,
+          cacheTtl: element.cacheTtl,
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -211,7 +210,7 @@ export class TokensComponent implements AfterViewInit {
   }
 
   permissionsToUsage(element: Token): TokenUsageInfo {
-    return getTokenUsageInfo(isTokenV2(element) ? element.permissions : TOKEN_V1_IMPLICIT_PERMISSIONS);
+    return getTokenUsageInfo(element.permissions);
   }
 
   copied() {
@@ -220,7 +219,7 @@ export class TokensComponent implements AfterViewInit {
 
   /** Only tokens holding Development Tools can be used by `@localess/cli`. */
   isCliToken(element: Token): boolean {
-    return isTokenV2(element) && element.permissions.includes(TokenPermission.DEV_TOOLS);
+    return element.permissions.includes(TokenPermission.DEV_TOOLS);
   }
 
   /** `@localess/cli` login command for this token, pointing at the Localess the user is on. */

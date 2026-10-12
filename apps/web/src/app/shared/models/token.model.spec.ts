@@ -1,4 +1,4 @@
-import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
+import { TokenPermission } from '@localess/shared';
 
 import { getTokenUsageInfo } from './token.model';
 
@@ -46,13 +46,13 @@ describe('getTokenUsageInfo()', () => {
     });
   });
 
-  it('exposes the TokenV1 implicit permission set', () => {
-    expect(TOKEN_V1_IMPLICIT_PERMISSIONS).toEqual([
+  it('classifies a token reading published and draft translations and content as SERVER_SIDE', () => {
+    const readAll = [
       TokenPermission.TRANSLATION_PUBLIC,
       TokenPermission.TRANSLATION_DRAFT,
       TokenPermission.CONTENT_PUBLIC,
       TokenPermission.CONTENT_DRAFT,
-    ]);
-    expect(getTokenUsageInfo(TOKEN_V1_IMPLICIT_PERMISSIONS)).toEqual(expect.objectContaining({ category: 'SERVER_SIDE' }));
+    ];
+    expect(getTokenUsageInfo(readAll)).toEqual(expect.objectContaining({ category: 'SERVER_SIDE' }));
   });
 });

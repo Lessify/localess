@@ -64,13 +64,12 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   describe('tokens', () => {
     const base = `/api/app/spaces/${S1}/tokens`;
 
-    it('creates V2 tokens with a UUIDv7 id and a 20-character secret, for SPACE_MANAGEMENT only', async () => {
+    it('creates tokens with a UUIDv7 id and a 20-character secret, for SPACE_MANAGEMENT only', async () => {
       const response = await manager.post(base, { name: 'Website', permissions: ['CONTENT_PUBLIC'], cacheTtl: 120 });
       expect(response.statusCode).toBe(201);
       expect(response.json()).toMatchObject({
         id: expect.stringMatching(UUID_V7),
         token: expect.stringMatching(/^[A-Za-z0-9]{20}$/),
-        version: 2,
         name: 'Website',
         permissions: ['CONTENT_PUBLIC'],
         cacheTtl: 120,
@@ -85,18 +84,18 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await manager.get(base)).json()).toHaveLength(2);
     });
 
-    it('regenerates a V1 token as V2 with its implicit permissions, under a new secret but the same id', async () => {
+    it('regenerates a token under a new secret, keeping its id, name and permissions', async () => {
       const id = newUuid();
-      await t.db.insert(tokens).values({ id, token: 'VVVVVVVVVVVVVVVVVVVV', spaceId: S1, name: 'Legacy' });
+      await t.db.insert(tokens).values({ id, token: 'VVVVVVVVVVVVVVVVVVVV', spaceId: S1, name: 'Legacy', permissions: ['CONTENT_PUBLIC'] });
       const read = (secret: string) => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${secret}` });
       expect((await read('VVVVVVVVVVVVVVVVVVVV')).statusCode).toBe(302); // now cached
       const response = await manager.post(`${base}/${id}/regenerate`);
       expect(response.json()).toMatchObject({
         id,
-        version: 2,
         name: 'Legacy',
-        permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT'],
+        permissions: ['CONTENT_PUBLIC'],
       });
+      expect(response.json()).not.toHaveProperty('version');
       expect(response.json().token).toMatch(/^[A-Za-z0-9]{20}$/);
       expect(response.json().token).not.toBe('VVVVVVVVVVVVVVVVVVVV');
       await eventually(async () => expect((await read('VVVVVVVVVVVVVVVVVVVV')).statusCode).toBe(401));

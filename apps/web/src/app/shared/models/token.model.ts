@@ -1,8 +1,8 @@
-import { TokenPermission, TokenV2 } from '@localess/shared';
+import { Token, TokenPermission } from '@localess/shared';
 
 // UI-only token helpers (labels, usage hints, form shape); the token model itself is in @localess/shared.
 
-export type TokenForm = Pick<TokenV2, 'name' | 'permissions' | 'cacheTtl'>;
+export type TokenForm = Pick<Token, 'name' | 'permissions' | 'cacheTtl'>;
 
 export const PERMISSION_TEXT: Record<TokenPermission, string> = {
   [TokenPermission.TRANSLATION_PUBLIC]: 'Translation Public',

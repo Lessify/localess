@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Space, Token, TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
+import { Space, Token, TokenPermission } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TokenService } from '@core/services/token.service';
 import { SpaceStore } from '@core/stores/space.store';
@@ -15,7 +15,7 @@ function space(): Space {
 }
 
 function token(overrides: Partial<Token> = {}): Token {
-  return { id: 't1', name: 'CI', version: 2, permissions: [TokenPermission.CONTENT_DRAFT], ...overrides } as unknown as Token;
+  return { id: 't1', name: 'CI', permissions: [TokenPermission.CONTENT_DRAFT], ...overrides } as unknown as Token;
 }
 
 describe('TokensComponent', () => {
@@ -117,16 +117,16 @@ describe('TokensComponent', () => {
     expect(success).toHaveBeenCalledWith('Token has been created.');
   });
 
-  it('openEditDialog() prefills the implicit permissions for a v1 token', () => {
+  it('openEditDialog() prefills the name, permissions and cache TTL of the token', () => {
     const { component, open } = setup([], space());
-    const element = { id: 't0', name: 'Legacy', version: undefined } as unknown as Token;
+    const element = token({ name: 'Website', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: 120 } as Partial<Token>);
     open.mockReturnValue({ closed$: of(undefined) });
 
     component.openEditDialog(element);
 
     expect(open).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ context: { name: 'Legacy', permissions: TOKEN_V1_IMPLICIT_PERMISSIONS, cacheTtl: undefined } }),
+      expect.objectContaining({ context: { name: 'Website', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: 120 } }),
     );
   });
 
@@ -227,13 +227,11 @@ describe('TokensComponent', () => {
     expect(info.category).toBe('PUBLIC_SAFE');
   });
 
-  it('permissionsToUsage() classifies a v1 token as SERVER_SIDE via its implicit permissions', () => {
+  it('permissionsToUsage() classifies a token by its permissions', () => {
     const { component } = setup([], space());
-    const v1Token = { id: 't1', name: 'Legacy', version: undefined } as unknown as Token;
 
-    const info = component.permissionsToUsage(v1Token);
-
-    expect(info.category).toBe('SERVER_SIDE');
+    const readAll = [TokenPermission.TRANSLATION_PUBLIC, TokenPermission.TRANSLATION_DRAFT, TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT];
+    expect(component.permissionsToUsage(token({ permissions: readAll })).category).toBe('SERVER_SIDE');
   });
 
   it('copied() notifies success', () => {
@@ -244,12 +242,11 @@ describe('TokensComponent', () => {
     expect(success).toHaveBeenCalledWith('Token ID copied to clipboard.');
   });
 
-  it('isCliToken() is true only for v2 tokens holding Development Tools', () => {
+  it('isCliToken() is true only for tokens holding Development Tools', () => {
     const { component } = setup([], space());
 
     expect(component.isCliToken(token({ permissions: [TokenPermission.DEV_TOOLS] }))).toBe(true);
     expect(component.isCliToken(token({ permissions: [TokenPermission.CONTENT_DRAFT] }))).toBe(false);
-    expect(component.isCliToken({ id: 't1', name: 'Legacy', version: undefined } as unknown as Token)).toBe(false);
   });
 
   it('cliLoginCommand() builds the login command for the current origin, space and token', () => {

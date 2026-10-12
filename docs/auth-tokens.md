@@ -16,17 +16,17 @@ Tokens are managed in the app (Space Settings → Tokens) through `/api/app/spac
 
 ---
 
-## Token Versions
+## Permissions and cache TTL
 
-### TokenV1 (legacy)
-`version` is null. Implicitly grants all read permissions:
-- `TRANSLATION_PUBLIC`, `TRANSLATION_DRAFT`, `CONTENT_PUBLIC`, `CONTENT_DRAFT`
-- Does **not** grant `DEV_TOOLS`
+A token grants exactly the `permissions` it lists (`permissions: TokenPermission[]`, never null). There is one kind of
+token: the Firebase-era V1 tokens, whose permissions were implicit, are imported with them listed
+(`TRANSLATION_PUBLIC`, `TRANSLATION_DRAFT`, `CONTENT_PUBLIC`, `CONTENT_DRAFT`; not `DEV_TOOLS`), keeping their value.
 
-### TokenV2 (current)
-Has `version: 2` and an explicit `permissions: TokenPermission[]` array. Only grants what is listed.
+The secret is stored as plain text, unlike sessions and reset links: the editor reads it to build Visual Editor
+previews and API links, and tokens are handed to websites (a `CONTENT_PUBLIC` token is public by design). Protect
+database backups accordingly.
 
-Also supports an optional `cacheTtl` (`cache_ttl`, 0–31536000 seconds), which overrides the default CDN redirect cache TTL (`CACHE_REDIRECT_MAX_AGE_DEFAULT`, 60s) for requests made with that token. `cacheTtl: 0` disables redirect caching entirely (`Cache-Control: no-cache`). See [CDN & Caching](cdn-caching.md).
+A token also supports an optional `cacheTtl` (`cache_ttl`, 0–31536000 seconds), which overrides the default CDN redirect cache TTL (`CACHE_REDIRECT_MAX_AGE_DEFAULT`, 60s) for requests made with that token. `cacheTtl: 0` disables redirect caching entirely (`Cache-Control: no-cache`). See [CDN & Caching](cdn-caching.md).
 
 ---
 
@@ -38,7 +38,7 @@ Also supports an optional `cacheTtl` (`cache_ttl`, 0–31536000 seconds), which 
 | `TRANSLATION_DRAFT` | Draft translations (requires `version` param) |
 | `CONTENT_PUBLIC` | Published content |
 | `CONTENT_DRAFT` | Draft content (requires `version` param) |
-| `DEV_TOOLS` | Dev-tools endpoints, `MANAGE` endpoints (translation bulk-write, schema push), and all content/translation access. TokenV2 only |
+| `DEV_TOOLS` | Dev-tools endpoints, `MANAGE` endpoints (translation bulk-write, schema push), and all content/translation access |
 
 ---
 
@@ -79,7 +79,7 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 
 ## Implementation Files
 
-- `packages/shared/src/models/token.model.ts` — `TokenPermission`, token types and `TOKEN_V1_IMPLICIT_PERMISSIONS` (shared by server and web)
+- `packages/shared/src/models/token.model.ts` — `TokenPermission` and the `Token` type (shared by server and web)
 - `apps/server/src/auth/services/token-auth.service.ts` — `authorize()`, the token cache and its invalidation; the lookup in `auth/repositories/api-tokens.repository.ts`
 - `apps/server/src/auth/utils/api-token.ts` — `ApiToken`, `validateToken`, `canPerform` / `canPerformAny`
 - `apps/server/src/modules/tokens/tokens.controller.ts` — token management for the app

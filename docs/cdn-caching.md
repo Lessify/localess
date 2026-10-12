@@ -98,7 +98,7 @@ that has since committed.
 | 404 — asset route with an old (Firestore) space id no space has yet | `no-cache` | `no-cache` | browser / CDN |
 | 503 — any `/api/v1/spaces/:spaceId/**` while the space is importing from Firebase or its import failed (`Retry-After: 60`) | `no-store` | `no-store` | browser / CDN |
 
-> Redirect TTL is a flat default (`CACHE_REDIRECT_MAX_AGE_DEFAULT`), not split by published/draft. It can be overridden per-token via the `cacheTtl` field on `TokenV2` — see [Auth Tokens](auth-tokens.md) — where `cacheTtl: 0` disables caching entirely (`Cache-Control: no-cache`).
+> Redirect TTL is a flat default (`CACHE_REDIRECT_MAX_AGE_DEFAULT`), not split by published/draft. It can be overridden per-token via the `cacheTtl` field of the token — see [Auth Tokens](auth-tokens.md) — where `cacheTtl: 0` disables caching entirely (`Cache-Control: no-cache`).
 >
 > "404 responses" is not a single behavior — it depends on which lookup fails (see rows above); some 404s carry no `Cache-Control` header at all.
 

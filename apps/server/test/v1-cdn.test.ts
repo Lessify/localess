@@ -10,7 +10,7 @@ import {
   TOKEN_NO_CACHE,
   TOKEN_NONE,
   TOKEN_PUBLIC,
-  TOKEN_V1,
+  TOKEN_READ,
 } from './seed.js';
 import { createTestApp, insertSpace, setImport, TestApp } from './test-app.js';
 import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
@@ -32,7 +32,7 @@ describe('v1 CDN API', () => {
     await seedTranslations(t);
     // A second space with nothing published, and its own token.
     await insertSpace(t.db, { id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
-    await t.db.insert(tokens).values({ id: newUuid(), token: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'v1' });
+    await t.db.insert(tokens).values({ id: newUuid(), token: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'read', permissions: ['TRANSLATION_PUBLIC', 'CONTENT_PUBLIC'] });
   });
 
   afterAll(() => t?.close());
@@ -78,16 +78,11 @@ describe('v1 CDN API', () => {
       expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DRAFT}&version=draft`)).statusCode).toBe(302);
       expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DEV}&version=draft`)).statusCode).toBe(302);
     });
-
-    it('gives V1 tokens their implicit public and draft permissions', async () => {
-      expect((await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}&version=draft`)).statusCode).toBe(302);
-      expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_V1}`)).statusCode).toBe(302);
-    });
   });
 
   describe('v1 route id validation (ported)', () => {
     it.each([
-      ['content id with an encoded slash (draft path)', `/api/v1/spaces/S1/contents/X%2Fdraft?locale=en&cv=1&token=${TOKEN_V1}`],
+      ['content id with an encoded slash (draft path)', `/api/v1/spaces/S1/contents/X%2Fdraft?locale=en&cv=1&token=${TOKEN_READ}`],
       ['content id containing a dot', '/api/v1/spaces/S1/contents/a.json?cv=1'],
       ['space id with an encoded slash', '/api/v1/spaces/S1%2Fcontents%2FX/contents/C1'],
       ['asset id with an encoded slash', '/api/v1/spaces/S1/assets/A1%2Fx'],
@@ -104,7 +99,7 @@ describe('v1 CDN API', () => {
     });
 
     it('answers 404 for a well-formed id that is neither a space UUID nor an imported Firestore id', async () => {
-      const response = await get(`/api/v1/spaces/NoSuchFirestoreId/contents/${C.home}?token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/NoSuchFirestoreId/contents/${C.home}?token=${TOKEN_READ}`);
       expect(response.statusCode).toBe(404);
       expect(response.json()).toEqual({ message: 'Not found', status: 'NOT_FOUND' });
     });
@@ -112,17 +107,17 @@ describe('v1 CDN API', () => {
 
   describe('cv redirects (ported)', () => {
     it('keeps a decoded value that contains & and = inside its own parameter', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}&version=x%26token%3Dinjected`);
+      const response = await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_READ}&version=x%26token%3Dinjected`);
       expect(response.statusCode).toBe(302);
       const location = new URL(response.headers.location as string, 'https://cms.example.com');
-      expect(location.searchParams.getAll('token')).toEqual([TOKEN_V1]);
+      expect(location.searchParams.getAll('token')).toEqual([TOKEN_READ]);
       expect(location.searchParams.get('version')).toBe('x&token=injected');
     });
 
     it('leaves ordinary values unchanged', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/translations/en?token=${TOKEN_READ}`);
       expect(response.statusCode).toBe(302);
-      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/translations/en?cv=3&token=${TOKEN_V1}`);
+      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/translations/en?cv=3&token=${TOKEN_READ}`);
       expect(response.headers['cache-control']).toBe('public, max-age=60, s-maxage=60');
     });
 
@@ -140,7 +135,7 @@ describe('v1 CDN API', () => {
   });
 
   describe('translations', () => {
-    const translations = (query: string) => get(`/api/v1/spaces/${S1}/translations/${query}&cv=3&token=${TOKEN_V1}`);
+    const translations = (query: string) => get(`/api/v1/spaces/${S1}/translations/${query}&cv=3&token=${TOKEN_READ}`);
 
     it('serves the published locale file, cached for a week', async () => {
       const response = await translations('de?x=1');
@@ -156,7 +151,7 @@ describe('v1 CDN API', () => {
 
     it('builds drafts from the live rows, filling gaps from the fallback locale', async () => {
       // A draft answers to the time it was built, not to the published cv.
-      const redirect = await get(`/api/v1/spaces/${S1}/translations/de?version=draft&token=${TOKEN_V1}`);
+      const redirect = await get(`/api/v1/spaces/${S1}/translations/de?version=draft&token=${TOKEN_READ}`);
       const response = await get(redirect.headers.location as string);
       expect(response.json()).toEqual({ farewell: 'Bye', greeting: 'Hallo', 'new.key': 'New (draft only)' });
       expect(Object.keys(response.json())).toEqual(['farewell', 'greeting', 'new.key']);
@@ -245,27 +240,27 @@ describe('v1 CDN API', () => {
 
   describe('content by slug', () => {
     it('finds a document by its full slug', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&token=${TOKEN_READ}`);
       expect(response.statusCode).toBe(200);
       expect(response.json()).toMatchObject({ id: C.post1, fullSlug: 'blog/post-1' });
     });
 
     it('redirects with each segment encoded', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?token=${TOKEN_V1}&locale=de`);
-      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&locale=de&token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?token=${TOKEN_READ}&locale=de`);
+      expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&locale=de&token=${TOKEN_READ}`);
     });
 
     it('finds a document by a path of several segments, and not under a sibling folder sharing a prefix', async () => {
       const draft = await follow(`/api/v1/spaces/${S1}/contents/slugs/blog-archive/old?token=${TOKEN_DRAFT}&version=draft`);
       expect(draft.json()).toMatchObject({ id: C.old, fullSlug: 'blog-archive/old', parentSlug: 'blog-archive' });
-      expect((await get(`/api/v1/spaces/${S1}/contents/slugs/blog/old?cv=7&token=${TOKEN_V1}`)).json()).toEqual({
+      expect((await get(`/api/v1/spaces/${S1}/contents/slugs/blog/old?cv=7&token=${TOKEN_READ}`)).json()).toEqual({
         message: 'Slug not found',
         status: 'NOT_FOUND',
       });
     });
 
     it('answers an unknown slug with 404 Slug not found', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/missing/page?cv=7&token=${TOKEN_V1}`);
+      const response = await get(`/api/v1/spaces/${S1}/contents/slugs/missing/page?cv=7&token=${TOKEN_READ}`);
       expect(response.statusCode).toBe(404);
       expect(response.json()).toEqual({ message: 'Slug not found', status: 'NOT_FOUND' });
     });

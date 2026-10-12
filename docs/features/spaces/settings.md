@@ -159,18 +159,13 @@ dialogs in `features/spaces` now follow this pattern (the delete confirmation in
 
 ## TokensComponent
 
-Create and manage API access tokens, displayed in an `ll-table` with columns `id`, `name`, `version`, `permissions`, `usage`, `cacheTtl`,
-`updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). Tokens come in two shapes:
-
-- **v1** — legacy tokens with an implicit, fixed permission set (`TOKEN_V1_IMPLICIT_PERMISSIONS`)
-- **v2** — current tokens with explicit `permissions[]` and an optional `cacheTtl` override
-
-`isTokenV2()` distinguishes the two at runtime, so v1 tokens still render sensibly in the table and edit dialog.
+Create and manage API access tokens, displayed in an `ll-table` with columns `id`, `name`, `permissions`, `usage`, `cacheTtl`,
+`updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). Every token lists its `permissions` and may set a
+`cacheTtl` override (Firebase-era V1 tokens are imported with their implicit permissions listed).
 
 The permissions column is rendered via `permissionsToText()`, which joins the token's `TokenPermission` values into a comma-separated string
 (`tokens.component.ts:214-216`). The usage column shows a classification badge computed by `permissionsToUsage()` / `getTokenUsageInfo()`,
-which derives a human-readable usage category (e.g. read-only/public vs. draft/write access) from the permission set — for v1 tokens this is
-computed from `TOKEN_V1_IMPLICIT_PERMISSIONS` (`tokens.component.ts:218-220`).
+which derives a human-readable usage category (e.g. read-only/public vs. draft/write access) from the permission set.
 
 **Key behaviour:**
 

@@ -21,6 +21,19 @@ password_reset_tokens (token_hash PK, user_id → users CASCADE): expires_at, us
 | `users.email_verified` | **Kept as information**: the address was confirmed by an identity provider (an OIDC sign-in) or set by the first-admin seed; an email change resets it. There is no verification email, and sign-in does not depend on it (OIDC linking checks the provider's own claim). |
 | `user_credentials.hash_algo` | One value (`argon2id`) today; the column leaves room for a future algorithm and rehash on sign-in. |
 
+## `tokens`
+
+```
+tokens (id PK, space_id → spaces CASCADE): token (the secret, unique), name, permissions (not null), cache_ttl,
+        created_at, updated_at
+```
+
+| Column / rule | Decision |
+|---|---|
+| `version` | **Dropped.** A token grants exactly its `permissions`; the Firebase import gives V1 tokens the four they had implicitly (and the default cache TTL). |
+| `token` | **Plain text**, unlike session and reset-link hashes: the editor reads it for previews and API links, and tokens are handed to websites. Backups must be protected. |
+| `tokens_permissions_idx` (GIN) | **Dropped**: a space has a handful of tokens, filtered through `tokens_space_idx`. |
+
 ## `spaces`
 
 | Column | Decision |
@@ -309,6 +322,8 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
   `resolveReference`/`resolveLink`/`resolveAsset` is cached under the main document's `cv` only: a referenced or linked
   document republished (or an asset changed) later stays in that cached response until the main document's `cv` moves
   (up to the 7-day TTL). Decide how the resolved targets take part in the `cv` (e.g. a hash of their versions).
+- **Tokens — last used:** a `last_used_at` per token, to find stale ones; written throttled on the v1 hot path (like the
+  session's `last_seen_at`).
 - **Table names:** singular instead of plural (`space`, `content`, …); `user` is a reserved word in Postgres.
 - **Assets — deleting what content uses:** refuse to delete a file (or a folder with such a file) while contents
   reference it, instead of the warning; decide how the published snapshots count.

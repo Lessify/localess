@@ -1,6 +1,6 @@
 {
-  "id": "3bb463b2-b0cf-44d1-9852-8787204a83c3",
-  "prevId": "7e785178-6b15-452b-bb0a-2c7eaa9fbc66",
+  "id": "6828d376-357c-4ccb-aa68-1312e70d1045",
+  "prevId": "2c4f8c8d-696d-4e3f-beff-da4fbb0300c0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1638,17 +1638,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "permissions": {
           "name": "permissions",
           "type": "text[]",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'{}'"
         },
         "cache_ttl": {
           "name": "cache_ttl",
@@ -1691,21 +1686,6 @@
           "isUnique": false,
           "with": {},
           "method": "btree",
-          "concurrently": false
-        },
-        "tokens_permissions_idx": {
-          "name": "tokens_permissions_idx",
-          "columns": [
-            {
-              "expression": "permissions",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "gin",
           "concurrently": false
         }
       },

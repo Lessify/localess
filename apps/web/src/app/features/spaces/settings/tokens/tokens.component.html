@@ -23,10 +23,6 @@
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
         <td llCell *llCellDef="let element">{{ element.name }}</td>
       </ng-container>
-      <ng-container llColumnDef="version">
-        <th llHeaderCell *llHeaderCellDef>Version</th>
-        <td llCell *llCellDef="let element">v{{ element.version ? element.version : '1' }}</td>
-      </ng-container>
       <ng-container llColumnDef="permissions">
         <th llHeaderCell *llHeaderCellDef>Permissions</th>
         <td llCell *llCellDef="let element">

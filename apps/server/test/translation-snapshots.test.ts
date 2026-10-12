@@ -4,7 +4,7 @@ import { translations, translationSnapshots } from '../src/infra/database/schema
 import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
 import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
 import { TranslationsService } from '../src/modules/translations/services/translations.service.js';
-import { seedSpace, seedTranslations, TOKEN_DEV, TOKEN_DRAFT, TOKEN_V1 } from './seed.js';
+import { seedSpace, seedTranslations, TOKEN_DEV, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
 
@@ -25,7 +25,7 @@ describe('translation snapshots', () => {
 
   const get = (url: string) => t.request({ method: 'GET', url });
   const draftUrl = (locale: string) => `/api/v1/spaces/${S1}/translations/${locale}?version=draft&token=${TOKEN_DRAFT}`;
-  const publishedUrl = (locale: string) => `/api/v1/spaces/${S1}/translations/${locale}?token=${TOKEN_V1}`;
+  const publishedUrl = (locale: string) => `/api/v1/spaces/${S1}/translations/${locale}?token=${TOKEN_READ}`;
   /** The `cv` the redirect names. */
   const cvOf = async (url: string): Promise<string> => {
     const response = await get(url);

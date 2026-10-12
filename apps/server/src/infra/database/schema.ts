@@ -526,15 +526,17 @@ export const tokens = pgTable(
     // a readable creation time). An imported token keeps its Firestore id here, the value customers already use.
     token: text('token').notNull().unique(),
     name: text('name').notNull(),
-    // null = V1 (implicit permissions), 2 = V2
-    version: integer('version'),
-    permissions: text('permissions', { enum: values(TokenPermission) }).array(),
+    // What the token may do. (Firebase-era V1 tokens, whose permissions were implicit, are imported with them listed.)
+    permissions: text('permissions', { enum: values(TokenPermission) })
+      .array()
+      .notNull()
+      .default([]),
+    // Seconds the `cv` redirect is cached (0: not cached); null: the default.
     cacheTtl: integer('cache_ttl'),
     ...timestamps,
   },
   t => [
     index('tokens_space_idx').on(t.spaceId, t.createdAt.desc()),
-    index('tokens_permissions_idx').using('gin', t.permissions),
     allOf('tokens_permissions_check', t.permissions, values(TokenPermission)),
   ],
 );

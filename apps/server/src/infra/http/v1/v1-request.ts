@@ -39,9 +39,9 @@ export function validIdParams(reply: FastifyReply, params: Params): boolean {
   return true;
 }
 
-/** The `cv` cache-busting redirect; V2 tokens may set its TTL (`cacheTtl: 0` disables caching). */
-export function redirectToVersion(reply: FastifyReply, url: string, token: { version: number | null; cacheTtl: number | null }): void {
-  const ttl = token.version === 2 ? (token.cacheTtl ?? undefined) : undefined;
+/** The `cv` cache-busting redirect; a token may set its TTL (`cacheTtl: 0` disables caching). */
+export function redirectToVersion(reply: FastifyReply, url: string, token: { cacheTtl: number | null }): void {
+  const ttl = token.cacheTtl ?? undefined;
   void reply.header('cache-control', ttl === 0 ? 'no-cache' : publicCache(ttl ?? CACHE_REDIRECT_MAX_AGE_DEFAULT)).redirect(url, 302);
 }
 

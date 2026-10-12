@@ -1,10 +1,9 @@
-import { TOKEN_V1_IMPLICIT_PERMISSIONS, TokenPermission } from '@localess/shared';
+import { TokenPermission } from '@localess/shared';
 
-/** A space API token as the v1 API sees it. V1 tokens (no `version`) carry implicit permissions. */
+/** A space API token as the v1 API sees it. */
 export interface ApiToken {
   /** The row's UUID, not the secret. */
   id: string;
-  version: number | null;
   permissions: TokenPermission[];
   cacheTtl: number | null;
 }
@@ -15,9 +14,7 @@ export function validateToken(token?: unknown): token is string {
 }
 
 export function canPerform(permission: TokenPermission, token: ApiToken): boolean {
-  if (token.version === null) return TOKEN_V1_IMPLICIT_PERMISSIONS.includes(permission);
-  if (token.version === 2) return token.permissions.includes(permission);
-  return false;
+  return token.permissions.includes(permission);
 }
 
 export const canPerformAny = (permissions: TokenPermission[], token: ApiToken) => permissions.some(it => canPerform(it, token));

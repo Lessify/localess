@@ -7,7 +7,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 
 export type TokenEntity = typeof tokens.$inferSelect;
-export type TokenValues = Pick<TokenEntity, 'token' | 'version' | 'name' | 'permissions' | 'cacheTtl'>;
+export type TokenValues = Pick<TokenEntity, 'token' | 'name' | 'permissions' | 'cacheTtl'>;
 
 /**
  * Space API tokens. Every change publishes a `tokens` event with the UUID, which also drops the public API's

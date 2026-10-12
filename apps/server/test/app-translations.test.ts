@@ -61,7 +61,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
     await t.db
       .insert(tokens)
-      .values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
+      .values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
     await t.db
       .insert(webhooks)
       .values({ id: newUuid(), spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'], enabled: true });

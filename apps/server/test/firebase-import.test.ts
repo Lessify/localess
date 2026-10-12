@@ -112,7 +112,12 @@ describe('Firebase import run', () => {
       environments: [{ id: expect.stringMatching(UUID_V7), name: 'Preview', url: 'https://preview.example.com' }],
     });
 
-    expect((await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id))).map(it => it.token).sort()).toEqual(['TOKENV1000000000000A', 'TOKENV2000000000000B']);
+    // Every token is imported in the one current form: a V1 token gets the permissions it had implicitly.
+    const imported = await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id));
+    expect(Object.fromEntries(imported.map(it => [it.token, it.permissions]))).toEqual({
+      TOKENV1000000000000A: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT'],
+      TOKENV2000000000000B: ['CONTENT_PUBLIC'],
+    });
     expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({ enabled: false, secret: 's' });
     expect((await t.db.select().from(translations).where(eq(translations.spaceId, space.id))).map(it => it.key).sort()).toEqual(['bye', 'greeting']);
     expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, space.id)))[0].name).toBe('page');

@@ -13,9 +13,9 @@ export class ApiTokensRepository {
   /** The token whose secret is `token` in this space. */
   async find(spaceId: string, token: string): Promise<ApiToken | undefined> {
     const [row] = await this.db
-      .select({ id: tokens.id, version: tokens.version, permissions: tokens.permissions, cacheTtl: tokens.cacheTtl })
+      .select({ id: tokens.id, permissions: tokens.permissions, cacheTtl: tokens.cacheTtl })
       .from(tokens)
       .where(and(eq(tokens.spaceId, spaceId), eq(tokens.token, token)));
-    return row ? { ...row, permissions: (row.permissions ?? []) as TokenPermission[] } : undefined;
+    return row ? { ...row, permissions: row.permissions as TokenPermission[] } : undefined;
   }
 }

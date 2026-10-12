@@ -243,8 +243,7 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 | `TRANSLATION_DRAFT`  | Draft translations (`version` param required)                        |
 | `DEV_TOOLS`          | MANAGE + DEV_TOOLS endpoints; also satisfies all PUBLIC/DRAFT checks |
 
-**TokenV1** (legacy, no `version` field) implicitly grants `TRANSLATION_PUBLIC`, `TRANSLATION_DRAFT`, `CONTENT_PUBLIC`, `CONTENT_DRAFT` — but not `DEV_TOOLS`.  
-**TokenV2** (current, `version: 2`) has an explicit `permissions: TokenPermission[]` array.
+A token grants exactly the permissions it lists. Firebase-era V1 tokens (implicitly `TRANSLATION_PUBLIC`, `TRANSLATION_DRAFT`, `CONTENT_PUBLIC`, `CONTENT_DRAFT`) are imported with those permissions listed, under the same token value.
 
 ---
 
