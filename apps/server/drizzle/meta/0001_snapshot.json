@@ -1,6 +1,6 @@
 {
-  "id": "da9dc719-8f03-4acc-979c-fbad2532fcce",
-  "prevId": "78f97e61-e9eb-453f-ba6f-16be4ec710f2",
+  "id": "e65f6383-c79f-42e8-ab5a-15368e5c573d",
+  "prevId": "53c6f9e4-6574-4161-b4f6-bb13c6219920",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -2394,7 +2394,7 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": false
         },
         "events": {
           "name": "events",

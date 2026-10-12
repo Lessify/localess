@@ -281,7 +281,7 @@ CREATE TABLE "webhooks" (
 	"space_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"url" text NOT NULL,
-	"enabled" boolean DEFAULT true NOT NULL,
+	"enabled" boolean DEFAULT false NOT NULL,
 	"events" text[] NOT NULL,
 	"headers" jsonb,
 	"secret" text,

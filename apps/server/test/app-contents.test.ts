@@ -68,6 +68,7 @@ describe('app API: contents', () => {
       id: newUuid(),
       spaceId: S1,
       name: 'site',
+      enabled: true,
       url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,
       events: ['content.published', 'content.unpublished', 'content.changed'],
       secret: 'shh',

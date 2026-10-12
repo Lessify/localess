@@ -1,5 +1,5 @@
 {
-  "id": "78f97e61-e9eb-453f-ba6f-16be4ec710f2",
+  "id": "53c6f9e4-6574-4161-b4f6-bb13c6219920",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2394,7 +2394,7 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": false
         },
         "events": {
           "name": "events",

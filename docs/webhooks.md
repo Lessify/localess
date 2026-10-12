@@ -211,7 +211,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 
-Webhooks are created with `enabled: true` by default. `WebhooksComponent` (list view) supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
+Webhooks created in the app start enabled (`WebhooksRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
 
 `WebhookDetailComponent` shows the full log history for a single webhook: search by log id, filter by event/status, paginated (`HlmPaginationImports`), plus enable/disable, edit, and delete actions.
 

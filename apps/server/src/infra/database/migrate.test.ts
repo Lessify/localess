@@ -118,6 +118,16 @@ describe('migrateDatabase', () => {
     ).rejects.toThrow(/foreign key/);
   });
 
+  it('creates a webhook disabled unless told otherwise', async () => {
+    await migrateDatabase(pool);
+    await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [A]);
+    const { rows } = await pool.query(
+      `insert into webhooks (id, space_id, name, url, events) values ('00000000-0000-7000-8000-0000000000f1', $1, 'Site', 'https://example.com', '{}') returning enabled`,
+      [A],
+    );
+    expect(rows[0].enabled).toBe(false);
+  });
+
   it('cascades space deletion to its children', async () => {
     await migrateDatabase(pool);
     await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [A]);

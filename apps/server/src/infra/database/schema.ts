@@ -556,7 +556,8 @@ export const webhooks = pgTable(
     spaceId: spaceId(),
     name: text('name').notNull(),
     url: text('url').notNull(),
-    enabled: boolean('enabled').notNull().default(true),
+    // A new webhook sends nothing until it is enabled (the App API's create enables it; the Firebase import does not).
+    enabled: boolean('enabled').notNull().default(false),
     events: text('events', { enum: values(WebHookEvent) }).array().notNull(),
     headers: jsonb('headers').$type<Record<string, string>>(),
     secret: text('secret'),
