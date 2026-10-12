@@ -250,6 +250,13 @@ describe('v1 dev tools and manage API', () => {
       expect(rows.map(it => it.name).sort()).toEqual(['card', 'page']);
     });
 
+    it('refuses fields that break a rule across fields, naming the schema', async () => {
+      const page = { id: 'page', type: 'ROOT', fields: [{ name: 'hero', kind: 'SCHEMA', schemas: ['gone'] }] };
+      const response = await push({ type: 'upsert', schemas: [page] });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().details).toEqual({ errors: ["Schema 'page': field 'hero' allows 'gone', which does not exist"] });
+    });
+
     it('validates the body', async () => {
       const response = await push({ type: 'sync', schemas: [{ id: 'x', type: 'ROOT', fields: [{ name: 'n', kind: 'SCHEMA' }] }] });
       expect(response.statusCode).toBe(400);

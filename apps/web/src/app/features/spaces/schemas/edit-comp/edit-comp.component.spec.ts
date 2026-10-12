@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
@@ -103,6 +104,52 @@ describe('EditCompComponent', () => {
     expect(event.preventDefault).toHaveBeenCalled();
     expect(component.fields.length).toBe(1);
     expect(component.fieldControlAt(0, 'name')?.value).toBe('b');
+  });
+
+  it('refuses a new field name that a loaded field already has', () => {
+    const { component } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT } as never] }));
+
+    component.newFieldName.setValue('title');
+
+    expect(component.newFieldName.errors).toEqual({ reservedName: true });
+  });
+
+  it('removeComponent() frees the removed field\'s name, not another one', () => {
+    const { component } = setup(rootSchema());
+    component.addField({ name: 'alpha', kind: SchemaFieldKind.TEXT } as never);
+    component.addField({ name: 'beta', kind: SchemaFieldKind.TEXT } as never);
+    const event = { preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() } as unknown as MouseEvent;
+    // Reordered: beta first, so the field's index is no longer its name's.
+    component.fieldDropDrop({ previousIndex: 1, currentIndex: 0 } as never);
+
+    component.removeComponent(event, 0);
+
+    component.newFieldName.setValue('alpha');
+    expect(component.newFieldName.errors).toEqual({ reservedName: true });
+    component.newFieldName.setValue('beta');
+    expect(component.newFieldName.errors).toBeNull();
+  });
+
+  it('removeComponent() clears the preview field when it removes that field', () => {
+    const { component } = setup(
+      rootSchema({ previewField: 'title', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }, { name: 'body', kind: SchemaFieldKind.TEXT }] as never } as never),
+    );
+    const event = { preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() } as unknown as MouseEvent;
+
+    component.removeComponent(event, 1);
+    expect(component.form.value['previewField']).toBe('title');
+    component.removeComponent(event, 0);
+    expect(component.form.value['previewField']).toBeUndefined();
+  });
+
+  it('save() shows the server\'s reason when it refuses the fields', () => {
+    const { component, updateComponent, error } = setup(rootSchema());
+    const message = "Schema 'root1' is not valid: field 'title' is defined more than once";
+    updateComponent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));
+
+    component.save();
+
+    expect(error).toHaveBeenCalledWith('Schema can not be updated.', { description: message });
   });
 
   it('selectComponent() sets the selected field index', () => {

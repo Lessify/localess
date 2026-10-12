@@ -1,7 +1,7 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Schema, type SchemaExport, SchemaType, type SchemaUsage } from '@localess/shared';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { type Schema, type SchemaExport, type SchemaField, SchemaType, type SchemaUsage } from '@localess/shared';
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
-import { docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
+import { checkSchemaFields, docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 import { type NewSchema, type SchemaColumns, type SchemaEntity, SchemasRepository } from '../repositories/schemas.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 
@@ -20,6 +20,20 @@ function inUseMessage(name: string, usage: SchemaUsage): string {
 /** The push's refusal for schemas that contents use as their document schema. */
 function contentErrors(counts: Map<string, number>): string[] {
   return [...counts].map(([name, value]) => `Cannot delete schema '${name}': used by ${value} ${value === 1 ? 'content' : 'contents'}`);
+}
+
+/** For schemas a write refers to that went since the service checked them. */
+function lostMessage(lost: string[]): string {
+  return `${lost.length === 1 ? 'Schema' : 'Schemas'} ${lost.map(it => `'${it}'`).join(', ')} ${lost.length === 1 ? 'was' : 'were'} renamed or deleted meanwhile`;
+}
+
+/** Refuses (400) the schemas whose fields break a rule across fields, saying which. */
+function requireValidFields(schemas: { name: string; type: SchemaType | `${SchemaType}`; previewField?: string | null; fields?: SchemaField[] | null }[], types: ReadonlyMap<string, SchemaType>): void {
+  const invalid = schemas
+    .filter(it => it.type !== SchemaType.ENUM)
+    .map(it => ({ name: it.name, problems: checkSchemaFields(it, types) }))
+    .filter(it => it.problems.length);
+  if (invalid.length) throw new BadRequestException(invalid.map(it => `Schema '${it.name}' is not valid: ${it.problems.join('; ')}`).join('. '));
 }
 
 function found(entity: SchemaEntity | undefined): Schema {
@@ -56,27 +70,41 @@ export class SchemasService {
     return toSchema(await this.schemas.create(spaceId, input));
   }
 
-  /** Several schemas at once, all or nothing (was the space-template `writeBatch`). */
+  /**
+   * Several schemas at once, all or nothing (was the space-template `writeBatch`). Their fields may refer to each
+   * other and to the space's schemas.
+   */
   async createMany(spaceId: string, inputs: NewSchema[]): Promise<Schema[]> {
-    return (await this.schemas.createMany(spaceId, inputs)).map(toSchema);
+    const types = await this.types(spaceId);
+    for (const input of inputs) types.set(input.name, input.type as SchemaType);
+    requireValidFields(inputs, types);
+    const outcome = await this.schemas.createMany(spaceId, inputs);
+    if (outcome.lost) throw new ConflictException(lostMessage(outcome.lost));
+    return outcome.schemas!.map(toSchema);
   }
 
   /**
    * Replaces the editable fields; absent ones are cleared (the UI's `deleteField()`). Only what the schema's type has
-   * is stored: fields and the preview field for ROOT and NODE, values for ENUM (the type never changes).
+   * is stored: fields and the preview field for ROOT and NODE, values for ENUM (the type never changes). The fields
+   * must keep the rules across fields (400, saying which); the schemas they refer to stay locked until the write
+   * commits.
    */
   async update(spaceId: string, id: string, input: Omit<SchemaColumns, 'type'>): Promise<Schema> {
-    const { type } = found(await this.schemas.findById(spaceId, id));
+    const { name, type } = found(await this.schemas.findById(spaceId, id));
     const component = type !== SchemaType.ENUM;
-    const entity = await this.schemas.update(spaceId, id, {
+    const values = {
       displayName: input.displayName || null,
       description: input.description || null,
       labels: input.labels?.length ? input.labels : null,
       previewField: (component && input.previewField) || null,
       fields: (component && input.fields) || null,
       values: (!component && input.values) || null,
-    });
-    return found(entity);
+    };
+    requireValidFields([{ name, type, ...values }], await this.types(spaceId));
+    const outcome = await this.schemas.update(spaceId, id, values);
+    if (!outcome) throw new NotFoundException('Schema not found');
+    if (outcome.lost) throw new ConflictException(lostMessage(outcome.lost));
+    return toSchema(outcome.schema!);
   }
 
   /**
@@ -118,8 +146,17 @@ export class SchemasService {
     return plan;
   }
 
-  /** The errors when contents took a schema the plan deletes since it was planned (nothing is written then). */
+  /**
+   * The errors when the plan no longer holds (nothing is written then): contents took a schema it deletes, or a schema
+   * its fields refer to went, since it was planned.
+   */
   async applyPush(spaceId: string, plan: SchemaPushPlan): Promise<string[]> {
-    return contentErrors(await this.schemas.applyPushPlan(spaceId, plan));
+    const { usedByContents, lost } = await this.schemas.applyPushPlan(spaceId, plan);
+    return [...contentErrors(usedByContents), ...(lost.length ? [lostMessage(lost)] : [])];
+  }
+
+  /** Every schema of the space by name, with its type. */
+  private async types(spaceId: string): Promise<Map<string, SchemaType>> {
+    return new Map((await this.schemas.findAll(spaceId)).map(it => [it.name, it.type as SchemaType]));
   }
 }

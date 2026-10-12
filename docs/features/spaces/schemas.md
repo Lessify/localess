@@ -53,7 +53,7 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 
 ## EditCompComponent (routed)
 
-Full field editor for `ROOT` and `NODE` schemas. Fields can be added, reordered, and configured. Protected by `isFormDirtyGuard`.
+Full field editor for `ROOT` and `NODE` schemas. Fields can be added, reordered, and configured. Protected by `isFormDirtyGuard`. Field names are unique (the new-field and name inputs refuse a taken one); the Preview Field select offers the fields of a previewable kind (`SCHEMA_PREVIEW_FIELD_KINDS`), and removing that field clears it; block pickers list NODE schemas, option sources ENUM schemas. The server checks the same rules on save (see [Schemas](../../roadmap/database-structure.md#schemas)) and a refusal (400/409) shows its reason in the error toast.
 
 Supported field kinds:
 `TEXT`, `TEXTAREA`, `RICH_TEXT`, `MARKDOWN`, `NUMBER`, `COLOR`, `DATE`, `DATETIME`, `BOOLEAN`, `OPTION`, `OPTIONS`, `SCHEMA` (embed node), `SCHEMAS` (array of nodes), `LINK`, `REFERENCE`, `REFERENCES`, `ASSET`, `ASSETS`

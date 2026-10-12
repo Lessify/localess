@@ -257,6 +257,67 @@ describe('Firebase import run', () => {
     }
   });
 
+  it('fixes what breaks a rule across fields, with a warning', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbRules',
+        name: 'Rules',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        schemas: [
+          {
+            id: 'page',
+            type: 'ROOT',
+            previewField: 'gone',
+            fields: [
+              { name: 'title', kind: 'TEXT' },
+              { name: 'title', kind: 'TEXTAREA' },
+              { name: 'items', kind: 'SCHEMAS', schemas: ['card', 'page', 'missing'] },
+              { name: 'color', kind: 'OPTION', source: 'card' },
+              { name: 'tint', kind: 'OPTIONS', source: 'colors' },
+            ],
+          },
+          { id: 'card', type: 'NODE', previewField: 'body', fields: [{ name: 'body', kind: 'RICH_TEXT' }] },
+          { id: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: odd.url, sourceSpaceId: 'fbRules', sourceSpaceName: 'Rules', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbRules');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, run.spaceId!)).orderBy(schemas.name);
+      expect(rows.map(({ name, previewField, fields }) => ({ name, previewField, fields }))).toEqual([
+        { name: 'card', previewField: null, fields: [{ name: 'body', kind: 'RICH_TEXT' }] },
+        { name: 'colors', previewField: null, fields: null },
+        {
+          name: 'page',
+          previewField: null,
+          fields: [
+            { name: 'title', kind: 'TEXT' },
+            { name: 'items', kind: 'SCHEMAS', schemas: ['card'] },
+            { name: 'tint', kind: 'OPTIONS', source: 'colors' },
+          ],
+        },
+      ]);
+      expect(run.stages.find(it => it.stage === 'schemas')!.warnings).toEqual([
+        "page: field 'title' is defined more than once, the later one dropped",
+        "page: field 'items' allows 'page', which is not a NODE schema, removed",
+        "page: field 'items' allows 'missing', which does not exist, removed",
+        "page: field 'color' takes its options from 'card', which is not an ENUM schema, dropped",
+        "page: preview field 'gone' is not a field of the schema, cleared",
+        "card: preview field 'body' is a RICH_TEXT field, which can not be a preview, cleared",
+      ]);
+    } finally {
+      await odd.close();
+    }
+  });
+
   it('keeps known locales in their order and skips the others (and broken environments), with a warning', async () => {
     const odd = await fakeFirebase([
       {

@@ -5,7 +5,7 @@ import { schemas } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
-import { applySchemaPushPlan } from '../../../shared/queries/schema.query.js';
+import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import type { SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 
 export type SchemaEntity = typeof schemas.$inferSelect;
@@ -31,14 +31,22 @@ export class SchemaTransferRepository {
       .orderBy(sql`${schemas.name} collate "C"`);
   }
 
-  /** Writes the import's push plan in one transaction; when it creates or updates any, the content version is bumped and a `schemas` change event published. */
-  applyImport(spaceId: string, plan: SchemaPushPlan, tx?: Transaction): Promise<void> {
+  /**
+   * Writes the import's push plan in one transaction; when it creates or updates any, the content version is bumped and
+   * a `schemas` change event published. Answers, writing nothing, when a schema the imported fields refer to went
+   * since the plan was made (the others stay locked until the commit).
+   */
+  applyImport(spaceId: string, plan: SchemaPushPlan, tx?: Transaction): Promise<string[]> {
     return transaction(this.db, tx, async t => {
+      const written = [...plan.creates, ...plan.updates].map(it => ({ name: it.id, fields: 'fields' in it ? it.fields : undefined }));
+      const lost = await lockSchemaReferences(t, spaceId, written);
+      if (lost.length) return [`Schemas renamed or deleted meanwhile: ${lost.join(', ')}`];
       await applySchemaPushPlan(t, spaceId, plan);
       if (plan.creates.length || plan.updates.length) {
         await bumpContentVersion(t, spaceId);
         await this.events.publish({ spaceId, entity: 'schemas', op: 'updated' }, t);
       }
+      return [];
     });
   }
 }

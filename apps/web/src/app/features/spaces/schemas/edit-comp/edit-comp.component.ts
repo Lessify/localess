@@ -1,5 +1,6 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
@@ -10,7 +11,15 @@ import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { AssetFileType, Schema, SchemaComponentUpdate, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import {
+  AssetFileType,
+  Schema,
+  SCHEMA_PREVIEW_FIELD_KINDS,
+  SchemaComponentUpdate,
+  SchemaField,
+  SchemaFieldKind,
+  SchemaType,
+} from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -136,7 +145,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   private readonly schemaService = inject(SchemaService);
   private readonly notificationService = inject(NotificationService);
 
-  readonly PREVIEW_TYPES = ['TEXT', 'TEXTAREA', 'NUMBER', 'COLOR', 'DATE', 'DATETIME', 'BOOLEAN', 'OPTION', 'OPTIONS'];
+  readonly PREVIEW_TYPES = SCHEMA_PREVIEW_FIELD_KINDS;
 
   // Input
   spaceId = input.required<string>();
@@ -176,7 +185,8 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
-          this.fieldReservedNames = [];
+          // Emptied in place: the new-field-name validator holds this array.
+          this.fieldReservedNames.length = 0;
           this.schemas = schemas;
           this.entity = schema;
 
@@ -246,12 +256,15 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     // Prevent Default
     event.preventDefault();
     event.stopImmediatePropagation();
-    // Remove name from reserved names
+    // Remove name from reserved names, and from the preview when it was that field
     const cValue = this.fieldControlAt(index, 'name')?.value;
     if (cValue) {
       const idx = this.fieldReservedNames.indexOf(cValue);
       if (idx !== -1) {
-        this.fieldReservedNames.splice(index, 1);
+        this.fieldReservedNames.splice(idx, 1);
+      }
+      if (this.form.value['previewField'] === cValue) {
+        this.form.controls['previewField'].setValue(undefined);
       }
     }
     // Remove
@@ -416,8 +429,13 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
       next: () => {
         this.notificationService.success('Schema has been updated.');
       },
-      error: () => {
-        this.notificationService.error('Schema can not be updated.');
+      error: (err: unknown) => {
+        // A refusal (400 broken field rules, 409) carries the server's reason.
+        if (err instanceof HttpErrorResponse && (err.status === 400 || err.status === 409) && typeof err.error?.message === 'string') {
+          this.notificationService.error('Schema can not be updated.', { description: err.error.message });
+        } else {
+          this.notificationService.error('Schema can not be updated.');
+        }
       },
       complete: () => {
         setTimeout(() => {

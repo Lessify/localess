@@ -170,6 +170,17 @@ describe('task worker: exports and imports', () => {
         expect.arrayContaining(['Starting SCHEMA_IMPORT processing', 'total changes : 2', 'Task finished successfully']),
       );
     });
+
+    it('refuses an import whose fields break a rule across fields, writing nothing', async () => {
+      const bytes = await zipOf({
+        'schemas.json': JSON.stringify([{ id: 'broken', type: 'ROOT', fields: [{ name: 'hero', kind: 'SCHEMA', schemas: ['gone'] }] }]),
+        'metadata.json': JSON.stringify({ kind: 'SCHEMA' }),
+      });
+      const imported = await importTask(SPACE_B, 'SCHEMA_IMPORT', bytes);
+      expect(imported).toMatchObject({ status: 'ERROR', message: 'Schema data is invalid.' });
+      expect(await logs(SPACE_B, imported.id)).toContain("Schema 'broken': field 'hero' allows 'gone', which does not exist");
+      expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, SPACE_B))).map(s => s.name)).not.toContain('broken');
+    });
   });
 
   describe('contents', () => {

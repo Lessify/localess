@@ -1,13 +1,13 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, inArray, ne, sql } from 'drizzle-orm';
-import { isSchemaInUse, type SchemaType, type SchemaUsage } from '@localess/shared';
+import { isSchemaInUse, type SchemaField, SchemaFieldKind, type SchemaType, type SchemaUsage } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { contents, schemas } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
-import { applySchemaPushPlan } from '../../../shared/queries/schema.query.js';
+import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { fieldRefersTo, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 
@@ -25,6 +25,15 @@ type Change = { id: string; op: 'created' | 'updated' | 'deleted' };
  * the content version bumped (drafts are rendered through schemas) and a `schemas` change event per changed row. A
  * name already taken in the space is a `ConflictException`.
  */
+/** `fields` with every block reference to `from` (the schema itself) renamed to `to`. */
+function renameSelfReferences(fields: SchemaField[], from: string, to: string): SchemaField[] {
+  return fields.map(field =>
+    (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) && field.schemas?.includes(from)
+      ? { ...field, schemas: field.schemas.map(it => (it === from ? to : it)) }
+      : field,
+  );
+}
+
 @Injectable()
 export class SchemasRepository {
   constructor(
@@ -83,33 +92,56 @@ export class SchemasRepository {
     });
   }
 
-  /** Several schemas at once, all or nothing (was the space-template `writeBatch`). */
-  createMany(spaceId: string, values: NewSchema[], tx?: Transaction): Promise<SchemaEntity[]> {
-    if (!values.length) return Promise.resolve([]);
+  /**
+   * Several schemas at once, all or nothing (was the space-template `writeBatch`). `lost`: schemas their fields refer
+   * to that are gone since the caller checked (nothing written).
+   */
+  createMany(spaceId: string, values: NewSchema[], tx?: Transaction): Promise<{ schemas?: SchemaEntity[]; lost?: string[] }> {
+    if (!values.length) return Promise.resolve({ schemas: [] });
     const rows = values.map(it => ({ id: newUuid(), spaceId, ...it }));
-    return this.write(spaceId, tx, async t => {
+    return this.write<{ schemas?: SchemaEntity[]; lost?: string[] }>(spaceId, tx, async t => {
+      const lost = await lockSchemaReferences(t, spaceId, values);
+      if (lost.length) return { result: { lost }, changed: [] };
       const result = await t.insert(schemas).values(rows).returning();
-      return { result, changed: rows.map(it => ({ id: it.id, op: 'created' as const })) };
+      return { result: { schemas: result }, changed: rows.map(it => ({ id: it.id, op: 'created' as const })) };
     });
   }
 
-  /** `undefined` when the space has no schema `id`. */
-  update(spaceId: string, id: string, values: Omit<SchemaColumns, 'type'>, tx?: Transaction): Promise<SchemaEntity | undefined> {
-    return this.write(spaceId, tx, async t => {
+  /**
+   * `undefined` when the space has no schema `id`. `lost`: schemas its fields refer to that are gone since the caller
+   * checked (nothing written); the ones still there stay locked until the commit, so they can not go meanwhile.
+   */
+  update(
+    spaceId: string,
+    id: string,
+    values: Omit<SchemaColumns, 'type'>,
+    tx?: Transaction,
+  ): Promise<{ schema?: SchemaEntity; lost?: string[] } | undefined> {
+    return this.write<{ schema?: SchemaEntity; lost?: string[] } | undefined>(spaceId, tx, async t => {
+      const [current] = await t.select({ name: schemas.name }).from(schemas).where(this.byId(spaceId, id)).for('update');
+      if (!current) return { result: undefined, changed: [] };
+      const lost = await lockSchemaReferences(t, spaceId, [{ name: current.name, fields: values.fields }]);
+      if (lost.length) return { result: { lost }, changed: [] };
       const [row] = await t.update(schemas).set(values).where(this.byId(spaceId, id)).returning();
-      return { result: row, changed: row ? [{ id, op: 'updated' }] : [] };
+      return { result: { schema: row }, changed: [{ id, op: 'updated' }] };
     });
   }
 
   /**
    * `undefined` when the space has no schema `id`; `inUse` (nothing written) while anything uses its current name. The
-   * row is locked first, so no content can take the old name between the check and the write.
+   * row is locked first, so no content can take the old name between the check and the write. Its own fields that
+   * allow it (a NODE nesting itself) follow the new name.
    */
   rename(spaceId: string, id: string, name: string, tx?: Transaction): Promise<{ schema?: SchemaEntity; inUse?: SchemaUsage } | undefined> {
     return this.write<{ schema?: SchemaEntity; inUse?: SchemaUsage } | undefined>(spaceId, tx, async t => {
       const guard = await this.unused(t, spaceId, id);
       if (!guard || guard.inUse) return { result: guard, changed: [] };
-      const [row] = await t.update(schemas).set({ name }).where(this.byId(spaceId, id)).returning();
+      const [current] = await t.select({ name: schemas.name, fields: schemas.fields }).from(schemas).where(this.byId(spaceId, id));
+      const [row] = await t
+        .update(schemas)
+        .set({ name, fields: current.fields && renameSelfReferences(current.fields, current.name, name) })
+        .where(this.byId(spaceId, id))
+        .returning();
       return { result: { schema: row }, changed: [{ id, op: 'updated' }] };
     });
   }
@@ -126,23 +158,27 @@ export class SchemasRepository {
 
   /**
    * Writes a push plan (CLI schema push) and bumps the content version: schemas shape the draft output (locale
-   * extraction), so content drafts change too. No change events, as before. The schemas it deletes are locked and
-   * checked again: when contents use some of them (taken meanwhile), nothing is written and their counts are answered.
+   * extraction), so content drafts change too. No change events, as before. Checked again under lock, writing nothing
+   * when it fails: `usedByContents`, the schemas it deletes that contents use (taken meanwhile), with their counts;
+   * `lost`, the schemas its fields refer to that are gone since it was planned.
    */
-  applyPushPlan(spaceId: string, plan: SchemaPushPlan, tx?: Transaction): Promise<Map<string, number>> {
+  applyPushPlan(spaceId: string, plan: SchemaPushPlan, tx?: Transaction): Promise<{ usedByContents: Map<string, number>; lost: string[] }> {
     return transaction(this.db, tx, async t => {
+      const written = [...plan.creates, ...plan.updates].map(it => ({ name: it.id, fields: 'fields' in it ? it.fields : undefined }));
+      const lost = await lockSchemaReferences(t, spaceId, written);
+      let usedByContents = new Map<string, number>();
       if (plan.deletes.length) {
         await t
           .select({ id: schemas.id })
           .from(schemas)
           .where(and(eq(schemas.spaceId, spaceId), inArray(schemas.name, plan.deletes)))
           .for('update');
-        const used = await this.countContentsBySchema(spaceId, plan.deletes, t);
-        if (used.size) return used;
+        usedByContents = await this.countContentsBySchema(spaceId, plan.deletes, t);
       }
+      if (lost.length || usedByContents.size) return { usedByContents, lost };
       await applySchemaPushPlan(t, spaceId, plan);
       await bumpContentVersion(t, spaceId);
-      return new Map();
+      return { usedByContents, lost };
     });
   }
 

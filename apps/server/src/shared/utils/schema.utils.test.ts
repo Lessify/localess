@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Schema, SchemaExport, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
-import { docSchemaToExport, isSchemaChanged, planSchemaPush } from './schema.utils.js';
+import { checkSchemaFields, docSchemaToExport, isSchemaChanged, planSchemaPush } from './schema.utils.js';
 
 // What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.
 const stored = { id: 'stored', name: 'stored', createdAt: {} as never, updatedAt: {} as never };
@@ -343,5 +343,83 @@ describe('planSchemaPush', () => {
     expect(plan.errors).toHaveLength(2);
     expect(plan.errors.some(e => e.includes('Button') && !e.includes('ButtonType'))).toBe(true);
     expect(plan.errors.some(e => e.includes('ButtonType'))).toBe(true);
+  });
+});
+
+describe('checkSchemaFields', () => {
+  const types = new Map([
+    ['page', SchemaType.ROOT],
+    ['card', SchemaType.NODE],
+    ['colors', SchemaType.ENUM],
+  ]);
+  const text = (name: string): SchemaField => ({ name, kind: SchemaFieldKind.TEXT });
+
+  it('accepts a schema whose fields are unique, whose preview is one of them, and whose references are a NODE / an ENUM', () => {
+    const fields: SchemaField[] = [
+      text('title'),
+      { name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['card'] },
+      { name: 'color', kind: SchemaFieldKind.OPTION, source: 'colors' },
+    ];
+    expect(checkSchemaFields({ previewField: 'title', fields }, types)).toEqual([]);
+    expect(checkSchemaFields({}, types)).toEqual([]);
+  });
+
+  it('refuses a field name defined more than once (case-sensitive), once per name', () => {
+    expect(checkSchemaFields({ fields: [text('title'), text('Title'), text('title'), text('title')] }, types)).toEqual([
+      "field 'title' is defined more than once",
+    ]);
+  });
+
+  it('refuses a preview field that is not a field of the schema, or of a kind that can not be a preview', () => {
+    expect(checkSchemaFields({ previewField: 'nope', fields: [text('title')] }, types)).toEqual([
+      "preview field 'nope' is not a field of the schema",
+    ]);
+    expect(checkSchemaFields({ previewField: 'body', fields: [{ name: 'body', kind: SchemaFieldKind.RICH_TEXT }] }, types)).toEqual([
+      "preview field 'body' is a RICH_TEXT field, which can not be a preview",
+    ]);
+  });
+
+  it('refuses blocks that are not an existing NODE, and options from what is not an existing ENUM', () => {
+    const fields: SchemaField[] = [
+      { name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['card', 'page', 'gone'] },
+      { name: 'hero', kind: SchemaFieldKind.SCHEMA, schemas: ['colors'] },
+      { name: 'color', kind: SchemaFieldKind.OPTION, source: 'card' },
+      { name: 'tags', kind: SchemaFieldKind.OPTIONS, source: 'gone' },
+    ];
+    expect(checkSchemaFields({ fields }, types)).toEqual([
+      "field 'items' allows 'page', which is not a NODE schema",
+      "field 'items' allows 'gone', which does not exist",
+      "field 'hero' allows 'colors', which is not a NODE schema",
+      "field 'color' takes its options from 'card', which is not an ENUM schema",
+      "field 'tags' takes its options from 'gone', which does not exist",
+    ]);
+  });
+});
+
+describe('planSchemaPush: fields checked against the schemas after the push', () => {
+  const existing = new Map<string, Schema>([['colors', { type: SchemaType.ENUM, ...stored }]]);
+
+  it('accepts references to schemas the same push creates', () => {
+    const plan = planSchemaPush(
+      existing,
+      [
+        { id: 'page', type: SchemaType.ROOT, fields: [{ name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['card'] }] },
+        { id: 'card', type: SchemaType.NODE, fields: [{ name: 'color', kind: SchemaFieldKind.OPTION, source: 'colors' }] },
+      ],
+      'upsert',
+    );
+    expect(plan.errors).toEqual([]);
+  });
+
+  it('names the schema of every field error', () => {
+    const plan = planSchemaPush(
+      existing,
+      [{ id: 'page', type: SchemaType.ROOT, previewField: 'nope', fields: [{ name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['colors'] }] }],
+      'upsert',
+    );
+    expect(plan.errors).toEqual([
+      "Schema 'page': preview field 'nope' is not a field of the schema",
+      "Schema 'page': field 'items' allows 'colors', which is not a NODE schema",
+    ]);
   });
 });

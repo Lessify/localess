@@ -31,7 +31,10 @@ export class SchemaTransferService {
     return { status: 'FINISHED', file: { name: `schema-export-${task.id}.lls.zip`, size } };
   }
 
-  /** Upsert: schemas absent from the file are kept. */
+  /**
+   * Upsert: schemas absent from the file are kept. Fields that break a rule across fields (checked against the space's
+   * schemas with the imported ones) fail the task, writing nothing.
+   */
   async import(task: TaskEntity): Promise<TaskOutcome> {
     const opened = await this.importFile.open(task, 'SCHEMA');
     if (!('zip' in opened)) return opened;
@@ -40,7 +43,11 @@ export class SchemaTransferService {
     await this.log.log(task, 'INFO', `valid=${parse.data.length}`);
     const rows = await this.schemas.findAll(task.spaceId);
     const plan = planSchemaPush(schemasByName(rows), parse.data as SchemaExport[], 'upsert');
-    await this.schemas.applyImport(task.spaceId, plan);
+    const errors = plan.errors.length ? plan.errors : await this.schemas.applyImport(task.spaceId, plan);
+    if (errors.length) {
+      for (const error of errors) await this.log.log(task, 'WARN', error);
+      return { status: 'ERROR', message: 'Schema data is invalid.', trace: JSON.stringify(errors.slice(0, 100)) };
+    }
     await this.log.log(task, 'INFO', `total changes : ${plan.creates.length + plan.updates.length}`);
     return { status: 'FINISHED' };
   }

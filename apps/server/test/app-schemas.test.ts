@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { SchemaField, SchemaFieldKind } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
+import { SchemasRepository } from '../src/modules/schemas/repositories/schemas.repository.js';
 import { contents, spaces } from '../src/infra/database/schema.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
@@ -89,6 +91,31 @@ describe('app API: schemas', () => {
     expect(response.json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }, { name: 'next', kind: 'REFERENCE' }]);
   });
 
+  it('refuses fields that break a rule across fields, saying which', async () => {
+    const url = `${base}/${ids['page']}`;
+    const before = (await editor.get(url)).json().fields;
+    const refused = await editor.put(url, {
+      previewField: 'body',
+      fields: [
+        { name: 'title', kind: 'TEXT' },
+        { name: 'title', kind: 'TEXTAREA' },
+        { name: 'body', kind: 'RICH_TEXT' },
+        { name: 'items', kind: 'SCHEMAS', schemas: ['page', 'gone'] },
+        { name: 'color', kind: 'OPTION', source: 'page' },
+      ],
+    });
+    expect(refused.statusCode).toBe(400);
+    expect(refused.json().message).toBe(
+      "Schema 'page' is not valid: field 'title' is defined more than once; preview field 'body' is a RICH_TEXT field, which can not be a preview; " +
+        "field 'items' allows 'page', which is not a NODE schema; field 'items' allows 'gone', which does not exist; " +
+        "field 'color' takes its options from 'page', which is not an ENUM schema",
+    );
+    expect((await editor.get(url)).json().fields).toEqual(before);
+    const ok = await editor.put(url, { previewField: 'title', fields: [{ name: 'title', kind: 'TEXT' }, { name: 'color', kind: 'OPTION', source: 'colors' }] });
+    expect(ok.statusCode).toBe(200);
+    await editor.put(url, { fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
+  });
+
   it('stores only what a schema type has: fields and a preview field for ROOT/NODE, values for ENUM', async () => {
     const page = await editor.put(`${base}/${ids['page']}`, {
       previewField: 'title',
@@ -126,7 +153,12 @@ describe('app API: schemas', () => {
     };
     expect((await editor.post(`${base}/template`, template)).statusCode).toBe(409);
     expect((await editor.get(base)).json().map((s: { name: string }) => s.name)).not.toContain('hero');
+    const broken = { schemas: [{ id: 'hero', type: 'NODE', fields: [{ name: 'size', kind: 'OPTION', source: 'gone' }] }] };
+    const refused = await editor.post(`${base}/template`, broken);
+    expect(refused.statusCode).toBe(400);
+    expect(refused.json().message).toBe("Schema 'hero' is not valid: field 'size' takes its options from 'gone', which does not exist");
     template.schemas[1].id = 'sizes';
+    template.schemas[0].fields!.push({ name: 'size', kind: 'OPTION', source: 'sizes' } as never);
     const created = (await editor.post(`${base}/template`, template)).json();
     expect(created.map((s: { name: string }) => s.name)).toEqual(['hero', 'sizes']);
     for (const schema of created) expect(schema.id).toMatch(UUID_V7);
@@ -145,11 +177,13 @@ describe('app API: schemas', () => {
       blocks = (await editor.post(base, { name: 'blocks', type: 'ROOT' })).json().id;
       await editor.put(`${base}/${blocks}`, {
         fields: [
-          { name: 'items', kind: 'SCHEMAS', schemas: ['card', 'blocks'] },
+          { name: 'items', kind: 'SCHEMAS', schemas: ['card'] },
           { name: 'color', kind: 'OPTION', source: 'colors' },
           { name: 'tint', kind: 'OPTIONS', source: 'colors' },
         ],
       });
+      // A NODE allowing itself as a block: nested cards.
+      await editor.put(`${base}/${card}`, { fields: [{ name: 'children', kind: 'SCHEMAS', schemas: ['card'] }] });
       // Blocks inside content data are not looked at: only `contents.schema`.
       await t.db.insert(contents).values([
         ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
@@ -169,7 +203,7 @@ describe('app API: schemas', () => {
         ],
         contents: { count: 0, first: [] },
       });
-      // Its own `items` field allowing it is no use: it goes with the schema.
+      // Its own `children` field allowing `card` is no use: it goes with the schema.
       expect((await contentReader.get(`${base}/${blocks}/usage`)).json()).toEqual({
         fields: [],
         contents: { count: 6, first: ['a', 'b', 'c', 'd', 'e'].map(name => ({ name, fullSlug: `docs/${name}` })) },
@@ -195,9 +229,23 @@ describe('app API: schemas', () => {
     it('renames and deletes once nothing uses it any more', async () => {
       await t.db.delete(contents).where(eq(contents.spaceId, S1));
       expect((await editor.delete(`${base}/${blocks}`)).statusCode).toBe(204);
-      expect((await editor.put(`${base}/${card}/name`, { name: 'tile' })).json().name).toBe('tile');
+      // Its own field allowing it follows the new name.
+      expect((await editor.put(`${base}/${card}/name`, { name: 'tile' })).json()).toMatchObject({
+        name: 'tile',
+        fields: [{ name: 'children', kind: 'SCHEMAS', schemas: ['tile'] }],
+      });
       expect((await editor.delete(`${base}/${card}`)).statusCode).toBe(204);
     });
+  });
+
+  it('writes no field that refers to a schema gone since the service checked it', async () => {
+    const repository = t.app.get(SchemasRepository);
+    const gone = await repository.create(S1, { name: 'gone', type: 'NODE' });
+    const stale = { fields: [{ name: 'hero', kind: SchemaFieldKind.SCHEMA, schemas: ['gone'] }] as SchemaField[] };
+    await repository.delete(S1, gone.id);
+    // As if the service checked while `gone` still existed.
+    expect(await repository.update(S1, ids['page'], stale)).toEqual({ lost: ['gone'] });
+    expect((await editor.get(`${base}/${ids['page']}`)).json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }]);
   });
 
   it('deletes', async () => {

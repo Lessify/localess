@@ -259,6 +259,19 @@ export function isSchemaInUse(usage: SchemaUsage): boolean {
   return usage.fields.length > 0 || usage.contents.count > 0;
 }
 
+/** Field kinds whose value can be a schema's preview (`previewField`): one short value. */
+export const SCHEMA_PREVIEW_FIELD_KINDS: readonly SchemaFieldKind[] = [
+  SchemaFieldKind.TEXT,
+  SchemaFieldKind.TEXTAREA,
+  SchemaFieldKind.NUMBER,
+  SchemaFieldKind.COLOR,
+  SchemaFieldKind.DATE,
+  SchemaFieldKind.DATETIME,
+  SchemaFieldKind.BOOLEAN,
+  SchemaFieldKind.OPTION,
+  SchemaFieldKind.OPTIONS,
+];
+
 /** Field kinds whose value is an array. */
 export function isSchemaArray(schema: SchemaField): boolean {
   return (
