@@ -1,5 +1,5 @@
 {
-  "id": "1a0fd14e-6636-4809-8f3b-8253f2bb0413",
+  "id": "78f97e61-e9eb-453f-ba6f-16be4ec710f2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -38,12 +38,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "parent_path": {
-          "name": "parent_path",
-          "type": "text",
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "default": "''"
+          "notNull": false
         },
         "extension": {
           "name": "extension",
@@ -134,7 +133,7 @@
               "nulls": "last"
             },
             {
-              "expression": "parent_path",
+              "expression": "parent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -183,27 +182,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "assets_parent_path_prefix_idx": {
-          "name": "assets_parent_path_prefix_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"parent_path\" text_pattern_ops",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -215,6 +193,21 @@
             "space_id"
           ],
           "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "assets_parent_fk": {
+          "name": "assets_parent_fk",
+          "tableFrom": "assets",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "space_id",
+            "parent_id"
+          ],
+          "columnsTo": [
+            "space_id",
             "id"
           ],
           "onDelete": "cascade",

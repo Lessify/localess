@@ -67,8 +67,8 @@ Loads all spaces the user has access to (a `liveQuery` over `GET /api/app/spaces
   selectedSpaceId: string | undefined,
   selectedEnvironmentBySpaceId: Record<string, string>,
   environment: SpaceEnvironment | undefined,
-  contentPath: PathItem[],   // breadcrumb trail for content browser
-  assetPath: PathItem[],     // breadcrumb trail for asset browser
+  contentFolderId: string | null, // content folder shown (null: root); breadcrumbs come from the live folder map
+  assetFolderId: string | null,   // asset folder shown (null: root); breadcrumbs come from the live folder map
   schemas: Schema[],         // schemas for the selected space
   documents: ContentDocument[] // documents for the selected space
 }

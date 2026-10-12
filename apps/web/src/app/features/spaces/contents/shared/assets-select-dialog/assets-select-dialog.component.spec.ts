@@ -13,11 +13,11 @@ import { AssetsSelectDialogContext } from './assets-select-dialog.model';
 import { AssetsSelectDialogComponent } from './assets-select-dialog.component';
 
 function file(overrides: Partial<AssetFile> = {}): AssetFile {
-  return { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png', parentPath: '', ...overrides } as AssetFile;
+  return { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png', ...overrides } as AssetFile;
 }
 
 function folder(overrides: Partial<AssetFolder> = {}): AssetFolder {
-  return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', parentPath: '', ...overrides } as AssetFolder;
+  return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', ...overrides } as AssetFolder;
 }
 
 describe('AssetsSelectDialogComponent', () => {
@@ -38,7 +38,10 @@ describe('AssetsSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: AssetService, useValue: { findAll, createFile } },
+        {
+          provide: AssetService,
+          useValue: { findAll, createFile, findAllFolders: () => of([{ id: 'a', name: 'A' }, { id: 'b', name: 'B', parentId: 'a' }]) },
+        },
         { provide: NotificationService, useValue: { error } },
       ],
     });
@@ -51,7 +54,7 @@ describe('AssetsSelectDialogComponent', () => {
     const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
     const { component, findAll } = setup({ spaceId: 'space-1' }, assets);
 
-    expect(findAll).toHaveBeenCalledWith('space-1', '', undefined);
+    expect(findAll).toHaveBeenCalledWith('space-1', undefined, undefined);
     expect(component.dataSource.filteredData()).toEqual(assets);
     expect(component.isLoading()).toBe(false);
   });
@@ -69,26 +72,22 @@ describe('AssetsSelectDialogComponent', () => {
     const { component, findAll } = setup({ spaceId: 'space-1' });
     findAll.mockClear();
 
-    component.onAssetSelect(folder({ id: 'f1', name: 'Images', parentPath: '' }));
+    component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
+    TestBed.tick();
 
     expect(findAll).toHaveBeenCalledWith('space-1', 'f1', undefined);
-    expect(component.assetPath).toEqual([
-      { name: 'Root', fullSlug: '' },
-      { name: 'Images', fullSlug: 'f1' },
-    ]);
   });
 
-  it('navigateToSlug() truncates the path after the target segment', () => {
+  it('builds the breadcrumbs from the folder map, and goes back by folder id', () => {
     const { component } = setup({ spaceId: 'space-1' });
-    component.onAssetSelect(folder({ id: 'a', name: 'A', parentPath: '' }));
-    component.onAssetSelect(folder({ id: 'b', name: 'B', parentPath: 'a' }));
+    component.onAssetSelect(folder({ id: 'a', name: 'A' }));
+    component.onAssetSelect(folder({ id: 'b', name: 'B', parentId: 'a' }));
+    expect(component.trail().map(it => it.name)).toEqual(['A', 'B']);
 
-    component.navigateToSlug({ name: 'A', fullSlug: 'a' });
-
-    expect(component.assetPath).toEqual([
-      { name: 'Root', fullSlug: '' },
-      { name: 'A', fullSlug: 'a' },
-    ]);
+    component.navigateToFolder('a');
+    expect(component.trail().map(it => it.name)).toEqual(['A']);
+    component.navigateToFolder(null);
+    expect(component.trail()).toEqual([]);
   });
 
   it('fileIcon()/filePreview() classify by mime type', () => {
@@ -108,7 +107,7 @@ describe('AssetsSelectDialogComponent', () => {
 
     component.onFileUpload({ target: input } as unknown as Event);
 
-    expect(createFile).toHaveBeenCalledWith('space-1', '', uploaded);
+    expect(createFile).toHaveBeenCalledWith('space-1', undefined, uploaded);
     expect(component.fileUploadQueue()).toEqual([]);
   });
 
@@ -159,7 +158,7 @@ describe('AssetsSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: { spaceId: 'space-1' } },
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
-        { provide: AssetService, useValue: { findAll: vi.fn().mockReturnValue(of([asset])), createFile: vi.fn() } },
+        { provide: AssetService, useValue: { findAll: vi.fn().mockReturnValue(of([asset])), findAllFolders: () => of([]), createFile: vi.fn() } },
         { provide: NotificationService, useValue: { error: vi.fn() } },
         provideHttpClient(),
         provideHttpClientTesting(),

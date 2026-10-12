@@ -29,25 +29,25 @@ apps/web/src/app/features/spaces/assets/
 
 ## AssetsComponent
 
-File/folder browser driven by `SpaceStore.assetPath`. Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`.
+File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Every folder of the space is loaded once (`GET …/assets/folders`, live) into a map `id → folder`; the breadcrumbs are built from it (`@core/utils/folder-tree`). Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`.
 
 **Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
-- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetPath)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
-- `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is appended to `SpaceStore.assetPath`
+- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetFolderId)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
+- `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is opened (`SpaceStore.changeAssetFolder(id)`); a breadcrumb calls `navigateToFolder(id)` (`null`: the root)
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
 - `onFileUpload(event)` — handles the `<input type="file">` change event and queues each selected file
-- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentPath`/`name`/… fields must precede the file). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset DTO: the file is already stored (there is no in-progress state; the `in_progress` column is gone). Every uploaded file has a name, a `type` (`application/octet-stream` when the browser sends none) and an `extension` (`''` when its name has none; a sent `extension` must start with a dot); a file with no name is refused with `400`. Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
+- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentId`/`name`/… fields must precede the file). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset DTO: the file is already stored (there is no in-progress state; the `in_progress` column is gone). Every uploaded file has a name, a `type` (`application/octet-stream` when the browser sends none) and an `extension` (`''` when its name has none; a sent `extension` must start with a dot); a file with no name is refused with `400`. Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
 - The queue uploads one item at a time, in order (`enqueue()`, also used by URL and Unsplash imports). A failed item gets its own notification (`uploadErrorMessage()` in `@core/utils/upload-error`: a `413` from the server or a reverse proxy reads "the file is too large") and the queue moves on; the "Uploading … (n)" count drops on success and failure alike. The asset picker in the content editor (`assets-select-dialog`) behaves the same
 - `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
-- `openAddFolderDialog()` — creates a new folder (`POST …/assets/folders` takes `parentPath` and `name` only: file fields are refused with `400`, and a folder takes no alt text)
+- `openAddFolderDialog()` — creates a new folder (`POST …/assets/folders` takes `parentId` and `name` only: file fields are refused with `400`, and a folder takes no alt text)
 - `openEditDialog(asset)` — dispatches to `openEditFileDialog()` or `openEditFolderDialog()` by `kind`
 - `openEditFileDialog(asset)` — edit metadata: display name, alt text
 - `openEditFolderDialog(asset)` — rename folder
 - `openDeleteDialog(asset)` — delete file or folder (with cascade for folders, done by the server: the rows go in the transaction, which queues their stored files and renditions in `storage_deletions`; the storage sweeper deletes them right after the commit and retries if storage fails — see [Storage deletions](../../roadmap/database-structure.md#storage-deletions)). Before asking, it reads `GET …/assets/:id/usage` (`{ contents }`: how many contents' draft data holds `{ kind: 'ASSET', uri }` for the file, or any file under the folder) and, when some do, says "It is used by N contents, which will show it as missing." Deleting stays allowed; a failed count just leaves the warning out
-- `openMoveDialog(asset)` — move a file to a different folder path (`PUT /api/app/spaces/:s/assets/:id/parent`). Only files can be moved: the action is shown for files only, and the server refuses to move folders (their descendants carry the folder path)
+- `openMoveDialog(asset)` — moves a file or a folder (with everything under it) into another folder (`PUT /api/app/spaces/:s/assets/:id/parent { parentId }`, `null`: the root): one row on the server. The dialog lists the root and every folder from the folder map, by path of names, without where the asset is and, for a folder, without itself and everything under it (400 "A folder cannot be moved into itself" on the server)
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
@@ -318,7 +318,7 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | `EditFolderDialogComponent` | Rename folder |
 | `ExportDialogComponent` | Export assets to archive |
 | `ImportDialogComponent` | Upload asset archive → creates a Task |
-| `MoveDialogComponent` | Move asset to a new folder |
+| `MoveDialogComponent` | Move a file or folder to another folder |
 | `UnsplashAssetsSelectDialogComponent`* | Browse and import from Unsplash |
 | `ImagePreviewDialogComponent`* | Full-size image preview |
 | `ConfirmationDialogComponent` | Delete / regenerate-metadata confirmation |
@@ -333,4 +333,4 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | `TaskService` | Create import/export tasks |
 | `UnsplashPluginService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
 | `NotificationService` | Snackbar feedback |
-| `SpaceStore` | Current space + `assetPath` breadcrumb |
+| `SpaceStore` | Current space + `assetFolderId` (the folder shown) |

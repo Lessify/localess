@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, inArray, like, or, sql, SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, isNull, like, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { assets, contents } from '../../../infra/database/schema.js';
@@ -7,12 +7,13 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
-import { folderPath } from '../../../shared/utils/asset-path.utils.js';
+import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
 
 export type AssetEntity = typeof assets.$inferSelect;
 
 export interface AssetQuery {
-  parentPath?: string;
+  /** `null`: the root's children; absent: any parent. */
+  parentId?: string | null;
   kind?: 'FOLDER' | 'FILE';
   /** Case-insensitive name prefix. */
   name?: string;
@@ -30,7 +31,7 @@ export interface NewAssetFile {
   type: string;
   size: number;
   md5: string;
-  parentPath: string;
+  parentId: string | null;
   alt: string | null;
   source: string | null;
   metadata: Record<string, unknown> | null;
@@ -43,11 +44,15 @@ interface WriteResult<T> {
 
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, m => `\\${m}`);
 
+export type MoveResult = { asset: AssetEntity } | { noParent: true } | { intoItself: true };
+
 /**
- * The `assets` rows of a space. Every write, in one transaction: the space checked (404 when gone), the change and an
- * `assets` change event per changed row. A parent
- * path is checked to be an existing folder inside the write's transaction. Writes on an asset id the space does not
- * have answer `undefined` and change nothing.
+ * The `assets` rows of a space. The tree is linked by `parent_id`: the foreign key keeps every child with its parent
+ * (a delete cascades to the subtree, whose stored files are queued first), so a move changes one row. Every write, in
+ * one transaction: the space checked (404 when gone), the space's assets lock (first, so the writes of a space run one
+ * at a time and never deadlock on row locks), the change and an `assets` change event per changed row. The parent is
+ * checked to be a folder of the space in the write's transaction. Writes on an asset id the space does not have answer
+ * `undefined` and change nothing.
  */
 @Injectable()
 export class AssetsRepository {
@@ -58,7 +63,8 @@ export class AssetsRepository {
 
   findAll(spaceId: string, query: AssetQuery): Promise<AssetEntity[]> {
     const conditions: SQL[] = [eq(assets.spaceId, spaceId)];
-    if (query.parentPath !== undefined) conditions.push(eq(assets.parentPath, query.parentPath));
+    if (query.parentId === null) conditions.push(isNull(assets.parentId));
+    else if (query.parentId !== undefined) conditions.push(eq(assets.parentId, query.parentId));
     if (query.kind) conditions.push(eq(assets.kind, query.kind));
     if (query.name) conditions.push(ilike(assets.name, `${escapeLike(query.name)}%`));
     // Folders stay visible while browsing by file type.
@@ -96,15 +102,27 @@ export class AssetsRepository {
     return row?.id;
   }
 
-  /** Whether `parentPath` is '' (root) or the path of an existing folder. */
-  isFolderPath(spaceId: string, parentPath: string): Promise<boolean> {
-    return this.folderExists(this.db, spaceId, parentPath);
+  /** Every folder of the space, by name: the editor's folder map. */
+  findFolders(spaceId: string): Promise<Pick<AssetEntity, 'id' | 'parentId' | 'name'>[]> {
+    return this.db
+      .select({ id: assets.id, parentId: assets.parentId, name: assets.name })
+      .from(assets)
+      .where(and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FOLDER')))
+      .orderBy(asc(assets.name));
   }
 
-  createFolder(spaceId: string, parentPath: string, name: string, tx?: Transaction): Promise<AssetEntity> {
+  /** Whether `parentId` is null (the root) or a folder of the space. */
+  async isFolder(spaceId: string, parentId: string | null): Promise<boolean> {
+    if (!parentId) return true;
+    const row = await this.find(this.db, spaceId, parentId);
+    return row?.kind === 'FOLDER';
+  }
+
+  /** `undefined` when `parentId` is not a folder of the space. */
+  createFolder(spaceId: string, parentId: string | null, name: string, tx?: Transaction): Promise<AssetEntity | undefined> {
     return this.write(spaceId, tx, async t => {
-      await this.checkParentPath(t, spaceId, parentPath);
-      const [row] = await t.insert(assets).values({ id: newUuid(), spaceId, kind: 'FOLDER', name, parentPath }).returning();
+      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) return undefined;
+      const [row] = await t.insert(assets).values({ id: newUuid(), spaceId, kind: 'FOLDER', name, parentId }).returning();
       return { result: row, changed: [{ id: row.id, op: 'created' }] };
     });
   }
@@ -119,9 +137,13 @@ export class AssetsRepository {
     await releaseUploadGuards(this.db, spaceId, [id]);
   }
 
-  /** The row of a file already in storage (the upload checked its parent path before storing it), releasing its guard. */
-  createFile(spaceId: string, values: NewAssetFile, tx?: Transaction): Promise<AssetEntity> {
+  /**
+   * The row of a file already in storage, releasing its guard. `undefined` when its folder is gone since the upload
+   * checked it (the file is then the caller's to remove).
+   */
+  createFile(spaceId: string, values: NewAssetFile, tx?: Transaction): Promise<AssetEntity | undefined> {
     return this.write(spaceId, tx, async t => {
+      if (values.parentId && !(await this.lockFolder(t, spaceId, values.parentId))) return undefined;
       const [row] = await t
         .insert(assets)
         .values({ ...values, spaceId, kind: 'FILE' })
@@ -149,15 +171,17 @@ export class AssetsRepository {
     });
   }
 
-  /** Files only: a folder's descendants carry its path, so moving one would orphan them. */
-  move(spaceId: string, id: string, parentPath: string, tx?: Transaction): Promise<AssetEntity | undefined> {
-    return this.write(spaceId, tx, async t => {
+  /** A file or a folder, with everything under it: one row. A folder is not moved under itself (`intoItself`). */
+  move(spaceId: string, id: string, parentId: string | null, tx?: Transaction): Promise<MoveResult | undefined> {
+    return this.write<MoveResult>(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
-      if (current.kind !== 'FILE') throw new BadRequestException('Only files can be moved');
-      await this.checkParentPath(t, spaceId, parentPath);
-      const [row] = await t.update(assets).set({ parentPath }).where(this.byId(spaceId, id)).returning();
-      return { result: row, changed: [{ id, op: 'updated' }] };
+      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) return { result: { noParent: true as const }, changed: [] };
+      if (current.kind === 'FOLDER' && (await isAssetUnderOrSelf(t, spaceId, id, parentId))) {
+        return { result: { intoItself: true as const }, changed: [] };
+      }
+      const [row] = await t.update(assets).set({ parentId }).where(this.byId(spaceId, id)).returning();
+      return { result: { asset: row }, changed: [{ id, op: 'updated' }] };
     });
   }
 
@@ -166,15 +190,9 @@ export class AssetsRepository {
     return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
-      const path = folderPath(current);
-      const scope =
-        current.kind === 'FOLDER'
-          ? or(eq(assets.id, id), eq(assets.parentPath, path), like(assets.parentPath, `${escapeLike(path)}/%`))
-          : eq(assets.id, id);
-      const rows = await t
-        .delete(assets)
-        .where(and(eq(assets.spaceId, spaceId), scope))
-        .returning({ id: assets.id, kind: assets.kind });
+      // The subtree before the rows go (the foreign key cascades): its files are queued, its rows are the events.
+      const rows = await assetSubtree(t, spaceId, id);
+      await t.delete(assets).where(this.byId(spaceId, id));
       // Their stored files go through the queue: the sweeper deletes them after the commit.
       await scheduleAssetFilesDeletion(
         t,
@@ -202,6 +220,8 @@ export class AssetsRepository {
   ): Promise<T | undefined> {
     return transaction(this.db, tx, async t => {
       await requireSpace(t, spaceId);
+      // First, before any row lock: the writes of a space take it in the same order, so they never deadlock.
+      await t.execute(sql`select pg_advisory_xact_lock(hashtext('assets'), hashtext(${spaceId}))`);
       const outcome = await work(t);
       if (!outcome) return undefined;
       for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'assets', ...it }, t);
@@ -214,18 +234,7 @@ export class AssetsRepository {
     const current = await this.find(this.db, spaceId, id);
     if (!current) return undefined;
     if (current.kind === 'FILE') return [current.id];
-    const path = folderPath(current);
-    const files = await this.db
-      .select({ id: assets.id })
-      .from(assets)
-      .where(
-        and(
-          eq(assets.spaceId, spaceId),
-          eq(assets.kind, 'FILE'),
-          or(eq(assets.parentPath, path), like(assets.parentPath, `${escapeLike(path)}/%`)),
-        ),
-      );
-    return files.map(it => it.id);
+    return (await assetSubtree(this.db, spaceId, id)).filter(it => it.kind === 'FILE').map(it => it.id);
   }
 
   /**
@@ -250,20 +259,11 @@ export class AssetsRepository {
     return Number(value);
   }
 
-  /** '' (root) or the path of an existing folder. */
-  private async checkParentPath(t: Transaction, spaceId: string, parentPath: string): Promise<void> {
-    if (!(await this.folderExists(t, spaceId, parentPath))) throw new BadRequestException(`No folder at '${parentPath}'`);
-  }
-
-  private async folderExists(executor: Pick<Database, 'select'>, spaceId: string, parentPath: string): Promise<boolean> {
-    if (!parentPath) return true;
-    const segments = parentPath.split('/');
-    if (!isUuid(segments[segments.length - 1])) return false;
-    const [folder] = await executor
-      .select()
-      .from(assets)
-      .where(and(eq(assets.spaceId, spaceId), eq(assets.id, segments[segments.length - 1]), eq(assets.kind, 'FOLDER')));
-    return folder !== undefined && folderPath(folder) === parentPath;
+  /** Locks folder `id` (shared: not deleted or moved meanwhile); `false` when the space has no such folder. */
+  private async lockFolder(t: Transaction, spaceId: string, id: string): Promise<boolean> {
+    if (!isUuid(id)) return false;
+    const [row] = await t.select({ kind: assets.kind }).from(assets).where(this.byId(spaceId, id)).for('share');
+    return row?.kind === 'FOLDER';
   }
 
   private async find(executor: Pick<Database, 'select'>, spaceId: string, id: string): Promise<AssetEntity | undefined> {

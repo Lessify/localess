@@ -22,13 +22,12 @@ import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { AssetsService } from '../services/assets.service.js';
 
-const parentPath = z
-  .string()
-  .regex(/^([A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*)?$/, 'parentPath is a /-separated list of folder ids')
-  .max(4000);
+/** The folder; null or absent: the root. */
+const parentId = z.uuid().nullable().optional();
 const name = z.string().trim().min(1).max(500);
 const listSchema = z.object({
-  parentPath: z.string().optional(),
+  // '': the root's children; absent: any parent.
+  parentId: z.union([z.uuid(), z.literal('')]).optional(),
   kind: z.enum(['FOLDER', 'FILE']).optional(),
   name: z.string().max(500).optional(),
   fileType: z.string().max(100).optional(),
@@ -39,11 +38,12 @@ const listSchema = z.object({
   limit: z.coerce.number().int().min(1).max(1000).optional(),
 });
 // A folder is a name in a place: file fields are refused, not ignored.
-const folderSchema = z.object({ parentPath, name }).strict();
+const folderSchema = z.object({ parentId, name }).strict();
 const updateSchema = z.object({ name: name.optional(), alt: z.string().max(2000).optional() });
-const moveSchema = z.object({ parentPath });
+const moveSchema = z.object({ parentId: z.uuid().nullable() });
 const uploadFields = z.object({
-  parentPath: parentPath.default(''),
+  // A multipart field: absent or '' for the root.
+  parentId: z.union([z.uuid(), z.literal('')]).optional(),
   name: name.optional(),
   extension: z
     .string()
@@ -68,11 +68,19 @@ function fieldValues(file: MultipartFile): Record<string, string> {
 export class AssetsController {
   constructor(private readonly assets: AssetsService) {}
 
-  /** `?parentPath=` (exact, '' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
+  /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
-    return this.assets.list(spaceId, query);
+    const { parentId, ...rest } = query;
+    return this.assets.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+  }
+
+  /** Every folder of the space (`{ id, parentId, name }`), for the editor's breadcrumbs and move targets. */
+  @Get('folders')
+  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  async folders(@Param('spaceId') spaceId: string) {
+    return this.assets.folders(spaceId);
   }
 
   @Get('count')
@@ -97,11 +105,11 @@ export class AssetsController {
   @Post('folders')
   @RequirePermission(UserPermission.ASSET_CREATE)
   async createFolder(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(folderSchema)) body: z.infer<typeof folderSchema>) {
-    return this.assets.createFolder(spaceId, body.parentPath, body.name);
+    return this.assets.createFolder(spaceId, body.parentId ?? null, body.name);
   }
 
   /**
-   * `multipart/form-data` with the fields (`parentPath`, optional `name`, `extension`, `alt`, `source`)
+   * `multipart/form-data` with the fields (`parentId`, optional `name`, `extension`, `alt`, `source`)
    * **before** the `file` part. Name and extension default to the uploaded filename's.
    */
   @Post('files')
@@ -118,6 +126,7 @@ export class AssetsController {
     try {
       return await this.assets.upload(spaceId, {
         ...fields.data,
+        parentId: fields.data.parentId || null,
         file: file.file,
         filename: file.filename,
         mimetype: file.mimetype,
@@ -146,7 +155,7 @@ export class AssetsController {
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(moveSchema)) body: z.infer<typeof moveSchema>,
   ) {
-    return this.assets.move(spaceId, id, body.parentPath);
+    return this.assets.move(spaceId, id, body.parentId);
   }
 
   @Delete(':id')

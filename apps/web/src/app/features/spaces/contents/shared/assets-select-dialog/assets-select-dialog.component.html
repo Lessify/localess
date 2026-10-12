@@ -32,19 +32,18 @@
   }
   <nav hlmBreadcrumb class="px-6 py-2">
     <ol hlmBreadcrumbList>
-      @for (pathItem of assetPath; track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
-        @if (!isFirst) {
-          <li hlmBreadcrumbSeparator></li>
-        }
+      <li hlmBreadcrumbItem>
+        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+          <ng-icon hlm size="sm" name="lucideFolderRoot" />
+        </button>
+      </li>
+      @for (folder of trail(); track folder.id; let isLast = $last) {
+        <li hlmBreadcrumbSeparator></li>
         <li hlmBreadcrumbItem>
-          @if (isFirst) {
-            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-              <ng-icon name="lucideFolderRoot" />
-            </button>
-          } @else if (isLast) {
-            <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
+          @if (isLast) {
+            <span hlmBreadcrumbPage>{{ folder.name }}</span>
           } @else {
-            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
+            <button hlmBreadcrumbButton (click)="navigateToFolder(folder.id)"> {{ folder.name }} </button>
           }
         </li>
       }

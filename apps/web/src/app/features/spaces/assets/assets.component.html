@@ -84,19 +84,18 @@
 <div class="mx-auto mt-3 px-2">
   <nav hlmBreadcrumb class="p-2">
     <ol hlmBreadcrumbList>
-      @for (pathItem of spaceStore.assetPath(); track pathItem.fullSlug; let isLast = $last; let isFirst = $first) {
-        @if (!isFirst) {
-          <li hlmBreadcrumbSeparator></li>
-        }
+      <li hlmBreadcrumbItem>
+        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+          <ng-icon hlm size="sm" name="lucideFolderRoot" />
+        </button>
+      </li>
+      @for (folder of trail(); track folder.id; let isLast = $last) {
+        <li hlmBreadcrumbSeparator></li>
         <li hlmBreadcrumbItem>
-          @if (isFirst) {
-            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)">
-              <ng-icon hlm size="sm" name="lucideFolderRoot" />
-            </button>
-          } @else if (isLast) {
-            <span hlmBreadcrumbPage>{{ pathItem.name }}</span>
+          @if (isLast) {
+            <span hlmBreadcrumbPage>{{ folder.name }}</span>
           } @else {
-            <button hlmBreadcrumbButton (click)="navigateToSlug(pathItem)"> {{ pathItem.name }} </button>
+            <button hlmBreadcrumbButton (click)="navigateToFolder(folder.id)"> {{ folder.name }} </button>
           }
         </li>
       }
@@ -209,12 +208,10 @@
                         <ng-icon hlm size="sm" name="lucidePencil" />
                         Edit
                       </button>
-                      @if (element.kind === 'FILE') {
-                        <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
-                          <ng-icon hlm size="sm" name="lucideFolderInput" />
-                          Move
-                        </button>
-                      }
+                      <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
+                        <ng-icon hlm size="sm" name="lucideFolderInput" />
+                        Move
+                      </button>
                     </hlm-dropdown-menu-group>
                   }
                   @if ('ASSET_DELETE' | canUserPerform | async) {
@@ -261,7 +258,7 @@
                 <ng-icon hlm size="sm" name="lucidePencil" />
               </button>
             }
-            @if (('ASSET_UPDATE' | canUserPerform | async) && item.kind === 'FILE') {
+            @if ('ASSET_UPDATE' | canUserPerform | async) {
               <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move">
                 <ng-icon hlm size="sm" name="lucideFolderInput" />
               </button>

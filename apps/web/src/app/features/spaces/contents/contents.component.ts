@@ -22,6 +22,7 @@ import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
+import { breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import {
   Content,
@@ -83,7 +84,6 @@ import { EditDialogComponent, EditDialogContext } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
 import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
-import { breadcrumbs } from './shared/content-folders';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({

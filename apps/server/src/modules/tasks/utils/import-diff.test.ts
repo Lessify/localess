@@ -1,31 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Asset, AssetExport, Translation, TranslationExport } from '@localess/shared';
-import { isAssetChanged, isLocalesEqual, isTranslationChanged } from './import-diff.js';
-
-describe('isAssetChanged', () => {
-  const file = {
-    kind: 'FILE',
-    name: 'logo',
-    parentPath: '',
-    extension: '.png',
-    type: 'image/png',
-    size: 10,
-    metadata: { format: 'png', width: 1, height: 2 },
-  };
-  it('ignores metadata beyond format and dimensions', () => {
-    expect(
-      isAssetChanged(
-        file as unknown as Asset,
-        { ...file, id: 'a', metadata: { format: 'png', width: 1, height: 2, hasAlpha: true } } as unknown as AssetExport,
-      ),
-    ).toBe(false);
-  });
-  it('detects renames, moves and alt changes, treating missing and empty alike', () => {
-    expect(isAssetChanged(file as unknown as Asset, { ...file, id: 'a', name: 'logo2' } as unknown as AssetExport)).toBe(true);
-    expect(isAssetChanged(file as unknown as Asset, { ...file, id: 'a', parentPath: 'f' } as unknown as AssetExport)).toBe(true);
-    expect(isAssetChanged(file as unknown as Asset, { ...file, id: 'a', alt: 'Logo' } as unknown as AssetExport)).toBe(true);
-  });
-});
+import { Translation, TranslationExport } from '@localess/shared';
+import { isLocalesEqual, isTranslationChanged } from './import-diff.js';
 
 describe('isTranslationChanged', () => {
   const tr = { type: 'STRING', locales: { en: 'Hi', de: 'Hallo' }, labels: ['a', 'b'] };

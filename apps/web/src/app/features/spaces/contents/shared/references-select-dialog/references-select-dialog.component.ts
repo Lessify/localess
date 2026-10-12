@@ -16,6 +16,7 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ContentService } from '@core/services/content.service';
 import { SchemaService } from '@core/services/schema.service';
+import { breadcrumbs } from '@core/utils/folder-tree';
 import { Content, ContentDocument, ContentFolderSummary, ContentKind, Schema, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideFolderRoot } from '@ng-icons/lucide';
@@ -32,7 +33,6 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
-import { breadcrumbs } from '../content-folders';
 import { DocumentStatusComponent } from '../document-status/document-status.component';
 import { ReferencesSelectDialogContext, ReferencesSelectDialogResult } from './references-select-dialog.model';
 

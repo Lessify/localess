@@ -1,6 +1,6 @@
 {
-  "id": "d0df162b-58de-434d-97e5-008249842edc",
-  "prevId": "1a0fd14e-6636-4809-8f3b-8253f2bb0413",
+  "id": "da9dc719-8f03-4acc-979c-fbad2532fcce",
+  "prevId": "78f97e61-e9eb-453f-ba6f-16be4ec710f2",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -38,12 +38,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "parent_path": {
-          "name": "parent_path",
-          "type": "text",
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "default": "''"
+          "notNull": false
         },
         "extension": {
           "name": "extension",
@@ -134,7 +133,7 @@
               "nulls": "last"
             },
             {
-              "expression": "parent_path",
+              "expression": "parent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -183,27 +182,6 @@
           "with": {},
           "method": "btree",
           "concurrently": false
-        },
-        "assets_parent_path_prefix_idx": {
-          "name": "assets_parent_path_prefix_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"parent_path\" text_pattern_ops",
-              "isExpression": true,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
         }
       },
       "foreignKeys": {
@@ -215,6 +193,21 @@
           ],
           "tableTo": "spaces",
           "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "assets_parent_fk": {
+          "name": "assets_parent_fk",
+          "tableFrom": "assets",
+          "columnsFrom": [
+            "space_id",
+            "parent_id"
+          ],
+          "tableTo": "assets",
+          "columnsTo": [
+            "space_id",
             "id"
           ],
           "onUpdate": "no action",

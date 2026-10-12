@@ -287,16 +287,16 @@ describe('SpaceStore', () => {
     });
   });
 
-  it('changeContentFolder and changeAssetPath update their respective signals', () => {
+  it('changeContentFolder and changeAssetFolder update their respective signals', () => {
     const store = createStore([space('a')]);
-    const path = [{ fullSlug: 'docs', name: 'Docs' }];
     expect(store.contentFolderId()).toBeNull();
+    expect(store.assetFolderId()).toBeNull();
 
     store.changeContentFolder('f1');
-    store.changeAssetPath(path);
+    store.changeAssetFolder('a1');
 
     expect(store.contentFolderId()).toBe('f1');
-    expect(store.assetPath()).toEqual(path);
+    expect(store.assetFolderId()).toBe('a1');
   });
 
   it('changeEnvironment updates the environment and persists the per-space selection', () => {

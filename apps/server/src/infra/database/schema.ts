@@ -351,8 +351,8 @@ export const assets = pgTable(
     legacyId: text('legacy_id'),
     kind: text('kind', { enum: values(AssetKind) }).notNull(),
     name: text('name').notNull(),
-    // Slash-joined ancestor folder ids (UUIDs; the import rewrites Firestore ones), '' for root.
-    parentPath: text('parent_path').notNull().default(''),
+    // The folder this asset is in; null at the root (shared/queries/asset-tree.query.ts).
+    parentId: uuid('parent_id'),
     extension: text('extension'),
     type: text('type'),
     size: bigint('size', { mode: 'number' }),
@@ -367,10 +367,12 @@ export const assets = pgTable(
     // Kept per space: the asset import task reuses the ids of an export in another space.
     primaryKey({ columns: [t.spaceId, t.id] }),
     uniqueIndex('assets_legacy_idx').on(t.spaceId, t.legacyId),
-    index('assets_parent_idx').on(t.spaceId, t.parentPath, t.kind.desc(), t.name),
+    // A child always has its parent: deleting a folder deletes everything under it (their files are queued first).
+    foreignKey({ name: 'assets_parent_fk', columns: [t.spaceId, t.parentId], foreignColumns: [t.spaceId, t.id] }).onDelete('cascade'),
+    // A folder's children, in their order (folders first, then by name). Names may repeat in a folder.
+    index('assets_parent_idx').on(t.spaceId, t.parentId, t.kind.desc(), t.name),
     index('assets_kind_idx').on(t.spaceId, t.kind, t.name),
     oneOf('assets_kind_check', t.kind, values(AssetKind)),
-    index('assets_parent_path_prefix_idx').on(t.spaceId, sql`${t.parentPath} text_pattern_ops`),
   ],
 );
 

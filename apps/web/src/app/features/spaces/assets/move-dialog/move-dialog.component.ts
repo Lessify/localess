@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
-import { AssetFolder } from '@localess/shared';
+import { folderPath, subtreeIds } from '@core/utils/folder-tree';
+import { AssetFolderSummary, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideHouse } from '@ng-icons/lucide';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
@@ -12,9 +13,8 @@ import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
-import { debounceTime, startWith, switchMap } from 'rxjs';
 
-import { MoveDialogContext, MoveDialogResult } from './move-dialog.model';
+import { MoveDialogContext, MoveDialogResult, MoveTarget } from './move-dialog.model';
 
 @Component({
   selector: 'll-asset-move-dialog',
@@ -30,48 +30,54 @@ export class MoveDialogComponent {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<MoveDialogResult>>(BrnDialogRef);
 
-  /** Required: the folder search is scoped to the space it carries. */
   private readonly context = injectBrnDialogContext<MoveDialogContext>();
 
   form: FormGroup = this.fb.group({
-    path: this.fb.control(null, Validators.required),
+    target: this.fb.control<MoveTarget | null>(null, Validators.required),
   });
 
-  // parentPath '~' acts as sentinel — id is never accessed for this item (see onValueChange guard)
-  readonly rootFolder: AssetFolder = { name: 'Root', parentPath: '~' } as AssetFolder;
-
   readonly search = signal('');
-  readonly selectedFolder = signal<AssetFolder | null>(null);
+  readonly selected = signal<MoveTarget | null>(null);
 
-  filteredFolders = toSignal(
-    toObservable(this.search).pipe(
-      startWith(''),
-      debounceTime(500),
-      switchMap(it => this.assetService.findAllFoldersByName(this.context.spaceId, it, 5)),
-    ),
-    { initialValue: [] as AssetFolder[] },
-  );
+  /** Every folder of the space, from the editor's folder map endpoint. */
+  private readonly folders = toSignal(this.assetService.findAllFolders(this.context.spaceId), {
+    initialValue: [] as AssetFolderSummary[],
+  });
 
-  protected readonly displayItem = (item?: AssetFolder): string => (item ? (item.parentPath === '~' ? `${item.name} | ~` : item.name) : '');
+  /**
+   * The root and every folder, by path, matching the search; without where the item already is, and for a folder
+   * without itself and everything under it.
+   */
+  readonly options = computed<MoveTarget[]>(() => {
+    const { asset } = this.context;
+    const folders = this.folders();
+    const map = new Map(folders.map(it => [it.id, it]));
+    const excluded = asset.kind === AssetKind.FOLDER ? subtreeIds(folders, asset.id) : new Set<string>();
+    const current = asset.parentId ?? null;
+    const term = this.search().trim().toLowerCase();
+    const targets: MoveTarget[] = [
+      { id: null, name: 'Root', path: '' },
+      ...folders
+        .filter(it => !excluded.has(it.id))
+        .map(it => ({ id: it.id, name: it.name, path: folderPath(map, it.id, folder => folder.name) })),
+    ];
+    return targets
+      .filter(it => it.id !== current)
+      .filter(it => !term || (it.id !== null && (it.name.toLowerCase().includes(term) || it.path.toLowerCase().includes(term))))
+      .sort((a, b) => a.path.localeCompare(b.path));
+  });
+
+  protected readonly displayItem = (item?: MoveTarget): string => (item ? `${item.name} | ${item.path || '~'}` : '');
 
   protected readonly noOpFilter = (): boolean => true;
 
-  protected onValueChange(folder: AssetFolder | null): void {
-    this.selectedFolder.set(folder);
-    if (folder === null) {
-      this.form.controls['path'].setValue(null);
-      return;
-    }
-    let parentPath: string;
-    if (folder.parentPath === '~') {
-      parentPath = '~';
-    } else {
-      parentPath = folder.parentPath ? `${folder.parentPath}/${folder.id}` : folder.id;
-    }
-    this.form.controls['path'].setValue(parentPath);
+  choose(target: MoveTarget | null): void {
+    this.selected.set(target);
+    this.form.controls['target'].setValue(target);
   }
 
   save(): void {
-    this.dialogRef.close(this.form.value as MoveDialogResult);
+    const target = this.selected();
+    if (target) this.dialogRef.close({ parentId: target.id });
   }
 }

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { AssetFolder } from '@localess/shared';
+import { Asset, AssetFolderSummary } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
@@ -9,93 +9,79 @@ import { vi } from 'vitest';
 import { MoveDialogContext } from './move-dialog.model';
 import { MoveDialogComponent } from './move-dialog.component';
 
-describe('MoveDialogComponent', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
+// Blog, Blog/2026, Blog/2026/June, News
+const FOLDERS: AssetFolderSummary[] = [
+  { id: 'blog', name: 'Blog' },
+  { id: 'y2026', name: '2026', parentId: 'blog' },
+  { id: 'june', name: 'June', parentId: 'y2026' },
+  { id: 'news', name: 'News' },
+];
 
-  function setup(context: MoveDialogContext, results: AssetFolder[] = []) {
+describe('MoveDialogComponent', () => {
+  function setup(asset: Partial<Asset>) {
     const close = vi.fn();
-    const findAllFoldersByName = vi.fn().mockReturnValue(of(results));
+    const findAllFolders = vi.fn().mockReturnValue(of(FOLDERS));
+    const context: MoveDialogContext = { spaceId: 'space-1', asset: { id: 'a1', kind: 'FILE', ...asset } as Asset };
     TestBed.overrideComponent(MoveDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: AssetService, useValue: { findAllFoldersByName } },
+        { provide: AssetService, useValue: { findAllFolders } },
       ],
     });
     const fixture = TestBed.createComponent(MoveDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findAllFoldersByName };
+    return { component: fixture.componentInstance, close, findAllFolders };
   }
+  const paths = (component: MoveDialogComponent) => component.options().map(it => it.path);
 
-  it('starts with an invalid, unset path', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-
+  it('starts with nothing chosen, from the folders of the space', () => {
+    const { component, findAllFolders } = setup({ parentId: 'news' });
+    expect(findAllFolders).toHaveBeenCalledWith('space-1');
+    expect(component.selected()).toBeNull();
     expect(component.form.invalid).toBe(true);
-    expect(component.selectedFolder()).toBeNull();
   });
 
-  it('searches folders for the given space after the debounce window', async () => {
-    vi.useFakeTimers();
-    const folder = { id: 'f1', name: 'Images', parentPath: '' } as AssetFolder;
-    const { component, findAllFoldersByName } = setup({ spaceId: 'space-1' }, [folder]);
-    findAllFoldersByName.mockClear();
-
-    component.search.set('img');
-    await vi.advanceTimersByTimeAsync(500);
-
-    expect(findAllFoldersByName).toHaveBeenCalledWith('space-1', 'img', 5);
-    expect(component.filteredFolders()).toEqual([folder]);
+  it('offers the root and every folder by path, leaving out the current folder', () => {
+    const { component } = setup({ parentId: 'news' });
+    expect(paths(component)).toEqual(['', 'Blog', 'Blog/2026', 'Blog/2026/June']);
   });
 
-  it('onValueChange(null) clears the selection and the path', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-
-    component['onValueChange'](null);
-
-    expect(component.selectedFolder()).toBeNull();
-    expect(component.form.value.path).toBeNull();
+  it('does not offer the root to an item already there', () => {
+    const { component } = setup({});
+    expect(paths(component)).toEqual(['Blog', 'Blog/2026', 'Blog/2026/June', 'News']);
   });
 
-  it('onValueChange() sets the path to "~" for the root folder sentinel', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-
-    component['onValueChange'](component.rootFolder);
-
-    expect(component.form.value.path).toBe('~');
+  it('leaves out a moved folder and everything under it', () => {
+    const { component } = setup({ id: 'y2026', kind: 'FOLDER', parentId: 'blog' } as Partial<Asset>);
+    expect(paths(component)).toEqual(['', 'News']);
   });
 
-  it('onValueChange() composes the parent path for a top-level folder', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-    const folder = { id: 'f1', name: 'Images', parentPath: '' } as AssetFolder;
-
-    component['onValueChange'](folder);
-
-    expect(component.form.value.path).toBe('f1');
+  it('filters by name or path', () => {
+    const { component } = setup({ parentId: 'news' });
+    component.search.set('jun');
+    expect(paths(component)).toEqual(['Blog/2026/June']);
+    component.search.set('2026');
+    expect(paths(component)).toEqual(['Blog/2026', 'Blog/2026/June']);
   });
 
-  it('onValueChange() composes the parent path for a nested folder', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-    const folder = { id: 'f2', name: 'Nested', parentPath: 'f1' } as AssetFolder;
+  it('closes with the chosen folder, or null for the root', () => {
+    const { component, close } = setup({ parentId: 'news' });
+    component.choose(component.options().find(it => it.path === 'Blog')!);
+    expect(component.form.valid).toBe(true);
+    component.save();
+    expect(close).toHaveBeenCalledWith({ parentId: 'blog' });
 
-    component['onValueChange'](folder);
-
-    expect(component.form.value.path).toBe('f1/f2');
+    component.choose(component.options().find(it => it.path === '')!);
+    component.save();
+    expect(close).toHaveBeenLastCalledWith({ parentId: null });
   });
 
-  it('displayItem() shows "Root" with a separator for the root sentinel', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-
-    expect(component['displayItem'](component.rootFolder)).toBe('Root | ~');
-  });
-
-  it('displayItem() shows the folder name for a regular folder, or an empty string when absent', () => {
-    const { component } = setup({ spaceId: 'space-1' });
-    const folder = { id: 'f1', name: 'Images', parentPath: '' } as AssetFolder;
-
-    expect(component['displayItem'](folder)).toBe('Images');
+  it('shows a target as its name and path', () => {
+    const { component } = setup({ parentId: 'news' });
+    expect(component['displayItem'](component.options()[1])).toBe('Blog | Blog');
+    expect(component['displayItem'](component.options()[0])).toBe('Root | ~');
     expect(component['displayItem'](undefined)).toBe('');
   });
 });

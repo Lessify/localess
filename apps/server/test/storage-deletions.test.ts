@@ -35,9 +35,9 @@ describe('storage deletions', () => {
   afterEach(() => vi.restoreAllMocks());
   afterAll(() => t?.close());
 
-  const upload = (name: string, parentPath = '', spaceId = S1) =>
+  const upload = (name: string, parentId: string | null = null, spaceId = S1) =>
     assets.upload(spaceId, {
-      parentPath,
+      parentId,
       file: Readable.from(Buffer.from(`bytes of ${name}`)),
       filename: `${name}.txt`,
       mimetype: 'text/plain',
@@ -82,7 +82,7 @@ describe('storage deletions', () => {
   });
 
   it('queues one entry per file under a deleted folder', async () => {
-    const folder = await assets.createFolder(S1, '', 'Folder');
+    const folder = await assets.createFolder(S1, null, 'Folder');
     const one = await upload('one', folder.id);
     const two = await upload('two', folder.id);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
@@ -98,7 +98,7 @@ describe('storage deletions', () => {
   it('queues the whole directory of a deleted space', async () => {
     const spaceId = newUuid();
     await insertSpace(t.db, { id: spaceId, name: 'Gone', locales: [{ id: 'en', name: 'English' }] });
-    const file = await upload('c', '', spaceId);
+    const file = await upload('c', null, spaceId);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
     await t.app.get(SpacesService).delete(spaceId);
     expect(await queue()).toEqual([expect.objectContaining({ prefix: `spaces/${spaceId}/`, spaceId, assetId: null })]);

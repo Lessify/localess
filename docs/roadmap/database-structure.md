@@ -166,7 +166,7 @@ what the public API serves for content is stored, and each row is its own `cv`.
 ## `assets`
 
 ```
-assets PK (space_id, id): kind FOLDER|FILE, name, parent_path (ancestor folder ids), extension, type, size, md5,
+assets PK (space_id, id): parent_id, kind FOLDER|FILE, name, extension, type, size, md5,
        alt, source, metadata, legacy_id
 ```
 
@@ -174,8 +174,8 @@ assets PK (space_id, id): kind FOLDER|FILE, name, parent_path (ancestor folder i
 |---|---|
 | `in_progress` | **Dropped**: an upload stores the file, then creates the row, and answers the asset DTO; nothing was ever in progress. |
 | `legacy_id` | **Kept** on the table: old (Firestore) asset URLs answer 301 to the UUID one, and the asset export/import task carries it. |
-| `parent_path` | **Kept** (materialized path of folder ids). Folders can't be moved yet ([To do](#to-do)). |
-| File vs folder fields | **Enforced by the API**, not a CHECK: a new folder takes `parentPath` and `name` only (file fields → 400), a folder takes no alt text, and every uploaded file has a name, a `type` and an `extension` (`''` when the name has none). `size` / `md5` stay nullable: files imported without their bytes have none. |
+| `parent_id` | **The structure, held by the database** ([Content and asset trees](content-asset-tree.md)): a foreign key with cascade (a folder delete takes its subtree, whose files are queued first), so a move is one row; files and folders move, a folder not under itself (400). Names may repeat in a folder. Every asset write takes the space's assets lock first. |
+| File vs folder fields | **Enforced by the API**, not a CHECK: a new folder takes `parentId` and `name` only (file fields → 400), a folder takes no alt text, and every uploaded file has a name, a `type` and an `extension` (`''` when the name has none). `size` / `md5` stay nullable: files imported without their bytes have none. |
 | Deleting a used asset | **Allowed, with a warning**: `GET …/assets/:id/usage` counts the contents whose draft data references the file (or any file under the folder); the delete dialog shows it. Refusing is a [To do](#to-do). |
 
 ## Storage deletions
@@ -284,8 +284,6 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
   document republished (or an asset changed) later stays in that cached response until the main document's `cv` moves
   (up to the 7-day TTL). Decide how the resolved targets take part in the `cv` (e.g. a hash of their versions).
 - **Table names:** singular instead of plural (`space`, `content`, …); `user` is a reserved word in Postgres.
-- **Assets — moving folders:** rewrite the descendants' `parent_path` prefix in one transaction (after checking the
-  target is not inside the folder), instead of refusing; or switch to `parent_id` with recursive queries.
 - **Assets — deleting what content uses:** refuse to delete a file (or a folder with such a file) while contents
   reference it, instead of the warning; decide how the published snapshots count.
 - **Task files through the storage queue:** task files (`spaces/{s}/tasks/{id}`) are still deleted after the commit;

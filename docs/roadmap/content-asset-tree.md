@@ -1,6 +1,6 @@
 # Content and asset trees by `parent_id`
 
-Status: **phase 1 (contents) implemented**; phase 2 (assets) to do. Plan: [content-tree-plan.md](content-tree-plan.md).
+Status: **implemented** — phase 1 (contents, plan: [content-tree-plan.md](content-tree-plan.md)) and phase 2 (assets).
 
 ## Goal
 

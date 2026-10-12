@@ -34,25 +34,38 @@ describe('AssetService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() lists the children of a parent path, the root by default', async () => {
+  it('findAll() lists the children of a folder, the root by default', async () => {
     const service = setup();
     const root = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?parentPath=`).flush([{ id: 'a1' }]);
+    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'a1' }]);
     expect(await root).toEqual([{ id: 'a1' }]);
 
-    const nested = firstValueFrom(service.findAll('space-1', 'f1/f2'));
-    http.expectOne(`${BASE}?parentPath=f1/f2`).flush([]);
+    const nested = firstValueFrom(service.findAll('space-1', 'f2'));
+    http.expectOne(`${BASE}?parentId=f2`).flush([]);
     expect(await nested).toEqual([]);
+  });
+
+  it('findAllFolders() reads every folder of the space, live', async () => {
+    vi.useFakeTimers();
+    const service = setup();
+    const results: unknown[][] = [];
+    const subscription = service.findAllFolders('space-1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}/folders`).flush([{ id: 'f1', name: 'Photos' }]);
+    events.next({ spaceId: 'space-1', entity: 'assets', id: 'f2', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}/folders`).flush([]);
+    expect(results).toEqual([[{ id: 'f1', name: 'Photos' }], []]);
+    subscription.unsubscribe();
   });
 
   it('findAll() narrows files by MIME prefix, except for ANY', async () => {
     const service = setup();
     const images = firstValueFrom(service.findAll('space-1', '', AssetFileType.IMAGE));
-    http.expectOne(`${BASE}?parentPath=&fileType=image/`).flush([]);
+    http.expectOne(`${BASE}?parentId=&fileType=image/`).flush([]);
     await images;
 
     const any = firstValueFrom(service.findAll('space-1', '', AssetFileType.ANY));
-    http.expectOne(`${BASE}?parentPath=`).flush([]);
+    http.expectOne(`${BASE}?parentId=`).flush([]);
     await any;
   });
 
@@ -61,15 +74,15 @@ describe('AssetService', () => {
     const service = setup();
     const results: Asset[][] = [];
     const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}?parentPath=`).flush([]);
+    http.expectOne(`${BASE}?parentId=`).flush([]);
 
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'c', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}?parentPath=`);
+    http.expectNone(`${BASE}?parentId=`);
 
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}?parentPath=`).flush([{ id: 'a1' } as Asset]);
+    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'a1' } as Asset]);
     expect(results).toEqual([[], [{ id: 'a1' }]]);
     subscription.unsubscribe();
   });
@@ -94,10 +107,6 @@ describe('AssetService', () => {
     const files = firstValueFrom(service.findAllFilesByName('space-1', 'lo', 5));
     http.expectOne(`${BASE}?name=lo&kind=FILE&limit=5`).flush([]);
     await files;
-
-    const folders = firstValueFrom(service.findAllFoldersByName('space-1', 'lo'));
-    http.expectOne(`${BASE}?name=lo&kind=FOLDER&limit=20`).flush([{ id: 'f1' }]);
-    expect(await folders).toEqual([{ id: 'f1' }]);
   });
 
   it('findById() reads one asset', async () => {
@@ -116,13 +125,13 @@ describe('AssetService', () => {
     expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);
   });
 
-  it('createFile() uploads the file as multipart with the parent path first', async () => {
+  it('createFile() uploads the file as multipart with the parent folder first', async () => {
     const service = setup();
     const file = new File(['hello'], 'logo.png', { type: 'image/png' });
     const result = firstValueFrom(service.createFile('space-1', 'f1', file));
     const request = http.expectOne({ method: 'POST', url: `${BASE}/files` });
     const entries = formEntries(request.request.body);
-    expect(entries.map(([key]) => key)).toEqual(['parentPath', 'file']);
+    expect(entries.map(([key]) => key)).toEqual(['parentId', 'file']);
     expect(entries[0][1]).toBe('f1');
     expect((entries[1][1] as File).name).toBe('logo.png');
     request.flush({ id: 'a1' });
@@ -132,12 +141,12 @@ describe('AssetService', () => {
   it('importFile() downloads the URL and uploads it with its metadata', async () => {
     const service = setup();
     const result = firstValueFrom(
-      service.importFile('space-1', '', { url: 'https://images.example/x', name: 'photo', extension: '.jpg', source: 'unsplash' }),
+      service.importFile('space-1', undefined, { url: 'https://images.example/x', name: 'photo', extension: '.jpg', source: 'unsplash' }),
     );
     http.expectOne('https://images.example/x').flush(new Blob(['img'], { type: 'image/jpeg' }));
     const request = http.expectOne({ method: 'POST', url: `${BASE}/files` });
     const entries = formEntries(request.request.body);
-    expect(entries.map(([key]) => key)).toEqual(['parentPath', 'name', 'extension', 'source', 'file']);
+    expect(entries.map(([key]) => key)).toEqual(['parentId', 'name', 'extension', 'source', 'file']);
     expect(entries.slice(0, 4).map(([, value]) => value)).toEqual(['', 'photo', '.jpg', 'unsplash']);
     expect((entries[4][1] as File).name).toBe('photo.jpg');
     request.flush({ id: 'a2' });
@@ -148,7 +157,7 @@ describe('AssetService', () => {
     const service = setup();
     const result = firstValueFrom(service.createFolder('space-1', 'f1', { name: 'Images' }));
     const request = http.expectOne({ method: 'POST', url: `${BASE}/folders` });
-    expect(request.request.body).toEqual({ parentPath: 'f1', name: 'Images' });
+    expect(request.request.body).toEqual({ parentId: 'f1', name: 'Images' });
     request.flush({ id: 'f2' });
     expect((await result).id).toBe('f2');
   });
@@ -175,17 +184,17 @@ describe('AssetService', () => {
     await file;
   });
 
-  it('move() puts the new parent path, mapping "~" to the root', async () => {
+  it('move() puts the new parent folder, null for the root', async () => {
     const service = setup();
-    const toRoot = firstValueFrom(service.move('space-1', 'a1', '~'));
+    const toRoot = firstValueFrom(service.move('space-1', 'a1', null));
     const request = http.expectOne({ method: 'PUT', url: `${BASE}/a1/parent` });
-    expect(request.request.body).toEqual({ parentPath: '' });
+    expect(request.request.body).toEqual({ parentId: null });
     request.flush({});
     await toRoot;
 
     const toFolder = firstValueFrom(service.move('space-1', 'a1', 'f1'));
     const folderRequest = http.expectOne({ method: 'PUT', url: `${BASE}/a1/parent` });
-    expect(folderRequest.request.body).toEqual({ parentPath: 'f1' });
+    expect(folderRequest.request.body).toEqual({ parentId: 'f1' });
     folderRequest.flush({});
     await toFolder;
   });

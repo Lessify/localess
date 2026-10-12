@@ -8,7 +8,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
-import { PathItem, SpaceStore } from '@core/stores/space.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';

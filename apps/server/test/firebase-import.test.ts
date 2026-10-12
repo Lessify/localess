@@ -29,8 +29,10 @@ const site: FakeFirebaseSpace = {
   schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] }],
   translations: [{ id: 'greeting', type: 'STRING', locales: { en: 'Hello' } }, { id: 'bye', type: 'STRING', locales: { en: 'Bye' } }],
   assets: [
+    // Before its folder: Firestore pages come in no tree order.
+    { id: 'a1', kind: 'FILE', name: 'photo', parentPath: 'f1/f2', extension: '.jpg', type: 'image/jpeg', size: photo.length, createdAt: '2025-02-01T00:00:00.000Z' },
+    { id: 'f2', kind: 'FOLDER', name: '2025', parentPath: 'f1' },
     { id: 'f1', kind: 'FOLDER', name: 'Photos', parentPath: '' },
-    { id: 'a1', kind: 'FILE', name: 'photo', parentPath: 'f1', extension: '.jpg', type: 'image/jpeg', size: photo.length, createdAt: '2025-02-01T00:00:00.000Z' },
     { id: 'a2', kind: 'FILE', name: 'missing', parentPath: 'gone', extension: '.jpg', type: 'image/jpeg', size: 1 },
   ],
   contents: [
@@ -97,7 +99,7 @@ describe('Firebase import run', () => {
       webhooks: ['DONE', 1],
       translations: ['DONE', 2],
       schemas: ['DONE', 1],
-      assets: ['DONE', 3],
+      assets: ['DONE', 4],
       contents: ['DONE', 4],
       contentMigration: ['DONE', 1],
     });
@@ -116,9 +118,13 @@ describe('Firebase import run', () => {
     expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, space.id)))[0].name).toBe('page');
 
     const rows = await t.db.select().from(assets).where(eq(assets.spaceId, space.id));
-    const folder = rows.find(it => it.legacyId === 'f1')!;
+    const photos = rows.find(it => it.legacyId === 'f1')!;
+    const folder = rows.find(it => it.legacyId === 'f2')!;
     const file = rows.find(it => it.legacyId === 'a1')!;
-    expect(file).toMatchObject({ id: expect.stringMatching(UUID_V7), parentPath: folder.id, md5: createHash('md5').update(photo).digest('base64') });
+    expect(photos.parentId).toBeNull();
+    expect(folder.parentId).toBe(photos.id);
+    expect(file).toMatchObject({ id: expect.stringMatching(UUID_V7), parentId: folder.id, md5: createHash('md5').update(photo).digest('base64') });
+    expect(rows.find(it => it.legacyId === 'a2')!.parentId).toBeNull();
     const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${space.id}/assets/${file.id}/original` });
     expect(served.rawPayload.equals(photo)).toBe(true);
 
@@ -139,7 +145,7 @@ describe('Firebase import run', () => {
 
     const warnings = run.stages.flatMap(it => it.warnings ?? []).join('\n');
     expect(warnings).toMatch(/missing: no file/); // a2 has no file in Firebase
-    expect(warnings).toMatch(/keeps an unmapped parent folder 'gone'/); // a2's parent folder is missing
+    expect(warnings).toMatch(/missing: parent folder 'gone' not found, imported at the root/);
     expect(warnings).toMatch(/home: data is not valid JSON/);
     expect(warnings).toMatch(/blog\/post: no content 'deleted'/);
     expect(warnings).toMatch(/nowhere\/lost: parent folder 'nowhere' not found, imported at the root/);
@@ -330,6 +336,42 @@ describe('Firebase import run', () => {
       expect(x.parentId).toBe(y.id);
       expect(y.parentId).toBeNull();
       expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual(["y: parent folder 'x' would make a cycle, imported at the root"]);
+    } finally {
+      await loop.close();
+    }
+  });
+
+  it('breaks a loop of asset folders naming each other as parent, with a warning', async () => {
+    const loop = await fakeFirebase([
+      {
+        id: 'fbAssetLoop',
+        name: 'Asset loop',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        assets: [
+          // X only waits on the loop: it keeps its parent P.
+          { id: 'a', kind: 'FOLDER', name: 'X', parentPath: 'q/p' },
+          { id: 'p', kind: 'FOLDER', name: 'P', parentPath: 'q' },
+          { id: 'q', kind: 'FOLDER', name: 'Q', parentPath: 'p' },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: loop.url, sourceSpaceId: 'fbAssetLoop', sourceSpaceName: 'Asset loop', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(loop.url, 'migration-secret', { allowInternal: true }), 'fbAssetLoop');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const rows = await t.db.select().from(assets).where(eq(assets.spaceId, run.spaceId!));
+      const p = rows.find(it => it.name === 'P')!;
+      const q = rows.find(it => it.name === 'Q')!;
+      expect(p.parentId).toBeNull();
+      expect(q.parentId).toBe(p.id);
+      expect(rows.find(it => it.name === 'X')!.parentId).toBe(p.id);
+      expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual(["P: parent folder 'q' would make a cycle, imported at the root"]);
     } finally {
       await loop.close();
     }

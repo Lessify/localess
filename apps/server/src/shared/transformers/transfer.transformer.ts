@@ -1,28 +1,10 @@
-import type { AssetExport, TranslationExport } from '@localess/shared';
-import type { assets, translations } from '../../infra/database/schema.js';
-import { withoutNulls } from '../../infra/database/without-nulls.js';
+import type { TranslationExport } from '@localess/shared';
+import type { translations } from '../../infra/database/schema.js';
 
 /*
- * Rows → the entries of export files (assets.json, contents.json, translations.json), the shapes the Firebase
+ * Rows → the entries of export files (translations.json), the shapes the Firebase
  * version wrote; the export tasks write them and the import tasks read them back.
  */
-
-export function assetToExport(row: typeof assets.$inferSelect): AssetExport {
-  const asset = withoutNulls(row);
-  if (asset.kind === 'FOLDER') return { id: asset.id, kind: 'FOLDER', name: asset.name, parentPath: asset.parentPath } as AssetExport;
-  return {
-    id: asset.id,
-    kind: 'FILE',
-    name: asset.name,
-    parentPath: asset.parentPath,
-    extension: asset.extension,
-    type: asset.type,
-    size: asset.size,
-    alt: asset.alt,
-    metadata: asset.metadata,
-    source: asset.source,
-  } as AssetExport;
-}
 
 export function translationToExport(row: typeof translations.$inferSelect): TranslationExport {
   // Export files identify a translation by its key, carried as `id`.

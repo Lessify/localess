@@ -26,8 +26,6 @@ import {
 import { UserStore } from './user.store';
 
 const LS_KEY = 'LL-SPACE-STATE';
-const ROOT_PATH: PathItem = { name: 'Root', fullSlug: '' };
-const DEFAULT_PATH = [ROOT_PATH];
 export type SpaceState = {
   spaces: Space[];
   /**
@@ -42,15 +40,11 @@ export type SpaceState = {
   selectedEnvironmentBySpaceId: Record<string, string>;
   /** The content folder the editor shows; `null`: the root. */
   contentFolderId: string | null;
-  assetPath: PathItem[];
+  /** The asset folder the editor shows; `null`: the root. */
+  assetFolderId: string | null;
   environment: SpaceEnvironment | undefined;
   schemas: Schema[];
   documents: ContentDocument[];
-};
-
-export type PathItem = {
-  fullSlug: string;
-  name: string;
 };
 
 const initialState: SpaceState = {
@@ -59,7 +53,7 @@ const initialState: SpaceState = {
   selectedSpaceId: undefined,
   selectedEnvironmentBySpaceId: {},
   contentFolderId: null,
-  assetPath: DEFAULT_PATH,
+  assetFolderId: null,
   environment: undefined,
   schemas: [],
   documents: [],
@@ -185,7 +179,7 @@ export const SpaceStore = signalStore(
                   spaces: [],
                   loaded: true,
                   selectedSpaceId: undefined,
-                  assetPath: DEFAULT_PATH,
+                  assetFolderId: null,
                   contentFolderId: null,
                   environment: undefined,
                 });
@@ -201,7 +195,7 @@ export const SpaceStore = signalStore(
                       spaces: response,
                       loaded: true,
                       selectedSpaceId: selectedSpaceId,
-                      assetPath: DEFAULT_PATH,
+                      assetFolderId: null,
                       contentFolderId: null,
                       environment,
                     });
@@ -213,7 +207,7 @@ export const SpaceStore = signalStore(
                       spaces: response,
                       loaded: true,
                       selectedSpaceId: space.id,
-                      assetPath: DEFAULT_PATH,
+                      assetFolderId: null,
                       contentFolderId: null,
                       environment,
                     });
@@ -226,7 +220,7 @@ export const SpaceStore = signalStore(
                     spaces: response,
                     loaded: true,
                     selectedSpaceId: defaultSpace.id,
-                    assetPath: DEFAULT_PATH,
+                    assetFolderId: null,
                     contentFolderId: null,
                     environment,
                   });
@@ -252,7 +246,7 @@ export const SpaceStore = signalStore(
           const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
           patchState(state, {
             selectedSpaceId: space.id,
-            assetPath: DEFAULT_PATH,
+            assetFolderId: null,
             contentFolderId: null,
             environment,
           });
@@ -262,7 +256,7 @@ export const SpaceStore = signalStore(
           const environment = resolveEnvironmentForSpace(fallbackSpace, selectedEnvironmentBySpaceId);
           patchState(state, {
             selectedSpaceId: fallbackSpace?.id,
-            assetPath: DEFAULT_PATH,
+            assetFolderId: null,
             contentFolderId: null,
             environment,
           });
@@ -272,8 +266,8 @@ export const SpaceStore = signalStore(
       changeContentFolder: (contentFolderId: string | null) => {
         patchState(state, { contentFolderId });
       },
-      changeAssetPath: (assetPath: PathItem[]) => {
-        patchState(state, { assetPath });
+      changeAssetFolder: (assetFolderId: string | null) => {
+        patchState(state, { assetFolderId });
       },
       changeEnvironment: (environment: SpaceEnvironment) => {
         console.log('changeEnvironment', environment);
@@ -298,7 +292,7 @@ export const SpaceStore = signalStore(
     return {
       spaces: computed(() => state.spaces()),
       contentFolderId: computed(() => state.contentFolderId()),
-      assetPath: computed(() => state.assetPath()),
+      assetFolderId: computed(() => state.assetFolderId()),
       environment: computed(() => state.environment()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
       documents: computed(() => state.documents()),

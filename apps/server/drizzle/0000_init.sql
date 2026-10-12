@@ -4,7 +4,7 @@ CREATE TABLE "assets" (
 	"legacy_id" text,
 	"kind" text NOT NULL,
 	"name" text NOT NULL,
-	"parent_path" text DEFAULT '' NOT NULL,
+	"parent_id" uuid,
 	"extension" text,
 	"type" text,
 	"size" bigint,
@@ -291,6 +291,7 @@ CREATE TABLE "webhooks" (
 );
 --> statement-breakpoint
 ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "assets" ADD CONSTRAINT "assets_parent_fk" FOREIGN KEY ("space_id","parent_id") REFERENCES "public"."assets"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_link_snapshots" ADD CONSTRAINT "content_link_snapshots_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_snapshots" ADD CONSTRAINT "content_snapshots_space_id_content_id_contents_space_id_id_fk" FOREIGN KEY ("space_id","content_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contents" ADD CONSTRAINT "contents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -313,9 +314,8 @@ ALTER TABLE "user_identities" ADD CONSTRAINT "user_identities_user_id_users_id_f
 ALTER TABLE "webhook_logs" ADD CONSTRAINT "webhook_logs_webhook_id_webhooks_id_fk" FOREIGN KEY ("webhook_id") REFERENCES "public"."webhooks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "webhooks" ADD CONSTRAINT "webhooks_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "assets_legacy_idx" ON "assets" USING btree ("space_id","legacy_id");--> statement-breakpoint
-CREATE INDEX "assets_parent_idx" ON "assets" USING btree ("space_id","parent_path","kind" DESC NULLS LAST,"name");--> statement-breakpoint
+CREATE INDEX "assets_parent_idx" ON "assets" USING btree ("space_id","parent_id","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name");--> statement-breakpoint
-CREATE INDEX "assets_parent_path_prefix_idx" ON "assets" USING btree ("space_id","parent_path" text_pattern_ops);--> statement-breakpoint
 CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_id","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_running_idx" ON "firebase_imports" USING btree ("status") WHERE "firebase_imports"."status" = 'RUNNING';--> statement-breakpoint

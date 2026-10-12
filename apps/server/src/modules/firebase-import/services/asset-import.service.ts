@@ -7,7 +7,12 @@ import type { FirebaseDoc } from '../utils/firebase-client.js';
 import { obj, str, timestamps } from '../utils/firebase-docs.js';
 import { type ImportStage, StageFailure } from '../utils/firebase-import.utils.js';
 
-/** Stage 8: the assets: ids first, so folder paths can be mapped; then rows and files. */
+/**
+ * Stage 8: the assets: ids first, so folder paths can be mapped; then rows and files, folders before what they hold
+ * (the tree is linked by `parent_id`, and Firestore pages come in no tree order). An asset's parent is the folder its
+ * Firebase `parentPath` ends with; one that is missing, not a folder, or would close a loop leaves it at the root, with
+ * a warning.
+ */
 @Injectable()
 export class AssetImportService {
   constructor(
@@ -24,19 +29,10 @@ export class AssetImportService {
     const assetIds = new Map(assetDocs.map(doc => [doc.id, newUuid(timestamps(doc).createdAt)]));
     const files = assetDocs.filter(doc => doc['kind'] === 'FILE');
     stage.total(files.length);
+    const parents = this.planParents(stage, assetDocs, assetIds);
     let assetCount = 0;
-    for (const doc of assetDocs) {
+    for (const doc of parents.order) {
       const id = assetIds.get(doc.id)!;
-      const parent = typeof doc['parentPath'] === 'string' ? doc['parentPath'] : '';
-      const parentPath = parent
-        .split('/')
-        .filter(Boolean)
-        .map(segment => {
-          const mapped = assetIds.get(segment);
-          if (!mapped) stage.warn(`${str(doc['name']) ?? doc.id}: keeps an unmapped parent folder '${segment}'`);
-          return mapped ?? segment;
-        })
-        .join('/');
       const isFile = doc['kind'] === 'FILE';
       let stored: { size: number; md5: string } | undefined;
       let extracted: { metadata?: Record<string, unknown>; alt?: string } | undefined;
@@ -59,7 +55,7 @@ export class AssetImportService {
         legacyId: doc.id,
         kind: isFile ? 'FILE' : 'FOLDER',
         name: str(doc['name']) ?? doc.id,
-        parentPath,
+        parentId: parents.parentOf.get(doc.id) ?? null,
         extension: isFile ? (typeof doc['extension'] === 'string' ? doc['extension'] : '') : null,
         type: isFile ? str(doc['type']) : null,
         size: isFile ? (stored?.size ?? (typeof doc['size'] === 'number' ? doc['size'] : null)) : null,
@@ -73,5 +69,62 @@ export class AssetImportService {
       if (assetCount % 50 === 0) await stage.progress(assetCount);
     }
     return { count: assetCount, ids: assetIds };
+  }
+
+  /**
+   * Each asset's parent (the new id of the folder its Firebase `parentPath` ends with), and the order to insert them in:
+   * folders once their parent is in, then files.
+   */
+  private planParents(
+    stage: ImportStage,
+    docs: FirebaseDoc[],
+    assetIds: Map<string, string>,
+  ): { order: FirebaseDoc[]; parentOf: Map<string, string | null> } {
+    const folderIds = new Set(docs.filter(doc => doc['kind'] !== 'FILE').map(doc => doc.id));
+    const parentOf = new Map<string, string | null>();
+    // Firebase id of the parent folder, or null.
+    const wanted = new Map<string, string | null>();
+    for (const doc of docs) {
+      const parentPath = typeof doc['parentPath'] === 'string' ? doc['parentPath'] : '';
+      const last = parentPath.split('/').filter(Boolean).pop();
+      if (last && !folderIds.has(last)) {
+        stage.warn(`${str(doc['name']) ?? doc.id}: parent folder '${last}' not found, imported at the root`);
+      }
+      wanted.set(doc.id, last && folderIds.has(last) ? last : null);
+    }
+    const order: FirebaseDoc[] = [];
+    const placed = new Set<string>();
+    let pending = docs.filter(doc => doc['kind'] !== 'FILE');
+    while (pending.length) {
+      const ready = pending.filter(doc => {
+        const parent = wanted.get(doc.id);
+        return !parent || placed.has(parent);
+      });
+      // Nothing ready: the rest wait on a loop. Follow the parents from the first one to a folder met twice, which is
+      // on the loop (the first one may only wait on it), and break the loop there by putting it at the root.
+      if (!ready.length) {
+        const seen = new Set<string>();
+        let at = pending[0].id;
+        while (!seen.has(at)) {
+          seen.add(at);
+          at = wanted.get(at)!;
+        }
+        const onLoop = docs.find(doc => doc.id === at)!;
+        stage.warn(`${str(onLoop['name']) ?? onLoop.id}: parent folder '${wanted.get(at)}' would make a cycle, imported at the root`);
+        wanted.set(at, null);
+        continue;
+      }
+      for (const doc of ready) {
+        order.push(doc);
+        placed.add(doc.id);
+      }
+      pending = pending.filter(doc => !placed.has(doc.id));
+    }
+    order.push(...docs.filter(doc => doc['kind'] === 'FILE'));
+    for (const doc of docs) {
+      const parent = wanted.get(doc.id);
+      parentOf.set(doc.id, parent ? assetIds.get(parent)! : null);
+    }
+    return { order, parentOf };
   }
 }

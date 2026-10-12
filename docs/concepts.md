@@ -166,7 +166,7 @@ Three translation types:
 An **Asset** is either a `FOLDER` or a `FILE`. Metadata is a Postgres row; the file lives in the server's storage directory (`LOCALESS_STORAGE_DIR`, default `$LOCALESS_DATA_DIR/storage`).
 
 ```
-Postgres: assets (space_id, id uuid, legacy_id)                   ← parent_path = slash-joined ancestor folder ids
+Postgres: assets (space_id, id uuid, legacy_id, parent_id)        ← parent_id: its folder (null: root), FK with cascade
 Storage:  spaces/{spaceId}/assets/{assetId}/original               ← raw file
           spaces/{spaceId}/assets/{assetId}/renditions/…           ← cached image transforms
 ```

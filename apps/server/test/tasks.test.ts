@@ -5,11 +5,11 @@ import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import unzipper from 'unzipper';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, schemas, tasks, translations, storageDeletions } from '../src/infra/database/schema.js';
+import { assets, contents, schemas, tasks, translations } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { STALE_AFTER_MS, TaskWorker } from '../src/modules/tasks/workers/task-worker.service.js';
 import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
-import { SPACE_A, SPACE_B, SPACE_S, UUID_V7 } from './ids.js';
+import { SPACE_A, SPACE_B, SPACE_S } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
 const en = { id: 'en', name: 'English' };
@@ -91,13 +91,13 @@ describe('task worker: exports and imports', () => {
       { id: newUuid(), spaceId: SPACE_A, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
     ]);
     await t.db.insert(assets).values([
-      { spaceId: SPACE_A, id: PHOTOS, kind: 'FOLDER', name: 'Photos', parentPath: '' },
+      { spaceId: SPACE_A, id: PHOTOS, kind: 'FOLDER', name: 'Photos' },
       {
         spaceId: SPACE_A,
         id: PIC,
         kind: 'FILE',
         name: 'pic',
-        parentPath: PHOTOS,
+        parentId: PHOTOS,
         extension: '.jpg',
         type: 'image/jpeg',
         size: jpeg.length,
@@ -196,79 +196,16 @@ describe('task worker: exports and imports', () => {
   });
 
   describe('assets', () => {
-    it('round-trips folders and files with their bytes into another space', async () => {
-      const exported = await exportTask(SPACE_A, { kind: 'ASSET_EXPORT' });
-      expect(exported.file?.name).toBe(`asset-export-${exported.id}.lla.zip`);
-      const bytes = await download(SPACE_A, exported.id);
-      const files = await readZip(bytes);
-      expect(Object.keys(files).sort()).toEqual(['assets.json', `assets/${PIC}`, 'metadata.json']);
-      expect(files[`assets/${PIC}`].equals(jpeg)).toBe(true);
-
-      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      const b = await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B));
-      // Same ids in the other space: the key is (space_id, id).
-      expect(b.find(a => a.id === PIC)).toMatchObject({
-        parentPath: PHOTOS,
-        size: jpeg.length,
-        md5: expect.any(String),
-        metadata: { width: 64, height: 48 },
+    it('asset export and import are switched off until their redesign', async () => {
+      expect(await exportTask(SPACE_A, { kind: 'ASSET_EXPORT' })).toMatchObject({
+        status: 'ERROR',
+        message: 'Asset import and export are being redesigned',
       });
-      const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/${PIC}/original` });
-      expect(served.rawPayload.equals(jpeg)).toBe(true);
-      // The guards of the stored files went with their rows.
-      expect(await t.db.select().from(storageDeletions)).toEqual([]);
-    });
-
-    it('gives Firestore ids of a Firebase-era export UUIDs, kept as legacy_id; folders paths follow; a re-import reuses them', async () => {
-      const bytes = await zipOf({
-        'metadata.json': JSON.stringify({ kind: 'ASSET' }),
-        'assets.json': JSON.stringify([
-          { id: 'oldFolder', kind: 'FOLDER', name: 'Old', parentPath: '' },
-          { id: 'oldFile', kind: 'FILE', name: 'old', parentPath: 'oldFolder', extension: '.jpg', type: 'image/jpeg', size: jpeg.length },
-        ]),
-        'assets/oldFile': jpeg,
+      const bytes = await zipOf({ 'metadata.json': JSON.stringify({ kind: 'ASSET' }), 'assets.json': '[]' });
+      expect(await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).toMatchObject({
+        status: 'ERROR',
+        message: 'Asset import and export are being redesigned',
       });
-      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      const imported = async () => {
-        const rows = await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B));
-        return { folder: rows.find(a => a.legacyId === 'oldFolder')!, file: rows.find(a => a.legacyId === 'oldFile')! };
-      };
-      const { folder, file } = await imported();
-      expect(folder.id).toMatch(UUID_V7);
-      expect(file).toMatchObject({ id: expect.stringMatching(UUID_V7), parentPath: folder.id });
-      const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${SPACE_B}/assets/${file.id}/original` });
-      expect(served.rawPayload.equals(jpeg)).toBe(true);
-
-      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      expect(await imported()).toMatchObject({ folder: { id: folder.id }, file: { id: file.id } });
-    });
-
-    it('extracts metadata for imported files that carry none, and skips files missing from the archive', async () => {
-      const bytes = await zipOf({
-        'metadata.json': JSON.stringify({ kind: 'ASSET' }),
-        'assets.json': JSON.stringify([
-          { id: 'fresh', kind: 'FILE', name: 'fresh', parentPath: '', extension: '.jpg', type: 'image/jpeg', size: jpeg.length },
-          { id: 'ghost', kind: 'FILE', name: 'ghost', parentPath: '', extension: '.jpg', type: 'image/jpeg', size: 1 },
-        ]),
-        'assets/fresh': jpeg,
-      });
-      expect((await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).status).toBe('FINISHED');
-      const legacyIds = (await t.db.select().from(assets).where(eq(assets.spaceId, SPACE_B))).map(a => a.legacyId);
-      expect(legacyIds).toContain('fresh');
-      expect(legacyIds).not.toContain('ghost');
-      const [fresh] = await t.db
-        .select()
-        .from(assets)
-        .where(and(eq(assets.spaceId, SPACE_B), eq(assets.legacyId, 'fresh')));
-      expect(fresh.metadata).toMatchObject({ type: 'image', width: 64, height: 48 });
-    });
-
-    it('refuses asset ids that are not safe storage keys', async () => {
-      const bytes = await zipOf({
-        'metadata.json': JSON.stringify({ kind: 'ASSET' }),
-        'assets.json': JSON.stringify([{ id: '../escape', kind: 'FOLDER', name: 'x', parentPath: '' }]),
-      });
-      expect(await importTask(SPACE_B, 'ASSET_IMPORT', bytes)).toMatchObject({ status: 'ERROR', message: 'Asset data is invalid.' });
     });
 
     it('regenerates metadata of every file', async () => {

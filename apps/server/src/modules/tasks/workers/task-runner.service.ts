@@ -22,9 +22,9 @@ export class TaskRunner {
   async run(task: TaskEntity): Promise<TaskOutcome> {
     switch (task.kind) {
       case 'ASSET_EXPORT':
-        return this.assets.export(task);
       case 'ASSET_IMPORT':
-        return this.assets.import(task);
+        // Redesigned with the asset tree (docs/roadmap/content-asset-tree.md); switched off until then.
+        return { status: 'ERROR', message: 'Asset import and export are being redesigned' };
       case 'ASSET_REGEN_METADATA':
         return this.assets.regenerateMetadata(task);
       case 'CONTENT_EXPORT':

@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -12,17 +13,19 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
 import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { PathItem, SpaceStore } from '@core/stores/space.store';
+import { SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
+import { breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFolder, AssetFolderSummary, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -182,12 +185,17 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
 
-  get parentPath(): string {
-    const assetPath = this.spaceStore.assetPath();
-    if (assetPath.length > 0) {
-      return assetPath[assetPath.length - 1].fullSlug;
-    }
-    return '';
+  /** Every folder of the space, live: the breadcrumbs are built from it. */
+  private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.assetService.findAllFolders(spaceId))), {
+    initialValue: [] as AssetFolderSummary[],
+  });
+  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** The folders from the root down to the one shown. */
+  readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.assetFolderId()));
+
+  /** The folder shown; `undefined`: the root. */
+  private get folderId(): string | undefined {
+    return this.spaceStore.assetFolderId() ?? undefined;
   }
 
   // Subscriptions
@@ -205,10 +213,10 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       this.dataSource.sort = this.sort() ?? null;
     });
 
-    toObservable(this.spaceStore.assetPath)
+    toObservable(this.spaceStore.assetFolderId)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
-        switchMap(() => this.assetService.findAll(this.spaceId(), this.parentPath)),
+        switchMap(() => this.assetService.findAll(this.spaceId(), this.folderId)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -226,8 +234,8 @@ export class AssetsComponent implements OnInit, AfterViewInit {
         // upload on the page with it.
         concatMap(item =>
           (item instanceof File
-            ? this.assetService.createFile(this.spaceId(), this.parentPath, item)
-            : this.assetService.importFile(this.spaceId(), this.parentPath, item)
+            ? this.assetService.createFile(this.spaceId(), this.folderId, item)
+            : this.assetService.importFile(this.spaceId(), this.folderId, item)
           ).pipe(
             catchError((error: unknown) => {
               this.notificationService.error(uploadErrorMessage(item instanceof File ? item.name : `${item.name}${item.extension}`, error));
@@ -336,7 +344,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.createFolder(this.spaceId(), this.parentPath, it!)),
+        switchMap(it => this.assetService.createFolder(this.spaceId(), this.folderId, it!)),
       )
       .subscribe({
         next: () => {
@@ -453,20 +461,21 @@ export class AssetsComponent implements OnInit, AfterViewInit {
       .open<MoveDialogResult, MoveDialogContext>(MoveDialogComponent, {
         context: {
           spaceId: this.spaceId(),
+          asset: element,
         },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.move(this.spaceId(), element.id, it!.path)),
+        switchMap(it => this.assetService.move(this.spaceId(), element.id, it!.parentId)),
       )
       .subscribe({
         next: () => {
           this.notificationService.success('Asset has been moved.');
         },
-        error: () => {
-          this.notificationService.error('Asset can not be moved.');
+        error: (err: unknown) => {
+          this.notificationService.error(apiErrorMessage(err, 'Asset can not be moved.'));
         },
       });
   }
@@ -485,21 +494,15 @@ export class AssetsComponent implements OnInit, AfterViewInit {
         .subscribe();
     } else if (element.kind === AssetKind.FOLDER) {
       this.isLoading.set(true);
-      const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
-      assetPath.push({
-        name: element.name,
-        fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id,
-      });
-      this.spaceStore.changeAssetPath(assetPath);
+      this.spaceStore.changeAssetFolder(element.id);
     }
   }
 
-  navigateToSlug(pathItem: PathItem) {
+  /** A breadcrumb: a folder, or `null` for the root. */
+  navigateToFolder(folderId: string | null) {
+    if (folderId === this.spaceStore.assetFolderId()) return;
     this.isLoading.set(true);
-    const assetPath = ObjectUtils.clone(this.spaceStore.assetPath() || []);
-    const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
-    assetPath.splice(idx + 1);
-    this.spaceStore.changeAssetPath(assetPath);
+    this.spaceStore.changeAssetFolder(folderId);
   }
 
   fileIcon(type: string): string {

@@ -1,45 +1,10 @@
-import {
-  Asset,
-  AssetExport,
-  AssetFile,
-  AssetFileExport,
-  AssetFileMetadata,
-  AssetKind,
-  Translation,
-  TranslationExport,
-} from '@localess/shared';
+import { Translation, TranslationExport } from '@localess/shared';
 import { isLabelsEqual } from '../../../shared/utils/labels.utils.js';
 
 /*
- * "Did the imported item change?" — moved unchanged from functions/src/services/{asset,content,translation}.service.ts.
+ * "Did the imported item change?" — moved unchanged from functions/src/services/translation.service.ts.
  * Imports only write items for which these return true.
  */
-
-/** Two metadata objects are equal when format, width and height match. */
-export function isAssetMetadataEqual(a?: AssetFileMetadata, b?: AssetFileMetadata): boolean {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  const x = a as { format?: string; width?: number; height?: number };
-  const y = b as { format?: string; width?: number; height?: number };
-  return x.format === y.format && x.width === y.width && x.height === y.height;
-}
-
-export function isAssetChanged(existing: Asset, imported: AssetExport): boolean {
-  if (existing.name !== imported.name) return true;
-  if (existing.parentPath !== imported.parentPath) return true;
-  if (existing.kind !== imported.kind) return true;
-  if (existing.kind === AssetKind.FILE && imported.kind === AssetKind.FILE) {
-    const e = existing as AssetFile;
-    const i = imported as AssetFileExport;
-    if (e.extension !== i.extension) return true;
-    if (e.type !== i.type) return true;
-    if (e.size !== i.size) return true;
-    if ((e.alt ?? undefined) !== (i.alt ?? undefined)) return true;
-    if ((e.source ?? undefined) !== (i.source ?? undefined)) return true;
-    if (!isAssetMetadataEqual(e.metadata, i.metadata)) return true;
-  }
-  return false;
-}
 
 export function isLocalesEqual(a: Record<string, string>, b: Record<string, string>): boolean {
   const keysA = Object.keys(a);

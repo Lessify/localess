@@ -4,6 +4,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   effect,
   inject,
@@ -12,15 +13,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { PathItem } from '@core/stores/space.store';
-import { ObjectUtils } from '@core/utils/object-utils.service';
+import { breadcrumbs } from '@core/utils/folder-tree';
 import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetKind } from '@localess/shared';
+import { Asset, AssetFolderSummary, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -53,7 +53,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { BehaviorSubject, EMPTY, Subject } from 'rxjs';
+import { EMPTY, Subject } from 'rxjs';
 import { catchError, concatMap, finalize, switchMap } from 'rxjs/operators';
 
 import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-select-dialog.model';
@@ -119,24 +119,19 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
   selection = new SelectionModel<Asset>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
-  assetPath: PathItem[] = [];
 
   fileUploadQueue = signal<File[]>([]);
 
-  get parentPath(): string {
-    if (this.assetPath && this.assetPath.length > 0) {
-      return this.assetPath[this.assetPath.length - 1].fullSlug;
-    }
-    return '';
-  }
-
-  // Subscriptions
-  path$ = new BehaviorSubject<PathItem[]>([
-    {
-      name: 'Root',
-      fullSlug: '',
-    },
-  ]);
+  /** Every folder of the space: the breadcrumbs are built from it. */
+  private readonly folders = toSignal(this.assetService.findAllFolders(this.context.spaceId), {
+    initialValue: [] as AssetFolderSummary[],
+  });
+  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** The folder shown; `null`: the root. */
+  readonly folderId = signal<string | null>(null);
+  /** The folders from the root down to the one shown. */
+  readonly trail = computed(() => breadcrumbs(this.folderMap(), this.folderId()));
+  private readonly folderId$ = toObservable(this.folderId);
 
   // Subscriptions
   private fileUploadQueue$ = new Subject<File>();
@@ -153,13 +148,9 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
       this.dataSource.sort = this.sort() ?? null;
     });
 
-    this.path$
-      .asObservable()
+    this.folderId$
       .pipe(
-        switchMap(path => {
-          this.assetPath = path;
-          return this.assetService.findAll(this.context.spaceId, this.parentPath, this.context.fileType);
-        }),
+        switchMap(folderId => this.assetService.findAll(this.context.spaceId, folderId ?? undefined, this.context.fileType)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -180,7 +171,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
         // Each upload handles its own failure: an error reaching this stream would end it, and every later
         // upload on the page with it.
         concatMap(item =>
-          this.assetService.createFile(this.context.spaceId, this.parentPath, item).pipe(
+          this.assetService.createFile(this.context.spaceId, this.folderId() ?? undefined, item).pipe(
             catchError((error: unknown) => {
               this.notificationService.error(uploadErrorMessage(item.name, error));
               return EMPTY;
@@ -199,12 +190,11 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
     this.fileUploadQueue$.next(item);
   }
 
-  navigateToSlug(pathItem: PathItem) {
+  /** A breadcrumb: a folder, or `null` for the root. */
+  navigateToFolder(folderId: string | null) {
+    if (folderId === this.folderId()) return;
     this.isLoading.set(true);
-    const assetPath = ObjectUtils.clone(this.assetPath);
-    const idx = assetPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
-    assetPath.splice(idx + 1);
-    this.path$.next(assetPath);
+    this.folderId.set(folderId);
   }
 
   onAssetSelect(element: Asset): void {
@@ -213,12 +203,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
       return;
     } else if (element.kind === AssetKind.FOLDER) {
       this.isLoading.set(true);
-      const assetPath = ObjectUtils.clone(this.assetPath);
-      assetPath.push({
-        name: element.name,
-        fullSlug: element.parentPath ? `${element.parentPath}/${element.id}` : element.id,
-      });
-      this.path$.next(assetPath);
+      this.folderId.set(element.id);
     }
   }
 

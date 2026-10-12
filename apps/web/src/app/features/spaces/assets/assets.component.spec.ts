@@ -6,7 +6,7 @@ import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
 import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
-import { PathItem, SpaceStore } from '@core/stores/space.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -14,11 +14,11 @@ import { vi } from 'vitest';
 import { AssetsComponent } from './assets.component';
 
 function file(overrides: Partial<AssetFile> = {}): AssetFile {
-  return { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png', size: 10, parentPath: '', ...overrides } as AssetFile;
+  return { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png', size: 10, ...overrides } as AssetFile;
 }
 
 function folder(overrides: Partial<AssetFolder> = {}): AssetFolder {
-  return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', parentPath: '', ...overrides } as AssetFolder;
+  return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', ...overrides } as AssetFolder;
 }
 
 describe('AssetsComponent', () => {
@@ -27,7 +27,7 @@ describe('AssetsComponent', () => {
     vi.unstubAllGlobals();
   });
 
-  function setup(assetPath: PathItem[] = []) {
+  function setup(folderId: string | null = null) {
     const findAll = vi.fn().mockReturnValue(of([]));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const importFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
@@ -43,20 +43,22 @@ describe('AssetsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
-    const changeAssetPath = vi.fn();
+    const changeAssetFolder = vi.fn();
+    const assetFolderId = signal<string | null>(folderId);
+    const findAllFolders = vi.fn().mockReturnValue(of([{ id: 'f1', name: 'Images' }, { id: 'f2', name: '2026', parentId: 'f1' }]));
 
     TestBed.overrideComponent(AssetsComponent, { set: { template: '<ll-paginator [length]="0" />' } });
     TestBed.configureTestingModule({
       providers: [
         {
           provide: AssetService,
-          useValue: { findAll, createFile, importFile, createFolder, updateFolder, updateFile, delete: deleteAsset, move, usage },
+          useValue: { findAll, findAllFolders, createFile, importFile, createFolder, updateFolder, updateFile, delete: deleteAsset, move, usage },
         },
         { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: UnsplashPluginService, useValue: { enabled: () => false } },
-        { provide: SpaceStore, useValue: { assetPath: signal(assetPath), changeAssetPath } },
+        { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder } },
       ],
     });
     const fixture = TestBed.createComponent(AssetsComponent);
@@ -79,21 +81,23 @@ describe('AssetsComponent', () => {
       success,
       error,
       open,
-      changeAssetPath,
+      changeAssetFolder,
+      assetFolderId,
+      findAllFolders,
     };
   }
 
   it('loads root assets on init', () => {
     const { component, findAll } = setup();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', '');
+    expect(findAll).toHaveBeenCalledWith('space-1', undefined);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('loads assets under the current folder path', () => {
-    const { findAll } = setup([{ name: 'Images', fullSlug: 'images' }]);
+  it('loads assets under the current folder', () => {
+    const { findAll } = setup('f2');
 
-    expect(findAll).toHaveBeenCalledWith('space-1', 'images');
+    expect(findAll).toHaveBeenCalledWith('space-1', 'f2');
   });
 
   describe('onFileUpload', () => {
@@ -106,7 +110,7 @@ describe('AssetsComponent', () => {
 
       component.onFileUpload({ target: input } as unknown as Event);
 
-      expect(createFile).toHaveBeenCalledWith('space-1', '', uploadedFile);
+      expect(createFile).toHaveBeenCalledWith('space-1', undefined, uploadedFile);
       expect(component.fileUploadQueue()).toEqual([]);
     });
 
@@ -129,7 +133,7 @@ describe('AssetsComponent', () => {
       expect(component.fileUploadQueue()).toEqual([]);
 
       pick(later);
-      expect(createFile).toHaveBeenLastCalledWith('space-1', '', later);
+      expect(createFile).toHaveBeenLastCalledWith('space-1', undefined, later);
       expect(component.fileUploadQueue()).toEqual([]);
     });
 
@@ -189,7 +193,7 @@ describe('AssetsComponent', () => {
 
       component.openUrlPrompt();
 
-      expect(importFile).toHaveBeenCalledWith('space-1', '', {
+      expect(importFile).toHaveBeenCalledWith('space-1', undefined, {
         url: 'https://example.com/path/photo.png',
         name: 'photo',
         extension: '.png',
@@ -205,7 +209,7 @@ describe('AssetsComponent', () => {
 
       component.openAddFolderDialog();
 
-      expect(createFolder).toHaveBeenCalledWith('space-1', '', { name: 'Images' });
+      expect(createFolder).toHaveBeenCalledWith('space-1', undefined, { name: 'Images' });
       expect(success).toHaveBeenCalledWith('Folder has been created.');
     });
 
@@ -291,23 +295,25 @@ describe('AssetsComponent', () => {
   describe('openMoveDialog', () => {
     it('moves and notifies success when confirmed', () => {
       const { component, open, move, success } = setup();
-      open.mockReturnValue({ closed$: of({ path: 'images' }) });
+      open.mockReturnValue({ closed$: of({ parentId: 'f1' }) });
+      const element = file({ id: 'a1' });
 
-      component.openMoveDialog(file({ id: 'a1' }));
+      component.openMoveDialog(element);
 
-      expect(move).toHaveBeenCalledWith('space-1', 'a1', 'images');
+      expect(open.mock.calls[0][1].context).toEqual({ spaceId: 'space-1', asset: element });
+      expect(move).toHaveBeenCalledWith('space-1', 'a1', 'f1');
       expect(success).toHaveBeenCalledWith('Asset has been moved.');
     });
   });
 
   describe('onAssetSelect', () => {
     it('navigates into a selected folder', () => {
-      const { component, changeAssetPath } = setup();
+      const { component, changeAssetFolder } = setup();
 
-      component.onAssetSelect(folder({ id: 'f1', name: 'Images', parentPath: '' }));
+      component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
 
       expect(component.isLoading()).toBe(true);
-      expect(changeAssetPath).toHaveBeenCalledWith([{ name: 'Images', fullSlug: 'f1' }]);
+      expect(changeAssetFolder).toHaveBeenCalledWith('f1');
     });
 
     it('opens the preview dialog for a previewable file', () => {
@@ -328,18 +334,16 @@ describe('AssetsComponent', () => {
     });
   });
 
-  describe('navigateToSlug', () => {
-    it('truncates the path after the target segment', () => {
-      const path: PathItem[] = [
-        { name: 'A', fullSlug: 'a' },
-        { name: 'B', fullSlug: 'a/b' },
-        { name: 'C', fullSlug: 'a/b/c' },
-      ];
-      const { component, changeAssetPath } = setup(path);
+  describe('breadcrumbs', () => {
+    it('are built from the folder map, and navigate by folder id', () => {
+      const { component, changeAssetFolder, findAllFolders } = setup('f2');
+      expect(findAllFolders).toHaveBeenCalledWith('space-1');
+      expect(component.trail().map(it => it.name)).toEqual(['Images', '2026']);
 
-      component.navigateToSlug(path[1]);
-
-      expect(changeAssetPath).toHaveBeenCalledWith([path[0], path[1]]);
+      component.navigateToFolder('f1');
+      expect(changeAssetFolder).toHaveBeenCalledWith('f1');
+      component.navigateToFolder(null);
+      expect(changeAssetFolder).toHaveBeenLastCalledWith(null);
     });
   });
 
@@ -435,7 +439,7 @@ describe('AssetsComponent', () => {
       component.onPaste(event);
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(createFile).toHaveBeenCalledWith('space-1', '', pastedFile);
+      expect(createFile).toHaveBeenCalledWith('space-1', undefined, pastedFile);
     });
 
     it('generates a filename for a nameless pasted screenshot', () => {

@@ -1,18 +1,20 @@
 import type { Readable } from 'node:stream';
 import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
-import type { Asset } from '@localess/shared';
+import type { Asset, AssetFolderSummary } from '@localess/shared';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toAsset } from '../../../shared/transformers/asset.transformer.js';
+import { toDto } from '../../../shared/transformers/dto.transformer.js';
 import { type AssetQuery, AssetsRepository } from '../repositories/assets.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 import { splitFilename } from '../utils/split-filename.js';
 import { assetPrefix, originalKey } from '../utils/storage-keys.js';
 
 export interface UploadInput {
-  parentPath: string;
+  /** The folder; null: the root. */
+  parentId: string | null;
   file: Readable;
   filename: string;
   mimetype: string;
@@ -55,8 +57,15 @@ export class AssetsService {
     return toAsset(found(await this.assets.findById(spaceId, id)));
   }
 
-  async createFolder(spaceId: string, parentPath: string, name: string): Promise<Asset> {
-    return toAsset(await this.assets.createFolder(spaceId, parentPath, name));
+  /** Every folder of the space: the editor builds its breadcrumbs and move targets from them. */
+  async folders(spaceId: string): Promise<AssetFolderSummary[]> {
+    return (await this.assets.findFolders(spaceId)).map(it => toDto(it) as unknown as AssetFolderSummary);
+  }
+
+  async createFolder(spaceId: string, parentId: string | null, name: string): Promise<Asset> {
+    const row = await this.assets.createFolder(spaceId, parentId, name);
+    if (!row) throw new BadRequestException('No such folder');
+    return toAsset(row);
   }
 
   /**
@@ -66,7 +75,7 @@ export class AssetsService {
    */
   async upload(spaceId: string, input: UploadInput): Promise<Asset> {
     if (!(await this.spaces.find(spaceId))) throw new NotFoundException('Space not found');
-    if (!(await this.assets.isFolderPath(spaceId, input.parentPath))) throw new BadRequestException(`No folder at '${input.parentPath}'`);
+    if (!(await this.assets.isFolder(spaceId, input.parentId))) throw new BadRequestException('No such folder');
     // Every file has a name, a type and an extension ('' when its name has none).
     const derived = splitFilename(input.filename);
     const name = input.name || derived.name;
@@ -92,11 +101,13 @@ export class AssetsService {
         type,
         size: stored.size,
         md5: stored.md5,
-        parentPath: input.parentPath,
+        parentId: input.parentId,
         alt: input.alt || extracted.alt || null,
         source: input.source || null,
         metadata: extracted.metadata ?? null,
       });
+      // Its folder went since the check: the file is removed below, as for any failed upload.
+      if (!row) throw new BadRequestException('No such folder');
       return toAsset(row);
     } catch (error) {
       // Cleaned up at once when storage allows; otherwise the guard stays and the sweeper does it.
@@ -123,9 +134,12 @@ export class AssetsService {
     return { contents: await this.assets.countContentsUsing(spaceId, files) };
   }
 
-  /** Files only: a folder's descendants carry its path, so moving one would orphan them. */
-  async move(spaceId: string, id: string, parentPath: string): Promise<Asset> {
-    return toAsset(found(await this.assets.move(spaceId, id, parentPath)));
+  /** A file or a folder (with everything under it) into folder `parentId`; null: the root. */
+  async move(spaceId: string, id: string, parentId: string | null): Promise<Asset> {
+    const result = found(await this.assets.move(spaceId, id, parentId));
+    if ('noParent' in result) throw new BadRequestException('No such folder');
+    if ('intoItself' in result) throw new BadRequestException('A folder cannot be moved into itself');
+    return toAsset(result.asset);
   }
 
   /**

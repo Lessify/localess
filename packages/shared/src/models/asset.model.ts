@@ -16,10 +16,18 @@ export interface AssetBase {
   legacyId?: string;
   kind: AssetKind;
   name: string;
-  parentPath: string;
+  /** The folder this asset is in; absent at the root. */
+  parentId?: string;
 
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+/** A folder as the editor's folder map holds it (`GET …/assets/folders`). */
+export interface AssetFolderSummary {
+  id: string;
+  parentId?: string;
+  name: string;
 }
 
 export interface AssetFolder extends AssetBase {

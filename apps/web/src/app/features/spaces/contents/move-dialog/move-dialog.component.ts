@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ContentService } from '@core/services/content.service';
+import { folderPath, subtreeIds } from '@core/utils/folder-tree';
 import { ContentFolderSummary, ContentKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideHouse } from '@ng-icons/lucide';
@@ -13,7 +14,6 @@ import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 
-import { folderPath, subtreeIds } from '../shared/content-folders';
 import { MoveDialogContext, MoveDialogResult, MoveTarget } from './move-dialog.model';
 
 @Component({
@@ -57,7 +57,9 @@ export class MoveDialogComponent {
     const term = this.search().trim().toLowerCase();
     const targets: MoveTarget[] = [
       { id: null, name: 'Root', path: '' },
-      ...folders.filter(it => !excluded.has(it.id)).map(it => ({ id: it.id, name: it.name, path: folderPath(map, it.id) })),
+      ...folders
+        .filter(it => !excluded.has(it.id))
+        .map(it => ({ id: it.id, name: it.name, path: folderPath(map, it.id, folder => folder.slug) })),
     ];
     return targets
       .filter(it => it.id !== current)
