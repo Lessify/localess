@@ -5,7 +5,6 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { assets, contents } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
-import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { folderPath } from '../../../shared/utils/asset-path.utils.js';
@@ -40,14 +39,13 @@ export interface NewAssetFile {
 interface WriteResult<T> {
   result: T;
   changed: { id: string; op: 'created' | 'updated' | 'deleted' }[];
-  bump?: boolean;
 }
 
 const escapeLike = (value: string) => value.replace(/[\\%_]/g, m => `\\${m}`);
 
 /**
- * The `assets` rows of a space. Every write, in one transaction: the space checked (404 when gone), the change, the
- * content version bumped when resolved content would change, and an `assets` change event per changed row. A parent
+ * The `assets` rows of a space. Every write, in one transaction: the space checked (404 when gone), the change and an
+ * `assets` change event per changed row. A parent
  * path is checked to be an existing folder inside the write's transaction. Writes on an asset id the space does not
  * have answer `undefined` and change nothing.
  */
@@ -147,7 +145,7 @@ export class AssetsRepository {
         })
         .where(this.byId(spaceId, id))
         .returning();
-      return { result: row, changed: [{ id, op: 'updated' }], bump: true };
+      return { result: row, changed: [{ id, op: 'updated' }] };
     });
   }
 
@@ -183,14 +181,13 @@ export class AssetsRepository {
         spaceId,
         rows.filter(it => it.kind === 'FILE').map(it => it.id),
       );
-      return { result: rows, changed: rows.map(it => ({ id: it.id, op: 'deleted' as const })), bump: true };
+      return { result: rows, changed: rows.map(it => ({ id: it.id, op: 'deleted' as const })) };
     });
   }
 
   /**
-   * Runs `work` in the write's transaction (or the caller's), with the space checked first; then bumps the content
-   * version when asked and queues the change events. When `work` finds no asset it answers `undefined` and nothing
-   * is bumped.
+   * Runs `work` in the write's transaction (or the caller's), with the space checked first; then queues the change
+   * events. When `work` finds no asset it answers `undefined`.
    */
   private write<T>(spaceId: string, tx: Transaction | undefined, work: (tx: Transaction) => Promise<WriteResult<T>>): Promise<T>;
   private write<T>(
@@ -207,8 +204,6 @@ export class AssetsRepository {
       await requireSpace(t, spaceId);
       const outcome = await work(t);
       if (!outcome) return undefined;
-      // Resolved content embeds asset name/alt/metadata, so changes to them move the content cache version.
-      if (outcome.bump) await bumpContentVersion(t, spaceId);
       for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'assets', ...it }, t);
       return outcome.result;
     });

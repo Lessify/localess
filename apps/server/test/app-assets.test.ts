@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, spaces } from '../src/infra/database/schema.js';
+import { assets, contents } from '../src/infra/database/schema.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
@@ -64,7 +64,6 @@ describe('app API: assets', () => {
       return [];
     }
   };
-  const contentVersion = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].contentVersion;
 
   let photos: { id: string };
   let nested: { id: string };
@@ -224,12 +223,10 @@ describe('app API: assets', () => {
   });
 
   describe('editing', () => {
-    it('renames and sets or clears alt text, moving the content cache version', async () => {
+    it('renames and sets or clears alt text', async () => {
       const [file] = (await editor.get(`${base}?name=spinner`)).json();
-      const before = await contentVersion();
       expect((await editor.patch(`${base}/${file.id}`, { name: 'Loader', alt: '' })).json()).toMatchObject({ name: 'Loader' });
       expect((await editor.get(`${base}/${file.id}`)).json()).not.toHaveProperty('alt');
-      expect(await contentVersion()).toBeGreaterThan(before);
     });
 
     it('moves files between folders, but never folders', async () => {

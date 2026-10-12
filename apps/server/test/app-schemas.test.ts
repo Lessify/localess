@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SchemaField, SchemaFieldKind } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
 import { SchemasRepository } from '../src/modules/schemas/repositories/schemas.repository.js';
-import { contents, spaces } from '../src/infra/database/schema.js';
+import { contents } from '../src/infra/database/schema.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 
@@ -30,18 +30,14 @@ describe('app API: schemas', () => {
 
   afterAll(() => t?.close());
 
-  const contentVersion = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].contentVersion;
-
   const ids: Record<string, string> = {};
 
-  it('creates schemas with a UUIDv7 id and a unique name, refusing duplicates and bad names, and bumps the content version', async () => {
-    const before = await contentVersion();
+  it('creates schemas with a UUIDv7 id and a unique name, refusing duplicates and bad names', async () => {
     const response = await editor.post(base, { name: 'page', type: 'ROOT', displayName: 'Page' });
     expect(response.statusCode).toBe(201);
     expect(response.json()).toMatchObject({ id: expect.stringMatching(UUID_V7), name: 'page', type: 'ROOT', displayName: 'Page' });
     expect(response.json()).not.toHaveProperty('spaceId');
     ids['page'] = response.json().id;
-    expect(await contentVersion()).toBeGreaterThan(before);
     expect((await editor.post(base, { name: 'page', type: 'NODE' })).statusCode).toBe(409);
     expect((await editor.post(base, { name: 'bad name!', type: 'NODE' })).statusCode).toBe(400);
     expect((await editor.post('/api/app/spaces/missing/schemas', { name: 'x', type: 'NODE' })).statusCode).toBe(404);

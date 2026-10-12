@@ -6,7 +6,6 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { contents, schemas } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
-import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { fieldRefersTo, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
@@ -21,8 +20,8 @@ export type NewSchema = { name: string } & SchemaColumns;
 type Change = { id: string; op: 'created' | 'updated' | 'deleted' };
 
 /**
- * The `schemas` rows of a space. Every app write, in one transaction: the space checked (404 when gone), the change,
- * the content version bumped (drafts are rendered through schemas) and a `schemas` change event per changed row. A
+ * The `schemas` rows of a space. Every app write, in one transaction: the space checked (404 when gone), the change
+ * and a `schemas` change event per changed row (content snapshots stay: a draft is rebuilt when its document changes). A
  * name already taken in the space is a `ConflictException`.
  */
 /** `fields` with every block reference to `from` (the schema itself) renamed to `to`. */
@@ -157,8 +156,7 @@ export class SchemasRepository {
   }
 
   /**
-   * Writes a push plan (CLI schema push) and bumps the content version: schemas shape the draft output (locale
-   * extraction), so content drafts change too. No change events, as before. Checked again under lock, writing nothing
+   * Writes a push plan (CLI schema push). No change events, as before. Checked again under lock, writing nothing
    * when it fails: `usedByContents`, the schemas it deletes that contents use (taken meanwhile), with their counts;
    * `lost`, the schemas its fields refer to that are gone since it was planned.
    */
@@ -177,7 +175,6 @@ export class SchemasRepository {
       }
       if (lost.length || usedByContents.size) return { usedByContents, lost };
       await applySchemaPushPlan(t, spaceId, plan);
-      await bumpContentVersion(t, spaceId);
       return { usedByContents, lost };
     });
   }
@@ -231,10 +228,7 @@ export class SchemasRepository {
       return await transaction(this.db, tx, async t => {
         await requireSpace(t, spaceId);
         const { result, changed } = await work(t);
-        if (changed.length) {
-          await bumpContentVersion(t, spaceId);
-          for (const it of changed) await this.events.publish({ spaceId, entity: 'schemas', ...it }, t);
-        }
+        for (const it of changed) await this.events.publish({ spaceId, entity: 'schemas', ...it }, t);
         return result;
       });
     } catch (error) {

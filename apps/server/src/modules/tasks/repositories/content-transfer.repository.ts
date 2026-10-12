@@ -4,7 +4,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { contents } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
-import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
+import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { escapeLike } from '../utils/escape-like.js';
 
 export type ContentEntity = typeof contents.$inferSelect;
@@ -58,8 +58,8 @@ export class ContentTransferRepository {
   }
 
   /**
-   * Writes an import in one transaction, in the file's order; when anything was written, the content version is bumped
-   * and a `contents` change event published. Answers the number of rows written.
+   * Writes an import in one transaction, in the file's order; when anything was written, the drafts of the updated
+   * documents and the `/links` lists are dropped and a `contents` change event published. Answers the number of rows written.
    */
   applyImport(spaceId: string, writes: ContentImportWrite[], tx?: Transaction): Promise<number> {
     return transaction(this.db, tx, async t => {
@@ -74,7 +74,12 @@ export class ContentTransferRepository {
         }
       }
       if (writes.length) {
-        await bumpContentVersion(t, spaceId);
+        await dropContentDrafts(
+          t,
+          spaceId,
+          writes.filter(it => it.op === 'update').map(it => it.id),
+        );
+        await dropContentLinks(t, spaceId);
         await this.events.publish({ spaceId, entity: 'contents', op: 'updated' }, t);
       }
       return writes.length;

@@ -1,6 +1,6 @@
 {
-  "id": "616860ab-444a-4024-950c-cb4cdf63fa04",
-  "prevId": "fa675264-949f-44c0-8710-954a5ccb77c4",
+  "id": "e615b36b-601a-4250-95dd-af00c9d580ec",
+  "prevId": "e9500102-48db-4f5f-b1c8-bbe699980601",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -240,8 +240,72 @@
       },
       "isRLSEnabled": false
     },
-    "public.content_published": {
-      "name": "content_published",
+    "public.content_link_snapshots": {
+      "name": "content_link_snapshots",
+      "schema": "",
+      "columns": {
+        "space_id": {
+          "name": "space_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "built_at": {
+          "name": "built_at",
+          "type": "timestamp (3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "content_link_snapshots_space_id_spaces_id_fk": {
+          "name": "content_link_snapshots_space_id_spaces_id_fk",
+          "tableFrom": "content_link_snapshots",
+          "columnsFrom": [
+            "space_id"
+          ],
+          "tableTo": "spaces",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "content_link_snapshots_space_id_version_pk": {
+          "name": "content_link_snapshots_space_id_version_pk",
+          "columns": [
+            "space_id",
+            "version"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "content_link_snapshots_version_check": {
+          "name": "content_link_snapshots_version_check",
+          "value": "\"content_link_snapshots\".\"version\" in ('draft', 'published')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.content_snapshots": {
+      "name": "content_snapshots",
       "schema": "",
       "columns": {
         "space_id": {
@@ -256,6 +320,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "locale": {
           "name": "locale",
           "type": "text",
@@ -264,23 +334,22 @@
         },
         "data": {
           "name": "data",
-          "type": "jsonb",
+          "type": "json",
           "primaryKey": false,
           "notNull": true
         },
-        "published_at": {
-          "name": "published_at",
-          "type": "timestamp with time zone",
+        "built_at": {
+          "name": "built_at",
+          "type": "timestamp (3) with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "content_published_space_id_content_id_contents_space_id_id_fk": {
-          "name": "content_published_space_id_content_id_contents_space_id_id_fk",
-          "tableFrom": "content_published",
+        "content_snapshots_space_id_content_id_contents_space_id_id_fk": {
+          "name": "content_snapshots_space_id_content_id_contents_space_id_id_fk",
+          "tableFrom": "content_snapshots",
           "columnsFrom": [
             "space_id",
             "content_id"
@@ -295,18 +364,24 @@
         }
       },
       "compositePrimaryKeys": {
-        "content_published_space_id_content_id_locale_pk": {
-          "name": "content_published_space_id_content_id_locale_pk",
+        "content_snapshots_space_id_content_id_version_locale_pk": {
+          "name": "content_snapshots_space_id_content_id_version_locale_pk",
           "columns": [
             "space_id",
             "content_id",
+            "version",
             "locale"
           ]
         }
       },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "content_snapshots_version_check": {
+          "name": "content_snapshots_version_check",
+          "value": "\"content_snapshots\".\"version\" in ('draft', 'published')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.contents": {
@@ -1232,13 +1307,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "content_version": {
-          "name": "content_version",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
         },
         "created_at": {
           "name": "created_at",

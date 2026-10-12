@@ -70,9 +70,9 @@ export class SpaceImportService {
     return environments.length;
   }
 
-  /** After the last stage: the content `cv` moves past any cache (the run is then saved FINISHED). */
-  bumpContentVersion(spaceId: string): Promise<void> {
-    return this.spaces.bumpContentVersion(spaceId);
+  /** After the last stage: what was served while the import ran is built again (the run is then saved FINISHED). */
+  dropContentSnapshots(spaceId: string): Promise<void> {
+    return this.spaces.dropContentSnapshots(spaceId);
   }
 
   /** Once the run is FINISHED: the space appears for clients. */

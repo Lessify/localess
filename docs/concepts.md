@@ -15,8 +15,6 @@ Key properties:
   which migrations seed and change (the API only reads it, `GET /api/app/locales`)
 - `defaultLocale` — `default_locale_id`: new translations are created in it, content stores its values in the bare field,
   and a locale with no value falls back to it (one of the space's locales, checked by the API)
-- `content_version` — counter bumped on every content change: the content [`cv`](cdn-caching.md). Translations answer to
-  their snapshot's `built_at` instead (`translation_snapshots`, below)
 
 ---
 
@@ -50,9 +48,10 @@ New spaces can be created from a template that seeds a ready-made set of schemas
 A **Content** is either a `FOLDER` (organisational) or a `DOCUMENT` (actual page/entry).
 
 ```
-Postgres: contents (space_id, id)                       ← draft source; drafts are built on read
-          content_published (space_id, content_id, locale) ← published snapshot, one per locale
-          spaces.content_version                           ← cv
+Postgres: contents (space_id, id)                                  ← what the editor saves
+          content_snapshots (space_id, content_id, version, locale)   ← draft / published document per locale;
+                                                                        its built_at is the cv
+          content_link_snapshots (space_id, version)                  ← the /links list per stage
 ```
 
 Key properties on a `ContentDocument`:
@@ -209,11 +208,12 @@ users                             role, permissions, lock, disabled
   user_identities                 Google / Microsoft sign-in links
   sessions, password_reset_tokens
 locales                           every locale a space can use (seeded by migrations, read-only API)
-spaces                            default_locale_id, content_version
+spaces                            default_locale_id
   space_locales     (space_id, locale_id)   position, created_at
   space_environments (id)                   Visual Editor previews: name, url, position
   contents          (space_id, id)
-    content_published (space_id, content_id, locale)
+    content_snapshots (space_id, content_id, version, locale)
+  content_link_snapshots (space_id, version)
   translations      (space_id, id)
   translation_snapshots (space_id, version, locale)
   schemas           (space_id, id)
@@ -234,4 +234,4 @@ spaces/{spaceId}/tasks/{taskId}/original
 ```
 
 > Every space-owned table references `spaces` with `on delete cascade`, so deleting a Space removes all its rows in one statement; the server then deletes the `spaces/{spaceId}/` storage prefix.
-> Deleting a content FOLDER deletes its whole subtree (`parent_slug` equal to or under the folder's `full_slug`) in the same transaction, and `content_published` rows cascade. Renaming or moving a folder rewrites its descendants' slugs in one statement.
+> Deleting a content FOLDER deletes its whole subtree (`parent_slug` equal to or under the folder's `full_slug`) in the same transaction, and their `content_snapshots` rows cascade. Renaming or moving a folder rewrites its descendants' slugs in one statement.

@@ -2,8 +2,8 @@ import { SchemaFieldKind } from '@localess/shared';
 import { createHash } from 'node:crypto';
 import {
   assets,
-  contentPublished,
   contents,
+  contentSnapshots,
   schemas,
   tokens,
   translationSnapshots,
@@ -27,7 +27,7 @@ const at = new Date('2026-01-01T00:00:00Z');
 
 /** A space `s1` (en fallback, de) with one token per permission profile. */
 export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
-  await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en, contentVersion: 7 });
+  await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en });
   await t.db.insert(tokens).values([
     { id: newUuid(), token: TOKEN_V1, spaceId, name: 'legacy v1' },
     { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', version: 2, permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
@@ -99,10 +99,13 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
     },
     doc('old', 'old', 'blog-archive', { title: 'Old' }),
   ]);
+  // Published at epoch millisecond 7: their `cv`.
   const published = (name: 'home' | 'post1', locale: string, data: Record<string, unknown>, extra: object = {}) => ({
     spaceId,
     contentId: C[name],
+    version: 'published' as const,
     locale,
+    builtAt: new Date(7),
     data: {
       id: C[name],
       name,
@@ -119,7 +122,7 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
     },
   });
   await t.db
-    .insert(contentPublished)
+    .insert(contentSnapshots)
     .values([
       published(
         'home',

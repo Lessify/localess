@@ -5,7 +5,6 @@ import { assets } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { guardUpload, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
-import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
 import { escapeLike } from '../utils/escape-like.js';
 
 export type AssetEntity = typeof assets.$inferSelect;
@@ -58,10 +57,6 @@ export class AssetTransferRepository {
       .where(and(eq(assets.spaceId, spaceId), inArray(assets.id, ids)));
   }
 
-  /**
-   * Writes an import in one transaction, in the file's order; when anything was written, the content version is bumped
-   * and an `assets` change event published. Answers the number of rows written.
-   */
   /** Before the import stores a file: queued for deletion in an hour unless its row is written (see storage-deletions.ts). */
   async guardUpload(spaceId: string, id: string): Promise<void> {
     await guardUpload(this.db, spaceId, id);
@@ -72,7 +67,10 @@ export class AssetTransferRepository {
     await releaseUploadGuards(this.db, spaceId, ids);
   }
 
-  /** The import's rows in one transaction; the guards of the files it stored (`storedIds`) go with them. */
+  /**
+   * The import's rows in one transaction, in the file's order; the guards of the files it stored (`storedIds`) go with
+   * them, and when anything was written an `assets` change event is published. Answers the number of rows written.
+   */
   applyImport(spaceId: string, writes: AssetImportWrite[], storedIds: string[] = [], tx?: Transaction): Promise<number> {
     return transaction(this.db, tx, async t => {
       await releaseUploadGuards(t, spaceId, storedIds);
@@ -87,7 +85,6 @@ export class AssetTransferRepository {
         }
       }
       if (writes.length) {
-        await bumpContentVersion(t, spaceId);
         await this.events.publish({ spaceId, entity: 'assets', op: 'updated' }, t);
       }
       return writes.length;
@@ -112,10 +109,9 @@ export class AssetTransferRepository {
     });
   }
 
-  /** After a metadata refresh: resolved content embeds asset metadata, so the content version moves, and the UI refetches. */
+  /** After a metadata refresh: the UI refetches. */
   metadataRefreshed(spaceId: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      await bumpContentVersion(t, spaceId);
       await this.events.publish({ spaceId, entity: 'assets', op: 'updated' }, t);
     });
   }

@@ -5,7 +5,7 @@ import { ContentData, ContentDocumentStorage, ContentKind, extractContent, Schem
  * @localess/shared, so the editor's preview runs the same code. Ported from the body of
  * `buildDocumentStorageForLocales` in functions/src/contents.ts, which wrote it to Storage on publish
  * (published) and on every save (draft).
- * Drafts are now built from `contents.data` on read; published snapshots live in `content_published`.
+ * Drafts and published documents are stored in `content_snapshots`, built from `contents.data`.
  */
 
 /** What `buildDocumentStorage` reads from a `contents` row. */

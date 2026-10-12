@@ -4,7 +4,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { locales, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
-import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
+import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { FirebaseImportsRepository } from './firebase-imports.repository.js';
 
 export type NewImportedSpace = typeof spaces.$inferInsert & { id: string };
@@ -42,9 +42,12 @@ export class SpaceImportRepository {
     });
   }
 
-  /** Moves the content `cv` of the finished space past any cached copy (content-version.ts), `updated_at` kept. */
-  bumpContentVersion(spaceId: string, tx?: Transaction): Promise<void> {
-    return transaction(this.db, tx, t => bumpContentVersion(t, spaceId));
+  /** Drops any content draft or `/links` list built while the import ran (content-snapshots.ts). */
+  dropContentSnapshots(spaceId: string, tx?: Transaction): Promise<void> {
+    return transaction(this.db, tx, async t => {
+      await dropContentDrafts(t, spaceId);
+      await dropContentLinks(t, spaceId);
+    });
   }
 
   /** Announces the finished space (a `spaces` change event): clients list it from now on. */

@@ -1,24 +1,31 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, or, sql, SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
 import { ContentKind } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { assets, contentPublished, contents, schemas } from '../../../infra/database/schema.js';
-import { startsWith } from '../utils/slug.utils.js';
+import {
+  assets,
+  contentLinkSnapshots,
+  contents,
+  contentSnapshots,
+  schemas,
+  type SnapshotVersion,
+} from '../../../infra/database/schema.js';
+import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { lockContents } from '../../../shared/data-rules/content-snapshots.js';
+import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
+import { toContentMetadata } from '../../../shared/transformers/content.transformer.js';
+import { buildDocumentStorage } from '../utils/content-extract.js';
 import type { ContentEntity } from './contents.repository.js';
 
 export type AssetEntity = typeof assets.$inferSelect;
 export type SchemaEntity = typeof schemas.$inferSelect;
-export type PublishedEntity = Pick<typeof contentPublished.$inferSelect, 'contentId' | 'data'>;
-
-export interface LinkFilter {
-  parentSlug?: string;
-  excludeChildren: boolean;
-  kind?: ContentKind;
-}
+export type ContentSnapshotEntity = Pick<typeof contentSnapshots.$inferSelect, 'contentId' | 'data' | 'builtAt'>;
+export type ContentLinkSnapshotEntity = typeof contentLinkSnapshots.$inferSelect;
 
 /**
- * The reads of the public v1 content API: published snapshots (`content_published`), the live rows drafts are built
- * from, the schemas they are built with, and the link and asset targets. Callers pass ids that are UUIDs.
+ * The reads of the public v1 content API: the stored snapshots (`content_snapshots`, `content_link_snapshots`), built
+ * when a write dropped them (content-snapshots.ts, which also explains the lock), and the link and asset targets.
+ * Callers pass ids that are UUIDs.
  */
 @Injectable()
 export class ContentDeliveryRepository {
@@ -33,22 +40,70 @@ export class ContentDeliveryRepository {
     return row?.id;
   }
 
-  findPublished(spaceId: string, ids: string[], locale: string): Promise<PublishedEntity[]> {
-    return this.db
-      .select({ contentId: contentPublished.contentId, data: contentPublished.data })
-      .from(contentPublished)
-      .where(and(eq(contentPublished.spaceId, spaceId), inArray(contentPublished.contentId, ids), eq(contentPublished.locale, locale)));
+  /** The published snapshots of `ids` in `locale`; documents never published (in it) are absent. */
+  findPublished(spaceId: string, ids: string[], locale: string): Promise<ContentSnapshotEntity[]> {
+    return this.findSnapshots(this.db, spaceId, 'published', ids, locale);
   }
 
-  findDocuments(spaceId: string, ids: string[]): Promise<ContentEntity[]> {
-    return this.db
-      .select()
-      .from(contents)
-      .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, ids), eq(contents.kind, ContentKind.DOCUMENT)));
+  /** The drafts of `ids` in `locale`, building the missing ones; ids that are no document of the space are absent. */
+  async findDrafts(spaceId: string, ids: string[], locale: string): Promise<ContentSnapshotEntity[]> {
+    const stored = await this.findSnapshots(this.db, spaceId, 'draft', ids, locale);
+    if (stored.length === ids.length) return stored;
+    return transaction(this.db, undefined, async t => {
+      await lockContents(t, spaceId);
+      const built = await this.findSnapshots(t, spaceId, 'draft', ids, locale);
+      const have = new Set(built.map(it => it.contentId));
+      const missing = ids.filter(id => !have.has(id));
+      const documents = await t
+        .select()
+        .from(contents)
+        .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, missing), eq(contents.kind, ContentKind.DOCUMENT)));
+      if (!documents.length) return built;
+      const schemaByName = schemasByName(await t.select().from(schemas).where(eq(schemas.spaceId, spaceId)));
+      const builtAt = new Date();
+      const rows = documents.map(document => ({
+        spaceId,
+        contentId: document.id,
+        version: 'draft' as const,
+        locale,
+        data: buildDocumentStorage(document, schemaByName, locale) as unknown as Record<string, unknown>,
+        builtAt,
+      }));
+      await t.insert(contentSnapshots).values(rows);
+      return [...built, ...rows];
+    });
   }
 
-  findSchemas(spaceId: string): Promise<SchemaEntity[]> {
-    return this.db.select().from(schemas).where(eq(schemas.spaceId, spaceId));
+  /**
+   * The `/links` list of `version`, built when a write dropped it: every folder and document (draft), or every folder
+   * and the published documents (published), as metadata keyed by id, in id order (creation order).
+   */
+  async findLinks(spaceId: string, version: SnapshotVersion): Promise<ContentLinkSnapshotEntity> {
+    const stored = await this.findLinkSnapshot(this.db, spaceId, version);
+    if (stored) return stored;
+    return transaction(this.db, undefined, async t => {
+      await lockContents(t, spaceId);
+      const built = await this.findLinkSnapshot(t, spaceId, version);
+      if (built) return built;
+      const rows = await t
+        .select()
+        .from(contents)
+        .where(
+          and(
+            eq(contents.spaceId, spaceId),
+            version === 'published' ? or(eq(contents.kind, ContentKind.FOLDER), isNotNull(contents.publishedAt)) : undefined,
+          ),
+        )
+        .orderBy(asc(contents.id)); // UUIDs: byte order is creation order
+      const snapshot = {
+        spaceId,
+        version,
+        data: Object.fromEntries(rows.map(row => [row.id, toContentMetadata(row)])),
+        builtAt: new Date(),
+      };
+      await t.insert(contentLinkSnapshots).values(snapshot);
+      return snapshot;
+    });
   }
 
   findContents(spaceId: string, ids: string[]): Promise<ContentEntity[]> {
@@ -65,31 +120,36 @@ export class ContentDeliveryRepository {
       .where(and(eq(assets.spaceId, spaceId), inArray(assets.id, ids)));
   }
 
-  /**
-   * `parentSlug` selects a folder's subtree (or only its direct children with `excludeChildren`); without it, the
-   * whole space (or the root level).
-   *
-   * The subtree used to be the Firestore range `parentSlug >= p AND < p + "/~"`, which also matched
-   * sibling folders sharing the prefix (`blog-archive` under `blog`). It is now an exact prefix match.
-   */
-  findLinks(spaceId: string, filter: LinkFilter): Promise<ContentEntity[]> {
-    const conditions: SQL[] = [eq(contents.spaceId, spaceId)];
-    if (filter.parentSlug) {
-      if (filter.excludeChildren) {
-        conditions.push(eq(contents.parentSlug, filter.parentSlug));
-      } else {
-        conditions.push(
-          or(eq(contents.parentSlug, filter.parentSlug), sql`${contents.parentSlug} like ${startsWith(`${filter.parentSlug}/`)}`) as SQL,
-        );
-      }
-    } else if (filter.excludeChildren) {
-      conditions.push(eq(contents.parentSlug, ''));
-    }
-    if (filter.kind) conditions.push(eq(contents.kind, filter.kind));
-    return this.db
+  private async findSnapshots(
+    executor: Pick<Database, 'select'> | Transaction,
+    spaceId: string,
+    version: SnapshotVersion,
+    ids: string[],
+    locale: string,
+  ): Promise<ContentSnapshotEntity[]> {
+    if (!ids.length) return [];
+    return executor
+      .select({ contentId: contentSnapshots.contentId, data: contentSnapshots.data, builtAt: contentSnapshots.builtAt })
+      .from(contentSnapshots)
+      .where(
+        and(
+          eq(contentSnapshots.spaceId, spaceId),
+          eq(contentSnapshots.version, version),
+          eq(contentSnapshots.locale, locale),
+          inArray(contentSnapshots.contentId, ids),
+        ),
+      );
+  }
+
+  private async findLinkSnapshot(
+    executor: Pick<Database, 'select'> | Transaction,
+    spaceId: string,
+    version: SnapshotVersion,
+  ): Promise<ContentLinkSnapshotEntity | undefined> {
+    const [row] = await executor
       .select()
-      .from(contents)
-      .where(and(...conditions))
-      .orderBy(asc(contents.id)); // UUIDs: byte order is creation order
+      .from(contentLinkSnapshots)
+      .where(and(eq(contentLinkSnapshots.spaceId, spaceId), eq(contentLinkSnapshots.version, version)));
+    return row;
   }
 }

@@ -8,7 +8,8 @@ const B = '00000000-0000-7000-8000-00000000000b';
 
 const EXPECTED_TABLES = [
   'assets',
-  'content_published',
+  'content_link_snapshots',
+  'content_snapshots',
   'contents',
   'firebase_imports',
   'locales',
@@ -110,10 +111,10 @@ describe('migrateDatabase', () => {
         [id],
       );
       await pool.query(`insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`, [id]);
-      await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-0000000000c1', 'en', '{}')`, [id]);
+      await pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`, [id]);
     }
     await expect(
-      pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-00000000dead', 'en', '{}')`, [A]),
+      pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-00000000dead', 'published', 'en', '{}', now())`, [A]),
     ).rejects.toThrow(/foreign key/);
   });
 
@@ -125,13 +126,13 @@ describe('migrateDatabase', () => {
       `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
       [A],
     );
-    await pool.query(`insert into content_published (space_id, content_id, locale, data) values ($1, '00000000-0000-7000-8000-0000000000c1', 'en', '{}')`, [A]);
+    await pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`, [A]);
     await pool.query(`insert into tasks (id, space_id, kind, status) values ('00000000-0000-7000-8000-0000000000e1', $1, 'SCHEMA_EXPORT', 'INITIATED')`, [A]);
     await pool.query(`insert into task_logs (id, task_id, level, message) values ('00000000-0000-7000-8000-0000000000e2', '00000000-0000-7000-8000-0000000000e1', 'INFO', 'started')`);
 
     await pool.query(`delete from spaces where id = $1`, [A]);
 
-    for (const table of ['space_locales', 'contents', 'content_published', 'tasks', 'task_logs']) {
+    for (const table of ['space_locales', 'contents', 'content_snapshots', 'tasks', 'task_logs']) {
       const { rows } = await pool.query(`select count(*)::int as n from ${table}`);
       expect(rows[0].n, table).toBe(0);
     }

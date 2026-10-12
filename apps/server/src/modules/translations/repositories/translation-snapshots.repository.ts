@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { translations, translationSnapshots, type TranslationSnapshotVersion } from '../../../infra/database/schema.js';
+import { type SnapshotVersion, translations, translationSnapshots } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { lockTranslations } from '../../../shared/data-rules/translation-drafts.js';
@@ -18,7 +18,7 @@ export type TranslationSnapshotEntity = typeof translationSnapshots.$inferSelect
 export class TranslationSnapshotsRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async find(spaceId: string, version: TranslationSnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
+  async find(spaceId: string, version: SnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
     const [row] = await this.db
       .select()
       .from(translationSnapshots)
@@ -40,7 +40,7 @@ export class TranslationSnapshotsRepository {
     });
   }
 
-  private ofVersion(spaceId: string, version: TranslationSnapshotVersion) {
+  private ofVersion(spaceId: string, version: SnapshotVersion) {
     return and(eq(translationSnapshots.spaceId, spaceId), eq(translationSnapshots.version, version));
   }
 
@@ -48,7 +48,7 @@ export class TranslationSnapshotsRepository {
    * Replaces the space's `version` maps with one per space locale, built from the rows as they are now, all with the
    * same `built_at` (a locale the space no longer has loses its map). Keys in byte order, like Firestore returned them.
    */
-  private async store(tx: Transaction, spaceId: string, version: TranslationSnapshotVersion): Promise<TranslationSnapshotEntity[]> {
+  private async store(tx: Transaction, spaceId: string, version: SnapshotVersion): Promise<TranslationSnapshotEntity[]> {
     await lockTranslations(tx, spaceId);
     const space = await requireSpace(tx, spaceId);
     const rows = await tx

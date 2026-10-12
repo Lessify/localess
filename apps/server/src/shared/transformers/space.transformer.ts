@@ -2,8 +2,8 @@ import type { Space } from '@localess/shared';
 import type { SpaceRow } from '../queries/space.query.js';
 import { toDto } from './dto.transformer.js';
 
-/** `Space` as the SPA reads it; the cache version is an API-internal detail, the default locale comes as `defaultLocale`. */
-export const toSpace = (space: SpaceRow): Space => toDto(space, ['contentVersion', 'defaultLocaleId']) as unknown as Space;
+/** `Space` as the SPA reads it; the default locale comes as `defaultLocale`. */
+export const toSpace = (space: SpaceRow): Space => toDto(space, ['defaultLocaleId']) as unknown as Space;
 
 /** The space on the public API (DEV_TOOLS): what a developer's tooling needs. */
 export const toPublicSpace = (space: SpaceRow) => ({

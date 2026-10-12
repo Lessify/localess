@@ -14,7 +14,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 | Method | Path                                           | Auth                                              | Query params                                                          |
 |--------|------------------------------------------------|---------------------------------------------------|-----------------------------------------------------------------------|
 | `GET`  | `/api/v1/spaces/:spaceId/translations/:locale` | `TRANSLATION_PUBLIC` or `TRANSLATION_DRAFT`       | `cv`, `version`, `token`                                              |
-| `GET`  | `/api/v1/spaces/:spaceId/links`                | `CONTENT_PUBLIC`, `CONTENT_DRAFT`, or `DEV_TOOLS` | `cv`, `kind`, `parentSlug`, `excludeChildren`, `token`                |
+| `GET`  | `/api/v1/spaces/:spaceId/links`                | `requireContentPermissions()`                     | `cv`, `version`, `kind`, `parentSlug`, `excludeChildren`, `token`     |
 | `GET`  | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
 | `GET`  | `/api/v1/spaces/:spaceId/contents/:contentId`  | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
 | `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId`      | None (public)                                     | `w`, `h`, `q`, `f`, `fit`, `thumbnail`                                |
@@ -23,7 +23,8 @@ Content delivery with cache-busting and asset transformation. All content/transl
 
 **Notable behaviors:**
 
-- **Published vs draft** — Published documents and translations are read from the `content_published` / `translation_snapshots` tables written on publish. A content `?version=draft` is built on every request from the live `contents` rows (locale extraction against the current schemas), so a draft always exists, even for a document that was never saved after import. A translation draft is a `translation_snapshots` row built from the `translations` rows on the first draft request after a change; its `cv` is its build time, separate from the published one ([CDN & Caching](cdn-caching.md#translation-cv-the-snapshots-built_at)).
+- **Published vs draft** — Published documents and translations are read from the `content_snapshots` / `translation_snapshots` rows written on publish. A draft (`?version=draft`) is a snapshot too, built from the live rows on the first draft request after a change, so a draft exists for every document, even one never saved after import. Each answers to its own `cv`, its build time, separate per document, locale and stage ([CDN & Caching](cdn-caching.md#content-cv-the-snapshots-built_at)).
+- **`/links`** — Lists every folder and the **published** documents; with `version` (which needs `CONTENT_DRAFT` or `DEV_TOOLS`, like a document draft) every folder and document. Each list answers to its own `cv`.
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
@@ -155,7 +156,7 @@ Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMA
 }
 ```
 
-Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemasRepository.applyPushPlan` and bumps `content_version`, because schemas shape the draft output; content drafts are built from the rows on read, so the new version is all it takes to move clients past cached copies. With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
+Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemasRepository.applyPushPlan`; it moves no content `cv` (a content draft keeps the schemas it was built with until its document changes). With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
 
 ---
 
@@ -228,7 +229,7 @@ Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details
 }
 ```
 
-`details.reason` is omitted for fixed-permission checks (e.g. `DEV_TOOLS`-only endpoints, `/links`) — only `requireContentPermissions()`/`requireTranslationPermissions()` populate it, for both draft (`version` present) and published requests, explaining which permissions that kind of request needs.
+`details.reason` is omitted for fixed-permission checks (e.g. `DEV_TOOLS`-only endpoints) — only `requireContentPermissions()`/`requireTranslationPermissions()` populate it, for both draft (`version` present) and published requests, explaining which permissions that kind of request needs.
 
 ---
 

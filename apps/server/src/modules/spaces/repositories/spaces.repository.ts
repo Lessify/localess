@@ -7,6 +7,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/data-rules/translation-drafts.js';
+import { dropContentDrafts, dropContentLocale } from '../../../shared/data-rules/content-snapshots.js';
 import { findSpace, requireSpace, selectSpaces, type SpaceRow } from '../../../shared/queries/space.query.js';
 
 type SpaceValues = Partial<Pick<typeof spaces.$inferInsert, 'name' | 'defaultLocaleId'>>;
@@ -110,12 +111,13 @@ export class SpacesRepository {
     });
   }
 
-  /** Its values stay; its translation maps go (requests for it get the default locale's). */
+  /** Its values stay; its translation maps and content snapshots go (requests for it get the default locale's). */
   removeLocale(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
     return this.change(spaceId, tx, async t => {
       await t.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
       await dropTranslationDrafts(t, spaceId);
       await dropTranslationLocale(t, spaceId, localeId);
+      await dropContentLocale(t, spaceId, localeId);
     });
   }
 
@@ -131,10 +133,14 @@ export class SpacesRepository {
     });
   }
 
-  /** Draft translation maps fill gaps from the default locale, so they go; published ones keep the fill of their publish. */
+  /**
+   * Draft translation maps fill gaps from the default locale and content drafts read it from the bare fields, so both
+   * go; published ones keep what their publish built.
+   */
   setDefaultLocale(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
     return this.change(spaceId, tx, async t => {
       await dropTranslationDrafts(t, spaceId);
+      await dropContentDrafts(t, spaceId);
       return { defaultLocaleId: localeId };
     });
   }

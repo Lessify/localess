@@ -13,7 +13,7 @@ keep, what to move. Decisions are listed per table; open items are under [To do]
 | `locale_fallback` jsonb | **Replaced** by `default_locale_id` (below). |
 | `environments` jsonb | **Replaced** by `space_environments` (below). |
 | `overview`, `progress` jsonb | **Dropped**: the dashboard numbers are computed on request ([Overview](#overview)). |
-| `content_version` | Kept for now; to be reviewed ([To do](#to-do)). |
+| `content_version` | **Dropped**: content answers to its snapshots' `built_at` ([Content snapshots](#content-snapshots)). |
 | `translation_version` | **Dropped**: translations answer to their snapshot's `built_at` ([Translation snapshots](#translation-snapshots)). |
 | `spaces_name_idx` | **Dropped**: it serves only the admin list, a handful of rows. |
 
@@ -110,6 +110,38 @@ map the public API serves per locale (gaps filled from the default locale):
 - **Removed locale:** both of its maps are deleted; requests for it get the default locale's.
 - **`data` is `json`, not `jsonb`:** jsonb reorders keys (by length); the map keeps them in byte order. Never queried
   inside.
+
+## Content snapshots
+
+```
+content_snapshots      (space_id, content_id → contents CASCADE, version 'draft' | 'published', locale, data json, built_at)
+                       PK (space_id, content_id, version, locale)
+content_link_snapshots (space_id → spaces CASCADE, version 'draft' | 'published', data json, built_at)
+                       PK (space_id, version)
+```
+
+Replace `content_published` and `spaces.content_version`, following the [translation snapshots](#translation-snapshots):
+what the public API serves for content is stored, and each row is its own `cv`.
+
+- **`cv` = `built_at`** in epoch milliseconds (`timestamp(3)`), per document, locale and stage, and per `/links` list.
+  Nothing is versioned per space.
+- **Published document:** a publish writes every space locale of the document with one `built_at`. Unpublish deletes
+  them. A rename or move keeps them (they hold the old slug until the next publish; the slug lookup uses the live
+  `full_slug`).
+- **Draft document:** built on the first draft request for its locale after a write of the document (data, rename,
+  move; a folder's move for everything under it) dropped its drafts. **A schema write drops nothing**: a draft keeps the
+  schemas it was built with until its document changes, as a schema change only shows in the editor's form until then.
+  Asset writes move no `cv` either.
+- **Space locales:** a removed locale's snapshots go, draft and published; a default locale change drops every draft
+  (the bare fields hold the old default's values); an added locale stores nothing (published requests get the default
+  locale's snapshot until the next publish).
+- **`/links`:** `draft` lists every folder and document, `published` every folder and the published documents (the live
+  rows, filtered); `version` needs a draft permission, like a document draft. Any content write (data, publish and
+  unpublish included) drops both lists; filters (`parentSlug`, `excludeChildren`, `kind`) are applied to the stored list.
+- **Lock:** writes that drop snapshots and the builds of one space take `pg_advisory_xact_lock` named for the space's
+  contents, for the same reason as translations.
+- **`data` is `json`, not `jsonb`:** keeps the document's field order. Never queried inside.
+- **`resolve*`:** resolved per request, cached under the document's `cv` (see the [To do](#to-do)).
 
 ## `assets`
 
@@ -212,7 +244,7 @@ server-only lists), plus a CHECK built from the same list:
 | `tasks.kind`, `tasks.status`, `tasks.type`, `task_logs.level` | `TaskKind`, `TaskStatus`, `TRANSLATION_IMPORT_FORMATS`, `TaskLogLevel` |
 | `tokens.permissions`, `webhooks.events` | `TokenPermission`, `WebHookEvent` (every element) |
 | `webhook_logs.status`, `webhook_logs.error_type`, `firebase_imports.status` | `WebHookStatus`, `WebHookErrorType`, `FIREBASE_IMPORT_STATUSES` |
-| `translation_snapshots.version` | `TRANSLATION_SNAPSHOT_VERSIONS` (server) |
+| `translation_snapshots.version`, `content_snapshots.version`, `content_link_snapshots.version` | `SNAPSHOT_VERSIONS` (server) |
 
 **Casing:** UPPERCASE, the same value in the database, TypeScript and both APIs, never mapped between layers. The
 role (`admin`/`custom` → `ADMIN`/`CUSTOM`) and webhook log values (`success`/`failure`, `timeout`/`network`/`http`)
@@ -227,8 +259,10 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
   purge, or archive).
 - **Changing the default locale of a space with content:** move the values (bare ↔ `_i18n_<locale>`, published
   snapshots included) instead of only warning.
-- **`content_version`:** review; content drafts could follow the [translation snapshots](#translation-snapshots)
-  pattern, so content edits stop moving the published content `cv`.
+- **Content `cv` and `resolve*`:** with a `cv` per document (its snapshot's `built_at`), a response with
+  `resolveReference`/`resolveLink`/`resolveAsset` is cached under the main document's `cv` only: a referenced or linked
+  document republished (or an asset changed) later stays in that cached response until the main document's `cv` moves
+  (up to the 7-day TTL). Decide how the resolved targets take part in the `cv` (e.g. a hash of their versions).
 - **Table names:** singular instead of plural (`space`, `content`, …); `user` is a reserved word in Postgres.
 - **Assets — moving folders:** rewrite the descendants' `parent_path` prefix in one transaction (after checking the
   target is not inside the folder), instead of refusing; or switch to `parent_id` with recursive queries.

@@ -122,7 +122,7 @@ export class FirebaseImportRunner {
         await this.references.rewrite(context('contentMigration', sid), { assets: assets.ids, contents: contents.ids }),
       );
 
-      await this.space.bumpContentVersion(sid);
+      await this.space.dropContentSnapshots(sid);
       await save({ status: 'FINISHED', finishedAt: new Date() });
       await this.space.announce(sid);
     } catch (error) {

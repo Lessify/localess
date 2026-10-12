@@ -25,7 +25,8 @@ const FILE_NOT_FOUND = 'File not found, on path. Please Publish again. The conte
 /**
  * Content on the public API (`?token=`, cached behind `cv`): links, documents by slug or id, with optional
  * reference/link/asset resolution. Ported from functions/src/v1/cdn.ts; URLs, query parameters, status codes,
- * bodies and Cache-Control values are unchanged.
+ * bodies and Cache-Control values are unchanged. Each document and each links list answers to its own `cv`, the
+ * `built_at` of its snapshot; `/links` lists published documents only, unless `version` (draft) is given.
  */
 @Public()
 @Controller('api/v1/spaces/:spaceId')
@@ -40,29 +41,30 @@ export class ContentsPublicController {
     const params = request.params as Params;
     if (!validIdParams(reply, params)) return;
     const { spaceId } = params;
-    const { kind, parentSlug, excludeChildren, cv, token: tokenId } = request.query as Query;
-    const token = await this.tokens.authorize(
-      reply,
-      spaceId,
-      tokenId,
-      [TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS],
-      { cached: true },
-    );
+    const { kind, parentSlug, excludeChildren, cv, version, token: tokenId } = request.query as Query;
+    const token = await this.authorizeContent(request, reply, spaceId);
     if (!token) return;
 
     const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const validKind = kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER ? kind : undefined;
-    if (needsRedirect(cv, space.contentVersion)) {
-      let url = `/api/v1/spaces/${spaceId}/links?cv=${space.contentVersion}`;
+    const { links, builtAt } = await this.delivery.listLinks(spaceId, version, {
+      parentSlug,
+      excludeChildren: excludeChildren === 'true',
+      kind: validKind,
+    });
+    const current = builtAt.getTime();
+    if (needsRedirect(cv, current)) {
+      let url = `/api/v1/spaces/${spaceId}/links?cv=${current}`;
       if (parentSlug !== undefined) url += `&parentSlug=${q(parentSlug)}`;
       if (excludeChildren === 'true') url += `&excludeChildren=${q(excludeChildren)}`;
       if (validKind) url += `&kind=${q(validKind)}`;
+      if (version) url += `&version=${q(version)}`;
       url += `&token=${q(tokenId)}`;
       redirectToVersion(reply, url, token);
       return;
     }
-    sendJson(reply, await this.delivery.listLinks(spaceId, { parentSlug, excludeChildren: excludeChildren === 'true', kind: validKind }));
+    sendJson(reply, links);
   }
 
   @Get('contents/slugs/*')
@@ -126,8 +128,15 @@ export class ContentsPublicController {
     path: string,
   ): Promise<void> {
     const { cv, locale, version, token: tokenId, resolveReference, resolveLink, resolveAsset } = request.query as Query;
-    if (needsRedirect(cv, space.contentVersion)) {
-      let url = `${path}?cv=${space.contentVersion}`;
+    const actualLocale = identifySpaceLocale(space, locale);
+    const found = await this.delivery.findLocaleDocument(space, contentId, actualLocale, version);
+    if (!found) {
+      sendV1Error(reply, 404, 'not-found', FILE_NOT_FOUND, { cacheControl: TEN_MINUTE_CACHE });
+      return;
+    }
+    const current = found.builtAt.getTime();
+    if (needsRedirect(cv, current)) {
+      let url = `${path}?cv=${current}`;
       if (locale) url += `&locale=${q(locale)}`;
       if (version) url += `&version=${q(version)}`;
       url += `&token=${q(tokenId)}`;
@@ -135,13 +144,6 @@ export class ContentsPublicController {
       if (resolveLink) url += `&resolveLink=${q(resolveLink)}`;
       if (resolveAsset) url += `&resolveAsset=${q(resolveAsset)}`;
       redirectToVersion(reply, url, token);
-      return;
-    }
-
-    const actualLocale = identifySpaceLocale(space, locale);
-    const found = await this.delivery.findLocaleDocument(space, contentId, actualLocale, version);
-    if (!found) {
-      sendV1Error(reply, 404, 'not-found', FILE_NOT_FOUND, { cacheControl: TEN_MINUTE_CACHE });
       return;
     }
     const { assets, links, references, ...rest } = found.document;

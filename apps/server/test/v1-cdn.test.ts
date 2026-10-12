@@ -1,7 +1,6 @@
 import { gunzipSync } from 'node:zlib';
-import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { spaces, tokens } from '../src/infra/database/schema.js';
+import { tokens } from '../src/infra/database/schema.js';
 import {
   seedContent,
   seedSpace,
@@ -133,17 +132,10 @@ describe('v1 CDN API', () => {
       expect(stale.headers['cache-control']).toBe('public, max-age=30, s-maxage=30');
 
       const noCache = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_NO_CACHE}&parentSlug=blog&excludeChildren=true&kind=DOCUMENT`);
-      expect(noCache.headers.location).toBe(
-        `/api/v1/spaces/${S1}/links?cv=7&parentSlug=blog&excludeChildren=true&kind=DOCUMENT&token=${TOKEN_NO_CACHE}`,
+      expect(noCache.headers.location).toMatch(
+        new RegExp(`^/api/v1/spaces/${S1}/links\\?cv=\\d+&parentSlug=blog&excludeChildren=true&kind=DOCUMENT&token=${TOKEN_NO_CACHE}$`),
       );
       expect(noCache.headers['cache-control']).toBe('no-cache');
-    });
-
-    it('follows the space version, so publishing invalidates every cached URL', async () => {
-      await t.db.update(spaces).set({ contentVersion: 8 }).where(eq(spaces.id, S1));
-      const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_V1}&cv=7`);
-      expect(response.headers.location).toContain('cv=8');
-      await t.db.update(spaces).set({ contentVersion: 7 }).where(eq(spaces.id, S1));
     });
   });
 
@@ -177,8 +169,16 @@ describe('v1 CDN API', () => {
     });
   });
 
+  /** The response at the URL the redirect names. */
+  const follow = async (url: string) => {
+    const redirect = await get(url);
+    expect(redirect.statusCode, redirect.body).toBe(302);
+    return get(redirect.headers.location as string);
+  };
+
   describe('content by id', () => {
     const content = (id: string, query = '') => get(`/api/v1/spaces/${S1}/contents/${id}?cv=7&token=${TOKEN_DRAFT}${query}`);
+    const draft = (id: string, query = '') => follow(`/api/v1/spaces/${S1}/contents/${id}?token=${TOKEN_DRAFT}&version=draft${query}`);
 
     it('serves the published snapshot without the internal id arrays', async () => {
       const response = await content(C.home, '&locale=de');
@@ -204,12 +204,12 @@ describe('v1 CDN API', () => {
     });
 
     it('builds drafts from the current data, per locale', async () => {
-      expect((await content(C.post2, '&version=draft&locale=de')).json()).toMatchObject({
+      expect((await draft(C.post2, '&locale=de')).json()).toMatchObject({
         id: C.post2,
         locale: 'de',
         data: { _id: 'post2-root', _schema: 'page', title: 'Beitrag 2' },
       });
-      const home = (await content(C.home, '&version=draft')).json();
+      const home = (await draft(C.home)).json();
       expect(home.data.title).toBe('Home (draft)');
       expect(home).not.toHaveProperty('publishedAt');
     });
@@ -263,11 +263,11 @@ describe('v1 CDN API', () => {
   });
 
   describe('links', () => {
-    const links = (query = '') => get(`/api/v1/spaces/${S1}/links?cv=7&token=${TOKEN_PUBLIC}${query}`);
+    const links = (query = '') => follow(`/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}${query}`);
 
-    it('lists every content item as metadata keyed by id', async () => {
+    it('lists every folder and the published documents as metadata keyed by id', async () => {
       const body = (await links()).json();
-      expect(Object.keys(body).map(contentName).sort()).toEqual(['archive', 'blog', 'home', 'old', 'post1', 'post2']);
+      expect(Object.keys(body).map(contentName).sort()).toEqual(['archive', 'blog', 'home', 'post1']);
       expect(body[C.blog]).toEqual({
         id: C.blog,
         kind: 'FOLDER',
@@ -281,7 +281,7 @@ describe('v1 CDN API', () => {
     });
 
     it('selects a folder subtree by prefix, without sibling folders that share it', async () => {
-      expect(Object.keys((await links('&parentSlug=blog')).json()).map(contentName).sort()).toEqual(['post1', 'post2']);
+      expect(Object.keys((await links('&parentSlug=blog')).json()).map(contentName).sort()).toEqual(['post1']);
     });
 
     it('filters to direct children and by kind', async () => {
@@ -292,11 +292,9 @@ describe('v1 CDN API', () => {
 
   describe('HTTP behaviour', () => {
     it('gzips large JSON responses and marks them as varying on Accept-Encoding', async () => {
-      const response = await t.request({
-        method: 'GET',
-        url: `/api/v1/spaces/${S1}/links?cv=7&token=${TOKEN_PUBLIC}`,
-        headers: { 'accept-encoding': 'gzip' },
-      });
+      const url = `/api/v1/spaces/${S1}/links?token=${TOKEN_DRAFT}&version=draft`;
+      const cv = new URL((await get(url)).headers.location as string, 'https://cms.example.com').searchParams.get('cv');
+      const response = await t.request({ method: 'GET', url: `${url}&cv=${cv}`, headers: { 'accept-encoding': 'gzip' } });
       expect(response.headers['content-encoding']).toBe('gzip');
       expect(response.headers['vary']).toMatch(/accept-encoding/i);
       expect(Object.keys(JSON.parse(gunzipSync(response.rawPayload).toString()))).toHaveLength(6);

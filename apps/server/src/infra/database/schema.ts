@@ -219,9 +219,6 @@ export const spaces = pgTable(
     defaultLocaleId: text('default_locale_id')
       .notNull()
       .references(() => locales.id),
-    // Cache-buster for the content `cv` redirect (was the GCS generation of `cache.json`). Translations answer to
-    // their snapshot's `built_at` instead (translation_snapshots).
-    contentVersion: bigint('content_version', { mode: 'number' }).notNull().default(1),
     ...timestamps,
   },
 );
@@ -292,20 +289,48 @@ export const contents = pgTable(
   ],
 );
 
-/** Published, locale-extracted documents (were `spaces/{s}/contents/{id}/{locale}.json` in Storage). */
-export const contentPublished = pgTable(
-  'content_published',
+/** The stages the public API serves content and translations in: `?version=…` (draft), or published. */
+export const SNAPSHOT_VERSIONS = ['draft', 'published'] as const;
+export type SnapshotVersion = (typeof SNAPSHOT_VERSIONS)[number];
+
+/**
+ * A document in one locale as the public API serves it (were `spaces/{s}/contents/{id}/{locale}.json` in Storage).
+ * Published snapshots are written by a publish, every locale with one `built_at`; a draft is built on the first draft
+ * request for its locale after a write of the document dropped it (shared/data-rules/content-snapshots.ts). A snapshot
+ * answers to `cv` = `built_at` in epoch milliseconds, so a draft save never moves the published `cv`, a publish never
+ * moves the draft one, and a `cv` always names the same data, even after a backup restore.
+ */
+export const contentSnapshots = pgTable(
+  'content_snapshots',
   {
     spaceId: uuid('space_id').notNull(),
     contentId: uuid('content_id').notNull(),
+    version: text('version', { enum: SNAPSHOT_VERSIONS }).notNull(),
     locale: text('locale').notNull(),
-    data: jsonb('data').$type<Record<string, unknown>>().notNull(),
-    publishedAt: timestamp('published_at', { withTimezone: true }).notNull().defaultNow(),
+    // json, not jsonb: jsonb reorders keys (by length), the document keeps its field order. Never queried inside.
+    data: json('data').$type<Record<string, unknown>>().notNull(),
+    builtAt: timestamp('built_at', { withTimezone: true, precision: 3 }).notNull(),
   },
   t => [
-    primaryKey({ columns: [t.spaceId, t.contentId, t.locale] }),
+    primaryKey({ columns: [t.spaceId, t.contentId, t.version, t.locale] }),
     foreignKey({ columns: [t.spaceId, t.contentId], foreignColumns: [contents.spaceId, contents.id] }).onDelete('cascade'),
+    oneOf('content_snapshots_version_check', t.version, SNAPSHOT_VERSIONS),
   ],
+);
+
+/**
+ * The `/links` list per stage: `id → ContentMetadata` of every folder and document (draft), or of every folder and the
+ * published documents (published). Built on the first request after a content write dropped it; `cv` = `built_at`.
+ */
+export const contentLinkSnapshots = pgTable(
+  'content_link_snapshots',
+  {
+    spaceId: spaceId(),
+    version: text('version', { enum: SNAPSHOT_VERSIONS }).notNull(),
+    data: json('data').$type<Record<string, unknown>>().notNull(),
+    builtAt: timestamp('built_at', { withTimezone: true, precision: 3 }).notNull(),
+  },
+  t => [primaryKey({ columns: [t.spaceId, t.version] }), oneOf('content_link_snapshots_version_check', t.version, SNAPSHOT_VERSIONS)],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -416,10 +441,6 @@ export const translations = pgTable(
   t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key), oneOf('translations_type_check', t.type, values(TranslationType))],
 );
 
-/** The stages the public API serves translations in: `?version=draft`, or published (lowercase, as the API names them). */
-export const TRANSLATION_SNAPSHOT_VERSIONS = ['draft', 'published'] as const;
-export type TranslationSnapshotVersion = (typeof TRANSLATION_SNAPSHOT_VERSIONS)[number];
-
 /**
  * The flat `{key: value}` map the public API serves per stage and locale, gaps filled from the default locale (were
  * `spaces/{s}/translations/{locale}.json` in Storage). Published maps are written by a publish; draft maps are built on
@@ -431,7 +452,7 @@ export const translationSnapshots = pgTable(
   'translation_snapshots',
   {
     spaceId: spaceId(),
-    version: text('version', { enum: TRANSLATION_SNAPSHOT_VERSIONS }).notNull(),
+    version: text('version', { enum: SNAPSHOT_VERSIONS }).notNull(),
     locale: text('locale').notNull(),
     // json, not jsonb: jsonb reorders keys (by length), the map keeps them in byte order. Never queried inside.
     data: json('data').$type<Record<string, string>>().notNull(),
@@ -439,7 +460,7 @@ export const translationSnapshots = pgTable(
   },
   t => [
     primaryKey({ columns: [t.spaceId, t.version, t.locale] }),
-    oneOf('translation_snapshots_version_check', t.version, TRANSLATION_SNAPSHOT_VERSIONS),
+    oneOf('translation_snapshots_version_check', t.version, SNAPSHOT_VERSIONS),
   ],
 );
 

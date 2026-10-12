@@ -1,11 +1,11 @@
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
-import { contentPublished, contents, keepUpdatedAt, schemas } from '../../../infra/database/schema.js';
+import { contents, contentSnapshots, keepUpdatedAt, schemas } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
-import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
+import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
@@ -42,12 +42,14 @@ export type ContentDataUpdate = {
 interface WriteResult<T> {
   result: T;
   changed: { id: string; op: 'created' | 'updated' | 'deleted' }[];
+  /** `false` when the write leaves what drafts are built from as it was (publish, unpublish). */
+  drafts?: boolean;
 }
 
 /**
- * The `contents` rows of a space and their published snapshots (`content_published`). Every write, in one
- * transaction: the space checked (404 when gone), the change, the content version bumped (was `cache.json`) and a
- * `contents` change event per changed row. Folder renames cascade to descendants in one statement, deletes take the
+ * The `contents` rows of a space and their published snapshots (`content_snapshots`). Every write, in one
+ * transaction: the space checked (404 when gone), the change, the drafts of the changed documents and the `/links`
+ * lists dropped (content-snapshots.ts) and a `contents` change event per changed row. Folder renames cascade to descendants in one statement, deletes take the
  * subtree. The tree's integrity (an existing parent folder, a free full slug, no folder moved into itself, data only
  * on documents) is checked inside the write's transaction. Writes on a content id the space does not have answer
  * `undefined` and change nothing.
@@ -180,7 +182,7 @@ export class ContentsRepository {
     });
   }
 
-  /** Deletes the item and, for a folder, everything under it; answers what was deleted. Published snapshots cascade. */
+  /** Deletes the item and, for a folder, everything under it; answers what was deleted. Their snapshots cascade. */
   delete(spaceId: string, id: string, tx?: Transaction): Promise<{ id: string; fullSlug: string }[] | undefined> {
     return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
@@ -202,9 +204,9 @@ export class ContentsRepository {
   }
 
   /**
-   * Publish a document (one snapshot per space locale), or every document under a folder that changed
-   * since it was last published. `updatedAt` is left alone so "changed since publish" keeps working.
-   * Answers the published item.
+   * Publish a document (one snapshot per space locale, all with the publish time as `built_at`, their `cv`), or every
+   * document under a folder that changed since it was last published. `updatedAt` is left alone so "changed since
+   * publish" keeps working. Answers the published item.
    */
   publish(spaceId: string, id: string, tx?: Transaction): Promise<ContentEntity | undefined> {
     return this.write(spaceId, tx, async (t, space) => {
@@ -232,29 +234,19 @@ export class ContentsRepository {
         for (const locale of localeIds) {
           const data = buildDocumentStorage(document, schemaById, locale, publishedAt.toISOString()) as unknown as Record<string, unknown>;
           await t
-            .insert(contentPublished)
-            .values({ spaceId, contentId: document.id, locale, data, publishedAt })
+            .insert(contentSnapshots)
+            .values({ spaceId, contentId: document.id, version: 'published', locale, data, builtAt: publishedAt })
             .onConflictDoUpdate({
-              target: [contentPublished.spaceId, contentPublished.contentId, contentPublished.locale],
-              set: { data, publishedAt },
+              target: [contentSnapshots.spaceId, contentSnapshots.contentId, contentSnapshots.version, contentSnapshots.locale],
+              set: { data, builtAt: publishedAt },
             });
         }
-        // Locales removed from the space since the last publish must stop being served.
-        await t
-          .delete(contentPublished)
-          .where(
-            and(
-              eq(contentPublished.spaceId, spaceId),
-              eq(contentPublished.contentId, document.id),
-              notInArray(contentPublished.locale, localeIds),
-            ),
-          );
         await t
           .update(contents)
           .set({ publishedAt, ...keepUpdatedAt(contents) })
           .where(this.byId(spaceId, document.id));
       }
-      return { result: target, changed: documents.map(it => ({ id: it.id, op: 'updated' as const })) };
+      return { result: target, changed: documents.map(it => ({ id: it.id, op: 'updated' as const })), drafts: false };
     });
   }
 
@@ -276,23 +268,24 @@ export class ContentsRepository {
         .where(and(eq(contents.spaceId, spaceId), isNotNull(contents.publishedAt), scope))
         .returning({ id: contents.id });
       if (unpublished.length) {
-        await t.delete(contentPublished).where(
+        await t.delete(contentSnapshots).where(
           and(
-            eq(contentPublished.spaceId, spaceId),
+            eq(contentSnapshots.spaceId, spaceId),
+            eq(contentSnapshots.version, 'published'),
             inArray(
-              contentPublished.contentId,
+              contentSnapshots.contentId,
               unpublished.map(it => it.id),
             ),
           ),
         );
       }
-      return { result: target, changed: unpublished.map(it => ({ id: it.id, op: 'updated' as const })) };
+      return { result: target, changed: unpublished.map(it => ({ id: it.id, op: 'updated' as const })), drafts: false };
     });
   }
 
   /**
-   * Runs `work` in the write's transaction (or the caller's), with the space checked first; then bumps the content
-   * version and queues the change events. When `work` finds no content it answers `undefined` and nothing is bumped.
+   * Runs `work` in the write's transaction (or the caller's), with the space checked first; then drops the snapshots
+   * the change makes stale and queues the change events. When `work` finds no content it answers `undefined`.
    */
   private write<T>(
     spaceId: string,
@@ -313,7 +306,13 @@ export class ContentsRepository {
       const space = await requireSpace(t, spaceId);
       const outcome = await work(t, space);
       if (!outcome) return undefined;
-      await bumpContentVersion(t, spaceId);
+      if (outcome.changed.length) {
+        if (outcome.drafts !== false) {
+          const updated = outcome.changed.filter(it => it.op === 'updated').map(it => it.id);
+          await dropContentDrafts(t, spaceId, updated);
+        }
+        await dropContentLinks(t, spaceId);
+      }
       for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'contents', ...it }, t);
       return outcome.result;
     });

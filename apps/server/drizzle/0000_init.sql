@@ -18,13 +18,24 @@ CREATE TABLE "assets" (
 	CONSTRAINT "assets_kind_check" CHECK ("assets"."kind" in ('FOLDER', 'FILE'))
 );
 --> statement-breakpoint
-CREATE TABLE "content_published" (
+CREATE TABLE "content_link_snapshots" (
+	"space_id" uuid NOT NULL,
+	"version" text NOT NULL,
+	"data" json NOT NULL,
+	"built_at" timestamp (3) with time zone NOT NULL,
+	CONSTRAINT "content_link_snapshots_space_id_version_pk" PRIMARY KEY("space_id","version"),
+	CONSTRAINT "content_link_snapshots_version_check" CHECK ("content_link_snapshots"."version" in ('draft', 'published'))
+);
+--> statement-breakpoint
+CREATE TABLE "content_snapshots" (
 	"space_id" uuid NOT NULL,
 	"content_id" uuid NOT NULL,
+	"version" text NOT NULL,
 	"locale" text NOT NULL,
-	"data" jsonb NOT NULL,
-	"published_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "content_published_space_id_content_id_locale_pk" PRIMARY KEY("space_id","content_id","locale")
+	"data" json NOT NULL,
+	"built_at" timestamp (3) with time zone NOT NULL,
+	CONSTRAINT "content_snapshots_space_id_content_id_version_locale_pk" PRIMARY KEY("space_id","content_id","version","locale"),
+	CONSTRAINT "content_snapshots_version_check" CHECK ("content_snapshots"."version" in ('draft', 'published'))
 );
 --> statement-breakpoint
 CREATE TABLE "contents" (
@@ -130,7 +141,6 @@ CREATE TABLE "spaces" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"default_locale_id" text NOT NULL,
-	"content_version" bigint DEFAULT 1 NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -281,7 +291,8 @@ CREATE TABLE "webhooks" (
 );
 --> statement-breakpoint
 ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "content_published" ADD CONSTRAINT "content_published_space_id_content_id_contents_space_id_id_fk" FOREIGN KEY ("space_id","content_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_link_snapshots" ADD CONSTRAINT "content_link_snapshots_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "content_snapshots" ADD CONSTRAINT "content_snapshots_space_id_content_id_contents_space_id_id_fk" FOREIGN KEY ("space_id","content_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contents" ADD CONSTRAINT "contents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

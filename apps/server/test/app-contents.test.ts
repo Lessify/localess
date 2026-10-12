@@ -4,7 +4,7 @@ import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { contentPublished, contents, schemas, spaces, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
+import { contents, contentSnapshots, schemas, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
@@ -82,7 +82,6 @@ describe('app API: contents', () => {
     await t.app.get(WebhookDispatcher).whenIdle();
     return received.map(it => JSON.parse(it.body));
   };
-  const version = async () => (await t.db.select().from(spaces).where(eq(spaces.id, S1)))[0].contentVersion;
   const row = async (id: string) =>
     (
       await t.db
@@ -100,8 +99,7 @@ describe('app API: contents', () => {
   let post: { id: string };
 
   describe('creating', () => {
-    it('creates folders and documents, bumping the version, without recording who changed them', async () => {
-      const before = await version();
+    it('creates folders and documents, without recording who changed them', async () => {
       blog = await create({ kind: 'FOLDER', parentSlug: '', name: 'Blog', slug: 'blog' });
       post = await create({ kind: 'DOCUMENT', parentSlug: 'blog', name: 'Post', slug: 'post', schema: 'page' });
       expect(post).toMatchObject({
@@ -112,7 +110,6 @@ describe('app API: contents', () => {
       });
       expect(post).not.toHaveProperty('publishedAt');
       expect(post).not.toHaveProperty('updatedBy');
-      expect(await version()).toBeGreaterThan(before);
     });
 
     it('refuses a missing parent folder, a taken slug, and slugs with slashes', async () => {
@@ -225,7 +222,10 @@ describe('app API: contents', () => {
       const cvBefore = (await cdn(post.id)).headers.location;
       expect((await editor.post(`${base}/${post.id}/publish`)).statusCode).toBe(204);
       expect((await cdn(post.id)).headers.location).not.toBe(cvBefore);
-      const published = await t.db.select().from(contentPublished).where(eq(contentPublished.contentId, post.id));
+      const published = await t.db
+        .select()
+        .from(contentSnapshots)
+        .where(and(eq(contentSnapshots.contentId, post.id), eq(contentSnapshots.version, 'published')));
       expect(published.map(it => it.locale).sort()).toEqual(['de', 'en']);
       expect((await cdnFollow(post.id, '&locale=de')).json()).toMatchObject({
         locale: 'de',
@@ -269,8 +269,11 @@ describe('app API: contents', () => {
     it('unpublishes a folder: published documents under it stop being served', async () => {
       expect((await editor.post(`${base}/${blog.id}/unpublish`)).statusCode).toBe(204);
       expect((await row(post.id)).publishedAt).toBeNull();
-      expect(await t.db.select().from(contentPublished).where(eq(contentPublished.contentId, post.id))).toEqual([]);
-      expect((await cdnFollow(post.id)).statusCode).toBe(404);
+      const published = and(eq(contentSnapshots.contentId, post.id), eq(contentSnapshots.version, 'published'));
+      expect(await t.db.select().from(contentSnapshots).where(published)).toEqual([]);
+      // Nothing to answer to: the 404 comes before any redirect. The draft stays.
+      expect((await cdn(post.id)).statusCode).toBe(404);
+      expect((await cdnFollow(post.id, '&version=draft')).json().data.title).toBe('Edited');
       expect(await deliveries()).toEqual([
         expect.objectContaining({ event: 'content.unpublished', data: { id: blog.id, fullSlug: 'news' } }),
       ]);
@@ -292,7 +295,7 @@ describe('app API: contents', () => {
       expect((await editor.delete(`${base}/${blog.id}`)).statusCode).toBe(204);
       const remaining = (await t.db.select().from(contents).where(eq(contents.spaceId, S1))).map(c => c.fullSlug).sort();
       expect(remaining).toEqual(['about', 'blog-archive']);
-      expect(await t.db.select().from(contentPublished).where(eq(contentPublished.spaceId, S1))).toEqual([]);
+      expect(await t.db.select().from(contentSnapshots).where(eq(contentSnapshots.spaceId, S1))).toEqual([]);
       expect((await deliveries()).map(d => d.data.id).sort()).toEqual(subtree.map(c => c.id).sort());
     });
 

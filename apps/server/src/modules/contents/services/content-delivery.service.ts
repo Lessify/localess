@@ -1,18 +1,32 @@
 import { Injectable } from '@nestjs/common';
-import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentMetadata } from '@localess/shared';
+import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata } from '@localess/shared';
+
 import { isUuid } from '../../../infra/database/id.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
-import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { toAssetMetadata, toContentMetadata } from '../../../shared/transformers/content.transformer.js';
 import { isDraft } from '../../../infra/http/v1/v1-request.js';
-import { ContentDeliveryRepository, type LinkFilter } from '../repositories/content-delivery.repository.js';
+import { ContentDeliveryRepository } from '../repositories/content-delivery.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import { buildDocumentStorage } from '../utils/content-extract.js';
 import { stripStorageIds } from '../utils/strip-storage-ids.js';
 
+export interface LinkFilter {
+  parentSlug?: string;
+  excludeChildren: boolean;
+  kind?: ContentKind;
+}
+
+/** A document in one locale as served, and its `cv`. */
+export interface LocaleDocument {
+  document: ContentDocumentStorage;
+  /** The locale found: the requested one, else the space's default locale. */
+  resolvedLocale: string;
+  builtAt: Date;
+}
+
 /**
- * Content reads for the public v1 API. Published documents come from the snapshots taken at publish
- * time; drafts are built from the live rows on read (they used to be files rewritten on every save).
+ * Content reads for the public v1 API, from the stored snapshots: published documents as their publish wrote them,
+ * drafts and the `/links` lists built on the first request after a write dropped them. Each answers to its own `cv`,
+ * its `built_at`.
  */
 @Injectable()
 export class ContentDeliveryService {
@@ -29,45 +43,31 @@ export class ContentDeliveryService {
     return this.delivery.findIdByFullSlug(spaceId, fullSlug);
   }
 
-  /** Locale documents for `ids` (published snapshot, or draft built from the row). Missing ones are absent. */
+  /** Snapshots of `ids` in `locale` (published, or drafts built when missing). Missing ones are absent. */
   private async localeDocuments(
     spaceId: string,
     ids: string[],
     locale: string,
     draft: boolean,
-  ): Promise<Map<string, ContentDocumentStorage>> {
-    const result = new Map<string, ContentDocumentStorage>();
-    ids = ids.filter(isUuid);
-    if (!ids.length) return result;
-    if (!draft) {
-      const rows = await this.delivery.findPublished(spaceId, ids, locale);
-      for (const row of rows) result.set(row.contentId, row.data as unknown as ContentDocumentStorage);
-      return result;
-    }
-    const rows = await this.delivery.findDocuments(spaceId, ids);
-    if (!rows.length) return result;
-    const schemaById = schemasByName(await this.delivery.findSchemas(spaceId));
-    for (const row of rows) result.set(row.id, buildDocumentStorage(row, schemaById, locale));
-    return result;
+  ): Promise<Map<string, { document: ContentDocumentStorage; builtAt: Date }>> {
+    ids = [...new Set(ids.filter(isUuid))];
+    if (!ids.length) return new Map();
+    const rows = draft ? await this.delivery.findDrafts(spaceId, ids, locale) : await this.delivery.findPublished(spaceId, ids, locale);
+    return new Map(rows.map(row => [row.contentId, { document: row.data as unknown as ContentDocumentStorage, builtAt: row.builtAt }]));
   }
 
   /**
-   * The document in `locale`, else in the space's default locale (what `resolveLocaleFilePath` did
-   * with the two Storage files). `resolvedLocale` says which one was found.
+   * The document in `locale`, else in the space's default locale (what `resolveLocaleFilePath` did with the two
+   * Storage files): a locale added since the publish, or one never published. A draft is built for any locale.
    */
-  async findLocaleDocument(
-    space: SpaceRow,
-    contentId: string,
-    locale: string,
-    version: unknown,
-  ): Promise<{ document: ContentDocumentStorage; resolvedLocale: string } | undefined> {
+  async findLocaleDocument(space: SpaceRow, contentId: string, locale: string, version: unknown): Promise<LocaleDocument | undefined> {
     const draft = isDraft(version);
     const primary = (await this.localeDocuments(space.id, [contentId], locale, draft)).get(contentId);
-    if (primary) return { document: primary, resolvedLocale: locale };
+    if (primary) return { ...primary, resolvedLocale: locale };
     const fallbackLocale = space.defaultLocaleId;
     if (fallbackLocale === locale) return undefined;
     const fallback = (await this.localeDocuments(space.id, [contentId], fallbackLocale, draft)).get(contentId);
-    return fallback ? { document: fallback, resolvedLocale: fallbackLocale } : undefined;
+    return fallback ? { ...fallback, resolvedLocale: fallbackLocale } : undefined;
   }
 
   /** Resolved `references`, one level deep, without their own id arrays. Same locale, no fallback. */
@@ -77,7 +77,7 @@ export class ContentDeliveryService {
     const found = await this.localeDocuments(spaceId, valid, locale, isDraft(version));
     const resolved: Record<string, ContentDocumentApi> = {};
     for (const id of valid) {
-      const document = found.get(id);
+      const document = found.get(id)?.document;
       if (document) resolved[id] = stripStorageIds(document) as ContentDocumentApi;
     }
     return resolved;
@@ -106,9 +106,23 @@ export class ContentDeliveryService {
     return resolved;
   }
 
-  /** `GET /links` (see `ContentDeliveryRepository.findLinks` for the filter). */
-  async listLinks(spaceId: string, filter: LinkFilter): Promise<Record<string, ContentMetadata>> {
-    const rows = await this.delivery.findLinks(spaceId, filter);
-    return Object.fromEntries(rows.map(row => [row.id, toContentMetadata(row)]));
+  /**
+   * `GET /links` of `version` and its `built_at`. `parentSlug` selects a folder's subtree (or only its direct children
+   * with `excludeChildren`); without it, the whole space (or the root level).
+   *
+   * The subtree used to be the Firestore range `parentSlug >= p AND < p + "/~"`, which also matched sibling folders
+   * sharing the prefix (`blog-archive` under `blog`). It is an exact prefix match.
+   */
+  async listLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
+    const snapshot = await this.delivery.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
+    const all = Object.values(snapshot.data as Record<string, ContentMetadata>);
+    const { parentSlug, excludeChildren, kind } = filter;
+    const links = all.filter(
+      it =>
+        (parentSlug
+          ? it.parentSlug === parentSlug || (!excludeChildren && it.parentSlug.startsWith(`${parentSlug}/`))
+          : !excludeChildren || it.parentSlug === '') && (!kind || it.kind === kind),
+    );
+    return { links: Object.fromEntries(links.map(it => [it.id, it])), builtAt: snapshot.builtAt };
   }
 }

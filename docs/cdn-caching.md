@@ -16,24 +16,49 @@ Every CDN endpoint follows this flow:
 
 ```
 Client request (no cv or stale cv)
-  → Server reads the space's version counter
-  → 302 redirect to same URL + ?cv=<generation>    ← cached 60s by default (per-token override)
+  → Server finds the snapshot it would serve
+  → 302 redirect to same URL + ?cv=<built_at>      ← cached 60s by default (per-token override)
   → Client follows redirect
   → Server returns actual JSON                     ← cached 7 days (browser and shared CDN)
 ```
 
-The `cv` value is:
-- Content:     `spaces.content_version`, a version counter on the space row
-- Translation: the `built_at` of the map served (`translation_snapshots`), in epoch milliseconds, separately per stage
-  (draft / published) and locale. See [Translations](#translation-cv-the-snapshots-built_at).
+The `cv` value is the `built_at` of the snapshot served, in epoch milliseconds, separately per stage (draft /
+published):
+- Content:     per document and locale (`content_snapshots`); per `/links` list (`content_link_snapshots`). See
+  [Content](#content-cv-the-snapshots-built_at).
+- Translation: per locale (`translation_snapshots`). See [Translations](#translation-cv-the-snapshots-built_at).
 
-Each content bump sets the version to `greatest(current + 1, now in epoch milliseconds)` (`nextVersion()` in `apps/server/src/shared/data-rules/content-version.ts`), so values are 13-digit numbers that only ever grow, even across a **database restore**: a plain counter would go back with the backup and reuse `cv` numbers that browsers and CDNs still cache with the discarded content for 7 days. (This relies on the server clock moving forward, as the Firebase-era storage `generation` did.)
+Nothing is versioned per space: a write moves only the `cv` of what it changed. (The Firebase-era `cv` was the GCS
+generation number of a `cache.json` marker file, and until the snapshots a counter on the space row that every content,
+schema and asset write moved; values changed once, which only costs each client one extra redirect.)
 
-The counter is bumped inside the same transaction as the write that changes what the API would serve (`bumpContentVersion()` in `apps/server/src/shared/data-rules/content-version.ts`):
+### Content `cv`: the snapshot's `built_at`
 
-- `content_version` — every content create/update/move/delete/publish/unpublish, every schema write (drafts are rendered through schemas), asset updates and deletes, content/schema/asset imports, and `POST /api/v1/.../schemas` (schema push).
+Each document the API serves is a row of `content_snapshots` (`space_id, content_id, version, locale`), and each
+`/links` list a row of `content_link_snapshots` (`space_id, version`); the `cv` is the row's `built_at`:
 
-So content drafts never go stale, and all existing content `cv` values become stale at once — the next request from any client triggers a redirect to the new `cv`. See [Publish Flow](publish-flow.md). (The Firebase-era `cv` was the GCS generation number of a `cache.json` marker file; values changed once at migration, which only costs each client one extra redirect.)
+- A **publish** writes the published snapshot of every space locale of the document, all with one new `built_at`: its
+  published `cv` moves, its draft `cv` doesn't. A folder publish does it per document that changed since its publish.
+- A **write of a document** (data, rename, move, a folder's move for everything under it) drops its drafts; the first
+  draft request for a locale after it builds that locale's, with a new `built_at`. Published URLs stay cached while a
+  team edits.
+- **Schema and asset writes move no `cv`.** A draft keeps the schemas it was built with until its document changes.
+- **Space locales:** removing one deletes its snapshots (draft and published); changing the default locale drops every
+  draft; adding one stores nothing (published requests get the default locale's snapshot until the next publish).
+- **`/links`**: lists every folder and the published documents, or with `version` (draft permission) every folder and
+  document. Any content write (data, publish and unpublish included) drops both lists; the next request builds its
+  list with a new `built_at`.
+- The redirect names the `built_at` of the row that will be served: for an unknown locale, or a locale never
+  published, the default locale's row and its `cv`. A document with nothing to serve answers 404 without a redirect.
+- A `built_at` always names the same data, so a **database restore** never makes a `cv` that caches still hold serve
+  other data.
+- `resolveReference` / `resolveLink` / `resolveAsset` are resolved per request and cached under the document's `cv`
+  (the query string is part of the cache key); a target changed later is not part of that `cv` yet (see the
+  [To do](roadmap/database-structure.md#to-do)).
+
+Writes that drop snapshots and the builds of one space take the same lock (`lockContents()` in
+`apps/server/src/shared/data-rules/content-snapshots.ts`), so a build never stores a document read before a write that
+has since committed.
 
 ### Translation `cv`: the snapshot's `built_at`
 
@@ -98,9 +123,9 @@ Content, translation and links JSON responses carry no `ETag` and never answer `
 | Endpoint | Auth | cv source |
 |----------|------|-----------|
 | `GET /api/v1/spaces/:spaceId/translations/:locale` | Token (TRANSLATION_PUBLIC or DRAFT) | `translation_snapshots.built_at` of the map served |
-| `GET /api/v1/spaces/:spaceId/links` | Token (CONTENT_PUBLIC, CONTENT_DRAFT or DEV_TOOLS) | `content_version` |
-| `GET /api/v1/spaces/:spaceId/contents/slugs/*slug` | Token (CONTENT_PUBLIC or DRAFT) | `content_version` |
-| `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (CONTENT_PUBLIC or DRAFT) | `content_version` |
+| `GET /api/v1/spaces/:spaceId/links` | Token (CONTENT_PUBLIC, CONTENT_DRAFT or DEV_TOOLS; with `version`: CONTENT_DRAFT or DEV_TOOLS) | `content_link_snapshots.built_at` of the list served |
+| `GET /api/v1/spaces/:spaceId/contents/slugs/*slug` | Token (CONTENT_PUBLIC or DRAFT) | `content_snapshots.built_at` of the document served |
+| `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (CONTENT_PUBLIC or DRAFT) | `content_snapshots.built_at` of the document served |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId` | None | N/A (no cv) |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId/original` | None | N/A (no cv) |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId/download` | None | N/A (no cv) |
@@ -204,7 +229,7 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 | | Published | Draft |
 |-|-----------|-------|
 | `version` query param | absent | `version=draft` |
-| Source | `content_published` rows / `translation_snapshots` (`published`), taken on publish | content: built on every request from the live rows; translations: `translation_snapshots` (`draft`), built on the first request after a change |
+| Source | `content_snapshots` / `translation_snapshots` (`published`), taken on publish; `content_link_snapshots` (`published`) | `content_snapshots` / `content_link_snapshots` / `translation_snapshots` (`draft`), built on the first request after a change |
 | Redirect TTL | 60s default (overridable via token `cacheTtl`) | 60s default (overridable via token `cacheTtl`) |
 | Required permission | `*_PUBLIC` or `*_DRAFT` | `*_DRAFT` or `DEV_TOOLS` |
 
@@ -217,6 +242,7 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
 - `apps/server/src/auth/services/token-auth.service.ts` — token auth per request
 - `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/assets.public.controller.ts` — ETag/304, Range, Cache-Control
-- `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
+- `apps/server/src/shared/data-rules/content-snapshots.ts` — the contents lock, dropping drafts, `/links` lists and a removed locale's snapshots (every module that writes contents or a space's locales)
+- `apps/server/src/modules/contents/repositories/content-delivery.repository.ts` — content snapshots: draft and `/links` builds
 - `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build
 - `apps/server/src/shared/data-rules/translation-drafts.ts` — the translations lock, dropping the drafts (every module that writes translations or a space's locales)

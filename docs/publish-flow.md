@@ -4,9 +4,9 @@
 
 ## Overview
 
-Publishing takes a snapshot of content into `content_published`, and of translations into `translation_snapshots` (`version = 'published'`). The public API serves published requests from those rows. Content drafts (`?version=draft`) are built from the live rows on every request; translation drafts are snapshots too (`version = 'draft'`), built on the first draft request after a change. Publishing is the only way to make content visible to `*_PUBLIC` tokens.
+Publishing takes a snapshot of content into `content_snapshots`, and of translations into `translation_snapshots` (`version = 'published'`). The public API serves published requests from those rows. Drafts (`?version=draft`) are snapshots too (`version = 'draft'`), built on the first draft request after a change; so are the `/links` lists (`content_link_snapshots`). Publishing is the only way to make content visible to `*_PUBLIC` tokens, in `/links` too.
 
-Every write follows the same shape on the server: one transaction that changes the rows, moves what the [`cv`](cdn-caching.md) names (content: bumps `spaces.content_version`; translations: drops the draft snapshots, under the space's translations lock) and queues change events (`pg_notify`, delivered to the UI over SSE). Webhooks are dispatched only **after** the transaction commits, so a receiver that fetches the API sees the new state.
+Every write follows the same shape on the server: one transaction that changes the rows, drops the snapshots it makes stale, which moves their [`cv`](cdn-caching.md) (content: the changed documents' drafts and the `/links` lists, under the space's contents lock; translations: the draft maps, under the translations lock) and queues change events (`pg_notify`, delivered to the UI over SSE). Webhooks are dispatched only **after** the transaction commits, so a receiver that fetches the API sees the new state.
 
 ---
 
@@ -19,31 +19,31 @@ Every write follows the same shape on the server: one transaction that changes t
    a. reads the document (or, for a FOLDER, every DOCUMENT under it that changed since it was
       last published) and the space's schemas
    b. extracts locale-specific data for each space locale (buildDocumentStorage) and upserts one
-      content_published row per (content, locale)
-   c. deletes content_published rows for locales no longer in the space
-   d. stamps contents.published_at (updated_at is left alone, so "changed since publish" works)
-   e. bumps spaces.content_version (new cv) and emits `contents` change events
+      published content_snapshots row per (content, locale), all with the publish time as built_at:
+      the document's new published cv (a removed locale already lost its rows)
+   c. stamps contents.published_at (updated_at is left alone, so "changed since publish" works)
+   d. drops both /links lists (published_at is in them) and emits `contents` change events
 4. After commit: CONTENT_PUBLISHED webhook
-5. All subsequent API requests get a new cv → cached responses bypassed
+5. Requests for that document get its new cv → cached responses bypassed; other documents keep theirs
 ```
-
-> **Note:** publish is not special for the `cv`. Every content write — create, edit, move, clone, delete, publish, unpublish — runs in `ContentsService.write()`, which bumps `content_version`. Schema writes and asset updates/deletes bump it too, because drafts are rendered through schemas and resolved assets appear in responses.
 
 ### Content Drafts
 
-There are no draft files any more. `GET /api/v1/.../contents/...?version=draft` reads the `contents` row and runs the same locale extraction against the current schemas on every request (`PublicContentService` → `buildDocumentStorage()`). Consequences:
+`GET /api/v1/.../contents/...?version=draft` serves the document's draft snapshot in that locale, built on the first draft request after a write of the document dropped it (`ContentDeliveryRepository.findDrafts()` → `buildDocumentStorage()`), with the schemas as they are then. Consequences:
 
-- A draft always exists and reflects the current schemas (Firebase-era draft files were snapshots written on save, and absent for never-edited documents).
-- Saving a document needs no separate draft step; the `content_version` bump moves draft consumers past cached copies.
+- A draft exists for every document and locale (Firebase-era draft files were written on save, and absent for never-edited documents).
+- Saving, renaming or moving a document drops its drafts (a folder move, those of everything under it); its draft `cv` moves, its published one doesn't.
+- A schema edit drops nothing: a draft keeps the schemas it was built with until its document changes. Changing the space's default locale drops every draft; removing a locale deletes its snapshots, draft and published.
+- Writes that drop drafts and the draft builds take the space's contents lock (`lockContents` in `apps/server/src/shared/data-rules/content-snapshots.ts`), so a build never stores a document read before a write that has since committed.
 
 ### Content Unpublish Flow
 
 ```
 1. Angular → POST /api/app/spaces/:spaceId/contents/:id/unpublish   (CONTENT_PUBLISH)
 2. ContentsService.unpublish(), in one transaction:
-   - for a DOCUMENT: clears published_at and deletes its content_published rows
+   - for a DOCUMENT: clears published_at and deletes its published content_snapshots rows (drafts stay)
    - for a FOLDER: does the same for every published document under the folder
-   - bumps content_version, emits change events
+   - drops both /links lists, emits change events
 3. After commit: CONTENT_UNPUBLISHED webhook
 ```
 
@@ -97,12 +97,12 @@ A flat JSON import is the same `TRANSLATION_IMPORT` task kind with `task.locale`
 
 ## Cache Invalidation
 
-The `cv` is `spaces.content_version` for content/links, and the snapshot's `built_at` (epoch milliseconds) for translations, separately for draft and published. A redirect to the current `cv` is what invalidates caches in front of the API:
+The `cv` is the `built_at` (epoch milliseconds) of the snapshot served: per document and locale, per `/links` list, per translation locale, separately for draft and published. A redirect to the current `cv` is what invalidates caches in front of the API:
 
 ```
-Old cv = 41  →  request redirects to ?cv=41  →  CDN/proxy has it cached ✓
-Publish happens   →  content_version = 42
-New request       →  no cv / stale cv      →  redirects to ?cv=42  →  cache miss, fetches fresh
+Published at 1760000000000  →  request redirects to ?cv=1760000000000  →  CDN/proxy has it cached ✓
+Document published again    →  its published built_at = 1760000500000
+New request for it          →  no cv / stale cv  →  redirects to ?cv=1760000500000  →  cache miss, fetches fresh
 ```
 
 After the first cache miss for the new cv, a CDN or caching proxy keeps the response for up to 7 days (`s-maxage`). See [CDN & Caching](cdn-caching.md).
@@ -112,9 +112,9 @@ After the first cache miss for the new cv, a CDN or caching proxy keeps the resp
 ## Where Published Data Lives
 
 ```
-content_published      PK (space_id, content_id, locale)  data jsonb, published_at
-translation_snapshots  PK (space_id, version, locale)     data json, built_at (the translation cv)
-spaces                 content_version (the content cv)
+content_snapshots       PK (space_id, content_id, version, locale)  data json, built_at (the document cv)
+content_link_snapshots  PK (space_id, version)                      data json, built_at (the /links cv)
+translation_snapshots   PK (space_id, version, locale)              data json, built_at (the translation cv)
 ```
 
 Only binary files are in storage (`$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/...` and task files). The Firebase-era `contents/{id}/{locale}.json`, `draft/` and `cache.json` files are gone; an import from Firebase brings drafts only; the space is published again after the import.
@@ -128,7 +128,7 @@ Content documents can include `links`, `references`, and `assets` arrays (IDs of
 - `?resolveReference=true` — resolves references to content documents, with their own id arrays stripped
 - `?resolveAsset=true` — resolves asset IDs to full asset metadata via `resolveAssets()`
 
-Resolution is done at request time with batched `where id = any(...)` queries: links from `contents`, assets from `assets`, and references from `content_published` (or, for a draft request, the live `contents` rows), in the same locale with no fallback. This adds latency but avoids denormalization.
+Resolution is done at request time with batched `where id = any(...)` queries: links from `contents`, assets from `assets`, and references from `content_snapshots` in the request's version (drafts built when missing), in the same locale with no fallback. This adds latency but avoids denormalization.
 
 ### The id arrays are storage-only
 
@@ -146,11 +146,11 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 ## Implementation Files
 
 - `apps/server/src/modules/contents/services/contents.service.ts` — content `publish`/`unpublish`, webhooks after commit
-- `apps/server/src/modules/contents/repositories/contents.repository.ts` — the writes and their transaction: `write()` (version bump, change events), the publish snapshots
+- `apps/server/src/modules/contents/repositories/contents.repository.ts` — the writes and their transaction: `write()` (snapshots dropped, change events), the publish snapshots
 - `apps/server/src/modules/translations/services/translations.service.ts` — translation `publish` and the app's writes; `repositories/translations.repository.ts` — the write transaction (row change, draft snapshots dropped, change events)
-- `apps/server/src/shared/data-rules/content-version.ts` — `bumpContentVersion()`
+- `apps/server/src/shared/data-rules/content-snapshots.ts` — the contents lock, `dropContentDrafts`, `dropContentLinks`, `dropContentLocale`
 - `apps/server/src/modules/contents/utils/content-extract.ts` — locale extraction (`buildDocumentStorage`)
-- `apps/server/src/modules/contents/services/content-delivery.service.ts` — published/draft document reads, link/reference/asset resolution (queries in `repositories/content-delivery.repository.ts`)
+- `apps/server/src/modules/contents/services/content-delivery.service.ts` — published/draft document reads, `/links`, link/reference/asset resolution (queries and the draft and `/links` builds in `repositories/content-delivery.repository.ts`)
 - `apps/server/src/modules/translations/services/translation-delivery.service.ts` — published/draft translation reads and the CLI push; `buildTranslationMap` in `utils/translation.utils.ts`
-- `apps/server/src/modules/tasks/services/*-transfer.service.ts` — imports; their `repositories/*-transfer.repository.ts` write each import in one transaction and bump versions at its end
+- `apps/server/src/modules/tasks/services/*-transfer.service.ts` — imports; their `repositories/*-transfer.repository.ts` write each import in one transaction and drop the snapshots it makes stale (contents, translations)
 - `apps/server/src/modules/translations/translations.public.controller.ts` — CLI translation push endpoint
