@@ -29,7 +29,8 @@ export class WebhooksService {
     return found(await this.webhooks.findById(spaceId, id));
   }
 
-  async logs(spaceId: string, id: string, limit?: number) {
+  /** Newest first: 100 unless another `limit` (1–1000) is asked for. */
+  async logs(spaceId: string, id: string, limit = 100) {
     await this.get(spaceId, id);
     return (await this.webhooks.findLogs(id, limit)).map(toWebhookLog);
   }

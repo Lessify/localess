@@ -25,7 +25,7 @@ App API (`apps/server/src/modules/webhooks/webhooks.controller.ts`):
 | `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | list (by name) / create |
 | `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:id` | read / update / delete |
 | `PATCH` | `/api/app/spaces/:spaceId/webhooks/:id/status` | `{ enabled }` |
-| `GET` | `/api/app/spaces/:spaceId/webhooks/:id/logs[?limit=]` | newest first; all rows, or `limit` clamped to 1–1000 |
+| `GET` | `/api/app/spaces/:spaceId/webhooks/:id/logs[?limit=]` | newest first; the 100 newest, or `limit` clamped to 1–1000 |
 
 ---
 
@@ -169,7 +169,7 @@ interface WebHookLogFailure extends WebHookLogBase {
 type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Logs are **not capped on write** — every delivery adds a row and nothing prunes them (they are only removed with the webhook, see [Cleanup](#cleanup)). Limits apply only on read: `GET …/webhooks/:id/logs` returns rows newest first, all of them or `?limit=` (clamped to 1–1000), and the frontend `WebHookService.findLogs()` takes an optional `max`. Webhook and log ids are UUIDv7s; a `:id` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
+Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:id/logs` returns rows newest first: the 100 newest, or `?limit=` (clamped to 1–1000); the frontend `WebHookService.findLogs()` takes an optional `max`. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebHookPayloadData`). Webhook and log ids are UUIDv7s; a `:id` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
 
 ---
 

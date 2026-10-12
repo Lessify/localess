@@ -265,6 +265,7 @@ CREATE TABLE "webhook_logs" (
 	"response_body" text,
 	"response_body_truncated" boolean,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "webhook_logs_event_check" CHECK ("webhook_logs"."event" in ('content.published', 'content.unpublished', 'content.changed', 'translation.published', 'translation.changed')),
 	CONSTRAINT "webhook_logs_status_check" CHECK ("webhook_logs"."status" in ('SUCCESS', 'FAILURE')),
 	CONSTRAINT "webhook_logs_error_type_check" CHECK ("webhook_logs"."error_type" in ('TIMEOUT', 'NETWORK', 'HTTP'))
 );
@@ -327,5 +328,4 @@ CREATE UNIQUE INDEX "translations_key_idx" ON "translations" USING btree ("space
 CREATE INDEX "user_identities_user_idx" ON "user_identities" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint
 CREATE INDEX "webhook_logs_webhook_idx" ON "webhook_logs" USING btree ("webhook_id","created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "webhooks_space_idx" ON "webhooks" USING btree ("space_id","name");--> statement-breakpoint
-CREATE INDEX "webhooks_events_idx" ON "webhooks" USING gin ("events");
+CREATE INDEX "webhooks_space_idx" ON "webhooks" USING btree ("space_id","name");

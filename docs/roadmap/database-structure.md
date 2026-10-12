@@ -34,6 +34,24 @@ tokens (id PK, space_id → spaces CASCADE): token (the secret, unique), name, p
 | `token` | **Plain text**, unlike session and reset-link hashes: the editor reads it for previews and API links, and tokens are handed to websites. Backups must be protected. |
 | `tokens_permissions_idx` (GIN) | **Dropped**: a space has a handful of tokens, filtered through `tokens_space_idx`. |
 
+## Webhooks
+
+```
+webhooks (id PK, space_id → spaces CASCADE): name, url, enabled (default false), events (CHECK), headers, secret,
+          created_at, updated_at
+webhook_logs (id PK, webhook_id → webhooks CASCADE): event (CHECK), url, status, status_code, status_text, error_type,
+              error_message, request_size, data, delivery_id, duration, response_body, response_body_truncated, created_at
+```
+
+| Column / rule | Decision |
+|---|---|
+| `webhook_logs` retention | **Deleted after `LOCALESS_WEBHOOK_LOG_DAYS`** (30 by default) by `WebhookLogCleanupService`, at start and every hour. |
+| Logs listing | **100 newest by default**, `?limit=` up to 1000. |
+| `webhook_logs.event` | **CHECK** of the known events, like `status` and `error_type`. |
+| `webhook_logs.data` | Typed `WebHookPayloadData` (only the dispatcher writes it). |
+| `webhooks_events_idx` (GIN) | **Dropped**: a space has a handful of webhooks, found through `webhooks_space_idx`. |
+| `secret`, `headers` | Plain text: the secret signs every delivery (HMAC), headers are sent as they are. |
+
 ## `spaces`
 
 | Column | Decision |

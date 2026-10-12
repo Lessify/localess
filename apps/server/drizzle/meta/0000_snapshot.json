@@ -1,5 +1,5 @@
 {
-  "id": "2c4f8c8d-696d-4e3f-beff-da4fbb0300c0",
+  "id": "ea4a7b7b-ea02-4399-be04-c4149ff4f90b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -2297,6 +2297,10 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "webhook_logs_event_check": {
+          "name": "webhook_logs_event_check",
+          "value": "\"webhook_logs\".\"event\" in ('content.published', 'content.unpublished', 'content.changed', 'translation.published', 'translation.changed')"
+        },
         "webhook_logs_status_check": {
           "name": "webhook_logs_status_check",
           "value": "\"webhook_logs\".\"status\" in ('SUCCESS', 'FAILURE')"
@@ -2396,21 +2400,6 @@
           "isUnique": false,
           "concurrently": false,
           "method": "btree",
-          "with": {}
-        },
-        "webhooks_events_idx": {
-          "name": "webhooks_events_idx",
-          "columns": [
-            {
-              "expression": "events",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "gin",
           "with": {}
         }
       },

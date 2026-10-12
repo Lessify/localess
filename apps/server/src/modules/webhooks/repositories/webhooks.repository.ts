@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, lt } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { spaces, webhookLogs, webhooks } from '../../../infra/database/schema.js';
@@ -27,14 +27,19 @@ export class WebhooksRepository {
     return row;
   }
 
-  /** Newest first. */
-  findLogs(webhookId: string, limit?: number): Promise<WebhookLogEntity[]> {
-    const select = this.db
+  /** Newest first, at most `limit`. */
+  findLogs(webhookId: string, limit: number): Promise<WebhookLogEntity[]> {
+    return this.db
       .select()
       .from(webhookLogs)
       .where(eq(webhookLogs.webhookId, webhookId))
-      .orderBy(desc(webhookLogs.createdAt), desc(webhookLogs.id));
-    return limit ? select.limit(limit) : select;
+      .orderBy(desc(webhookLogs.createdAt), desc(webhookLogs.id))
+      .limit(limit);
+  }
+
+  /** Deletes the delivery logs written before `before`, of every webhook. */
+  async deleteLogsBefore(before: Date): Promise<void> {
+    await this.db.delete(webhookLogs).where(lt(webhookLogs.createdAt, before));
   }
 
   /** Enabled. `undefined` when there is no space `spaceId`. */

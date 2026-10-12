@@ -51,6 +51,8 @@ const envSchema = z.object({
   // ffmpeg binary for video thumbnails; defaults to `ffmpeg` on the PATH.
   LOCALESS_FFMPEG_PATH: z.string().optional(),
   // Lets webhooks reach loopback/private addresses (local development only; SSRF protection otherwise).
+  // Days a webhook delivery log is kept.
+  LOCALESS_WEBHOOK_LOG_DAYS: z.coerce.number().int().positive().default(30),
   LOCALESS_WEBHOOK_ALLOW_INTERNAL: z
     .enum(['true', 'false'])
     .default('false')
@@ -87,6 +89,8 @@ export interface AppConfig {
   storageDir: string;
   ffmpegPath: string | undefined;
   webhookAllowInternal: boolean;
+  /** LOCALESS_WEBHOOK_LOG_DAYS: delivery logs older than this are deleted. */
+  webhookLogDays: number;
   translate:
     | { provider: 'deepl'; apiKey: string }
     | { provider: 'google'; projectId: string; location: string }
@@ -174,6 +178,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dataDir,
     ffmpegPath: parsed.LOCALESS_FFMPEG_PATH,
     webhookAllowInternal: parsed.LOCALESS_WEBHOOK_ALLOW_INTERNAL,
+    webhookLogDays: parsed.LOCALESS_WEBHOOK_LOG_DAYS,
     translate: parsed.LOCALESS_TRANSLATE_PROVIDER
       ? { provider: 'stub' }
       : parsed.DEEPL_API_KEY

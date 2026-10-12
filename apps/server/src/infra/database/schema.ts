@@ -21,6 +21,7 @@ import {
   UserPermission,
   WebHookErrorType,
   WebHookEvent,
+  type WebHookPayloadData,
   WebHookStatus,
 } from '@localess/shared';
 import { OAUTH_PROVIDERS } from '../config/oauth-providers.js';
@@ -561,7 +562,6 @@ export const webhooks = pgTable(
   },
   t => [
     index('webhooks_space_idx').on(t.spaceId, t.name),
-    index('webhooks_events_idx').using('gin', t.events),
     allOf('webhooks_events_check', t.events, values(WebHookEvent)),
   ],
 );
@@ -573,7 +573,7 @@ export const webhookLogs = pgTable(
     webhookId: uuid('webhook_id')
       .notNull()
       .references(() => webhooks.id, { onDelete: 'cascade' }),
-    event: text('event').notNull(),
+    event: text('event', { enum: values(WebHookEvent) }).notNull(),
     url: text('url').notNull(),
     status: text('status', { enum: values(WebHookStatus) }).notNull(),
     statusCode: integer('status_code'),
@@ -581,7 +581,8 @@ export const webhookLogs = pgTable(
     errorType: text('error_type', { enum: values(WebHookErrorType) }),
     errorMessage: text('error_message'),
     requestSize: integer('request_size').notNull(),
-    data: jsonb('data').$type<Record<string, unknown>>().notNull(),
+    // The payload's `data` as it was sent.
+    data: jsonb('data').$type<WebHookPayloadData>().notNull(),
     deliveryId: text('delivery_id').notNull(),
     duration: integer('duration').notNull(),
     responseBody: text('response_body'),
@@ -590,6 +591,7 @@ export const webhookLogs = pgTable(
   },
   t => [
     index('webhook_logs_webhook_idx').on(t.webhookId, t.createdAt.desc()),
+    oneOf('webhook_logs_event_check', t.event, values(WebHookEvent)),
     oneOf('webhook_logs_status_check', t.status, values(WebHookStatus)),
     oneOf('webhook_logs_error_type_check', t.errorType, values(WebHookErrorType)),
   ],

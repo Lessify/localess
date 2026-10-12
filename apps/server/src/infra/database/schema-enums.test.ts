@@ -41,6 +41,7 @@ const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][]
   ['task_logs', 'level', Object.values(TaskLogLevel)],
   ['tokens', 'permissions', Object.values(TokenPermission)],
   ['webhooks', 'events', Object.values(WebHookEvent)],
+  ['webhook_logs', 'event', Object.values(WebHookEvent)],
   ['webhook_logs', 'status', Object.values(WebHookStatus)],
   ['webhook_logs', 'error_type', Object.values(WebHookErrorType)],
   ['firebase_imports', 'status', FIREBASE_IMPORT_STATUSES],

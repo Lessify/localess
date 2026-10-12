@@ -50,6 +50,12 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LOCALESS_INSTANCE_NAME: 'Test', LOCALESS_INSTANCE_COLOR: 'neon' })).toThrow(/LOCALESS_INSTANCE_COLOR/);
   });
 
+  it('keeps webhook logs 30 days unless configured, refusing a non-positive number', () => {
+    expect(loadConfig({}).webhookLogDays).toBe(30);
+    expect(loadConfig({ LOCALESS_WEBHOOK_LOG_DAYS: '7' }).webhookLogDays).toBe(7);
+    expect(() => loadConfig({ LOCALESS_WEBHOOK_LOG_DAYS: '0' })).toThrow(/LOCALESS_WEBHOOK_LOG_DAYS/);
+  });
+
   it('rejects an invalid DATABASE_URL', () => {
     expect(() => loadConfig({ DATABASE_URL: 'not a url' })).toThrow();
   });

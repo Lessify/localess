@@ -7,6 +7,7 @@ import { schemas, taskLogs, tokens, webhookLogs } from '../src/infra/database/sc
 import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
+import { WebhookLogCleanupService } from '../src/modules/webhooks/services/webhook-log-cleanup.service.js';
 
 function multipart(fields: Record<string, string>, file: { filename: string; bytes: Buffer }) {
   const boundary = `----localess${randomBytes(8).toString('hex')}`;
@@ -171,7 +172,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await manager.patch(`${base}/${hook.id}/status`, { enabled: false })).json().enabled).toBe(false);
       const log = {
         webhookId: hook.id,
-        event: 'content.published',
+        event: 'content.published' as const,
         url: 'https://example.com/v2',
         status: 'SUCCESS' as const,
         requestSize: 10,
@@ -187,6 +188,22 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect(logs).toEqual([expect.objectContaining({ deliveryId: 'new', id: expect.stringMatching(UUID_V7) })]);
       expect((await manager.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
       expect(logs[0]).not.toHaveProperty('webhookId');
+    });
+
+    it('lists at most 100 logs unless asked for more, and deletes those older than the retention', async () => {
+      const log = { webhookId: hook.id, event: 'content.published' as const, url: 'https://example.com/v2', status: 'SUCCESS' as const, requestSize: 10, data: {}, duration: 5 };
+      const day = 24 * 60 * 60 * 1000;
+      await t.db.insert(webhookLogs).values(
+        Array.from({ length: 101 }, (_, index) => ({ ...log, id: newUuid(), deliveryId: `bulk-${index}`, createdAt: new Date(Date.now() - day) })),
+      );
+      await t.db.insert(webhookLogs).values({ ...log, id: newUuid(), deliveryId: 'stale', createdAt: new Date(Date.now() - 31 * day) });
+      expect((await manager.get(`${base}/${hook.id}/logs`)).json()).toHaveLength(100);
+      expect((await manager.get(`${base}/${hook.id}/logs?limit=500`)).json().length).toBeGreaterThan(101);
+
+      await t.app.get(WebhookLogCleanupService).cleanup();
+      const kept = (await manager.get(`${base}/${hook.id}/logs?limit=1000`)).json().map((it: { deliveryId: string }) => it.deliveryId);
+      expect(kept).not.toContain('stale');
+      expect(kept).toContain('bulk-0');
     });
 
     it('lists by name and deletes with logs, for SPACE_MANAGEMENT only', async () => {

@@ -38,7 +38,7 @@ export class WebhooksController {
 
   @Get(':id/logs')
   logs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Query('limit') limit?: string) {
-    return this.webhooks.logs(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : undefined);
+    return this.webhooks.logs(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
   }
 
   @Post()
