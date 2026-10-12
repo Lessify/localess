@@ -1,3 +1,4 @@
+import { SchemaFieldKind } from '@localess/shared';
 import { createHash } from 'node:crypto';
 import {
   assets,
@@ -50,9 +51,9 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
     name: 'page',
     type: 'ROOT',
     fields: [
-      { name: 'title', kind: 'TEXT', translatable: true },
-      { name: 'author', kind: 'REFERENCE' },
-      { name: 'cta', kind: 'LINK' },
+      { name: 'title', kind: SchemaFieldKind.TEXT, translatable: true },
+      { name: 'author', kind: SchemaFieldKind.REFERENCE },
+      { name: 'cta', kind: SchemaFieldKind.LINK },
     ],
   });
   const doc = (name: keyof typeof C, slug: string, parentSlug: string, data: Record<string, unknown>, extra: object = {}) => ({

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Schema, SchemaExport, SchemaType } from '@localess/shared';
+import { type Schema, type SchemaExport, SchemaType } from '@localess/shared';
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
 import { docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 import { type NewSchema, type SchemaColumns, type SchemaEntity, SchemasRepository } from '../repositories/schemas.repository.js';
@@ -39,15 +39,20 @@ export class SchemasService {
     return (await this.schemas.createMany(spaceId, inputs)).map(toSchema);
   }
 
-  /** Replaces the editable fields; absent ones are cleared (the UI's `deleteField()`). */
+  /**
+   * Replaces the editable fields; absent ones are cleared (the UI's `deleteField()`). Only what the schema's type has
+   * is stored: fields and the preview field for ROOT and NODE, values for ENUM (the type never changes).
+   */
   async update(spaceId: string, id: string, input: Omit<SchemaColumns, 'type'>): Promise<Schema> {
+    const { type } = found(await this.schemas.findById(spaceId, id));
+    const component = type !== SchemaType.ENUM;
     const entity = await this.schemas.update(spaceId, id, {
       displayName: input.displayName || null,
       description: input.description || null,
       labels: input.labels?.length ? input.labels : null,
-      previewField: input.previewField || null,
-      fields: input.fields ?? null,
-      values: input.values ?? null,
+      previewField: (component && input.previewField) || null,
+      fields: (component && input.fields) || null,
+      values: (!component && input.values) || null,
     });
     return found(entity);
   }

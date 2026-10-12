@@ -69,6 +69,45 @@ describe('app API: schemas', () => {
     });
   });
 
+  it('refuses fields and enum values that are not valid, dropping keys a field kind does not have', async () => {
+    const url = `${base}/${ids['page']}`;
+    for (const fields of [
+      [{ name: 'title', kind: 'WIDGET' }],
+      [{ name: 'Bad Name', kind: 'TEXT' }],
+      [{ name: '_schema', kind: 'TEXT' }],
+      [{ name: 'color', kind: 'OPTION' }],
+      [{ name: 'title', kind: 'TEXT', maxLength: 'long' }],
+    ]) {
+      expect((await editor.put(url, { fields })).statusCode, JSON.stringify(fields)).toBe(400);
+    }
+    expect((await editor.put(`${base}/${ids['colors']}`, { values: [{ name: 'red' }] })).statusCode).toBe(400);
+
+    const response = await editor.put(url, {
+      fields: [{ name: 'title', kind: 'TEXT', translatable: true, extra: 1 }, { name: 'next', kind: 'REFERENCE', translatable: true }],
+    });
+    expect(response.json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }, { name: 'next', kind: 'REFERENCE' }]);
+  });
+
+  it('stores only what a schema type has: fields and a preview field for ROOT/NODE, values for ENUM', async () => {
+    const page = await editor.put(`${base}/${ids['page']}`, {
+      previewField: 'title',
+      fields: [{ name: 'title', kind: 'TEXT' }],
+      values: [{ name: 'Red', value: 'red' }],
+    });
+    expect(page.json()).toMatchObject({ previewField: 'title', fields: [{ name: 'title', kind: 'TEXT' }] });
+    expect(page.json()).not.toHaveProperty('values');
+
+    const colors = await editor.put(`${base}/${ids['colors']}`, {
+      previewField: 'title',
+      fields: [{ name: 'title', kind: 'TEXT' }],
+      values: [{ name: 'Red', value: 'red' }],
+    });
+    expect(colors.json()).toMatchObject({ type: 'ENUM', values: [{ name: 'Red', value: 'red' }] });
+    expect(colors.json()).not.toHaveProperty('fields');
+    expect(colors.json()).not.toHaveProperty('previewField');
+    await editor.put(`${base}/${ids['page']}`, { fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
+  });
+
   it('renames: a new name under the same id, refusing a taken name', async () => {
     const url = `${base}/${ids['page']}/name`;
     expect((await editor.put(url, { name: 'colors' })).statusCode).toBe(409);

@@ -1,10 +1,9 @@
-import { type AssetMetadata, type Content, ContentKind, type ContentMetadata, type Schema } from '@localess/shared';
-import type { assets, contents, schemas } from '../../infra/database/schema.js';
+import { type AssetMetadata, type Content, ContentKind, type ContentMetadata } from '@localess/shared';
+import type { assets, contents } from '../../infra/database/schema.js';
 import { toDto } from './dto.transformer.js';
 
 type ContentEntity = typeof contents.$inferSelect;
 type AssetEntity = typeof assets.$inferSelect;
-type SchemaEntity = typeof schemas.$inferSelect;
 
 /** A `contents` row as the App API's DTO: `null` columns left out and `spaceId` dropped. */
 export const toContent = (entity: ContentEntity): Content => toDto(entity) as unknown as Content;
@@ -45,9 +44,4 @@ export function toAssetMetadata(asset: AssetEntity): AssetMetadata {
     if (typeof metadata.duration === 'number') contentAsset.duration = metadata.duration;
   }
   return contentAsset;
-}
-
-/** Schemas keyed by `name` as the locale extraction (`buildDocumentStorage`) reads them: the rows as they are. */
-export function documentSchemas(entities: SchemaEntity[]): Map<string, Schema> {
-  return new Map(entities.map(row => [row.name, row as unknown as Schema]));
 }

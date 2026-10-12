@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { SchemaType, UserPermission } from '@localess/shared';
-import { zSchemaTemplateSchema } from '@localess/shared/zod';
+import { schemaEnumValueSchema, schemaFieldSchema, zSchemaTemplateSchema } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
@@ -16,9 +16,9 @@ const updateSchema = z.object({
   description: z.string().max(2000).optional(),
   labels: zLabels.optional(),
   previewField: z.string().max(200).optional(),
-  // Field and value shapes are validated by the editor and by the push/import schemas; stored as given.
-  fields: z.array(z.record(z.string(), z.unknown())).optional(),
-  values: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+  // The shapes the push and the imports check too; keys a field kind does not have are dropped.
+  fields: z.array(schemaFieldSchema).optional(),
+  values: z.array(schemaEnumValueSchema).optional(),
 });
 
 /** Schemas (was direct `spaces/{s}/schemas` access from the SPA). `:id` is the UUID; references use `name`. */

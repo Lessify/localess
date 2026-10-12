@@ -1,3 +1,4 @@
+import { SchemaFieldKind } from '@localess/shared';
 import { createHmac } from 'node:crypto';
 import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
@@ -36,7 +37,7 @@ describe('app API: contents', () => {
     });
     await t.db
       .insert(schemas)
-      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
+      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }] });
     await t.db.insert(tokens).values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', version: 2, permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
     editor = api(
       t,

@@ -1,17 +1,29 @@
-import type { Schema } from '@localess/shared';
+import { type Schema, SchemaType } from '@localess/shared';
 import type { schemas } from '../../infra/database/schema.js';
-import { withoutNulls } from '../../infra/database/without-nulls.js';
+import { present } from '../../infra/database/without-nulls.js';
 
 type SchemaEntity = typeof schemas.$inferSelect;
 
 /**
  * A `schemas` row as the shared model, the App API's DTO: `id` the UUID, `name` the reference key, `null` columns
- * left out and `spaceId` dropped (see `without-nulls.ts`).
+ * left out, `spaceId` dropped, and only what the type has (fields and a preview field for ROOT and NODE, values for
+ * ENUM).
  */
 export function toSchema(entity: SchemaEntity): Schema {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- space_id is not part of the model
-  const { spaceId, ...rest } = withoutNulls(entity);
-  return rest as unknown as Schema;
+  const base = {
+    id: entity.id,
+    name: entity.name,
+    ...present({ displayName: entity.displayName, description: entity.description, labels: entity.labels }),
+  };
+  const timestamps = { createdAt: entity.createdAt.toISOString(), updatedAt: entity.updatedAt.toISOString() };
+  return entity.type === 'ENUM'
+    ? { ...base, type: SchemaType.ENUM, ...present({ values: entity.values }), ...timestamps }
+    : {
+        ...base,
+        type: entity.type === 'ROOT' ? SchemaType.ROOT : SchemaType.NODE,
+        ...present({ previewField: entity.previewField, fields: entity.fields }),
+        ...timestamps,
+      };
 }
 
 /** Schemas keyed by `name`, which is what content (`schema`, `_schema`) and fields (`schemas`, `source`) refer to. */

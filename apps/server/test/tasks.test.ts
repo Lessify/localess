@@ -1,3 +1,4 @@
+import { SchemaFieldKind } from '@localess/shared';
 import { randomBytes } from 'node:crypto';
 import archiver from 'archiver';
 import { and, eq } from 'drizzle-orm';
@@ -68,7 +69,7 @@ describe('task worker: exports and imports', () => {
       .toBuffer();
     for (const id of [SPACE_A, SPACE_B]) await insertSpace(t.db, { id, name: id, locales: [en, de], defaultLocale: en });
     await t.db.insert(schemas).values([
-      { id: newUuid(), spaceId: SPACE_A, name: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] },
+      { id: newUuid(), spaceId: SPACE_A, name: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }] },
       { id: newUuid(), spaceId: SPACE_A, name: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
     ]);
     await t.db.insert(contents).values([

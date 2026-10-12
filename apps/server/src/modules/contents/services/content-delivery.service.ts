@@ -1,8 +1,9 @@
+import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { Injectable } from '@nestjs/common';
 import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentMetadata } from '@localess/shared';
 import { isUuid } from '../../../infra/database/id.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
-import { documentSchemas, toAssetMetadata, toContentMetadata } from '../../../shared/transformers/content.transformer.js';
+import { toAssetMetadata, toContentMetadata } from '../../../shared/transformers/content.transformer.js';
 import { isDraft } from '../../../infra/http/v1/v1-request.js';
 import { ContentDeliveryRepository, type LinkFilter } from '../repositories/content-delivery.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
@@ -45,7 +46,7 @@ export class ContentDeliveryService {
     }
     const rows = await this.delivery.findDocuments(spaceId, ids);
     if (!rows.length) return result;
-    const schemaById = documentSchemas(await this.delivery.findSchemas(spaceId));
+    const schemaById = schemasByName(await this.delivery.findSchemas(spaceId));
     for (const row of rows) result.set(row.id, buildDocumentStorage(row, schemaById, locale));
     return result;
   }

@@ -1,3 +1,4 @@
+import { SchemaFieldKind } from '@localess/shared';
 import { randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -47,7 +48,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     // These pin the API; task processing has its own tests (test/tasks.test.ts).
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
-    await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] });
+    await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
     manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {

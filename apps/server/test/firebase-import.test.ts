@@ -201,6 +201,62 @@ describe('Firebase import run', () => {
     }
   });
 
+  it('drops schema fields and enum values that are not valid, and what a schema type does not have, with a warning', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbFields',
+        name: 'Fields',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        schemas: [
+          {
+            id: 'page',
+            type: 'ROOT',
+            previewField: 'title',
+            fields: [
+              { name: 'title', kind: 'TEXT', translatable: true },
+              { name: 'Bad Name', kind: 'TEXT' },
+              { name: 'gadget', kind: 'WIDGET' },
+              'not a field',
+            ],
+            values: [{ name: 'Red', value: 'red' }],
+          },
+          {
+            id: 'colors',
+            type: 'ENUM',
+            fields: [{ name: 'title', kind: 'TEXT' }],
+            previewField: 'title',
+            values: [{ name: 'Red', value: 'red' }, { name: 'Blue' }],
+          },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: odd.url, sourceSpaceId: 'fbFields', sourceSpaceName: 'Fields', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbFields');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, run.spaceId!)).orderBy(schemas.name);
+      expect(rows.map(({ name, previewField, fields, values }) => ({ name, previewField, fields, values }))).toEqual([
+        { name: 'colors', previewField: null, fields: null, values: [{ name: 'Red', value: 'red' }] },
+        { name: 'page', previewField: 'title', fields: [{ name: 'title', kind: 'TEXT', translatable: true }], values: null },
+      ]);
+      const warnings = run.stages.find(it => it.stage === 'schemas')!.warnings;
+      expect(warnings).toEqual([
+        "page: field 'Bad Name' is not valid, dropped",
+        "page: field 'gadget' is not valid, dropped",
+        'page: field 4 is not valid, dropped',
+        "colors: enum value 'Blue' is not valid, dropped",
+      ]);
+    } finally {
+      await odd.close();
+    }
+  });
+
   it('keeps known locales in their order and skips the others (and broken environments), with a warning', async () => {
     const odd = await fakeFirebase([
       {

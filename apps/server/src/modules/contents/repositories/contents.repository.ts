@@ -1,3 +1,4 @@
+import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -7,7 +8,6 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
-import { documentSchemas } from '../../../shared/transformers/content.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 import { joinSlug, startsWith } from '../utils/slug.utils.js';
 
@@ -216,7 +216,7 @@ export class ContentsRepository {
                   ),
                 )
             ).filter(doc => !(doc.publishedAt && doc.publishedAt > doc.updatedAt));
-      const schemaById = documentSchemas(await t.select().from(schemas).where(eq(schemas.spaceId, spaceId)));
+      const schemaById = schemasByName(await t.select().from(schemas).where(eq(schemas.spaceId, spaceId)));
       const publishedAt = new Date();
       const localeIds = space.locales.map(it => it.id);
       for (const document of documents) {

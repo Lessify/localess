@@ -5,6 +5,8 @@ import {
   FIREBASE_IMPORT_STATUSES,
   type FirebaseImportStage,
   type FirebaseImportStageName,
+  type SchemaEnumValue,
+  type SchemaField,
   SchemaType,
   TaskKind,
   TaskLogLevel,
@@ -365,7 +367,7 @@ export const storageDeletions = pgTable(
 );
 
 // ---------------------------------------------------------------------------------------------------
-// Schemas (id is chosen by the user, unique per space)
+// Schemas (`name` is the reference, unique per space)
 // ---------------------------------------------------------------------------------------------------
 
 export const schemas = pgTable(
@@ -381,8 +383,10 @@ export const schemas = pgTable(
     description: text('description'),
     labels: text('labels').array(),
     previewField: text('preview_field'),
-    fields: jsonb('fields').$type<unknown[]>(),
-    values: jsonb('values').$type<{ name: string; value: string }[]>(),
+    // ROOT and NODE only.
+    fields: jsonb('fields').$type<SchemaField[]>(),
+    // ENUM only.
+    values: jsonb('values').$type<SchemaEnumValue[]>(),
     ...timestamps,
   },
   t => [
@@ -393,7 +397,7 @@ export const schemas = pgTable(
 );
 
 // ---------------------------------------------------------------------------------------------------
-// Translations (id is the translation key, unique per space)
+// Translations (`key` is the reference, unique per space)
 // ---------------------------------------------------------------------------------------------------
 
 export const translations = pgTable(

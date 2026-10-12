@@ -12,16 +12,10 @@ import type { SchemaPushPlan } from '../utils/schema.utils.js';
 
 /** Columns written for a pushed schema; absent fields are cleared, like `FieldValue.delete()` did. */
 function schemaColumns(schema: SchemaExport) {
-  const component = schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE;
-  return {
-    type: schema.type,
-    displayName: schema.displayName || null,
-    description: schema.description || null,
-    labels: schema.labels || null,
-    previewField: component ? (schema as { previewField?: string }).previewField || null : null,
-    fields: component ? ((schema as { fields?: unknown[] }).fields ?? null) : null,
-    values: !component ? ((schema as { values?: { name: string; value: string }[] }).values ?? null) : null,
-  };
+  const base = { type: schema.type, displayName: schema.displayName || null, description: schema.description || null, labels: schema.labels || null };
+  return schema.type === SchemaType.ENUM
+    ? { ...base, previewField: null, fields: null, values: schema.values ?? null }
+    : { ...base, previewField: schema.previewField || null, fields: schema.fields ?? null, values: null };
 }
 
 /** Writes a `planSchemaPush` result (CLI schema push, schema import task). */

@@ -149,6 +149,28 @@ them, so a crash or a storage failure between the row and the files never leaves
   then 6 h.
 - **No foreign keys:** the space or asset is already gone when its files are deleted.
 
+## `schemas`
+
+```
+schemas PK id: space_id (FK, cascade), name (unique per space), type ROOT|NODE|ENUM, display_name, description,
+        labels, preview_field, fields (jsonb SchemaField[]), values (jsonb SchemaEnumValue[]), created_at, updated_at
+```
+
+`space_id` is the only foreign key. Everything else refers to a schema by `name`, without a constraint:
+`contents.schema` (ROOT), `_schema` in content data (NODE), a field's `schemas` (SCHEMA/SCHEMAS) and `source`
+(OPTION/OPTIONS → an ENUM). Every write bumps the space's content `cv`.
+
+| Column / rule | Decision |
+|---|---|
+| `fields`, `values` | **Validated on every write path** with the shared zod schemas (`schemaFieldSchema`, `schemaEnumValueSchema`): the app's update, templates, the CLI push, the schema import task. Keys a field kind does not have are dropped. The columns are typed `SchemaField[]` / `SchemaEnumValue[]`, and `toSchema` maps them without a cast. |
+| Columns of the other type | **Not stored:** ROOT/NODE keep `fields` and `preview_field`, ENUM keeps `values`; what does not belong to the type is cleared on write (the type never changes). |
+| Firebase import | An invalid field or enum value is **dropped with a warning**, the rest of the schema is imported. |
+
+Still to discuss: renaming a schema in use (references keep the old name), deleting a schema in use (the app does not
+check; the push does for fields), rules across fields (duplicate field names, `preview_field` naming no field,
+`schemas` / `source` pointing at a schema of the wrong type), `schemas_type_idx` carrying an unused `display_name`,
+an `updated_by` column.
+
 ## Timestamps
 
 Tables with the standard pair spread `...timestamps` (`created_at`, `updated_at`: `timestamptz not null default now()`);
