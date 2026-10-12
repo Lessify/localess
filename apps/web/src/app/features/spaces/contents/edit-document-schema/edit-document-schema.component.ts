@@ -384,7 +384,7 @@ export class EditDocumentSchemaComponent {
   }
 
   addSchemaOne(field: SchemaField, schema: Schema): void {
-    const sch: ContentData | undefined = this.data()[field.name];
+    const sch: ContentData | undefined = this.data()[field.name] as ContentData | undefined;
     if (sch) {
       this.data()[field.name] = {
         _id: v4(),
@@ -405,7 +405,7 @@ export class EditDocumentSchemaComponent {
   }
 
   addSchemaMany(field: SchemaField, schema: Schema, index?: number): void {
-    const fieldData: ContentData[] | undefined = this.data()[field.name];
+    const fieldData: ContentData[] | undefined = this.data()[field.name] as ContentData[] | undefined;
     if (fieldData) {
       if (index !== undefined) {
         // add at index
@@ -436,7 +436,7 @@ export class EditDocumentSchemaComponent {
   }
 
   removeSchemaMany(field: SchemaField, schemaId: string): void {
-    const sch: ContentData[] | undefined = this.data()[field.name];
+    const sch: ContentData[] | undefined = this.data()[field.name] as ContentData[] | undefined;
     const index = sch?.findIndex(it => it._id == schemaId) ?? -1;
     if (index >= 0) {
       removeBlock({ parent: this.data(), field: field.name, index });
@@ -476,9 +476,9 @@ export class EditDocumentSchemaComponent {
       const field = schema.fields?.find(it => it.name === schema.previewField);
       if (field) {
         if (isFieldTranslatable(field) && !this.isDefaultLocale()) {
-          return content[schema.previewField + '_i18n_' + localeId];
+          return content[schema.previewField + '_i18n_' + localeId] as string | undefined;
         } else {
-          return content[schema.previewField];
+          return content[schema.previewField] as string | undefined;
         }
       }
     }
@@ -491,9 +491,9 @@ export class EditDocumentSchemaComponent {
     //debugger;
     let content = '';
     if (sourceLocale === CONTENT_DEFAULT_LOCALE.id) {
-      content = this.data()[fieldName];
+      content = this.data()[fieldName] as string;
     } else {
-      content = this.data()[`${fieldName}_i18n_${sourceLocale}`];
+      content = this.data()[`${fieldName}_i18n_${sourceLocale}`] as string;
     }
     if (content === undefined || content === null || content === '') {
       this.notificationService.error('No content to translate');

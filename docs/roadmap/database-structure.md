@@ -130,6 +130,7 @@ The tree is linked by `parent_id` (null: root); see [Content and asset trees](co
 | Folder moves | Under the contents lock, the target must not be the folder or under it (400 "A folder cannot be moved into itself"). |
 | Firebase import | Rows go in at the root under a placeholder slug, page by page; after the last page the tree is linked by the Firebase paths. A slug used twice under a parent is suffixed, a missing parent folder leaves the item at the root, each with a warning. |
 | Content export / import tasks | Switched off until their redesign ([Import / Export](import-export.md)). |
+| `data` | **Typed `ContentData`, checked on every write** (`zContentData` in `@localess/shared/zod`): the root and every block carry `_id` and `_schema`, and each value is one of the shapes the editor stores (string, number, boolean, string[], LINK / REFERENCE / ASSET and their arrays, TipTap JSON, a block, blocks). `PUT …/data` answers 400 naming the path otherwise. The Firebase import brings old data to that shape: a block's legacy `schema` key moves to `_schema`, a root without `_id`/`_schema` gets them, a link without a target gets `_self`, `null`s and empty arrays go, anything else is dropped with a warning. Checking values against the schema's fields is a [To do](#to-do). |
 
 ## Content snapshots
 
@@ -279,6 +280,13 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
   purge, or archive).
 - **Changing the default locale of a space with content:** move the values (bare ↔ `_i18n_<locale>`, published
   snapshots included) instead of only warning.
+- **Content data validated against its schema:** a `blockSchema(schema, { schemas, locales, defaultLocale })` in
+  `@localess/shared` that builds the zod rules of a block from its schema's fields, as the editor's form does (TEXT
+  min/max length, NUMBER min/max, COLOR `#rrggbb`, DATE `YYYY-MM-DD`, DATETIME `YYYY-MM-DDTHH:mm`, OPTION/OPTIONS values
+  of the source ENUM with min/max values, LINK/REFERENCE/ASSET shapes, SCHEMA/SCHEMAS blocks of the allowed schemas,
+  `{field}_i18n_{locale}` for translatable fields), used by the server on save and publish and by the editor in place of
+  `validateContent`. Open: `required` on save or only on publish; RICH_TEXT `minLength`/`maxLength` (measured on the
+  TipTap JSON today); DATETIME stays local time without a timezone. The structural `ContentData` type comes first.
 - **Content `cv` and `resolve*`:** with a `cv` per document (its snapshot's `built_at`), a response with
   `resolveReference`/`resolveLink`/`resolveAsset` is cached under the main document's `cv` only: a referenced or linked
   document republished (or an asset changed) later stays in that cached response until the main document's `cv` moves

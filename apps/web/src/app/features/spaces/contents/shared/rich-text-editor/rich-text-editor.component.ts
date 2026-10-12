@@ -85,8 +85,9 @@ export class RichTextEditorComponent implements OnDestroy {
    * HTML is then parsed back by the editor, whose value accessor writes the JSON to the form.
    */
   translate(fieldName: string, sourceLocale: string, targetLocale: string): void {
-    const source: JSONContent | string | undefined =
-      sourceLocale === CONTENT_DEFAULT_LOCALE.id ? this.data()[fieldName] : this.data()[`${fieldName}_i18n_${sourceLocale}`];
+    const source: JSONContent | string | undefined = (
+      sourceLocale === CONTENT_DEFAULT_LOCALE.id ? this.data()[fieldName] : this.data()[`${fieldName}_i18n_${sourceLocale}`]
+    ) as JSONContent | string | undefined;
 
     const content = this.toHtml(source);
     if (!content) {

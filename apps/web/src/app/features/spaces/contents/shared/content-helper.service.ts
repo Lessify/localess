@@ -142,7 +142,7 @@ export class ContentHelperService {
         schema.fields
           ?.filter(it => it.kind === SchemaFieldKind.SCHEMA)
           .forEach(field => {
-            const sch: ContentData | undefined = selectedContent && selectedContent[field.name];
+            const sch: ContentData | undefined = (selectedContent && selectedContent[field.name]) as ContentData | undefined;
             if (sch) {
               contentIteration.push(sch);
             }
@@ -150,7 +150,7 @@ export class ContentHelperService {
         schema.fields
           ?.filter(it => it.kind === SchemaFieldKind.SCHEMAS)
           .forEach(field => {
-            const sch: ContentData[] | undefined = selectedContent![field.name];
+            const sch: ContentData[] | undefined = selectedContent![field.name] as ContentData[] | undefined;
             sch?.forEach(it => contentIteration.push(it));
           });
       }

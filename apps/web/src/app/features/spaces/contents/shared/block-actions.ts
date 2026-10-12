@@ -34,11 +34,12 @@ export function findBlock(root: ContentData, id: string, schemas: ReadonlyMap<st
       const value = node[field.name];
       if (field.kind === SchemaFieldKind.SCHEMA && value) {
         if ((value as ContentData)._id === id) return { parent: node, field: field.name };
-        queue.push(value);
+        queue.push(value as ContentData);
       } else if (field.kind === SchemaFieldKind.SCHEMAS && Array.isArray(value)) {
-        const index = value.findIndex((it: ContentData) => it._id === id);
+        const blocks = value as ContentData[];
+        const index = blocks.findIndex(it => it._id === id);
         if (index >= 0) return { parent: node, field: field.name, index };
-        queue.push(...value);
+        queue.push(...blocks);
       }
     }
   }

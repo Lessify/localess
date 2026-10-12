@@ -1,4 +1,4 @@
-import type { ContentData } from './models/content.model.js';
+import { type ContentData, isContentBlock } from './models/content.model.js';
 import { isFieldTranslatable, type Schema, SchemaFieldKind, SchemaType } from './models/schema.model.js';
 
 /*
@@ -11,7 +11,7 @@ import { isFieldTranslatable, type Schema, SchemaFieldKind, SchemaType } from '.
  * legacy `schema` key, which is read as a fallback and never served.
  */
 export function contentSchemaId(content: ContentData): string {
-  return content._schema || content['schema'];
+  return content._schema || (content['schema'] as string);
 }
 
 /** The block as served for `locale`: translatable fields read `{field}_i18n_{locale}`, falling back to `{field}`. */
@@ -25,14 +25,14 @@ export function extractContent(content: ContentData, schemas: Map<string, Schema
   if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
     for (const field of schema?.fields || []) {
       if (field.kind === SchemaFieldKind.SCHEMA) {
-        const fieldContent: ContentData | undefined = content[field.name];
-        if (fieldContent) {
+        const fieldContent = content[field.name];
+        if (isContentBlock(fieldContent)) {
           extractedContentData[field.name] = extractContent(fieldContent, schemas, locale);
         }
       } else if (field.kind === SchemaFieldKind.SCHEMAS) {
-        const fieldContent: ContentData[] | undefined = content[field.name];
-        if (fieldContent && Array.isArray(fieldContent)) {
-          extractedContentData[field.name] = fieldContent.map(it => extractContent(it, schemas, locale));
+        const fieldContent = content[field.name];
+        if (Array.isArray(fieldContent)) {
+          extractedContentData[field.name] = fieldContent.filter(isContentBlock).map(it => extractContent(it, schemas, locale));
         }
       } else {
         if (isFieldTranslatable(field)) {

@@ -63,7 +63,7 @@ export class ContentDeliveryRepository {
         contentId: document.id,
         version: 'draft' as const,
         locale,
-        data: buildDocumentStorage(document, schemaByName, locale) as unknown as Record<string, unknown>,
+        data: buildDocumentStorage(document, schemaByName, locale),
         builtAt,
       }));
       await t.insert(contentSnapshots).values(rows);

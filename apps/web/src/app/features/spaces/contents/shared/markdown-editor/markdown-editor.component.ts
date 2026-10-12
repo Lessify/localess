@@ -138,9 +138,9 @@ export class MarkdownEditorComponent implements OnDestroy {
     // get source locale content
     let content = '';
     if (sourceLocale === CONTENT_DEFAULT_LOCALE.id) {
-      content = this.data()[fieldName];
+      content = this.data()[fieldName] as string;
     } else {
-      content = this.data()[`${fieldName}_i18n_${sourceLocale}`];
+      content = this.data()[`${fieldName}_i18n_${sourceLocale}`] as string;
     }
     if (content === undefined || content === null || content === '') {
       this.notificationService.error('No content to translate');

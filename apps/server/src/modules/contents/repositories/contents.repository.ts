@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { ContentData } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -40,12 +41,12 @@ export interface NewContent {
   name: string;
   slug: string;
   schema?: string;
-  data?: Record<string, unknown>;
+  data?: ContentData;
 }
 
 export type ContentMove = { name?: string; slug?: string; parentId?: string | null };
 export type ContentDataUpdate = {
-  data: Record<string, unknown>;
+  data: ContentData;
   assets: string[];
   links: string[];
   references: string[];
@@ -250,7 +251,7 @@ export class ContentsRepository {
       const localeIds = space.locales.map(it => it.id);
       for (const document of withPaths(documents, folders)) {
         for (const locale of localeIds) {
-          const data = buildDocumentStorage(document, schemaById, locale, publishedAt.toISOString()) as unknown as Record<string, unknown>;
+          const data = buildDocumentStorage(document, schemaById, locale, publishedAt.toISOString());
           await t
             .insert(contentSnapshots)
             .values({ spaceId, contentId: document.id, version: 'published', locale, data, builtAt: publishedAt })

@@ -37,7 +37,7 @@ describe('findBlock', () => {
 
     expect(findBlock(data, 'hero', schemas)).toEqual({ parent: data, field: 'hero' });
     expect(findBlock(data, 's2', schemas)).toEqual({ parent: data, field: 'body', index: 1 });
-    expect(findBlock(data, 'c1', schemas)).toEqual({ parent: data['body'][0], field: 'cards', index: 0 });
+    expect(findBlock(data, 'c1', schemas)).toEqual({ parent: (data['body'] as ContentData[])[0], field: 'cards', index: 0 });
   });
 
   it('returns undefined for the root and unknown ids', () => {
@@ -53,7 +53,7 @@ describe('blockActions', () => {
     expect(blockActions({ parent: data, field: 'hero' })).toEqual(['remove']);
     expect(blockActions({ parent: data, field: 'body', index: 0 })).toEqual(['moveDown', 'duplicate', 'remove']);
     expect(blockActions({ parent: data, field: 'body', index: 1 })).toEqual(['moveUp', 'duplicate', 'remove']);
-    expect(blockActions({ parent: data['body'][0], field: 'cards', index: 0 })).toEqual(['duplicate', 'remove']);
+    expect(blockActions({ parent: (data['body'] as ContentData[])[0], field: 'cards', index: 0 })).toEqual(['duplicate', 'remove']);
   });
 });
 
@@ -85,8 +85,8 @@ describe('block actions', () => {
     const [original, copy] = data['body'] as ContentData[];
     expect(ids(data)).toEqual(['s1', copy._id, 's2']);
     expect(copy._id).not.toBe('s1');
-    expect(copy['cards'][0]).toMatchObject({ _schema: 'card', title: 'One' });
-    expect(copy['cards'][0]._id).not.toBe(original['cards'][0]._id);
+    expect((copy['cards'] as ContentData[])[0]).toMatchObject({ _schema: 'card', title: 'One' });
+    expect((copy['cards'] as ContentData[])[0]._id).not.toBe((original['cards'] as ContentData[])[0]._id);
   });
 
   it('removes a block, and the field with the last one', () => {

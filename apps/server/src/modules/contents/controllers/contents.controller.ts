@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
+import { zContentData } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
@@ -21,7 +22,8 @@ const createSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('FOLDER'), parentId, name, slug }),
 ]);
 const updateSchema = z.object({ name: name.optional(), slug: slug.optional(), parentId });
-const dataSchema = z.object({ data: z.record(z.string(), z.unknown()), assets: ids, links: ids, references: ids });
+// Blocks of known values (`zContentData`): `_id`, `_schema`, and each value one of the shapes the editor stores.
+const dataSchema = z.object({ data: zContentData, assets: ids, links: ids, references: ids });
 const listSchema = z.object({
   // '': the root's children; absent: any parent.
   parentId: z.union([z.uuid(), z.literal('')]).optional(),

@@ -111,8 +111,8 @@ describe('extractContent', () => {
   });
 
   it('ignores a leftover translatable flag on a REFERENCE field, serving the shared value', () => {
-    const shared = { kind: 'REFERENCE', uri: 'doc-en' };
-    const content: ContentData = { _id: '1', _schema: 'root-1', author: shared, author_i18n_de: { kind: 'REFERENCE', uri: 'doc-de' } };
+    const shared = { kind: 'REFERENCE' as const, uri: 'doc-en' };
+    const content: ContentData = { _id: '1', _schema: 'root-1', author: shared, author_i18n_de: { kind: 'REFERENCE' as const, uri: 'doc-de' } };
     const schemas = schemasMap(schemaOf([{ name: 'author', kind: SchemaFieldKind.REFERENCE, translatable: true }]));
 
     expect(extractContent(content, schemas, 'de').author).toEqual(shared);
@@ -134,7 +134,7 @@ describe('buildDocumentStorage', () => {
     slug: 'home',
     parentSlug: '',
     fullSlug: 'home',
-    data: JSON.stringify({ _id: 'b1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' }),
+    data: { _id: 'b1', _schema: 'root-1', title: 'Hello', title_i18n_de: 'Hallo' },
     assets: ['a1'],
     links: [],
     references: null,
@@ -142,7 +142,7 @@ describe('buildDocumentStorage', () => {
     updatedAt: new Date('2026-01-02T00:00:00Z'),
   };
 
-  it('builds the per-locale document, accepting data stored as a JSON string', () => {
+  it('builds the per-locale document', () => {
     expect(buildDocumentStorage(document, schemas, 'de')).toEqual({
       id: 'doc-1',
       name: 'Home',

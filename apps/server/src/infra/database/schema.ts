@@ -1,7 +1,10 @@
 import { type SQL, sql } from 'drizzle-orm';
 import {
   AssetKind,
+  type ContentData,
+  type ContentDocumentStorage,
   ContentKind,
+  type ContentMetadata,
   FIREBASE_IMPORT_STATUSES,
   type FirebaseImportStage,
   type FirebaseImportStageName,
@@ -273,7 +276,8 @@ export const contents = pgTable(
     name: text('name').notNull(),
     slug: text('slug').notNull(),
     schema: text('schema'),
-    data: jsonb('data').$type<Record<string, unknown>>(),
+    // Blocks of known values, checked on every write (`zContentData`); null until the document is first saved.
+    data: jsonb('data').$type<ContentData>(),
     assets: text('assets').array(),
     links: text('links').array(),
     references: text('references').array(),
@@ -313,7 +317,7 @@ export const contentSnapshots = pgTable(
     version: text('version', { enum: SNAPSHOT_VERSIONS }).notNull(),
     locale: text('locale').notNull(),
     // json, not jsonb: jsonb reorders keys (by length), the document keeps its field order. Never queried inside.
-    data: json('data').$type<Record<string, unknown>>().notNull(),
+    data: json('data').$type<ContentDocumentStorage>().notNull(),
     builtAt: timestamp('built_at', { withTimezone: true, precision: 3 }).notNull(),
   },
   t => [
@@ -332,7 +336,7 @@ export const contentLinkSnapshots = pgTable(
   {
     spaceId: spaceId(),
     version: text('version', { enum: SNAPSHOT_VERSIONS }).notNull(),
-    data: json('data').$type<Record<string, unknown>>().notNull(),
+    data: json('data').$type<Record<string, ContentMetadata>>().notNull(),
     builtAt: timestamp('built_at', { withTimezone: true, precision: 3 }).notNull(),
   },
   t => [primaryKey({ columns: [t.spaceId, t.version] }), oneOf('content_link_snapshots_version_check', t.version, SNAPSHOT_VERSIONS)],

@@ -444,8 +444,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   navigateToSchemaForwards(pathItem: SchemaPathItem): void {
-    const field = this.selectedDocumentData[pathItem.fieldName];
-    const next: ContentData | undefined = Array.isArray(field) ? field.find((it: ContentData) => it._id == pathItem.contentId) : field;
+    const field = this.selectedDocumentData[pathItem.fieldName] as ContentData | ContentData[] | undefined;
+    const next: ContentData | undefined = Array.isArray(field) ? field.find(it => it._id == pathItem.contentId) : field;
     if (!next) {
       console.warn('navigateToSchemaForwards: target not found, aborting navigation', pathItem);
       return;
@@ -466,8 +466,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       let localSelectedContent: ContentData | undefined = this.documentData;
       for (const path of truncatedPath) {
         if (path.fieldName === '') continue;
-        const field: ContentData | ContentData[] | undefined = localSelectedContent[path.fieldName];
-        localSelectedContent = Array.isArray(field) ? field.find((it: ContentData) => it._id == path.contentId) : field;
+        const field = localSelectedContent[path.fieldName] as ContentData | ContentData[] | undefined;
+        localSelectedContent = Array.isArray(field) ? field.find(it => it._id == path.contentId) : field;
         if (!localSelectedContent) break;
       }
       if (!localSelectedContent) {
@@ -512,13 +512,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         for (const field of schema.fields || []) {
           if (field.kind === SchemaFieldKind.SCHEMA) {
-            const cData: ContentData | undefined = node.data[field.name];
+            const cData: ContentData | undefined = node.data[field.name] as ContentData | undefined;
             if (cData) {
               nodeIterator.push({ path: [...node.path, cData._id], data: cData });
             }
           }
           if (field.kind === SchemaFieldKind.SCHEMAS) {
-            const cData: ContentData[] | undefined = node.data[field.name];
+            const cData: ContentData[] | undefined = node.data[field.name] as ContentData[] | undefined;
             for (const content of cData || []) {
               if (cData) {
                 nodeIterator.push({ path: [...node.path, content._id], data: content });
@@ -574,7 +574,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
         schemaFieldsLoop: for (const schemaField of schema.fields || []) {
           if (schemaField.kind === SchemaFieldKind.SCHEMA) {
-            const cData: ContentData | undefined = this.selectedDocumentData[schemaField.name];
+            const cData: ContentData | undefined = this.selectedDocumentData[schemaField.name] as ContentData | undefined;
             if (cData && cData._id === selectedContentId) {
               this.navigateToSchemaForwards({
                 contentId: selectedContentId!,
@@ -585,7 +585,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
             }
           }
           if (schemaField.kind === SchemaFieldKind.SCHEMAS) {
-            const cData: ContentData[] | undefined = this.selectedDocumentData[schemaField.name];
+            const cData: ContentData[] | undefined = this.selectedDocumentData[schemaField.name] as ContentData[] | undefined;
             for (const content of cData || []) {
               if (content._id === selectedContentId) {
                 this.navigateToSchemaForwards({

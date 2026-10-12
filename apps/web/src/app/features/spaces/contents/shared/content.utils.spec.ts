@@ -269,7 +269,7 @@ describe('content utils', () => {
       fields[0].apply('<p>Hallo</p>');
 
       expect(data['body_i18n_de']).toMatchObject({ type: 'doc' });
-      expect(data['body_i18n_de'].content[0].content[0].text).toBe('Hallo');
+      expect((data['body_i18n_de'] as { content: { content: { text: string }[] }[] }).content[0].content[0].text).toBe('Hallo');
     });
 
     it('skips an empty RICH_TEXT document', () => {

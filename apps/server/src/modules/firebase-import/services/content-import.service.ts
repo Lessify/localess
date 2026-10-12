@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { newUuid } from '../../../infra/database/id.js';
 import { randomSuffix } from '../../contents/utils/slug.utils.js';
 import { ContentImportRepository, type ContentLink } from '../repositories/content-import.repository.js';
+import { toContentData } from '../utils/content-data.js';
 import { parseData, str, strings, timestamps } from '../utils/firebase-docs.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
 
@@ -50,7 +51,7 @@ export class ContentImportService {
           // Unique at the root until the tree is linked.
           slug: id,
           schema: isDocument ? str(doc['schema']) : null,
-          data: parsed.data,
+          data: toContentData(parsed.data, str(doc['schema']), newUuid, message => stage.warn(`${fullSlug}: ${message}`)),
           assets: strings(doc['assets']),
           links: strings(doc['links']),
           references: strings(doc['references']),

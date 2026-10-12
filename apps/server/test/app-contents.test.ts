@@ -225,6 +225,22 @@ describe('app API: contents', () => {
       ]);
     });
 
+    it('refuses data that is not blocks of known values, naming where', async () => {
+      const save = (data: unknown) => editor.put(`${base}/${post.id}/data`, { data, assets: [], links: [], references: [] });
+      const before = (await row(post.id)).data;
+      for (const [data, path] of [
+        [{ _schema: 'page', title: 'no id' }, 'data._id'],
+        [{ _id: 'r', title: 'no schema' }, 'data._schema'],
+        [{ _id: 'r', _schema: 'page', odd: { foo: 1 } }, 'data.odd'],
+        [{ _id: 'r', _schema: 'page', blocks: [{ _id: 'b1', title: 'block without schema' }] }, 'data.blocks'],
+      ] as const) {
+        const response = await save(data);
+        expect(response.statusCode).toBe(400);
+        expect(response.json().issues.map((it: { path: string }) => it.path)).toContain(path);
+      }
+      expect((await row(post.id)).data).toEqual(before);
+    });
+
     it('signs deliveries with the webhook secret over the exact body, and logs them', async () => {
       await editor.patch(`${base}/${post.id}`, { name: 'Post!' });
       await deliveries();

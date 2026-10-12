@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Content, type ContentFolderSummary, WebHookEvent } from '@localess/shared';
+import { type Content, type ContentData, type ContentFolderSummary, WebHookEvent } from '@localess/shared';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toContent } from '../../../shared/transformers/content.transformer.js';
 import { toDto } from '../../../shared/transformers/dto.transformer.js';
@@ -52,7 +52,7 @@ export class ContentsService {
       name: string;
       slug: string;
       schema?: string;
-      data?: Record<string, unknown>;
+      data?: ContentData;
     },
   ): Promise<Content> {
     const result = await this.contents.create(spaceId, input);
@@ -95,7 +95,7 @@ export class ContentsService {
   async updateData(
     spaceId: string,
     id: string,
-    input: { data: Record<string, unknown>; assets: string[]; links: string[]; references: string[] },
+    input: { data: ContentData; assets: string[]; links: string[]; references: string[] },
   ): Promise<Content> {
     const content = found(await this.contents.updateData(spaceId, id, input));
     if ('notDocument' in content) throw new BadRequestException('Only documents have data');

@@ -15,8 +15,8 @@ export interface StorableDocument {
   slug: string;
   parentSlug: string;
   fullSlug: string;
-  /** Firestore stored it as an object or a JSON string; both are accepted. */
-  data?: ContentData | Record<string, unknown> | string | null;
+  /** Blocks of known values (`zContentData`); null until the document is first saved. */
+  data?: ContentData | null;
   assets?: string[] | null;
   links?: string[] | null;
   references?: string[] | null;
@@ -46,8 +46,7 @@ export function buildDocumentStorage(
     documentStorage.publishedAt = publishedAt;
   }
   if (document.data) {
-    const data = (typeof document.data === 'string' ? JSON.parse(document.data) : document.data) as ContentData;
-    documentStorage.data = extractContent(data, schemas, locale);
+    documentStorage.data = extractContent(document.data, schemas, locale);
   }
   if (document.assets && document.assets.length > 0) {
     documentStorage.assets = document.assets;

@@ -68,6 +68,13 @@ function hasKind(arg: unknown, kind: string): boolean {
   return typeof arg === 'object' && arg !== null && (arg as { kind?: unknown }).kind === kind;
 }
 
+/** A block (`{ _id, _schema, … }`); one stored before `_schema` existed carries only the legacy `schema` key. */
+export function isContentBlock(arg: unknown): arg is ContentData {
+  if (typeof arg !== 'object' || arg === null || Array.isArray(arg)) return false;
+  const block = arg as Record<string, unknown>;
+  return typeof block['_id'] === 'string' && (typeof block['_schema'] === 'string' || typeof block['schema'] === 'string');
+}
+
 export function isContentAsset(arg: unknown): arg is ContentAsset {
   return hasKind(arg, 'ASSET');
 }
@@ -128,10 +135,31 @@ export interface ContentDocumentApi {
   references?: Record<string, ContentDocumentApi>;
 }
 
-export interface ContentData extends Record<string, any | ContentData | ContentData[]> {
+/**
+ * A block of document data, as the editor stores it: its id, its schema's name, and one value per field (a translatable
+ * field's other locales under `{field}_i18n_{locale}`). Checked structurally on every write (`zContentData` in
+ * `@localess/shared/zod`); checking it against its schema's fields is a later step.
+ */
+export interface ContentData {
   _id: string;
   _schema: string;
+  [field: string]: ContentValue | undefined;
 }
+
+/** The value of a field: what each field kind stores (TEXT … OPTIONS, LINK, REFERENCE(S), ASSET(S), RICH_TEXT, SCHEMA(S)). */
+export type ContentValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | ContentLink
+  | ContentReference
+  | ContentReference[]
+  | ContentAsset
+  | ContentAsset[]
+  | ContentRichText
+  | ContentData
+  | ContentData[];
 
 export interface ContentMetadata {
   id: string;

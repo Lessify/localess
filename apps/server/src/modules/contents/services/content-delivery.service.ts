@@ -53,7 +53,7 @@ export class ContentDeliveryService {
     ids = [...new Set(ids.filter(isUuid))];
     if (!ids.length) return new Map();
     const rows = draft ? await this.delivery.findDrafts(spaceId, ids, locale) : await this.delivery.findPublished(spaceId, ids, locale);
-    return new Map(rows.map(row => [row.contentId, { document: row.data as unknown as ContentDocumentStorage, builtAt: row.builtAt }]));
+    return new Map(rows.map(row => [row.contentId, { document: row.data, builtAt: row.builtAt }]));
   }
 
   /**
@@ -115,7 +115,7 @@ export class ContentDeliveryService {
    */
   async listLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
     const snapshot = await this.delivery.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
-    const all = Object.values(snapshot.data as Record<string, ContentMetadata>);
+    const all = Object.values(snapshot.data);
     const { parentSlug, excludeChildren, kind } = filter;
     const links = all.filter(
       it =>

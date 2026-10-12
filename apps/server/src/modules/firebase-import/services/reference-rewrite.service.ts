@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { ContentData } from '@localess/shared';
 import { ContentImportRepository } from '../repositories/content-import.repository.js';
 import { pathOf } from '../../../shared/queries/content-tree.query.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
@@ -35,7 +36,7 @@ export class ReferenceRewriteService {
         for (const it of missing) stage.warn(`${pathOf(row, folders).fullSlug}: no ${it}`);
         if (data.changed || assetRefs.changed || links.changed || references.changed) {
           await this.contents.updateReferences(sid, row.id, {
-            data: data.value as Record<string, unknown> | null,
+            data: data.value as ContentData | null,
             assets: assetRefs.value,
             links: links.value,
             references: references.value,

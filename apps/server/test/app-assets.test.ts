@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { ContentData } from '@localess/shared';
 import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -285,7 +286,7 @@ describe('app API: assets', () => {
         name: slug,
         slug,
         schema: 'page',
-        data,
+        data: data as ContentData,
       });
       await t.db.insert(contents).values([
         // At any depth, in any locale variant.

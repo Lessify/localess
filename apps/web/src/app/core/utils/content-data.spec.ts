@@ -76,8 +76,8 @@ describe('content data', () => {
       const copy = copyBlock(block);
 
       expect(copy).toMatchObject({ _schema: 'section', title: 'Hello' });
-      expect([copy._id, copy['child']._id, copy['cards'][0]._id]).not.toContain('a');
-      expect(new Set([copy._id, copy['child']._id, copy['cards'][0]._id, 'a', 'b', 'c']).size).toBe(6);
+      expect([copy._id, (copy['child'] as ContentData)._id, (copy['cards'] as ContentData[])[0]._id]).not.toContain('a');
+      expect(new Set([copy._id, (copy['child'] as ContentData)._id, (copy['cards'] as ContentData[])[0]._id, 'a', 'b', 'c']).size).toBe(6);
       expect(block._id).toBe('a');
     });
 

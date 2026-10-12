@@ -174,7 +174,7 @@ describe('EditDocumentSchemaComponent', () => {
       expect(component.data()['children']).toHaveLength(1);
 
       component.addSchemaMany({ name: 'children', kind: SchemaFieldKind.SCHEMAS } as never, schema([], 'child-2'), 0);
-      expect(component.data()['children'][0]._schema).toBe('child-2');
+      expect((component.data()['children'] as ContentData[])[0]._schema).toBe('child-2');
       expect(component.data()['children']).toHaveLength(2);
     });
 
@@ -260,7 +260,7 @@ describe('EditDocumentSchemaComponent', () => {
     }
 
     it('never writes a non-translatable REFERENCE back from another locale', () => {
-      const shared = { kind: SchemaFieldKind.REFERENCE, uri: 'doc-en' };
+      const shared = { kind: 'REFERENCE' as const, uri: 'doc-en' };
       const data: ContentData = { _id: '1', _schema: 'root-1', author: shared };
       const references = schema([{ name: 'author', kind: SchemaFieldKind.REFERENCE } as never]);
       const { component } = setup({ schemas: [], data, locale: { id: 'de', name: 'German' } });
@@ -272,7 +272,7 @@ describe('EditDocumentSchemaComponent', () => {
     });
 
     it('treats a leftover translatable flag on a REFERENCE as not translatable', () => {
-      const shared = { kind: SchemaFieldKind.REFERENCE, uri: 'doc-en' };
+      const shared = { kind: 'REFERENCE' as const, uri: 'doc-en' };
       const data: ContentData = { _id: '1', _schema: 'root-1', author: shared };
       const leftover = schema([{ name: 'author', kind: SchemaFieldKind.REFERENCE, translatable: true } as never]);
       const { component } = setup({ schemas: [], data, locale: { id: 'de', name: 'German' } });

@@ -281,8 +281,8 @@ describe('Firebase import run', () => {
         doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
         schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] }],
         contents: [
-          { id: 'c1', kind: 'DOCUMENT', name: 'First', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{}' },
-          { id: 'c2', kind: 'DOCUMENT', name: 'Second', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{}' },
+          { id: 'c1', kind: 'DOCUMENT', name: 'First', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{"_id":"r1","_schema":"page"}' },
+          { id: 'c2', kind: 'DOCUMENT', name: 'Second', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{"_id":"r2","_schema":"page"}' },
         ],
       },
     ]);
@@ -374,6 +374,64 @@ describe('Firebase import run', () => {
       expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual(["P: parent folder 'q' would make a cycle, imported at the root"]);
     } finally {
       await loop.close();
+    }
+  });
+
+  it('keeps content data to blocks of known values: legacy keys moved, a missing root filled, the rest dropped with a warning', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbData',
+        name: 'Data',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] }],
+        contents: [
+          {
+            id: 'c1',
+            kind: 'DOCUMENT',
+            name: 'Page',
+            slug: 'page',
+            parentSlug: '',
+            fullSlug: 'page',
+            schema: 'page',
+            data: {
+              title: 'Hello',
+              empty: null,
+              odd: { foo: 1 },
+              legacy: { _id: 'b1', schema: 'card', label: 'Old block', bad: { foo: 2 } },
+              blocks: [{ _id: 'b2', _schema: 'card' }],
+              // Older links carry no target: the editor's default.
+              cta: { kind: 'LINK', type: 'url', uri: 'https://example.com' },
+            },
+          },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: odd.url, sourceSpaceId: 'fbData', sourceSpaceName: 'Data', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbData');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const [row] = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
+      expect(row.data).toEqual({
+        _id: expect.stringMatching(UUID_V7),
+        _schema: 'page',
+        title: 'Hello',
+        legacy: { _id: 'b1', _schema: 'card', label: 'Old block' },
+        blocks: [{ _id: 'b2', _schema: 'card' }],
+        cta: { kind: 'LINK', type: 'url', target: '_self', uri: 'https://example.com' },
+      });
+      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual([
+        'page: data has no _id or _schema, filled in',
+        "page: 'odd' is not a known value, dropped",
+        "page: 'legacy.bad' is not a known value, dropped",
+      ]);
+    } finally {
+      await odd.close();
     }
   });
 

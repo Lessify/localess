@@ -1,4 +1,4 @@
-import { SchemaFieldKind } from '@localess/shared';
+import { type ContentDocumentStorage, SchemaFieldKind } from '@localess/shared';
 import { createHash } from 'node:crypto';
 import {
   assets,
@@ -110,7 +110,7 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
       publishedAt: at.toISOString(),
       data,
       ...extra,
-    },
+    } as ContentDocumentStorage,
   });
   await t.db
     .insert(contentSnapshots)

@@ -143,7 +143,7 @@ export function extractReferences(
       schema.fields
         ?.filter(it => it.kind === SchemaFieldKind.SCHEMA)
         .forEach(field => {
-          const sch: ContentData | undefined = selectedContent && selectedContent[field.name];
+          const sch: ContentData | undefined = (selectedContent && selectedContent[field.name]) as ContentData | undefined;
           if (sch) {
             contentIteration.push(sch);
           }
@@ -151,7 +151,7 @@ export function extractReferences(
       schema.fields
         ?.filter(it => it.kind === SchemaFieldKind.SCHEMAS)
         .forEach(field => {
-          const sch: ContentData[] | undefined = selectedContent![field.name];
+          const sch: ContentData[] | undefined = selectedContent![field.name] as ContentData[] | undefined;
           sch?.forEach(it => contentIteration.push(it));
         });
     }
@@ -199,12 +199,12 @@ export function collectTranslatableFields(
     if (schema && (schema.type === SchemaType.ROOT || schema.type === SchemaType.NODE)) {
       for (const field of (schema as SchemaComponent).fields || []) {
         if (field.kind === SchemaFieldKind.SCHEMA) {
-          const child: ContentData | undefined = node[field.name];
+          const child: ContentData | undefined = node[field.name] as ContentData | undefined;
           if (child) contentIteration.push(child);
           continue;
         }
         if (field.kind === SchemaFieldKind.SCHEMAS) {
-          const children: ContentData[] | undefined = node[field.name];
+          const children: ContentData[] | undefined = node[field.name] as ContentData[] | undefined;
           children?.forEach(it => contentIteration.push(it));
           continue;
         }
@@ -221,7 +221,7 @@ export function collectTranslatableFields(
 
         if (field.kind === SchemaFieldKind.RICH_TEXT) {
           // A field written through the API can hold a plain string rather than a document.
-          const html = typeof sourceValue === 'string' ? sourceValue : generateHTML(sourceValue, richTextExtensions);
+          const html = typeof sourceValue === 'string' ? sourceValue : generateHTML(sourceValue as JSONContent, richTextExtensions);
           fields.push({
             id: `${node._id}.${field.name}`,
             content: html,
