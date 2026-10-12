@@ -26,7 +26,7 @@ Two roles exist, stored in the `users.role` column (`null` = no access):
 
 Role and permissions are read from the `users` row on **every request** (the session resolves to the current row), so a change applies immediately on the server — there are no token claims to refresh.
 
-A `lock: true` flag (`users.lock`) does **not** block login. Its only consumer is `UserStore.isLocked`, which `me.component.html` uses to hide the Update Profile / Email / Password actions on the user's own profile page. It is UI-only — nothing server-side enforces it (`/api/app/me` does not check it). Blocking sign-in is the separate `users.disabled` flag: a disabled user can't log in, and their existing sessions stop resolving.
+A `lock: true` flag (`users.lock`) does **not** block login. It locks the user's own profile: `UserStore.isLocked` hides the Update Profile / Email / Password actions on the profile page, and the server refuses those changes (`PATCH /api/app/me`, `PUT /api/app/me/email`, `PUT /api/app/me/password`) with 403 "Your profile is locked". The profile can still be read. Blocking sign-in is the separate `users.disabled` flag: a disabled user can't log in, and their existing sessions stop resolving.
 
 ---
 

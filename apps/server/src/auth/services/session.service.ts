@@ -53,8 +53,4 @@ export class SessionService {
   async revokeAllForUser(userId: string, exceptSessionId?: string): Promise<void> {
     await this.sessions.deleteAllForUser(userId, exceptSessionId);
   }
-
-  async deleteExpired(): Promise<void> {
-    await this.sessions.deleteExpiredBefore(new Date());
-  }
 }

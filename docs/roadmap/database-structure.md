@@ -3,6 +3,24 @@
 Reviewing the Postgres schema (`apps/server/src/infra/database/schema.ts`) table by table: why each column exists, what to
 keep, what to move. Decisions are listed per table; open items are under [To do](#to-do).
 
+## Users and sign-in
+
+```
+users (id PK): email (unique on lower(email)), email_verified, display_name, photo_url, disabled, role, permissions,
+       lock, created_at, updated_at
+user_credentials (user_id PK → users CASCADE): password_hash, hash_algo, updated_at
+user_identities (PK provider + provider_subject, user_id → users CASCADE): created_at
+sessions (id = sha256 of the cookie, user_id → users CASCADE): expires_at, last_seen_at, user_agent, ip, created_at
+password_reset_tokens (token_hash PK, user_id → users CASCADE): expires_at, used_at, created_at
+```
+
+| Column / rule | Decision |
+|---|---|
+| `sessions`, `password_reset_tokens` | **Cleaned up** by `AuthCleanupService` at start and every hour: sessions past `expires_at`, reset tokens used or expired over a day ago (a link that expired recently still answers "expired"). |
+| `users.lock` | **Enforced by the server**: a locked user's own profile can be read but not changed (403 on the name/photo, email and password updates); the profile page hides those actions. It does not block sign-in (that is `disabled`). |
+| `users.email_verified` | **Kept as information**: the address was confirmed by an identity provider (an OIDC sign-in) or set by the first-admin seed; an email change resets it. There is no verification email, and sign-in does not depend on it (OIDC linking checks the provider's own claim). |
+| `user_credentials.hash_algo` | One value (`argon2id`) today; the column leaves room for a future algorithm and rehash on sign-in. |
+
 ## `spaces`
 
 | Column | Decision |

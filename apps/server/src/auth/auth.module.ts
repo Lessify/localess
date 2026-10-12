@@ -6,6 +6,7 @@ import { OAuthController } from './controllers/oauth.controller.js';
 import { AuthUsersRepository } from './repositories/auth-users.repository.js';
 import { PasswordResetTokensRepository } from './repositories/password-reset-tokens.repository.js';
 import { SessionsRepository } from './repositories/sessions.repository.js';
+import { AuthCleanupService } from './services/auth-cleanup.service.js';
 import { AuthService } from './services/auth.service.js';
 import { OAuthService } from './services/oauth.service.js';
 import { PasswordResetService } from './services/password-reset.service.js';
@@ -23,6 +24,7 @@ import { AuthGuard } from './auth.guard.js';
     AuthService,
     SessionService,
     PasswordResetService,
+    AuthCleanupService,
     OAuthService,
     SessionsRepository,
     PasswordResetTokensRepository,

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, isNull, lt, or } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { passwordResetTokens } from '../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../infra/database/transaction.js';
@@ -12,6 +12,13 @@ export class PasswordResetTokensRepository {
   create(values: { tokenHash: string; userId: string; expiresAt: Date }, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(passwordResetTokens).values(values);
+    });
+  }
+
+  /** Deletes the tokens that were used, or that expired before `expiredBefore`. */
+  deleteSpent(expiredBefore: Date, tx?: Transaction): Promise<void> {
+    return transaction(this.db, tx, async t => {
+      await t.delete(passwordResetTokens).where(or(isNotNull(passwordResetTokens.usedAt), lt(passwordResetTokens.expiresAt, expiredBefore)));
     });
   }
 
