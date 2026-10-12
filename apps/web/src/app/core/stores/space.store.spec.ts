@@ -152,13 +152,13 @@ describe('SpaceStore', () => {
     const spaceA = space('a');
     const spaceB = space('b', [{ id: 'e1', name: 'prod', url: 'https://prod' }]);
     const store = createStore([spaceA, spaceB]);
-    store.changeContentPath([{ fullSlug: 'nested', name: 'Nested' }]);
+    store.changeContentFolder('f1');
 
     store.changeSpace(spaceB);
 
     expect(store.selectedSpace()?.id).toBe('b');
     expect(store.environment()?.name).toBe('prod');
-    expect(store.contentPath()).toEqual([{ fullSlug: '', name: 'Root' }]);
+    expect(store.contentFolderId()).toBeNull();
   });
 
   describe('space data listeners', () => {
@@ -287,14 +287,15 @@ describe('SpaceStore', () => {
     });
   });
 
-  it('changeContentPath and changeAssetPath update their respective signals', () => {
+  it('changeContentFolder and changeAssetPath update their respective signals', () => {
     const store = createStore([space('a')]);
     const path = [{ fullSlug: 'docs', name: 'Docs' }];
+    expect(store.contentFolderId()).toBeNull();
 
-    store.changeContentPath(path);
+    store.changeContentFolder('f1');
     store.changeAssetPath(path);
 
-    expect(store.contentPath()).toEqual(path);
+    expect(store.contentFolderId()).toBe('f1');
     expect(store.assetPath()).toEqual(path);
   });
 

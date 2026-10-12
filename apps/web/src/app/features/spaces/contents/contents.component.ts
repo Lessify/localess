@@ -1,7 +1,18 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  Injector,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
@@ -9,7 +20,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
-import { PathItem, SpaceStore } from '@core/stores/space.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import {
@@ -17,6 +28,7 @@ import {
   ContentDocument,
   ContentDocumentCreate,
   ContentFolderCreate,
+  ContentFolderSummary,
   ContentKind,
   ContentUpdate,
   Schema,
@@ -71,6 +83,7 @@ import { EditDialogComponent, EditDialogContext } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
 import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
+import { breadcrumbs } from './shared/content-folders';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({
@@ -143,12 +156,17 @@ export class ContentsComponent implements AfterViewInit {
   schemas: Schema[] = [];
   schemasMapByName: Map<string, Schema> = new Map<string, Schema>();
 
-  get parentPath(): string {
-    const contentPath = this.spaceStore.contentPath();
-    if (contentPath.length > 0) {
-      return contentPath[contentPath.length - 1].fullSlug;
-    }
-    return '';
+  /** Every folder of the space, live: breadcrumbs and paths are built from it. */
+  private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.contentService.findAllFolders(spaceId))), {
+    initialValue: [] as ContentFolderSummary[],
+  });
+  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** The folders from the root down to the one shown. */
+  readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.contentFolderId()));
+
+  /** The folder shown; `undefined`: the root. */
+  private get folderId(): string | undefined {
+    return this.spaceStore.contentFolderId() ?? undefined;
   }
 
   availableToken?: string = undefined;
@@ -156,13 +174,13 @@ export class ContentsComponent implements AfterViewInit {
   private destroyRef = inject(DestroyRef);
 
   constructor() {
-    toObservable(this.spaceStore.contentPath)
+    toObservable(this.spaceStore.contentFolderId)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
         switchMap(() =>
           combineLatest([
             this.schemasService.findAll(this.spaceId(), SchemaType.ROOT),
-            this.contentService.findAll(this.spaceId(), this.parentPath),
+            this.contentService.findAll(this.spaceId(), this.folderId),
           ]),
         ),
         takeUntilDestroyed(this.destroyRef),
@@ -195,7 +213,7 @@ export class ContentsComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createDocument(this.spaceId(), this.parentPath, it!)),
+        switchMap(it => this.contentService.createDocument(this.spaceId(), this.folderId, it!)),
       )
       .subscribe({
         next: () => {
@@ -219,7 +237,7 @@ export class ContentsComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.createFolder(this.spaceId(), this.parentPath, it!)),
+        switchMap(it => this.contentService.createFolder(this.spaceId(), this.folderId, it!)),
       )
       .subscribe({
         next: () => {
@@ -244,7 +262,7 @@ export class ContentsComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.update(this.spaceId(), element.id, this.parentPath, it!)),
+        switchMap(it => this.contentService.update(this.spaceId(), element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -302,20 +320,21 @@ export class ContentsComponent implements AfterViewInit {
       .open<MoveDialogResult, MoveDialogContext>(MoveDialogComponent, {
         context: {
           spaceId: this.spaceId(),
+          content: element,
         },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.contentService.move(this.spaceId(), element.id, it!.path, element.slug)),
+        switchMap(it => this.contentService.move(this.spaceId(), element.id, it!.parentId)),
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Document has been moved.');
+          this.notificationService.success('Content has been moved.');
         },
         error: (err: unknown) => {
-          this.notificationService.error(apiErrorMessage(err, 'Document can not be moved.'));
+          this.notificationService.error(apiErrorMessage(err, 'Content can not be moved.'));
         },
       });
   }
@@ -438,21 +457,15 @@ export class ContentsComponent implements AfterViewInit {
     }
 
     if (element.kind === ContentKind.FOLDER) {
-      const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
-      contentPath.push({
-        name: element.name,
-        fullSlug: element.fullSlug,
-      });
-      this.spaceStore.changeContentPath(contentPath);
+      this.spaceStore.changeContentFolder(element.id);
     }
   }
 
-  navigateToSlug(pathItem: PathItem) {
+  /** A breadcrumb: a folder, or `null` for the root. */
+  navigateToFolder(folderId: string | null) {
+    if (folderId === this.spaceStore.contentFolderId()) return;
     this.isLoading.set(true);
-    const contentPath = ObjectUtils.clone(this.spaceStore.contentPath() || []);
-    const idx = contentPath.findIndex(it => it.fullSlug == pathItem.fullSlug);
-    contentPath.splice(idx + 1);
-    this.spaceStore.changeContentPath(contentPath);
+    this.spaceStore.changeContentFolder(folderId);
   }
 
   openApiV1InNewTab(token: string) {

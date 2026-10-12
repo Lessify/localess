@@ -114,15 +114,22 @@ map the public API serves per locale (gaps filled from the default locale):
 ## `contents`
 
 ```
-contents PK (space_id, id): kind FOLDER|DOCUMENT, name, slug, parent_slug, full_slug, schema, data, assets[], links[],
-         references[], published_at, created_at, updated_at
+contents PK (space_id, id): parent_id, kind FOLDER|DOCUMENT, name, slug, schema, data, assets[], links[], references[],
+         published_at, created_at, updated_at
+         FK (space_id, parent_id) → contents (space_id, id) ON DELETE CASCADE
+         UNIQUE NULLS NOT DISTINCT (space_id, parent_id, slug)
 ```
 
-The tree is built by text: `parent_slug` is the parent folder's `full_slug` ('' for the root), no foreign key.
+The tree is linked by `parent_id` (null: root); see [Content and asset trees](content-asset-tree.md).
 
 | Column / rule | Decision |
 |---|---|
-| `full_slug` | **Unique per space** (`contents_full_slug_idx`, `text_pattern_ops` so the subtree `LIKE 'a/%'` queries use it too). The app checks first for the usual case; a write that loses a race to an uncommitted one is refused by the index with the same 409. A folder rename or move rewrites the descendants in one statement, refused as a whole on a clash. The content import task refuses a file with a path used twice, or used by another item of the space (task `ERROR`, nothing written); the Firebase import suffixes a repeated path's slug with a warning. |
+| `parent_id` | **The structure, held by the database.** The foreign key keeps every child with its parent: a create in a folder being deleted fails or is taken by the delete, never left behind; deleting a folder cascades to its subtree (and their snapshots). The parent being a folder is checked by the code (`kind` never changes). |
+| `slug` | **Unique among siblings** (`contents_slug_idx`, root being one parent). A clash, even with a write that commits at the same moment, is a 409 "'x' is already used". |
+| Paths | **Computed, never stored** (`parent_slug` and `full_slug` are dropped; `shared/queries/content-tree.query.ts`): lists from one map of every folder of the space, a lookup by path segment by segment, a subtree or the ancestors by a recursive query. A rename or move changes one row; it drops the drafts of everything under the item. |
+| Folder moves | Under the contents lock, the target must not be the folder or under it (400 "A folder cannot be moved into itself"). |
+| Firebase import | Rows go in at the root under a placeholder slug, page by page; after the last page the tree is linked by the Firebase paths. A slug used twice under a parent is suffixed, a missing parent folder leaves the item at the root, each with a warning. |
+| Content export / import tasks | Switched off until their redesign ([Import / Export](import-export.md)). |
 
 ## Content snapshots
 
@@ -139,8 +146,8 @@ what the public API serves for content is stored, and each row is its own `cv`.
 - **`cv` = `built_at`** in epoch milliseconds (`timestamp(3)`), per document, locale and stage, and per `/links` list.
   Nothing is versioned per space.
 - **Published document:** a publish writes every space locale of the document with one `built_at`. Unpublish deletes
-  them. A rename or move keeps them (they hold the old slug until the next publish; the slug lookup uses the live
-  `full_slug`).
+  them. A rename or move keeps them (they hold the old path until the next publish; the slug lookup uses the live
+  tree).
 - **Draft document:** built on the first draft request for its locale after a write of the document (data, rename,
   move; a folder's move for everything under it) dropped its drafts. **A schema write drops nothing**: a draft keeps the
   schemas it was built with until its document changes, as a schema change only shows in the editor's form until then.

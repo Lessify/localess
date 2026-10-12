@@ -12,10 +12,10 @@ import {
 } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { lockContents } from '../../../shared/data-rules/content-snapshots.js';
+import { type ContentWithPath, findIdByPath, folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { toContentMetadata } from '../../../shared/transformers/content.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
-import type { ContentEntity } from './contents.repository.js';
 
 export type AssetEntity = typeof assets.$inferSelect;
 export type SchemaEntity = typeof schemas.$inferSelect;
@@ -31,13 +31,9 @@ export type ContentLinkSnapshotEntity = typeof contentLinkSnapshots.$inferSelect
 export class ContentDeliveryRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async findIdByFullSlug(spaceId: string, fullSlug: string): Promise<string | undefined> {
-    const [row] = await this.db
-      .select({ id: contents.id })
-      .from(contents)
-      .where(and(eq(contents.spaceId, spaceId), eq(contents.fullSlug, fullSlug)))
-      .limit(1);
-    return row?.id;
+  /** The item at `fullSlug`, by its path segments (content-tree.query.ts). */
+  findIdByFullSlug(spaceId: string, fullSlug: string): Promise<string | undefined> {
+    return findIdByPath(this.db, spaceId, fullSlug);
   }
 
   /** The published snapshots of `ids` in `locale`; documents never published (in it) are absent. */
@@ -59,9 +55,10 @@ export class ContentDeliveryRepository {
         .from(contents)
         .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, missing), eq(contents.kind, ContentKind.DOCUMENT)));
       if (!documents.length) return built;
+      const folders = await folderPaths(t, spaceId);
       const schemaByName = schemasByName(await t.select().from(schemas).where(eq(schemas.spaceId, spaceId)));
       const builtAt = new Date();
-      const rows = documents.map(document => ({
+      const rows = withPaths(documents, folders).map(document => ({
         spaceId,
         contentId: document.id,
         version: 'draft' as const,
@@ -98,7 +95,7 @@ export class ContentDeliveryRepository {
       const snapshot = {
         spaceId,
         version,
-        data: Object.fromEntries(rows.map(row => [row.id, toContentMetadata(row)])),
+        data: Object.fromEntries(withPaths(rows, await folderPaths(t, spaceId)).map(row => [row.id, toContentMetadata(row)])),
         builtAt: new Date(),
       };
       await t.insert(contentLinkSnapshots).values(snapshot);
@@ -106,11 +103,13 @@ export class ContentDeliveryRepository {
     });
   }
 
-  findContents(spaceId: string, ids: string[]): Promise<ContentEntity[]> {
-    return this.db
+  /** Link targets, with their paths. */
+  async findContents(spaceId: string, ids: string[]): Promise<ContentWithPath[]> {
+    const rows = await this.db
       .select()
       .from(contents)
       .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, ids)));
+    return withPaths(rows, await folderPaths(this.db, spaceId));
   }
 
   findAssets(spaceId: string, ids: string[]): Promise<AssetEntity[]> {

@@ -234,4 +234,4 @@ spaces/{spaceId}/tasks/{taskId}/original
 ```
 
 > Every space-owned table references `spaces` with `on delete cascade`, so deleting a Space removes all its rows in one statement; the server then deletes the `spaces/{spaceId}/` storage prefix.
-> Deleting a content FOLDER deletes its whole subtree (`parent_slug` equal to or under the folder's `full_slug`) in the same transaction, and their `content_snapshots` rows cascade. Renaming or moving a folder rewrites its descendants' slugs in one statement.
+> Deleting a content FOLDER deletes its whole subtree (the `parent_id` foreign key cascades), and their `content_snapshots` rows with it. Renaming or moving a folder rewrites its descendants' slugs in one statement.

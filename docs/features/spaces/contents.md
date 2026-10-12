@@ -58,16 +58,17 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 **Key behaviour:**
 
 - Loads schemas from `SchemaService` (needed for the Add Document dialog's schema picker)
-- Loads content at the current `contentPath` level from `GET /api/app/spaces/:s/contents` (a live query, refetched on `contents` change events)
-- `onRowSelect(item)` — opens folder (updates `SpaceStore.contentPath`) or navigates to the document editor
-- `navigateToSlug(slug)` — path breadcrumb navigation
+- Loads the children of the current folder (`SpaceStore.contentFolderId`, `null` at the root) from `GET /api/app/spaces/:s/contents?parentId=` (a live query, refetched on `contents` change events)
+- Loads every folder of the space once (`GET …/contents/folders`, live) into a map `id → folder`: the breadcrumbs and paths are built from it (`shared/content-folders.ts`)
+- `onRowSelect(item)` — opens a folder (`SpaceStore.changeContentFolder(id)`) or navigates to the document editor
+- `navigateToFolder(id)` — breadcrumb navigation (`null`: the root)
 - `openAddDocumentDialog()` — pick schema → creates `ContentDocument` with `kind: DOCUMENT`
 - `openAddFolderDialog()` — creates `ContentFolder` with `kind: FOLDER`
-- `openEditDialog(element)` — edit document/folder name and slug. Full slugs are unique per space (`contents_full_slug_idx`; a clash, even with a write that commits at the same moment, is a 409 "'x' is already used"), and renaming a folder rewrites the full slug of every descendant in the same transaction
+- `openEditDialog(element)` — edit document/folder name and slug. Slugs are unique among siblings (a clash, even with a write that commits at the same moment, is a 409 "'x' is already used"); a folder rename changes one row, the paths under it follow (they are computed)
 - `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
 - `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:id/publish`), which writes one published `content_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
 - `openUnpublishDialog()` — removes the published snapshot (`POST …/:id/unpublish` deletes the published `content_snapshots` rows)
-- `openMoveDialog()` — moves document/folder to a new parent slug (`PATCH …/:id`); the new parent must be an existing folder
+- `openMoveDialog()` — moves a document or folder (`PATCH …/:id { parentId }`, `null`: the root); the dialog lists the root and every folder from the folder map, without where the item is and, for a folder, without itself and everything under it
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
 - `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export

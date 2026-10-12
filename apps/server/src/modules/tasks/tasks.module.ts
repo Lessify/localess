@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TasksController } from './controllers/tasks.controller.js';
 import { AssetTransferRepository } from './repositories/asset-transfer.repository.js';
-import { ContentTransferRepository } from './repositories/content-transfer.repository.js';
 import { SchemaTransferRepository } from './repositories/schema-transfer.repository.js';
 import { SpaceRepository } from './repositories/space.repository.js';
 import { TasksRepository } from './repositories/tasks.repository.js';
 import { TranslationTransferRepository } from './repositories/translation-transfer.repository.js';
 import { AssetTransferService } from './services/asset-transfer.service.js';
-import { ContentTransferService } from './services/content-transfer.service.js';
 import { ImportFileService } from './services/import-file.service.js';
 import { SchemaTransferService } from './services/schema-transfer.service.js';
 import { TaskLogService } from './services/task-log.service.js';
@@ -28,7 +26,6 @@ import { TaskWorker } from './workers/task-worker.service.js';
     TaskLogService,
     ImportFileService,
     AssetTransferService,
-    ContentTransferService,
     SchemaTransferService,
     TranslationTransferService,
     TaskRunner,
@@ -36,7 +33,6 @@ import { TaskWorker } from './workers/task-worker.service.js';
     TasksRepository,
     SpaceRepository,
     AssetTransferRepository,
-    ContentTransferRepository,
     SchemaTransferRepository,
     TranslationTransferRepository,
   ],

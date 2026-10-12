@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Content, WebHookEvent } from '@localess/shared';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { type Content, type ContentFolderSummary, WebHookEvent } from '@localess/shared';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toContent } from '../../../shared/transformers/content.transformer.js';
-import { type ContentEntity, type ContentQuery, ContentsRepository } from '../repositories/contents.repository.js';
+import { toDto } from '../../../shared/transformers/dto.transformer.js';
+import { type ContentQuery, ContentsRepository, type ContentWithPath } from '../repositories/contents.repository.js';
 import { randomSuffix } from '../utils/slug.utils.js';
 
 function found<T>(result: T | undefined): T {
@@ -11,10 +12,9 @@ function found<T>(result: T | undefined): T {
 }
 
 /**
- * Content tree of a space. Replaces the SPA's direct Firestore writes and what the content triggers
- * did behind them: every write bumps the content version (was `cache.json`), folder renames cascade
- * to descendants in one statement, deletes take the subtree (the repository, in the write's transaction), and
- * webhooks fire as before. Webhooks go out only after the commit, so receivers never see (or fetch) uncommitted state.
+ * Content tree of a space, linked by `parent_id` (the repository, in the write's transaction): a rename or move
+ * changes one row, a delete takes the subtree. The service words the repository's refusals (400/409) and fires the
+ * webhooks as before, only after the commit, so receivers never see (or fetch) uncommitted state.
  */
 @Injectable()
 export class ContentsService {
@@ -35,17 +35,31 @@ export class ContentsService {
     return toContent(found(await this.contents.findById(spaceId, id)));
   }
 
+  /** Every folder of the space: the editor builds its breadcrumbs, paths and move targets from them. */
+  async folders(spaceId: string): Promise<ContentFolderSummary[]> {
+    return (await this.contents.findFolders(spaceId)).map(it => toDto(it) as unknown as ContentFolderSummary);
+  }
+
   /**
-   * The parent must be an existing folder ('' is the root), the full slug must be free, and a document's schema must
-   * be a ROOT schema of the space.
+   * The parent must be a folder of the space (absent: the root), the slug free among its siblings, and a document's
+   * schema a ROOT schema of the space.
    */
   async create(
     spaceId: string,
-    input: { kind: 'FOLDER' | 'DOCUMENT'; parentSlug: string; name: string; slug: string; schema?: string; data?: Record<string, unknown> },
+    input: {
+      kind: 'FOLDER' | 'DOCUMENT';
+      parentId?: string | null;
+      name: string;
+      slug: string;
+      schema?: string;
+      data?: Record<string, unknown>;
+    },
   ): Promise<Content> {
-    const entity = await this.contents.create(spaceId, input);
-    if (!entity) throw new BadRequestException(`No ROOT schema '${input.schema}' in the space`);
-    return toContent(entity);
+    const result = await this.contents.create(spaceId, input);
+    if ('noSchema' in result) throw new BadRequestException(`No ROOT schema '${input.schema}' in the space`);
+    if ('noParent' in result) throw new BadRequestException('No such folder');
+    if ('taken' in result) throw new ConflictException(`'${result.taken}' is already used`);
+    return toContent(result.content);
   }
 
   /** A copy next to the original with a random suffix, never published. */
@@ -57,7 +71,7 @@ export class ContentsService {
       spaceId,
       {
         kind: 'DOCUMENT',
-        parentSlug: source.parentSlug,
+        parentId: source.parentId,
         name: `${source.name} ${suffix}`,
         slug: `${source.slug}-${suffix}`,
         schema: source.schema ?? undefined,
@@ -66,12 +80,15 @@ export class ContentsService {
     );
   }
 
-  /** Rename and/or move. A folder's new full slug is rewritten into every descendant. */
-  async update(spaceId: string, id: string, input: { name?: string; slug?: string; parentSlug?: string }): Promise<Content> {
-    const { content, moved } = found(await this.contents.update(spaceId, id, input));
-    // As before: a document edit that keeps its slug is a `content.changed`; a move is not.
-    if (!moved && content.kind === 'DOCUMENT') this.changed(spaceId, content);
-    return toContent(content);
+  /** Rename and/or move (`parentId` null: the root). A folder is not moved under itself. */
+  async update(spaceId: string, id: string, input: { name?: string; slug?: string; parentId?: string | null }): Promise<Content> {
+    const result = found(await this.contents.update(spaceId, id, input));
+    if ('noParent' in result) throw new BadRequestException('No such folder');
+    if ('taken' in result) throw new ConflictException(`'${result.taken}' is already used`);
+    if ('intoItself' in result) throw new BadRequestException('A folder cannot be moved into itself');
+    // As before: a document edit that keeps its path is a `content.changed`; a move is not.
+    if (!result.moved && result.content.kind === 'DOCUMENT') this.changed(spaceId, result.content);
+    return toContent(result.content);
   }
 
   /** Saves the editor's data and the ids it references (assets, links, references). */
@@ -81,6 +98,7 @@ export class ContentsService {
     input: { data: Record<string, unknown>; assets: string[]; links: string[]; references: string[] },
   ): Promise<Content> {
     const content = found(await this.contents.updateData(spaceId, id, input));
+    if ('notDocument' in content) throw new BadRequestException('Only documents have data');
     this.changed(spaceId, content);
     return toContent(content);
   }
@@ -107,7 +125,7 @@ export class ContentsService {
     this.webhooks.dispatch(spaceId, WebHookEvent.CONTENT_UNPUBLISHED, { id, fullSlug: target.fullSlug });
   }
 
-  private changed(spaceId: string, content: Pick<ContentEntity, 'id' | 'fullSlug'>): void {
+  private changed(spaceId: string, content: Pick<ContentWithPath, 'id' | 'fullSlug'>): void {
     this.webhooks.dispatch(spaceId, WebHookEvent.CONTENT_CHANGED, { id: content.id, fullSlug: content.fullSlug });
   }
 }

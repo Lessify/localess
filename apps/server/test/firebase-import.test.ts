@@ -34,7 +34,6 @@ const site: FakeFirebaseSpace = {
     { id: 'a2', kind: 'FILE', name: 'missing', parentPath: 'gone', extension: '.jpg', type: 'image/jpeg', size: 1 },
   ],
   contents: [
-    { id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
     {
       id: 'post',
       kind: 'DOCUMENT',
@@ -51,6 +50,9 @@ const site: FakeFirebaseSpace = {
       references: ['deleted'],
     },
     { id: 'home', kind: 'DOCUMENT', name: 'Home', slug: 'home', parentSlug: '', fullSlug: 'home', schema: 'page', data: '{not json' },
+    { id: 'lost', kind: 'DOCUMENT', name: 'Lost', slug: 'lost', parentSlug: 'nowhere', fullSlug: 'nowhere/lost', schema: 'page', data: '{}' },
+    // After its children: Firestore pages come in no tree order.
+    { id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
   ],
   files: { a1: photo },
 };
@@ -96,7 +98,7 @@ describe('Firebase import run', () => {
       translations: ['DONE', 2],
       schemas: ['DONE', 1],
       assets: ['DONE', 3],
-      contents: ['DONE', 3],
+      contents: ['DONE', 4],
       contentMigration: ['DONE', 1],
     });
 
@@ -121,8 +123,14 @@ describe('Firebase import run', () => {
     expect(served.rawPayload.equals(photo)).toBe(true);
 
     const docs = await t.db.select().from(contents).where(eq(contents.spaceId, space.id));
-    const post = docs.find(it => it.fullSlug === 'blog/post')!;
-    const home = docs.find(it => it.fullSlug === 'home')!;
+    const blog = docs.find(it => it.slug === 'blog')!;
+    const post = docs.find(it => it.slug === 'post')!;
+    const home = docs.find(it => it.slug === 'home')!;
+    // The tree is linked after the last page, by the Firebase paths.
+    expect(blog).toMatchObject({ kind: 'FOLDER', parentId: null });
+    expect(post.parentId).toBe(blog.id);
+    expect(home.parentId).toBeNull();
+    expect(docs.find(it => it.slug === 'lost')).toMatchObject({ parentId: null });
     expect(post.publishedAt).toBeNull();
     // Rewriting its references is not an edit: it keeps the date it had in Firebase.
     expect(post.updatedAt).toEqual(new Date('2025-02-15T00:00:00.000Z'));
@@ -134,6 +142,7 @@ describe('Firebase import run', () => {
     expect(warnings).toMatch(/keeps an unmapped parent folder 'gone'/); // a2's parent folder is missing
     expect(warnings).toMatch(/home: data is not valid JSON/);
     expect(warnings).toMatch(/blog\/post: no content 'deleted'/);
+    expect(warnings).toMatch(/nowhere\/lost: parent folder 'nowhere' not found, imported at the root/);
   });
 
   it('rewrites references that cross page boundaries (one document per page)', async () => {
@@ -149,10 +158,11 @@ describe('Firebase import run', () => {
     const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
     expect(run.status).toBe('FINISHED');
     const docs = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
-    const home = docs.find(it => it.fullSlug === 'home')!;
-    const post = docs.find(it => it.fullSlug === 'blog/post')!;
+    const home = docs.find(it => it.slug === 'home')!;
+    const post = docs.find(it => it.slug === 'post')!;
     expect(post.data).toMatchObject({ next: { kind: 'LINK', type: 'content', uri: home.id } });
-    expect(run.stages.find(it => it.stage === 'contents')!.count).toBe(3);
+    expect(post.parentId).toBe(docs.find(it => it.slug === 'blog')!.id);
+    expect(run.stages.find(it => it.stage === 'contents')!.count).toBe(4);
   });
 
   it('imports an empty space', async () => {
@@ -283,12 +293,45 @@ describe('Firebase import run', () => {
       const rows = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
       const first = rows.find(it => it.name === 'First')!;
       const second = rows.find(it => it.name === 'Second')!;
-      expect(first).toMatchObject({ slug: 'post', fullSlug: 'post' });
-      expect(second.slug).toMatch(/^post-[a-z0-9]{5}$/);
-      expect(second.fullSlug).toBe(second.slug);
-      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual([`post: path used twice, imported as ${second.fullSlug}`]);
+      expect(first).toMatchObject({ slug: 'post', parentId: null });
+      expect(second).toMatchObject({ slug: expect.stringMatching(/^post-[a-z0-9]{5}$/), parentId: null });
+      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual([`post: path used twice, imported as ${second.slug}`]);
     } finally {
       await twice.close();
+    }
+  });
+
+  it('breaks a cycle of folders naming each other as parent, with a warning', async () => {
+    const loop = await fakeFirebase([
+      {
+        id: 'fbLoop',
+        name: 'Loop',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        contents: [
+          { id: 'x', kind: 'FOLDER', name: 'X', slug: 'x', parentSlug: 'y', fullSlug: 'x' },
+          { id: 'y', kind: 'FOLDER', name: 'Y', slug: 'y', parentSlug: 'x', fullSlug: 'y' },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id, origin: loop.url, sourceSpaceId: 'fbLoop', sourceSpaceName: 'Loop', status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(loop.url, 'migration-secret', { allowInternal: true }), 'fbLoop');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const rows = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
+      const x = rows.find(it => it.name === 'X')!;
+      const y = rows.find(it => it.name === 'Y')!;
+      // The first one keeps its parent; the one that would close the loop goes to the root.
+      expect(x.parentId).toBe(y.id);
+      expect(y.parentId).toBeNull();
+      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual(["y: parent folder 'x' would make a cycle, imported at the root"]);
+    } finally {
+      await loop.close();
     }
   });
 

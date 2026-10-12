@@ -35,6 +35,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -265,11 +266,12 @@ export const contents = pgTable(
   {
     id: uuid('id').notNull(),
     spaceId: spaceId(),
+    // The folder this item is in; null at the root. Paths (fullSlug, parentSlug) are computed, never stored
+    // (shared/queries/content-tree.query.ts).
+    parentId: uuid('parent_id'),
     kind: text('kind', { enum: values(ContentKind) }).notNull(),
     name: text('name').notNull(),
     slug: text('slug').notNull(),
-    parentSlug: text('parent_slug').notNull().default(''),
-    fullSlug: text('full_slug').notNull(),
     schema: text('schema'),
     data: jsonb('data').$type<Record<string, unknown>>(),
     assets: text('assets').array(),
@@ -282,11 +284,13 @@ export const contents = pgTable(
     oneOf('contents_kind_check', t.kind, values(ContentKind)),
     // Kept per space: the content import task reuses the ids of an export in another space.
     primaryKey({ columns: [t.spaceId, t.id] }),
-    index('contents_parent_idx').on(t.spaceId, t.parentSlug, t.kind.desc(), t.name),
+    // A child always has its parent: deleting a folder deletes everything under it.
+    foreignKey({ name: 'contents_parent_fk', columns: [t.spaceId, t.parentId], foreignColumns: [t.spaceId, t.id] }).onDelete('cascade'),
+    // A path segment is unique among its siblings; the root is one parent (nulls not distinct).
+    unique('contents_slug_idx').on(t.spaceId, t.parentId, t.slug).nullsNotDistinct(),
+    // The children list, in its order (folders first, then by name).
+    index('contents_parent_idx').on(t.spaceId, t.parentId, t.kind.desc(), t.name),
     index('contents_kind_idx').on(t.spaceId, t.kind, t.name),
-    // The path the public API finds a document by: unique per space. text_pattern_ops also serves the subtree LIKE 'a/%'.
-    uniqueIndex('contents_full_slug_idx').on(t.spaceId, sql`${t.fullSlug} text_pattern_ops`),
-    index('contents_parent_slug_prefix_idx').on(t.spaceId, sql`${t.parentSlug} text_pattern_ops`),
   ],
 );
 

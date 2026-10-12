@@ -28,7 +28,13 @@ describe('ReferencesSelectDialogComponent', () => {
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
         { provide: SchemaService, useValue: { findAll: findAllSchemas } },
-        { provide: ContentService, useValue: { findAll: findAllContents } },
+        {
+          provide: ContentService,
+          useValue: {
+            findAll: findAllContents,
+            findAllFolders: () => of([{ id: 'a', name: 'A', slug: 'a' }, { id: 'b', name: 'B', slug: 'b', parentId: 'a' }]),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ReferencesSelectDialogComponent);
@@ -42,7 +48,7 @@ describe('ReferencesSelectDialogComponent', () => {
     const { component, findAllSchemas, findAllContents } = setup({ spaceId: 'space-1' }, items, schemas);
 
     expect(findAllSchemas).toHaveBeenCalledWith('space-1', SchemaType.ROOT);
-    expect(findAllContents).toHaveBeenCalledWith('space-1', '');
+    expect(findAllContents).toHaveBeenCalledWith('space-1', undefined);
     expect(component.schemas()).toEqual(schemas);
     expect(component.dataSource.filteredData()).toEqual(items);
     expect(component.schemasMapByName().get('s1')).toEqual(schemas[0]);
@@ -63,20 +69,20 @@ describe('ReferencesSelectDialogComponent', () => {
     findAllContents.mockClear();
 
     component.onRowSelect(folder({ id: 'f1', name: 'Docs', fullSlug: 'docs' }));
+    TestBed.tick();
 
-    expect(findAllContents).toHaveBeenCalledWith('space-1', 'docs');
+    expect(findAllContents).toHaveBeenCalledWith('space-1', 'f1');
   });
 
-  it('navigateToSlug() truncates the path after the target segment', () => {
+  it('builds the breadcrumbs from the folder map, and goes back by folder id', () => {
     const { component } = setup({ spaceId: 'space-1' });
     component.onRowSelect(folder({ id: 'a', name: 'A', fullSlug: 'a' }));
     component.onRowSelect(folder({ id: 'b', name: 'B', fullSlug: 'a/b' }));
+    expect(component.trail().map(it => it.name)).toEqual(['A', 'B']);
 
-    component.navigateToSlug({ name: 'A', fullSlug: 'a' });
-
-    expect(component.contentPath).toEqual([
-      { name: 'Root', fullSlug: '' },
-      { name: 'A', fullSlug: 'a' },
-    ]);
+    component.navigateToFolder('a');
+    expect(component.trail().map(it => it.name)).toEqual(['A']);
+    component.navigateToFolder(null);
+    expect(component.trail()).toEqual([]);
   });
 });

@@ -116,6 +116,7 @@ describe('content snapshots', () => {
       await contents().update(S1, C.blog, { slug: 'news' });
       expect(await snapshots('draft', C.post1)).toEqual([]);
       expect((await follow(draftUrl(C.post1))).fullSlug).toBe('news/post-1');
+      expect((await follow(linksUrl('&version=draft')))[C.post1]).toMatchObject({ fullSlug: 'news/post-1', parentSlug: 'news' });
       await contents().update(S1, C.blog, { slug: 'blog' });
     });
   });

@@ -1,5 +1,5 @@
-import type { AssetExport, ContentExport, TranslationExport } from '@localess/shared';
-import type { assets, contents, translations } from '../../infra/database/schema.js';
+import type { AssetExport, TranslationExport } from '@localess/shared';
+import type { assets, translations } from '../../infra/database/schema.js';
 import { withoutNulls } from '../../infra/database/without-nulls.js';
 
 /*
@@ -22,12 +22,6 @@ export function assetToExport(row: typeof assets.$inferSelect): AssetExport {
     metadata: asset.metadata,
     source: asset.source,
   } as AssetExport;
-}
-
-export function contentToExport(row: typeof contents.$inferSelect): ContentExport {
-  const base = { id: row.id, kind: row.kind, name: row.name, slug: row.slug, parentSlug: row.parentSlug, fullSlug: row.fullSlug };
-  if (row.kind === 'FOLDER') return base as ContentExport;
-  return { ...base, schema: row.schema ?? undefined, data: row.data ?? undefined } as ContentExport;
 }
 
 export function translationToExport(row: typeof translations.$inferSelect): TranslationExport {

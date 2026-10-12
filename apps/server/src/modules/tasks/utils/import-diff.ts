@@ -5,11 +5,6 @@ import {
   AssetFileExport,
   AssetFileMetadata,
   AssetKind,
-  Content,
-  ContentDocument,
-  ContentDocumentExport,
-  ContentExport,
-  ContentKind,
   Translation,
   TranslationExport,
 } from '@localess/shared';
@@ -42,24 +37,6 @@ export function isAssetChanged(existing: Asset, imported: AssetExport): boolean 
     if ((e.alt ?? undefined) !== (i.alt ?? undefined)) return true;
     if ((e.source ?? undefined) !== (i.source ?? undefined)) return true;
     if (!isAssetMetadataEqual(e.metadata, i.metadata)) return true;
-  }
-  return false;
-}
-
-export function isContentChanged(existing: Content, imported: ContentExport): boolean {
-  if (existing.kind !== imported.kind) return true;
-  if (existing.name !== imported.name) return true;
-  if (existing.slug !== imported.slug) return true;
-  if (existing.parentSlug !== imported.parentSlug) return true;
-  if (existing.fullSlug !== imported.fullSlug) return true;
-  if (existing.kind === ContentKind.DOCUMENT && imported.kind === ContentKind.DOCUMENT) {
-    const e = existing as ContentDocument;
-    const i = imported as ContentDocumentExport;
-    if (e.schema !== i.schema) return true;
-    if (JSON.stringify(e.data ?? null) !== JSON.stringify(i.data ?? null)) return true;
-    if (JSON.stringify(e.assets ?? []) !== JSON.stringify(i.assets ?? [])) return true;
-    if (JSON.stringify(e.links ?? []) !== JSON.stringify(i.links ?? [])) return true;
-    if (JSON.stringify(e.references ?? []) !== JSON.stringify(i.references ?? [])) return true;
   }
   return false;
 }

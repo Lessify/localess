@@ -2,13 +2,15 @@ import { SchemaFieldKind } from '@localess/shared';
 import { createHmac } from 'node:crypto';
 import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { contents, contentSnapshots, schemas, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { ContentsRepository } from '../src/modules/contents/repositories/contents.repository.js';
 import { ContentsService } from '../src/modules/contents/services/contents.service.js';
 import { transaction } from '../src/infra/database/transaction.js';
+import { subtree } from '../src/shared/queries/content-tree.query.js';
+import { lockContents } from '../src/shared/data-rules/content-snapshots.js';
 import { ConflictException } from '@nestjs/common';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
@@ -99,15 +101,20 @@ describe('app API: contents', () => {
     return response.json();
   };
 
+  /** An item as the API answers it, with its computed paths. */
+  const item = async (id: string) => (await reader.get(`${base}/${id}`)).json();
+
   let blog: { id: string };
   let post: { id: string };
+  let deep: { id: string };
 
   describe('creating', () => {
     it('creates folders and documents, without recording who changed them', async () => {
-      blog = await create({ kind: 'FOLDER', parentSlug: '', name: 'Blog', slug: 'blog' });
-      post = await create({ kind: 'DOCUMENT', parentSlug: 'blog', name: 'Post', slug: 'post', schema: 'page' });
+      blog = await create({ kind: 'FOLDER', name: 'Blog', slug: 'blog' });
+      post = await create({ kind: 'DOCUMENT', parentId: blog.id, name: 'Post', slug: 'post', schema: 'page' });
       expect(post).toMatchObject({
         kind: 'DOCUMENT',
+        parentId: blog.id,
         fullSlug: 'blog/post',
         parentSlug: 'blog',
         schema: 'page',
@@ -124,13 +131,13 @@ describe('app API: contents', () => {
       const insertedYet = new Promise<void>(resolve => (inserted = resolve));
       // The first write inserts `race` and holds its transaction open.
       const first = transaction(t.db, undefined, async tx => {
-        await repository.create(S1, { kind: 'FOLDER', parentSlug: '', name: 'Race', slug: 'race' }, tx);
+        await repository.create(S1, { kind: 'FOLDER', name: 'Race', slug: 'race' }, tx);
         inserted();
         await held;
       });
       await insertedYet;
       // The second one's check does not see the uncommitted row; its insert waits on the index, then fails.
-      const second = t.app.get(ContentsService).create(S1, { kind: 'FOLDER', parentSlug: '', name: 'Race 2', slug: 'race' });
+      const second = t.app.get(ContentsService).create(S1, { kind: 'FOLDER', name: 'Race 2', slug: 'race' });
       const settled = second.then(
         () => 'created',
         (error: unknown) => error,
@@ -144,33 +151,52 @@ describe('app API: contents', () => {
       const raced = await t.db
         .select()
         .from(contents)
-        .where(and(eq(contents.spaceId, S1), eq(contents.fullSlug, 'race')));
+        .where(and(eq(contents.spaceId, S1), isNull(contents.parentId), eq(contents.slug, 'race')));
       expect(raced).toHaveLength(1);
       await editor.delete(`${base}/${raced[0].id}`);
     });
 
-    it('refuses a missing parent folder, a taken slug, and slugs with slashes', async () => {
-      expect((await editor.post(base, { kind: 'FOLDER', parentSlug: 'nope', name: 'X', slug: 'x' })).statusCode).toBe(400);
-      expect((await editor.post(base, { kind: 'FOLDER', parentSlug: 'blog/post', name: 'X', slug: 'x' })).statusCode).toBe(400);
-      expect(
-        (await editor.post(base, { kind: 'DOCUMENT', parentSlug: 'blog', name: 'Dup', slug: 'post', schema: 'page' })).statusCode,
-      ).toBe(409);
-      expect((await editor.post(base, { kind: 'FOLDER', parentSlug: '', name: 'X', slug: 'a/b' })).statusCode).toBe(400);
-      expect((await reader.post(base, { kind: 'FOLDER', parentSlug: '', name: 'X', slug: 'x' })).statusCode).toBe(403);
+    it('refuses a parent that is a document, missing, or of another space (400)', async () => {
+      for (const parentId of [post.id, newUuid()]) {
+        const response = await editor.post(base, { kind: 'FOLDER', parentId, name: 'X', slug: 'x' });
+        expect(response.statusCode).toBe(400);
+        expect(response.json().message).toBe('No such folder');
+      }
+    });
+
+    it('refuses a taken slug among siblings, slugs with slashes, and readers', async () => {
+      const taken = await editor.post(base, { kind: 'DOCUMENT', parentId: blog.id, name: 'Dup', slug: 'post', schema: 'page' });
+      expect(taken.statusCode).toBe(409);
+      expect(taken.json().message).toBe("'blog/post' is already used");
+      expect((await editor.post(base, { kind: 'FOLDER', name: 'X', slug: 'a/b' })).statusCode).toBe(400);
+      expect((await reader.post(base, { kind: 'FOLDER', name: 'X', slug: 'x' })).statusCode).toBe(403);
+    });
+
+    it('allows the same slug under another parent', async () => {
+      const other = await create({ kind: 'FOLDER', name: 'Other', slug: 'other' });
+      const dup = await create({ kind: 'DOCUMENT', parentId: other.id, name: 'Post', slug: 'post', schema: 'page' });
+      expect(dup).toMatchObject({ parentId: other.id, fullSlug: 'other/post', parentSlug: 'other' });
+      await editor.delete(`${base}/${other.id}`);
+    });
+
+    it('lists every folder of the space for the editor', async () => {
+      const response = await reader.get(`${base}/folders`);
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual([{ id: blog.id, name: 'Blog', slug: 'blog' }]);
     });
 
     it('creates a document only for a ROOT schema of the space', async () => {
       await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'hero', type: 'NODE' });
-      const missing = await editor.post(base, { kind: 'DOCUMENT', parentSlug: '', name: 'X', slug: 'x', schema: 'nope' });
+      const missing = await editor.post(base, { kind: 'DOCUMENT', name: 'X', slug: 'x', schema: 'nope' });
       expect(missing.statusCode).toBe(400);
       expect(missing.json().message).toBe("No ROOT schema 'nope' in the space");
-      expect((await editor.post(base, { kind: 'DOCUMENT', parentSlug: '', name: 'X', slug: 'x', schema: 'hero' })).statusCode).toBe(400);
+      expect((await editor.post(base, { kind: 'DOCUMENT', name: 'X', slug: 'x', schema: 'hero' })).statusCode).toBe(400);
       await t.db.delete(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'hero')));
     });
 
     it('lists by parent (folders first, then by name), by name prefix, by ids, and counts', async () => {
-      await create({ kind: 'DOCUMENT', parentSlug: '', name: 'About', slug: 'about', schema: 'page' });
-      expect((await reader.get(`${base}?parentSlug=`)).json().map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
+      await create({ kind: 'DOCUMENT', name: 'About', slug: 'about', schema: 'page' });
+      expect((await reader.get(`${base}?parentId=`)).json().map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
       expect((await reader.get(`${base}?name=ab`)).json().map((c: { name: string }) => c.name)).toEqual(['About']);
       expect((await reader.get(`${base}?ids=${post.id},missing`)).json().map((c: { id: string }) => c.id)).toEqual([post.id]);
       expect((await reader.get(`${base}?kind=DOCUMENT&limit=1`)).json()).toHaveLength(1);
@@ -211,17 +237,17 @@ describe('app API: contents', () => {
       expect(logs).toEqual([expect.objectContaining({ status: 'SUCCESS', statusCode: 200, event: 'content.changed', responseBody: 'ok' })]);
     });
 
-    it('renames a folder and rewrites every descendant slug in one go', async () => {
-      const deep = await create({ kind: 'FOLDER', parentSlug: 'blog', name: '2026', slug: '2026' });
-      const nested = await create({ kind: 'DOCUMENT', parentSlug: 'blog/2026', name: 'Deep', slug: 'deep', schema: 'page' });
-      await create({ kind: 'FOLDER', parentSlug: '', name: 'Blog archive', slug: 'blog-archive' });
+    it('renames a folder: one row, and every path under it follows', async () => {
+      deep = await create({ kind: 'FOLDER', parentId: blog.id, name: '2026', slug: '2026' });
+      const nested = await create({ kind: 'DOCUMENT', parentId: deep.id, name: 'Deep', slug: 'deep', schema: 'page' });
+      await create({ kind: 'FOLDER', name: 'Blog archive', slug: 'blog-archive' });
       const response = await editor.patch(`${base}/${blog.id}`, { slug: 'news' });
       expect(response.json()).toMatchObject({ slug: 'news', fullSlug: 'news' });
-      expect(await row(post.id)).toMatchObject({ parentSlug: 'news', fullSlug: 'news/post' });
-      expect(await row(deep.id)).toMatchObject({ parentSlug: 'news', fullSlug: 'news/2026' });
-      expect(await row(nested.id)).toMatchObject({ parentSlug: 'news/2026', fullSlug: 'news/2026/deep' });
+      expect(await item(post.id)).toMatchObject({ parentSlug: 'news', fullSlug: 'news/post' });
+      expect(await item(deep.id)).toMatchObject({ parentSlug: 'news', fullSlug: 'news/2026' });
+      expect(await item(nested.id)).toMatchObject({ parentSlug: 'news/2026', fullSlug: 'news/2026/deep' });
       expect(
-        (await reader.get(`${base}?parentSlug=`))
+        (await reader.get(`${base}?parentId=`))
           .json()
           .map((c: { fullSlug: string }) => c.fullSlug)
           .sort(),
@@ -231,10 +257,68 @@ describe('app API: contents', () => {
     });
 
     it('moves documents, refusing a folder into its own subtree or onto a taken slug', async () => {
-      expect((await editor.patch(`${base}/${blog.id}`, { parentSlug: 'news/2026' })).statusCode).toBe(400);
-      expect((await editor.patch(`${base}/${post.id}`, { parentSlug: '', slug: 'about' })).statusCode).toBe(409);
-      expect((await editor.patch(`${base}/${post.id}`, { parentSlug: '' })).json()).toMatchObject({ fullSlug: 'post', parentSlug: '' });
-      expect((await editor.patch(`${base}/${post.id}`, { parentSlug: 'news' })).json().fullSlug).toBe('news/post');
+      for (const parentId of [blog.id, deep.id]) {
+        const response = await editor.patch(`${base}/${blog.id}`, { parentId });
+        expect(response.statusCode).toBe(400);
+        expect(response.json().message).toBe('A folder cannot be moved into itself');
+      }
+      expect((await editor.patch(`${base}/${post.id}`, { parentId: null, slug: 'about' })).statusCode).toBe(409);
+      expect((await editor.patch(`${base}/${post.id}`, { parentId: null })).json()).toMatchObject({ fullSlug: 'post', parentSlug: '' });
+      expect((await editor.patch(`${base}/${post.id}`, { parentId: blog.id })).json().fullSlug).toBe('news/post');
+    });
+
+    it('renames or moves to where it already is without a conflict', async () => {
+      expect((await editor.patch(`${base}/${post.id}`, { slug: 'post', parentId: blog.id })).statusCode).toBe(200);
+    });
+
+    it('takes the contents lock before any row lock, so writes can not deadlock on lock order', async () => {
+      const folder = await create({ kind: 'FOLDER', name: 'Order', slug: 'order' });
+      let release!: () => void;
+      const held = new Promise<void>(resolve => (release = resolve));
+      let locked!: () => void;
+      const lockedYet = new Promise<void>(resolve => (locked = resolve));
+      // Another write of the space holds the contents lock.
+      const holder = transaction(t.db, undefined, async tx => {
+        await lockContents(tx, S1);
+        locked();
+        await held;
+      });
+      await lockedYet;
+      const creating = editor.post(base, { kind: 'FOLDER', parentId: folder.id, name: 'Inner', slug: 'inner' });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      // The waiting create holds no row lock yet: the parent folder can still be locked for update.
+      const probe = await transaction(t.db, undefined, async tx =>
+        tx.execute(sql`select id from ${contents} where space_id = ${S1} and id = ${folder.id} for update nowait`).then(
+          () => 'free',
+          () => 'locked',
+        ),
+      );
+      release();
+      await holder;
+      expect(probe).toBe('free');
+      expect((await creating).statusCode).toBe(201);
+      await editor.delete(`${base}/${folder.id}`);
+    });
+
+    it('does not leave a child behind when its folder is deleted at the same moment (foreign key)', async () => {
+      const folder = await create({ kind: 'FOLDER', name: 'Gone', slug: 'gone' });
+      const repository = t.app.get(ContentsRepository);
+      let release!: () => void;
+      const held = new Promise<void>(resolve => (release = resolve));
+      let inserted!: () => void;
+      const insertedYet = new Promise<void>(resolve => (inserted = resolve));
+      const first = transaction(t.db, undefined, async tx => {
+        await repository.create(S1, { kind: 'FOLDER', parentId: folder.id, name: 'Child', slug: 'child' }, tx);
+        inserted();
+        await held;
+      });
+      await insertedYet;
+      const deleting = editor.delete(`${base}/${folder.id}`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      release();
+      await first;
+      expect((await deleting).statusCode).toBe(204);
+      expect(await t.db.select().from(contents).where(and(eq(contents.spaceId, S1), eq(contents.parentId, folder.id)))).toEqual([]);
     });
 
     it('clones a document under a new slug with its data', async () => {
@@ -287,8 +371,8 @@ describe('app API: contents', () => {
     });
 
     it('publishes a folder: only documents changed since their last publish', async () => {
-      const fresh = await create({ kind: 'DOCUMENT', parentSlug: 'news', name: 'Fresh', slug: 'fresh', schema: 'page' });
-      const untouched = await create({ kind: 'DOCUMENT', parentSlug: 'news', name: 'Untouched', slug: 'untouched', schema: 'page' });
+      const fresh = await create({ kind: 'DOCUMENT', parentId: blog.id, name: 'Fresh', slug: 'fresh', schema: 'page' });
+      const untouched = await create({ kind: 'DOCUMENT', parentId: blog.id, name: 'Untouched', slug: 'untouched', schema: 'page' });
       await editor.post(`${base}/${untouched.id}/publish`);
       const untouchedAt = (await row(untouched.id)).publishedAt;
       await deliveries();
@@ -326,18 +410,16 @@ describe('app API: contents', () => {
       await editor.post(`${base}/${post.id}/publish`);
       await deliveries();
       received = [];
-      const subtree = (await t.db.select().from(contents).where(eq(contents.spaceId, S1))).filter(
-        c => c.fullSlug === 'news' || c.fullSlug.startsWith('news/'),
-      );
+      const under = await subtree(t.db, S1, blog.id);
       expect((await editor.delete(`${base}/${blog.id}`)).statusCode).toBe(204);
-      const remaining = (await t.db.select().from(contents).where(eq(contents.spaceId, S1))).map(c => c.fullSlug).sort();
+      const remaining = (await t.db.select().from(contents).where(eq(contents.spaceId, S1))).map(c => c.slug).sort();
       expect(remaining).toEqual(['about', 'blog-archive']);
       expect(await t.db.select().from(contentSnapshots).where(eq(contentSnapshots.spaceId, S1))).toEqual([]);
-      expect((await deliveries()).map(d => d.data.id).sort()).toEqual(subtree.map(c => c.id).sort());
+      expect((await deliveries()).map(d => d.data.id).sort()).toEqual(under.map(c => c.id).sort());
     });
 
     it('sends no webhook for a write that fails', async () => {
-      expect((await editor.post(base, { kind: 'FOLDER', parentSlug: '', name: 'Dup', slug: 'about' })).statusCode).toBe(409);
+      expect((await editor.post(base, { kind: 'FOLDER', name: 'Dup', slug: 'about' })).statusCode).toBe(409);
       expect((await editor.delete(`${base}/missing`)).statusCode).toBe(404);
       expect(await deliveries()).toEqual([]);
     });

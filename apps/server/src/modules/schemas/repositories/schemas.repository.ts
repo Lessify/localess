@@ -7,6 +7,7 @@ import { contents, schemas } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
+import { folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { fieldRefersTo, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 
@@ -205,13 +206,15 @@ export class SchemasRepository {
       .orderBy(sql`${schemas.name} collate "C"`);
     const byContents = and(eq(contents.spaceId, spaceId), eq(contents.schema, name));
     const [{ value }] = await executor.select({ value: count() }).from(contents).where(byContents);
+    // Paths are computed (content-tree.query.ts): the first five by path in byte order, as `collate "C"` sorted them.
     const first = Number(value)
-      ? await executor
-          .select({ name: contents.name, fullSlug: contents.fullSlug })
-          .from(contents)
-          .where(byContents)
-          .orderBy(sql`${contents.fullSlug} collate "C"`)
-          .limit(5)
+      ? withPaths(
+          await executor.select({ name: contents.name, parentId: contents.parentId, slug: contents.slug }).from(contents).where(byContents),
+          await folderPaths(executor, spaceId),
+        )
+          .sort((a, b) => (a.fullSlug < b.fullSlug ? -1 : a.fullSlug > b.fullSlug ? 1 : 0))
+          .slice(0, 5)
+          .map(it => ({ name: it.name, fullSlug: it.fullSlug }))
       : [];
     return {
       fields: referring.flatMap(row => (row.fields ?? []).filter(field => fieldRefersTo(field, name)).map(field => ({ schema: row.name, field: field.name }))),

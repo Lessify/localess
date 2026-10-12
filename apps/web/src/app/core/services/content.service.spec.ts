@@ -28,15 +28,28 @@ describe('ContentService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() lists the children of a parent slug, the root by default', async () => {
+  it('findAll() lists the children of a folder, the root by default', async () => {
     const service = setup();
     const root = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?parentSlug=`).flush([{ id: 'c1' }]);
+    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'c1' }]);
     expect(await root).toEqual([{ id: 'c1' }]);
 
-    const nested = firstValueFrom(service.findAll('space-1', 'blog/posts'));
-    http.expectOne(`${BASE}?parentSlug=blog/posts`).flush([]);
+    const nested = firstValueFrom(service.findAll('space-1', 'f1'));
+    http.expectOne(`${BASE}?parentId=f1`).flush([]);
     expect(await nested).toEqual([]);
+  });
+
+  it('findAllFolders() reads every folder of the space, live', async () => {
+    vi.useFakeTimers();
+    const service = setup();
+    const results: unknown[][] = [];
+    const subscription = service.findAllFolders('space-1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}/folders`).flush([{ id: 'f1', name: 'Blog', slug: 'blog' }]);
+    events.next({ spaceId: 'space-1', entity: 'contents', id: 'f2', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}/folders`).flush([]);
+    expect(results).toEqual([[{ id: 'f1', name: 'Blog', slug: 'blog' }], []]);
+    subscription.unsubscribe();
   });
 
   it('findAll() refetches when a content of the space changes, ignoring other entities', async () => {
@@ -44,15 +57,15 @@ describe('ContentService', () => {
     const service = setup();
     const results: Content[][] = [];
     const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}?parentSlug=`).flush([]);
+    http.expectOne(`${BASE}?parentId=`).flush([]);
 
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}?parentSlug=`);
+    http.expectNone(`${BASE}?parentId=`);
 
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'c1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}?parentSlug=`).flush([{ id: 'c1' } as Content]);
+    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'c1' } as Content]);
     expect(results).toEqual([[], [{ id: 'c1' }]]);
     subscription.unsubscribe();
   });
@@ -84,10 +97,6 @@ describe('ContentService', () => {
     const documents = firstValueFrom(service.findAllDocumentsByName('space-1', 'Ho', 5));
     http.expectOne(`${BASE}?name=Ho&kind=DOCUMENT&limit=5`).flush([]);
     await documents;
-
-    const folders = firstValueFrom(service.findAllFoldersByName('space-1', 'Ho'));
-    http.expectOne(`${BASE}?name=Ho&kind=FOLDER&limit=20`).flush([{ id: 'f1' }]);
-    expect(await folders).toEqual([{ id: 'f1' }]);
   });
 
   it('findById() and findDocumentById() read one content', async () => {
@@ -112,39 +121,39 @@ describe('ContentService', () => {
 
   it('createDocument() and createFolder() post the new content and return it', async () => {
     const service = setup();
-    const document = firstValueFrom(service.createDocument('space-1', 'blog', { name: 'Home', slug: 'home', schema: 'page' }));
+    const document = firstValueFrom(service.createDocument('space-1', 'f1', { name: 'Home', slug: 'home', schema: 'page' }));
     const request = http.expectOne({ method: 'POST', url: BASE });
-    expect(request.request.body).toEqual({ kind: 'DOCUMENT', parentSlug: 'blog', name: 'Home', slug: 'home', schema: 'page' });
+    expect(request.request.body).toEqual({ kind: 'DOCUMENT', parentId: 'f1', name: 'Home', slug: 'home', schema: 'page' });
     request.flush({ id: 'd1' });
     expect((await document).id).toBe('d1');
 
-    const folder = firstValueFrom(service.createFolder('space-1', '', { name: 'Blog', slug: 'blog' }));
+    const folder = firstValueFrom(service.createFolder('space-1', undefined, { name: 'Blog', slug: 'blog' }));
     const folderRequest = http.expectOne({ method: 'POST', url: BASE });
-    expect(folderRequest.request.body).toEqual({ kind: 'FOLDER', parentSlug: '', name: 'Blog', slug: 'blog' });
+    expect(folderRequest.request.body).toEqual({ kind: 'FOLDER', parentId: undefined, name: 'Blog', slug: 'blog' });
     folderRequest.flush({ id: 'f1' });
     expect((await folder).id).toBe('f1');
   });
 
-  it('update() patches name, slug and parent slug', async () => {
+  it('update() patches name and slug', async () => {
     const service = setup();
-    const done = firstValueFrom(service.update('space-1', 'c1', 'blog', { name: 'Home', slug: 'home' }));
+    const done = firstValueFrom(service.update('space-1', 'c1', { name: 'Home', slug: 'home' }));
     const request = http.expectOne({ method: 'PATCH', url: `${BASE}/c1` });
-    expect(request.request.body).toEqual({ name: 'Home', slug: 'home', parentSlug: 'blog' });
+    expect(request.request.body).toEqual({ name: 'Home', slug: 'home' });
     request.flush({});
     await done;
   });
 
-  it('move() patches the parent slug, mapping "~" to the root', async () => {
+  it('move() patches the parent folder, null for the root', async () => {
     const service = setup();
-    const toRoot = firstValueFrom(service.move('space-1', 'c1', '~', 'home'));
+    const toRoot = firstValueFrom(service.move('space-1', 'c1', null));
     const request = http.expectOne({ method: 'PATCH', url: `${BASE}/c1` });
-    expect(request.request.body).toEqual({ parentSlug: '', slug: 'home' });
+    expect(request.request.body).toEqual({ parentId: null });
     request.flush({});
     await toRoot;
 
-    const toFolder = firstValueFrom(service.move('space-1', 'c1', 'blog', 'home'));
+    const toFolder = firstValueFrom(service.move('space-1', 'c1', 'f1'));
     const folderRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/c1` });
-    expect(folderRequest.request.body).toEqual({ parentSlug: 'blog', slug: 'home' });
+    expect(folderRequest.request.body).toEqual({ parentId: 'f1' });
     folderRequest.flush({});
     await toFolder;
   });

@@ -7,9 +7,12 @@ export interface ContentBase {
   kind: ContentKind;
   name: string;
 
-  // Slug
+  /** The folder this item is in; absent at the root. */
+  parentId?: string;
   slug: string;
+  /** Computed by the server from the folders above: read only. */
   parentSlug: string;
+  /** Computed by the server from the folders above: read only. */
   fullSlug: string;
 
   createdAt: Timestamp;
@@ -28,6 +31,14 @@ export interface ContentDocument<T extends ContentData = ContentData> extends Co
 
 export interface ContentFolder extends ContentBase {
   kind: ContentKind.FOLDER;
+}
+
+/** A folder as the editor's folder map holds it (`GET …/contents/folders`). */
+export interface ContentFolderSummary {
+  id: string;
+  parentId?: string;
+  name: string;
+  slug: string;
 }
 
 export enum ContentKind {

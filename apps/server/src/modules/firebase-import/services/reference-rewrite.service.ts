@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ContentImportRepository } from '../repositories/content-import.repository.js';
+import { pathOf } from '../../../shared/queries/content-tree.query.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
 import { type ReferenceMaps, rewriteData, rewriteIds } from '../utils/rewrite-references.js';
 
@@ -19,6 +20,7 @@ export class ReferenceRewriteService {
     const sid = stage.spaceId;
     let rewritten = 0;
     let after: string | undefined;
+    const folders = await this.contents.folderPaths(sid);
     for (;;) {
       const rows = await this.contents.findReferencesPage(sid, after, PAGE_SIZE);
       if (!rows.length) break;
@@ -30,7 +32,7 @@ export class ReferenceRewriteService {
         const missing = new Set(
           [...data.missing, ...assetRefs.missing, ...links.missing, ...references.missing].map(it => `${it.kind} '${it.id}'`),
         );
-        for (const it of missing) stage.warn(`${row.fullSlug}: no ${it}`);
+        for (const it of missing) stage.warn(`${pathOf(row, folders).fullSlug}: no ${it}`);
         if (data.changed || assetRefs.changed || links.changed || references.changed) {
           await this.contents.updateReferences(sid, row.id, {
             data: data.value as Record<string, unknown> | null,

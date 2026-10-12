@@ -56,14 +56,13 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
       { name: 'cta', kind: SchemaFieldKind.LINK },
     ],
   });
-  const doc = (name: keyof typeof C, slug: string, parentSlug: string, data: Record<string, unknown>, extra: object = {}) => ({
+  const doc = (name: keyof typeof C, slug: string, parentId: string | null, data: Record<string, unknown>, extra: object = {}) => ({
     id: C[name],
     spaceId,
     kind: 'DOCUMENT' as const,
     name,
     slug,
-    parentSlug,
-    fullSlug: parentSlug ? `${parentSlug}/${slug}` : slug,
+    parentId,
     schema: 'page',
     data: { _id: `${name}-root`, _schema: 'page', ...data },
     createdAt: at,
@@ -71,10 +70,14 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
     ...extra,
   });
   await t.db.insert(contents).values([
+    { id: C.blog, spaceId, kind: 'FOLDER', name: 'Blog', slug: 'blog', createdAt: at, updatedAt: at },
+    { id: C.archive, spaceId, kind: 'FOLDER', name: 'Archive', slug: 'blog-archive', createdAt: at, updatedAt: at },
+  ]);
+  await t.db.insert(contents).values([
     doc(
       'home',
       'home',
-      '',
+      null,
       { title: 'Home (draft)', title_i18n_de: 'Startseite (Entwurf)' },
       {
         assets: ['logo'],
@@ -83,21 +86,9 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
         publishedAt: at,
       },
     ),
-    { id: C.blog, spaceId, kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog', createdAt: at, updatedAt: at },
-    doc('post1', 'post-1', 'blog', { title: 'Post 1 (draft)' }, { publishedAt: at }),
-    doc('post2', 'post-2', 'blog', { title: 'Post 2 (draft)', title_i18n_de: 'Beitrag 2' }),
-    {
-      id: C.archive,
-      spaceId,
-      kind: 'FOLDER',
-      name: 'Archive',
-      slug: 'blog-archive',
-      parentSlug: '',
-      fullSlug: 'blog-archive',
-      createdAt: at,
-      updatedAt: at,
-    },
-    doc('old', 'old', 'blog-archive', { title: 'Old' }),
+    doc('post1', 'post-1', C.blog, { title: 'Post 1 (draft)' }, { publishedAt: at }),
+    doc('post2', 'post-2', C.blog, { title: 'Post 2 (draft)', title_i18n_de: 'Beitrag 2' }),
+    doc('old', 'old', C.archive, { title: 'Old' }),
   ]);
   // Published at epoch millisecond 7: their `cv`.
   const published = (name: 'home' | 'post1', locale: string, data: Record<string, unknown>, extra: object = {}) => ({

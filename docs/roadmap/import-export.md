@@ -10,6 +10,8 @@
 
 To turn it back on, set `importExport: true` once the items below are fixed.
 
+**Content export and import are switched off on the server** (`CONTENT_EXPORT` / `CONTENT_IMPORT` end as `ERROR` "Content import and export are being redesigned") since the content tree moved to `parent_id` ([Content and asset trees](content-asset-tree.md)): their file format (paths) is redesigned once those decisions are stable. The items below predate that change.
+
 ## To be fixed
 
 ### 1. Re-importing a Firebase-era content export duplicates every entry (High)

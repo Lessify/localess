@@ -41,11 +41,10 @@ CREATE TABLE "content_snapshots" (
 CREATE TABLE "contents" (
 	"id" uuid NOT NULL,
 	"space_id" uuid NOT NULL,
+	"parent_id" uuid,
 	"kind" text NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
-	"parent_slug" text DEFAULT '' NOT NULL,
-	"full_slug" text NOT NULL,
 	"schema" text,
 	"data" jsonb,
 	"assets" text[],
@@ -55,6 +54,7 @@ CREATE TABLE "contents" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "contents_space_id_id_pk" PRIMARY KEY("space_id","id"),
+	CONSTRAINT "contents_slug_idx" UNIQUE NULLS NOT DISTINCT("space_id","parent_id","slug"),
 	CONSTRAINT "contents_kind_check" CHECK ("contents"."kind" in ('FOLDER', 'DOCUMENT'))
 );
 --> statement-breakpoint
@@ -294,6 +294,7 @@ ALTER TABLE "assets" ADD CONSTRAINT "assets_space_id_spaces_id_fk" FOREIGN KEY (
 ALTER TABLE "content_link_snapshots" ADD CONSTRAINT "content_link_snapshots_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "content_snapshots" ADD CONSTRAINT "content_snapshots_space_id_content_id_contents_space_id_id_fk" FOREIGN KEY ("space_id","content_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contents" ADD CONSTRAINT "contents_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "contents" ADD CONSTRAINT "contents_parent_fk" FOREIGN KEY ("space_id","parent_id") REFERENCES "public"."contents"("space_id","id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "firebase_imports" ADD CONSTRAINT "firebase_imports_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "schemas" ADD CONSTRAINT "schemas_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -315,10 +316,8 @@ CREATE UNIQUE INDEX "assets_legacy_idx" ON "assets" USING btree ("space_id","leg
 CREATE INDEX "assets_parent_idx" ON "assets" USING btree ("space_id","parent_path","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE INDEX "assets_parent_path_prefix_idx" ON "assets" USING btree ("space_id","parent_path" text_pattern_ops);--> statement-breakpoint
-CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_slug","kind" DESC NULLS LAST,"name");--> statement-breakpoint
+CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_id","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
-CREATE UNIQUE INDEX "contents_full_slug_idx" ON "contents" USING btree ("space_id","full_slug" text_pattern_ops);--> statement-breakpoint
-CREATE INDEX "contents_parent_slug_prefix_idx" ON "contents" USING btree ("space_id","parent_slug" text_pattern_ops);--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_running_idx" ON "firebase_imports" USING btree ("status") WHERE "firebase_imports"."status" = 'RUNNING';--> statement-breakpoint
 CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("started_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_space_idx" ON "firebase_imports" USING btree ("space_id");--> statement-breakpoint

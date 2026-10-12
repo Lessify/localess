@@ -107,7 +107,7 @@ describe('migrateDatabase', () => {
       await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [id]);
       // Same content and asset id in two spaces, as an export of one imported into the other produces.
       await pool.query(
-        `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
+        `insert into contents (id, space_id, kind, name, slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home')`,
         [id],
       );
       await pool.query(`insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`, [id]);
@@ -123,7 +123,7 @@ describe('migrateDatabase', () => {
     await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [A]);
     await pool.query(`insert into space_locales (space_id, locale_id, position) values ($1, 'en', 0)`, [A]);
     await pool.query(
-      `insert into contents (id, space_id, kind, name, slug, full_slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home', 'home')`,
+      `insert into contents (id, space_id, kind, name, slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home')`,
       [A],
     );
     await pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`, [A]);

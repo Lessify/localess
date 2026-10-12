@@ -255,6 +255,15 @@ describe('v1 CDN API', () => {
       expect(response.headers.location).toBe(`/api/v1/spaces/${S1}/contents/slugs/blog/post-1?cv=7&locale=de&token=${TOKEN_V1}`);
     });
 
+    it('finds a document by a path of several segments, and not under a sibling folder sharing a prefix', async () => {
+      const draft = await follow(`/api/v1/spaces/${S1}/contents/slugs/blog-archive/old?token=${TOKEN_DRAFT}&version=draft`);
+      expect(draft.json()).toMatchObject({ id: C.old, fullSlug: 'blog-archive/old', parentSlug: 'blog-archive' });
+      expect((await get(`/api/v1/spaces/${S1}/contents/slugs/blog/old?cv=7&token=${TOKEN_V1}`)).json()).toEqual({
+        message: 'Slug not found',
+        status: 'NOT_FOUND',
+      });
+    });
+
     it('answers an unknown slug with 404 Slug not found', async () => {
       const response = await get(`/api/v1/spaces/${S1}/contents/slugs/missing/page?cv=7&token=${TOKEN_V1}`);
       expect(response.statusCode).toBe(404);

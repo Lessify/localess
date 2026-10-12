@@ -1,5 +1,5 @@
 {
-  "id": "46eb4eb3-abe9-4d27-9cc2-54bb2e0f2c4f",
+  "id": "1a0fd14e-6636-4809-8f3b-8253f2bb0413",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -400,6 +400,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "kind": {
           "name": "kind",
           "type": "text",
@@ -414,19 +420,6 @@
         },
         "slug": {
           "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_slug": {
-          "name": "parent_slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "full_slug": {
-          "name": "full_slug",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -493,7 +486,7 @@
               "nulls": "last"
             },
             {
-              "expression": "parent_slug",
+              "expression": "parent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -542,48 +535,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "contents_full_slug_idx": {
-          "name": "contents_full_slug_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"full_slug\" text_pattern_ops",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "contents_parent_slug_prefix_idx": {
-          "name": "contents_parent_slug_prefix_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"parent_slug\" text_pattern_ops",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -599,6 +550,21 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "contents_parent_fk": {
+          "name": "contents_parent_fk",
+          "tableFrom": "contents",
+          "tableTo": "contents",
+          "columnsFrom": [
+            "space_id",
+            "parent_id"
+          ],
+          "columnsTo": [
+            "space_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -610,7 +576,17 @@
           ]
         }
       },
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "contents_slug_idx": {
+          "name": "contents_slug_idx",
+          "nullsNotDistinct": true,
+          "columns": [
+            "space_id",
+            "parent_id",
+            "slug"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "contents_kind_check": {

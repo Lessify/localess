@@ -11,21 +11,20 @@ const slug = z
   .string()
   .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, 'Slugs are letters, digits, - and _')
   .max(200);
-const parentSlug = z
-  .string()
-  .regex(/^([A-Za-z0-9][A-Za-z0-9_-]*(\/[A-Za-z0-9][A-Za-z0-9_-]*)*)?$/)
-  .max(2000);
+/** The folder; null or absent: the root. */
+const parentId = z.uuid().nullable().optional();
 const name = z.string().trim().min(1).max(500);
 const ids = z.array(z.string().max(128)).max(10_000);
 
 const createSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('DOCUMENT'), parentSlug, name, slug, schema: z.string().min(1).max(128) }),
-  z.object({ kind: z.literal('FOLDER'), parentSlug, name, slug }),
+  z.object({ kind: z.literal('DOCUMENT'), parentId, name, slug, schema: z.string().min(1).max(128) }),
+  z.object({ kind: z.literal('FOLDER'), parentId, name, slug }),
 ]);
-const updateSchema = z.object({ name: name.optional(), slug: slug.optional(), parentSlug: parentSlug.optional() });
+const updateSchema = z.object({ name: name.optional(), slug: slug.optional(), parentId });
 const dataSchema = z.object({ data: z.record(z.string(), z.unknown()), assets: ids, links: ids, references: ids });
 const listSchema = z.object({
-  parentSlug: z.string().optional(),
+  // '': the root's children; absent: any parent.
+  parentId: z.union([z.uuid(), z.literal('')]).optional(),
   kind: z.enum(['FOLDER', 'DOCUMENT']).optional(),
   name: z.string().max(500).optional(),
   ids: z
@@ -40,11 +39,19 @@ const listSchema = z.object({
 export class ContentsController {
   constructor(private readonly contents: ContentsService) {}
 
-  /** `?parentSlug=` (exact, '' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
+  /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.CONTENT_READ)
   async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
-    return this.contents.list(spaceId, query);
+    const { parentId, ...rest } = query;
+    return this.contents.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+  }
+
+  /** Every folder of the space (`{ id, parentId, name, slug }`), for the editor's breadcrumbs and move targets. */
+  @Get('folders')
+  @RequirePermission(UserPermission.CONTENT_READ)
+  async folders(@Param('spaceId') spaceId: string) {
+    return this.contents.folders(spaceId);
   }
 
   @Get('count')

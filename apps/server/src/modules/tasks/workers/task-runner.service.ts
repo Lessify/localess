@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { TaskEntity } from '../repositories/tasks.repository.js';
 import { AssetTransferService } from '../services/asset-transfer.service.js';
-import { ContentTransferService } from '../services/content-transfer.service.js';
 import { SchemaTransferService } from '../services/schema-transfer.service.js';
 import { TranslationTransferService } from '../services/translation-transfer.service.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
@@ -16,7 +15,6 @@ import type { TaskOutcome } from '../utils/task.utils.js';
 export class TaskRunner {
   constructor(
     private readonly assets: AssetTransferService,
-    private readonly contents: ContentTransferService,
     private readonly schemas: SchemaTransferService,
     private readonly translations: TranslationTransferService,
   ) {}
@@ -30,9 +28,9 @@ export class TaskRunner {
       case 'ASSET_REGEN_METADATA':
         return this.assets.regenerateMetadata(task);
       case 'CONTENT_EXPORT':
-        return this.contents.export(task);
       case 'CONTENT_IMPORT':
-        return this.contents.import(task);
+        // Redesigned with the content tree (docs/roadmap/content-asset-tree.md); switched off until then.
+        return { status: 'ERROR', message: 'Content import and export are being redesigned' };
       case 'SCHEMA_EXPORT':
         return this.schemas.export(task);
       case 'SCHEMA_IMPORT':

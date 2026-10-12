@@ -1,6 +1,6 @@
 {
-  "id": "1392ad24-6f48-46f3-81e3-2605b8f6bc6d",
-  "prevId": "46eb4eb3-abe9-4d27-9cc2-54bb2e0f2c4f",
+  "id": "d0df162b-58de-434d-97e5-008249842edc",
+  "prevId": "1a0fd14e-6636-4809-8f3b-8253f2bb0413",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -400,6 +400,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "kind": {
           "name": "kind",
           "type": "text",
@@ -414,19 +420,6 @@
         },
         "slug": {
           "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_slug": {
-          "name": "parent_slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "full_slug": {
-          "name": "full_slug",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -493,7 +486,7 @@
               "nulls": "last"
             },
             {
-              "expression": "parent_slug",
+              "expression": "parent_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -542,48 +535,6 @@
           "with": {},
           "method": "btree",
           "concurrently": false
-        },
-        "contents_full_slug_idx": {
-          "name": "contents_full_slug_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"full_slug\" text_pattern_ops",
-              "isExpression": true,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        },
-        "contents_parent_slug_prefix_idx": {
-          "name": "contents_parent_slug_prefix_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "\"parent_slug\" text_pattern_ops",
-              "isExpression": true,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
         }
       },
       "foreignKeys": {
@@ -599,6 +550,21 @@
           ],
           "onUpdate": "no action",
           "onDelete": "cascade"
+        },
+        "contents_parent_fk": {
+          "name": "contents_parent_fk",
+          "tableFrom": "contents",
+          "columnsFrom": [
+            "space_id",
+            "parent_id"
+          ],
+          "tableTo": "contents",
+          "columnsTo": [
+            "space_id",
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {
@@ -610,7 +576,17 @@
           ]
         }
       },
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "contents_slug_idx": {
+          "name": "contents_slug_idx",
+          "columns": [
+            "space_id",
+            "parent_id",
+            "slug"
+          ],
+          "nullsNotDistinct": true
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "contents_kind_check": {

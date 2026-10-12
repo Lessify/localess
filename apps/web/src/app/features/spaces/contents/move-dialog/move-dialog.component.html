@@ -1,5 +1,5 @@
 <hlm-dialog-header>
-  <h2 hlmDialogTitle>Move Document</h2>
+  <h2 hlmDialogTitle>Move</h2>
 </hlm-dialog-header>
 <form [formGroup]="form" class="flex flex-col gap-4">
   <div hlmField>
@@ -8,31 +8,24 @@
       id="folder"
       [(search)]="search"
       [filter]="noOpFilter"
-      [value]="selectedFolder()"
-      (valueChange)="onValueChange($event)"
+      [value]="selected()"
+      (valueChange)="choose($event)"
       [itemToString]="displayItem">
       <hlm-combobox-input placeholder="Search folders..." showClear />
       <hlm-combobox-content *hlmComboboxPortal>
         <hlm-combobox-empty>No results found.</hlm-combobox-empty>
         <div hlmComboboxList>
-          @if (!search()) {
-            <hlm-combobox-item [value]="rootFolder">
-              <ng-icon hlm size="sm" name="lucideHouse" />
-              Root
-              <span class="text-muted-foreground text-xs">| ~</span>
-            </hlm-combobox-item>
-          }
-          @for (folder of filteredFolders(); track folder.id) {
-            <hlm-combobox-item [value]="folder">
-              <ng-icon hlm size="sm" name="lucideFolder" />
-              {{ folder.name }}
-              <span class="text-muted-foreground text-xs">| {{ folder.fullSlug }}</span>
+          @for (target of options(); track target.id) {
+            <hlm-combobox-item [value]="target">
+              <ng-icon hlm size="sm" [name]="target.id === null ? 'lucideHouse' : 'lucideFolder'" />
+              {{ target.name }}
+              <span class="text-muted-foreground text-xs">| {{ target.path || '~' }}</span>
             </hlm-combobox-item>
           }
         </div>
       </hlm-combobox-content>
     </hlm-combobox>
-    @if (form.controls['path'].errors; as errors) {
+    @if (form.controls['target'].errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
     }
   </div>

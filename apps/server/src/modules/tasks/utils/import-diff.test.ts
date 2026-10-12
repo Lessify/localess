@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Asset, AssetExport, Content, ContentExport, Translation, TranslationExport } from '@localess/shared';
-import { isAssetChanged, isContentChanged, isLocalesEqual, isTranslationChanged } from './import-diff.js';
+import { Asset, AssetExport, Translation, TranslationExport } from '@localess/shared';
+import { isAssetChanged, isLocalesEqual, isTranslationChanged } from './import-diff.js';
 
 describe('isAssetChanged', () => {
   const file = {
@@ -24,25 +24,6 @@ describe('isAssetChanged', () => {
     expect(isAssetChanged(file as unknown as Asset, { ...file, id: 'a', name: 'logo2' } as unknown as AssetExport)).toBe(true);
     expect(isAssetChanged(file as unknown as Asset, { ...file, id: 'a', parentPath: 'f' } as unknown as AssetExport)).toBe(true);
     expect(isAssetChanged(file as unknown as Asset, { ...file, id: 'a', alt: 'Logo' } as unknown as AssetExport)).toBe(true);
-  });
-});
-
-describe('isContentChanged', () => {
-  const doc = {
-    kind: 'DOCUMENT',
-    name: 'Home',
-    slug: 'home',
-    parentSlug: '',
-    fullSlug: 'home',
-    schema: 'page',
-    data: { _id: 'r', title: 'Hi' },
-  };
-  it('compares data deeply and slugs exactly', () => {
-    expect(isContentChanged(doc as unknown as Content, { ...doc, id: 'c' } as unknown as ContentExport)).toBe(false);
-    expect(
-      isContentChanged(doc as unknown as Content, { ...doc, id: 'c', data: { _id: 'r', title: 'Hello' } } as unknown as ContentExport),
-    ).toBe(true);
-    expect(isContentChanged(doc as unknown as Content, { ...doc, id: 'c', fullSlug: 'x/home' } as unknown as ContentExport)).toBe(true);
   });
 });
 

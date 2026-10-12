@@ -164,8 +164,9 @@ describe('app API: schemas', () => {
   describe('in use: referred to by another schema\'s fields, or the schema of contents', () => {
     let card: string;
     let blocks: string;
+    const docsFolder = newUuid();
     const doc = (name: string) => ({
-      spaceId: S1, id: newUuid(), kind: 'DOCUMENT' as const, name, slug: name, fullSlug: `docs/${name}`, schema: 'blocks', data: { _id: name, _schema: 'blocks' },
+      spaceId: S1, id: newUuid(), parentId: docsFolder, kind: 'DOCUMENT' as const, name, slug: name, schema: 'blocks', data: { _id: name, _schema: 'blocks' },
     });
 
     beforeAll(async () => {
@@ -181,6 +182,7 @@ describe('app API: schemas', () => {
       // A NODE allowing itself as a block: nested cards.
       await editor.put(`${base}/${card}`, { fields: [{ name: 'children', kind: 'SCHEMAS', schemas: ['card'] }] });
       // Blocks inside content data are not looked at: only `contents.schema`.
+      await t.db.insert(contents).values({ spaceId: S1, id: docsFolder, kind: 'FOLDER', name: 'Docs', slug: 'docs' });
       await t.db.insert(contents).values([
         ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
         { ...doc('nested'), schema: 'other', data: { _id: 'n', _schema: 'other', items: [{ _id: 'n1', _schema: 'card' }] } },

@@ -40,7 +40,8 @@ export type SpaceState = {
   loaded: boolean;
   selectedSpaceId: string | undefined;
   selectedEnvironmentBySpaceId: Record<string, string>;
-  contentPath: PathItem[];
+  /** The content folder the editor shows; `null`: the root. */
+  contentFolderId: string | null;
   assetPath: PathItem[];
   environment: SpaceEnvironment | undefined;
   schemas: Schema[];
@@ -57,7 +58,7 @@ const initialState: SpaceState = {
   loaded: false,
   selectedSpaceId: undefined,
   selectedEnvironmentBySpaceId: {},
-  contentPath: DEFAULT_PATH,
+  contentFolderId: null,
   assetPath: DEFAULT_PATH,
   environment: undefined,
   schemas: [],
@@ -185,7 +186,7 @@ export const SpaceStore = signalStore(
                   loaded: true,
                   selectedSpaceId: undefined,
                   assetPath: DEFAULT_PATH,
-                  contentPath: DEFAULT_PATH,
+                  contentFolderId: null,
                   environment: undefined,
                 });
                 persistSpaceState(undefined, selectedEnvironmentBySpaceId);
@@ -201,7 +202,7 @@ export const SpaceStore = signalStore(
                       loaded: true,
                       selectedSpaceId: selectedSpaceId,
                       assetPath: DEFAULT_PATH,
-                      contentPath: DEFAULT_PATH,
+                      contentFolderId: null,
                       environment,
                     });
                     persistSpaceState(selectedSpaceId, selectedEnvironmentBySpaceId);
@@ -213,7 +214,7 @@ export const SpaceStore = signalStore(
                       loaded: true,
                       selectedSpaceId: space.id,
                       assetPath: DEFAULT_PATH,
-                      contentPath: DEFAULT_PATH,
+                      contentFolderId: null,
                       environment,
                     });
                     persistSpaceState(space.id, selectedEnvironmentBySpaceId);
@@ -226,7 +227,7 @@ export const SpaceStore = signalStore(
                     loaded: true,
                     selectedSpaceId: defaultSpace.id,
                     assetPath: DEFAULT_PATH,
-                    contentPath: DEFAULT_PATH,
+                    contentFolderId: null,
                     environment,
                   });
                   persistSpaceState(defaultSpace.id, selectedEnvironmentBySpaceId);
@@ -252,7 +253,7 @@ export const SpaceStore = signalStore(
           patchState(state, {
             selectedSpaceId: space.id,
             assetPath: DEFAULT_PATH,
-            contentPath: DEFAULT_PATH,
+            contentFolderId: null,
             environment,
           });
           persistSpaceState(space.id, selectedEnvironmentBySpaceId);
@@ -262,18 +263,16 @@ export const SpaceStore = signalStore(
           patchState(state, {
             selectedSpaceId: fallbackSpace?.id,
             assetPath: DEFAULT_PATH,
-            contentPath: DEFAULT_PATH,
+            contentFolderId: null,
             environment,
           });
           persistSpaceState(fallbackSpace?.id, selectedEnvironmentBySpaceId);
         }
       },
-      changeContentPath: (contentPath: PathItem[]) => {
-        console.log('changeContentPath', contentPath);
-        patchState(state, { contentPath });
+      changeContentFolder: (contentFolderId: string | null) => {
+        patchState(state, { contentFolderId });
       },
       changeAssetPath: (assetPath: PathItem[]) => {
-        console.log('changeContentPath', assetPath);
         patchState(state, { assetPath });
       },
       changeEnvironment: (environment: SpaceEnvironment) => {
@@ -298,7 +297,7 @@ export const SpaceStore = signalStore(
   withComputed(state => {
     return {
       spaces: computed(() => state.spaces()),
-      contentPath: computed(() => state.contentPath()),
+      contentFolderId: computed(() => state.contentFolderId()),
       assetPath: computed(() => state.assetPath()),
       environment: computed(() => state.environment()),
       selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),

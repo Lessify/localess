@@ -236,8 +236,8 @@ describe('app API: spaces, locales, settings', () => {
         { id: newUuid(), spaceId, key: 'later', type: 'STRING', locales: {} },
       ]);
       await t.db.insert(contents).values([
-        { spaceId, id: newUuid(), kind: 'DOCUMENT', name: 'Home', slug: 'home', fullSlug: 'home' },
-        { spaceId, id: newUuid(), kind: 'FOLDER', name: 'Blog', slug: 'blog', fullSlug: 'blog' },
+        { spaceId, id: newUuid(), kind: 'DOCUMENT', name: 'Home', slug: 'home' },
+        { spaceId, id: newUuid(), kind: 'FOLDER', name: 'Blog', slug: 'blog' },
       ]);
       await t.db.insert(assets).values([
         { spaceId, id: newUuid(), kind: 'FILE', name: 'a', size: 1000 },

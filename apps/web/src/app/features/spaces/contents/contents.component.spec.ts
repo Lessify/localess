@@ -53,7 +53,9 @@ describe('ContentsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
-    const changeContentPath = vi.fn();
+    const changeContentFolder = vi.fn();
+    const contentFolderId = signal<string | null>(null);
+    const findAllFolders = vi.fn().mockReturnValue(of([{ id: 'f1', name: 'Blog', slug: 'blog' }, { id: 'f2', name: '2026', slug: '2026', parentId: 'f1' }]));
 
     TestBed.overrideComponent(ContentsComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -65,6 +67,7 @@ describe('ContentsComponent', () => {
           provide: ContentService,
           useValue: {
             findAll: findAllContents,
+            findAllFolders,
             createDocument,
             createFolder,
             update,
@@ -80,7 +83,7 @@ describe('ContentsComponent', () => {
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
-        { provide: SpaceStore, useValue: { contentPath: signal([]), changeContentPath } },
+        { provide: SpaceStore, useValue: { contentFolderId, changeContentFolder } },
       ],
     });
     const fixture = TestBed.createComponent(ContentsComponent);
@@ -105,7 +108,9 @@ describe('ContentsComponent', () => {
       success,
       error,
       open,
-      changeContentPath,
+      changeContentFolder,
+      contentFolderId,
+      findAllFolders,
     };
   }
 
@@ -115,7 +120,7 @@ describe('ContentsComponent', () => {
     const { component, findAllSchemas, findAllContents } = setup([b, a]);
 
     expect(findAllSchemas).toHaveBeenCalledWith('space-1', SchemaType.ROOT);
-    expect(findAllContents).toHaveBeenCalledWith('space-1', '');
+    expect(findAllContents).toHaveBeenCalledWith('space-1', undefined);
     expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['a', 'b']);
     expect(component.isLoading()).toBe(false);
   });
@@ -132,7 +137,7 @@ describe('ContentsComponent', () => {
         expect.anything(),
         expect.objectContaining({ context: expect.objectContaining({ reservedNames: ['Page'], reservedSlugs: ['page'] }) }),
       );
-      expect(createDocument).toHaveBeenCalledWith('space-1', '', model);
+      expect(createDocument).toHaveBeenCalledWith('space-1', undefined, model);
       expect(success).toHaveBeenCalledWith('Document has been created.');
     });
 
@@ -164,7 +169,7 @@ describe('ContentsComponent', () => {
 
       component.openAddFolderDialog();
 
-      expect(createFolder).toHaveBeenCalledWith('space-1', '', { name: 'New', slug: 'new' });
+      expect(createFolder).toHaveBeenCalledWith('space-1', undefined, { name: 'New', slug: 'new' });
       expect(success).toHaveBeenCalledWith('Folder has been created.');
     });
 
@@ -186,7 +191,7 @@ describe('ContentsComponent', () => {
 
       component.openEditDialog(doc({ id: 'c1' }));
 
-      expect(update).toHaveBeenCalledWith('space-1', 'c1', '', { name: 'Renamed', slug: 'renamed' });
+      expect(update).toHaveBeenCalledWith('space-1', 'c1', { name: 'Renamed', slug: 'renamed' });
       expect(success).toHaveBeenCalledWith('Content has been updated.');
     });
 
@@ -241,23 +246,24 @@ describe('ContentsComponent', () => {
   describe('openMoveDialog', () => {
     it('moves and notifies success when confirmed', () => {
       const { component, open, move, success } = setup();
-      open.mockReturnValue({ closed$: of({ path: 'new-parent' }) });
+      open.mockReturnValue({ closed$: of({ parentId: 'f1' }) });
       const element = doc({ id: 'c1', slug: 'page' });
 
       component.openMoveDialog(element);
 
-      expect(move).toHaveBeenCalledWith('space-1', 'c1', 'new-parent', 'page');
-      expect(success).toHaveBeenCalledWith('Document has been moved.');
+      expect(open.mock.calls[0][1].context).toEqual({ spaceId: 'space-1', content: element });
+      expect(move).toHaveBeenCalledWith('space-1', 'c1', 'f1');
+      expect(success).toHaveBeenCalledWith('Content has been moved.');
     });
 
     it("shows the server's reason when the target folder already has the slug", () => {
       const { component, open, move, error } = setup();
       move.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })));
-      open.mockReturnValue({ closed$: of({ path: 'new-parent' }) });
+      open.mockReturnValue({ closed$: of({ parentId: 'f1' }) });
 
       component.openMoveDialog(doc({ id: 'c1', slug: 'page' }));
 
-      expect(error).toHaveBeenCalledWith("Document can not be moved: 'page' is already used");
+      expect(error).toHaveBeenCalledWith("Content can not be moved: 'page' is already used");
     });
   });
 
@@ -347,21 +353,34 @@ describe('ContentsComponent', () => {
     });
 
     it('navigates into a selected folder', () => {
-      const { component, changeContentPath } = setup();
+      const { component, changeContentFolder } = setup();
 
       component.onRowSelect(folder({ id: 'f1', name: 'Folder', fullSlug: 'folder' }));
 
       expect(component.isLoading()).toBe(true);
-      expect(changeContentPath).toHaveBeenCalledWith([{ name: 'Folder', fullSlug: 'folder' }]);
+      expect(changeContentFolder).toHaveBeenCalledWith('f1');
     });
   });
 
-  it('navigateToSlug() truncates the path after the target segment', () => {
-    const { component, changeContentPath } = setup();
+  it('builds the breadcrumbs from the folder map, and navigates by folder id', () => {
+    const { component, changeContentFolder, contentFolderId, findAllFolders } = setup();
+    expect(findAllFolders).toHaveBeenCalledWith('space-1');
+    expect(component.trail()).toEqual([]);
 
-    component.navigateToSlug({ name: 'A', fullSlug: 'a' });
+    contentFolderId.set('f2');
+    expect(component.trail().map(it => it.name)).toEqual(['Blog', '2026']);
 
-    expect(changeContentPath).toHaveBeenCalledWith([]);
+    component.navigateToFolder('f1');
+    expect(changeContentFolder).toHaveBeenCalledWith('f1');
+    component.navigateToFolder(null);
+    expect(changeContentFolder).toHaveBeenLastCalledWith(null);
+  });
+
+  it('lists the children of the folder shown', () => {
+    const { contentFolderId, findAllContents } = setup();
+    contentFolderId.set('f2');
+    TestBed.tick();
+    expect(findAllContents).toHaveBeenLastCalledWith('space-1', 'f2');
   });
 
   describe('openLinksV1InNewTab', () => {

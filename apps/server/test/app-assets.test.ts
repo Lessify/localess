@@ -253,7 +253,6 @@ describe('app API: assets', () => {
         kind: 'DOCUMENT' as const,
         name: slug,
         slug,
-        fullSlug: slug,
         schema: 'page',
         data,
       });
