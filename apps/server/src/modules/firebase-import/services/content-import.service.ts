@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { newUuid } from '../../../infra/database/id.js';
 import { ContentImportRepository } from '../repositories/content-import.repository.js';
-import { obj, parseData, str, strings, timestamps } from '../utils/firebase-docs.js';
+import { parseData, str, strings, timestamps } from '../utils/firebase-docs.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
 
 /** Stage 9: the contents, as stored, page by page; references are rewritten in the next stage. Only the id map is kept. */
@@ -37,7 +37,6 @@ export class ContentImportService {
           links: strings(doc['links']),
           references: strings(doc['references']),
           publishedAt: null,
-          updatedBy: obj<{ name: string; email: string }>(doc['updatedBy']),
           ...timestamps(doc),
         };
       });

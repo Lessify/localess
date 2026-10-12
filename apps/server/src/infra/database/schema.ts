@@ -93,7 +93,8 @@ export interface Locale {
   name: string;
 }
 
-export interface UpdatedBy {
+/** A user as a row records them, e.g. who started a Firebase import. */
+export interface UserRef {
   name: string;
   email: string;
 }
@@ -278,7 +279,6 @@ export const contents = pgTable(
     links: text('links').array(),
     references: text('references').array(),
     publishedAt: timestamp('published_at', { withTimezone: true }),
-    updatedBy: jsonb('updated_by').$type<UpdatedBy>(),
     ...timestamps,
   },
   t => [
@@ -391,7 +391,6 @@ export const schemas = pgTable(
   },
   t => [
     uniqueIndex('schemas_name_idx').on(t.spaceId, t.name),
-    index('schemas_type_idx').on(t.spaceId, t.type, t.displayName),
     oneOf('schemas_type_check', t.type, values(SchemaType)),
   ],
 );
@@ -412,7 +411,6 @@ export const translations = pgTable(
     locales: jsonb('locales').$type<Record<string, string>>().notNull().default({}),
     labels: text('labels').array(),
     description: text('description'),
-    updatedBy: jsonb('updated_by').$type<UpdatedBy>(),
     ...timestamps,
   },
   t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key), oneOf('translations_type_check', t.type, values(TranslationType))],
@@ -590,7 +588,7 @@ export const firebaseImports = pgTable(
     status: text('status', { enum: values(FIREBASE_IMPORT_STATUSES) }).notNull(),
     stages: jsonb('stages').$type<FirebaseImportStage[]>().notNull(),
     error: jsonb('error').$type<{ stage: FirebaseImportStageName; message: string }>(),
-    startedBy: jsonb('started_by').$type<UpdatedBy>().notNull(),
+    startedBy: jsonb('started_by').$type<UserRef>().notNull(),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     // Moved on every progress write and every 30 s while running: a RUNNING run whose heartbeat is stale was cut off.
     heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }).notNull().defaultNow(),

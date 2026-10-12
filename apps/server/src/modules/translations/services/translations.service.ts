@@ -1,7 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Translation, TranslationType, WebHookEvent } from '@localess/shared';
-import type { UserRow } from '../../../shared/models/user.js';
-import { updatedByOf } from '../../../shared/transformers/updated-by.transformer.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
@@ -51,39 +49,36 @@ export class TranslationsService {
   async create(
     spaceId: string,
     input: { key: string; type: TranslationType; locales: Record<string, string>; labels?: string[]; description?: string },
-    user: UserRow,
   ): Promise<Translation> {
     requireSpaceLocales(await this.spaces.require(spaceId), Object.keys(input.locales));
     const entity = await this.translations.create(spaceId, {
       ...input,
       labels: input.labels?.length ? input.labels : null,
       description: input.description || null,
-      updatedBy: updatedByOf(user),
     });
     return this.changed(spaceId, toTranslation(entity));
   }
 
-  async update(spaceId: string, id: string, input: { labels?: string[]; description?: string }, user: UserRow): Promise<Translation> {
+  async update(spaceId: string, id: string, input: { labels?: string[]; description?: string }): Promise<Translation> {
     await this.spaces.require(spaceId);
     const entity = await this.translations.update(spaceId, id, {
       labels: input.labels?.length ? input.labels : null,
       description: input.description || null,
-      updatedBy: updatedByOf(user),
     });
     return this.changed(spaceId, found(entity));
   }
 
   /** One locale's value, for a locale of the space; an empty string removes it (for any locale: leftovers of a removed locale). */
-  async updateLocale(spaceId: string, id: string, locale: string, value: string, user: UserRow): Promise<Translation> {
+  async updateLocale(spaceId: string, id: string, locale: string, value: string): Promise<Translation> {
     const space = await this.spaces.require(spaceId);
     if (value) requireSpaceLocales(space, [locale]);
-    return this.changed(spaceId, found(await this.translations.setLocale(spaceId, id, locale, value, updatedByOf(user))));
+    return this.changed(spaceId, found(await this.translations.setLocale(spaceId, id, locale, value)));
   }
 
   /** Changes the key; the id stays. */
-  async rename(spaceId: string, id: string, key: string, user: UserRow): Promise<Translation> {
+  async rename(spaceId: string, id: string, key: string): Promise<Translation> {
     await this.spaces.require(spaceId);
-    return this.changed(spaceId, found(await this.translations.update(spaceId, id, { key, updatedBy: updatedByOf(user) })));
+    return this.changed(spaceId, found(await this.translations.update(spaceId, id, { key })));
   }
 
   async delete(spaceId: string, id: string): Promise<void> {
@@ -117,7 +112,6 @@ export class TranslationsService {
     sourceLocale: string,
     targetLocale: string,
     overwrite: boolean,
-    user: UserRow,
   ): Promise<{ translated: number; failed: number }> {
     this.translate.requireProvider();
     requireSpaceLocales(await this.spaces.require(spaceId), [sourceLocale, targetLocale]);
@@ -133,7 +127,7 @@ export class TranslationsService {
     const written = result.items.filter(it => it.content);
     if (written.length) {
       const values = written.map(it => ({ id: it.id, value: it.content }));
-      await this.translations.setLocaleValues(spaceId, targetLocale, values, updatedByOf(user));
+      await this.translations.setLocaleValues(spaceId, targetLocale, values);
       this.changed(spaceId, undefined);
     }
     return { translated: written.length, failed: result.failed.length };

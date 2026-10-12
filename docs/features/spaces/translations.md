@@ -113,7 +113,7 @@ locale, see [Space Settings → Translation support](settings.md#translation-sup
 
 There is no separate draft publish. Draft translations (`?version=draft` on the public API) are draft `translation_snapshots`
 built from the `translations` table on the first draft request after a change: every translation write drops them and emits
-a change event in the same transaction (see [Publish Flow](../../publish-flow.md#translation-drafts)). `updatedBy` is set by the server from the session, not sent by the client.
+a change event in the same transaction (see [Publish Flow](../../publish-flow.md#translation-drafts)).
 
 ## Values only for the space's locales
 

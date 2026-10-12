@@ -75,8 +75,7 @@ modules/translations/
 - **Entities** are the Drizzle rows. The schema stays in one file, `infra/database/schema.ts` (drizzle-kit generates
   the migrations from it); a repository exports the entity types it returns (`TranslationEntity = typeof translations.$inferSelect`).
 - **Domain models and API DTOs** are the types in `@localess/shared` (one definition for server and web). Transformers
-  map an entity to them; they all live in `shared/transformers/`, one place for every module (contents and translations
-  both write `updated_by` with `updatedByOf`). Controllers send what the service returns.
+  map an entity to them; they all live in `shared/transformers/`, one place for every module. Controllers send what the service returns.
 
 ## Transactions
 
@@ -113,7 +112,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher`, `AssetMetadataService` (size, duration, orientation, embedded alt of a stored file: assets, the asset import and metadata tasks, the Firebase import), `StorageSweeperService` (deletes queued stored files, hourly and when kicked) |
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository`, `StorageDeletionsRepository` |
 | `shared/models/` | Entity types that auth and every module name, without importing a module | `user.ts`: `UserRow` (the signed-in user, `CurrentUser`) |
-| `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `updatedByOf`, `toContent`, `toContentMetadata`, `toAssetMetadata` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `contentToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks), `toFirebaseImport` (firebase-import.transformer.ts) |
+| `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `toContent`, `toContentMetadata`, `toAssetMetadata` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `contentToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks), `toFirebaseImport` (firebase-import.transformer.ts) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
 | | | `content-version.ts`: `bumpContentVersion` (every write that changes what the content API serves: contents, schemas, assets, the import tasks) |
 | | | `storage-deletions.ts`: `scheduleAssetFilesDeletion`, `scheduleSpaceFilesDeletion`, `guardUpload`, `releaseUploadGuards` (every module that deletes rows with stored files, or stores a file before its row) |

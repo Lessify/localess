@@ -1,6 +1,6 @@
 {
-  "id": "c3684c20-5cba-4554-83bb-62ed6703e491",
-  "prevId": "aade26e5-e506-427d-9e14-0cadddb59354",
+  "id": "616860ab-444a-4024-950c-cb4cdf63fa04",
+  "prevId": "fa675264-949f-44c0-8710-954a5ccb77c4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -389,12 +389,6 @@
         "published_at": {
           "name": "published_at",
           "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -900,33 +894,6 @@
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        },
-        "schemas_type_idx": {
-          "name": "schemas_type_idx",
-          "columns": [
-            {
-              "expression": "space_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "display_name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "with": {},
           "method": "btree",
           "concurrently": false
@@ -1887,12 +1854,6 @@
         "description": {
           "name": "description",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

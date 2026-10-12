@@ -12,11 +12,6 @@ export interface ContentBase {
   parentSlug: string;
   fullSlug: string;
 
-  updatedBy?: {
-    name: string;
-    email: string;
-  };
-
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

@@ -67,11 +67,11 @@ and the server so the 10 duplicated model files collapse into one set.
 | `password_reset_tokens` | `token_hash`, `user_id`, `expires_at`, `used_at` | `sendPasswordResetEmail` |
 | `settings` | single row: `ui jsonb`, `updated_at` | `configs/settings` |
 | `spaces` | `id`, `name`, `locales jsonb`, `locale_fallback jsonb`, `environments jsonb`, `overview jsonb`, `progress jsonb`, **`content_version bigint`**, **`translation_version bigint`**, timestamps | `spaces/{id}` + the two `cache.json` generations |
-| `contents` | `id`, `space_id`, `kind`, `name`, `slug`, `parent_slug`, `full_slug`, `schema`, `data jsonb`, `assets text[]`, `links text[]`, `references text[]`, `published_at`, `updated_by jsonb`, timestamps; unique(space_id, full_slug) | `spaces/{s}/contents` |
+| `contents` | `id`, `space_id`, `kind`, `name`, `slug`, `parent_slug`, `full_slug`, `schema`, `data jsonb`, `assets text[]`, `links text[]`, `references text[]`, `published_at`, timestamps; unique(space_id, full_slug) | `spaces/{s}/contents` |
 | `content_published` | `content_id`, `locale`, `data jsonb`, `published_at`; PK(content_id, locale) | `contents/{id}/{locale}.json` in Storage |
 | `assets` | `id`, `space_id`, `kind`, `name`, `parent_path`, `extension`, `type`, `size`, `md5`, `alt`, `source`, `metadata jsonb`, `in_progress`, timestamps | `spaces/{s}/assets` (+ `md5` replaces the GCS `md5Hash` used for ETags) |
 | `schemas` | PK(space_id, id), `type`, `display_name`, `description`, `labels text[]`, `preview_field`, `fields jsonb`, `values jsonb`, timestamps | `spaces/{s}/schemas` (id is user-chosen) |
-| `translations` | PK(space_id, id), `type`, `locales jsonb`, `labels text[]`, `description`, `updated_by jsonb`, timestamps | `spaces/{s}/translations` |
+| `translations` | PK(space_id, id), `type`, `locales jsonb`, `labels text[]`, `description`, timestamps | `spaces/{s}/translations` |
 | `translation_published` | PK(space_id, locale), `data jsonb`, `published_at` | `translations/{locale}.json` in Storage |
 | `tasks` | `id`, `space_id`, `kind`, `status`, `message`, `trace`, `path`, `locale`, `type`, `file jsonb`, `upload_key`, `locked_by`, `locked_at`, timestamps | `spaces/{s}/tasks` (also the job queue) |
 | `task_logs` | `id bigserial`, `task_id` (cascade), `level`, `message`, `trace`, `created_at` | `tasks/{t}/logs` |

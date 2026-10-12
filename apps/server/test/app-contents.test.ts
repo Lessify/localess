@@ -100,7 +100,7 @@ describe('app API: contents', () => {
   let post: { id: string };
 
   describe('creating', () => {
-    it('creates folders and documents with updatedBy from the session, bumping the version', async () => {
+    it('creates folders and documents, bumping the version, without recording who changed them', async () => {
       const before = await version();
       blog = await create({ kind: 'FOLDER', parentSlug: '', name: 'Blog', slug: 'blog' });
       post = await create({ kind: 'DOCUMENT', parentSlug: 'blog', name: 'Post', slug: 'post', schema: 'page' });
@@ -109,9 +109,9 @@ describe('app API: contents', () => {
         fullSlug: 'blog/post',
         parentSlug: 'blog',
         schema: 'page',
-        updatedBy: { name: 'editor@example.com', email: 'editor@example.com' },
       });
       expect(post).not.toHaveProperty('publishedAt');
+      expect(post).not.toHaveProperty('updatedBy');
       expect(await version()).toBeGreaterThan(before);
     });
 

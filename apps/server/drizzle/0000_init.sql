@@ -41,7 +41,6 @@ CREATE TABLE "contents" (
 	"links" text[],
 	"references" text[],
 	"published_at" timestamp with time zone,
-	"updated_by" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "contents_space_id_id_pk" PRIMARY KEY("space_id","id"),
@@ -208,7 +207,6 @@ CREATE TABLE "translations" (
 	"locales" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"labels" text[],
 	"description" text,
-	"updated_by" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "translations_type_check" CHECK ("translations"."type" in ('STRING', 'PLURAL', 'ARRAY'))
@@ -315,7 +313,6 @@ CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("
 CREATE UNIQUE INDEX "firebase_imports_space_idx" ON "firebase_imports" USING btree ("space_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_source_idx" ON "firebase_imports" USING btree ("source_space_id") WHERE "firebase_imports"."space_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "schemas_name_idx" ON "schemas" USING btree ("space_id","name");--> statement-breakpoint
-CREATE INDEX "schemas_type_idx" ON "schemas" USING btree ("space_id","type","display_name");--> statement-breakpoint
 CREATE INDEX "sessions_user_idx" ON "sessions" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "space_environments_space_idx" ON "space_environments" USING btree ("space_id","position");--> statement-breakpoint
 CREATE INDEX "storage_deletions_due_idx" ON "storage_deletions" USING btree ("not_before");--> statement-breakpoint

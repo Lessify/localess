@@ -1,9 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Content, WebHookEvent } from '@localess/shared';
-import type { UserRow } from '../../../shared/models/user.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toContent } from '../../../shared/transformers/content.transformer.js';
-import { updatedByOf } from '../../../shared/transformers/updated-by.transformer.js';
 import { type ContentEntity, type ContentQuery, ContentsRepository } from '../repositories/contents.repository.js';
 import { randomSuffix } from '../utils/slug.utils.js';
 
@@ -44,15 +42,14 @@ export class ContentsService {
   async create(
     spaceId: string,
     input: { kind: 'FOLDER' | 'DOCUMENT'; parentSlug: string; name: string; slug: string; schema?: string; data?: Record<string, unknown> },
-    user: UserRow,
   ): Promise<Content> {
-    const entity = await this.contents.create(spaceId, { ...input, updatedBy: updatedByOf(user) });
+    const entity = await this.contents.create(spaceId, input);
     if (!entity) throw new BadRequestException(`No ROOT schema '${input.schema}' in the space`);
     return toContent(entity);
   }
 
   /** A copy next to the original with a random suffix, never published. */
-  async clone(spaceId: string, id: string, user: UserRow): Promise<Content> {
+  async clone(spaceId: string, id: string): Promise<Content> {
     const source = found(await this.contents.findById(spaceId, id));
     if (source.kind !== 'DOCUMENT') throw new BadRequestException('Only documents can be cloned');
     const suffix = randomSuffix();
@@ -66,13 +63,12 @@ export class ContentsService {
         schema: source.schema ?? undefined,
         data: source.data ?? undefined,
       },
-      user,
     );
   }
 
   /** Rename and/or move. A folder's new full slug is rewritten into every descendant. */
-  async update(spaceId: string, id: string, input: { name?: string; slug?: string; parentSlug?: string }, user: UserRow): Promise<Content> {
-    const { content, moved } = found(await this.contents.update(spaceId, id, { ...input, updatedBy: updatedByOf(user) }));
+  async update(spaceId: string, id: string, input: { name?: string; slug?: string; parentSlug?: string }): Promise<Content> {
+    const { content, moved } = found(await this.contents.update(spaceId, id, input));
     // As before: a document edit that keeps its slug is a `content.changed`; a move is not.
     if (!moved && content.kind === 'DOCUMENT') this.changed(spaceId, content);
     return toContent(content);
@@ -83,9 +79,8 @@ export class ContentsService {
     spaceId: string,
     id: string,
     input: { data: Record<string, unknown>; assets: string[]; links: string[]; references: string[] },
-    user: UserRow,
   ): Promise<Content> {
-    const content = found(await this.contents.updateData(spaceId, id, { ...input, updatedBy: updatedByOf(user) }));
+    const content = found(await this.contents.updateData(spaceId, id, input));
     this.changed(spaceId, content);
     return toContent(content);
   }

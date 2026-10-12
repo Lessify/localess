@@ -3,14 +3,14 @@ import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 import { TranslationType } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
-import { translations, type UpdatedBy } from '../../../infra/database/schema.js';
+import { translations } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 
 export type TranslationEntity = typeof translations.$inferSelect;
-export type NewTranslation = Pick<TranslationEntity, 'key' | 'type' | 'locales' | 'labels' | 'description' | 'updatedBy'>;
-export type TranslationUpdate = Partial<Pick<TranslationEntity, 'key' | 'labels' | 'description'>> & { updatedBy: UpdatedBy };
+export type NewTranslation = Pick<TranslationEntity, 'key' | 'type' | 'locales' | 'labels' | 'description'>;
+export type TranslationUpdate = Partial<Pick<TranslationEntity, 'key' | 'labels' | 'description'>>;
 
 type Change = { id?: string; op: 'created' | 'updated' | 'deleted' };
 
@@ -80,13 +80,12 @@ export class TranslationsRepository {
     id: string,
     locale: string,
     value: string,
-    updatedBy: UpdatedBy,
     tx?: Transaction,
   ): Promise<TranslationEntity | undefined> {
     return this.write(spaceId, tx, async t => {
       const [row] = await t
         .update(translations)
-        .set({ locales: this.localeValue(locale, value), updatedBy })
+        .set({ locales: this.localeValue(locale, value) })
         .where(this.byId(spaceId, id))
         .returning();
       return { result: row, changed: row ? [{ id, op: 'updated' }] : [] };
@@ -98,14 +97,13 @@ export class TranslationsRepository {
     spaceId: string,
     locale: string,
     values: { id: string; value: string }[],
-    updatedBy: UpdatedBy,
     tx?: Transaction,
   ): Promise<void> {
     return this.write(spaceId, tx, async t => {
       for (const { id, value } of values) {
         await t
           .update(translations)
-          .set({ locales: this.localeValue(locale, value), updatedBy })
+          .set({ locales: this.localeValue(locale, value) })
           .where(this.byId(spaceId, id));
       }
       return { result: undefined, changed: values.map(it => ({ id: it.id, op: 'updated' as const })) };

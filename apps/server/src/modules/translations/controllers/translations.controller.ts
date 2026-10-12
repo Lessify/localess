@@ -2,8 +2,6 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from
 import { z } from 'zod';
 import { TranslationType, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { CurrentUser } from '../../../auth/request-context.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { zLabels } from '../../../infra/http/zod.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
@@ -56,9 +54,8 @@ export class TranslationsController {
   create(
     @Param('spaceId') spaceId: string,
     @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.translations.create(spaceId, body, user);
+    return this.translations.create(spaceId, body);
   }
 
   @Patch(':id')
@@ -67,9 +64,8 @@ export class TranslationsController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.translations.update(spaceId, id, body, user);
+    return this.translations.update(spaceId, id, body);
   }
 
   @Put(':id/locales/:locale')
@@ -79,9 +75,8 @@ export class TranslationsController {
     @Param('id', UuidParamPipe) id: string,
     @Param('locale') locale: string,
     @Body(new ZodValidationPipe(localeValueSchema)) body: z.infer<typeof localeValueSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.translations.updateLocale(spaceId, id, locale, body.value, user);
+    return this.translations.updateLocale(spaceId, id, locale, body.value);
   }
 
   @Put(':id/key')
@@ -90,9 +85,8 @@ export class TranslationsController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(renameSchema)) body: z.infer<typeof renameSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.translations.rename(spaceId, id, body.key, user);
+    return this.translations.rename(spaceId, id, body.key);
   }
 
   @Delete(':id')
@@ -122,8 +116,7 @@ export class TranslationsController {
   translateLocale(
     @Param('spaceId') spaceId: string,
     @Body(new ZodValidationPipe(translateLocaleSchema)) body: z.infer<typeof translateLocaleSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.translations.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true, user);
+    return this.translations.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }
 }

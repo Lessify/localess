@@ -18,10 +18,6 @@ export interface Translation {
   locales: Record<string, string>;
   labels?: string[];
   description?: string;
-  updatedBy?: {
-    name: string;
-    email: string;
-  };
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -31,7 +27,7 @@ export interface PublishTranslationsData {
 }
 
 // Import and Export: a translation is identified by its key, carried as `id`; the row UUID never leaves the App API.
-export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt' | 'updatedBy'> & { /** The key. */ id: string };
+export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt'> & { /** The key. */ id: string };
 
 // App API requests
 export interface TranslationCreate {

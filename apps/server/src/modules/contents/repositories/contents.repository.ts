@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable } from '@nes
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, ne, notInArray, or, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
-import { contentPublished, contents, keepUpdatedAt, schemas, type UpdatedBy } from '../../../infra/database/schema.js';
+import { contentPublished, contents, keepUpdatedAt, schemas } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { bumpContentVersion } from '../../../shared/data-rules/content-version.js';
@@ -29,16 +29,14 @@ export interface NewContent {
   slug: string;
   schema?: string;
   data?: Record<string, unknown>;
-  updatedBy: UpdatedBy;
 }
 
-export type ContentMove = { name?: string; slug?: string; parentSlug?: string; updatedBy: UpdatedBy };
+export type ContentMove = { name?: string; slug?: string; parentSlug?: string };
 export type ContentDataUpdate = {
   data: Record<string, unknown>;
   assets: string[];
   links: string[];
   references: string[];
-  updatedBy: UpdatedBy;
 };
 
 interface WriteResult<T> {
@@ -118,7 +116,6 @@ export class ContentsRepository {
           fullSlug,
           schema: values.kind === 'DOCUMENT' ? values.schema : null,
           data: values.kind === 'DOCUMENT' ? (values.data ?? null) : null,
-          updatedBy: values.updatedBy,
         })
         .returning();
       return { result: row, changed: [{ id: row.id, op: 'created' }] };
@@ -150,7 +147,7 @@ export class ContentsRepository {
       }
       const [row] = await t
         .update(contents)
-        .set({ name: values.name ?? current.name, slug, parentSlug, fullSlug, updatedBy: values.updatedBy })
+        .set({ name: values.name ?? current.name, slug, parentSlug, fullSlug })
         .where(this.byId(spaceId, id))
         .returning();
       const changed: { id: string; op: 'updated' }[] = [{ id, op: 'updated' }];

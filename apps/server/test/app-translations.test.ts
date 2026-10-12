@@ -123,8 +123,8 @@ describe('app API: translations, machine translation, Unsplash', () => {
         key: 'home.title',
         locales: { en: 'Welcome' },
         labels: ['home'],
-        updatedBy: { email: 'editor@example.com' },
       });
+      expect(response.json()).not.toHaveProperty('updatedBy');
       expect(await draftSnapshots(t.db, S1)).toEqual([]);
       expect(await events()).toEqual(['translation.changed']);
       expect((await editor.post(base, { key: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);

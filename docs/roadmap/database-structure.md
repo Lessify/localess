@@ -168,12 +168,17 @@ schemas PK id: space_id (FK, cascade), name (unique per space), type ROOT|NODE|E
 | Firebase import | An invalid field or enum value is **dropped with a warning**, the rest of the schema is imported. The rules across fields are then kept the same way, with a warning each: a field name defined again drops the later field, a block that is not a NODE leaves `schemas`, an OPTION/OPTIONS field whose `source` is not an ENUM is dropped, a preview that is not a previewable field left is cleared. |
 | Schema in use | **No rename, no delete** (409, saying where) while the schema is in use, in either of two ways: **(1)** a field of another schema refers to it, `schemas` (SCHEMA/SCHEMAS: mostly a NODE) or `source` (OPTION/OPTIONS: an ENUM); a schema referring to itself goes with it and does not count; **(2)** contents use it as their document schema, `contents.schema` (a ROOT). `contents.data` is not looked at. `GET …/schemas/:id/usage` answers `{ fields: [{ schema, field }], contents: { count, first } }` (the first five by full slug); the rename and delete dialogs show it. The CLI push (sync) refuses the same deletes. |
 | Checks and races | The service decides and words the 409; the repository locks the schema row (`FOR UPDATE`) and reads its usage in the write's transaction, answering it instead of writing. A document is created only for a ROOT schema of the space (400 otherwise), whose row it locks `FOR SHARE`: a rename or delete waits for that insert and then sees the content, or runs first and the insert finds no schema. The push re-checks its deletes under the same lock. |
+| Indexes | Only the unique `schemas_name_idx (space_id, name)`: it serves every query (the space's schemas ordered by name, one by name, the ROOT ones with `type` as a filter). `schemas_type_idx (space_id, type, display_name)` is **dropped**: nothing orders by `display_name` in SQL (the web sorts the list itself), and a space has too few schemas for a `type` index to pay off. |
 | Known gap | A NODE whose blocks sit in contents but that no field allows any more (removed from a field's `schemas`) counts as unused: deleting or renaming it leaves those blocks unresolved. |
 
 Renaming a used schema everywhere is a [To do](#to-do).
 
-Still to discuss: `schemas_type_idx` carrying an unused `display_name`,
-an `updated_by` column.
+## Who changed a row
+
+**Not recorded, for now.** The `updated_by` columns of `contents` and `translations` are dropped (the translation
+detail no longer shows "Updated By"), and `schemas` does not get one. A write path without a user (the CLI push,
+the import tasks, the Firebase import) could not have filled it, so it was half-true. `firebase_imports.started_by`
+stays: it records who started the import.
 
 ## Timestamps
 

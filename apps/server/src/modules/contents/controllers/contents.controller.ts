@@ -2,9 +2,7 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { CurrentUser } from '../../../auth/request-context.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ContentsService } from '../services/contents.service.js';
 
@@ -66,15 +64,14 @@ export class ContentsController {
   async create(
     @Param('spaceId') spaceId: string,
     @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.contents.create(spaceId, body, user);
+    return this.contents.create(spaceId, body);
   }
 
   @Post(':id/clone')
   @RequirePermission(UserPermission.CONTENT_CREATE)
-  async clone(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow) {
-    return this.contents.clone(spaceId, id, user);
+  async clone(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.contents.clone(spaceId, id);
   }
 
   /** Rename and/or move (`parentSlug`; '' is the root). */
@@ -84,9 +81,8 @@ export class ContentsController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.contents.update(spaceId, id, body, user);
+    return this.contents.update(spaceId, id, body);
   }
 
   @Put(':id/data')
@@ -95,9 +91,8 @@ export class ContentsController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(dataSchema)) body: z.infer<typeof dataSchema>,
-    @CurrentUser() user: UserRow,
   ) {
-    return this.contents.updateData(spaceId, id, body, user);
+    return this.contents.updateData(spaceId, id, body);
   }
 
   @Delete(':id')
