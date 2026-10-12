@@ -25,7 +25,7 @@ describe('user-management', () => {
     it('stops a user manager at themselves, admins and users with more permissions', () => {
       expect(canManageUser(manager, target({ id: 'mgr' }))).toBe(false);
       expect(canManageUser(manager, target({ role: 'ADMIN' }))).toBe(false);
-      expect(canManageUser(manager, target({ permissions: ['SETTINGS_MANAGEMENT'] }))).toBe(false);
+      expect(canManageUser(manager, target({ permissions: ['SPACE_MANAGEMENT'] }))).toBe(false);
     });
 
     it('refuses users without USER_MANAGEMENT', () => {
@@ -40,8 +40,8 @@ describe('user-management', () => {
   });
 
   it('canGrantPermission() limits a user manager to what they hold', () => {
-    expect(canGrantPermission(admin, 'SETTINGS_MANAGEMENT')).toBe(true);
+    expect(canGrantPermission(admin, 'SPACE_MANAGEMENT')).toBe(true);
     expect(canGrantPermission(manager, 'CONTENT_READ')).toBe(true);
-    expect(canGrantPermission(manager, 'SETTINGS_MANAGEMENT')).toBe(false);
+    expect(canGrantPermission(manager, 'SPACE_MANAGEMENT')).toBe(false);
   });
 });

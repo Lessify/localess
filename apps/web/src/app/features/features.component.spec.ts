@@ -7,7 +7,6 @@ import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { NotificationService } from '@core/services/notification.service';
 import { VersionService } from '@core/services/version.service';
-import { AppSettingsStore } from '@core/stores/app-settings.store';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
@@ -65,7 +64,6 @@ function configureModule(overrides: {
         },
       },
       { provide: UserStore, useValue: { isAuthenticated: signal(true) } },
-      { provide: AppSettingsStore, useValue: {} },
       {
         provide: LocalSettingsStore,
         useValue: {

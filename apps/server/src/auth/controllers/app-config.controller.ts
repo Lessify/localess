@@ -1,18 +1,8 @@
 import { Controller, Get, Inject } from '@nestjs/common';
+import type { PublicAppConfig } from '@localess/shared';
 import { Public } from '../decorators.js';
 import { OAuthService } from '../services/oauth.service.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
-
-export interface PublicAppConfig {
-  auth: {
-    /** OAuth providers the login page offers, in the Firebase-era names. */
-    providers: ('GOOGLE' | 'MICROSOFT')[];
-    loginMessage: string;
-    passwordResetByEmail: boolean;
-  };
-  plugins: { unsplash: boolean };
-  translate: { enabled: boolean };
-}
 
 /**
  * Runtime settings for the SPA, replacing the build-time LOCALESS_* `--define`s so one build works
@@ -36,6 +26,7 @@ export class AppConfigController {
       },
       plugins: { unsplash: this.config.unsplash !== undefined },
       translate: { enabled: this.config.translate.provider !== 'none' },
+      ...(this.config.instance ? { instance: this.config.instance } : {}),
     };
   }
 }

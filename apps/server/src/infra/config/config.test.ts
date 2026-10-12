@@ -39,6 +39,17 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LOCALESS_RENDITION_CACHE: 'memory' })).toThrow();
   });
 
+  it('labels the instance only when named, in primary unless a color is given', () => {
+    expect(loadConfig({}).instance).toBeUndefined();
+    expect(loadConfig({ LOCALESS_INSTANCE_NAME: '  ' }).instance).toBeUndefined();
+    expect(loadConfig({ LOCALESS_INSTANCE_NAME: 'Test' }).instance).toEqual({ name: 'Test', color: 'primary' });
+    expect(loadConfig({ LOCALESS_INSTANCE_NAME: ' Production ', LOCALESS_INSTANCE_COLOR: 'destructive' }).instance).toEqual({
+      name: 'Production',
+      color: 'destructive',
+    });
+    expect(() => loadConfig({ LOCALESS_INSTANCE_NAME: 'Test', LOCALESS_INSTANCE_COLOR: 'neon' })).toThrow(/LOCALESS_INSTANCE_COLOR/);
+  });
+
   it('rejects an invalid DATABASE_URL', () => {
     expect(() => loadConfig({ DATABASE_URL: 'not a url' })).toThrow();
   });

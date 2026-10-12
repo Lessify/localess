@@ -68,16 +68,14 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
   it('streams committed changes for the space plus global ones, not other spaces', async () => {
     const client = api(t, cookie);
     let page = '';
-    const events = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, cookie, 3, async () => {
+    const events = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, cookie, 2, async () => {
       await t.app.get(EventsService).publish({ spaceId: S2, entity: 'contents', id: 'x', op: 'updated' });
       page = (await client.post(`/api/app/spaces/${S1}/schemas`, { name: 'page', type: 'ROOT' })).json().id;
       await client.patch(`/api/app/spaces/${S1}`, { name: 'Renamed' });
-      await client.patch('/api/app/settings/ui', { text: 'hi' });
     });
     expect(events).toEqual([
       { spaceId: S1, entity: 'schemas', id: page, op: 'created' },
       { spaceId: null, entity: 'spaces', id: S1, op: 'updated' },
-      { spaceId: null, entity: 'settings', op: 'updated' },
     ]);
   });
 
@@ -89,11 +87,11 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
       await events.publish({ spaceId: S1, entity: 'contents', id: 'c', op: 'updated' });
       await events.publish({ spaceId: null, entity: 'users', id: 'someone', op: 'updated' });
       await events.publish({ spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' });
-      await events.publish({ spaceId: null, entity: 'settings', op: 'updated' });
+      await events.publish({ spaceId: null, entity: 'spaces', id: S1, op: 'updated' });
     });
     expect(received).toEqual([
       { spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' },
-      { spaceId: null, entity: 'settings', op: 'updated' },
+      { spaceId: null, entity: 'spaces', id: S1, op: 'updated' },
     ]);
   });
 

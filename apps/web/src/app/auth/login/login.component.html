@@ -1,3 +1,6 @@
+@if (instanceLabel(); as label) {
+  <div class="mt-8"><ll-instance-label [label]="label" /></div>
+}
 <h2 class="mt-8 text-2xl font-bold tracking-tight"> Sign in to your account </h2>
 @if (message()) {
   <div class="text-destructive mt-2 text-sm"> {{ message() }} </div>

@@ -3,7 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
-import { AppConfigService, DEFAULT_APP_CONFIG, PublicAppConfig } from '@core/api/app-config.service';
+import { AppConfigService, DEFAULT_APP_CONFIG } from '@core/api/app-config.service';
+import type { PublicAppConfig } from '@localess/shared';
 import { UserStore } from '@core/stores/user.store';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
@@ -13,7 +14,7 @@ import { LoginComponent } from './login.component';
 describe('LoginComponent', () => {
   let http: HttpTestingController;
 
-  function setup(config: Partial<PublicAppConfig['auth']> = {}, query: Record<string, string> = {}) {
+  function setup(config: Partial<PublicAppConfig['auth']> = {}, query: Record<string, string> = {}, instance?: PublicAppConfig['instance']) {
     const signedIn = vi.fn();
     TestBed.configureTestingModule({
       providers: [
@@ -21,7 +22,7 @@ describe('LoginComponent', () => {
         provideHttpClientTesting(),
         {
           provide: AppConfigService,
-          useValue: { config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config } }) },
+          useValue: { config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config }, ...(instance ? { instance } : {}) }) },
         },
         { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap(query)) } },
         { provide: UserStore, useValue: { signedIn, isAuthenticated: signal(false), email: signal(undefined) } },
@@ -43,6 +44,15 @@ describe('LoginComponent', () => {
     expect(component.isGoogleAuthEnabled()).toBe(true);
     expect(component.isMicrosoftAuthEnabled()).toBe(false);
     expect(component.message()).toBe('Maintenance tonight');
+  });
+
+  it('has no instance label unless the installation has one', () => {
+    expect(setup().component.instanceLabel()).toBeUndefined();
+  });
+
+  it('reads the instance label from the runtime config', () => {
+    const { component } = setup({}, {}, { name: 'Test', color: 'destructive' });
+    expect(component.instanceLabel()).toEqual({ name: 'Test', color: 'destructive' });
   });
 
   it('form is invalid when empty; valid once both fields have at least 2 characters', () => {

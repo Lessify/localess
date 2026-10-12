@@ -33,9 +33,8 @@ describe('canReceive', () => {
     }
   });
 
-  it('gives spaces and settings to any role', () => {
+  it('gives spaces to any role', () => {
     expect(canReceive(custom(), event('spaces', null))).toBe(true);
-    expect(canReceive(custom(), event('settings', null))).toBe(true);
   });
 
   it('gives user events to user managers, and to a user about themselves', () => {

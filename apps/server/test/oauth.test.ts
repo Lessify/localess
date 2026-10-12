@@ -81,6 +81,8 @@ describe('OAuth sign-in', () => {
         plugins: { unsplash: false },
         translate: { enabled: false },
       });
+      // No label unless the instance is named (LOCALESS_INSTANCE_NAME).
+      expect(response.json()).not.toHaveProperty('instance');
     });
 
     it('signs an existing user in by verified email, links the identity, and returns to the app', async () => {

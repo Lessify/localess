@@ -39,7 +39,7 @@ describe('UserDialogComponent', () => {
     const { component } = setup(null);
 
     expect(component['canGrantAdmin']()).toBe(true);
-    expect(component.canGrantPermission('SETTINGS_MANAGEMENT')).toBe(true);
+    expect(component.canGrantPermission('SPACE_MANAGEMENT')).toBe(true);
   });
 
   it('limits a user manager to the custom role and permissions they hold', () => {
@@ -47,7 +47,7 @@ describe('UserDialogComponent', () => {
 
     expect(component['canGrantAdmin']()).toBe(false);
     expect(component.canGrantPermission('CONTENT_READ')).toBe(true);
-    expect(component.canGrantPermission('SETTINGS_MANAGEMENT')).toBe(false);
+    expect(component.canGrantPermission('SPACE_MANAGEMENT')).toBe(false);
   });
 
   it('exposes every permission group', () => {

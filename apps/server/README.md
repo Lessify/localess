@@ -133,7 +133,6 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 | Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`shared/http/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
 | Spaces | `/api/app/spaces` CRUD, `GET …/:id/overview` (computed on request), `POST/DELETE …/:id/locales[/:locale]`, `PUT …/:id/locales/order`, `PUT …/:id/default-locale`, `POST …/:id/environments`, `PATCH/DELETE …/:id/environments/:environmentId`, `PUT …/:id/environments/order`; `GET /api/app/locales` (read-only) |
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
-| Settings | `GET /api/app/settings`, `PATCH /api/app/settings/ui` |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`:id` = UUID), `PUT …/:id/name` (rename), `POST …/template` |
 | Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
 | Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:id/locales/:locale`, `PUT …/:id/key` (rename; `:id` = UUID), `POST …/publish`, `POST …/translate-locale`, `DELETE` (all) |

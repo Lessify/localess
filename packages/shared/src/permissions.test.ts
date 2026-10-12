@@ -13,7 +13,7 @@ const noRole: Principal = { id: 'new', role: null, permissions: [UserPermission.
 
 describe('canPerform', () => {
   it('lets admins do everything', () => {
-    expect(canPerform(admin, UserPermission.SETTINGS_MANAGEMENT)).toBe(true);
+    expect(canPerform(admin, UserPermission.SPACE_MANAGEMENT)).toBe(true);
   });
 
   it('checks the permission list for custom users', () => {
@@ -42,7 +42,7 @@ describe('canGrant', () => {
 
   it('never lets a manager grant admin or a permission they lack', () => {
     expect(canGrant(manager, 'ADMIN', [])).toBe(false);
-    expect(canGrant(manager, 'CUSTOM', [UserPermission.SETTINGS_MANAGEMENT])).toBe(false);
+    expect(canGrant(manager, 'CUSTOM', [UserPermission.SPACE_MANAGEMENT])).toBe(false);
   });
 
   it('requires USER_MANAGEMENT', () => {
@@ -62,13 +62,13 @@ describe('canManageUser', () => {
   });
 
   it('checks stored permissions even when the target has no role (same as the old rule)', () => {
-    expect(canManageUser(manager, { id: 'x', role: null, permissions: [UserPermission.SETTINGS_MANAGEMENT] })).toBe(false);
+    expect(canManageUser(manager, { id: 'x', role: null, permissions: [UserPermission.SPACE_MANAGEMENT] })).toBe(false);
   });
 
   it('never lets a manager manage themselves, an admin, or someone with more permissions', () => {
     expect(canManageUser(manager, manager)).toBe(false);
     expect(canManageUser(manager, admin)).toBe(false);
-    expect(canManageUser(manager, { id: 'x', role: 'CUSTOM', permissions: [UserPermission.SETTINGS_MANAGEMENT] })).toBe(false);
+    expect(canManageUser(manager, { id: 'x', role: 'CUSTOM', permissions: [UserPermission.SPACE_MANAGEMENT] })).toBe(false);
   });
 
   it('denies users without USER_MANAGEMENT', () => {

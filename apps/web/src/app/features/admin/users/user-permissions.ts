@@ -15,7 +15,6 @@ export const USER_PERMISSION_GROUPS: UserPermissionGroup[] = [
     permissions: [
       { id: 'USER_MANAGEMENT', label: 'User Management', desc: 'Invite, Delete users and change roles.' },
       { id: 'SPACE_MANAGEMENT', label: 'Space Management', desc: 'Create, Update and Delete.' },
-      { id: 'SETTINGS_MANAGEMENT', label: 'Settings Management', desc: 'Change system settings.' },
     ],
   },
   {

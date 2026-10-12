@@ -7,6 +7,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { AuthApiService, OAuthProvider } from '@core/services/auth-api.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { UserStore } from '@core/stores/user.store';
+import { InstanceLabelComponent } from '@shared/components/instance-label';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
@@ -26,7 +27,7 @@ const OAUTH_ERRORS: Record<string, string> = {
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterModule, HlmButtonImports, HlmFieldImports, HlmInputImports],
+  imports: [ReactiveFormsModule, RouterModule, HlmButtonImports, HlmFieldImports, HlmInputImports, InstanceLabelComponent],
 })
 export class LoginComponent {
   private readonly authApi = inject(AuthApiService);
@@ -48,6 +49,8 @@ export class LoginComponent {
   readonly isGoogleAuthEnabled = computed(() => this.providers().includes('GOOGLE'));
   readonly isMicrosoftAuthEnabled = computed(() => this.providers().includes('MICROSOFT'));
   readonly message = computed(() => this.appConfig.config().auth.loginMessage);
+  /** The installation's label, so production and test are told apart before signing in. */
+  readonly instanceLabel = computed(() => this.appConfig.config().instance);
   readonly oauthError = toSignal(
     inject(ActivatedRoute).queryParamMap.pipe(
       map(params => (params.get('error') ? (OAUTH_ERRORS[params.get('error')!] ?? OAUTH_ERRORS['failed']) : undefined)),

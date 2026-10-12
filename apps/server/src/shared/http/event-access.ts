@@ -19,7 +19,6 @@ const TASK_READ = [
  */
 const READ_ACCESS: Record<string, readonly UserPermission[] | 'anyRole'> = {
   spaces: 'anyRole',
-  settings: 'anyRole',
   contents: [UserPermission.CONTENT_READ],
   schemas: [UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ],
   assets: [UserPermission.ASSET_READ, UserPermission.CONTENT_READ],

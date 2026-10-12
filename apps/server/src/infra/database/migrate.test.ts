@@ -16,7 +16,6 @@ const EXPECTED_TABLES = [
   'password_reset_tokens',
   'schemas',
   'sessions',
-  'settings',
   'space_environments',
   'space_locales',
   'spaces',

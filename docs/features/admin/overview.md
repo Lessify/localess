@@ -16,7 +16,6 @@ All admin routes are guarded by `permissionGuard(...)`, which reads the role and
 |--------|-------|-------|-----|
 | Users | `/features/admin/users` | `USER_MANAGEMENT` | [admin-users.md](admin-users.md) |
 | Spaces | `/features/admin/spaces` | `SPACE_MANAGEMENT` | [admin-spaces.md](admin-spaces.md) |
-| Settings | `/features/admin/settings` | `SETTINGS_MANAGEMENT` | [admin-settings.md](admin-settings.md) |
 
 ---
 

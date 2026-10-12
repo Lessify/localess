@@ -14,11 +14,11 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
+import { AppConfigService } from '@core/api/app-config.service';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AuthApiService } from '@core/services/auth-api.service';
 import { NotificationService } from '@core/services/notification.service';
 import { VersionService } from '@core/services/version.service';
-import { AppSettingsStore } from '@core/stores/app-settings.store';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
@@ -58,6 +58,7 @@ import {
   lucideWebhook,
 } from '@ng-icons/lucide';
 import { tablerApi, tablerSpaces } from '@ng-icons/tabler-icons';
+import { InstanceLabelComponent } from '@shared/components/instance-label';
 import { LogoComponent } from '@shared/components/logo';
 import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
@@ -78,7 +79,6 @@ import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
 import { HlmSwitchImports } from '@spartan-ng/helm/switch';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { cva } from 'class-variance-authority';
 import { filter, mergeMap, timer } from 'rxjs';
 
 import { environment } from '../../environments/environment';
@@ -92,24 +92,6 @@ import { WhatsNewDialogComponent } from './whats-new/whats-new-dialog.component'
  * rather than parsed - GitHub's newest release can sit in the 3.x range for as long as it likes.
  */
 const MIN_SUPPORTED_VERSION = '4.0.0';
-
-const appTextVariants = cva(
-  'focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-md border px-2 py-0.5 text-xl font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] ',
-  {
-    variants: {
-      variant: {
-        primary: 'bg-primary text-primary-foreground [a&]:hover:bg-primary/90 border-transparent',
-        secondary: 'bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90 border-transparent',
-        destructive:
-          'bg-destructive [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 border-transparent text-white',
-        outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
-      },
-    },
-    defaultVariants: {
-      variant: 'primary',
-    },
-  },
-);
 
 interface SideMenuItem {
   icon: IconType;
@@ -127,6 +109,7 @@ interface SideMenuItem {
   styleUrl: './features.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    InstanceLabelComponent,
     RouterModule,
     CanUserPerformPipe,
     CommonModule,
@@ -196,7 +179,9 @@ export class FeaturesComponent implements OnInit {
   public readonly spaceStore = inject(SpaceStore);
   public readonly userStore = inject(UserStore);
   public readonly localeSettingsStore = inject(LocalSettingsStore);
-  public readonly appSettingsStore = inject(AppSettingsStore);
+  private readonly appConfig = inject(AppConfigService);
+  /** The installation's label (LOCALESS_INSTANCE_NAME / LOCALESS_INSTANCE_COLOR), when it has one. */
+  readonly instanceLabel = computed(() => this.appConfig.config().instance);
 
   // Settings
   isDebug = environment.debug;
@@ -212,8 +197,6 @@ export class FeaturesComponent implements OnInit {
     const tag = this.latestRelease()?.tag_name;
     return tag ? isVersionNewer(tag, this.version) : false;
   });
-
-  appTextClass = computed(() => appTextVariants({ variant: this.appSettingsStore.ui()?.color }));
 
   /**
    * How far this install has drifted, in whole days between its build and the newest release.
@@ -316,7 +299,6 @@ export class FeaturesComponent implements OnInit {
   adminSideMenu: SideMenuItem[] = [
     { link: 'admin/users', label: 'Users', icon: 'lucideUsers', permission: UserPermission.USER_MANAGEMENT },
     { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', permission: UserPermission.SPACE_MANAGEMENT },
-    { link: 'admin/settings', label: 'Settings', icon: 'lucideSettings', permission: UserPermission.SETTINGS_MANAGEMENT },
   ];
 
   communitySideMenu: SideMenuItem[] = [

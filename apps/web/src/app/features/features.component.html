@@ -3,12 +3,10 @@
     <div hlmSidebarHeader>
       <a routerLink="/"> <ll-logo [open]="sidebarService.open() || sidebarService.openMobile()" /> </a>
       @if (sidebarService.open() || sidebarService.openMobile()) {
-        @if (appSettingsStore.ui(); as ui) {
-          @if (ui.text) {
-            <div class="flex justify-center">
-              <span [class]="appTextClass()"> {{ ui.text }} </span>
-            </div>
-          }
+        @if (instanceLabel(); as label) {
+          <div class="flex justify-center">
+            <ll-instance-label [label]="label" />
+          </div>
         }
       }
       <ul hlmSidebarMenu>

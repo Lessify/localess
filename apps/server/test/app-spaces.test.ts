@@ -9,7 +9,7 @@ import { S2, UUID_V7 } from './ids.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { api, createTestApp, insertSpace, setImport, TestApp, userWithAccess } from './test-app.js';
 
-describe('app API: spaces, locales, settings', () => {
+describe('app API: spaces, locales, instance label', () => {
   let t: TestApp;
   let admin: ReturnType<typeof api>;
   let manager: ReturnType<typeof api>;
@@ -319,14 +319,17 @@ describe('app API: spaces, locales, settings', () => {
     });
   });
 
-  describe('settings', () => {
-    it('is readable by every role and writable with SETTINGS_MANAGEMENT', async () => {
-      expect((await reader.get('/api/app/settings')).json()).toEqual({});
-      expect((await reader.patch('/api/app/settings/ui', { text: 'Hi' })).statusCode).toBe(403);
-      const updated = await admin.patch('/api/app/settings/ui', { text: 'Maintenance tonight', color: 'destructive' });
-      expect(updated.json()).toMatchObject({ ui: { text: 'Maintenance tonight', color: 'destructive' }, updatedAt: expect.any(String) });
-      expect((await reader.get('/api/app/settings')).json().ui.text).toBe('Maintenance tonight');
-      expect((await admin.patch('/api/app/settings/ui', { color: 'neon' })).statusCode).toBe(400);
+  describe('instance label', () => {
+    it('comes from the environment through the public runtime config; the settings API is gone', async () => {
+      const labelled = await createTestApp({ LOCALESS_INSTANCE_NAME: 'Test', LOCALESS_INSTANCE_COLOR: 'destructive' });
+      try {
+        const response = await labelled.request({ method: 'GET', url: '/api/config' });
+        expect(response.json().instance).toEqual({ name: 'Test', color: 'destructive' });
+      } finally {
+        await labelled.close();
+      }
+      expect((await admin.get('/api/app/settings')).statusCode).toBe(404);
+      expect((await admin.patch('/api/app/settings/ui', { text: 'Hi' })).statusCode).toBe(404);
     });
   });
 });

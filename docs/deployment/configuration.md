@@ -6,6 +6,9 @@ Localess is configured entirely by environment variables, read when the server (
 There is no build-time configuration: change a value and restart. Invalid values (a malformed URL,
 an unknown log level) stop the server at boot with an error naming the variable. The source of
 truth is `apps/server/src/infra/config/config.ts`.
+Every variable is listed with its default and a short description in
+[`apps/server/.env.example`](../../apps/server/.env.example), a starting point for `apps/server/.env` or a
+Compose environment.
 
 Run [`check`](check.md) after changing configuration to see what is enabled.
 
@@ -20,6 +23,16 @@ Run [`check`](check.md) after changing configuration to see what is enabled.
 | `LOCALESS_PUBLIC_URL` | the request's origin | Public origin, e.g. `https://cms.example.com`. Used for OAuth callback URLs and password reset links. Set it whenever a proxy sits in front |
 | `LOCALESS_STATIC_DIR` | `apps/web/dist/browser` in the checkout | Angular build to serve. Empty string → serve the API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`, `error`, `warn`, `log`, `debug`, `verbose`. `debug` and up include the embedded Postgres log |
+
+## Instance label
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `LOCALESS_INSTANCE_NAME` | – | A label that tells installations apart, e.g. `Production` or `Test`: shown in the sidebar and on the login page. Unset or blank: no label |
+| `LOCALESS_INSTANCE_COLOR` | `primary` | The label's color: `primary`, `secondary`, `outline` or `destructive`. Another value stops the server at boot |
+
+It is configuration of the deployment, not data: a test environment filled with a copy of the production database
+keeps its own label.
 
 ## Database
 

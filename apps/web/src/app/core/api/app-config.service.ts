@@ -1,17 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
+import type { PublicAppConfig } from '@localess/shared';
 import { catchError, firstValueFrom, of } from 'rxjs';
-
-/** Runtime settings served by `GET /api/config` (replaces the build-time LOCALESS_* constants). */
-export interface PublicAppConfig {
-  auth: {
-    providers: ('GOOGLE' | 'MICROSOFT')[];
-    loginMessage: string;
-    passwordResetByEmail: boolean;
-  };
-  plugins: { unsplash: boolean };
-  translate: { enabled: boolean };
-}
 
 export const DEFAULT_APP_CONFIG: PublicAppConfig = {
   auth: { providers: [], loginMessage: '', passwordResetByEmail: false },

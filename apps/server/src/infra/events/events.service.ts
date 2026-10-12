@@ -13,7 +13,7 @@ export const EVENTS_CHANNEL = 'localess_events';
 export interface ChangeEvent {
   /** null for data outside spaces (users, settings, the space list itself). */
   spaceId: string | null;
-  /** Table-like name: 'spaces', 'contents', 'schemas', 'translations', 'assets', 'tasks', 'tokens', 'webhooks', 'users', 'settings', … */
+  /** Table-like name: 'spaces', 'contents', 'schemas', 'translations', 'assets', 'tasks', 'tokens', 'webhooks', 'users', … */
   entity: string;
   id?: string;
   op: 'created' | 'updated' | 'deleted';

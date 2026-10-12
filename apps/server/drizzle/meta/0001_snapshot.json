@@ -1,6 +1,6 @@
 {
-  "id": "e65f6383-c79f-42e8-ab5a-15368e5c573d",
-  "prevId": "53c6f9e4-6574-4161-b4f6-bb13c6219920",
+  "id": "3bb463b2-b0cf-44d1-9852-8787204a83c3",
+  "prevId": "7e785178-6b15-452b-bb0a-2c7eaa9fbc66",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1050,39 +1050,6 @@
           "onDelete": "cascade"
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.settings": {
-      "name": "settings",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "'settings'"
-        },
-        "ui": {
-          "name": "ui",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2149,7 +2116,7 @@
           "type": "text[]",
           "primaryKey": false,
           "notNull": true,
-          "default": "'{}'::text[]"
+          "default": "'{}'"
         },
         "lock": {
           "name": "lock",
@@ -2201,7 +2168,7 @@
         },
         "users_permissions_check": {
           "name": "users_permissions_check",
-          "value": "\"users\".\"permissions\" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'SETTINGS_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[]"
+          "value": "\"users\".\"permissions\" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[]"
         }
       },
       "isRLSEnabled": false

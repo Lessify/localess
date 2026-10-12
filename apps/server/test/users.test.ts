@@ -3,7 +3,7 @@ import { UserPermission } from '@localess/shared';
 import { UsersService } from '../src/modules/users/services/users.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
-const { USER_MANAGEMENT, CONTENT_READ, CONTENT_UPDATE, SETTINGS_MANAGEMENT } = UserPermission;
+const { USER_MANAGEMENT, CONTENT_READ, CONTENT_UPDATE, SPACE_MANAGEMENT } = UserPermission;
 
 describe('user management', () => {
   let t: TestApp;
@@ -33,7 +33,7 @@ describe('user management', () => {
       email: 'powerful@example.com',
       password: 'secret1',
       role: 'CUSTOM',
-      permissions: [SETTINGS_MANAGEMENT],
+      permissions: [SPACE_MANAGEMENT],
     });
     ids = { admin: admin.id, manager: manager.id, reader: reader.id, powerful: powerful.id };
     adminCookie = await login(t, 'admin@example.com', 'secret1');
@@ -112,7 +112,7 @@ describe('user management', () => {
             email: 'x2@example.com',
             password: 'secret1',
             role: 'CUSTOM',
-            permissions: [SETTINGS_MANAGEMENT],
+            permissions: [SPACE_MANAGEMENT],
           })
         ).statusCode,
       ).toBe(403);
@@ -143,7 +143,7 @@ describe('user management', () => {
     it('stops a manager from granting admin or permissions they lack', async () => {
       expect((await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'ADMIN' })).statusCode).toBe(403);
       expect(
-        (await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'CUSTOM', permissions: [SETTINGS_MANAGEMENT] }))
+        (await call(managerCookie, 'PATCH', `/api/app/users/${ids.reader}`, { role: 'CUSTOM', permissions: [SPACE_MANAGEMENT] }))
           .statusCode,
       ).toBe(403);
     });

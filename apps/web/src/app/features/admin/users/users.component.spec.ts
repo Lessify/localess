@@ -277,7 +277,7 @@ describe('UsersComponent', () => {
       expect(component.canManage(user({ role: 'CUSTOM', permissions: ['CONTENT_READ'] as User['permissions'] }))).toBe(true);
       expect(component.canManage(user({ id: 'mgr', role: 'CUSTOM' }))).toBe(false);
       expect(component.canManage(user({ role: 'ADMIN' }))).toBe(false);
-      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['SETTINGS_MANAGEMENT'] as User['permissions'] }))).toBe(false);
+      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] as User['permissions'] }))).toBe(false);
     });
   });
 });

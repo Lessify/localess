@@ -113,6 +113,6 @@ describe('UserInviteDialogComponent', () => {
 
     expect(component['canGrantAdmin']()).toBe(false);
     expect(component.canGrantPermission('CONTENT_READ')).toBe(true);
-    expect(component.canGrantPermission('SETTINGS_MANAGEMENT')).toBe(false);
+    expect(component.canGrantPermission('SPACE_MANAGEMENT')).toBe(false);
   });
 });

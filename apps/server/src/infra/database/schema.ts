@@ -190,16 +190,6 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
 });
 
 // ---------------------------------------------------------------------------------------------------
-// Global settings (was `configs/settings`)
-// ---------------------------------------------------------------------------------------------------
-
-export const settings = pgTable('settings', {
-  id: text('id').primaryKey().default('settings'),
-  ui: jsonb('ui').$type<{ text?: string; color?: string }>(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
-
-// ---------------------------------------------------------------------------------------------------
 // Locales: every locale a space can use. Database data only, seeded and changed by migrations; the API only reads it.
 // ---------------------------------------------------------------------------------------------------
 

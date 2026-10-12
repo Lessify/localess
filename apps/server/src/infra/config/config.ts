@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import type { LogLevel } from '@nestjs/common';
+import { INSTANCE_COLORS, type InstanceLabel } from '@localess/shared';
 import { z } from 'zod';
 import type { OAuthProviderId } from './oauth-providers.js';
 
@@ -26,6 +27,9 @@ const envSchema = z.object({
   LOCALESS_PUBLIC_URL: z.string().url().optional(),
   // Shown on the login page.
   LOCALESS_LOGIN_MESSAGE: z.string().default(''),
+  // The label that tells installations apart (for example production and test); unset or blank: no label.
+  LOCALESS_INSTANCE_NAME: z.string().max(100).optional(),
+  LOCALESS_INSTANCE_COLOR: z.enum(INSTANCE_COLORS).default('primary'),
   // Comma-separated OAuth providers to offer: GOOGLE, MICROSOFT. Each also needs its client id + secret.
   LOCALESS_AUTH_PROVIDERS: z.string().default(''),
   // Google: required `hd` (Workspace domain). Microsoft: the tenant (domain or id) — required for Microsoft.
@@ -97,6 +101,8 @@ export interface AppConfig {
   firstAdmin: { email: string; password: string } | undefined;
   publicUrl: string | undefined;
   loginMessage: string;
+  /** LOCALESS_INSTANCE_NAME / LOCALESS_INSTANCE_COLOR; undefined when the instance is not named. */
+  instance: InstanceLabel | undefined;
   auth: {
     customDomain: string;
     autoRegister: boolean;
@@ -187,6 +193,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         : undefined,
     publicUrl: parsed.LOCALESS_PUBLIC_URL?.replace(/\/+$/, ''),
     loginMessage: parsed.LOCALESS_LOGIN_MESSAGE,
+    instance: parsed.LOCALESS_INSTANCE_NAME?.trim()
+      ? { name: parsed.LOCALESS_INSTANCE_NAME.trim(), color: parsed.LOCALESS_INSTANCE_COLOR }
+      : undefined,
     auth: oauthProviders(parsed),
     smtp: parsed.LOCALESS_SMTP_URL ? { url: parsed.LOCALESS_SMTP_URL, from: parsed.LOCALESS_SMTP_FROM } : undefined,
     logLevels: LOG_LEVELS.slice(0, LOG_LEVELS.indexOf(parsed.LOCALESS_LOG_LEVEL) + 1),

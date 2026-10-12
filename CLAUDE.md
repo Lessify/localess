@@ -87,7 +87,7 @@ apps/web/src/app/
 ├── core/          # App-wide singletons and state (@core/*)
 │   ├── api/       # Runtime config, SSE change events, liveQuery, apiInterceptor
 │   ├── services/  # App API services used by several features or by a store
-│   ├── stores/    # 4 NgRx Signal stores (UserStore, SpaceStore, AppSettingsStore, LocalSettingsStore)
+│   ├── stores/    # 3 NgRx Signal stores (UserStore, SpaceStore, LocalSettingsStore)
 │   ├── guards/    # permissionGuard, spaceSelectionGuard, dirty-form guard
 │   └── error-handler/, http-interceptors/, title/, utils/
 ├── shared/        # Reusable UI only (@shared/*)
@@ -105,10 +105,9 @@ apps/server/src/   # NestJS server: infra/ (config, database, storage, events, h
 
 ### State Management
 
-Four NgRx Signal stores initialized at app startup:
+Three NgRx Signal stores initialized at app startup:
 - **`UserStore`**: Auth state, role, granular permissions (loaded from `/api/auth/me`)
 - **`SpaceStore`**: Selected workspace, content hierarchy, schemas, documents
-- **`AppSettingsStore`**: Global UI settings
 - **`LocalSettingsStore`**: User preferences (persisted to localStorage)
 
 ### Routing & Guards
@@ -151,7 +150,7 @@ After every code change, always run the following in order:
 
 ## Environment & Local Setup
 
-Two Angular build configurations: `development` and `production`. In development, `pnpm dev` (or `pnpm start` alone) proxies `/api` to the server on :3000 (`apps/web/proxy.conf.cjs`). Server configuration is environment variables only — see [apps/server/README.md](apps/server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
+Two Angular build configurations: `development` and `production`. In development, `pnpm dev` (or `pnpm start` alone) proxies `/api` to the server on :3000 (`apps/web/proxy.conf.cjs`). Server configuration is environment variables only — every one is listed with its default in [apps/server/.env.example](apps/server/.env.example); see also [apps/server/README.md](apps/server/README.md) and [docs/deployment/configuration.md](docs/deployment/configuration.md).
 
 There is no in-app setup wizard. Start the server once with `LOCALESS_ADMIN_EMAIL` and `LOCALESS_ADMIN_PASSWORD` set to seed an admin (only when no users exist), or run `pnpm localess admin:create --email <email>`. Local data (embedded Postgres, uploaded files) lives in `.data` at the repo root (unless `LOCALESS_DATA_DIR` is set) and persists across restarts; delete it to start from scratch.
 
@@ -192,7 +191,6 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |
 | Admin → Spaces | [docs/features/admin/admin-spaces.md](docs/features/admin/admin-spaces.md) | `features/admin/spaces/` |
-| Admin → Settings | [docs/features/admin/admin-settings.md](docs/features/admin/admin-settings.md) | `features/admin/settings/` |
 | **Feature modules — Spaces** | | |
 | Spaces overview | [docs/features/spaces/overview.md](docs/features/spaces/overview.md) | Any space feature |
 | Dashboard | [docs/features/spaces/dashboard.md](docs/features/spaces/dashboard.md) | `features/spaces/dashboard/` |

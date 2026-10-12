@@ -2,6 +2,7 @@
 // Types, enums and pure functions only; zod validators live in '@localess/shared/zod'.
 export * from './content.js';
 export * from './locales.js';
+export * from './models/app-config.model.js';
 export * from './models/asset.model.js';
 export * from './models/content.model.js';
 export * from './models/firebase-import.model.js';

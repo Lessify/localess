@@ -60,7 +60,6 @@ All authenticated routes live under `/features` and are protected by `authGuard(
   admin/
     users                           → UsersModule         [USER_MANAGEMENT]
     spaces                          → SpacesModule        [SPACE_MANAGEMENT]
-    settings                        → SettingsModule      [SETTINGS_MANAGEMENT]
 ```
 
 Guards in brackets are `permissionGuard(...)` (`core/guards/permission.guard.ts`), reading role and permissions from `UserStore`; the server enforces the same permissions on every `/api/app` call. `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).

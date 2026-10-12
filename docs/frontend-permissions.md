@@ -37,7 +37,6 @@ enum UserPermission {
   // Administration
   USER_MANAGEMENT        // Manage users (invite, edit, delete)
   SPACE_MANAGEMENT       // Create/edit/delete spaces and their settings
-  SETTINGS_MANAGEMENT    // Edit global app settings
 
   // Translations
   TRANSLATION_READ       // View translations

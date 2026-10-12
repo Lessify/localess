@@ -14,7 +14,6 @@ State is managed with **NgRx Signals** (`@ngrx/signals`). Four global signal sto
 |-------|-----|-----------|---------|
 | `UserStore` | `LL-USER-STATE` | `isAuthenticated` only | Session user (`GET /api/auth/me`), role, permissions |
 | `SpaceStore` | `LL-SPACE-STATE` | `selectedSpaceId`, `selectedEnvironmentBySpaceId` | Active workspace, content path, schemas |
-| `AppSettingsStore` | — | No | Global UI settings (`GET /api/app/settings`) |
 | `LocalSettingsStore` | `LL-SETTINGS-STATE` | All fields | User preferences (theme, layouts, editor) |
 
 ---
@@ -96,17 +95,11 @@ This is what makes shared links work: the persisted `selectedSpaceId` is only a 
 
 ---
 
-## AppSettingsStore
+## The instance label
 
-**File:** `apps/web/src/app/core/stores/app-settings.store.ts`
-
-Loads global application settings through `SettingsService.find()` — a live query on `GET /api/app/settings` (the single `settings` row), refetched on `settings` change events. Contains UI configuration set by admins (e.g. custom branding). Readable by every role.
-
-```typescript
-{ ui: AppUi | undefined }
-```
-
-Not persisted to `localStorage` — always fetched fresh on startup.
+Not a store: the installation's label (`LOCALESS_INSTANCE_NAME` / `LOCALESS_INSTANCE_COLOR`) comes with the runtime config
+(`AppConfigService.config().instance`, from `GET /api/config`), shown by `ll-instance-label` in the sidebar and on the
+login page. It is deployment configuration, not data: there is no settings table or settings page.
 
 Runtime server configuration (login providers, plugins, machine translation) is not in a store: it is `AppConfigService.config()` (`core/api/`), loaded from `GET /api/config` before the first render — see [Frontend Architecture](frontend-architecture.md#server-integration).
 

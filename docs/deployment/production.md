@@ -33,6 +33,13 @@ per-user. How the headers and redirects work: [CDN Caching](../cdn-caching.md).
 Generated image renditions are also cached on disk next to the original, so a cache miss for a
 known transformation is cheap.
 
+## Telling environments apart
+
+Give each installation a label, so nobody edits production thinking it is test: `LOCALESS_INSTANCE_NAME=Production`
+with `LOCALESS_INSTANCE_COLOR=destructive`, `LOCALESS_INSTANCE_NAME=Test` with `secondary`
+([configuration](configuration.md#instance-label)). The label is part of the deployment, so restoring a production
+backup into test keeps the test label.
+
 ## Backups
 
 Two things hold all state: **Postgres** and the **storage directory** (`/data/storage` in Docker).

@@ -169,17 +169,6 @@ const routes: Routes = [
           } satisfies BreadcrumbItem,
         },
       },
-      {
-        path: 'admin/settings',
-        title: 'Settings',
-        loadChildren: () => import('./admin/settings/settings.module').then(m => m.SettingsModule),
-        canActivate: [permissionGuard(UserPermission.SETTINGS_MANAGEMENT)],
-        data: {
-          breadcrumb: {
-            label: 'Settings',
-          } satisfies BreadcrumbItem,
-        },
-      },
     ],
   },
 ];

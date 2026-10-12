@@ -13,7 +13,6 @@ import { ContentsModule } from './modules/contents/contents.module.js';
 import { FirebaseImportModule } from './modules/firebase-import/firebase-import.module.js';
 import { PluginsModule } from './modules/plugins/plugins.module.js';
 import { SchemasModule } from './modules/schemas/schemas.module.js';
-import { SettingsModule } from './modules/settings/settings.module.js';
 import { SpacesModule } from './modules/spaces/spaces.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { TokensModule } from './modules/tokens/tokens.module.js';
@@ -38,7 +37,6 @@ export class AppModule {
         // Features: each owns its App API (/api/app) and public API (/api/v1) controllers.
         UsersModule,
         SpacesModule,
-        SettingsModule,
         SchemasModule,
         ContentsModule,
         TranslationsModule,
