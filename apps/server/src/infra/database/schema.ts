@@ -118,7 +118,7 @@ export const users = pgTable(
     permissions: text('permissions', { enum: values(UserPermission) })
       .array()
       .notNull()
-      .default(sql`'{}'::text[]`),
+      .default([]),
     lock: boolean('lock').notNull().default(false),
     ...timestamps,
   },
