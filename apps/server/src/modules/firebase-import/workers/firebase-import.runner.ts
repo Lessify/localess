@@ -134,7 +134,7 @@ export class FirebaseImportRunner {
       const message = (error as Error).message;
       this.logger.warn(`Import ${runId} failed at ${failedStage}: ${message}`);
       Object.assign(stage(failedStage), { status: 'FAILED', error: message });
-      await save({ status: 'FAILED', error: { stage: failedStage, message }, finishedAt: new Date() }).catch(() => undefined);
+      await save({ status: 'FAILED', finishedAt: new Date() }).catch(() => undefined);
     } finally {
       clearInterval(heartbeat);
     }

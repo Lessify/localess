@@ -1,5 +1,5 @@
 {
-  "id": "b30b71e0-79b5-49a9-95b1-52432f5bb047",
+  "id": "630f43b3-e198-428d-b223-df7c10258058",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -635,12 +635,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "error": {
-          "name": "error",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "started_by": {
           "name": "started_by",
           "type": "jsonb",
@@ -681,21 +675,6 @@
           ],
           "isUnique": true,
           "where": "\"firebase_imports\".\"status\" = 'RUNNING'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "firebase_imports_started_idx": {
-          "name": "firebase_imports_started_idx",
-          "columns": [
-            {
-              "expression": "started_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

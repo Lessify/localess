@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
@@ -42,6 +42,15 @@ describe('app API: import from Firebase', () => {
     }
     throw new Error('import did not finish');
   };
+
+  it('keeps a failed run\'s error on its stage only, and no index for the history list', async () => {
+    const columns = await t.db.execute<{ column_name: string }>(
+      sql`select column_name from information_schema.columns where table_name = 'firebase_imports'`,
+    );
+    expect(columns.rows.map(it => it.column_name)).not.toContain('error');
+    const indexes = await t.db.execute<{ indexname: string }>(sql`select indexname from pg_indexes where tablename = 'firebase_imports'`);
+    expect(indexes.rows.map(it => it.indexname)).not.toContain('firebase_imports_started_idx');
+  });
 
   it('is for admins only', async () => {
     expect((await manager.post(`${base}/spaces`, connection())).statusCode).toBe(403);

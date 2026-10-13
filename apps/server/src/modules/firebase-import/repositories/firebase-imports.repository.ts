@@ -9,7 +9,7 @@ import { RunAbandoned } from '../utils/firebase-import.utils.js';
 export type FirebaseImportEntity = typeof firebaseImports.$inferSelect;
 export type NewFirebaseImport = typeof firebaseImports.$inferInsert;
 /** What a run's progress save may set besides its stages. */
-export type FirebaseImportUpdate = Partial<Pick<NewFirebaseImport, 'status' | 'error' | 'finishedAt'>>;
+export type FirebaseImportUpdate = Partial<Pick<NewFirebaseImport, 'status' | 'finishedAt'>>;
 
 /**
  * The `firebase_imports` runs. One RUNNING run per install (a partial unique index); every write of the runner is
@@ -82,15 +82,11 @@ export class FirebaseImportsRepository {
    * Fails a running run (cut off by a stopped instance, or cancelled); its runner stops at its next save. `undefined`
    * when it ended meanwhile.
    */
-  fail(
-    id: string,
-    values: Required<Pick<NewFirebaseImport, 'stages' | 'error'>>,
-    tx?: Transaction,
-  ): Promise<FirebaseImportEntity | undefined> {
+  fail(id: string, stages: FirebaseImportStage[], tx?: Transaction): Promise<FirebaseImportEntity | undefined> {
     return transaction(this.db, tx, async t => {
       const [run] = await t
         .update(firebaseImports)
-        .set({ status: 'FAILED', ...values, finishedAt: new Date() })
+        .set({ status: 'FAILED', stages, finishedAt: new Date() })
         .where(and(eq(firebaseImports.id, id), eq(firebaseImports.status, 'RUNNING')))
         .returning();
       return run;

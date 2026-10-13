@@ -7,6 +7,7 @@ import { assets, contents, firebaseImports, schemas, spaces, tokens, translation
 import { FirebaseClient } from '../src/modules/firebase-import/utils/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/workers/firebase-import.runner.js';
 import { selectSpaces } from '../src/shared/queries/space.query.js';
+import { toFirebaseImport } from '../src/shared/transformers/firebase-import.transformer.js';
 import { fakeFirebase, FakeFirebaseSpace } from './fake-firebase.js';
 import { UUID_V7 } from './ids.js';
 import { createTestApp, TestApp } from './test-app.js';
@@ -557,7 +558,7 @@ describe('Firebase import run', () => {
     await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(twin.url, 'migration-secret', { allowInternal: true }), 'fbTwin');
     await twin.close();
     const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
-    expect(run).toMatchObject({ status: 'FAILED', error: { stage: 'tokens', message: "Token 'legacy' already exists in space 'Site'" } });
+    expect(toFirebaseImport(run)).toMatchObject({ status: 'FAILED', error: { stage: 'tokens', message: "Token 'legacy' already exists in space 'Site'" } });
   });
 
   it('records the failing stage and keeps the space flagged', async () => {
@@ -573,7 +574,7 @@ describe('Firebase import run', () => {
     await failing.close();
     const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
     expect(run.status).toBe('FAILED');
-    expect(run.error).toMatchObject({ stage: 'assets', message: expect.stringContaining('asset') });
+    expect(toFirebaseImport(run).error).toMatchObject({ stage: 'assets', message: expect.stringContaining('asset') });
     expect(run.stages.find(it => it.stage === 'translations')!.status).toBe('DONE');
     expect(run.stages.find(it => it.stage === 'assets')!.status).toBe('FAILED');
     expect(run.stages.find(it => it.stage === 'contents')!.status).toBe('PENDING');

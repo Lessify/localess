@@ -87,8 +87,7 @@ New table `firebase_imports`, one row per run:
 | `source_space_name` | text | |
 | `space_id` | uuid, nullable, unique | the new space; `on delete cascade`: deleting the space deletes its run. Null until the space exists, and for a run that failed before creating it |
 | `status` | text | `RUNNING` \| `FINISHED` \| `FAILED` |
-| `stages` | jsonb | `[{ stage, status, count, total?, warnings?, warningCount?, error? }]` in run order |
-| `error` | jsonb, nullable | `{ stage, message }` |
+| `stages` | jsonb | `[{ stage, status, count, total?, warnings?, warningCount?, error? }]` in run order; a failed run's error is on its `FAILED` stage (the API's `error: { stage, message }` is read from it) |
 | `started_by` | jsonb | `{ name, email }` of the admin |
 | `started_at`, `finished_at` | timestamptz | |
 
@@ -145,7 +144,7 @@ every 50 files, so polling shows movement.
 
 Then any content draft or `/links` list served while the run went is dropped, and the run is `FINISHED`.
 
-On an error the current stage becomes `FAILED` with the message, the run becomes `FAILED` with `error`, and the
+On an error the current stage becomes `FAILED` with the message, the run becomes `FAILED` (the API names the stage and message as `error`), and the
 space reads as failed. Stored files stay until the space is deleted (deleting a space removes its
 files).
 

@@ -85,6 +85,10 @@ A space imported from Firebase is linked to its one run (one-to-one); the space 
 - **Deleting the space deletes its run**, so the Firebase space can be imported again. A run that failed before
   creating its space stays in the history.
 - A failed space is not resumed: the UI says to delete it and import again.
+- **A failed run's error is kept once**, on its `FAILED` stage in `stages`; the `error` column is **dropped** (it held
+  the same stage and message). The App API still sends `error: { stage, message }`, read from that stage.
+- `firebase_imports_started_idx` is **dropped**: the run history is a handful of rows per install.
+- Runs are kept: an import is rare, and deleting the space deletes its run.
 
 ### Locales
 

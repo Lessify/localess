@@ -66,7 +66,6 @@ CREATE TABLE "firebase_imports" (
 	"space_id" uuid,
 	"status" text NOT NULL,
 	"stages" jsonb NOT NULL,
-	"error" jsonb,
 	"started_by" jsonb NOT NULL,
 	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"heartbeat_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -311,7 +310,6 @@ CREATE INDEX "assets_kind_idx" ON "assets" USING btree ("space_id","kind","name"
 CREATE INDEX "contents_parent_idx" ON "contents" USING btree ("space_id","parent_id","kind" DESC NULLS LAST,"name");--> statement-breakpoint
 CREATE INDEX "contents_kind_idx" ON "contents" USING btree ("space_id","kind","name");--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_running_idx" ON "firebase_imports" USING btree ("status") WHERE "firebase_imports"."status" = 'RUNNING';--> statement-breakpoint
-CREATE INDEX "firebase_imports_started_idx" ON "firebase_imports" USING btree ("started_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_space_idx" ON "firebase_imports" USING btree ("space_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "firebase_imports_source_idx" ON "firebase_imports" USING btree ("source_space_id") WHERE "firebase_imports"."space_id" is not null;--> statement-breakpoint
 CREATE UNIQUE INDEX "schemas_name_idx" ON "schemas" USING btree ("space_id","name");--> statement-breakpoint

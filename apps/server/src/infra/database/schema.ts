@@ -7,7 +7,6 @@ import {
   type ContentMetadata,
   FIREBASE_IMPORT_STATUSES,
   type FirebaseImportStage,
-  type FirebaseImportStageName,
   type SchemaEnumValue,
   type SchemaField,
   SchemaType,
@@ -612,8 +611,8 @@ export const firebaseImports = pgTable(
     // and for a run that failed before creating it.
     spaceId: uuid('space_id').references(() => spaces.id, { onDelete: 'cascade' }),
     status: text('status', { enum: values(FIREBASE_IMPORT_STATUSES) }).notNull(),
+    // A failed run's error is on its FAILED stage.
     stages: jsonb('stages').$type<FirebaseImportStage[]>().notNull(),
-    error: jsonb('error').$type<{ stage: FirebaseImportStageName; message: string }>(),
     startedBy: jsonb('started_by').$type<UserRef>().notNull(),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     // Moved on every progress write and every 30 s while running: a RUNNING run whose heartbeat is stale was cut off.
@@ -625,7 +624,6 @@ export const firebaseImports = pgTable(
     uniqueIndex('firebase_imports_running_idx')
       .on(t.status)
       .where(sql`${t.status} = 'RUNNING'`),
-    index('firebase_imports_started_idx').on(t.startedAt.desc()),
     oneOf('firebase_imports_status_check', t.status, FIREBASE_IMPORT_STATUSES),
     uniqueIndex('firebase_imports_space_idx').on(t.spaceId),
     // One local space per Firebase space: its legacy id resolves to one space.

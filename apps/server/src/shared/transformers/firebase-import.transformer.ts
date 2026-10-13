@@ -3,8 +3,13 @@ import type { firebaseImports } from '../../infra/database/schema.js';
 
 type FirebaseImportEntity = typeof firebaseImports.$inferSelect;
 
-/** A `firebase_imports` run as the App API's DTO: unset columns left out, the heartbeat dropped. */
-export const toFirebaseImport = (entity: FirebaseImportEntity): FirebaseImport => ({
+/**
+ * A `firebase_imports` run as the App API's DTO: unset columns left out, the heartbeat dropped, the error of a failed
+ * run taken from its FAILED stage.
+ */
+export const toFirebaseImport = (entity: FirebaseImportEntity): FirebaseImport => {
+  const failed = entity.stages.find(it => it.status === 'FAILED');
+  return {
   id: entity.id,
   origin: entity.origin,
   sourceSpaceId: entity.sourceSpaceId,
@@ -12,8 +17,9 @@ export const toFirebaseImport = (entity: FirebaseImportEntity): FirebaseImport =
   ...(entity.spaceId ? { spaceId: entity.spaceId } : {}),
   status: entity.status as FirebaseImport['status'],
   stages: entity.stages,
-  ...(entity.error ? { error: entity.error } : {}),
+  ...(failed ? { error: { stage: failed.stage, message: failed.error ?? '' } } : {}),
   startedBy: entity.startedBy,
   startedAt: entity.startedAt.toISOString(),
   ...(entity.finishedAt ? { finishedAt: entity.finishedAt.toISOString() } : {}),
-});
+  };
+};

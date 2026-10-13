@@ -65,7 +65,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   private failAtCurrentStage(run: FirebaseImportEntity, message: string): Promise<FirebaseImportEntity | undefined> {
     const current = run.stages.find(it => it.status === 'RUNNING') ?? run.stages.find(it => it.status === 'PENDING') ?? run.stages[0];
     const stages = run.stages.map(it => (it.stage === current.stage ? { ...it, status: 'FAILED' as const, error: message } : it));
-    return this.runs.fail(run.id, { stages, error: { stage: current.stage, message } });
+    return this.runs.fail(run.id, stages);
   }
 
   private client(origin: string, token: string): FirebaseClient {
