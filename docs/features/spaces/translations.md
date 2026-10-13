@@ -27,14 +27,14 @@ apps/web/src/app/features/spaces/translations/
   export-dialog/                         ← export to file
   import-dialog/                         ← import from file (creates Task)
   shared/components/
-    translation-string-view/ translation-string-edit/  ← STRING type components (only type with an editor UI)
+    translation-string-view/ translation-string-edit/  ← value view and editor (translations are plain text)
     translation-detail/                  ← per-key detail panel, locale editing, keyboard navigation
     translation-list/                    ← flat/tree list rendering (renders `<ll-tree>`)
     translation-filter/                  ← search/filter bar
     translation-status/                  ← visual status badge
 
 apps/web/src/app/shared/models/
-  translation.model.ts                   ← Translation, TranslationType, etc.
+  translation.model.ts                   ← Translation, the key rule and value limit, etc.
 
 apps/web/src/app/shared/components/
   translate-locale-dialog/               ← shared/global dialog, also used by Contents (bulk AI-translate to a target locale)
@@ -73,23 +73,24 @@ The directions are asked separately because Google models them separately. `Tran
 menus disable their locale options too — those pick nothing but the translation — and the Locales settings table reports both directions per
 locale, see [Space Settings → Translation support](settings.md#translation-support).
 
-## Translation Types
+## Keys and values
 
-`TranslationType` (`STRING`, `PLURAL`, `ARRAY`) is defined in the data model, but only `STRING` currently has an editor UI:
+A translation is plain text: one string per locale (the former `PLURAL` and `ARRAY` types, which had no editor and no
+users, are gone; the Firebase import keeps such a value as the text it was stored as).
 
-| Type     | Component                                                           | Description                                                                  |
-| -------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `STRING` | `TranslationStringEditComponent` / `TranslationStringViewComponent` | Single value per locale — the only type creatable/editable from the UI today |
-| `PLURAL` | —                                                                   | Defined in `TranslationType` enum, no dedicated edit/view component exists   |
-| `ARRAY`  | —                                                                   | Defined in `TranslationType` enum, no dedicated edit/view component exists   |
-
-`AddDialogComponent` hardcodes `type: 'STRING'` on its form — there is no type picker, so new keys are always created as `STRING`.
+- **Key rule** (`TRANSLATION_KEY_PATTERN`, `isTranslationKey` in `@localess/shared`): a letter first, then letters,
+  digits, `-`, `_` or `.`, ending in a letter or digit, at most 150 characters. The add and rename dialogs use it, and
+  the server checks it wherever a key is created or renamed: the App API (400), the CLI push `add-missing` (400 naming
+  the keys, dry run too) and the import tasks (ERROR naming the keys, nothing written). Existing keys are updated
+  whatever their form, so keys imported from Firebase keep working.
+- **Value limit** (`TRANSLATION_VALUE_MAX_LENGTH`): 10,000 characters per locale, on every write (App API, CLI push,
+  import files) and in the editor.
 
 ## Dialogs
 
 | Dialog                           | Purpose                                                                                                                                                               |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AddDialogComponent`             | Create a new translation key (always `STRING` type — no type picker; Key, labels, description, optional client-side auto-translate to other locales)                   |
+| `AddDialogComponent`             | Create a new translation key (Key, value, labels, description, optional client-side auto-translate to other locales)                                                  |
 | `EditDialogComponent`            | Edit key metadata (labels, description)                                                                                                                               |
 | `EditIdDialogComponent`          | Rename a translation key (`PUT …/:id/key`, addressed by the UUID `id`)                                                                                                 |
 | `ExportDialogComponent`          | Choose format and locales to export                                                                                                                                   |

@@ -11,10 +11,10 @@
     (scroll)="handleScroll()"
     hlmInputGroupTextarea
     placeholder="Enter your content here..."
-    maxlength="1000"
+    [attr.maxlength]="maxLength"
     class="max-h-80 min-h-0">
   </textarea>
   <div hlmInputGroupAddon align="block-end">
-    <span hlmInputGroupText class="text-muted-foreground text-xs">{{ 1000 - textarea.value.length }} characters left</span>
+    <span hlmInputGroupText class="text-muted-foreground text-xs">{{ maxLength - textarea.value.length }} characters left</span>
   </div>
 </div>

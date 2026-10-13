@@ -193,7 +193,8 @@ describe('Firebase import run', () => {
         doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
         tokens: [{ id: 'TOKENV3000000000000C', name: 'odd', version: 2, permissions: ['CONTENT_PUBLIC', 'SOMETHING_NEW'] }],
         webhooks: [{ id: 'w9', name: 'Odd', url: 'https://example.com/hook', events: ['content.published', 'space.renamed'] }],
-        translations: [{ id: 'odd', type: 'MAP', locales: { en: 'x' } }],
+        // Translations are plain text: a Firebase type (PLURAL, ARRAY, anything) is dropped, the value kept as it is.
+        translations: [{ id: 'odd', type: 'PLURAL', locales: { en: '{"0":"None","1":"One"}' } }],
         schemas: [{ id: 'odd', type: 'WIDGET' }],
       },
     ]);
@@ -210,12 +211,14 @@ describe('Firebase import run', () => {
       const sid = run.spaceId!;
       expect((await t.db.select().from(tokens).where(eq(tokens.spaceId, sid)))[0].permissions).toEqual(['CONTENT_PUBLIC']);
       expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, sid)))[0].events).toEqual(['content.published']);
-      expect((await t.db.select().from(translations).where(eq(translations.spaceId, sid)))[0].type).toBe('STRING');
+      expect((await t.db.select().from(translations).where(eq(translations.spaceId, sid)))[0].locales).toEqual({
+        en: '{"0":"None","1":"One"}',
+      });
       expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, sid)))[0].type).toBe('ROOT');
       const warnings = (name: string) => run.stages.find(it => it.stage === name)!.warnings?.join('\n');
       expect(warnings('tokens')).toMatch(/odd: unknown permission SOMETHING_NEW, dropped/);
       expect(warnings('webhooks')).toMatch(/Odd: unknown event space.renamed, dropped/);
-      expect(warnings('translations')).toMatch(/odd: unknown type MAP, imported as STRING/);
+      expect(warnings('translations')).toBeUndefined();
       expect(warnings('schemas')).toMatch(/odd: unknown type WIDGET, imported as ROOT/);
     } finally {
       await odd.close();

@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Locale, Translation, TranslationType } from '@localess/shared';
+import { Locale, Translation } from '@localess/shared';
 import { TranslationStatus } from '../../models/translation-status.model';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -18,7 +18,7 @@ const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
 function translation(overrides: Partial<Translation> = {}): Translation {
-  return { id: 't1', key: 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+  return { id: 't1', key: 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
 describe('TranslationDetailComponent', () => {

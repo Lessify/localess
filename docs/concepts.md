@@ -152,12 +152,9 @@ Postgres: translations (id uuid, space_id, key)   ← key: the translation key, 
 `id` is a UUIDv7 the App API uses to address the row; the public API, the SDK, the CLI and export files use the
 **key** (export files carry it as `id`). Renaming changes only `key`.
 
-Three translation types:
-| Type | Structure |
-|------|-----------|
-| `STRING` | Single string per locale |
-| `PLURAL` | Locale-keyed plural forms |
-| `ARRAY` | Array of strings per locale |
+A translation is plain text: one string per locale. Keys follow one rule (a letter first, then letters, digits, `-`,
+`_` or `.`, ending in a letter or digit, at most 150 characters), and a value is at most 10,000 characters; see
+[translations.md](features/spaces/translations.md#keys-and-values).
 
 ---
 

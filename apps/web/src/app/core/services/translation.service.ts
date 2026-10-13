@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Translation, TranslationCreate, TranslationType, TranslationUpdate } from '@localess/shared';
+import { Translation, TranslationCreate, TranslationUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -34,11 +34,7 @@ export class TranslationService {
   }
 
   create(spaceId: string, entity: TranslationCreate): Observable<void> {
-    const locales: Record<string, string> = {};
-    for (const [locale, value] of Object.entries(entity.locales)) {
-      locales[locale] = this.wrapLocaleValue(entity.type, value);
-    }
-    const body: TranslationCreate = { key: entity.key, type: entity.type, locales };
+    const body: TranslationCreate = { key: entity.key, locales: entity.locales };
     if (entity.labels && entity.labels.length > 0) {
       body.labels = entity.labels;
     }
@@ -46,18 +42,6 @@ export class TranslationService {
       body.description = entity.description;
     }
     return this.http.post<void>(this.base(spaceId), body);
-  }
-
-  private wrapLocaleValue(type: TranslationType, value: string): string {
-    switch (type) {
-      case TranslationType.ARRAY:
-        return `["${value}"]`;
-      case TranslationType.PLURAL:
-        return `{"0":"${value}"}`;
-      case TranslationType.STRING:
-      default:
-        return value;
-    }
   }
 
   /** Empty labels/description clear them. */

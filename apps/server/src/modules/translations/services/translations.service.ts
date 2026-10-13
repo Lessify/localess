@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Translation, TranslationType, WebHookEvent } from '@localess/shared';
+import { type Translation, WebHookEvent } from '@localess/shared';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
@@ -48,7 +48,7 @@ export class TranslationsService {
 
   async create(
     spaceId: string,
-    input: { key: string; type: TranslationType; locales: Record<string, string>; labels?: string[]; description?: string },
+    input: { key: string; locales: Record<string, string>; labels?: string[]; description?: string },
   ): Promise<Translation> {
     requireSpaceLocales(await this.spaces.require(spaceId), Object.keys(input.locales));
     const entity = await this.translations.create(spaceId, {

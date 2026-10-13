@@ -7,6 +7,7 @@ import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.ser
 import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
 import { buildDrafts, createTestApp, draftSnapshots, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
+import { newUuid } from '../src/infra/database/id.js';
 
 describe('v1 dev tools and manage API', () => {
   let t: TestApp;
@@ -152,10 +153,29 @@ describe('v1 dev tools and manage API', () => {
       await buildDrafts(t, S1);
       const response = await push({ type: 'add-missing', values: { 'brand.new': 'Neu', greeting: 'ignored, exists' } });
       expect(response.json()).toEqual({ message: 'Added 1 translation', ids: ['brand.new'] });
-      expect(await translation('brand.new')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
+      expect(await translation('brand.new')).toMatchObject({ locales: { de: 'Neu' } });
       expect((await translation('greeting')).locales).toEqual({ en: 'Hello', de: 'Hallo' });
       expect(await draftSnapshots(t.db, S1)).toEqual([]);
       expectNotified(true);
+    });
+
+    it('refuses to add keys outside the key rule, naming them, even on a dry run', async () => {
+      for (const dryRun of [true, false]) {
+        const response = await push({ type: 'add-missing', values: { 'ok.key': 'x', 'bad key': 'x', 'trailing.': 'x' }, dryRun });
+        expect(response.statusCode).toBe(400);
+        expect(response.json()).toMatchObject({ status: 'INVALID_ARGUMENT', details: { keys: ['bad key', 'trailing.'] } });
+      }
+      expect(await translation('ok.key')).toBeUndefined();
+      expectNotified(false);
+    });
+
+    it('updates existing keys whatever their form (imported keys are kept as they are)', async () => {
+      await t.db.insert(translations).values({ id: newUuid(), spaceId: S1, key: 'legacy key', locales: { en: 'Old' } });
+      const response = await push({ type: 'update-existing', values: { 'legacy key': 'Alt' } });
+      expect(response.json()).toEqual({ message: 'Updated 1 translation', ids: ['legacy key'] });
+      await t.db.delete(translations).where(eq(translations.key, 'legacy key'));
+      dispatch.mockClear();
+      publish.mockClear();
     });
 
     it('updates only the pushed locale of existing keys', async () => {

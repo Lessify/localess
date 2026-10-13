@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Locale, Translation, TranslationType } from '@localess/shared';
+import { Locale, Translation } from '@localess/shared';
 import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
 import { vi } from 'vitest';
 
@@ -10,7 +10,7 @@ const de: Locale = { id: 'de', name: 'German' };
 
 function translation(overrides: Partial<Translation> = {}): Translation {
   // The key follows the id unless given, so tests can name translations by either.
-  return { id: 't1', key: overrides.id ?? 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+  return { id: 't1', key: overrides.id ?? 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
 describe('TranslationListComponent', () => {

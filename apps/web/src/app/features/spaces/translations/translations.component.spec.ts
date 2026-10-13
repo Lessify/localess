@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Locale, Space, Token, TokenPermission, Translation, TranslationType } from '@localess/shared';
+import { Locale, Space, Token, TokenPermission, Translation } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
@@ -24,7 +24,7 @@ function space(overrides: Partial<Space> = {}): Space {
 
 function translation(overrides: Partial<Translation> = {}): Translation {
   // The key follows the id unless given, so tests can name translations by either.
-  return { id: 't1', key: overrides.id ?? 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+  return { id: 't1', key: overrides.id ?? 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
 describe('TranslationsComponent', () => {
@@ -146,14 +146,13 @@ describe('TranslationsComponent', () => {
     it('creates the translation with only the default locale when auto-translate is off', () => {
       const { component, open, create, success } = setup();
       open.mockReturnValue({
-        closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),
+        closed$: of({ key: 'new.id', value: 'Hello', labels: [], description: '' }),
       });
 
       component.openAddDialog();
 
       expect(create).toHaveBeenCalledWith('space-1', {
         key: 'new.id',
-        type: TranslationType.STRING,
         locales: { en: 'Hello' },
         labels: [],
         description: '',
@@ -161,10 +160,10 @@ describe('TranslationsComponent', () => {
       expect(success).toHaveBeenCalledWith('Translation has been added.');
     });
 
-    it('auto-translates the other locales when requested for STRING type', () => {
+    it('auto-translates the other locales when requested', () => {
       const { component, open, create, translate } = setup();
       open.mockReturnValue({
-        closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
+        closed$: of({ key: 'new.id', value: 'Hello', labels: [], description: '', autoTranslate: true }),
       });
 
       component.openAddDialog();
@@ -172,7 +171,6 @@ describe('TranslationsComponent', () => {
       expect(translate).toHaveBeenCalledWith({ content: 'Hello', sourceLocale: 'en', targetLocale: 'de' });
       expect(create).toHaveBeenCalledWith('space-1', {
         key: 'new.id',
-        type: TranslationType.STRING,
         locales: { en: 'Hello', de: 'translated' },
         labels: [],
         description: '',
@@ -183,14 +181,13 @@ describe('TranslationsComponent', () => {
       const { component, open, create, translate } = setup();
       translate.mockReturnValue(throwError(() => new Error('boom')));
       open.mockReturnValue({
-        closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
+        closed$: of({ key: 'new.id', value: 'Hello', labels: [], description: '', autoTranslate: true }),
       });
 
       component.openAddDialog();
 
       expect(create).toHaveBeenCalledWith('space-1', {
         key: 'new.id',
-        type: TranslationType.STRING,
         locales: { en: 'Hello' },
         labels: [],
         description: '',
@@ -201,7 +198,7 @@ describe('TranslationsComponent', () => {
       const { component, open, create, translate, error, success } = setup();
       translate.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 412, error: { message: 'not configured' } })));
       open.mockReturnValue({
-        closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '', autoTranslate: true }),
+        closed$: of({ key: 'new.id', value: 'Hello', labels: [], description: '', autoTranslate: true }),
       });
 
       component.openAddDialog();
@@ -223,7 +220,7 @@ describe('TranslationsComponent', () => {
       const { component, open, create, error } = setup();
       create.mockReturnValue(throwError(() => new Error('boom')));
       open.mockReturnValue({
-        closed$: of({ key: 'new.id', type: TranslationType.STRING, value: 'Hello', labels: [], description: '' }),
+        closed$: of({ key: 'new.id', value: 'Hello', labels: [], description: '' }),
       });
 
       component.openAddDialog();

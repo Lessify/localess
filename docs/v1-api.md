@@ -106,7 +106,7 @@ Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header
 
 | Type                   | Behavior                                                                                                   |
 |------------------------|------------------------------------------------------------------------------------------------------------|
-| `add-missing`          | Creates new `translations` rows (type `STRING`) for IDs that don't exist yet                                                |
+| `add-missing`          | Creates new `translations` rows for IDs that don't exist yet                                                |
 | `update-existing`      | Updates `locales->{locale}` (`jsonb_set`) for IDs that already exist                                                |
 | `delete-missing-key`   | Deletes the whole translation row — **every locale's value** — for each ID **not** in `values`             |
 | `delete-missing-value` | Removes only `locales.{locale}` for each ID **not** in `values` that has a value there; other locales keep theirs |
@@ -115,7 +115,10 @@ Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header
 run it with a complete file (normally the source locale). The former `delete-missing` was split into these two and is
 no longer accepted.
 
-Returns `400 invalid-argument` (`Locale not supported by this space`) when `:locale` is not one of the space's locales.
+Returns `400 invalid-argument` (`Locale not supported by this space`) when `:locale` is not one of the space's locales,
+and `400 invalid-argument` (`Invalid translation keys`, `details: { keys }`) when `add-missing` would create keys outside
+the key rule (see [translations.md](features/spaces/translations.md#keys-and-values)); nothing is written, dry run or not.
+Each value is at most 10,000 characters.
 
 **Response:**
 

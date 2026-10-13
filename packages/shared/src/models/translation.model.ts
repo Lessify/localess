@@ -3,10 +3,18 @@ import type { z } from 'zod';
 import type { Timestamp } from './timestamp.js';
 import type { zTranslationManageUpdateSchema } from './translation.zod.js';
 
-export enum TranslationType {
-  STRING = 'STRING',
-  PLURAL = 'PLURAL',
-  ARRAY = 'ARRAY',
+/**
+ * A translation key: a letter first, then letters, digits, `-`, `_` or `.`, ending in a letter or digit (the nested
+ * JSON format splits keys on `.`). Checked where a key is created or renamed; keys imported from Firebase are kept as
+ * they are.
+ */
+export const TRANSLATION_KEY_PATTERN = /^[a-zA-Z][a-zA-Z0-9_.-]*[a-zA-Z0-9]$/;
+export const TRANSLATION_KEY_MAX_LENGTH = 150;
+/** The longest value of one locale, on every write. */
+export const TRANSLATION_VALUE_MAX_LENGTH = 10_000;
+
+export function isTranslationKey(key: string): boolean {
+  return key.length <= TRANSLATION_KEY_MAX_LENGTH && TRANSLATION_KEY_PATTERN.test(key);
 }
 
 export interface Translation {
@@ -14,7 +22,7 @@ export interface Translation {
   id: string;
   /** The translation key, unique per space: what the public API, the SDK, the CLI and export files use. */
   key: string;
-  type: TranslationType;
+  /** Plain text per locale. */
   locales: Record<string, string>;
   labels?: string[];
   description?: string;
@@ -32,7 +40,6 @@ export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | '
 // App API requests
 export interface TranslationCreate {
   key: string;
-  type: TranslationType;
   labels?: string[];
   description?: string;
   locales: Record<string, string>;

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { TaskExportMetadata, TranslationExport, WebHookEvent } from '@localess/shared';
+import { isTranslationKey, TaskExportMetadata, TranslationExport, WebHookEvent } from '@localess/shared';
 import { zTranslationExportArraySchema, zTranslationFlatExportSchema } from '@localess/shared/zod';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
@@ -78,7 +78,6 @@ export class TranslationTransferService {
     const writes: TranslationImportWrite[] = [];
     for (const translation of imported) {
       const columns = {
-        type: translation.type,
         locales: translation.locales,
         description: translation.description || null,
         labels: translation.labels?.length ? translation.labels : null,
@@ -91,6 +90,8 @@ export class TranslationTransferService {
         writes.push({ op: 'insert', key: translation.id, columns });
       }
     }
+    const refused = await this.refuseInvalidKeys(task, writes);
+    if (refused) return refused;
     return this.imported(task, await this.translations.applyImport(spaceId, writes));
   }
 
@@ -125,7 +126,18 @@ export class TranslationTransferService {
         writes.push({ op: 'insert', key, value });
       }
     }
+    const refused = await this.refuseInvalidKeys(task, writes);
+    if (refused) return refused;
     return this.imported(task, await this.translations.applyLocaleImport(spaceId, locale, writes));
+  }
+
+  /** An ERROR outcome when the import would create keys outside the key rule (existing keys are updated whatever their form). */
+  private async refuseInvalidKeys(task: TaskEntity, writes: { op: 'insert' | 'update'; key: string }[]): Promise<TaskOutcome | undefined> {
+    const invalid = writes.filter(it => it.op === 'insert' && !isTranslationKey(it.key)).map(it => it.key);
+    if (!invalid.length) return undefined;
+    const message = `Invalid translation keys: ${invalid.slice(0, 20).join(', ')}${invalid.length > 20 ? `, … (${invalid.length})` : ''}`;
+    await this.log.log(task, 'ERROR', message);
+    return { status: 'ERROR', message };
   }
 
   /** `translation.changed` after commit, when the import wrote anything. */

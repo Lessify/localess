@@ -206,13 +206,11 @@ CREATE TABLE "translations" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
 	"key" text NOT NULL,
-	"type" text NOT NULL,
 	"locales" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"labels" text[],
 	"description" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "translations_type_check" CHECK ("translations"."type" in ('STRING', 'PLURAL', 'ARRAY'))
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user_credentials" (

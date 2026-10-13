@@ -1,18 +1,20 @@
 import { ValidatorFn, Validators } from '@angular/forms';
-import { CommonPattern, CommonValidator } from '@shared/validators/common.validator';
+import { TRANSLATION_KEY_MAX_LENGTH, TRANSLATION_KEY_PATTERN, TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
+import { CommonValidator } from '@shared/validators/common.validator';
 
 export class TranslationValidator {
   public static ID: ValidatorFn[] = [
     Validators.required,
     CommonValidator.noSpace,
-    Validators.pattern(CommonPattern.ID),
+    Validators.pattern(TRANSLATION_KEY_PATTERN),
     Validators.minLength(2),
-    Validators.maxLength(150),
+    Validators.maxLength(TRANSLATION_KEY_MAX_LENGTH),
   ];
-  public static STRING_VALUE: ValidatorFn[] = [Validators.required, Validators.minLength(1), Validators.maxLength(1000)];
-  public static PLURAL_VALUE: ValidatorFn[] = [Validators.required, Validators.minLength(1), Validators.maxLength(300)];
-  public static ARRAY_VALUE: ValidatorFn[] = [Validators.required, Validators.minLength(1), Validators.maxLength(150)];
+  public static STRING_VALUE: ValidatorFn[] = [
+    Validators.required,
+    Validators.minLength(1),
+    Validators.maxLength(TRANSLATION_VALUE_MAX_LENGTH),
+  ];
   public static DESCRIPTION: ValidatorFn[] = [Validators.maxLength(250)];
-  public static TYPE: ValidatorFn[] = [Validators.required];
   public static LABEL: ValidatorFn[] = [CommonValidator.noSpace, Validators.minLength(2), Validators.maxLength(50)];
 }

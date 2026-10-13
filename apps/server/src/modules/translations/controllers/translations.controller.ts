@@ -1,23 +1,22 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
-import { TranslationType, UserPermission } from '@localess/shared';
+import { UserPermission } from '@localess/shared';
+import { zTranslationKey, zTranslationValue } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { zLabels } from '../../../infra/http/zod.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { TranslationsService } from '../services/translations.service.js';
 
-const translationKey = z.string().min(1).max(500);
 const createSchema = z.object({
-  key: translationKey,
-  type: z.enum(TranslationType),
-  locales: z.record(z.string(), z.string()),
+  key: zTranslationKey,
+  locales: z.record(z.string(), zTranslationValue),
   labels: zLabels.optional(),
   description: z.string().max(2000).optional(),
 });
 const updateSchema = z.object({ labels: zLabels.optional(), description: z.string().max(2000).optional() });
-const localeValueSchema = z.object({ value: z.string() });
-const renameSchema = z.object({ key: translationKey });
+const localeValueSchema = z.object({ value: zTranslationValue });
+const renameSchema = z.object({ key: zTranslationKey });
 const translateLocaleSchema = z.object({
   sourceLocaleId: z.string().min(1),
   targetLocaleId: z.string().min(1),

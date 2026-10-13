@@ -137,6 +137,19 @@ keys, asset files, content documents, schemas), storage (the sum of `assets.size
 and translation progress per locale against the number of keys, on the current values. Tasks and the sizes of the
 published JSON are no longer shown. See [dashboard.md](../features/spaces/dashboard.md).
 
+## Translations
+
+```
+translations (id PK, space_id → spaces CASCADE, key unique per space): locales, labels, description, created_at, updated_at
+```
+
+| Column / rule | Decision |
+|---|---|
+| `type` | **Dropped**, with `TranslationType`: translations are plain text. `PLURAL` and `ARRAY` (JSON inside the string, no editor, unchecked) had no users. Export files no longer carry `type`; older files with it still import. The Firebase import drops it and keeps the value as stored. |
+| `key` | **One rule** (`isTranslationKey`, `@localess/shared`), checked where a key is created or renamed: App API, CLI push `add-missing`, import tasks. Existing keys are updated whatever their form; the Firebase import keeps keys as they are. |
+| `locales` values | **At most 10,000 characters** (`TRANSLATION_VALUE_MAX_LENGTH`) on every write path and in the editor. |
+| `labels`, `description` | Keep (empty stored as null). |
+
 ## Translation snapshots
 
 ```
@@ -310,7 +323,7 @@ server-only lists), plus a CHECK built from the same list:
 |---|---|
 | `users.role`, `users.permissions` | `USER_ROLES` (`ADMIN`, `CUSTOM`), `UserPermission` |
 | `user_credentials.hash_algo`, `user_identities.provider` | `HASH_ALGORITHMS`, `OAUTH_PROVIDERS` |
-| `contents.kind`, `assets.kind`, `schemas.type`, `translations.type` | `ContentKind`, `AssetKind`, `SchemaType`, `TranslationType` |
+| `contents.kind`, `assets.kind`, `schemas.type` | `ContentKind`, `AssetKind`, `SchemaType` |
 | `tasks.kind`, `tasks.status`, `tasks.type`, `task_logs.level` | `TaskKind`, `TaskStatus`, `TRANSLATION_IMPORT_FORMATS`, `TaskLogLevel` |
 | `tokens.permissions`, `webhooks.events` | `TokenPermission`, `WebHookEvent` (every element) |
 | `webhook_logs.status`, `webhook_logs.error_type`, `firebase_imports.status` | `WebHookStatus`, `WebHookErrorType`, `FIREBASE_IMPORT_STATUSES` |

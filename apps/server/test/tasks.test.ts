@@ -87,8 +87,8 @@ describe('task worker: exports and imports', () => {
       { spaceId: SPACE_A, id: TC.about, kind: 'DOCUMENT', name: 'About', slug: 'about', schema: 'page' },
     ]);
     await t.db.insert(translations).values([
-      { id: newUuid(), spaceId: SPACE_A, key: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
-      { id: newUuid(), spaceId: SPACE_A, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
+      { id: newUuid(), spaceId: SPACE_A, key: 'greeting', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
+      { id: newUuid(), spaceId: SPACE_A, key: 'farewell', locales: { en: 'Bye' } },
     ]);
     await t.db.insert(assets).values([
       { spaceId: SPACE_A, id: PHOTOS, kind: 'FOLDER', name: 'Photos' },
@@ -228,8 +228,8 @@ describe('task worker: exports and imports', () => {
       expect(exported.file?.name).toBe(`translation-export-${exported.id}.llt.zip`);
       const files = await readZip(await download(SPACE_A, exported.id));
       expect(JSON.parse(files['translations.json'].toString())).toEqual([
-        { id: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
-        { id: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
+        { id: 'farewell', locales: { en: 'Bye' } },
+        { id: 'greeting', locales: { en: 'Hello', de: 'Hallo' }, labels: ['ui'] },
       ]);
       await buildDrafts(t, SPACE_B);
       expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', await download(SPACE_A, exported.id))).status).toBe('FINISHED');
@@ -250,7 +250,7 @@ describe('task worker: exports and imports', () => {
       expect((await importTask(SPACE_B, 'TRANSLATION_IMPORT', edited, { locale: 'de' })).status).toBe('FINISHED');
       const b = await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B));
       expect(b.find(it => it.key === 'greeting')?.locales).toEqual({ en: 'Hello', de: 'Servus' });
-      expect(b.find(it => it.key === 'brandNew')).toMatchObject({ type: 'STRING', locales: { de: 'Neu' } });
+      expect(b.find(it => it.key === 'brandNew')).toMatchObject({ locales: { de: 'Neu' } });
     });
 
     it("imports values only for the space's locales, logging the skipped ones", async () => {
@@ -266,6 +266,24 @@ describe('task worker: exports and imports', () => {
         .where(and(eq(translations.spaceId, SPACE_B), eq(translations.key, 'only.fr')));
       expect(row.locales).toEqual({ en: 'Only' });
       expect((await logs(SPACE_B, task.id)).join('\n')).toMatch(/skipped 2 values of locales not in the space: fr, it/);
+    });
+
+    it('refuses to create keys outside the key rule, naming them and writing nothing', async () => {
+      const zip = await zipOf({
+        'metadata.json': JSON.stringify({ kind: 'TRANSLATION' }),
+        'translations.json': JSON.stringify([
+          { id: 'fine.key', locales: { en: 'Fine' } },
+          { id: 'bad key', locales: { en: 'Bad' } },
+        ]),
+      });
+      const flat = Buffer.from(JSON.stringify({ 'fine.flat': 'Fine', 'trailing.': 'Bad' }));
+      for (const task of [await importTask(SPACE_B, 'TRANSLATION_IMPORT', zip), await importTask(SPACE_B, 'TRANSLATION_IMPORT', flat, { locale: 'de' })]) {
+        expect(task.status).toBe('ERROR');
+        expect(task.message).toMatch(/Invalid translation keys: (bad key|trailing\.)/);
+      }
+      const keys = (await t.db.select().from(translations).where(eq(translations.spaceId, SPACE_B))).map(it => it.key);
+      expect(keys).not.toContain('fine.key');
+      expect(keys).not.toContain('fine.flat');
     });
 
     it("refuses a single-locale import into a locale the space does not have", async () => {

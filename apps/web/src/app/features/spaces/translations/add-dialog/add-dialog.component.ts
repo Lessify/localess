@@ -45,7 +45,6 @@ export class AddDialogComponent {
 
   form: FormGroup = this.fb.group({
     key: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedKeys)]),
-    type: this.fb.control('STRING', TranslationValidator.TYPE),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
     labels: this.fb.control([], TranslationValidator.LABEL),

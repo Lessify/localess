@@ -140,9 +140,9 @@ export async function seedContent(t: TestApp, spaceId = S1): Promise<void> {
 
 export async function seedTranslations(t: TestApp, spaceId = S1): Promise<void> {
   await t.db.insert(translations).values([
-    { id: newUuid(), spaceId, key: 'greeting', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' } },
-    { id: newUuid(), spaceId, key: 'farewell', type: 'STRING', locales: { en: 'Bye' } },
-    { id: newUuid(), spaceId, key: 'new.key', type: 'STRING', locales: { en: 'New (draft only)' } },
+    { id: newUuid(), spaceId, key: 'greeting', locales: { en: 'Hello', de: 'Hallo' } },
+    { id: newUuid(), spaceId, key: 'farewell', locales: { en: 'Bye' } },
+    { id: newUuid(), spaceId, key: 'new.key', locales: { en: 'New (draft only)' } },
   ]);
   // Published at epoch millisecond 3: their `cv`.
   await t.db.insert(translationSnapshots).values([

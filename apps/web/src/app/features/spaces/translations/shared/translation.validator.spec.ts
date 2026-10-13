@@ -16,6 +16,13 @@ describe('TranslationValidator', () => {
       expect(new FormControl('a', TranslationValidator.ID).hasError('minlength')).toBe(true);
     });
 
+    it('follows the shared key rule: a letter first, a letter or digit last, at most 150', () => {
+      expect(new FormControl('trailing.', TranslationValidator.ID).hasError('pattern')).toBe(true);
+      expect(new FormControl('1st', TranslationValidator.ID).hasError('pattern')).toBe(true);
+      expect(new FormControl('x'.repeat(151), TranslationValidator.ID).hasError('maxlength')).toBe(true);
+      expect(new FormControl('x'.repeat(150), TranslationValidator.ID).valid).toBe(true);
+    });
+
     it('is valid for a well-formed id', () => {
       expect(new FormControl('home.title', TranslationValidator.ID).valid).toBe(true);
     });
@@ -26,32 +33,13 @@ describe('TranslationValidator', () => {
       expect(new FormControl('', TranslationValidator.STRING_VALUE).hasError('required')).toBe(true);
     });
 
-    it('is invalid when longer than 1000 characters', () => {
-      expect(new FormControl('a'.repeat(1001), TranslationValidator.STRING_VALUE).hasError('maxlength')).toBe(true);
+    it('allows the shared limit of 10,000 characters, not more', () => {
+      expect(new FormControl('a'.repeat(10_000), TranslationValidator.STRING_VALUE).valid).toBe(true);
+      expect(new FormControl('a'.repeat(10_001), TranslationValidator.STRING_VALUE).hasError('maxlength')).toBe(true);
     });
 
     it('is valid for a well-formed value', () => {
       expect(new FormControl('Welcome', TranslationValidator.STRING_VALUE).valid).toBe(true);
-    });
-  });
-
-  describe('PLURAL_VALUE', () => {
-    it('is invalid when empty (required)', () => {
-      expect(new FormControl('', TranslationValidator.PLURAL_VALUE).hasError('required')).toBe(true);
-    });
-
-    it('is invalid when longer than 300 characters', () => {
-      expect(new FormControl('a'.repeat(301), TranslationValidator.PLURAL_VALUE).hasError('maxlength')).toBe(true);
-    });
-  });
-
-  describe('ARRAY_VALUE', () => {
-    it('is invalid when empty (required)', () => {
-      expect(new FormControl('', TranslationValidator.ARRAY_VALUE).hasError('required')).toBe(true);
-    });
-
-    it('is invalid when longer than 150 characters', () => {
-      expect(new FormControl('a'.repeat(151), TranslationValidator.ARRAY_VALUE).hasError('maxlength')).toBe(true);
     });
   });
 
@@ -62,16 +50,6 @@ describe('TranslationValidator', () => {
 
     it('is valid when empty (optional)', () => {
       expect(new FormControl('', TranslationValidator.DESCRIPTION).valid).toBe(true);
-    });
-  });
-
-  describe('TYPE', () => {
-    it('is invalid when empty (required)', () => {
-      expect(new FormControl('', TranslationValidator.TYPE).hasError('required')).toBe(true);
-    });
-
-    it('is valid when set', () => {
-      expect(new FormControl('STRING', TranslationValidator.TYPE).valid).toBe(true);
     });
   });
 

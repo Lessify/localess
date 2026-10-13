@@ -14,7 +14,6 @@ export function isLocalesEqual(a: Record<string, string>, b: Record<string, stri
 }
 
 export function isTranslationChanged(existing: Translation, imported: TranslationExport): boolean {
-  if (existing.type !== imported.type) return true;
   if (!isLocalesEqual(existing.locales, imported.locales)) return true;
   if ((existing.description ?? undefined) !== (imported.description ?? undefined)) return true;
   if (!isLabelsEqual(existing.labels, imported.labels)) return true;

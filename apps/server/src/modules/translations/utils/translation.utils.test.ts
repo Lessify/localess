@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { Translation, TranslationType } from '@localess/shared';
+import { Translation } from '@localess/shared';
 import { planTranslationUpdate, storedLocaleValues } from './translation.utils.js';
 
 // What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.
 const stored = { id: 'stored', key: 'stored', createdAt: {} as never, updatedAt: {} as never };
 
 function translation(locales: Record<string, string>): Translation {
-  return { type: TranslationType.STRING, locales, ...stored };
+  return { locales, ...stored };
 }
 
 describe('planTranslationUpdate', () => {

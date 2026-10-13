@@ -21,10 +21,10 @@ describe('AddDialogComponent', () => {
     return { component: fixture.componentInstance, close };
   }
 
-  it('starts with STRING type and no auto-translate', () => {
+  it('starts with no auto-translate, and no type: translations are plain text', () => {
     const { component } = setup({ reservedKeys: [] });
 
-    expect(component.form.value.type).toBe('STRING');
+    expect(component.form.value).not.toHaveProperty('type');
     expect(component.form.value.autoTranslate).toBe(false);
   });
 

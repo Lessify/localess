@@ -1,6 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
-import { TranslationType } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { translations } from '../../../infra/database/schema.js';
@@ -9,7 +8,7 @@ import { EventsService } from '../../../infra/events/events.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 
 export type TranslationEntity = typeof translations.$inferSelect;
-export type NewTranslation = Pick<TranslationEntity, 'key' | 'type' | 'locales' | 'labels' | 'description'>;
+export type NewTranslation = Pick<TranslationEntity, 'key' | 'locales' | 'labels' | 'description'>;
 export type TranslationUpdate = Partial<Pick<TranslationEntity, 'key' | 'labels' | 'description'>>;
 
 type Change = { id?: string; op: 'created' | 'updated' | 'deleted' };
@@ -127,7 +126,7 @@ export class TranslationsRepository {
 
   // The CLI push (`POST /api/v1/spaces/:s/translations/:locale`) addresses translations by key.
 
-  /** New `STRING` translations with a value for `locale`. */
+  /** New translations with a value for `locale`. */
   addKeys(spaceId: string, locale: string, values: Record<string, string>, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       await t.insert(translations).values(
@@ -135,7 +134,6 @@ export class TranslationsRepository {
           id: newUuid(),
           spaceId,
           key,
-          type: TranslationType.STRING,
           locales: { [locale]: value },
         })),
       );

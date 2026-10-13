@@ -231,9 +231,9 @@ describe('app API: spaces, locales, instance label', () => {
       await manager.post(`${base}/locales`, { id: 'de' });
       await manager.post(`${base}/locales`, { id: 'fr' });
       await t.db.insert(translations).values([
-        { id: newUuid(), spaceId, key: 'hello', type: 'STRING', locales: { en: 'Hello', de: 'Hallo' } },
-        { id: newUuid(), spaceId, key: 'bye', type: 'STRING', locales: { en: 'Bye', de: '' } },
-        { id: newUuid(), spaceId, key: 'later', type: 'STRING', locales: {} },
+        { id: newUuid(), spaceId, key: 'hello', locales: { en: 'Hello', de: 'Hallo' } },
+        { id: newUuid(), spaceId, key: 'bye', locales: { en: 'Bye', de: '' } },
+        { id: newUuid(), spaceId, key: 'later', locales: {} },
       ]);
       await t.db.insert(contents).values([
         { spaceId, id: newUuid(), kind: 'DOCUMENT', name: 'Home', slug: 'home' },

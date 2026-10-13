@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, model, viewChild } from '@angular/core';
+import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
 import { SafeHtmlPipe } from '@shared/pipes/safe-html.pipe';
 import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
 
@@ -11,6 +12,7 @@ import { HlmInputGroupImports } from '@spartan-ng/helm/input-group';
   imports: [HlmInputGroupImports, SafeHtmlPipe],
 })
 export class TranslationStringEditComponent {
+  readonly maxLength = TRANSLATION_VALUE_MAX_LENGTH;
   value = model.required<string>();
   enableHighlighting = input<boolean>(false);
 

@@ -1,4 +1,4 @@
-import { Locale, Translation, TranslationType } from '@localess/shared';
+import { Locale, Translation } from '@localess/shared';
 import { LocaleStatus, TranslationStatus } from './translation-status.model';
 
 import { identifyLocaleStatus, identifyTranslationStatus } from './translation.model';
@@ -7,7 +7,7 @@ const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
 function translation(overrides: Partial<Translation> = {}): Translation {
-  return { id: 't1', type: TranslationType.STRING, locales: { en: 'Hello' }, ...overrides } as Translation;
+  return { id: 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
 describe('identifyTranslationStatus', () => {

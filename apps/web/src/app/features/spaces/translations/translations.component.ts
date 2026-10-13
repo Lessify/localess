@@ -10,7 +10,7 @@ import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { translateErrorMessage } from '@core/utils/translate-error';
-import { CONTENT_DEFAULT_LOCALE, Locale, TokenPermission, Translation, TranslationCreate, TranslationType } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, Locale, TokenPermission, Translation, TranslationCreate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -219,7 +219,7 @@ export class TranslationsComponent implements OnInit {
         switchMap(it => {
           const locales: Record<string, string> = { [space.defaultLocale.id]: it!.value };
           const otherLocales = space.locales.filter(locale => locale.id !== space.defaultLocale.id);
-          if (!it!.autoTranslate || it!.type !== TranslationType.STRING || otherLocales.length === 0) {
+          if (!it!.autoTranslate || otherLocales.length === 0) {
             return of({ it: it!, locales });
           }
           return forkJoin(
@@ -251,7 +251,6 @@ export class TranslationsComponent implements OnInit {
         switchMap(({ it, locales }) => {
           const tc: TranslationCreate = {
             key: it.key,
-            type: it.type,
             locales,
             labels: it.labels,
             description: it.description,

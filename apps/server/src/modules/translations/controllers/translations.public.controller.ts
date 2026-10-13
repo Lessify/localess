@@ -119,6 +119,11 @@ export class TranslationsPublicController {
       return;
     }
 
-    void reply.send(await this.delivery.push(spaceId, locale, type, values, dryRun));
+    const result = await this.delivery.push(spaceId, locale, type, values, dryRun);
+    if ('invalidKeys' in result) {
+      sendV1Error(reply, 400, 'invalid-argument', 'Invalid translation keys', { details: { keys: result.invalidKeys } });
+      return;
+    }
+    void reply.send(result);
   }
 }

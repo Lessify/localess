@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Translation, TranslationType } from '@localess/shared';
+import { Translation } from '@localess/shared';
 import { TranslationService } from './translation.service';
 
 const BASE = '/api/app/spaces/space-1/translations';
@@ -67,23 +67,19 @@ describe('TranslationService', () => {
     expect(await result).toEqual({ id: 'hello' });
   });
 
-  it('create() posts the translation, wrapping locale values by type and dropping empty labels/description', async () => {
+  it('create() posts the translation with its values as they are, dropping empty labels/description', async () => {
     const service = setup();
-    const plural = firstValueFrom(
-      service.create('space-1', { key: 'items', type: TranslationType.PLURAL, locales: { en: 'Item' }, labels: [], description: '' }),
-    );
+    const bare = firstValueFrom(service.create('space-1', { key: 'quote', locales: { en: 'Say "hi"' }, labels: [], description: '' }));
     const request = http.expectOne({ method: 'POST', url: BASE });
-    expect(request.request.body).toEqual({ key: 'items', type: 'PLURAL', locales: { en: '{"0":"Item"}' } });
+    expect(request.request.body).toEqual({ key: 'quote', locales: { en: 'Say "hi"' } });
     request.flush({});
-    await plural;
+    await bare;
 
-    const array = firstValueFrom(
-      service.create('space-1', { key: 'list', type: TranslationType.ARRAY, locales: { en: 'A' }, labels: ['x'], description: 'd' }),
-    );
-    const arrayRequest = http.expectOne({ method: 'POST', url: BASE });
-    expect(arrayRequest.request.body).toEqual({ key: 'list', type: 'ARRAY', locales: { en: '["A"]' }, labels: ['x'], description: 'd' });
-    arrayRequest.flush({});
-    await array;
+    const full = firstValueFrom(service.create('space-1', { key: 'list', locales: { en: 'A' }, labels: ['x'], description: 'd' }));
+    const fullRequest = http.expectOne({ method: 'POST', url: BASE });
+    expect(fullRequest.request.body).toEqual({ key: 'list', locales: { en: 'A' }, labels: ['x'], description: 'd' });
+    fullRequest.flush({});
+    await full;
   });
 
   it('update() patches labels and description', async () => {

@@ -16,7 +16,6 @@ import {
   TaskStatus,
   TokenPermission,
   TRANSLATION_IMPORT_FORMATS,
-  TranslationType,
   USER_ROLES,
   UserPermission,
   WebHookErrorType,
@@ -434,13 +433,13 @@ export const translations = pgTable(
     // The translation key: what the public API, the SDK, the CLI and export files use, so unique per space. An
     // imported translation keeps its Firestore id here.
     key: text('key').notNull(),
-    type: text('type', { enum: values(TranslationType) }).notNull(),
+    // Plain text per locale.
     locales: jsonb('locales').$type<Record<string, string>>().notNull().default({}),
     labels: text('labels').array(),
     description: text('description'),
     ...timestamps,
   },
-  t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key), oneOf('translations_type_check', t.type, values(TranslationType))],
+  t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key)],
 );
 
 /**

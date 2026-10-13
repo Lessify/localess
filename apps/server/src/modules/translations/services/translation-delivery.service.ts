@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
+import { isTranslationKey, type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
@@ -59,7 +59,8 @@ export class TranslationDeliveryService {
 
   /**
    * The CLI's push of one locale's values, in one transaction; `dryRun` only reports what it would change. Fires
-   * `translation.changed` after commit, as an edit in the app does.
+   * `translation.changed` after commit, as an edit in the app does. Keys it would create outside the key rule refuse
+   * the whole push (`invalidKeys`), dry run or not; existing keys are updated whatever their form.
    */
   async push(
     spaceId: string,
@@ -67,7 +68,7 @@ export class TranslationDeliveryService {
     type: TranslationPushType,
     values: Record<string, string>,
     dryRun?: boolean,
-  ): Promise<TranslationUpdateResponse> {
+  ): Promise<TranslationUpdateResponse | { invalidKeys: string[] }> {
     // add-missing / update-existing only need the pushed keys; the delete types need every key.
     const rows =
       type === 'delete-missing-key' || type === 'delete-missing-value'
@@ -80,6 +81,10 @@ export class TranslationDeliveryService {
       'delete-missing-key': plan.keyDeletes,
       'delete-missing-value': plan.valueDeletes,
     }[type];
+    if (type === 'add-missing') {
+      const invalidKeys = actionable.filter(key => !isTranslationKey(key));
+      if (invalidKeys.length) return { invalidKeys };
+    }
     const { verb, past } = PUSH_VERBS[type];
     const noun = PUSH_VERBS[type].noun[actionable.length === 1 ? 0 : 1];
 

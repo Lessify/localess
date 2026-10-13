@@ -10,7 +10,7 @@ import { dropTranslationDrafts } from '../../../shared/data-rules/translation-dr
 export type TranslationEntity = typeof translations.$inferSelect;
 
 /** The columns a full translation import writes. */
-export type TranslationImportColumns = Pick<typeof translations.$inferInsert, 'type' | 'locales' | 'description' | 'labels'>;
+export type TranslationImportColumns = Pick<typeof translations.$inferInsert, 'locales' | 'description' | 'labels'>;
 
 /** One key of a full translation import: an existing translation updated, or a new one created. */
 export interface TranslationImportWrite {
@@ -76,7 +76,7 @@ export class TranslationTransferRepository {
         } else {
           await t
             .insert(translations)
-            .values({ id: newUuid(), spaceId, key: write.key, type: 'STRING', locales: { [locale]: write.value } });
+            .values({ id: newUuid(), spaceId, key: write.key, locales: { [locale]: write.value } });
         }
       }
     });

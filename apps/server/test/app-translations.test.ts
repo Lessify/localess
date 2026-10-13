@@ -2,6 +2,7 @@ import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
 import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
@@ -115,7 +116,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
   describe('keys', () => {
     it('creates keys with a UUIDv7 id, refusing duplicates, with translation.changed, dropping the draft maps', async () => {
       await buildDrafts(t, S1);
-      const response = await editor.post(base, { key: 'home.title', type: 'STRING', locales: { en: 'Welcome' }, labels: ['home'] });
+      const response = await editor.post(base, { key: 'home.title', locales: { en: 'Welcome' }, labels: ['home'] });
       expect(response.statusCode).toBe(201);
       ids['home.title'] = response.json().id;
       expect(response.json()).toMatchObject({
@@ -125,10 +126,12 @@ describe('app API: translations, machine translation, Unsplash', () => {
         labels: ['home'],
       });
       expect(response.json()).not.toHaveProperty('updatedBy');
+      // Plain text only: no type.
+      expect(response.json()).not.toHaveProperty('type');
       expect(await draftSnapshots(t.db, S1)).toEqual([]);
       expect(await events()).toEqual(['translation.changed']);
-      expect((await editor.post(base, { key: 'home.title', type: 'STRING', locales: {} })).statusCode).toBe(409);
-      expect((await reader.post(base, { key: 'x', type: 'STRING', locales: {} })).statusCode).toBe(403);
+      expect((await editor.post(base, { key: 'home.title', locales: {} })).statusCode).toBe(409);
+      expect((await reader.post(base, { key: 'x', locales: {} })).statusCode).toBe(403);
       // Routes take the UUID, not the key.
       expect((await reader.get(`${base}/home.title`)).statusCode).toBe(404);
     });
@@ -141,7 +144,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
 
     it("writes values only for the space's locales; removing a value is allowed for any locale", async () => {
-      const refused = await editor.post(base, { key: 'stray', type: 'STRING', locales: { en: 'Hi', fr: 'Salut' } });
+      const refused = await editor.post(base, { key: 'stray', locales: { en: 'Hi', fr: 'Salut' } });
       expect(refused.statusCode).toBe(400);
       expect(refused.json().message).toMatch(/fr/);
       expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).not.toContain('stray');
@@ -166,12 +169,23 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
 
     it('renames: a new key under the same id, refusing a taken key', async () => {
-      ids['taken'] = (await editor.post(base, { key: 'taken', type: 'STRING', locales: { en: 'x' } })).json().id;
+      ids['taken'] = (await editor.post(base, { key: 'taken', locales: { en: 'x' } })).json().id;
       expect((await editor.put(`${url('home.title')}/key`, { key: 'taken' })).statusCode).toBe(409);
       const renamed = (await editor.put(`${url('home.title')}/key`, { key: 'hero.title' })).json();
       expect(renamed).toMatchObject({ id: ids['home.title'], key: 'hero.title' });
       ids['hero.title'] = renamed.id;
       expect(await stored('home.title')).toBeUndefined();
+    });
+
+    it('refuses keys outside the key rule and values over the limit', async () => {
+      for (const key of ['has space', 'trailing.', '1st', 'x'.repeat(151)]) {
+        expect((await editor.post(base, { key, locales: { en: 'x' } })).statusCode).toBe(400);
+        expect((await editor.put(`${url('hero.title')}/key`, { key })).statusCode).toBe(400);
+      }
+      const long = 'x'.repeat(TRANSLATION_VALUE_MAX_LENGTH + 1);
+      expect((await editor.post(base, { key: 'long', locales: { en: long } })).statusCode).toBe(400);
+      expect((await editor.put(`${url('hero.title')}/locales/en`, { value: long })).statusCode).toBe(400);
+      expect((await stored('hero.title')).locales).toEqual({ en: 'Welcome' });
     });
 
     it('lists by key and counts', async () => {

@@ -2,12 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { Translation, TranslationType } from '@localess/shared';
+import { Translation } from '@localess/shared';
 
 import { EditDialogComponent } from './edit-dialog.component';
 
 function translation(overrides: Partial<Translation> = {}): Translation {
-  return { id: 't1', type: TranslationType.STRING, locales: {}, ...overrides } as Translation;
+  return { id: 't1', locales: {}, ...overrides } as Translation;
 }
 
 describe('EditDialogComponent', () => {
