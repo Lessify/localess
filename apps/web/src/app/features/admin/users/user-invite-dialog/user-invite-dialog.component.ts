@@ -48,8 +48,9 @@ export class UserInviteDialogComponent {
     password: this.fb.control('', [Validators.required, Validators.minLength(6)]),
     displayName: this.fb.control('', [Validators.minLength(2)]),
     role: this.fb.control<string | undefined>(undefined),
-    permissions: this.fb.control<string[] | undefined>(undefined),
-    lock: this.fb.control<boolean | undefined>(undefined),
+    // Not null: the server takes a list / a boolean or nothing, and refuses null (400).
+    permissions: this.fb.nonNullable.control<string[]>([]),
+    lock: this.fb.nonNullable.control(false),
   });
 
   settingsStore = inject(LocalSettingsStore);

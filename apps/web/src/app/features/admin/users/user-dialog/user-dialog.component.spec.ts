@@ -59,13 +59,19 @@ describe('UserDialogComponent', () => {
   it('leaves the form at its defaults when there is no data', () => {
     const { component } = setup(null);
 
-    expect(component.form.value).toEqual({ role: null, permissions: null, lock: null });
+    expect(component.form.value).toEqual({ role: null, permissions: [], lock: false });
   });
 
   it('patches the form from the given data, defaulting a missing role to null', () => {
     const { component } = setup({ permissions: [UserPermission.USER_MANAGEMENT], lock: true });
 
     expect(component.form.value).toEqual({ role: null, permissions: [UserPermission.USER_MANAGEMENT], lock: true });
+  });
+
+  it('defaults a missing lock and permissions to values the server accepts', () => {
+    const { component } = setup({ role: 'CUSTOM' });
+
+    expect(component.form.value).toEqual({ role: 'CUSTOM', permissions: [], lock: false });
   });
 
   it('patches the role when provided', () => {
@@ -109,6 +115,6 @@ describe('UserDialogComponent', () => {
 
     component.save();
 
-    expect(close).toHaveBeenCalledWith({ role: 'ADMIN', permissions: null, lock: null });
+    expect(close).toHaveBeenCalledWith({ role: 'ADMIN', permissions: [], lock: false });
   });
 });

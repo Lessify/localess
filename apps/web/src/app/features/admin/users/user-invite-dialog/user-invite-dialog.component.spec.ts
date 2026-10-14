@@ -43,6 +43,13 @@ describe('UserInviteDialogComponent', () => {
     expect(component.form.value).toMatchObject({ email: '', password: '', displayName: '' });
   });
 
+  it('sends lock and permissions the server accepts when they are left untouched', () => {
+    const { component } = setup();
+
+    // The server takes a boolean / a list or nothing; null is refused (400), so the defaults are false and [].
+    expect(component.form.value).toMatchObject({ permissions: [], lock: false });
+  });
+
   it('is valid once email and password meet their requirements', () => {
     const { component } = setup();
 

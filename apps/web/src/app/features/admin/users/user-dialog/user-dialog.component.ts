@@ -46,8 +46,9 @@ export class UserDialogComponent implements OnInit {
 
   form: FormGroup = this.fb.group({
     role: this.fb.control<string | undefined>(undefined),
-    permissions: this.fb.control<string[] | undefined>(undefined),
-    lock: this.fb.control<boolean | undefined>(undefined),
+    // Not null: the server takes a list / a boolean or nothing, and refuses null (400).
+    permissions: this.fb.nonNullable.control<string[]>([]),
+    lock: this.fb.nonNullable.control(false),
   });
 
   settingsStore = inject(LocalSettingsStore);
@@ -55,7 +56,12 @@ export class UserDialogComponent implements OnInit {
   ngOnInit(): void {
     // `?.` because the injection above is optional - without it this throws when no context was passed.
     if (this.context != null) {
-      this.form.patchValue({ ...this.context, role: this.context.role ?? null });
+      this.form.patchValue({
+        ...this.context,
+        role: this.context.role ?? null,
+        permissions: this.context.permissions ?? [],
+        lock: this.context.lock ?? false,
+      });
     }
   }
 
