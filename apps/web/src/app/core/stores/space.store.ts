@@ -310,8 +310,10 @@ export const SpaceStore = signalStore(
       const userStore = inject(UserStore);
       store.load();
       // Gated on auth: this store outlives the signed-in shell, and listeners left running after
-      // sign-out would fail on the rules and retry forever.
-      store._syncSpaceData(computed(() => (userStore.isAuthenticated() ? store.selectedSpaceId() : undefined)));
+      // sign-out would fail on the rules and retry forever. And only a space in the loaded list:
+      // the id restored from localStorage may name a space that no longer exists (deleted, new
+      // install), which would answer 404 and show "Lost connection" toasts until the list arrives.
+      store._syncSpaceData(computed(() => (userStore.isAuthenticated() ? store.selectedSpace()?.id : undefined)));
     },
     onDestroy: store => {
       console.log('onDestroy', store);

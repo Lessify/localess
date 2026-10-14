@@ -188,6 +188,34 @@ describe('SpaceStore', () => {
       expect(store.schemas()).toEqual([{ id: 'schema' }]);
     });
 
+    it('never listens to a persisted space that no longer exists (new install, deleted space)', () => {
+      localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'missing', selectedEnvironmentBySpaceId: {} }));
+      const findAllDocuments = vi.fn().mockReturnValue(of([]));
+      const findAllSchemas = vi.fn().mockReturnValue(of([]));
+      const notifyError = vi.fn();
+      createStore([space('a')], { findAllDocuments, findAllSchemas, notifyError });
+      TestBed.tick();
+
+      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(findAllSchemas.mock.calls).toEqual([['a']]);
+      expect(notifyError).not.toHaveBeenCalled();
+    });
+
+    it('waits for the space list before listening to the persisted space', () => {
+      localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: {} }));
+      const spaces = new Subject<Space[]>();
+      const findAllDocuments = vi.fn().mockReturnValue(NEVER);
+      configure(() => spaces, { findAllDocuments });
+      TestBed.tick();
+
+      expect(findAllDocuments).not.toHaveBeenCalled();
+
+      spaces.next([space('a')]);
+      TestBed.tick();
+
+      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+    });
+
     it("closes the previous space's listeners and drops its data when the space changes", () => {
       const documents = subjectsBySpace();
       const schemas = subjectsBySpace();
