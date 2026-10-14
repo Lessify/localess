@@ -207,7 +207,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 
 **Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
-- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. The server's zod DTO (`webhooks.controller.ts`) enforces the same shape on create and update. Delivery re-checks it and blocks private addresses, see [Destination restrictions](#destination-restrictions-ssrf-protection).
+- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhooksService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 

@@ -4,6 +4,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { WebHook, WebHookEvent } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -156,7 +157,7 @@ export class WebhooksComponent implements AfterViewInit {
         next: () => this.notificationService.success('Webhook has been created.'),
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('Webhook can not be created.');
+          this.notificationService.error(apiErrorMessage(err, 'Webhook can not be created.'));
         },
       });
   }
@@ -177,7 +178,7 @@ export class WebhooksComponent implements AfterViewInit {
         next: () => this.notificationService.success('Webhook has been updated.'),
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('Webhook can not be updated.');
+          this.notificationService.error(apiErrorMessage(err, 'Webhook can not be updated.'));
         },
       });
   }

@@ -2,8 +2,8 @@ import { AbstractControl, ValidationErrors, ValidatorFn, Validators } from '@ang
 import { CommonValidator } from '@shared/validators/common.validator';
 
 /**
- * Webhooks are delivered only to public https URLs (plain http is accepted for a local receiver,
- * for development). The server re-checks this at delivery, so this is feedback, not the guard.
+ * Webhooks are delivered only to public https URLs (plain http to a local receiver only where the server
+ * allows internal targets). Feedback only: the server applies its delivery rule on save and at delivery.
  */
 function webhookUrl(control: AbstractControl): ValidationErrors | null {
   const value = control.value;

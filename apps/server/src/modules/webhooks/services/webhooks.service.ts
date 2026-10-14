@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { WebHookEvent } from '@localess/shared';
+import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { toWebhook, toWebhookLog } from '../../../shared/transformers/webhook.transformer.js';
+import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
 import { type WebhookEntity, WebhooksRepository } from '../repositories/webhooks.repository.js';
 
 export interface WebhookInput {
@@ -19,7 +21,20 @@ function found(entity: WebhookEntity | undefined) {
 /** Webhook configuration and delivery logs (was `spaces/{s}/webhooks`); delivery is `WebhookDispatcher` (shared). */
 @Injectable()
 export class WebhooksService {
-  constructor(private readonly webhooks: WebhooksRepository) {}
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly webhooks: WebhooksRepository,
+  ) {}
+
+  /**
+   * The rule delivery applies (`WebhookDispatcher`), said when saving: otherwise a URL delivery refuses
+   * (http, a local or private host without LOCALESS_WEBHOOK_ALLOW_INTERNAL) is saved and every delivery fails.
+   * The resolved-address check still runs at delivery (DNS can change).
+   */
+  private assertDeliverable(url: string): void {
+    const checked = checkWebhookUrl(url, this.config.webhookAllowInternal);
+    if (!checked.ok) throw new BadRequestException(`Webhook URL is not allowed: ${checked.reason}`);
+  }
 
   async list(spaceId: string) {
     return (await this.webhooks.findAll(spaceId)).map(toWebhook);
@@ -36,6 +51,7 @@ export class WebhooksService {
   }
 
   async create(spaceId: string, input: WebhookInput) {
+    this.assertDeliverable(input.url);
     const entity = await this.webhooks.create(spaceId, input);
     if (!entity) throw new NotFoundException('Space not found');
     return toWebhook(entity);
@@ -43,6 +59,7 @@ export class WebhooksService {
 
   /** Headers and secret are only replaced when sent (the form leaves them out to keep them). */
   async update(spaceId: string, id: string, input: WebhookInput) {
+    this.assertDeliverable(input.url);
     return found(
       await this.webhooks.update(spaceId, id, {
         name: input.name,

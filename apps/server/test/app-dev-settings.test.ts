@@ -163,16 +163,21 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     const base = `/api/app/spaces/${S1}/webhooks`;
     let hook: { id: string };
 
-    it('creates enabled webhooks, accepting https and local http only', async () => {
+    it('creates enabled webhooks, refusing a URL delivery would refuse', async () => {
       expect((await manager.post(base, { name: 'Bad', url: 'http://example.com/hook', events: ['content.published'] })).statusCode).toBe(
         400,
       );
       expect((await manager.post(base, { name: 'Bad', url: 'https://example.com/hook', events: ['content.exploded'] })).statusCode).toBe(
         400,
       );
-      expect((await manager.post(base, { name: 'Local', url: 'http://localhost:4000/hook', events: ['content.changed'] })).statusCode).toBe(
-        201,
-      );
+      // Local http only with LOCALESS_WEBHOOK_ALLOW_INTERNAL (off here): the same rule as delivery, said when saving.
+      const local = await manager.post(base, { name: 'Local', url: 'http://localhost:4000/hook', events: ['content.changed'] });
+      expect(local.statusCode).toBe(400);
+      expect(local.json().message).toBe('Webhook URL is not allowed: only https URLs are allowed');
+      const internal = await manager.post(base, { name: 'Internal', url: 'https://10.0.0.5/hook', events: ['content.changed'] });
+      expect(internal.statusCode).toBe(400);
+      expect(internal.json().message).toBe('Webhook URL is not allowed: private address');
+      expect((await manager.post(base, { name: 'Alpha', url: 'https://alpha.example.com/hook', events: ['content.changed'] })).statusCode).toBe(201);
       hook = (
         await manager.post(base, {
           name: 'Site',
@@ -240,7 +245,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('lists by name and deletes with logs, for SPACE_MANAGEMENT only', async () => {
-      expect((await manager.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Local', 'Site 2']);
+      expect((await manager.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
       expect((await nobody.get(base)).statusCode).toBe(403);
       expect((await manager.delete(`${base}/${hook.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(webhookLogs)).toEqual([]);

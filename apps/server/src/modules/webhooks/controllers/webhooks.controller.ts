@@ -6,11 +6,8 @@ import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { WebhooksService } from '../services/webhooks.service.js';
 
-/** Same rule firestore.rules applied: https, or plain http to localhost for local testing. */
-const webhookUrl = z
-  .string()
-  .max(2048)
-  .refine(url => /^https:\/\//.test(url) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(url), 'Webhook URLs must use https');
+/** Shape only; which URLs may be delivered to is checked in `WebhooksService` (the delivery rule). */
+const webhookUrl = z.string().max(2048);
 const webhookSchema = z.object({
   name: z.string().trim().min(1).max(200),
   url: webhookUrl,

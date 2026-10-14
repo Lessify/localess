@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
@@ -123,6 +124,17 @@ describe('WebhooksComponent', () => {
 
     expect(update).toHaveBeenCalledWith('space-1', 'w1', model);
     expect(success).toHaveBeenCalledWith('Webhook has been updated.');
+  });
+
+  it('openAddDialog() shows why the server refused the URL', () => {
+    const { component, open, create, error } = setup();
+    const refused = new HttpErrorResponse({ status: 400, error: { message: 'Webhook URL is not allowed: only https URLs are allowed' } });
+    create.mockReturnValue(throwError(() => refused));
+    open.mockReturnValue({ closed$: of({ name: 'Local', url: 'http://127.0.0.1:8787/hook', events: [] }) });
+
+    component.openAddDialog();
+
+    expect(error).toHaveBeenCalledWith('Webhook can not be created: Webhook URL is not allowed: only https URLs are allowed');
   });
 
   it('openEditDialog() notifies an error on failure', () => {

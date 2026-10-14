@@ -443,4 +443,12 @@ describe('app API: contents', () => {
       expect(await deliveries()).toEqual([]);
     });
   });
+
+  // This file runs with LOCALESS_WEBHOOK_ALLOW_INTERNAL=true (the local receiver above).
+  it('saves a local http webhook when internal targets are allowed, as delivery does', async () => {
+    const manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
+    const created = await manager.post(`/api/app/spaces/${S1}/webhooks`, { name: 'Local', url: 'http://localhost:4000/hook', events: ['content.changed'] });
+    expect(created.statusCode, created.body).toBe(201);
+    expect((await manager.delete(`/api/app/spaces/${S1}/webhooks/${created.json().id}`)).statusCode).toBe(204);
+  });
 });
