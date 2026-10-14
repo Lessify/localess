@@ -183,7 +183,7 @@ their sites and CI.
 
 ## Outside this repository
 
-`@localess/cli` must use `/api/manage/v1/…` with `Authorization: Bearer`. Older CLI versions stop working against a new
+`@localess/cli` must use `/api/manage/v1/…` with `Authorization: Bearer`. The full list of CLI and SDK changes (with an open decision on `translation pull`): [cli-token-types.md](cli-token-types.md). Older CLI versions stop working against a new
 install; this goes in the CLI changelog.
 
 ## Docs
