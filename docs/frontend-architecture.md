@@ -117,9 +117,9 @@ if one feature uses it, it lives in that feature.
 - **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))
 - **`guards/`** — `permissionGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard
 - **`utils/content-data.ts`** — `normalizeContent`, `copyBlock`: the shape documents are loaded, compared and saved in
-- **`AppErrorHandler`** (`error-handler/app-error-handler.service.ts`) — global Angular error handler. Shows an error toast via `NotificationService`, then delegates to the default handler (console). Chunk-load failures (a stale tab after a deploy) instead show a persistent "A new version is available" toast with a Reload action.
+- **`AppErrorHandler`** (`error-handler/app-error-handler.service.ts`) — global Angular error handler for errors nobody handled (`provideBrowserGlobalErrorListeners()` in `app.config.ts` routes uncaught errors to it, including an HTTP call subscribed without an `error` callback). Shows a generic error toast via `NotificationService`, then delegates to the default handler (console). Chunk-load failures (a stale tab after a deploy) instead show a persistent "A new version is available" toast with a Reload action. A handled HTTP error is not reported here: the caller shows its own message, so the user sees one toast.
 - **`FormErrorHandlerService`** (`error-handler/form-error-handler.service.ts`) — maps reactive-form control errors to display messages
-- **HTTP Interceptors** — `apiInterceptor` (`api/`, see above) and `HttpErrorInterceptor` (`http-interceptors/`), which reports HTTP errors to `AppErrorHandler` except `401`s from the API, which are left to the auth flow
+- **HTTP Interceptor** — `apiInterceptor` (`api/`, see above). There is no error interceptor: it reported every HTTP error to `AppErrorHandler`, which added a generic toast next to the caller's own message
 - **`api/`** — `AppConfigService`, `ChangeEventsService`, `liveQuery`, `apiInterceptor` (see [Server Integration](#server-integration))
 - **`PageTitleStrategy`** (`title/page-title.strategy.ts`) — a `TitleStrategy` that sets `<title>` to `<appName> - <route title>`
 - **`utils/`** — stateless helpers: `filter-predicate-utils`, `name-utils`, `object-utils`

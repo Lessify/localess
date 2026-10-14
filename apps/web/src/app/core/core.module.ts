@@ -1,9 +1,7 @@
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ErrorHandler, inject, NgModule } from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { AppErrorHandler } from './error-handler/app-error-handler.service';
-import { HttpErrorInterceptor } from './http-interceptors/http-error.interceptor';
 import { PageTitleStrategy } from './title/page-title.strategy';
 
 @NgModule({
@@ -11,7 +9,8 @@ import { PageTitleStrategy } from './title/page-title.strategy';
   exports: [],
   imports: [],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true },
+    // HTTP errors are not forwarded here: the caller shows its own message. An error nobody handles
+    // reaches AppErrorHandler through provideBrowserGlobalErrorListeners() (app.config.ts).
     { provide: ErrorHandler, useClass: AppErrorHandler },
     { provide: TitleStrategy, useClass: PageTitleStrategy },
   ],

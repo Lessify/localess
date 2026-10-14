@@ -89,7 +89,7 @@ apps/web/src/app/
 │   ├── services/  # App API services used by several features or by a store
 │   ├── stores/    # 3 NgRx Signal stores (UserStore, SpaceStore, LocalSettingsStore)
 │   ├── guards/    # permissionGuard, spaceSelectionGuard, dirty-form guard
-│   └── error-handler/, http-interceptors/, title/, utils/
+│   └── error-handler/, title/, utils/
 ├── shared/        # Reusable UI only (@shared/*)
 │   ├── components/# Dialogs, table, paginator, tree, filter-toolbar, locale-icon, logo, etc. (toasts via NotificationService/Sonner)
 │   ├── models/    # UI-only model helpers (labels, icons, sorting, form shapes); domain types come from @localess/shared
