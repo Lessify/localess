@@ -49,6 +49,25 @@ describe('EditEnumComponent', () => {
     return { component: fixture.componentInstance, updateEnum, success, error, navigate };
   }
 
+  it('shows the schema name under the title, like the component editor (not the internal id)', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: SchemaService, useValue: { findAll: vi.fn().mockReturnValue(of([])), findById: vi.fn().mockReturnValue(of(enumSchema({ id: '01a1-uuid', name: 'Color', displayName: 'Color' }))) } },
+        { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
+        { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(false) } },
+        { provide: Router, useValue: { navigate: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(EditEnumComponent);
+    fixture.componentRef.setInput('spaceId', 'space-1');
+    fixture.componentRef.setInput('schemaId', '01a1-uuid');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('#Color');
+    expect(text).not.toContain('#01a1-uuid');
+  });
+
   it('loads the schema and populates the form on init', () => {
     const { component } = setup(enumSchema({ displayName: 'Enum' }));
 

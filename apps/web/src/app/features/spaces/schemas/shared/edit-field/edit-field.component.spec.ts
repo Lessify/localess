@@ -42,6 +42,16 @@ describe('EditFieldComponent', () => {
     return { fixture, host: fixture.componentInstance, editField: fixture.componentInstance.editField() };
   }
 
+  it('counts empty optional texts as 0 characters, never NaN (a new field has none of them)', () => {
+    const { host, fixture } = setup();
+    host.form.set(new FormBuilder().group({ name: ['title'], kind: [''], displayName: [null], required: [false], description: [null], defaultValue: [null] }));
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).not.toContain('NaN');
+    expect(text).toContain('250 characters left');
+  });
+
   describe('form input propagation (reference identity)', () => {
     it('mutations made by the child are visible on the parent-owned FormGroup instance', () => {
       const { host, editField } = setup();

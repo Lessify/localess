@@ -63,7 +63,7 @@
           @if (form().controls['displayName']?.errors; as errors) {
             <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
           } @else {
-            <p hlmFieldDescription class="content-end">{{ 30 - form().value.displayName?.length }} characters left</p>
+            <p hlmFieldDescription class="content-end">{{ 30 - (form().value.displayName?.length ?? 0) }} characters left</p>
           }
         </div>
         <div hlmField orientation="horizontal">
@@ -83,7 +83,7 @@
           @if (form().controls['description']?.errors; as errors) {
             <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
           } @else {
-            <p hlmFieldDescription class="content-end">{{ 250 - form().value.description?.length }} characters left</p>
+            <p hlmFieldDescription class="content-end">{{ 250 - (form().value.description?.length ?? 0) }} characters left</p>
           }
         </div>
         <div hlmField>
@@ -92,7 +92,7 @@
           @if (form().controls['defaultValue']?.errors; as errors) {
             <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
           } @else {
-            <p hlmFieldDescription class="content-end">{{ 250 - form().value.defaultValue?.length }} characters left</p>
+            <p hlmFieldDescription class="content-end">{{ 250 - (form().value.defaultValue?.length ?? 0) }} characters left</p>
           }
         </div>
         <!--Number-->
@@ -215,7 +215,7 @@
             @if (form().controls['path']?.errors; as errors) {
               <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
             } @else {
-              <p hlmFieldDescription class="content-end">{{ 500 - form().value.path?.length }} characters left</p>
+              <p hlmFieldDescription class="content-end">{{ 500 - (form().value.path?.length ?? 0) }} characters left</p>
             }
           </div>
         }
