@@ -36,10 +36,11 @@ export class WebhookDialogComponent {
   private readonly dialogRef = inject<BrnDialogRef<WebhookDialogResult>>(BrnDialogRef);
 
   /**
-   * Optional, and read with `?.` throughout: adding a webhook opens the dialog with no context at
-   * all, which is exactly the case the option exists for. The template also keys its title off it.
+   * Optional, and read with `?.` throughout: adding a webhook passes no context. Spartan injects an object
+   * either way (at least `{ close }`), so "editing" is decided by the webhook's `id`, not by the context.
    */
-  readonly context = injectBrnDialogContext<WebhookDialogContext>({ optional: true });
+  readonly context = injectBrnDialogContext<Partial<WebhookDialogContext>>({ optional: true });
+  readonly isEdit = this.context?.id != null;
 
   webhookEvents = Object.values(WebHookEvent);
 

@@ -8,7 +8,10 @@ import { vi } from 'vitest';
 import { TokenDialogComponent } from './token-dialog.component';
 
 describe('TokenDialogComponent', () => {
-  function setup(context: TokenForm | undefined) {
+  /** What Spartan injects when the caller passes no context: never undefined, always an object with `close`. */
+  const CREATE_CONTEXT = { close: () => undefined };
+
+  function setup(context: TokenForm | typeof CREATE_CONTEXT) {
     const close = vi.fn();
     TestBed.overrideComponent(TokenDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
@@ -23,9 +26,10 @@ describe('TokenDialogComponent', () => {
   }
 
   it('starts as a public token with empty defaults', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     expect(component.form.getRawValue()).toEqual({ name: '', type: TokenType.PUBLIC, cacheTtl: null });
+    expect(component.form.controls.type.enabled).toBe(true);
     expect(component.isEdit).toBe(false);
   });
 
@@ -38,7 +42,7 @@ describe('TokenDialogComponent', () => {
   });
 
   it('hides and clears the cache TTL for management tokens', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
     component.form.controls.cacheTtl.setValue(30);
 
     component.form.controls.type.setValue(TokenType.MANAGEMENT);
@@ -50,7 +54,7 @@ describe('TokenDialogComponent', () => {
   });
 
   it('offers the three types as choice cards', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     expect(component.types.map(it => it.type)).toEqual([TokenType.PUBLIC, TokenType.PREVIEW, TokenType.MANAGEMENT]);
   });
@@ -64,7 +68,7 @@ describe('TokenDialogComponent', () => {
   });
 
   it('closes with name, type and cache TTL', () => {
-    const { component, close } = setup(undefined);
+    const { component, close } = setup(CREATE_CONTEXT);
     component.form.setValue({ name: 'Site', type: TokenType.PREVIEW, cacheTtl: 5 });
 
     component.save();

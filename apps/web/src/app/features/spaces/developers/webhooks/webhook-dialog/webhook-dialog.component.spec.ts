@@ -7,7 +7,10 @@ import { vi } from 'vitest';
 import { WebhookDialogComponent } from './webhook-dialog.component';
 
 describe('WebhookDialogComponent', () => {
-  function setup(context: WebHook | undefined) {
+  /** What Spartan injects when the caller passes no context: never undefined, always an object with `close`. */
+  const CREATE_CONTEXT = { close: () => undefined };
+
+  function setup(context: WebHook | typeof CREATE_CONTEXT) {
     const close = vi.fn();
     TestBed.overrideComponent(WebhookDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
@@ -22,16 +25,22 @@ describe('WebhookDialogComponent', () => {
   }
 
   it('lists every webhook event as a selectable option', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     expect(component.webhookEvents).toEqual(Object.values(WebHookEvent));
   });
 
   it('starts with empty defaults and an invalid form when there is no data', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     expect(component.form.value).toEqual({ name: '', url: '', events: [], secret: '' });
     expect(component.form.invalid).toBe(true);
+  });
+
+  it('is in add mode without a webhook and in edit mode with one', () => {
+    expect(setup(CREATE_CONTEXT).component.isEdit).toBe(false);
+    TestBed.resetTestingModule();
+    expect(setup({ id: 'w1', name: 'Slack', url: 'https://hooks.example.com', events: [], enabled: true } as unknown as WebHook).component.isEdit).toBe(true);
   });
 
   it('prefills the form from the given webhook', () => {
@@ -56,7 +65,7 @@ describe('WebhookDialogComponent', () => {
   });
 
   it('rejects a url without an http(s) scheme', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     component.form.setValue({ name: 'Slack', url: 'ftp://example.com', events: [WebHookEvent.CONTENT_PUBLISHED], secret: '' });
 
@@ -64,7 +73,7 @@ describe('WebhookDialogComponent', () => {
   });
 
   it('rejects a name with leading/trailing spaces', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     component.form.controls['name'].setValue(' Slack ');
 
@@ -72,14 +81,14 @@ describe('WebhookDialogComponent', () => {
   });
 
   it('requires at least one event', () => {
-    const { component } = setup(undefined);
+    const { component } = setup(CREATE_CONTEXT);
 
     component.form.setValue({ name: 'Slack', url: 'https://example.com', events: [], secret: '' });
 
     expect(component.form.controls['events'].valid).toBe(false);
   });
   it('closes with the form value when saved', () => {
-    const { component, close } = setup(undefined);
+    const { component, close } = setup(CREATE_CONTEXT);
     component.form.patchValue({ name: 'Slack', url: 'https://example.com', events: [] });
 
     component.save();

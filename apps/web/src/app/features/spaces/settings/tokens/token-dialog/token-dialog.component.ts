@@ -39,12 +39,15 @@ export class TokenDialogComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<TokenForm>>(BrnDialogRef);
 
-  /** Optional: creating a token opens the dialog with no context, editing one passes the token. */
-  private readonly context = injectBrnDialogContext<TokenForm>({ optional: true });
+  /**
+   * Creating a token passes no context, editing one passes the token. Spartan injects an object either way
+   * (at least `{ close }`), so "editing" is decided by the token's `type`, never by the context being there.
+   */
+  private readonly context = injectBrnDialogContext<Partial<TokenForm>>({ optional: true });
 
   readonly types = TOKEN_TYPES;
   /** On edit the type is shown but locked: the value's prefix names it. */
-  readonly isEdit = this.context != null;
+  readonly isEdit = this.context?.type != null;
 
   readonly form = this.fb.group({
     name: this.fb.control<string>('', TokenValidator.NAME),
@@ -63,9 +66,8 @@ export class TokenDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // `?.` because the injection above is optional - without it this throws on the create path.
-    if (this.context != null) {
-      this.form.patchValue({ name: this.context.name, type: this.context.type, cacheTtl: this.context.cacheTtl ?? null });
+    if (this.isEdit) {
+      this.form.patchValue({ name: this.context?.name, type: this.context?.type, cacheTtl: this.context?.cacheTtl ?? null });
     }
   }
 
