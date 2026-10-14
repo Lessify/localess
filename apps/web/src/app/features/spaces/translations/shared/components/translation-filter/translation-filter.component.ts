@@ -17,7 +17,7 @@ import { HlmPopoverImports } from '@spartan-ng/helm/popover';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { debounceTime } from 'rxjs';
 
-import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
+import { LocaleStatus, TRANSLATION_STATUS_LABELS, TranslationStatus } from '../../models/translation-status.model';
 
 export interface TranslationFilterCriteria {
   locale: string;
@@ -67,11 +67,7 @@ export class TranslationFilterComponent {
   readonly filterChange = output<TranslationFilterCriteria>();
 
   readonly allTranslationStates = [TranslationStatus.TRANSLATED, TranslationStatus.PARTIALLY_TRANSLATED, TranslationStatus.UNTRANSLATED];
-  readonly translationStatesDictionary: Record<TranslationStatus, string> = {
-    [TranslationStatus.TRANSLATED]: 'Translated',
-    [TranslationStatus.PARTIALLY_TRANSLATED]: 'Partially Translated',
-    [TranslationStatus.UNTRANSLATED]: 'Untranslated',
-  };
+  readonly translationStatesDictionary = TRANSLATION_STATUS_LABELS;
   readonly allLocaleStates = [LocaleStatus.TRANSLATED, LocaleStatus.UNTRANSLATED];
   readonly localeStatesDictionary: Record<LocaleStatus, string> = {
     [LocaleStatus.TRANSLATED]: 'Translated',

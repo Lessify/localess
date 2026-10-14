@@ -343,7 +343,7 @@ export class ContentsComponent implements AfterViewInit {
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
         context: {
           title: 'Clone Document',
-          content: `Are you sure about clone the Document with name: ${element.name}.`,
+          content: `Clone the document ${element.name}?`,
         },
         contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
       })

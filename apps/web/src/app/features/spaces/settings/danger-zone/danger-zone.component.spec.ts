@@ -37,7 +37,7 @@ describe('DangerZoneComponent', () => {
     component.deleteTranslations('space-1');
 
     expect(deleteAll).toHaveBeenCalledWith('space-1');
-    expect(success).toHaveBeenCalledWith('All Translations deleted process, have successfully started');
+    expect(success).toHaveBeenCalledWith('All translations have been deleted.');
   });
 
   it('does nothing when cancelled', () => {

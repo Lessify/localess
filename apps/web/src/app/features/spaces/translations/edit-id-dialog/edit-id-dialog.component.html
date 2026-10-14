@@ -10,7 +10,7 @@
         >{{ form.controls['key'].value?.length || 0 }}/150</hlm-input-group-addon
       >
     </div>
-    <hlm-field-description>Will be used in OpenAPI Schema Name.</hlm-field-description>
+    <hlm-field-description>Your code (SDK, CLI) reads the translation by this key: update it there too.</hlm-field-description>
     @if (form.controls['key'].errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
     }

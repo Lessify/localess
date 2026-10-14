@@ -35,7 +35,7 @@ import { filter, switchMap, take } from 'rxjs/operators';
 import { EditDialogComponent, EditDialogContext, EditDialogResult } from '../../../edit-dialog';
 import { EditIdDialogComponent, EditIdDialogContext, EditIdDialogResult } from '../../../edit-id-dialog';
 import { identifyTranslationStatus } from '../../models/translation.model';
-import { TranslationStatus } from '../../models/translation-status.model';
+import { TRANSLATION_STATUS_LABELS, TranslationStatus } from '../../models/translation-status.model';
 import { TranslationStringEditComponent } from '../translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
 
@@ -114,6 +114,10 @@ export class TranslationDetailComponent {
 
   identifyTranslationStatus(translate: Translation): TranslationStatus {
     return identifyTranslationStatus(translate, this.availableLocales());
+  }
+
+  statusLabel(translate: Translation): string {
+    return TRANSLATION_STATUS_LABELS[this.identifyTranslationStatus(translate)];
   }
 
   translate(): void {
@@ -199,7 +203,7 @@ export class TranslationDetailComponent {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Translation ID has been updated.');
+          this.notificationService.success('Translation key has been updated.');
         },
         error: err => {
           console.error(err);

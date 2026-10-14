@@ -125,7 +125,7 @@ describe('TranslationsComponent', () => {
       component.publish();
 
       expect(publish).toHaveBeenCalledWith('space-1');
-      expect(success).toHaveBeenCalledWith('Translations has been published.');
+      expect(success).toHaveBeenCalledWith('Translations have been published.');
       expect(component.isPublishLoading()).toBe(true);
 
       await vi.advanceTimersByTimeAsync(1000);

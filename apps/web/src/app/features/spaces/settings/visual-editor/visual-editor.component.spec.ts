@@ -103,7 +103,7 @@ describe('VisualEditorComponent', () => {
 
     expect(openDialog.mock.calls[0][1].context).toEqual({ name: 'prod', url: 'https://twin.example.com/' });
     expect(spaceService.updateEnvironment).toHaveBeenCalledWith('space-1', 'e3', { name: 'Twin', url: 'https://twin.example.com/' });
-    expect(success).toHaveBeenCalledWith("Environment 'prod' has been updated.");
+    expect(success).toHaveBeenCalledWith("Environment 'Twin' has been updated.");
   });
 
   it('openDeleteDialog() deletes by id once confirmed', () => {

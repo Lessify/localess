@@ -183,7 +183,7 @@ export class TranslationsComponent implements OnInit {
     this.isPublishLoading.set(true);
     this.translationService.publish(this.spaceId()).subscribe({
       next: () => {
-        this.notificationService.success('Translations has been published.');
+        this.notificationService.success('Translations have been published.');
       },
       error: () => {
         this.notificationService.error('Translations can not be published.');

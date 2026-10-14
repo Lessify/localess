@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { TRANSLATION_KEY_PATTERN } from '@localess/shared';
 import { CommonPattern } from '@shared/validators/common.validator';
 
 import { FormErrorHandlerService } from './form-error-handler.service';
@@ -61,6 +62,27 @@ describe('FormErrorHandlerService', () => {
   it('reservedName', () => {
     const service = setup();
     expect(service.errors({ reservedName: true })).toBe('The value is already reserved.');
+  });
+
+  it('pattern explains the translation key rule in words, not as a regex', () => {
+    const service = setup();
+    // Validators.pattern(regex) reports the regex as its string form.
+    const message = service.errors({ pattern: { requiredPattern: String(TRANSLATION_KEY_PATTERN) } });
+    expect(message).toBe(
+      'Should contain only a-z, A-Z, 0-9, dot (.), hyphen (-) and underscore (_). Should start with a letter and end with a letter or a digit.',
+    );
+  });
+
+  it('previewUrl names both rules: absolute http(s), and not the app\'s own origin', () => {
+    expect(setup().errors({ previewUrl: true })).toBe(
+      'Should be an absolute http:// or https:// URL of your site, on another origin than Localess.',
+    );
+  });
+
+  it('webhookUrl says local http depends on the server', () => {
+    expect(setup().errors({ webhookUrl: true })).toBe(
+      'Should be an https:// URL (http:// only to localhost, where the server allows internal targets).',
+    );
   });
 
   it('pattern falls back to a generic message for an unrecognized pattern', () => {

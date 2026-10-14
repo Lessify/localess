@@ -59,7 +59,7 @@ export class DangerZoneComponent {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('All Translations deleted process, have successfully started');
+          this.notificationService.success('All translations have been deleted.');
         },
         error: () => {
           this.notificationService.error('Failed to delete All Translations');

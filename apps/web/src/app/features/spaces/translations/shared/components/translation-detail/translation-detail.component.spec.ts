@@ -68,6 +68,14 @@ describe('TranslationDetailComponent', () => {
     };
   }
 
+  it('statusLabel() names the status in words, not as the raw enum value', () => {
+    const { component } = setup();
+
+    expect(component.statusLabel(translation({ locales: {} }))).toBe('Untranslated');
+    expect(component.statusLabel(translation({ locales: { en: 'Hi' } }))).toBe('Partially Translated');
+    expect(component.statusLabel(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe('Translated');
+  });
+
   it('identifyTranslationStatus() delegates to the shared util using availableLocales', () => {
     const { component } = setup();
 
@@ -212,7 +220,7 @@ describe('TranslationDetailComponent', () => {
       component.openEditIdDialog(t);
 
       expect(updateKey).toHaveBeenCalledWith('space-1', t, 'new.id');
-      expect(success).toHaveBeenCalledWith('Translation ID has been updated.');
+      expect(success).toHaveBeenCalledWith('Translation key has been updated.');
     });
 
     it('notifies an error on failure', () => {

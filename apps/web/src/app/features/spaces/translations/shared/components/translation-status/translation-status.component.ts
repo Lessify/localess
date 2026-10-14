@@ -4,7 +4,7 @@ import { lucideCircleDot, lucideCircleDotDashed, lucideCircleSmall } from '@ng-i
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
-import { TranslationStatus } from '../../models/translation-status.model';
+import { TRANSLATION_STATUS_LABELS, TranslationStatus } from '../../models/translation-status.model';
 
 @Component({
   selector: 'll-translation-status',
@@ -26,20 +26,7 @@ import { TranslationStatus } from '../../models/translation-status.model';
 export class TranslationStatusComponent {
   status = input.required<TranslationStatus>();
 
-  tooltip = computed(() => {
-    const status = this.status();
-    switch (status) {
-      case TranslationStatus.TRANSLATED: {
-        return 'Translated';
-      }
-      case TranslationStatus.PARTIALLY_TRANSLATED: {
-        return 'Partially Translated';
-      }
-      case TranslationStatus.UNTRANSLATED: {
-        return 'Untranslated';
-      }
-    }
-  });
+  tooltip = computed(() => TRANSLATION_STATUS_LABELS[this.status()]);
 
   icon = computed(() => {
     const status = this.status();

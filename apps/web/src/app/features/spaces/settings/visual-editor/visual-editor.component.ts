@@ -20,7 +20,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { filter, map, switchMap, take } from 'rxjs/operators';
 
 import { EnvironmentDialogComponent } from './environment-dialog/environment-dialog.component';
 import { EnvironmentDialogContext, EnvironmentDialogResult } from './environment-dialog/environment-dialog.model';
@@ -67,9 +67,10 @@ export class VisualEditorComponent {
     const spaceId = this.spaceStore.selectedSpaceId();
     if (!spaceId) return;
     this.openDialog({ name: environment.name, url: environment.url })
-      .pipe(switchMap(it => this.spaceService.updateEnvironment(spaceId, environment.id, it)))
+      .pipe(switchMap(it => this.spaceService.updateEnvironment(spaceId, environment.id, it).pipe(map(() => it.name))))
       .subscribe({
-        next: () => this.notificationService.success(`Environment '${environment.name}' has been updated.`),
+        // The name it was saved with: a rename shows the new one.
+        next: name => this.notificationService.success(`Environment '${name}' has been updated.`),
         error: () => this.notificationService.error(`Environment '${environment.name}' can not be updated.`),
       });
   }

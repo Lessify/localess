@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ValidationErrors } from '@angular/forms';
+import { TRANSLATION_KEY_PATTERN } from '@localess/shared';
 import { CommonPattern } from '@shared/validators/common.validator';
 
 @Injectable({
@@ -36,6 +37,8 @@ export class FormErrorHandlerService {
             return `Should contain only a-z, A-Z, and 0-9. Should start with a-z or A-Z and end with a-z or A-Z or 0-9.`;
           case `^${CommonPattern.ENUM_VALUE}$`:
             return `Should contain only a-z, A-Z, 0-9 and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.`;
+          case String(TRANSLATION_KEY_PATTERN):
+            return 'Should contain only a-z, A-Z, 0-9, dot (.), hyphen (-) and underscore (_). Should start with a letter and end with a letter or a digit.';
           case CommonPattern.SCHEMA_FIELD_NAME_TRANSLATION:
             return '_i18n_ is reserved for translations. Please avoid using it in the field name.';
           default:
@@ -58,10 +61,10 @@ export class FormErrorHandlerService {
         return `No spaces at start and end.`;
       }
       if (errors['webhookUrl']) {
-        return `Should be an https:// URL (http:// is allowed only for localhost).`;
+        return `Should be an https:// URL (http:// only to localhost, where the server allows internal targets).`;
       }
       if (errors['previewUrl']) {
-        return `Should be an absolute http:// or https:// URL of your site.`;
+        return `Should be an absolute http:// or https:// URL of your site, on another origin than Localess.`;
       }
       if (errors['previewUrlPlaceholder']) {
         return `Unknown placeholder ${errors['previewUrlPlaceholder']}.`;
