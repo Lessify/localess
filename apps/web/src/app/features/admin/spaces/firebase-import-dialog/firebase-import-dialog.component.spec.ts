@@ -61,4 +61,42 @@ describe('FirebaseImportDialogComponent', () => {
     component.connect();
     expect(component.error()).toBe('The migration token was refused');
   });
+
+  describe('with its template', () => {
+    function render(service: Partial<Record<keyof FirebaseImportService, unknown>>) {
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: FirebaseImportService, useValue: service },
+          { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+        ],
+      });
+      const fixture = TestBed.createComponent(FirebaseImportDialogComponent);
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    /** A dialog box grows with its content and nothing scrolls it: a long list must scroll on its own. */
+    const isBoundedScroll = (el: Element | null) =>
+      !!el && el.classList.contains('overflow-y-auto') && [...el.classList].some(it => it.startsWith('max-h-'));
+
+    it('scrolls a long list of source spaces inside the dialog, so Import stays reachable', () => {
+      const spaces = Array.from({ length: 80 }, (_, i) => ({ id: `s${i}`, name: `Space ${i}`, importedAs: null }));
+      const fixture = render({ sourceSpaces: vi.fn().mockReturnValue(of(spaces)) });
+      fixture.componentInstance.form.setValue({ origin: 'https://cms.example.com', token: 't' });
+      fixture.componentInstance.connect();
+      fixture.detectChanges();
+
+      const list = (fixture.nativeElement as HTMLElement).querySelector('ul');
+      expect(list?.querySelectorAll('li').length).toBe(80);
+      expect(isBoundedScroll(list)).toBe(true);
+    });
+
+    it('scrolls the stage progress of a run inside the dialog', () => {
+      const fixture = render({});
+      fixture.componentInstance.run.set({ id: 'r1', status: 'FINISHED', sourceSpaceName: 'A', stages: [] } as never);
+      fixture.detectChanges();
+
+      expect(isBoundedScroll((fixture.nativeElement as HTMLElement).querySelector('ll-firebase-import-progress'))).toBe(true);
+    });
+  });
 });

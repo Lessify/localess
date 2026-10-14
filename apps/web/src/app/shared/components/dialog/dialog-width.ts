@@ -18,8 +18,12 @@ export const DIALOG_WIDTH_SM = 'sm:w-[640px]! sm:max-w-[640px]!';
 /** Narrower than `sm`, for dialogs that are a sentence and two buttons. */
 export const DIALOG_WIDTH_LG = 'w-lg! max-w-lg!';
 
-/** Was `panelClass: 'xl'` - min 900px, max 1280px. */
-export const DIALOG_WIDTH_XL = 'sm:w-[1280px]! sm:max-w-[1280px]!';
+/**
+ * Was `panelClass: 'xl'` - min 900px, max 1280px. For list dialogs (the References picker): the height is
+ * capped like {@link DIALOG_WIDTH_FULL_SCREEN} (same reasons), so a long table scrolls inside the dialog
+ * and the footer with its confirm button stays on screen. Without the cap the box grew past the viewport.
+ */
+export const DIALOG_WIDTH_XL = 'sm:w-[1280px]! sm:max-w-[1280px]! max-h-[calc(100vh-24px)] grid-rows-[minmax(0,1fr)]';
 
 /**
  * Was `panelClass: 'full-screen'`. Bounds the height too, as the Material panel did.
@@ -31,8 +35,8 @@ export const DIALOG_WIDTH_XL = 'sm:w-[1280px]! sm:max-w-[1280px]!';
  * Forcing the row to `minmax(0,1fr)` is what makes the host adopt the available height instead;
  * `min-height: 0` on the host alone does nothing, because the row is still `auto`-sized.
  *
- * Only this constant needs it: it is the only one that caps height. The others let the box size to
- * its content, so the footer is always in view.
+ * Only the constants that cap height need it (this one and XL). The others let the box size to its
+ * content.
  */
 export const DIALOG_WIDTH_FULL_SCREEN =
   'w-[calc(100vw-24px)]! max-w-[calc(100vw-24px)]! max-h-[calc(100vh-24px)] grid-rows-[minmax(0,1fr)]';

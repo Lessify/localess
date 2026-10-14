@@ -13,10 +13,11 @@
   @if (failureHint(run); as hint) {
     <p class="text-muted-foreground text-sm">{{ hint }}</p>
   }
-  <ll-firebase-import-progress [run]="run" />
+  <!-- The dialog box grows with its content and nothing scrolls it: long lists scroll on their own. -->
+  <ll-firebase-import-progress class="block max-h-[50vh] overflow-y-auto" [run]="run" />
 } @else {
   @if (runs().length) {
-    <ul class="flex flex-col gap-1">
+    <ul class="flex max-h-[60vh] flex-col gap-1 overflow-y-auto">
       @for (run of runs(); track run.id) {
         <li>
           <button hlmBtn variant="ghost" class="h-auto w-full justify-between py-2 text-left" (click)="select(run)">

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { FirebaseImportService } from '@core/services/firebase-import.service';
 import { FirebaseImport } from '@localess/shared';
+import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -48,5 +49,40 @@ describe('FirebaseImportsDialogComponent', () => {
     expect(cancel).toHaveBeenCalledWith('r2');
     expect(component.selectedRun()).toBe(cancelled);
     expect(component.runs()[0]).toBe(cancelled);
+  });
+
+  describe('with its template', () => {
+    const isBoundedScroll = (el: Element | null) =>
+      !!el && el.classList.contains('overflow-y-auto') && [...el.classList].some(it => it.startsWith('max-h-'));
+
+    function render(list: FirebaseImport[]) {
+      TestBed.configureTestingModule({
+        providers: [
+          { provide: FirebaseImportService, useValue: { findAll: vi.fn().mockReturnValue(of(list)), cancel: vi.fn() } },
+          { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+        ],
+      });
+      const fixture = TestBed.createComponent(FirebaseImportsDialogComponent);
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('scrolls a long list of runs inside the dialog', () => {
+      const many = Array.from({ length: 40 }, (_, i) => ({ ...runs[1], id: `r${i}`, startedBy: { name: 'QA', email: 'qa@example.com' } }));
+      const fixture = render(many as FirebaseImport[]);
+
+      const list = (fixture.nativeElement as HTMLElement).querySelector('ul');
+      expect(list?.querySelectorAll('li').length).toBe(40);
+      expect(isBoundedScroll(list)).toBe(true);
+    });
+
+    it("scrolls an opened run's stage progress inside the dialog", () => {
+      const listed = runs.map(it => ({ ...it, startedBy: { name: 'QA', email: 'qa@example.com' } }));
+      const fixture = render(listed);
+      fixture.componentInstance.select(listed[1]);
+      fixture.detectChanges();
+
+      expect(isBoundedScroll((fixture.nativeElement as HTMLElement).querySelector('ll-firebase-import-progress'))).toBe(true);
+    });
   });
 });
