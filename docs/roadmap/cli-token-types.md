@@ -85,6 +85,8 @@ URLs and `?token=` are unchanged for the CDN API, so the SDKs keep working with 
 
 - `requiredPermissions` → `requiredTypes` in the parsed details and the error box ("Required token type(s): preview").
 - 403 hint text (~534): "draft access needs a **Preview** token; published needs a Public or Preview token".
+- The 403 `message` is now "Token type not allowed for this request" (was "Token is missing a required permission"); the
+  CLI and SDK only use it in test fixtures (`packages/cli/src/client.test.ts:135`, `packages/client/src/client.test.ts`).
 
 ### S2. 401 hint
 

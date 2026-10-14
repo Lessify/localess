@@ -218,7 +218,7 @@ On the CDN, a management token in `?token=` gets `details: { "hint": "Management
 
 ```json
 {
-  "message": "Token is missing a required permission",
+  "message": "Token type not allowed for this request",
   "status": "PERMISSION_DENIED",
   "details": {
     "requiredTypes": ["preview"],

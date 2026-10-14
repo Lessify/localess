@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { Schema, SchemaType } from '@localess/shared';
+import { Schema, SchemaType, TokenType } from '@localess/shared';
+import { parseApiToken } from '../../../shared/utils/api-token-format.js';
 import { generateOpenApi } from './open-api.js';
 
 /** Minimal ROOT schema so the generator has something to derive ContentData from. */
@@ -34,6 +35,21 @@ function collectRefs(node: unknown, found: string[] = []): string[] {
 describe('generateOpenApi', () => {
   const doc = generateOpenApi(schemas);
   const components = doc.components?.schemas ?? {};
+
+  it('documents the token parameter as a public or preview token, with a real-looking example', () => {
+    const tokenParams = Object.values(doc.paths ?? {})
+      .flatMap(item => Object.values(item as Record<string, { parameters?: { name?: string; description?: string; schema?: { example?: unknown } }[] }>))
+      .flatMap(operation => operation.parameters ?? [])
+      .filter(param => param.name === 'token');
+
+    expect(tokenParams.length).toBeGreaterThan(0);
+    for (const param of tokenParams) {
+      // A value the server would accept as a public token (prefix and checksum), not a Firebase-era one.
+      expect(parseApiToken(param.schema?.example)).toBe(TokenType.PUBLIC);
+      expect(param.description).toMatch(/public/i);
+      expect(param.description).toMatch(/preview/i);
+    }
+  });
 
   it('every $ref resolves to a declared component', () => {
     const dangling = collectRefs(doc)

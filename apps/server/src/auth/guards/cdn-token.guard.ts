@@ -41,7 +41,7 @@ export class CdnTokenGuard implements CanActivate {
     const draft = version !== undefined;
     const required = RANK[draft ? rule.draft : rule.published] as number;
     if (rank < required) {
-      throw new V1Error(403, 'permission-denied', 'Token is missing a required permission', {
+      throw new V1Error(403, 'permission-denied', 'Token type not allowed for this request', {
         details: {
           requiredTypes: CDN_TYPES.filter(it => (RANK[it] as number) >= required),
           reason: draft ? rule.reason.draft : rule.reason.published,

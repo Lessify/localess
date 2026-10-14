@@ -534,11 +534,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token.',
+              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
-                example: 'fb6oTcVjbnyLCMhO2iLY',
+                example: 'pub_P55XxPv0j5hoGQXZx47s3CANlVicUoa11sqaVd',
               },
             },
           ],
@@ -625,11 +625,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token.',
+              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
-                example: 'fb6oTcVjbnyLCMhO2iLY',
+                example: 'pub_P55XxPv0j5hoGQXZx47s3CANlVicUoa11sqaVd',
               },
             },
           ],
@@ -715,11 +715,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token.',
+              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
-                example: 'fb6oTcVjbnyLCMhO2iLY',
+                example: 'pub_P55XxPv0j5hoGQXZx47s3CANlVicUoa11sqaVd',
               },
             },
             {
@@ -835,11 +835,11 @@ export function generateOpenApi(schemasById: Map<string, Schema>): OpenAPIObject
             {
               name: 'token',
               in: 'query',
-              description: 'Authentication Token.',
+              description: 'A public or preview API token (`pub_…` or `prv_…`, Space Settings → Tokens). Drafts (`version=draft`) need a preview token.',
               required: true,
               schema: {
                 type: 'string',
-                example: 'fb6oTcVjbnyLCMhO2iLY',
+                example: 'pub_P55XxPv0j5hoGQXZx47s3CANlVicUoa11sqaVd',
               },
             },
             {

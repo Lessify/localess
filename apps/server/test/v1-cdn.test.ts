@@ -83,7 +83,7 @@ describe('v1 CDN API', () => {
           reason: 'This request includes a `version` query parameter, which requires a preview token.',
           hint: 'Use a token of one of the required types.',
         },
-        message: 'Token is missing a required permission',
+        message: 'Token type not allowed for this request',
         status: 'PERMISSION_DENIED',
       });
     });
