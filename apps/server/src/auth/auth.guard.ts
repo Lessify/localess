@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
 import { canPerform, hasAnyRole } from '@localess/shared';
 import { toPrincipal } from '../shared/transformers/user.transformer.js';
-import { IS_PUBLIC, REQUIRED_ACCESS, RequiredAccess } from './decorators.js';
+import { AUTH_KIND, type AuthKind, IS_PUBLIC, REQUIRED_ACCESS, RequiredAccess } from './decorators.js';
 import { SessionService } from './services/session.service.js';
 import { SESSION_COOKIE } from './utils/session-cookie.js';
 
@@ -15,8 +15,8 @@ export const CSRF_HEADER = 'x-requested-with';
  * `@Require*` metadata is checked against the user's role and permissions.
  *
  * CSRF: the session cookie is SameSite=Lax, and every state-changing request that relies on it must
- * also carry `X-Requested-With` — a header a cross-site form or image can't set. The public `/api/v1`
- * API authenticates with tokens, not cookies, so it's exempt.
+ * also carry `X-Requested-With` — a header a cross-site form or image can't set. The CDN and Management APIs
+ * authenticate with tokens through their own guards (`@CdnToken`, `@ManagementToken`), not cookies, so they're exempt.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -29,7 +29,10 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<FastifyRequest>();
     const targets = [context.getHandler(), context.getClass()];
 
-    if (!SAFE_METHODS.has(request.method) && !request.url.startsWith('/api/v1/') && !request.headers[CSRF_HEADER]) {
+    // Token routes are authenticated by their own guard (@CdnToken / @ManagementToken) and send no cookie: no CSRF check.
+    if (this.reflector.getAllAndOverride<AuthKind | undefined>(AUTH_KIND, targets)) return true;
+
+    if (!SAFE_METHODS.has(request.method) && !request.headers[CSRF_HEADER]) {
       throw new ForbiddenException('Missing X-Requested-With header');
     }
 

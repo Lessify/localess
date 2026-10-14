@@ -5,6 +5,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { newUuid } from '../../../infra/database/id.js';
 import { spaceLocales, spaces, userCredentials, users } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 
 /**
  * The first administrator and the starter space. Needs the database only (no events): the CLI (`admin:create`) runs
@@ -28,7 +29,7 @@ export class FirstAdminRepository {
     return user !== undefined;
   }
 
-  /** The admin with an argon2id password, and the "Hello World" space with the default locale, in one transaction. */
+  /** The admin with an argon2id password, and the "Hello World" space with the default locale and its preview token, in one transaction. */
   createWithStarterSpace(
     admin: { email: string; displayName: string; passwordHash: string },
     tx?: Transaction,
@@ -48,6 +49,7 @@ export class FirstAdminRepository {
       const spaceId = newUuid();
       await t.insert(spaces).values({ id: spaceId, name: 'Hello World', defaultLocaleId: DEFAULT_LOCALE.id });
       await t.insert(spaceLocales).values({ spaceId, localeId: DEFAULT_LOCALE.id, position: 0 });
+      await createPreviewToken(t, spaceId);
       return { userId: user.id, spaceId };
     });
   }

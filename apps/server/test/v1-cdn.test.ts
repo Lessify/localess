@@ -5,16 +5,17 @@ import {
   seedContent,
   seedSpace,
   seedTranslations,
-  TOKEN_DEV,
   TOKEN_DRAFT,
+  TOKEN_MANAGEMENT,
   TOKEN_NO_CACHE,
-  TOKEN_NONE,
   TOKEN_PUBLIC,
   TOKEN_READ,
+  tokenRow,
 } from './seed.js';
 import { createTestApp, insertSpace, setImport, TestApp } from './test-app.js';
 import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
-import { newUuid } from '../src/infra/database/id.js';
+import { TokenType } from '@localess/shared';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
 
 /**
  * The public delivery API against real rows. The cases ported from functions/src/v1/*.test.ts keep
@@ -23,7 +24,7 @@ import { newUuid } from '../src/infra/database/id.js';
 describe('v1 CDN API', () => {
   let t: TestApp;
 
-  const EMPTY_TOKEN = 'GGGGGGGGGGGGGGGGGGGG';
+  const EMPTY_TOKEN = newApiToken(TokenType.PUBLIC);
 
   beforeAll(async () => {
     t = await createTestApp();
@@ -32,7 +33,7 @@ describe('v1 CDN API', () => {
     await seedTranslations(t);
     // A second space with nothing published, and its own token.
     await insertSpace(t.db, { id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
-    await t.db.insert(tokens).values({ id: newUuid(), token: EMPTY_TOKEN, spaceId: EMPTY_SPACE, name: 'read', permissions: ['TRANSLATION_PUBLIC', 'CONTENT_PUBLIC'] });
+    await t.db.insert(tokens).values(tokenRow(EMPTY_SPACE, TokenType.PUBLIC, EMPTY_TOKEN, 'read'));
   });
 
   afterAll(() => t?.close());
@@ -45,6 +46,8 @@ describe('v1 CDN API', () => {
         `/api/v1/spaces/${S1}/translations/en`,
         `/api/v1/spaces/${S1}/translations/en?token=short`,
         `/api/v1/spaces/${S1}/translations/en?token=ZZZZZZZZZZZZZZZZZZZZ`,
+        `/api/v1/spaces/${S1}/translations/en?token=${newApiToken(TokenType.PUBLIC)}`,
+        `/api/v1/spaces/${S1}/translations/en?token=${TOKEN_PUBLIC.slice(0, -1)}${TOKEN_PUBLIC.endsWith('A') ? 'B' : 'A'}`,
       ]) {
         const response = await get(url);
         expect(response.statusCode).toBe(401);
@@ -57,14 +60,28 @@ describe('v1 CDN API', () => {
       expect((await get(`/api/v1/spaces/${S1}/links?token=${EMPTY_TOKEN}`)).statusCode).toBe(401);
     });
 
-    it('names the missing permissions in a 403', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_NONE}`);
+    it('refuses a management token in the URL before any lookup, saying where it goes', async () => {
+      const response = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_MANAGEMENT}`);
+      expect(response.statusCode).toBe(401);
+      expect(response.json()).toEqual({
+        details: { hint: 'Management tokens go in the Authorization header on /api/manage/v1.' },
+        message: 'Missing or invalid API token',
+        status: 'UNAUTHENTICATED',
+      });
+    });
+
+    it('reads published with a preview token too (preview includes public)', async () => {
+      expect((await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_READ}`)).statusCode).toBe(302);
+    });
+
+    it('names the required token types in a 403', async () => {
+      const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
       expect(response.json()).toEqual({
         details: {
-          requiredPermissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT', 'DEV_TOOLS'],
-          reason: 'Published content requires the CONTENT_PUBLIC, CONTENT_DRAFT, or DEV_TOOLS permission.',
-          hint: 'Add one of the required permissions to this token, or use a token that already has it.',
+          requiredTypes: ['preview'],
+          reason: 'This request includes a `version` query parameter, which requires a preview token.',
+          hint: 'Use a token of one of the required types.',
         },
         message: 'Token is missing a required permission',
         status: 'PERMISSION_DENIED',
@@ -74,9 +91,10 @@ describe('v1 CDN API', () => {
     it('requires a draft permission whenever `version` is present', async () => {
       const response = await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
-      expect(response.json().details.reason).toMatch(/draft content/);
+      expect(response.json().details.reason).toMatch(/preview token/);
       expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DRAFT}&version=draft`)).statusCode).toBe(302);
-      expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_DEV}&version=draft`)).statusCode).toBe(302);
+      // Management tokens never read the CDN.
+      expect((await get(`/api/v1/spaces/${S1}/contents/${C.home}?token=${TOKEN_MANAGEMENT}&version=draft`)).statusCode).toBe(401);
     });
   });
 

@@ -15,8 +15,9 @@ Spaces move one at a time from a running Firebase-era Localess environment, from
    A running import can be stopped with *Cancel import* (in the import dialog or in **Imports**): it ends as failed
    at the stage it reached ("Cancelled by <email>"), and its space is deleted and imported again like any failed one.
 4. **After each import:** publish the space's content and translations, re-invite users, re-enable the webhooks
-   (they are imported disabled), and update your SDK configuration: the new origin and the new space id. API tokens
-   keep their values.
+   (they are imported disabled), and update your SDK configuration: the new origin, the new space id and new tokens.
+   API tokens are **not imported**: each imported space gets an *Auto Generated Preview Token*; create Public and
+   Management tokens in Space Settings → Tokens, then update your sites (`?token=`) and CI (`localess login`).
 5. **Old asset URLs:** they keep working if the old host now points at this install (a custom domain you move with
    DNS); `/api/v1/spaces/<old space id>/assets/<old asset id>` redirects (301) to the new URL. On the default Firebase
    domains, keep the Firebase environment running as long as old asset URLs are in use.

@@ -96,7 +96,6 @@ describe('Firebase import run', () => {
       space: ['DONE', 1],
       locales: ['DONE', 2],
       environments: ['DONE', 1],
-      tokens: ['DONE', 2],
       webhooks: ['DONE', 1],
       translations: ['DONE', 2],
       schemas: ['DONE', 1],
@@ -113,12 +112,11 @@ describe('Firebase import run', () => {
       environments: [{ id: expect.stringMatching(UUID_V7), name: 'Preview', url: 'https://preview.example.com' }],
     });
 
-    // Every token is imported in the one current form: a V1 token gets the permissions it had implicitly.
-    const imported = await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id));
-    expect(Object.fromEntries(imported.map(it => [it.token, it.permissions]))).toEqual({
-      TOKENV1000000000000A: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT'],
-      TOKENV2000000000000B: ['CONTENT_PUBLIC'],
-    });
+    // Tokens are not imported (their values are the old format): the space gets its own preview token instead.
+    expect(FIREBASE_IMPORT_STAGES).not.toContain('tokens');
+    const spaceTokens = await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id));
+    expect(spaceTokens).toHaveLength(1);
+    expect(spaceTokens[0]).toMatchObject({ type: 'preview', name: 'Auto Generated Preview Token' });
     expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({ enabled: false, secret: 's' });
     expect((await t.db.select().from(translations).where(eq(translations.spaceId, space.id))).map(it => it.key).sort()).toEqual(['bye', 'greeting']);
     expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, space.id)))[0].name).toBe('page');
@@ -158,7 +156,7 @@ describe('Firebase import run', () => {
   });
 
   it('rewrites references that cross page boundaries (one document per page)', async () => {
-    const paged = await fakeFirebase([{ ...site, id: 'fbPaged', tokens: [] }], { pageSize: 1 });
+    const paged = await fakeFirebase([{ ...site, id: 'fbPaged' }], { pageSize: 1 });
     const id = newUuid();
     await t.db.insert(firebaseImports).values({
       id, origin: paged.url, sourceSpaceId: 'fbPaged', sourceSpaceName: 'Site', status: 'RUNNING',
@@ -186,13 +184,12 @@ describe('Firebase import run', () => {
     expect(space).toMatchObject({ locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
-  it('keeps only known enum values (token permissions, webhook events, translation and schema types), with a warning', async () => {
+  it('keeps only known enum values (webhook events, translation and schema types), with a warning', async () => {
     const odd = await fakeFirebase([
       {
         id: 'fbValues',
         name: 'Values',
         doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
-        tokens: [{ id: 'TOKENV3000000000000C', name: 'odd', version: 2, permissions: ['CONTENT_PUBLIC', 'SOMETHING_NEW'] }],
         webhooks: [{ id: 'w9', name: 'Odd', url: 'https://example.com/hook', events: ['content.published', 'space.renamed'] }],
         // Translations are plain text: a Firebase type (PLURAL, ARRAY, anything) is dropped, the value kept as it is.
         translations: [{ id: 'odd', type: 'PLURAL', locales: { en: '{"0":"None","1":"One"}' } }],
@@ -210,14 +207,12 @@ describe('Firebase import run', () => {
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const sid = run.spaceId!;
-      expect((await t.db.select().from(tokens).where(eq(tokens.spaceId, sid)))[0].permissions).toEqual(['CONTENT_PUBLIC']);
       expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, sid)))[0].events).toEqual(['content.published']);
       expect((await t.db.select().from(translations).where(eq(translations.spaceId, sid)))[0].locales).toEqual({
         en: '{"0":"None","1":"One"}',
       });
       expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, sid)))[0].type).toBe('ROOT');
       const warnings = (name: string) => run.stages.find(it => it.stage === name)!.warnings?.join('\n');
-      expect(warnings('tokens')).toMatch(/odd: unknown permission SOMETHING_NEW, dropped/);
       expect(warnings('webhooks')).toMatch(/Odd: unknown event space.renamed, dropped/);
       expect(warnings('translations')).toBeUndefined();
       expect(warnings('schemas')).toMatch(/odd: unknown type WIDGET, imported as ROOT/);
@@ -543,27 +538,8 @@ describe('Firebase import run', () => {
     }
   });
 
-  it('fails at tokens when a token value already belongs to another space', async () => {
-    const twin = await fakeFirebase([{ ...site, id: 'fbTwin' }]);
-    const id = newUuid();
-    await t.db.insert(firebaseImports).values({
-      id,
-      origin: twin.url,
-      sourceSpaceId: 'fbTwin',
-      sourceSpaceName: 'Site',
-      status: 'RUNNING',
-      stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
-      startedBy: { name: 'Admin', email: 'admin@example.com' },
-    });
-    await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(twin.url, 'migration-secret', { allowInternal: true }), 'fbTwin');
-    await twin.close();
-    const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
-    expect(toFirebaseImport(run)).toMatchObject({ status: 'FAILED', error: { stage: 'tokens', message: "Token 'legacy' already exists in space 'Site'" } });
-  });
-
   it('records the failing stage and keeps the space flagged', async () => {
-    // No tokens: the first test already imported this fixture's token values.
-    const failing = await fakeFirebase([{ ...site, id: 'fbFail', tokens: [] }], { failAfterFiles: 0 });
+    const failing = await fakeFirebase([{ ...site, id: 'fbFail' }], { failAfterFiles: 0 });
     const id = newUuid();
     await t.db.insert(firebaseImports).values({
       id, origin: failing.url, sourceSpaceId: 'fbFail', sourceSpaceName: 'Site', status: 'RUNNING',

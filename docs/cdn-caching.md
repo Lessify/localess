@@ -1,10 +1,10 @@
 # CDN & Caching
 
-> Related: [Publish Flow](publish-flow.md) · [Auth Tokens](auth-tokens.md) · [V1 Public API](v1-api.md)
+> Related: [Publish Flow](publish-flow.md) · [Auth Tokens](auth-tokens.md) · [V1 API](v1-api.md)
 
 ## Overview
 
-The public API (`/api/v1/**`) is served by the NestJS server (each feature's `*.public.controller.ts` under `apps/server/src/modules/`, shared plumbing in `apps/server/src/infra/http/v1/`). All CDN endpoints use a **cache-version redirect pattern** so that browsers and shared caches can keep responses long-term while still supporting instant invalidation after publish.
+The CDN API (`/api/v1/**`) is served by the NestJS server (each feature's `*.cdn.controller.ts` under `apps/server/src/modules/`, shared plumbing in `apps/server/src/infra/http/v1/`). The Management API (`/api/manage/v1/**`) is never cached: every response is `Cache-Control: no-store`, so a CDN rule only needs to cover `/api/v1/*`. All CDN endpoints use a **cache-version redirect pattern** so that browsers and shared caches can keep responses long-term while still supporting instant invalidation after publish.
 
 **There is no CDN in front of Localess by default.** The Firebase era got Firebase Hosting's edge CDN for free; a self-hosted server answers every request itself. For production, put a CDN or a caching reverse proxy (Cloudflare, Fastly, CloudFront, nginx/Varnish `proxy_cache`, …) in front of at least `/api/v1/**`. The responses are already CDN-ready: every cacheable response carries `public, max-age, s-maxage`, URLs are versioned by `cv`, and asset responses carry ETags. The proxy should key on the full URL including the query string, and honour `Vary: Accept-Encoding`. Without one, browsers still cache per client, and image transforms are still cached on disk by default (see [Rendition cache](#rendition-cache)), but every redirect and JSON response is served by the Node process.
 
@@ -122,10 +122,10 @@ Content, translation and links JSON responses carry no `ETag` and never answer `
 
 | Endpoint | Auth | cv source |
 |----------|------|-----------|
-| `GET /api/v1/spaces/:spaceId/translations/:locale` | Token (TRANSLATION_PUBLIC or DRAFT) | `translation_snapshots.built_at` of the map served |
-| `GET /api/v1/spaces/:spaceId/links` | Token (CONTENT_PUBLIC, CONTENT_DRAFT or DEV_TOOLS; with `version`: CONTENT_DRAFT or DEV_TOOLS) | `content_link_snapshots.built_at` of the list served |
-| `GET /api/v1/spaces/:spaceId/contents/slugs/*slug` | Token (CONTENT_PUBLIC or DRAFT) | `content_snapshots.built_at` of the document served |
-| `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (CONTENT_PUBLIC or DRAFT) | `content_snapshots.built_at` of the document served |
+| `GET /api/v1/spaces/:spaceId/translations/:locale` | Token (`public`; with `version`: `preview`) | `translation_snapshots.built_at` of the map served |
+| `GET /api/v1/spaces/:spaceId/links` | Token (`public`; with `version`: `preview`) | `content_link_snapshots.built_at` of the list served |
+| `GET /api/v1/spaces/:spaceId/contents/slugs/*slug` | Token (`public`; with `version`: `preview`) | `content_snapshots.built_at` of the document served |
+| `GET /api/v1/spaces/:spaceId/contents/:contentId` | Token (`public`; with `version`: `preview`) | `content_snapshots.built_at` of the document served |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId` | None | N/A (no cv) |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId/original` | None | N/A (no cv) |
 | `GET /api/v1/spaces/:spaceId/assets/:assetId/download` | None | N/A (no cv) |
@@ -231,17 +231,17 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 | `version` query param | absent | `version=draft` |
 | Source | `content_snapshots` / `translation_snapshots` (`published`), taken on publish; `content_link_snapshots` (`published`) | `content_snapshots` / `content_link_snapshots` / `translation_snapshots` (`draft`), built on the first request after a change |
 | Redirect TTL | 60s default (overridable via token `cacheTtl`) | 60s default (overridable via token `cacheTtl`) |
-| Required permission | `*_PUBLIC` or `*_DRAFT` | `*_DRAFT` or `DEV_TOOLS` |
+| Required token type | `public` or `preview` | `preview` |
 
 ---
 
 ## Implementation Files
 
-- `apps/server/src/modules/{contents,translations,assets}/controllers/*.public.controller.ts` — the CDN route handlers
+- `apps/server/src/modules/{contents,translations,assets}/controllers/*.cdn.controller.ts` — the CDN route handlers (`@CdnToken`)
 - `apps/server/src/infra/http/v1/v1-request.ts` — `cv` redirects (`needsRedirect`, `redirectToVersion`), `validIdParams`, `isDraft`
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
-- `apps/server/src/auth/services/token-auth.service.ts` — token auth per request
-- `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/assets.public.controller.ts` — ETag/304, Range, Cache-Control
+- `apps/server/src/auth/guards/cdn-token.guard.ts`, `apps/server/src/auth/services/token-auth.service.ts` — token check per request, the 5-minute token cache
+- `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/assets.cdn.controller.ts` — ETag/304, Range, Cache-Control
 - `apps/server/src/shared/data-rules/content-snapshots.ts` — the contents lock, dropping drafts, `/links` lists and a removed locale's snapshots (every module that writes contents or a space's locales)
 - `apps/server/src/modules/contents/repositories/content-delivery.repository.ts` — content snapshots: draft and `/links` builds
 - `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build

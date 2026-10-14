@@ -7,6 +7,7 @@ import {
   publicCache,
 } from './cache-control.js';
 import { isValidId } from './id-param.js';
+import { V1Error } from './v1-error.js';
 import { sendV1Error } from './v1-response.js';
 
 /*
@@ -37,6 +38,13 @@ export function validIdParams(reply: FastifyReply, params: Params): boolean {
     }
   }
   return true;
+}
+
+/** `validIdParams` for guards: throws the same 400 instead of answering it (`cacheControl` for the Management API's no-store). */
+export function assertValidIdParams(params: Params, cacheControl = publicCache(CACHE_BAD_REQUEST_MAX_AGE)): void {
+  for (const name of ['spaceId', 'contentId', 'assetId']) {
+    if (name in params && !isValidId(params[name])) throw new V1Error(400, 'invalid-argument', `Invalid '${name}'.`, { cacheControl });
+  }
 }
 
 /** The `cv` cache-busting redirect; a token may set its TTL (`cacheTtl: 0` disables caching). */

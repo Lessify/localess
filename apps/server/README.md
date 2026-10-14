@@ -53,7 +53,7 @@ src/
 ```
 
 Domain types, permission rules and validators come from `@localess/shared` (`packages/shared`). A feature
-module imports `ApiTokensModule` when it has a public controller and no other feature module (a space it needs
+module imports `ApiTokensModule` when it has a CDN or Management controller and no other feature module (a space it needs
 is read with its own query); infrastructure modules (database, storage, events) and `SharedModule` are global.
 
 ## Environment
@@ -106,12 +106,14 @@ is read with its own query); infrastructure modules (database, storage, events) 
 | `GET/PATCH /api/app/me` · `PUT /api/app/me/email` · `PUT /api/app/me/password` | Own profile |
 | `GET/POST /api/app/users` · `GET/PATCH/DELETE /api/app/users/:id` · `POST …/:id/password-reset-link` | User management |
 
-## Public API (`/api/v1`)
+## CDN API (`/api/v1`) and Management API (`/api/manage/v1`)
 
-Same URLs, parameters, token rules, status codes, bodies and `Cache-Control` values as the former
-`publicv1` function (see [docs/cdn-caching.md](../../docs/cdn-caching.md),
-[docs/v1-api.md](../../docs/v1-api.md)). Code: each feature's
-`src/modules/<feature>/<feature>.public.controller.ts`, with shared plumbing in `src/infra/http/v1/`.
+The CDN API keeps the URLs, parameters, status codes, bodies and `Cache-Control` values of the former `publicv1`
+function, with `public`/`preview` tokens in `?token=`; the Management API (CLI, CI) takes a `management` token in
+`Authorization: Bearer` and is never cached (see [docs/cdn-caching.md](../../docs/cdn-caching.md),
+[docs/v1-api.md](../../docs/v1-api.md), [docs/auth-tokens.md](../../docs/auth-tokens.md)). Code: each feature's
+`src/modules/<feature>/controllers/<feature>.cdn.controller.ts` / `<feature>.management.controller.ts`, the token guards in
+`src/auth/guards/`, shared plumbing in `src/infra/http/v1/`.
 
 - `cv` is the `built_at` of the snapshot served: per document and locale (`content_snapshots`), per `/links` list
   (`content_link_snapshots`), per translation locale (`translation_snapshots`), draft and published separately.

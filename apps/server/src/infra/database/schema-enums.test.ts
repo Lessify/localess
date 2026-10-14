@@ -8,7 +8,7 @@ import {
   TaskKind,
   TaskLogLevel,
   TaskStatus,
-  TokenPermission,
+  TokenType,
   TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
   UserPermission,
@@ -37,7 +37,7 @@ const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][]
   ['tasks', 'status', Object.values(TaskStatus)],
   ['tasks', 'type', TRANSLATION_IMPORT_FORMATS],
   ['task_logs', 'level', Object.values(TaskLogLevel)],
-  ['tokens', 'permissions', Object.values(TokenPermission)],
+  ['tokens', 'type', Object.values(TokenType)],
   ['webhooks', 'events', Object.values(WebHookEvent)],
   ['webhook_logs', 'event', Object.values(WebHookEvent)],
   ['webhook_logs', 'status', Object.values(WebHookStatus)],
@@ -65,7 +65,7 @@ describe('columns with a fixed set of values', () => {
          from pg_constraint c
          join pg_class t on t.oid = c.conrelid
          join pg_attribute a on a.attrelid = t.oid and a.attnum = any (c.conkey)
-        where c.contype = 'c' and t.relname = $1 and a.attname = $2`,
+        where c.contype = 'c' and t.relname = $1 and a.attname = $2 and c.conname = $1 || '_' || $2 || '_check'`,
       [table, column],
     );
     expect(rows).toHaveLength(1);

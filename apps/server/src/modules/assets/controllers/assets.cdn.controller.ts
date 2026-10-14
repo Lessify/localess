@@ -18,12 +18,12 @@ import { parseByteRange } from '../utils/byte-range.js';
 import { parseAssetTransformQuery } from '../utils/image-transform.js';
 
 /**
- * Asset delivery on the public API (no token): transformed images, the original file and downloads. A Firestore asset
+ * Asset delivery on the CDN API (no token): transformed images, the original file and downloads. A Firestore asset
  * id (imported from Firebase) redirects to the UUID URL.
  */
 @Public()
 @Controller('api/v1/spaces/:spaceId')
-export class AssetsPublicController {
+export class AssetsCdnController {
   constructor(private readonly assetDelivery: AssetDeliveryService) {}
 
   @Get('assets/:assetId')

@@ -6,9 +6,18 @@ import { NotificationService } from '@core/services/notification.service';
 import { TokenService } from '@core/services/token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { Token, TokenPermission } from '@localess/shared';
+import { Token, TokenType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideCopy, lucidePencil, lucidePlus, lucideRefreshCw, lucideSquareTerminal, lucideTrash } from '@ng-icons/lucide';
+import {
+  lucideCopy,
+  lucideEye,
+  lucideGlobe,
+  lucideKeyRound,
+  lucidePencil,
+  lucidePlus,
+  lucideRefreshCw,
+  lucideTrash,
+} from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -19,7 +28,7 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { getTokenUsageInfo, PERMISSION_TEXT, TokenForm, TokenUsageInfo } from '@shared/models/token.model';
+import { TOKEN_TYPE_INFO, TokenForm } from '@shared/models/token.model';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -29,6 +38,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
+import { TokenSecretDialogComponent, TokenSecretDialogContext } from './token-secret-dialog/token-secret-dialog.component';
 
 @Component({
   selector: 'll-space-settings-tokens',
@@ -54,7 +64,9 @@ import { TokenDialogComponent } from './token-dialog/token-dialog.component';
       lucideCopy,
       lucidePencil,
       lucideRefreshCw,
-      lucideSquareTerminal,
+      lucideGlobe,
+      lucideEye,
+      lucideKeyRound,
     }),
   ],
 })
@@ -73,13 +85,14 @@ export class TokensComponent implements AfterViewInit {
 
   private readonly tokens = signal<Token[]>([]);
   readonly dataSource = new TableDataSource<Token>(this.tokens, this.injector);
-  displayedColumns: string[] = ['id', 'name', 'permissions', 'usage', 'cacheTtl', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['hint', 'name', 'type', 'cacheTtl', 'updatedAt', 'actions'];
+  readonly typeInfo = TOKEN_TYPE_INFO;
 
   private destroyRef = inject(DestroyRef);
 
   constructor() {
     this.dataSource.filterPredicate = FilterPredicateUtils.create<Token>({
-      searchFields: token => [token.token, token.name],
+      searchFields: token => [token.hint, token.name],
     });
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
@@ -116,8 +129,9 @@ export class TokensComponent implements AfterViewInit {
         switchMap(it => this.tokenService.create(spaceId!, it)),
       )
       .subscribe({
-        next: () => {
+        next: token => {
           this.notificationService.success('Token has been created.');
+          this.showSecret(token);
         },
         error: (err: unknown) => {
           console.error(err);
@@ -132,7 +146,7 @@ export class TokensComponent implements AfterViewInit {
       .open<TokenForm, TokenForm>(TokenDialogComponent, {
         context: {
           name: element.name,
-          permissions: element.permissions,
+          type: element.type,
           cacheTtl: element.cacheTtl,
         },
         contentClass: DIALOG_WIDTH_SM,
@@ -140,15 +154,15 @@ export class TokensComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.tokenService.update(spaceId!, element.id, it)),
+        switchMap(it => this.tokenService.update(spaceId!, element.id, { name: it.name, cacheTtl: it.cacheTtl })),
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('Token has been created.');
+          this.notificationService.success('Token has been updated.');
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.error('Token can not be created.');
+          this.notificationService.error('Token can not be updated.');
         },
       });
   }
@@ -170,8 +184,9 @@ export class TokensComponent implements AfterViewInit {
         switchMap(() => this.tokenService.regenerate(spaceId!, element)),
       )
       .subscribe({
-        next: () => {
+        next: token => {
           this.notificationService.success(`Token '${element.name}' has been regenerated.`);
+          this.showSecret(token);
         },
         error: () => {
           this.notificationService.error(`Token '${element.name}' can not be regenerated.`);
@@ -205,31 +220,21 @@ export class TokensComponent implements AfterViewInit {
       });
   }
 
-  permissionsToText(permissions: TokenPermission[]): string {
-    return permissions.map(it => PERMISSION_TEXT[it]).join(', ');
-  }
-
-  permissionsToUsage(element: Token): TokenUsageInfo {
-    return getTokenUsageInfo(element.permissions);
-  }
-
   copied() {
-    this.notificationService.success(`Token ID copied to clipboard.`);
+    this.notificationService.success(`Token copied to clipboard.`);
   }
 
-  /** Only tokens holding Development Tools can be used by `@localess/cli`. */
-  isCliToken(element: Token): boolean {
-    return element.permissions.includes(TokenPermission.DEV_TOOLS);
-  }
-
-  /** `@localess/cli` login command for this token, pointing at the Localess the user is on. */
-  cliLoginCommand(element: Token): string {
-    const origin = this.document.location.origin;
+  /** A new or regenerated management token: its value and CLI login, shown this once. */
+  private showSecret(token: Token): void {
+    if (token.type !== TokenType.MANAGEMENT || !token.token) return;
     const spaceId = this.spaceStore.selectedSpaceId();
-    return `localess login --origin ${origin} --space ${spaceId} --token ${element.token}`;
-  }
-
-  cliLoginCopied() {
-    this.notificationService.success(`CLI login command copied to clipboard.`);
+    this.dialog.open<void, TokenSecretDialogContext>(TokenSecretDialogComponent, {
+      context: {
+        name: token.name,
+        token: token.token,
+        cliLogin: `localess login --origin ${this.document.location.origin} --space ${spaceId} --token ${token.token}`,
+      },
+      contentClass: DIALOG_WIDTH_SM,
+    });
   }
 }

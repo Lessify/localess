@@ -159,22 +159,28 @@ dialogs in `features/spaces` now follow this pattern (the delete confirmation in
 
 ## TokensComponent
 
-Create and manage API access tokens, displayed in an `ll-table` with columns `id`, `name`, `permissions`, `usage`, `cacheTtl`,
-`updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). Every token lists its `permissions` and may set a
-`cacheTtl` override (Firebase-era V1 tokens are imported with their implicit permissions listed).
+Create and manage API tokens ([Auth Tokens](../../auth-tokens.md)), displayed in an `ll-table` with columns `hint`, `name`, `type`,
+`cacheTtl`, `updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). A new space already has one token, the
+**Auto Generated Preview Token**.
 
-The permissions column is rendered via `permissionsToText()`, which joins the token's `TokenPermission` values into a comma-separated string
-(`tokens.component.ts:214-216`). The usage column shows a classification badge computed by `permissionsToUsage()` / `getTokenUsageInfo()`,
-which derives a human-readable usage category (e.g. read-only/public vs. draft/write access) from the permission set.
+- **Token** shows the `hint` (prefix and last 4 characters, e.g. `mgt_…aB3x`), never the whole value.
+- **Type** is a badge (icon and label from `TOKEN_TYPE_INFO`, `shared/models/token.model.ts`), its description as tooltip.
+- **Cache TTL** shows `—` for management tokens, which are never cached.
+
+**Token dialog** (`token-dialog/`): name, the type as choice cards (`hlm-radio-group`, the same markup as the template choice in
+Admin → Spaces → Create), one card per type with where to use it, and the Cache TTL field for Public and Preview only. The type
+is chosen on create and shown locked on edit (it can't change).
+
+**Show-once dialog** (`token-secret-dialog/`): after a management token is created or regenerated, its value and the
+`localess login --origin … --space … --token …` command, each with a copy button, and "You won't see this token again".
 
 **Key behaviour:**
 
-- `openAddDialog()` / `openEditDialog(element)` — open `TokenDialogComponent` to create/edit a token
-- `openRegenerateDialog(element)` — opens a `ConfirmationDialogComponent` warning that all clients using the current token immediately lose
-  access, then calls `TokenService.regenerate()` to issue a new token value while keeping the same name/permissions/cacheTtl
-  (`tokens.component.ts:162-186`)
+- `openAddDialog()` / `openEditDialog(element)` — open `TokenDialogComponent`; edit sends the name and cache TTL only
+- `openRegenerateDialog(element)` — confirmation that every client using the current token loses access, then
+  `TokenService.regenerate()`: same id, type and name under a new value (shown once for management tokens)
 - `openDeleteDialog(element)` — confirmation dialog then deletes the token
-- `copied()` — snackbar feedback when a token value (`token`, not the UUID `id`) is copied to clipboard
+- `copied()` — feedback when a public or preview token value is copied (management tokens have no copy button)
 
 **Services:** `TokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 

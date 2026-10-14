@@ -25,7 +25,7 @@ src/
 
 `auth/` is not a feature but what every feature relies on: the global `AuthGuard`, the `@Public` / `@Require*`
 decorators (`decorators.ts`), `CurrentUser` / `CurrentSessionId` (`request-context.ts`), and `ApiTokensModule`
-(`TokenAuthService`, the `/api/v1` token check every module with a public controller imports). Inside it is layered
+(`TokenAuthService` and the token guards, which every module with a CDN or Management controller imports). Inside it is layered
 like a module, and it imports no feature module:
 
 ```
@@ -64,7 +64,7 @@ to the file they test (`utils/chunk-by-size.test.ts`); integration tests stay in
 ```
 modules/translations/
   translations.module.ts
-  controllers/   translations.controller.ts  translate.controller.ts  translations.public.controller.ts
+  controllers/   translations.controller.ts  translate.controller.ts  translations.cdn.controller.ts  translations.management.controller.ts
   services/      translations.service.ts  translation-delivery.service.ts  translate.service.ts
   repositories/  translations.repository.ts  translation-snapshots.repository.ts  space-locales.repository.ts
   utils/         translation.utils.ts  translate-batch.ts  chunk-by-size.ts  translate-format.utils.ts
@@ -113,7 +113,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository`, `StorageDeletionsRepository` |
 | `shared/models/` | Entity types that auth and every module name, without importing a module | `user.ts`: `UserRow` (the signed-in user, `CurrentUser`) |
 | `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `toContent`, `toContentMetadata`, `toAssetMetadata` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks), `toFirebaseImport` (firebase-import.transformer.ts) |
-| `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import) |
+| `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import); `space-tokens.ts`: `createPreviewToken`: whoever inserts a space writes its auto-generated preview token (spaces, the first admin's starter space, the Firebase import) |
 | | | `content-snapshots.ts`: `lockContents`, `dropContentDrafts`, `dropContentLinks`, `dropContentLocale`: whoever writes contents, a space's locales or its default locale drops the snapshots it makes stale under the contents lock (contents, spaces, the content import task, the Firebase import) |
 | | | `storage-deletions.ts`: `scheduleAssetFilesDeletion`, `scheduleSpaceFilesDeletion`, `guardUpload`, `releaseUploadGuards` (every module that deletes rows with stored files, or stores a file before its row) |
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |

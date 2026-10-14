@@ -6,7 +6,6 @@ import { ContentImportService } from '../services/content-import.service.js';
 import { ReferenceRewriteService } from '../services/reference-rewrite.service.js';
 import { SchemaImportService } from '../services/schema-import.service.js';
 import { SpaceImportService } from '../services/space-import.service.js';
-import { TokenImportService } from '../services/token-import.service.js';
 import { TranslationImportService } from '../services/translation-import.service.js';
 import { WebhookImportService } from '../services/webhook-import.service.js';
 import type { FirebaseClient } from '../utils/firebase-client.js';
@@ -27,7 +26,6 @@ export class FirebaseImportRunner {
   constructor(
     private readonly runs: FirebaseImportsRepository,
     private readonly space: SpaceImportService,
-    private readonly tokens: TokenImportService,
     private readonly webhooks: WebhookImportService,
     private readonly translations: TranslationImportService,
     private readonly schemas: SchemaImportService,
@@ -89,33 +87,29 @@ export class FirebaseImportRunner {
       await begin('environments');
       await done('environments', await this.space.importEnvironments(space, context('environments', sid)));
 
-      // 4 tokens
-      await begin('tokens');
-      await done('tokens', await this.tokens.import(context('tokens', sid)));
-
-      // 5 webhooks, disabled: both environments may run in parallel
+      // 4 webhooks, disabled: both environments may run in parallel
       await begin('webhooks');
       await done('webhooks', await this.webhooks.import(context('webhooks', sid)));
 
-      // 6 translations
+      // 5 translations
       await begin('translations');
       await done('translations', await this.translations.import(context('translations', sid)));
 
-      // 7 schemas
+      // 6 schemas
       await begin('schemas');
       await done('schemas', await this.schemas.import(context('schemas', sid)));
 
-      // 8 assets: ids first, so folder paths can be mapped; then rows and files
+      // 7 assets: ids first, so folder paths can be mapped; then rows and files
       await begin('assets');
       const assets = await this.assets.import(context('assets', sid));
       await done('assets', assets.count);
 
-      // 9 contents, as stored, page by page; references are rewritten in the next stage. Only the id map is kept.
+      // 8 contents, as stored, page by page; references are rewritten in the next stage. Only the id map is kept.
       await begin('contents');
       const contents = await this.contents.import(context('contents', sid));
       await done('contents', contents.count);
 
-      // 10 content migration, in pages of the space's rows
+      // 9 content migration, in pages of the space's rows
       await begin('contentMigration');
       await done(
         'contentMigration',

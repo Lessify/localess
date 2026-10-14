@@ -2,7 +2,9 @@ import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
+import { TRANSLATION_VALUE_MAX_LENGTH, TokenType } from '@localess/shared';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { tokenRow } from './seed.js';
 import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
@@ -36,7 +38,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
   let hooks: Awaited<ReturnType<typeof fakeServer>>;
   let unsplash: Awaited<ReturnType<typeof fakeServer>>;
   const base = `/api/app/spaces/${S1}/translations`;
-  const TOKEN = 'TTTTTTTTTTTTTTTTTTTT';
+  const TOKEN = newApiToken(TokenType.PREVIEW);
 
   beforeAll(async () => {
     hooks = await fakeServer(() => ({ status: 204, body: '' }));
@@ -62,7 +64,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
     await t.db
       .insert(tokens)
-      .values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT'] });
+      .values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
     await t.db
       .insert(webhooks)
       .values({ id: newUuid(), spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'], enabled: true });

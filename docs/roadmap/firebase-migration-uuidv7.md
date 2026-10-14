@@ -57,7 +57,7 @@ Derived requirements (needed for R1–R6 to be safe):
 - Column type becomes native `uuid` for every generated id (16 bytes, time-ordered B-tree inserts). Postgres
   rejects anything else in a `uuid` column, so every lookup by an id from a request checks `isUuid()` first and
   answers 404 instead of a 500.
-- `newTokenSecret()` (20 random alphanumerics, formerly `newId()`) is only used for API token secrets.
+- `newTokenSecret()` (20 random alphanumerics, formerly `newId()`) was used for API token secrets until token types replaced it with prefixed values (`newApiToken()`, [Auth Tokens](../auth-tokens.md)).
 - `isValidId` / `zId` accept a canonical lowercase UUID; the generic `[A-Za-z0-9_-]{1,128}` pattern is only kept
   where legacy ids are still accepted (D2).
 

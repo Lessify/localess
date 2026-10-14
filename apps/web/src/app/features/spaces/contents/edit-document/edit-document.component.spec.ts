@@ -3,7 +3,7 @@ import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { CONTENT_DEFAULT_LOCALE, ContentDocument, ContentKind, Locale, Schema, SchemaFieldKind, SchemaType, Space, Token, TokenPermission } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, ContentDocument, ContentKind, Locale, Schema, SchemaFieldKind, SchemaType, Space, Token, TokenType } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
@@ -60,7 +60,7 @@ describe('EditDocumentComponent', () => {
     const unpublish = vi.fn().mockReturnValue(of(undefined));
     const updateDocumentData = vi.fn().mockReturnValue(of(undefined));
     const translateBatch = vi.fn().mockReturnValue(of({ items: [], failed: [] }));
-    const findFirstByPermission = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
+    const findFirstByType = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
     const isActionSave = vi.fn().mockReturnValue(false);
     const navigate = vi.fn();
     const success = vi.fn();
@@ -72,7 +72,7 @@ describe('EditDocumentComponent', () => {
       providers: [
         { provide: ContentService, useValue: { publish, unpublish, updateDocumentData } },
         { provide: TranslateService, useValue: { translateBatch } },
-        { provide: TokenService, useValue: { findFirstByPermission } },
+        { provide: TokenService, useValue: { findFirstByType } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: PlatformService, useValue: { isActionSave } },
@@ -98,7 +98,7 @@ describe('EditDocumentComponent', () => {
       unpublish,
       updateDocumentData,
       translateBatch,
-      findFirstByPermission,
+      findFirstByType,
       isActionSave,
       navigate,
       success,
@@ -254,44 +254,56 @@ describe('EditDocumentComponent', () => {
 
   describe('token-gated API links', () => {
     it('openDraftV1InNewTab() fetches a token then opens the link', () => {
-      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+      const { component, findFirstByType } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openDraftV1InNewTab('en');
 
-      expect(findFirstByPermission).toHaveBeenCalledWith('space-1', TokenPermission.CONTENT_DRAFT);
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PREVIEW);
       expect(openSpy).toHaveBeenCalled();
       openSpy.mockRestore();
     });
 
-    it('openDraftV1InNewTab() reuses the cached token', () => {
-      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+    it('openPublishedV1InNewTab() after a draft link asks for a public token (no shared cache across types)', () => {
+      const { component, findFirstByType } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
       component.openDraftV1InNewTab('en');
-      findFirstByPermission.mockClear();
+      findFirstByType.mockClear();
 
-      component.openDraftV1InNewTab('de');
+      component.openPublishedV1InNewTab('en');
 
-      expect(findFirstByPermission).not.toHaveBeenCalled();
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
       openSpy.mockRestore();
     });
 
-    it('openDraftV1InNewTab() notifies an error when no single token is available', () => {
-      const { component, findFirstByPermission, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
-      findFirstByPermission.mockReturnValue(of([]));
+    it('openDraftV1InNewTab() reuses the cached token', () => {
+      const { component, findFirstByType } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+      component.openDraftV1InNewTab('en');
+      findFirstByType.mockClear();
+
+      component.openDraftV1InNewTab('de');
+
+      expect(findFirstByType).not.toHaveBeenCalled();
+      openSpy.mockRestore();
+    });
+
+    it('openDraftV1InNewTab() notifies an error when the space has no such token', () => {
+      const { component, findFirstByType, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+      findFirstByType.mockReturnValue(of([]));
 
       component.openDraftV1InNewTab('en');
 
-      expect(error).toHaveBeenCalledWith('Please create Access Token with Content Draft Permission in your Space Settings');
+      expect(error).toHaveBeenCalledWith('Please create a Preview Token in your Space Settings');
     });
 
     it('openPublishedV1InNewTab() fetches a token then opens the link', () => {
-      const { component, findFirstByPermission } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+      const { component, findFirstByType } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openPublishedV1InNewTab('en');
 
-      expect(findFirstByPermission).toHaveBeenCalledWith('space-1', TokenPermission.CONTENT_PUBLIC);
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
       expect(openSpy).toHaveBeenCalled();
       openSpy.mockRestore();
     });

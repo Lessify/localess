@@ -17,16 +17,6 @@ describe('TokenValidator', () => {
     });
   });
 
-  describe('PERMISSIONS', () => {
-    it('is invalid when empty (required)', () => {
-      expect(new FormControl(null, TokenValidator.PERMISSIONS).hasError('required')).toBe(true);
-    });
-
-    it('is valid when at least one permission is set', () => {
-      expect(new FormControl(['contents:read'], TokenValidator.PERMISSIONS).valid).toBe(true);
-    });
-  });
-
   describe('CACHE_TTL', () => {
     it('is invalid above one year (max)', () => {
       expect(new FormControl(31536001, TokenValidator.CACHE_TTL).hasError('max')).toBe(true);

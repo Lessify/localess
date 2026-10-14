@@ -11,7 +11,7 @@ beforeAll(async () => {
         id: 's1',
         name: 'Site',
         doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
-        tokens: [{ id: 'TOKEN000000000000001', name: 'web' }],
+        webhooks: [{ id: 'w1', name: 'Site' }],
         translations: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
         files: { a1: Buffer.from('bytes') },
       },
@@ -58,7 +58,7 @@ describe('FirebaseClient', () => {
 
   it('reads a space and a small collection', async () => {
     expect(await client().space('s1')).toMatchObject({ id: 's1', name: 'Site' });
-    expect(await client().list('s1', 'tokens')).toEqual([{ id: 'TOKEN000000000000001', name: 'web' }]);
+    expect(await client().list('s1', 'webhooks')).toEqual([{ id: 'w1', name: 'Site' }]);
   });
 
   it('follows cursors until the last page', async () => {

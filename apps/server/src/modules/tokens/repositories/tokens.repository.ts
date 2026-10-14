@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import type { TokenType } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { spaces, tokens } from '../../../infra/database/schema.js';
@@ -7,7 +8,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 
 export type TokenEntity = typeof tokens.$inferSelect;
-export type TokenValues = Pick<TokenEntity, 'token' | 'name' | 'permissions' | 'cacheTtl'>;
+export type TokenValues = Pick<TokenEntity, 'type' | 'token' | 'tokenHash' | 'hint' | 'name' | 'cacheTtl'>;
 
 /**
  * Space API tokens. Every change publishes a `tokens` event with the UUID, which also drops the public API's
@@ -20,10 +21,10 @@ export class TokensRepository {
     private readonly events: EventsService,
   ) {}
 
-  /** Newest first; `permission` keeps tokens carrying it, `limit` caps the list. */
-  findAll(spaceId: string, filter: { permission?: string; limit?: number } = {}): Promise<TokenEntity[]> {
+  /** Newest first; `type` keeps tokens of that type, `limit` caps the list. */
+  findAll(spaceId: string, filter: { type?: TokenType; limit?: number } = {}): Promise<TokenEntity[]> {
     const conditions = [eq(tokens.spaceId, spaceId)];
-    if (filter.permission) conditions.push(sql`${tokens.permissions} @> array[${filter.permission}]::text[]`);
+    if (filter.type) conditions.push(eq(tokens.type, filter.type));
     const select = this.db
       .select()
       .from(tokens)

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { FirstAdminService } from '../src/modules/users/services/first-admin.service.js';
-import { spaces, users } from '../src/infra/database/schema.js';
+import { spaces, tokens, users } from '../src/infra/database/schema.js';
 import { selectSpaces } from '../src/shared/queries/space.query.js';
 import { createTestApp, login, TestApp } from './test-app.js';
 
@@ -24,6 +24,10 @@ describe('first admin', () => {
       locales: [{ id: 'en', name: 'English' }],
       defaultLocale: { id: 'en', name: 'English' },
     });
+    // Like every new space, the starter space has its preview token.
+    const spaceTokens = await t.db.select().from(tokens);
+    expect(spaceTokens).toHaveLength(1);
+    expect(spaceTokens[0]).toMatchObject({ spaceId: spaceRows[0].id, type: 'preview', name: 'Auto Generated Preview Token' });
     await expect(login(t, 'root@example.com', 'root-pass')).resolves.toContain('localess_session=');
   });
 

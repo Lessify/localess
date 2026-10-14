@@ -6,6 +6,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { FirebaseImportsRepository } from './firebase-imports.repository.js';
+import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 
 export type NewImportedSpace = typeof spaces.$inferInsert & { id: string };
 export type NewImportedEnvironment = typeof spaceEnvironments.$inferInsert;
@@ -32,6 +33,8 @@ export class SpaceImportRepository {
     return transaction(this.db, tx, async t => {
       await t.insert(spaces).values(space);
       await t.insert(spaceLocales).values(localeIds.map((localeId, position) => ({ spaceId: space.id, localeId, position })));
+      // Tokens are not imported: the space starts with its own preview token, as a new space does.
+      await createPreviewToken(t, space.id);
       await this.runs.linkSpace(runId, space.id, stages, t);
     });
   }

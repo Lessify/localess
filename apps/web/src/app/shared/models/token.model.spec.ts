@@ -1,58 +1,17 @@
-import { TokenPermission } from '@localess/shared';
+import { TokenType } from '@localess/shared';
 
-import { getTokenUsageInfo } from './token.model';
+import { TOKEN_TYPE_INFO, TOKEN_TYPES } from './token.model';
 
-describe('getTokenUsageInfo()', () => {
-  it('classifies no permissions as NO_ACCESS', () => {
-    expect(getTokenUsageInfo(undefined)).toEqual({
-      category: 'NO_ACCESS',
-      label: 'No access',
-      rationale: "This token won't grant access to anything yet.",
-      variant: 'warning',
-    });
-    expect(getTokenUsageInfo([])).toEqual(expect.objectContaining({ category: 'NO_ACCESS' }));
+describe('token types', () => {
+  it('lists Public, Preview, Management in that order, each with an icon and a description', () => {
+    expect(TOKEN_TYPES.map(it => it.type)).toEqual([TokenType.PUBLIC, TokenType.PREVIEW, TokenType.MANAGEMENT]);
+    expect(TOKEN_TYPES.map(it => it.label)).toEqual(['Public', 'Preview', 'Management']);
+    expect(TOKEN_TYPES.map(it => it.icon)).toEqual(['lucideGlobe', 'lucideEye', 'lucideKeyRound']);
+    for (const it of TOKEN_TYPES) expect(it.description.length).toBeGreaterThan(20);
   });
 
-  it('classifies only *_PUBLIC permissions as PUBLIC_SAFE', () => {
-    const info = getTokenUsageInfo([TokenPermission.CONTENT_PUBLIC, TokenPermission.TRANSLATION_PUBLIC]);
-
-    expect(info).toEqual({
-      category: 'PUBLIC_SAFE',
-      label: 'Public-safe',
-      rationale: 'Only grants access to published content — safe to embed in public-facing apps.',
-      variant: 'default',
-    });
-  });
-
-  it('classifies any *_DRAFT permission as SERVER_SIDE', () => {
-    const info = getTokenUsageInfo([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT]);
-
-    expect(info).toEqual({
-      category: 'SERVER_SIDE',
-      label: 'Server-side only',
-      rationale: 'Grants draft (unpublished) access — keep this token secret and use only from a trusted backend or dev environment.',
-      variant: 'default',
-    });
-  });
-
-  it('classifies DEV_TOOLS as DEV_TOOLS regardless of other permissions', () => {
-    const info = getTokenUsageInfo([TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS]);
-
-    expect(info).toEqual({
-      category: 'DEV_TOOLS',
-      label: 'Development Tools Only',
-      rationale: 'Grants Development Tools access — used via the X-API-KEY header with CLI/dev tools, not for public/client use.',
-      variant: 'default',
-    });
-  });
-
-  it('classifies a token reading published and draft translations and content as SERVER_SIDE', () => {
-    const readAll = [
-      TokenPermission.TRANSLATION_PUBLIC,
-      TokenPermission.TRANSLATION_DRAFT,
-      TokenPermission.CONTENT_PUBLIC,
-      TokenPermission.CONTENT_DRAFT,
-    ];
-    expect(getTokenUsageInfo(readAll)).toEqual(expect.objectContaining({ category: 'SERVER_SIDE' }));
+  it('warns about drafts on preview and secrecy on management', () => {
+    expect(TOKEN_TYPE_INFO[TokenType.PREVIEW].description).toContain("Don't use it on your production site");
+    expect(TOKEN_TYPE_INFO[TokenType.MANAGEMENT].description).toContain('shown only once');
   });
 });

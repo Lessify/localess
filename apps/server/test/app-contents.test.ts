@@ -1,4 +1,6 @@
-import { SchemaFieldKind } from '@localess/shared';
+import { SchemaFieldKind, TokenType } from '@localess/shared';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { tokenRow } from './seed.js';
 import { createHmac } from 'node:crypto';
 import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
@@ -28,7 +30,7 @@ describe('app API: contents', () => {
   let receiver: Server;
   let received: Received[];
   const base = `/api/app/spaces/${S1}/contents`;
-  const TOKEN = 'TTTTTTTTTTTTTTTTTTTT';
+  const TOKEN = newApiToken(TokenType.PREVIEW);
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true' });
@@ -44,7 +46,7 @@ describe('app API: contents', () => {
     await t.db
       .insert(schemas)
       .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }] });
-    await t.db.insert(tokens).values({ id: newUuid(), token: TOKEN, spaceId: S1, name: 't', permissions: ['CONTENT_PUBLIC', 'CONTENT_DRAFT'] });
+    await t.db.insert(tokens).values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {

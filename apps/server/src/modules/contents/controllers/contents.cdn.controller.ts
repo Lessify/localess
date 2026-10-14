@@ -1,9 +1,9 @@
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { ContentDocumentApi, ContentKind, TokenPermission } from '@localess/shared';
-import { TokenAuthService } from '../../../auth/services/token-auth.service.js';
+import { ContentDocumentApi, ContentKind, TokenType } from '@localess/shared';
 import type { ApiToken } from '../../../auth/utils/api-token.js';
-import { Public } from '../../../auth/decorators.js';
+import { CurrentToken } from '../../../auth/request-context.js';
+import { CdnToken } from '../../../auth/token-auth.decorators.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { publicCache, TEN_MINUTES } from '../../../infra/http/v1/cache-control.js';
 import {
@@ -14,7 +14,6 @@ import {
   redirectToVersion,
   requireV1Space,
   sendJson,
-  validIdParams,
 } from '../../../infra/http/v1/v1-request.js';
 import { q, sendV1Error } from '../../../infra/http/v1/v1-response.js';
 import { ContentDeliveryService } from '../services/content-delivery.service.js';
@@ -23,27 +22,27 @@ const TEN_MINUTE_CACHE = publicCache(TEN_MINUTES);
 const FILE_NOT_FOUND = 'File not found, on path. Please Publish again. The content is cached for 10 minutes.';
 
 /**
- * Content on the public API (`?token=`, cached behind `cv`): links, documents by slug or id, with optional
+ * Content on the CDN API (`?token=` with a public or preview token, checked by `@CdnToken`; cached behind `cv`): links, documents by slug or id, with optional
  * reference/link/asset resolution. Ported from functions/src/v1/cdn.ts; URLs, query parameters, status codes,
  * bodies and Cache-Control values are unchanged. Each document and each links list answers to its own `cv`, the
  * `built_at` of its snapshot; `/links` lists published documents only, unless `version` (draft) is given.
  */
-@Public()
+@CdnToken({
+  published: TokenType.PUBLIC,
+  draft: TokenType.PREVIEW,
+  reason: {
+    published: 'Published content requires a public or preview token.',
+    draft: 'This request includes a `version` query parameter, which requires a preview token.',
+  },
+})
 @Controller('api/v1/spaces/:spaceId')
-export class ContentsPublicController {
-  constructor(
-    private readonly delivery: ContentDeliveryService,
-    private readonly tokens: TokenAuthService,
-  ) {}
+export class ContentsCdnController {
+  constructor(private readonly delivery: ContentDeliveryService) {}
 
   @Get('links')
-  async links(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
-    const params = request.params as Params;
-    if (!validIdParams(reply, params)) return;
-    const { spaceId } = params;
+  async links(@Req() request: FastifyRequest, @Res() reply: FastifyReply, @CurrentToken() token: ApiToken): Promise<void> {
+    const { spaceId } = request.params as Params;
     const { kind, parentSlug, excludeChildren, cv, version, token: tokenId } = request.query as Query;
-    const token = await this.authorizeContent(request, reply, spaceId);
-    if (!token) return;
 
     const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
@@ -68,11 +67,8 @@ export class ContentsPublicController {
   }
 
   @Get('contents/slugs/*')
-  async contentBySlug(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
+  async contentBySlug(@Req() request: FastifyRequest, @Res() reply: FastifyReply, @CurrentToken() token: ApiToken): Promise<void> {
     const params = request.params as Params;
-    if (!validIdParams(reply, params)) return;
-    const token = await this.authorizeContent(request, reply, params['spaceId']);
-    if (!token) return;
     const { spaceId } = params;
     const fullSlug = params['*'] ?? '';
 
@@ -88,35 +84,12 @@ export class ContentsPublicController {
   }
 
   @Get('contents/:contentId')
-  async contentById(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
-    const params = request.params as Params;
-    if (!validIdParams(reply, params)) return;
-    const token = await this.authorizeContent(request, reply, params['spaceId']);
-    if (!token) return;
-    const { spaceId, contentId } = params;
+  async contentById(@Req() request: FastifyRequest, @Res() reply: FastifyReply, @CurrentToken() token: ApiToken): Promise<void> {
+    const { spaceId, contentId } = request.params as Params;
 
     const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     await this.sendContent(request, reply, token, space, contentId, `/api/v1/spaces/${spaceId}/contents/${q(contentId)}`);
-  }
-
-  private authorizeContent(request: FastifyRequest, reply: FastifyReply, spaceId: string): Promise<ApiToken | undefined> {
-    const { token: tokenId, version } = request.query as Query;
-    const draft = version !== undefined;
-    return this.tokens.authorize(
-      reply,
-      spaceId,
-      tokenId,
-      draft
-        ? [TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS]
-        : [TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT, TokenPermission.DEV_TOOLS],
-      {
-        cached: true,
-        reason: draft
-          ? 'This request includes a `version` query parameter, which requires access to draft content.'
-          : 'Published content requires the CONTENT_PUBLIC, CONTENT_DRAFT, or DEV_TOOLS permission.',
-      },
-    );
   }
 
   private async sendContent(

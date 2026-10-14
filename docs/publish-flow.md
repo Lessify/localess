@@ -153,4 +153,4 @@ Do not reintroduce them into a response. `stripStorageIds` uses a rest-destructu
 - `apps/server/src/modules/contents/services/content-delivery.service.ts` — published/draft document reads, `/links`, link/reference/asset resolution (queries and the draft and `/links` builds in `repositories/content-delivery.repository.ts`)
 - `apps/server/src/modules/translations/services/translation-delivery.service.ts` — published/draft translation reads and the CLI push; `buildTranslationMap` in `utils/translation.utils.ts`
 - `apps/server/src/modules/tasks/services/*-transfer.service.ts` — imports; their `repositories/*-transfer.repository.ts` write each import in one transaction and drop the snapshots it makes stale (contents, translations)
-- `apps/server/src/modules/translations/translations.public.controller.ts` — CLI translation push endpoint
+- `apps/server/src/modules/translations/controllers/translations.management.controller.ts` — CLI translation push endpoint (Management API)

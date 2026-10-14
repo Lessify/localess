@@ -15,69 +15,67 @@
     }
   </div>
 
-  <div class="flex flex-col gap-4">
-    <p class="text-sm font-semibold">Permissions</p>
-    @for (group of permissionGroups; track group.label; let last = $last) {
-      <div class="flex flex-col gap-2">
-        <p class="text-muted-foreground text-xs font-medium tracking-wide uppercase">{{ group.label }}</p>
-        <div class="flex flex-col gap-2">
-          @for (perm of group.permissions; track perm.id) {
-            <div class="flex items-start gap-3">
-              <hlm-checkbox
-                [inputId]="perm.id"
-                [checked]="isPermissionSelected(perm.id)"
-                (checkedChange)="togglePermission(perm.id, $event)" />
-              <div class="grid gap-1.5 leading-none">
-                <label hlmLabel [for]="perm.id">{{ perm.label }}</label>
-                <p class="text-muted-foreground text-sm font-normal">{{ perm.desc }}</p>
+  <fieldset hlmFieldSet>
+    <legend hlmFieldLegend>Type</legend>
+    <p hlmFieldDescription>
+      @if (isEdit) {
+        The type can't be changed. To use the token another way, create a new one.
+      } @else {
+        What the token is for. It can't be changed later.
+      }
+    </p>
+    <hlm-radio-group formControlName="type">
+      @for (item of types; track item.type) {
+        <label hlmFieldLabel [for]="'token-type-' + item.type">
+          <div hlmField orientation="horizontal">
+            <div hlmFieldContent>
+              <div hlmFieldTitle>
+                <ng-icon hlm size="sm" [name]="item.icon" />
+                {{ item.label }}
               </div>
+              <div hlmFieldDescription>{{ item.description }}</div>
             </div>
-          }
+            <hlm-radio [value]="item.type" [inputId]="'token-type-' + item.type">
+              <hlm-radio-indicator indicator />
+            </hlm-radio>
+          </div>
+        </label>
+      }
+    </hlm-radio-group>
+  </fieldset>
+
+  @if (showCacheTtl()) {
+    <hlm-separator />
+
+    <div hlmField>
+      <label hlmFieldLabel for="cacheTtl">Cache TTL</label>
+      <div class="flex items-center gap-2">
+        <div hlmInputGroup class="flex-1">
+          <input
+            hlmInputGroupInput
+            id="cacheTtl"
+            type="number"
+            formControlName="cacheTtl"
+            min="0"
+            max="31536000"
+            autocomplete="off"
+            placeholder="60" />
+          <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
+            seconds
+            <button hlmInputGroupButton size="icon-xs" (click)="resetCacheTtl()">
+              <ng-icon name="lucideX" />
+            </button>
+          </hlm-input-group-addon>
         </div>
       </div>
-      @if (!last) {
-        <hlm-separator />
+      <hlm-field-description>
+        Override redirect cache duration in seconds. Use 0 to disable caching. Leave empty to use the default of 60 seconds.
+      </hlm-field-description>
+      @if (form.controls['cacheTtl'].errors; as errors) {
+        <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
       }
-    }
-    @if (form.controls['permissions'].errors; as errors) {
-      <p class="text-destructive text-sm">{{ fe.errors(errors) }}</p>
-    }
-    <div class="flex items-center gap-2">
-      <span hlmBadge [variant]="usageInfo().variant === 'warning' ? 'destructive' : 'outline'">{{ usageInfo().label }}</span>
-      <p class="text-muted-foreground text-xs">{{ usageInfo().rationale }}</p>
     </div>
-  </div>
-
-  <hlm-separator />
-
-  <div hlmField>
-    <label hlmFieldLabel for="cacheTtl">Cache TTL</label>
-    <div class="flex items-center gap-2">
-      <div hlmInputGroup class="flex-1">
-        <input
-          hlmInputGroupInput
-          id="cacheTtl"
-          type="number"
-          formControlName="cacheTtl"
-          min="0"
-          max="31536000"
-          autocomplete="off"
-          placeholder="60" />
-        <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
-          seconds
-          <button hlmInputGroupButton size="icon-xs" (click)="resetCacheTtl()">
-            <ng-icon name="lucideX" />
-          </button>
-        </hlm-input-group-addon>
-      </div>
-    </div>
-    <hlm-field-description>
-      Override redirect cache duration in seconds. Use 0 to disable caching. Leave empty to use the default of 60 seconds.
-    </hlm-field-description>
-    @if (form.controls['cacheTtl'].errors; as errors) {
-      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-    }
-  </div>
+  }
 </form>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>

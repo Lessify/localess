@@ -1,57 +1,37 @@
-import { Token, TokenPermission } from '@localess/shared';
+import { Token, TokenType } from '@localess/shared';
 
-// UI-only token helpers (labels, usage hints, form shape); the token model itself is in @localess/shared.
+// UI-only token helpers (labels, icons, where to use each type); the token model itself is in @localess/shared.
 
-export type TokenForm = Pick<Token, 'name' | 'permissions' | 'cacheTtl'>;
+export type TokenForm = Pick<Token, 'name' | 'type' | 'cacheTtl'>;
 
-export const PERMISSION_TEXT: Record<TokenPermission, string> = {
-  [TokenPermission.TRANSLATION_PUBLIC]: 'Translation Public',
-  [TokenPermission.TRANSLATION_DRAFT]: 'Translation Draft',
-  [TokenPermission.CONTENT_PUBLIC]: 'Content Public',
-  [TokenPermission.CONTENT_DRAFT]: 'Content Draft',
-  [TokenPermission.DEV_TOOLS]: 'Development Tools',
-};
-
-export type TokenUsageCategory = 'DEV_TOOLS' | 'SERVER_SIDE' | 'PUBLIC_SAFE' | 'NO_ACCESS';
-
-export interface TokenUsageInfo {
-  category: TokenUsageCategory;
+export interface TokenTypeInfo {
+  type: TokenType;
   label: string;
-  rationale: string;
-  variant: 'default' | 'warning';
+  icon: string;
+  description: string;
 }
 
-const DRAFT_PERMISSIONS: readonly TokenPermission[] = [TokenPermission.TRANSLATION_DRAFT, TokenPermission.CONTENT_DRAFT];
+export const TOKEN_TYPES: TokenTypeInfo[] = [
+  {
+    type: TokenType.PUBLIC,
+    label: 'Public',
+    icon: 'lucideGlobe',
+    description: 'Reads published content and translations. Safe in browser code: websites, mobile apps, static site builds.',
+  },
+  {
+    type: TokenType.PREVIEW,
+    label: 'Preview',
+    icon: 'lucideEye',
+    description:
+      "Reads drafts and published content. For preview sites, the Visual Editor and staging builds. Don't use it on your production site.",
+  },
+  {
+    type: TokenType.MANAGEMENT,
+    label: 'Management',
+    icon: 'lucideKeyRound',
+    description:
+      'The CLI and CI: push and pull schemas and translations, generate the OpenAPI spec. Secret: sent in the Authorization header, shown only once.',
+  },
+];
 
-export function getTokenUsageInfo(permissions: readonly TokenPermission[] | undefined): TokenUsageInfo {
-  if (permissions?.includes(TokenPermission.DEV_TOOLS)) {
-    return {
-      category: 'DEV_TOOLS',
-      label: 'Development Tools Only',
-      rationale: 'Grants Development Tools access — used via the X-API-KEY header with CLI/dev tools, not for public/client use.',
-      variant: 'default',
-    };
-  }
-  if (permissions?.some(p => DRAFT_PERMISSIONS.includes(p))) {
-    return {
-      category: 'SERVER_SIDE',
-      label: 'Server-side only',
-      rationale: 'Grants draft (unpublished) access — keep this token secret and use only from a trusted backend or dev environment.',
-      variant: 'default',
-    };
-  }
-  if (permissions && permissions.length > 0) {
-    return {
-      category: 'PUBLIC_SAFE',
-      label: 'Public-safe',
-      rationale: 'Only grants access to published content — safe to embed in public-facing apps.',
-      variant: 'default',
-    };
-  }
-  return {
-    category: 'NO_ACCESS',
-    label: 'No access',
-    rationale: "This token won't grant access to anything yet.",
-    variant: 'warning',
-  };
-}
+export const TOKEN_TYPE_INFO = Object.fromEntries(TOKEN_TYPES.map(it => [it.type, it])) as Record<TokenType, TokenTypeInfo>;

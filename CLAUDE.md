@@ -118,7 +118,7 @@ Three NgRx Signal stores initialized at app startup:
 
 ### Services Pattern
 
-Domain services (in `core/services/`; services used by one feature live in that feature) call the App API (`/api/app/**`, session cookie + `X-Requested-With` header added by `apiInterceptor`). Live data uses `liveQueryWith(events, scope, fetch)`: the server publishes change events (`pg_notify` → SSE at `/api/app/events`) and the client refetches. The public REST API is served at `/api/v1/**` with API tokens. Runtime config (login providers, etc.) comes from `GET /api/config`.
+Domain services (in `core/services/`; services used by one feature live in that feature) call the App API (`/api/app/**`, session cookie + `X-Requested-With` header added by `apiInterceptor`). Live data uses `liveQueryWith(events, scope, fetch)`: the server publishes change events (`pg_notify` → SSE at `/api/app/events`) and the client refetches. The CDN API is served at `/api/v1/**` (`?token=`) and the Management API at `/api/manage/v1/**` (`Authorization: Bearer`), both with API tokens. Runtime config (login providers, etc.) comes from `GET /api/config`.
 
 ## Angular Code Conventions
 
@@ -161,11 +161,11 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Topic | File | Read when working on |
 |-------|------|----------------------|
 | Domain concepts (Space, Content, Schema, Translation, Asset), **how localised values are stored** | [docs/concepts.md](docs/concepts.md) | Any new feature, onboarding, anything reading/writing a localised field |
-| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `apps/server/src/modules/*/*.public.controller.ts`, `apps/server/src/infra/http/v1/` |
-| V1 API — all endpoints, controllers, token permissions | [docs/v1-api.md](docs/v1-api.md) | Any `*.public.controller.ts` or `apps/server/src/infra/http/v1/` |
+| CDN caching, `cv` param, redirect logic, TTLs | [docs/cdn-caching.md](docs/cdn-caching.md) | `apps/server/src/modules/*/controllers/*.cdn.controller.ts`, `apps/server/src/infra/http/v1/` |
+| V1 API — CDN API (`/api/v1`) and Management API (`/api/manage/v1`), endpoints, token types | [docs/v1-api.md](docs/v1-api.md) | Any `*.cdn.controller.ts` / `*.management.controller.ts` or `apps/server/src/infra/http/v1/` |
 | Publish flow & cache invalidation | [docs/publish-flow.md](docs/publish-flow.md) | Content/translation publish, tasks |
 | Webhooks — events, payload, HMAC signing, logging | [docs/webhooks.md](docs/webhooks.md) | `apps/server/src/modules/webhooks/`, webhook UI |
-| API token auth & permissions | [docs/auth-tokens.md](docs/auth-tokens.md) | Middleware, token management, public API |
+| API token types (public, preview, management), values, guards | [docs/auth-tokens.md](docs/auth-tokens.md) | Middleware, token management, public API |
 | Frontend architecture, routing, packages/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
 | User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |

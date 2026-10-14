@@ -1,22 +1,27 @@
-# V1 Public API
+# V1 API: CDN API and Management API
 
 > Related: [CDN & Caching](cdn-caching.md) · [Auth Tokens](auth-tokens.md) · [Publish Flow](publish-flow.md)
 
-The public REST API is served under `/api/v1/**` by the NestJS server: each feature module owns its public controller (`apps/server/src/modules/<feature>/<feature>.public.controller.ts`), with shared request plumbing in `apps/server/src/infra/http/v1/`, on the same port as the app and the app API. It replaced the `publicv1` Firebase Function with the same URLs, query parameters, token rules, status codes, bodies and `Cache-Control` values; the former Express routers are now five per-feature public controllers (see [Implementation Files](#implementation-files) below). All routes are `@Public()` (no session) and authenticate with API tokens instead. JSON request bodies are limited to 5 MB (Fastify `bodyLimit` in `apps/server/src/app.factory.ts`), so a whole space's schemas fit in one push. CORS reflects any origin on `/api/v1/**` only; the cookie-authenticated app API gets no CORS headers. Responses are gzip/deflate-compressed above 1 KB (`@fastify/compress`).
+Two token-authenticated APIs are served by the NestJS server, on the same port as the app and the app API, with shared request plumbing in `apps/server/src/infra/http/v1/`:
+
+- **CDN API** — `/api/v1/spaces/:spaceId/…`, read only, cacheable (`cv` redirects), `?token=` with a `public` or `preview` token (`*.cdn.controller.ts`, `@CdnToken`). It replaced the `publicv1` Firebase Function's delivery routes with the same URLs, query parameters, status codes, bodies and `Cache-Control` values. CORS reflects any origin on `/api/v1/**`.
+- **Management API** — `/api/manage/v1/spaces/:spaceId/…`, live (`Cache-Control: no-store`, no token cache), `Authorization: Bearer` with a `management` token only (`*.management.controller.ts`, `@ManagementToken`). Used by `@localess/cli` and CI. No CORS headers.
+
+Token types, values and checks: [Auth Tokens](auth-tokens.md). Neither API accepts the app's session cookie, and neither needs `X-Requested-With`. JSON request bodies are limited to 5 MB (Fastify `bodyLimit` in `apps/server/src/app.factory.ts`), so a whole space's schemas fit in one push. Responses are gzip/deflate-compressed above 1 KB (`@fastify/compress`).
 ---
 
-## Routers
+## CDN API
 
-### CDN (`contents`, `translations` and `assets` public controllers)
+### Routes (`contents`, `translations` and `assets` CDN controllers)
 
 Content delivery with cache-busting and asset transformation. All content/translation endpoints follow the [`cv` redirect pattern](cdn-caching.md).
 
 | Method | Path                                           | Auth                                              | Query params                                                          |
 |--------|------------------------------------------------|---------------------------------------------------|-----------------------------------------------------------------------|
-| `GET`  | `/api/v1/spaces/:spaceId/translations/:locale` | `TRANSLATION_PUBLIC` or `TRANSLATION_DRAFT`       | `cv`, `version`, `token`                                              |
-| `GET`  | `/api/v1/spaces/:spaceId/links`                | `requireContentPermissions()`                     | `cv`, `version`, `kind`, `parentSlug`, `excludeChildren`, `token`     |
-| `GET`  | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
-| `GET`  | `/api/v1/spaces/:spaceId/contents/:contentId`  | `requireContentPermissions()`                     | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
+| `GET`  | `/api/v1/spaces/:spaceId/translations/:locale` | `public`; with `version`: `preview`               | `cv`, `version`, `token`                                              |
+| `GET`  | `/api/v1/spaces/:spaceId/links`                | `public`; with `version`: `preview`               | `cv`, `version`, `kind`, `parentSlug`, `excludeChildren`, `token`     |
+| `GET`  | `/api/v1/spaces/:spaceId/contents/slugs/*slug` | `public`; with `version`: `preview`               | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
+| `GET`  | `/api/v1/spaces/:spaceId/contents/:contentId`  | `public`; with `version`: `preview`               | `cv`, `locale`, `version`, `resolveReference`, `resolveLink`, `resolveAsset`, `token` |
 | `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId`      | None (public)                                     | `w`, `h`, `q`, `f`, `fit`, `thumbnail`                                |
 | `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId/original` | None (public)                                 | *(none — a transform param is rejected with 400)*                     |
 | `GET`  | `/api/v1/spaces/:spaceId/assets/:assetId/download` | None (public)                                 | *(none — a transform param is rejected with 400)*                     |
@@ -24,7 +29,7 @@ Content delivery with cache-busting and asset transformation. All content/transl
 **Notable behaviors:**
 
 - **Published vs draft** — Published documents and translations are read from the `content_snapshots` / `translation_snapshots` rows written on publish. A draft (`?version=draft`) is a snapshot too, built from the live rows on the first draft request after a change, so a draft exists for every document, even one never saved after import. Each answers to its own `cv`, its build time, separate per document, locale and stage ([CDN & Caching](cdn-caching.md#content-cv-the-snapshots-built_at)).
-- **`/links`** — Lists every folder and the **published** documents; with `version` (which needs `CONTENT_DRAFT` or `DEV_TOOLS`, like a document draft) every folder and document. Each list answers to its own `cv`.
+- **`/links`** — Lists every folder and the **published** documents; with `version` (which needs a preview token, like a document draft) every folder and document. Each list answers to its own `cv`.
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
@@ -83,14 +88,24 @@ ignored and the untransformed image was returned; it now returns `400 invalid-ar
 
 ---
 
-### MANAGE (`translations` and `schemas` public controllers)
+## Management API
 
-Admin bulk-write endpoints for translations and schemas. Uses `X-API-KEY` header auth (not query param).
+`Authorization: Bearer mgt_…` on every route (`spaces`, `schemas` and `translations` management controllers). Every response, errors included, is `Cache-Control: no-store`; the token is read from the database on every request.
 
-| Method | Path                                           | Auth                                     | Body                       |
-|--------|------------------------------------------------|------------------------------------------|----------------------------|
-| `POST` | `/api/v1/spaces/:spaceId/translations/:locale` | `DEV_TOOLS` (header)                     | `zTranslationManageUpdateSchema` |
-| `POST` | `/api/v1/spaces/:spaceId/schemas`              | `DEV_TOOLS` (header)                      | `zSchemaPushSchema`        |
+| Method | Path                                                  | Body / Response |
+|--------|-------------------------------------------------------|-----------------|
+| `GET`  | `/api/manage/v1/spaces/:spaceId`                      | `{ id, name, locales, defaultLocale, createdAt, updatedAt }` — `locales` in the space's order; `defaultLocale` was `localeFallback` before the self-hosted version |
+| `GET`  | `/api/manage/v1/spaces/:spaceId/open-api`             | OpenAPI 3.0 JSON spec generated from schemas |
+| `GET`  | `/api/manage/v1/spaces/:spaceId/schemas`              | `SchemaExport[]` (id + type-specific fields, no timestamps) |
+| `POST` | `/api/manage/v1/spaces/:spaceId/schemas`              | `zSchemaPushSchema` (schema push, below) |
+| `GET`  | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |
+| `POST` | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `zTranslationManageUpdateSchema` (translation push, below) |
+
+These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) routes under `/api/v1`; the old URLs now answer 404. `GET …/translations/:locale/values` lost its `/values` suffix. A space that is being imported answers `503` here too.
+
+> **Breaking change (v3.3):** `GET /schemas` previously returned `Record<schemaId, Schema>` with raw Firestore timestamps. It now returns a `SchemaExport[]` array — the same shape the push endpoint accepts and the export zip contains.
+
+### Translation push (`POST …/translations/:locale`)
 
 **Request body (`zTranslationManageUpdateSchema`):**
 
@@ -132,9 +147,9 @@ Each value is at most 10,000 characters.
 
 `update-existing` only lists (and writes) IDs whose value for `:locale` actually differs; identical values are skipped.
 
-#### Schema push (`POST /api/v1/spaces/:spaceId/schemas`)
+### Schema push (`POST …/schemas`)
 
-Synchronous schema write used by `@localess/cli`'s `schema push`. Requires `DEV_TOOLS`, same as translation updates.
+Synchronous schema write used by `@localess/cli`'s `schema push`.
 
 **Request body (`zSchemaPushSchema`):**
 
@@ -163,48 +178,25 @@ Each push is one Postgres transaction (Firestore used to commit in 500-write bat
 
 ---
 
-### DEV_TOOLS (`spaces`, `schemas` and `translations` public controllers)
+## Request checks
 
-Space introspection and OpenAPI generation. Uses `token` query param auth.
+### Ids (both APIs)
 
-| Method | Path                               | Auth        | Response                                                      |
-|--------|------------------------------------|-------------|---------------------------------------------------------------|
-| `GET`  | `/api/v1/spaces/:spaceId`          | `DEV_TOOLS` | `{ id, name, locales, defaultLocale, createdAt, updatedAt }` — `locales` in the space's order; `defaultLocale` was `localeFallback` before the self-hosted version (breaking for clients reading it) |
-| `GET`  | `/api/v1/spaces/:spaceId/open-api` | `DEV_TOOLS` | OpenAPI 3.0 JSON spec generated from schemas                  |
-| `GET`  | `/api/v1/spaces/:spaceId/schemas`  | `DEV_TOOLS` | `SchemaExport[]` (id + type-specific fields, no timestamps)   |
-| `GET`  | `/api/v1/spaces/:spaceId/translations/:locale/values` | `DEV_TOOLS` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |
+The token guards check `spaceId`, `contentId` and `assetId` first (`assertValidIdParams()` in `apps/server/src/infra/http/v1/v1-request.ts`; asset routes call `validIdParams()`). A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`apps/server/src/infra/http/v1/id-param.ts`) gets `400 invalid-argument` — on the CDN with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`), on the Management API `no-store` — so a bad ID never reaches the token check, a query or a storage key.
 
-> **Breaking change (v3.3):** `GET /schemas` previously returned `Record<schemaId, Schema>` with raw Firestore timestamps. It now returns a `SchemaExport[]` array — the same shape the push endpoint accepts and the export zip contains. Upgrade `@localess/cli` before upgrading Localess; the current CLI accepts both shapes.
-
----
-
-## Middleware
-
-### `validIdParams()` — ID validation (all controllers)
-
-`validIdParams()` (exported from `apps/server/src/infra/http/v1/v1-request.ts`, called first by every public controller) checks `spaceId`, `contentId` and `assetId`. A value that doesn't match `^[A-Za-z0-9_-]{1,128}$` (`apps/server/src/infra/http/v1/id-param.ts`) gets `400 invalid-argument`, with `Cache-Control: public, max-age=3600` (`CACHE_BAD_REQUEST_MAX_AGE`), so a bad ID never reaches the permission checks, a query or a storage key.
-
-The check dates from the Firebase era, when IDs were spliced into Firestore and Storage paths and `GET /contents/X%2Fdraft?cv=…` could serve the **unpublished draft** file under a `CONTENT_PUBLIC` token. IDs are now bound SQL parameters, but asset IDs still form storage keys (`spaces/{spaceId}/assets/{assetId}/original`), so the guard stays.
+The check dates from the Firebase era, when IDs were spliced into Firestore and Storage paths and `GET /contents/X%2Fdraft?cv=…` could serve the **unpublished draft** file under a public token. IDs are now bound SQL parameters, but asset IDs still form storage keys (`spaces/{spaceId}/assets/{assetId}/original`), so the check stays.
 
 Two more guards back it up:
 
 - `assertPathSegment()` (same file) lets path builders refuse IDs that reach them from stored data.
 - Reference resolution skips a stored reference ID that isn't well-formed instead of failing the response.
 
-Tokens are checked too: `validateToken()` accepts only 20 alphanumerics, and anything else gets the usual `401`.
+### Tokens
 
-### `TokenAuthService` — Query Param Auth (CDN + DEV_TOOLS)
+- **CDN:** `@CdnToken({ published, draft, reason })` → `CdnTokenGuard`: `?token=`, pattern and checksum, a cached lookup by hash (5 minutes, dropped by `tokens` change events), then the type the request needs (`draft` when `version` is present). A `mgt_` value is refused before any lookup.
+- **Management:** `@ManagementToken()` → `ManagementTokenGuard`: `Authorization: Bearer` (scheme in any case, one value), a management token found by hash in this space, uncached.
 
-Token passed as `?token=<tokenId>`. Lookups go to the `tokens` table and are cached in memory per server instance with a 5-minute TTL (key: `${spaceId}:${tokenId}`). Token edits emit `tokens` change events, which every instance receives (Postgres `NOTIFY`) and use to drop the entry, so a revoked token stops working at once. See [Auth Tokens](auth-tokens.md).
-
-**Conditional permission helpers:**
-
-- `requireContentPermissions()` — requires `CONTENT_DRAFT` or `DEV_TOOLS` when `version` query param is present; otherwise accepts `CONTENT_PUBLIC`, `CONTENT_DRAFT`, or `DEV_TOOLS`.
-- `requireTranslationPermissions()` — same logic with `TRANSLATION_DRAFT` / `TRANSLATION_PUBLIC` (plus `DEV_TOOLS`).
-
-### `TokenAuthService` — Header Auth (MANAGE)
-
-Token passed as `X-API-KEY` header. No caching — a direct `tokens` lookup on every request (`authorize(..., { cached: false })`).
+See [Auth Tokens](auth-tokens.md#checks).
 
 ---
 
@@ -212,41 +204,41 @@ Token passed as `X-API-KEY` header. No caching — a direct `tokens` lookup on e
 
 Errors keep the body the Firebase-era `HttpsError.toJSON()` produced, `{ details?, message, status }`, now written by `sendV1Error()` (`apps/server/src/infra/http/v1/v1-response.ts`).
 
-**401 Unauthenticated** — same generic body for a missing/malformed token and for a well-formed token that doesn't exist in the space, so the response never reveals which case occurred:
+Guards throw `V1Error` and `V1ExceptionFilter` writes the same body (`apps/server/src/infra/http/v1/v1-error.ts`).
+
+**401 Unauthenticated** — same generic body for a missing, malformed or checksum-broken token and for a well-formed token that doesn't exist in the space, so the response never reveals which case occurred:
 
 ```json
 { "message": "Missing or invalid API token", "status": "UNAUTHENTICATED" }
 ```
 
-**403 Permission Denied** — `details` names the permission(s) that would have satisfied the check and, where relevant, why:
+On the CDN, a management token in `?token=` gets `details: { "hint": "Management tokens go in the Authorization header on /api/manage/v1." }`. On the Management API every 401 carries `WWW-Authenticate: Bearer`.
+
+**403 Permission Denied** (CDN only) — `details` names the token types that would have satisfied the check and why:
 
 ```json
 {
   "message": "Token is missing a required permission",
   "status": "PERMISSION_DENIED",
   "details": {
-    "requiredPermissions": ["CONTENT_DRAFT", "DEV_TOOLS"],
-    "reason": "This request includes a `version` query parameter, which requires access to draft content.",
-    "hint": "Add one of the required permissions to this token, or use a token that already has it."
+    "requiredTypes": ["preview"],
+    "reason": "This request includes a `version` query parameter, which requires a preview token.",
+    "hint": "Use a token of one of the required types."
   }
 }
 ```
 
-`details.reason` is omitted for fixed-permission checks (e.g. `DEV_TOOLS`-only endpoints) — only `requireContentPermissions()`/`requireTranslationPermissions()` populate it, for both draft (`version` present) and published requests, explaining which permissions that kind of request needs.
-
 ---
 
-## Token Permissions Reference
+## Token Types Reference
 
-| Permission           | Grants access to                                                     |
-|----------------------|----------------------------------------------------------------------|
-| `CONTENT_PUBLIC`     | Published content (no `version` param)                               |
-| `CONTENT_DRAFT`      | Draft content (`version` param required)                             |
-| `TRANSLATION_PUBLIC` | Published translations                                               |
-| `TRANSLATION_DRAFT`  | Draft translations (`version` param required)                        |
-| `DEV_TOOLS`          | MANAGE + DEV_TOOLS endpoints; also satisfies all PUBLIC/DRAFT checks |
+| Type         | CDN API (`?token=`)                | Management API (`Authorization: Bearer`) |
+|--------------|------------------------------------|------------------------------------------|
+| `public`     | Published content and translations | No                                       |
+| `preview`    | Published and drafts               | No                                       |
+| `management` | No                                 | Every route                              |
 
-A token grants exactly the permissions it lists. Firebase-era V1 tokens (implicitly `TRANSLATION_PUBLIC`, `TRANSLATION_DRAFT`, `CONTENT_PUBLIC`, `CONTENT_DRAFT`) are imported with those permissions listed, under the same token value.
+Tokens are not imported from Firebase; every space starts with an Auto Generated Preview Token. See [Auth Tokens](auth-tokens.md).
 
 ---
 
@@ -254,19 +246,21 @@ A token grants exactly the permissions it lists. Firebase-era V1 tokens (implici
 
 | File                                                     | Purpose                                                                                   |
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `apps/server/src/modules/contents/controllers/contents.public.controller.ts`         | CDN — links, documents by slug and id, `resolve*` options                                  |
-| `apps/server/src/modules/translations/translations.public.controller.ts` | CDN translations, DEV_TOOLS stored values, MANAGE translation push                        |
-| `apps/server/src/modules/assets/controllers/assets.public.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
-| `apps/server/src/modules/schemas/controllers/schemas.public.controller.ts` | DEV_TOOLS OpenAPI and schema export, MANAGE schema push                                   |
-| `apps/server/src/modules/spaces/spaces.public.controller.ts`             | DEV_TOOLS space metadata                                                                  |
-| `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`validIdParams`, `cv` redirects, `isDraft`), responses, Cache-Control, ID checks |
+| `apps/server/src/modules/contents/controllers/contents.cdn.controller.ts` | CDN — links, documents by slug and id, `resolve*` options                                  |
+| `apps/server/src/modules/translations/controllers/translations.cdn.controller.ts` | CDN translations                                                                 |
+| `apps/server/src/modules/translations/controllers/translations.management.controller.ts` | Management — stored values, translation push                              |
+| `apps/server/src/modules/assets/controllers/assets.cdn.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
+| `apps/server/src/modules/schemas/controllers/schemas.management.controller.ts` | Management — OpenAPI, schema export, schema push                                 |
+| `apps/server/src/modules/spaces/controllers/spaces.management.controller.ts` | Management — space metadata                                                        |
+| `apps/server/src/auth/token-auth.decorators.ts`, `apps/server/src/auth/guards/` | `@CdnToken`, `@ManagementToken` and their guards                                 |
+| `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`assertValidIdParams`, `validIdParams`, `cv` redirects, `isDraft`), `v1-error.ts`, responses, Cache-Control, ID checks |
 | `apps/server/src/modules/contents/services/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |
 | `apps/server/src/modules/translations/services/translation-delivery.service.ts` | Published and draft translation maps                                                      |
 | `apps/server/src/modules/assets/utils/`                                  | `image-transform.ts` (`applySharpTransforms`, `ImageFormat`), ETags, asset query parsing, Range |
-| `apps/server/src/auth/services/token-auth.service.ts`              | Query-param and header token auth, 5-min token cache invalidated by change events         |
+| `apps/server/src/auth/services/token-auth.service.ts`              | Token lookups by hash, the CDN's 5-min token cache invalidated by change events           |
 | `apps/server/src/modules/assets/services/asset-delivery.service.ts` | Transform decisions, transforms, rendition cache                                       |
 | `apps/server/src/infra/http/v1/cache-control.ts`                 | Cache TTL constants                                                                       |
 | `apps/server/src/infra/http/v1/v1-response.ts`                   | `sendV1Error()` error bodies                                                              |
-| `packages/shared/src/` (`@localess/shared`, `@localess/shared/zod`) | `TokenPermission` enum, token types and zod request models                                |
+| `packages/shared/src/` (`@localess/shared`, `@localess/shared/zod`) | `TokenType` enum, the `Token` model and zod request models                               |
 
-Acceptance tests (ported from the functions-era route tests): `apps/server/test/v1-*.test.ts`.
+Acceptance tests: `apps/server/test/v1-*.test.ts` (CDN, ported from the functions-era route tests) and `apps/server/test/manage-api.test.ts` (Management API).

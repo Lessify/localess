@@ -1,4 +1,4 @@
-import { type ContentDocumentStorage, SchemaFieldKind } from '@localess/shared';
+import { type ContentDocumentStorage, SchemaFieldKind, TokenType } from '@localess/shared';
 import { createHash } from 'node:crypto';
 import {
   assets,
@@ -13,35 +13,39 @@ import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driv
 import { C, S1 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { insertSpace, type TestApp } from './test-app.js';
+import { newApiToken, tokenColumns } from '../src/shared/utils/api-token-format.js';
 
-export const TOKEN_READ = 'AAAAAAAAAAAAAAAAAAAA';
-export const TOKEN_PUBLIC = 'BBBBBBBBBBBBBBBBBBBB';
-export const TOKEN_DRAFT = 'CCCCCCCCCCCCCCCCCCCC';
-export const TOKEN_DEV = 'DDDDDDDDDDDDDDDDDDDD';
-export const TOKEN_NO_CACHE = 'EEEEEEEEEEEEEEEEEEEE';
-export const TOKEN_NONE = 'FFFFFFFFFFFFFFFFFFFF';
+export const TOKEN_PUBLIC = newApiToken(TokenType.PUBLIC);
+/** Preview, default redirect TTL: reads published and drafts. */
+export const TOKEN_READ = newApiToken(TokenType.PREVIEW);
+/** Preview with a 30-second redirect TTL. */
+export const TOKEN_DRAFT = newApiToken(TokenType.PREVIEW);
+export const TOKEN_MANAGEMENT = newApiToken(TokenType.MANAGEMENT);
+export const TOKEN_NO_CACHE = newApiToken(TokenType.PUBLIC);
+
+/** A `tokens` row for `value`. */
+export const tokenRow = (spaceId: string, type: TokenType, value: string, name: string, cacheTtl: number | null = null) => ({
+  id: newUuid(),
+  spaceId,
+  type,
+  name,
+  cacheTtl,
+  ...tokenColumns(type, value),
+});
 
 const en = { id: 'en', name: 'English' };
 const de = { id: 'de', name: 'German' };
 const at = new Date('2026-01-01T00:00:00Z');
 
-/** A space `s1` (en fallback, de) with one token per permission profile. */
+/** A space `s1` (en fallback, de) with one token per type and cache setting. */
 export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
   await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en });
   await t.db.insert(tokens).values([
-    // What a token imported from Firebase V1 holds: read translations and content, published and draft.
-    {
-      id: newUuid(),
-      token: TOKEN_READ,
-      spaceId,
-      name: 'read',
-      permissions: ['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT'],
-    },
-    { id: newUuid(), token: TOKEN_PUBLIC, spaceId, name: 'public', permissions: ['CONTENT_PUBLIC', 'TRANSLATION_PUBLIC'] },
-    { id: newUuid(), token: TOKEN_DRAFT, spaceId, name: 'draft', permissions: ['CONTENT_DRAFT', 'TRANSLATION_DRAFT'], cacheTtl: 30 },
-    { id: newUuid(), token: TOKEN_DEV, spaceId, name: 'dev', permissions: ['DEV_TOOLS'] },
-    { id: newUuid(), token: TOKEN_NO_CACHE, spaceId, name: 'no cache', permissions: ['CONTENT_PUBLIC'], cacheTtl: 0 },
-    { id: newUuid(), token: TOKEN_NONE, spaceId, name: 'none', permissions: [] },
+    tokenRow(spaceId, TokenType.PREVIEW, TOKEN_READ, 'read'),
+    tokenRow(spaceId, TokenType.PUBLIC, TOKEN_PUBLIC, 'public'),
+    tokenRow(spaceId, TokenType.PREVIEW, TOKEN_DRAFT, 'draft', 30),
+    tokenRow(spaceId, TokenType.MANAGEMENT, TOKEN_MANAGEMENT, 'management'),
+    tokenRow(spaceId, TokenType.PUBLIC, TOKEN_NO_CACHE, 'no cache', 0),
   ]);
 }
 

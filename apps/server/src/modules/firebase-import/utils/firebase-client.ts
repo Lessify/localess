@@ -101,7 +101,7 @@ export class FirebaseClient {
     return this.get(`/spaces/${encodeURIComponent(id)}`);
   }
 
-  list(spaceId: string, name: 'tokens' | 'webhooks' | 'schemas'): Promise<FirebaseDoc[]> {
+  list(spaceId: string, name: 'webhooks' | 'schemas'): Promise<FirebaseDoc[]> {
     return this.get(`/spaces/${encodeURIComponent(spaceId)}/${name}`);
   }
 

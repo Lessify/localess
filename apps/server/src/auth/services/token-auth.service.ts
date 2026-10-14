@@ -1,19 +1,15 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { filter, Subscription } from 'rxjs';
-import type { FastifyReply, FastifyRequest } from 'fastify';
-import { TokenPermission } from '@localess/shared';
 import { EventsService } from '../../infra/events/events.service.js';
-import { Params, Query, validIdParams } from '../../infra/http/v1/v1-request.js';
-import { sendV1Error } from '../../infra/http/v1/v1-response.js';
 import { ApiTokensRepository } from '../repositories/api-tokens.repository.js';
-import { type ApiToken, canPerformAny, validateToken } from '../utils/api-token.js';
+import type { ApiToken } from '../utils/api-token.js';
+import { hashToken } from '../utils/token-hash.js';
 
 const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
- * Query-string (`?token=`) and header (`X-API-KEY`) token checks for /api/v1, ported from
- * functions/src/v1/middleware. Query tokens are cached per instance for 5 minutes like before;
- * `invalidate` drops an entry when a token changes.
+ * Token lookups for the token guards: the CDN API's are cached per instance for 5 minutes (`findCached`), the Management
+ * API's are not (`find`); `invalidate` drops an entry when a token changes.
  */
 @Injectable()
 export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
@@ -37,17 +33,18 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
     this.subscription?.unsubscribe();
   }
 
-  /** The token whose secret is `token` in this space. */
-  find(spaceId: string, token: string): Promise<ApiToken | undefined> {
-    return this.tokens.find(spaceId, token);
+  /** The token whose value is `value` in this space (looked up by its hash). */
+  find(spaceId: string, value: string): Promise<ApiToken | undefined> {
+    return this.tokens.findByHash(spaceId, hashToken(value));
   }
 
-  /** Cached by secret; entries remember the row UUID so change events can drop them. */
-  async findCached(spaceId: string, secret: string): Promise<ApiToken | undefined> {
-    const key = `${spaceId}:${secret}`;
+  /** Cached by the value's hash (the value itself is never kept); entries remember the row UUID so change events can drop them. */
+  async findCached(spaceId: string, value: string): Promise<ApiToken | undefined> {
+    const tokenHash = hashToken(value);
+    const key = `${spaceId}:${tokenHash}`;
     const cached = this.cache.get(key);
     if (cached && cached.expiresAt > Date.now()) return cached.token;
-    const token = await this.find(spaceId, secret);
+    const token = await this.tokens.findByHash(spaceId, tokenHash);
     if (token) this.cache.set(key, { token, expiresAt: Date.now() + TOKEN_CACHE_TTL_MS });
     else this.cache.delete(key);
     return token;
@@ -58,54 +55,5 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
     for (const [key, entry] of this.cache) {
       if (key.startsWith(`${spaceId}:`) && (!id || entry.token.id === id)) this.cache.delete(key);
     }
-  }
-
-  /**
-   * Checks a token against `required` (any of). Sends the 401/403 itself and returns undefined when
-   * the request must stop. The 401 body is the same for missing, malformed and unknown tokens.
-   */
-  async authorize(
-    reply: FastifyReply,
-    spaceId: string,
-    tokenId: unknown,
-    required: TokenPermission[],
-    options: { cached: boolean; reason?: string },
-  ): Promise<ApiToken | undefined> {
-    if (!validateToken(tokenId)) {
-      sendV1Error(reply, 401, 'unauthenticated', 'Missing or invalid API token');
-      return undefined;
-    }
-    const token = options.cached ? await this.findCached(spaceId, tokenId) : await this.find(spaceId, tokenId);
-    if (!token) {
-      sendV1Error(reply, 401, 'unauthenticated', 'Missing or invalid API token');
-      return undefined;
-    }
-    if (!canPerformAny(required, token)) {
-      sendV1Error(reply, 403, 'permission-denied', 'Token is missing a required permission', {
-        details: {
-          requiredPermissions: required,
-          ...(options.reason ? { reason: options.reason } : {}),
-          hint: 'Add one of the required permissions to this token, or use a token that already has it.',
-        },
-      });
-      return undefined;
-    }
-    return token;
-  }
-
-  /** Read-only DEV_TOOLS endpoints: `?token=` (cached), after the route's ids are validated. */
-  async authorizeDevTools(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
-    const params = request.params as Params;
-    if (!validIdParams(reply, params)) return false;
-    const { token } = request.query as Query;
-    return (await this.authorize(reply, params['spaceId'], token, [TokenPermission.DEV_TOOLS], { cached: true })) !== undefined;
-  }
-
-  /** Write endpoints for the CLI: DEV_TOOLS in the `X-API-KEY` header, never cached. */
-  async authorizeApiKey(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
-    const params = request.params as Params;
-    if (!validIdParams(reply, params)) return false;
-    const apiKey = request.headers['x-api-key'];
-    return (await this.authorize(reply, params['spaceId'], apiKey, [TokenPermission.DEV_TOOLS], { cached: false })) !== undefined;
   }
 }

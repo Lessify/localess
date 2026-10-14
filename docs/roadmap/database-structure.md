@@ -24,14 +24,18 @@ password_reset_tokens (token_hash PK, user_id → users CASCADE): expires_at, us
 ## `tokens`
 
 ```
-tokens (id PK, space_id → spaces CASCADE): token (the secret, unique), name, permissions (not null), cache_ttl,
+tokens (id PK, space_id → spaces CASCADE): type (CHECK), name, token, token_hash (unique), hint, cache_ttl,
         created_at, updated_at
 ```
 
 | Column / rule | Decision |
 |---|---|
-| `version` | **Dropped.** A token grants exactly its `permissions`; the Firebase import gives V1 tokens the four they had implicitly (and the default cache TTL). |
-| `token` | **Plain text**, unlike session and reset-link hashes: the editor reads it for previews and API links, and tokens are handed to websites. Backups must be protected. |
+| `type` | `public`, `preview` or `management` (lower case, `tokens_type_check`); replaces the `permissions` array and the old `version`. Never changes: the value's prefix (`pub_`, `prv_`, `mgt_`) names it. See [Auth Tokens](../auth-tokens.md). |
+| `token_hash` | `sha256(value)`, unique; every lookup goes through it. |
+| `token` | **Plain text for `public`/`preview`** (the editor reads it for its API links, and these tokens are handed to websites); **`null` for `management`** (`tokens_token_check`), whose value is shown once. |
+| `hint` | Prefix and last 4 characters, for the list. |
+| `cache_ttl` | CDN tokens only (`tokens_cache_ttl_check`). |
+| Auto Generated Preview Token | Every space starts with one, written with the space (`createPreviewToken`, `shared/data-rules/space-tokens.ts`); the Firebase import does the same. Tokens are not imported. |
 | `tokens_permissions_idx` (GIN) | **Dropped**: a space has a handful of tokens, filtered through `tokens_space_idx`. |
 
 ## Webhooks
@@ -329,7 +333,7 @@ server-only lists), plus a CHECK built from the same list:
 | `user_credentials.hash_algo`, `user_identities.provider` | `HASH_ALGORITHMS`, `OAUTH_PROVIDERS` |
 | `contents.kind`, `assets.kind`, `schemas.type` | `ContentKind`, `AssetKind`, `SchemaType` |
 | `tasks.kind`, `tasks.status`, `tasks.type`, `task_logs.level` | `TaskKind`, `TaskStatus`, `TRANSLATION_IMPORT_FORMATS`, `TaskLogLevel` |
-| `tokens.permissions`, `webhooks.events` | `TokenPermission`, `WebHookEvent` (every element) |
+| `webhooks.events` | `WebHookEvent` (every element) |
 | `webhook_logs.status`, `webhook_logs.error_type`, `firebase_imports.status` | `WebHookStatus`, `WebHookErrorType`, `FIREBASE_IMPORT_STATUSES` |
 | `translation_snapshots.version`, `content_snapshots.version`, `content_link_snapshots.version` | `SNAPSHOT_VERSIONS` (server) |
 

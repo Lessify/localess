@@ -181,14 +181,18 @@ CREATE TABLE "tasks" (
 CREATE TABLE "tokens" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"space_id" uuid NOT NULL,
-	"token" text NOT NULL,
+	"type" text NOT NULL,
 	"name" text NOT NULL,
-	"permissions" text[] DEFAULT '{}' NOT NULL,
+	"token" text,
+	"token_hash" text NOT NULL,
+	"hint" text NOT NULL,
 	"cache_ttl" integer,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "tokens_token_unique" UNIQUE("token"),
-	CONSTRAINT "tokens_permissions_check" CHECK ("tokens"."permissions" <@ array['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT', 'DEV_TOOLS']::text[])
+	CONSTRAINT "tokens_token_hash_unique" UNIQUE("token_hash"),
+	CONSTRAINT "tokens_type_check" CHECK ("tokens"."type" in ('public', 'preview', 'management')),
+	CONSTRAINT "tokens_token_check" CHECK (("tokens"."type" = 'management') = ("tokens"."token" is null)),
+	CONSTRAINT "tokens_cache_ttl_check" CHECK ("tokens"."type" <> 'management' or "tokens"."cache_ttl" is null)
 );
 --> statement-breakpoint
 CREATE TABLE "translation_snapshots" (

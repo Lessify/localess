@@ -1,27 +1,32 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import type { TokenPermission } from '@localess/shared';
-import { newTokenSecret } from '../../../infra/database/id.js';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { TokenType } from '@localess/shared';
+import { newApiToken, tokenColumns } from '../../../shared/utils/api-token-format.js';
 import { toToken } from '../../../shared/transformers/token.transformer.js';
 import { type TokenEntity, TokensRepository } from '../repositories/tokens.repository.js';
 
 export interface TokenInput {
   name: string;
-  permissions: TokenPermission[];
+  type: TokenType;
   cacheTtl?: number | null;
 }
+
+/** What an edit may change: the type never changes (the value's prefix names it). */
+export type TokenChange = Omit<TokenInput, 'type'>;
+
+const NO_CACHE_FOR_MANAGEMENT = 'Management tokens are never cached: leave the cache TTL empty.';
 
 function found(entity: TokenEntity | undefined) {
   if (!entity) throw new NotFoundException('Token not found');
   return toToken(entity);
 }
 
-/** Space API tokens (was `spaces/{s}/tokens`). New and changed tokens are V2; the secret is `token`. */
+/** Space API tokens. The value is returned on create and regenerate; afterwards only for public and preview tokens. */
 @Injectable()
 export class TokensService {
   constructor(private readonly tokens: TokensRepository) {}
 
-  async list(spaceId: string, permission?: string, limit?: number) {
-    return (await this.tokens.findAll(spaceId, { permission, limit })).map(toToken);
+  async list(spaceId: string, type?: TokenType, limit?: number) {
+    return (await this.tokens.findAll(spaceId, { type, limit })).map(toToken);
   }
 
   async get(spaceId: string, id: string) {
@@ -29,29 +34,36 @@ export class TokensService {
   }
 
   async create(spaceId: string, input: TokenInput) {
+    if (input.type === TokenType.MANAGEMENT && input.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
+    const value = newApiToken(input.type);
     const entity = await this.tokens.create(spaceId, {
-      token: newTokenSecret(),
+      type: input.type,
       name: input.name,
-      permissions: input.permissions,
       cacheTtl: input.cacheTtl ?? null,
+      ...tokenColumns(input.type, value),
     });
     if (!entity) throw new NotFoundException('Space not found');
-    return toToken(entity);
+    return { ...toToken(entity), token: value };
   }
 
-  async update(spaceId: string, id: string, input: TokenInput) {
+  async update(spaceId: string, id: string, input: TokenChange) {
     return found(
-      await this.tokens.update(spaceId, id, () => ({
-          name: input.name,
-        permissions: input.permissions,
-        cacheTtl: input.cacheTtl ?? null,
-      })),
+      await this.tokens.update(spaceId, id, current => {
+        if (current.type === TokenType.MANAGEMENT && input.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
+        return { name: input.name, cacheTtl: input.cacheTtl ?? null };
+      }),
     );
   }
 
-  /** Same token (same id, name and permissions) under a new secret. */
+  /** The same token (id, type, name) under a new value, returned once. */
   async regenerate(spaceId: string, id: string) {
-    return found(await this.tokens.update(spaceId, id, () => ({ token: newTokenSecret() })));
+    let value = '';
+    const entity = await this.tokens.update(spaceId, id, current => {
+      const type = current.type as TokenType;
+      value = newApiToken(type);
+      return tokenColumns(type, value);
+    });
+    return { ...found(entity), token: value };
   }
 
   async delete(spaceId: string, id: string): Promise<void> {

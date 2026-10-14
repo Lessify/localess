@@ -147,15 +147,15 @@ describe('content snapshots', () => {
   });
 
   describe('links', () => {
-    it('lists every folder and the published documents without `version`, for CONTENT_PUBLIC', async () => {
+    it('lists every folder and the published documents without `version`, for a public token', async () => {
       const url = `/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}`;
       expect(Object.keys(await follow(url)).map(contentName).sort()).toEqual(['archive', 'blog', 'home', 'post1']);
     });
 
-    it('lists the whole tree with `version`, which needs a draft permission', async () => {
+    it('lists the whole tree with `version`, which needs a preview token', async () => {
       const response = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
-      expect(response.json().details.reason).toMatch(/draft content/);
+      expect(response.json().details.reason).toMatch(/preview token/);
       expect(Object.keys(await follow(linksUrl('&version=draft'))).map(contentName).sort()).toEqual([
         'archive',
         'blog',

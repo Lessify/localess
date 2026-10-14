@@ -13,7 +13,7 @@ import {
   TaskKind,
   TaskLogLevel,
   TaskStatus,
-  TokenPermission,
+  TokenType,
   TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
   UserPermission,
@@ -521,22 +521,25 @@ export const tokens = pgTable(
   {
     id: uuid('id').primaryKey(),
     spaceId: spaceId(),
-    // The secret passed as `?token=` / `X-API-KEY`: 20 alphanumerics (`newTokenSecret()`), never the UUID (74 random bits and
-    // a readable creation time). An imported token keeps its Firestore id here, the value customers already use.
-    token: text('token').notNull().unique(),
+    // `public`/`preview` read the CDN API, `management` the Management API (docs/auth-tokens.md). Never changes: the value's
+    // prefix names it.
+    type: text('type', { enum: values(TokenType) }).notNull(),
     name: text('name').notNull(),
-    // What the token may do. (Firebase-era V1 tokens, whose permissions were implicit, are imported with them listed.)
-    permissions: text('permissions', { enum: values(TokenPermission) })
-      .array()
-      .notNull()
-      .default([]),
-    // Seconds the `cv` redirect is cached (0: not cached); null: the default.
+    // The value (`pub_…`/`prv_…`), so the app can show and copy it; null for `management`, kept only as its hash.
+    token: text('token'),
+    // sha256 of the value (`hashToken()`): every lookup goes through it.
+    tokenHash: text('token_hash').notNull().unique(),
+    // The prefix and the last 4 characters, e.g. `mgt_…aB3x`: what the list shows.
+    hint: text('hint').notNull(),
+    // Seconds the `cv` redirect is cached (0: not cached); null: the default. CDN tokens only.
     cacheTtl: integer('cache_ttl'),
     ...timestamps,
   },
   t => [
     index('tokens_space_idx').on(t.spaceId, t.createdAt.desc()),
-    allOf('tokens_permissions_check', t.permissions, values(TokenPermission)),
+    oneOf('tokens_type_check', t.type, values(TokenType)),
+    check('tokens_token_check', sql`(${t.type} = 'management') = (${t.token} is null)`),
+    check('tokens_cache_ttl_check', sql`${t.type} <> 'management' or ${t.cacheTtl} is null`),
   ],
 );
 

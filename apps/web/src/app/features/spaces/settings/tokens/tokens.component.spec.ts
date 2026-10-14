@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Space, Token, TokenPermission } from '@localess/shared';
+import { Space, Token, TokenType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TokenService } from '@core/services/token.service';
 import { SpaceStore } from '@core/stores/space.store';
@@ -8,6 +8,7 @@ import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { TokenSecretDialogComponent } from './token-secret-dialog/token-secret-dialog.component';
 import { TokensComponent } from './tokens.component';
 
 function space(): Space {
@@ -15,7 +16,7 @@ function space(): Space {
 }
 
 function token(overrides: Partial<Token> = {}): Token {
-  return { id: 't1', name: 'CI', permissions: [TokenPermission.CONTENT_DRAFT], ...overrides } as unknown as Token;
+  return { id: 't1', name: 'CI', type: TokenType.PREVIEW, hint: 'prv_…abcd', token: 'prv_x', ...overrides } as Token;
 }
 
 describe('TokensComponent', () => {
@@ -25,10 +26,10 @@ describe('TokensComponent', () => {
 
   function setup(tokens: Token[], selectedSpace: Space | undefined) {
     const findAll = vi.fn().mockReturnValue(of(tokens));
-    const create = vi.fn().mockReturnValue(of(undefined));
+    const create = vi.fn().mockReturnValue(of(token()));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteToken = vi.fn().mockReturnValue(of(undefined));
-    const regenerate = vi.fn().mockReturnValue(of(undefined));
+    const regenerate = vi.fn().mockReturnValue(of(token()));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -74,7 +75,7 @@ describe('TokensComponent', () => {
 
   it('openAddDialog() creates the token and notifies success when confirmed', () => {
     const { component, open, create, success } = setup([], space());
-    const model = { name: 'CI', permissions: [TokenPermission.CONTENT_DRAFT] };
+    const model = { name: 'CI', type: TokenType.PREVIEW };
     open.mockReturnValue({ closed$: of(model) });
 
     component.openAddDialog();
@@ -95,49 +96,49 @@ describe('TokensComponent', () => {
   it('openAddDialog() notifies an error on failure', () => {
     const { component, open, create, error } = setup([], space());
     create.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ closed$: of({ name: 'CI', permissions: [] }) });
+    open.mockReturnValue({ closed$: of({ name: 'CI', type: TokenType.PUBLIC }) });
 
     component.openAddDialog();
 
     expect(error).toHaveBeenCalledWith('Token can not be created.');
   });
 
-  it('openEditDialog() prefills from a v2 token and updates on confirm', () => {
+  it('openEditDialog() prefills from the token and updates the name and cache TTL on confirm', () => {
     const { component, open, update, success } = setup([], space());
     const element = token({ id: 't1' });
-    open.mockReturnValue({ closed$: of({ name: 'Renamed', permissions: [] }) });
+    open.mockReturnValue({ closed$: of({ name: 'Renamed', type: TokenType.PREVIEW, cacheTtl: 5 }) });
 
     component.openEditDialog(element);
 
     expect(open).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ context: { name: 'CI', permissions: [TokenPermission.CONTENT_DRAFT], cacheTtl: undefined } }),
+      expect.objectContaining({ context: { name: 'CI', type: TokenType.PREVIEW, cacheTtl: undefined } }),
     );
-    expect(update).toHaveBeenCalledWith('space-1', 't1', { name: 'Renamed', permissions: [] });
-    expect(success).toHaveBeenCalledWith('Token has been created.');
+    expect(update).toHaveBeenCalledWith('space-1', 't1', { name: 'Renamed', cacheTtl: 5 });
+    expect(success).toHaveBeenCalledWith('Token has been updated.');
   });
 
-  it('openEditDialog() prefills the name, permissions and cache TTL of the token', () => {
+  it('openEditDialog() prefills the name, type and cache TTL of the token', () => {
     const { component, open } = setup([], space());
-    const element = token({ name: 'Website', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: 120 } as Partial<Token>);
+    const element = token({ name: 'Website', type: TokenType.PUBLIC, cacheTtl: 120 });
     open.mockReturnValue({ closed$: of(undefined) });
 
     component.openEditDialog(element);
 
     expect(open).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ context: { name: 'Website', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: 120 } }),
+      expect.objectContaining({ context: { name: 'Website', type: TokenType.PUBLIC, cacheTtl: 120 } }),
     );
   });
 
   it('openEditDialog() notifies an error on failure', () => {
     const { component, open, update, error } = setup([], space());
     update.mockReturnValue(throwError(() => new Error('boom')));
-    open.mockReturnValue({ closed$: of({ name: 'Renamed', permissions: [] }) });
+    open.mockReturnValue({ closed$: of({ name: 'Renamed', type: TokenType.PREVIEW }) });
 
     component.openEditDialog(token({ id: 't1' }));
 
-    expect(error).toHaveBeenCalledWith('Token can not be created.');
+    expect(error).toHaveBeenCalledWith('Token can not be updated.');
   });
 
   it('openDeleteDialog() deletes and notifies success when confirmed', () => {
@@ -211,27 +212,45 @@ describe('TokensComponent', () => {
     expect(error).toHaveBeenCalledWith("Token 'CI' can not be regenerated.");
   });
 
-  it('permissionsToText() joins the permission labels with commas', () => {
+  it('shows the columns hint, name, type, cache TTL, updated at and actions', () => {
     const { component } = setup([], space());
 
-    const text = component.permissionsToText([TokenPermission.CONTENT_DRAFT, TokenPermission.TRANSLATION_PUBLIC]);
-
-    expect(text).toBe('Content Draft, Translation Public');
+    expect(component.displayedColumns).toEqual(['hint', 'name', 'type', 'cacheTtl', 'updatedAt', 'actions']);
   });
 
-  it('permissionsToUsage() classifies a v2 token by its explicit permissions', () => {
-    const { component } = setup([], space());
+  it('shows a new management token once, with its CLI login command', () => {
+    const { component, open, create } = setup([], space());
+    open.mockReturnValueOnce({ closed$: of({ name: 'CI', type: TokenType.MANAGEMENT }) });
+    create.mockReturnValue(of(token({ name: 'CI', type: TokenType.MANAGEMENT, token: 'mgt_x' })));
 
-    const info = component.permissionsToUsage(token({ permissions: [TokenPermission.CONTENT_PUBLIC] }));
+    component.openAddDialog();
 
-    expect(info.category).toBe('PUBLIC_SAFE');
+    expect(open).toHaveBeenLastCalledWith(
+      TokenSecretDialogComponent,
+      expect.objectContaining({
+        context: { name: 'CI', token: 'mgt_x', cliLogin: `localess login --origin ${window.location.origin} --space space-1 --token mgt_x` },
+      }),
+    );
   });
 
-  it('permissionsToUsage() classifies a token by its permissions', () => {
-    const { component } = setup([], space());
+  it('does not open the secret dialog for a public or preview token', () => {
+    const { component, open, create } = setup([], space());
+    open.mockReturnValueOnce({ closed$: of({ name: 'Site', type: TokenType.PUBLIC }) });
+    create.mockReturnValue(of(token({ type: TokenType.PUBLIC, token: 'pub_x' })));
 
-    const readAll = [TokenPermission.TRANSLATION_PUBLIC, TokenPermission.TRANSLATION_DRAFT, TokenPermission.CONTENT_PUBLIC, TokenPermission.CONTENT_DRAFT];
-    expect(component.permissionsToUsage(token({ permissions: readAll })).category).toBe('SERVER_SIDE');
+    component.openAddDialog();
+
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a regenerated management token once', () => {
+    const { component, open, regenerate } = setup([], space());
+    open.mockReturnValueOnce({ closed$: of(true) });
+    regenerate.mockReturnValue(of(token({ name: 'CI', type: TokenType.MANAGEMENT, token: 'mgt_new' })));
+
+    component.openRegenerateDialog(token({ name: 'CI', type: TokenType.MANAGEMENT, token: undefined }));
+
+    expect(open).toHaveBeenLastCalledWith(TokenSecretDialogComponent, expect.objectContaining({ context: expect.objectContaining({ token: 'mgt_new' }) }));
   });
 
   it('copied() notifies success', () => {
@@ -239,29 +258,6 @@ describe('TokensComponent', () => {
 
     component.copied();
 
-    expect(success).toHaveBeenCalledWith('Token ID copied to clipboard.');
-  });
-
-  it('isCliToken() is true only for tokens holding Development Tools', () => {
-    const { component } = setup([], space());
-
-    expect(component.isCliToken(token({ permissions: [TokenPermission.DEV_TOOLS] }))).toBe(true);
-    expect(component.isCliToken(token({ permissions: [TokenPermission.CONTENT_DRAFT] }))).toBe(false);
-  });
-
-  it('cliLoginCommand() builds the login command for the current origin, space and token', () => {
-    const { component } = setup([], space());
-
-    const command = component.cliLoginCommand(token({ token: 'tok-123', permissions: [TokenPermission.DEV_TOOLS] }));
-
-    expect(command).toBe(`localess login --origin ${window.location.origin} --space space-1 --token tok-123`);
-  });
-
-  it('cliLoginCopied() notifies success', () => {
-    const { component, success } = setup([], space());
-
-    component.cliLoginCopied();
-
-    expect(success).toHaveBeenCalledWith('CLI login command copied to clipboard.');
+    expect(success).toHaveBeenCalledWith('Token copied to clipboard.');
   });
 });

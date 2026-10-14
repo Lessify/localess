@@ -1,15 +1,16 @@
 import { and, eq } from 'drizzle-orm';
-import { WebHookEvent } from '@localess/shared';
+import { TokenType, WebHookEvent } from '@localess/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
-import { schemas, translations } from '../src/infra/database/schema.js';
+import { schemas, tokens, translations } from '../src/infra/database/schema.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
 import { EventsService } from '../src/infra/events/events.service.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
-import { seedContent, seedSpace, seedTranslations, TOKEN_DEV, TOKEN_PUBLIC } from './seed.js';
-import { buildDrafts, createTestApp, draftSnapshots, TestApp } from './test-app.js';
-import { S1 } from './ids.js';
+import { seedContent, seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_PUBLIC, TOKEN_READ, tokenRow } from './seed.js';
+import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp } from './test-app.js';
+import { S1, S2 } from './ids.js';
 import { newUuid } from '../src/infra/database/id.js';
 
-describe('v1 dev tools and manage API', () => {
+describe('management API', () => {
   let t: TestApp;
 
   beforeAll(async () => {
@@ -21,10 +22,12 @@ describe('v1 dev tools and manage API', () => {
 
   afterAll(() => t?.close());
 
-  const get = (url: string) => t.request({ method: 'GET', url });
-  /** `apiKey: null` sends no header. */
-  const post = (url: string, payload: unknown, apiKey: string | null = TOKEN_DEV) =>
-    t.request({ method: 'POST', url, payload: payload as object, headers: apiKey ? { 'x-api-key': apiKey } : {} });
+  const base = `/api/manage/v1/spaces/${S1}`;
+  /** `Authorization: Bearer <value>`; `null` sends no header. */
+  const bearer = (value: string | null = TOKEN_MANAGEMENT): Record<string, string> => (value ? { authorization: `Bearer ${value}` } : {});
+  const get = (url: string, value: string | null = TOKEN_MANAGEMENT) => t.request({ method: 'GET', url, headers: bearer(value) });
+  const post = (url: string, payload: unknown, value: string | null = TOKEN_MANAGEMENT) =>
+    t.request({ method: 'POST', url, payload: payload as object, headers: bearer(value) });
   const translation = async (key: string) =>
     (
       await t.db
@@ -33,9 +36,9 @@ describe('v1 dev tools and manage API', () => {
         .where(and(eq(translations.spaceId, S1), eq(translations.key, key)))
     )[0];
 
-  describe('dev tools (?token= with DEV_TOOLS)', () => {
+  describe('reads', () => {
     it('describes the space', async () => {
-      const response = await get(`/api/v1/spaces/${S1}?token=${TOKEN_DEV}`);
+      const response = await get(base);
       expect(response.statusCode).toBe(200);
       expect(response.json()).toEqual({
         id: S1,
@@ -50,21 +53,17 @@ describe('v1 dev tools and manage API', () => {
       });
     });
 
-    it('refuses tokens without DEV_TOOLS', async () => {
-      expect((await get(`/api/v1/spaces/${S1}?token=${TOKEN_PUBLIC}`)).statusCode).toBe(403);
-    });
-
     it('generates an OpenAPI document from the schemas', async () => {
-      const body = (await get(`/api/v1/spaces/${S1}/open-api?token=${TOKEN_DEV}`)).json();
+      const body = (await get(`${base}/open-api`)).json();
       expect(body.openapi).toMatch(/^3\./);
       expect(JSON.stringify(body.components)).toContain('page');
     });
 
     it('returns stored values for one locale without fallback filling', async () => {
-      const response = await get(`/api/v1/spaces/${S1}/translations/de/values?token=${TOKEN_DEV}`);
-      expect(response.headers['cache-control']).toBe('no-cache');
+      const response = await get(`${base}/translations/de`);
+      expect(response.headers['cache-control']).toBe('no-store');
       expect(response.json()).toEqual({ greeting: 'Hallo' });
-      const unknown = await get(`/api/v1/spaces/${S1}/translations/fr/values?token=${TOKEN_DEV}`);
+      const unknown = await get(`${base}/translations/fr`);
       expect(unknown.statusCode).toBe(400);
       expect(unknown.json()).toEqual({
         details: 'Locale fr is not in space locales',
@@ -74,7 +73,7 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('exports schemas without timestamps or nulls', async () => {
-      expect((await get(`/api/v1/spaces/${S1}/schemas?token=${TOKEN_DEV}`)).json()).toEqual([
+      expect((await get(`${base}/schemas`)).json()).toEqual([
         {
           id: 'page',
           type: 'ROOT',
@@ -88,15 +87,15 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it.each([
-      ['space id on the dev-tools route', '/api/v1/spaces/S1%2Fx'],
-      ['space id on the translation values route', '/api/v1/spaces/S1%2Fx/translations/en/values'],
+      ['space id on the space route', '/api/manage/v1/spaces/S1%2Fx'],
+      ['space id on the translation values route', '/api/manage/v1/spaces/S1%2Fx/translations/en'],
     ])('rejects a %s with 400 (ported)', async (_name, url) => {
       expect((await get(url)).statusCode).toBe(400);
     });
   });
 
-  describe('translation push (X-API-KEY with DEV_TOOLS)', () => {
-    const push = (payload: unknown, apiKey: string | null = TOKEN_DEV) => post(`/api/v1/spaces/${S1}/translations/de`, payload, apiKey);
+  describe('translation push', () => {
+    const push = (payload: unknown, value: string | null = TOKEN_MANAGEMENT) => post(`${base}/translations/de`, payload, value);
     let dispatch: MockInstance<WebhookDispatcher['dispatch']>;
     let publish: MockInstance<EventsService['publish']>;
 
@@ -120,23 +119,21 @@ describe('v1 dev tools and manage API', () => {
       }
     };
 
-    it('authenticates with the X-API-KEY header only', async () => {
-      expect((await post(`/api/v1/spaces/${S1}/translations/de`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
-      expect(
-        (await post(`/api/v1/spaces/${S1}/translations/de?token=${TOKEN_DEV}`, { type: 'add-missing', values: {} }, null)).statusCode,
-      ).toBe(401);
-      expect((await push({ type: 'add-missing', values: {} }, TOKEN_PUBLIC)).statusCode).toBe(403);
+    it('authenticates with the Bearer header only', async () => {
+      expect((await post(`${base}/translations/de`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
+      expect((await post(`${base}/translations/de?token=${TOKEN_MANAGEMENT}`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
+      expect((await push({ type: 'add-missing', values: {} }, TOKEN_PUBLIC)).statusCode).toBe(401);
     });
 
     it('rejects a malformed space id (ported)', async () => {
-      expect((await post('/api/v1/spaces/S1%2Fx/translations/en', {})).statusCode).toBe(400);
+      expect((await post('/api/manage/v1/spaces/S1%2Fx/translations/en', {})).statusCode).toBe(400);
     });
 
     it('validates the body and the locale', async () => {
       const bad = await push({ type: 'replace-everything', values: {} });
       expect(bad.statusCode).toBe(400);
       expect(bad.json()).toMatchObject({ message: 'Bad request body', status: 'INVALID_ARGUMENT', details: expect.anything() });
-      expect((await post(`/api/v1/spaces/${S1}/translations/fr`, { type: 'add-missing', values: {} })).statusCode).toBe(400);
+      expect((await post(`${base}/translations/fr`, { type: 'add-missing', values: {} })).statusCode).toBe(400);
     });
 
     it('reports a dry run without writing, with status 200 like the Express endpoint', async () => {
@@ -187,8 +184,8 @@ describe('v1 dev tools and manage API', () => {
     });
 
     it('is visible immediately in draft translations', async () => {
-      const redirect = await get(`/api/v1/spaces/${S1}/translations/de?version=draft&token=${TOKEN_DEV}`);
-      const response = await get(redirect.headers.location as string);
+      const redirect = await get(`/api/v1/spaces/${S1}/translations/de?version=draft&token=${TOKEN_READ}`, null);
+      const response = await get(redirect.headers.location as string, null);
       expect(response.json()).toMatchObject({ greeting: 'Servus', 'brand.new': 'Neu' });
     });
 
@@ -215,8 +212,8 @@ describe('v1 dev tools and manage API', () => {
     });
   });
 
-  describe('schema push (X-API-KEY with DEV_TOOLS)', () => {
-    const push = (payload: unknown) => post(`/api/v1/spaces/${S1}/schemas`, payload);
+  describe('schema push', () => {
+    const push = (payload: unknown) => post(`${base}/schemas`, payload);
     const card = { id: 'card', type: 'NODE', fields: [{ name: 'heading', kind: 'TEXT' }] };
     const color = { id: 'color', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] };
 
@@ -277,6 +274,67 @@ describe('v1 dev tools and manage API', () => {
     it('validates the body', async () => {
       const response = await push({ type: 'sync', schemas: [{ id: 'x', type: 'ROOT', fields: [{ name: 'n', kind: 'SCHEMA' }] }] });
       expect(response.statusCode).toBe(400);
+    });
+  });
+  describe('authentication', () => {
+    const unauthenticated = { message: 'Missing or invalid API token', status: 'UNAUTHENTICATED' };
+
+    it.each([
+      ['no header', {}],
+      ['X-API-KEY', { 'x-api-key': TOKEN_MANAGEMENT }],
+      ['another scheme', { authorization: `Basic ${TOKEN_MANAGEMENT}` }],
+      ['a public token', { authorization: `Bearer ${TOKEN_PUBLIC}` }],
+      ['a preview token', { authorization: `Bearer ${TOKEN_READ}` }],
+      ['an unknown management token', { authorization: `Bearer ${newApiToken(TokenType.MANAGEMENT)}` }],
+      ['two values', { authorization: `Bearer ${TOKEN_MANAGEMENT} ${TOKEN_MANAGEMENT}` }],
+    ])('answers %s with 401, WWW-Authenticate: Bearer and no-store', async (_, headers) => {
+      const response = await t.request({ method: 'GET', url: `${base}/schemas`, headers });
+      expect(response.statusCode).toBe(401);
+      expect(response.headers['www-authenticate']).toBe('Bearer');
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(response.json()).toEqual(unauthenticated);
+    });
+
+    it('ignores ?token=', async () => {
+      expect((await get(`${base}/schemas?token=${TOKEN_MANAGEMENT}`, null)).statusCode).toBe(401);
+    });
+
+    it('accepts the scheme in any case', async () => {
+      const response = await t.request({ method: 'GET', url: `${base}/schemas`, headers: { authorization: `bearer ${TOKEN_MANAGEMENT}` } });
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('does not accept a token from another space', async () => {
+      await insertSpace(t.db, { id: S2, name: 'Other', locales: [{ id: 'en', name: 'English' }] });
+      const other = newApiToken(TokenType.MANAGEMENT);
+      await t.db.insert(tokens).values(tokenRow(S2, TokenType.MANAGEMENT, other, 'other'));
+      expect((await get(`${base}/schemas`, other)).statusCode).toBe(401);
+      expect((await get(`/api/manage/v1/spaces/${S2}/schemas`, other)).statusCode).toBe(200);
+    });
+
+    it('answers a bad space id with 400 before checking the token', async () => {
+      expect((await get('/api/manage/v1/spaces/bad%2Fid/schemas', null)).statusCode).toBe(400);
+    });
+
+    it('marks every response no-store, errors included', async () => {
+      expect((await get(base)).headers['cache-control']).toBe('no-store');
+      expect((await get(`${base}/translations/fr`)).headers['cache-control']).toBe('no-store'); // 400
+      expect((await post(`${base}/schemas`, { bad: true })).headers['cache-control']).toBe('no-store'); // 400
+    });
+
+    it('sends no CORS headers', async () => {
+      const response = await t.request({ method: 'GET', url: `${base}/schemas`, headers: { ...bearer(), origin: 'https://site.example' } });
+      expect(response.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('needs no X-Requested-With on POST (no cookie)', async () => {
+      expect((await post(`${base}/translations/de`, { type: 'add-missing', values: { greeting: 'x' } })).statusCode).toBe(200);
+    });
+
+    it('no longer serves the old dev-tools URLs', async () => {
+      for (const path of ['', '/schemas', '/open-api', '/translations/de/values']) {
+        expect((await get(`/api/v1/spaces/${S1}${path}?token=${TOKEN_MANAGEMENT}`, null)).statusCode).toBe(404);
+      }
     });
   });
 });

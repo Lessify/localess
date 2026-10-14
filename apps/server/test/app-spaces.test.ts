@@ -2,7 +2,9 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents, firebaseImports, schemas, spaces, translations } from '../src/infra/database/schema.js';
+import { assets, contents, firebaseImports, schemas, spaces, tokens, translations } from '../src/infra/database/schema.js';
+import { transaction } from '../src/infra/database/transaction.js';
+import { SpacesRepository } from '../src/modules/spaces/repositories/spaces.repository.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
@@ -33,6 +35,29 @@ describe('app API: spaces, locales, instance label', () => {
   afterAll(() => t?.close());
 
   describe('spaces', () => {
+    it('gives a new space one preview token, "Auto Generated Preview Token", that reads drafts', async () => {
+      const space = (await admin.post('/api/app/spaces', { name: 'With token' })).json();
+      const list = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json();
+      expect(list).toHaveLength(1);
+      expect(list[0]).toMatchObject({ type: 'preview', name: 'Auto Generated Preview Token' });
+      expect(list[0].token).toMatch(/^prv_/);
+      const draft = await t.request({ method: 'GET', url: `/api/v1/spaces/${space.id}/links?version=draft&token=${list[0].token}` });
+      expect(draft.statusCode).not.toBe(401);
+      expect(draft.statusCode).not.toBe(403);
+      await t.db.delete(spaces).where(eq(spaces.id, space.id)); // the listing tests below count spaces
+    });
+
+    it('leaves no token behind when the space is rolled back', async () => {
+      const before = (await t.db.select({ id: tokens.id }).from(tokens)).length;
+      await expect(
+        transaction(t.db, undefined, async tx => {
+          await t.app.get(SpacesRepository).create('Rolled back', 'en', tx);
+          throw new Error('boom');
+        }),
+      ).rejects.toThrow('boom');
+      expect((await t.db.select({ id: tokens.id }).from(tokens)).length).toBe(before);
+    });
+
     let spaceId: string;
 
     it('lets SPACE_MANAGEMENT create a space with the default locale', async () => {

@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Token, TokenPermission } from '@localess/shared';
+import { Token, TokenType } from '@localess/shared';
 import { TokenService } from './token.service';
 
 const BASE = '/api/app/spaces/space-1/tokens';
@@ -60,10 +60,10 @@ describe('TokenService', () => {
     expect(await result).toEqual([{ id: 't1' }]);
   });
 
-  it('findFirstByPermission() filters by permission and limits to 1', async () => {
+  it('findFirstByType() filters by type and limits to 1', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findFirstByPermission('space-1', TokenPermission.CONTENT_PUBLIC));
-    http.expectOne(`${BASE}?permission=${TokenPermission.CONTENT_PUBLIC}&limit=1`).flush([]);
+    const result = firstValueFrom(service.findFirstByType('space-1', TokenType.PREVIEW));
+    http.expectOne(`${BASE}?type=preview&limit=1`).flush([]);
     expect(await result).toEqual([]);
   });
 
@@ -74,20 +74,20 @@ describe('TokenService', () => {
     expect(await result).toEqual({ id: 't1' });
   });
 
-  it('create() posts name, permissions and cacheTtl (null when unset), returning the token', async () => {
+  it('create() posts name, type and cacheTtl (null when unset), returning the token', async () => {
     const service = setup();
-    const result = firstValueFrom(service.create('space-1', { name: 'CDN', permissions: [TokenPermission.CONTENT_PUBLIC] }));
+    const result = firstValueFrom(service.create('space-1', { name: 'CDN', type: TokenType.PUBLIC }));
     const request = http.expectOne({ method: 'POST', url: BASE });
-    expect(request.request.body).toEqual({ name: 'CDN', permissions: [TokenPermission.CONTENT_PUBLIC], cacheTtl: null });
+    expect(request.request.body).toEqual({ name: 'CDN', type: 'public', cacheTtl: null });
     request.flush({ id: 'secret' });
     expect((await result).id).toBe('secret');
   });
 
-  it('update() puts the same body', async () => {
+  it('update() puts the name and cacheTtl only (the type never changes)', async () => {
     const service = setup();
-    const done = firstValueFrom(service.update('space-1', 't1', { name: 'CDN', permissions: [], cacheTtl: 60 }));
+    const done = firstValueFrom(service.update('space-1', 't1', { name: 'CDN', cacheTtl: 60 }));
     const request = http.expectOne({ method: 'PUT', url: `${BASE}/t1` });
-    expect(request.request.body).toEqual({ name: 'CDN', permissions: [], cacheTtl: 60 });
+    expect(request.request.body).toEqual({ name: 'CDN', cacheTtl: 60 });
     request.flush({});
     await done;
   });

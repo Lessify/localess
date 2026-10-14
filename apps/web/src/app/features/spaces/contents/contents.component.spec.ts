@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { Content, ContentDocument, ContentFolder, ContentKind, Schema, SchemaType, Token, TokenPermission } from '@localess/shared';
+import { Content, ContentDocument, ContentFolder, ContentKind, Schema, SchemaType, Token, TokenType } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
@@ -48,7 +48,7 @@ describe('ContentsComponent', () => {
     const unpublish = vi.fn().mockReturnValue(of(undefined));
     const createContentImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const createContentExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const findFirstByPermission = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
+    const findFirstByType = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
     const navigate = vi.fn();
     const success = vi.fn();
     const error = vi.fn();
@@ -79,7 +79,7 @@ describe('ContentsComponent', () => {
           },
         },
         { provide: TaskService, useValue: { createContentImportTask, createContentExportTask } },
-        { provide: TokenService, useValue: { findFirstByPermission } },
+        { provide: TokenService, useValue: { findFirstByType } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
@@ -103,7 +103,7 @@ describe('ContentsComponent', () => {
       unpublish,
       createContentImportTask,
       createContentExportTask,
-      findFirstByPermission,
+      findFirstByType,
       navigate,
       success,
       error,
@@ -385,35 +385,35 @@ describe('ContentsComponent', () => {
 
   describe('openLinksV1InNewTab', () => {
     it('fetches a token then opens the link', () => {
-      const { component, findFirstByPermission } = setup();
+      const { component, findFirstByType } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openLinksV1InNewTab();
 
-      expect(findFirstByPermission).toHaveBeenCalledWith('space-1', TokenPermission.CONTENT_PUBLIC);
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
       expect(openSpy).toHaveBeenCalled();
       openSpy.mockRestore();
     });
 
     it('reuses the cached token on a second call', () => {
-      const { component, findFirstByPermission } = setup();
+      const { component, findFirstByType } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
       component.openLinksV1InNewTab();
-      findFirstByPermission.mockClear();
+      findFirstByType.mockClear();
 
       component.openLinksV1InNewTab();
 
-      expect(findFirstByPermission).not.toHaveBeenCalled();
+      expect(findFirstByType).not.toHaveBeenCalled();
       openSpy.mockRestore();
     });
 
-    it('notifies an error when no single token is available', () => {
-      const { component, findFirstByPermission, error } = setup();
-      findFirstByPermission.mockReturnValue(of([]));
+    it('notifies an error when the space has no such token', () => {
+      const { component, findFirstByType, error } = setup();
+      findFirstByType.mockReturnValue(of([]));
 
       component.openLinksV1InNewTab();
 
-      expect(error).toHaveBeenCalledWith('Please create Access Token with Content Public Permission in your Space Settings');
+      expect(error).toHaveBeenCalledWith('Please create a Public Token in your Space Settings');
     });
   });
 

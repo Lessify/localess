@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets } from '../src/infra/database/schema.js';
 import { newUuid } from '../src/infra/database/id.js';
-import { seedAsset, seedContent, seedSpace, seedTranslations, TOKEN_PUBLIC } from './seed.js';
+import { seedAsset, seedContent, seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_PUBLIC } from './seed.js';
 import { createTestApp, setImport, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
 
@@ -56,6 +56,15 @@ describe('v1 API while a space is being imported from Firebase', () => {
           expect(response.headers['retry-after'], url).toBe('60');
           expect(response.json().message, url).toBe(message);
         }
+        // The Management API too: the CLI can't push into a space that is being imported.
+        const manage = await t.request({
+          method: 'POST',
+          url: `/api/manage/v1/spaces/${S1}/translations/en`,
+          payload: { type: 'add-missing', values: {} },
+          headers: { authorization: `Bearer ${TOKEN_MANAGEMENT}` },
+        });
+        expect(manage.statusCode).toBe(503);
+        expect(manage.json().message).toBe(message);
       } finally {
         await setSpace(null);
       }

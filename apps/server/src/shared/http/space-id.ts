@@ -67,8 +67,10 @@ export function registerSpaceIdResolution(fastify: FastifyInstance, resolver: Sp
     const spaceId = params?.['spaceId'];
     if (spaceId === undefined) return;
     const v1 = request.url.startsWith('/api/v1/');
+    // The CDN and Management APIs: answered with the v1 error body, and not while the space imports.
+    const tokenApi = v1 || request.url.startsWith('/api/manage/v1/');
     if (isUuid(spaceId)) {
-      if (!v1) return;
+      if (!tokenApi) return;
       // Unknown UUIDs carry on to the route, which answers its own (cached) 404.
       const space = await resolver.resolve(spaceId);
       if (space?.importStatus) {
@@ -77,8 +79,8 @@ export function registerSpaceIdResolution(fastify: FastifyInstance, resolver: Sp
       }
       return;
     }
-    // A malformed id on the public API keeps its 400 from `validIdParams`, which runs before any query.
-    if (v1 && ['spaceId', 'contentId', 'assetId'].some(name => name in params! && !isValidId(params![name]))) return;
+    // A malformed id on the token APIs keeps its 400 from the token guard, which runs before any query.
+    if (tokenApi && ['spaceId', 'contentId', 'assetId'].some(name => name in params! && !isValidId(params![name]))) return;
     // An imported space's Firestore id still reaches its old asset URLs (customer sites, emails, CDNs); nothing else.
     const assetRoute = v1 && ASSET_ROUTE.test(request.url);
     const space = assetRoute ? await resolver.resolve(spaceId) : undefined;
@@ -92,6 +94,7 @@ export function registerSpaceIdResolution(fastify: FastifyInstance, resolver: Sp
     }
     // An old asset URL whose space is not imported yet must not be cached as gone: it works once the import has run.
     if (v1) sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: assetRoute ? 'no-cache' : CONTENT_CACHE });
+    else if (tokenApi) sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: 'no-store' });
     else void reply.code(404).send({ statusCode: 404, error: 'Not Found', message: 'Space not found' });
     return reply;
   });

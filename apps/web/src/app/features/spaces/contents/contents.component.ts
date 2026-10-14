@@ -34,7 +34,7 @@ import {
   ContentUpdate,
   Schema,
   SchemaType,
-  TokenPermission,
+  TokenType,
 } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -67,6 +67,7 @@ import { LlPaginatorImports, Paginator } from '@shared/components/paginator/pagi
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { sortContent } from '@shared/models/content.model';
 import { sortSchema } from '@shared/models/schema.model';
+import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -169,7 +170,8 @@ export class ContentsComponent implements AfterViewInit {
     return this.spaceStore.contentFolderId() ?? undefined;
   }
 
-  availableToken?: string = undefined;
+  /** API token values for the "open in API" links, by type. */
+  private readonly apiTokens: Partial<Record<TokenType, string>> = {};
 
   private destroyRef = inject(DestroyRef);
 
@@ -475,20 +477,25 @@ export class ContentsComponent implements AfterViewInit {
   }
 
   openLinksV1InNewTab(): void {
-    if (this.availableToken) {
-      this.openApiV1InNewTab(this.availableToken);
-    } else {
-      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.CONTENT_PUBLIC).subscribe({
-        next: tokens => {
-          if (tokens.length === 1) {
-            this.availableToken = tokens[0].token;
-            this.openApiV1InNewTab(this.availableToken);
-          } else {
-            this.notificationService.error('Please create Access Token with Content Public Permission in your Space Settings');
-          }
-        },
+    this.withApiToken(TokenType.PUBLIC, token => this.openApiV1InNewTab(token));
+  }
+
+  /** The first token of `type` (cached per type), or an error toast naming the type to create. */
+  private withApiToken(type: TokenType, open: (token: string) => void): void {
+    const cached = this.apiTokens[type];
+    if (cached) return open(cached);
+    this.tokenService
+      .findFirstByType(this.spaceId(), type)
+      .pipe(take(1))
+      .subscribe(tokens => {
+        const token = tokens[0]?.token;
+        if (!token) {
+          this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[type].label} Token in your Space Settings`);
+          return;
+        }
+        this.apiTokens[type] = token;
+        open(token);
       });
-    }
   }
 
   openImportDialog() {

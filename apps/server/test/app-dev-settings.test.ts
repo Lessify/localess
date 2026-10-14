@@ -1,4 +1,7 @@
-import { SchemaFieldKind } from '@localess/shared';
+import { SchemaFieldKind, TokenType } from '@localess/shared';
+import { eq } from 'drizzle-orm';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { tokenRow } from './seed.js';
 import { randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -64,65 +67,95 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
   describe('tokens', () => {
     const base = `/api/app/spaces/${S1}/tokens`;
+    const cdn = (value: string) => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${value}` });
 
-    it('creates tokens with a UUIDv7 id and a 20-character secret, for SPACE_MANAGEMENT only', async () => {
-      const response = await manager.post(base, { name: 'Website', permissions: ['CONTENT_PUBLIC'], cacheTtl: 120 });
+    it('creates typed tokens with a UUIDv7 id and a prefixed value, for SPACE_MANAGEMENT only', async () => {
+      const response = await manager.post(base, { name: 'Website', type: 'public', cacheTtl: 120 });
       expect(response.statusCode).toBe(201);
-      expect(response.json()).toMatchObject({
-        id: expect.stringMatching(UUID_V7),
-        token: expect.stringMatching(/^[A-Za-z0-9]{20}$/),
-        name: 'Website',
-        permissions: ['CONTENT_PUBLIC'],
-        cacheTtl: 120,
-      });
+      const body = response.json();
+      expect(body).toMatchObject({ id: expect.stringMatching(UUID_V7), type: 'public', name: 'Website', cacheTtl: 120 });
+      expect(body.token).toMatch(/^pub_[A-Za-z0-9]{38}$/);
+      expect(body.hint).toBe(`pub_…${body.token.slice(-4)}`);
+      expect(body).not.toHaveProperty('tokenHash');
       expect((await nobody.get(base)).statusCode).toBe(403);
-      expect((await manager.post(base, { name: 'Bad', permissions: ['EVERYTHING'] })).statusCode).toBe(400);
+      expect((await manager.post(base, { name: 'Bad', type: 'everything' })).statusCode).toBe(400);
+      expect((await manager.post(base, { name: 'Bad', permissions: ['CONTENT_PUBLIC'] })).statusCode).toBe(400);
     });
 
-    it('filters by permission', async () => {
-      await manager.post(base, { name: 'CLI', permissions: ['DEV_TOOLS'] });
-      expect((await manager.get(`${base}?permission=DEV_TOOLS&limit=1`)).json().map((it: { name: string }) => it.name)).toEqual(['CLI']);
-      expect((await manager.get(base)).json()).toHaveLength(2);
+    it('shows a management token once: in the create response, never in list or get', async () => {
+      const created = (await manager.post(base, { name: 'CI', type: 'management' })).json();
+      expect(created.token).toMatch(/^mgt_[A-Za-z0-9]{38}$/);
+      expect(created.hint).toBe(`mgt_…${created.token.slice(-4)}`);
+      const listed = (await manager.get(base)).json().find((it: { id: string }) => it.id === created.id);
+      expect(listed).not.toHaveProperty('token');
+      expect(listed.hint).toBe(created.hint);
+      expect((await manager.get(`${base}/${created.id}`)).json()).not.toHaveProperty('token');
+      const [row] = await t.db.select().from(tokens).where(eq(tokens.id, created.id));
+      expect(row.token).toBeNull();
+      expect(row.tokenHash).toMatch(/^[0-9a-f]{64}$/);
     });
 
-    it('regenerates a token under a new secret, keeping its id, name and permissions', async () => {
-      const id = newUuid();
-      await t.db.insert(tokens).values({ id, token: 'VVVVVVVVVVVVVVVVVVVV', spaceId: S1, name: 'Legacy', permissions: ['CONTENT_PUBLIC'] });
-      const read = (secret: string) => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${secret}` });
-      expect((await read('VVVVVVVVVVVVVVVVVVVV')).statusCode).toBe(302); // now cached
-      const response = await manager.post(`${base}/${id}/regenerate`);
-      expect(response.json()).toMatchObject({
-        id,
-        name: 'Legacy',
-        permissions: ['CONTENT_PUBLIC'],
-      });
-      expect(response.json()).not.toHaveProperty('version');
-      expect(response.json().token).toMatch(/^[A-Za-z0-9]{20}$/);
-      expect(response.json().token).not.toBe('VVVVVVVVVVVVVVVVVVVV');
-      await eventually(async () => expect((await read('VVVVVVVVVVVVVVVVVVVV')).statusCode).toBe(401));
-      expect((await read(response.json().token)).statusCode).toBe(302);
+    it('refuses a cache TTL on a management token', async () => {
+      expect((await manager.post(base, { name: 'CI', type: 'management', cacheTtl: 10 })).statusCode).toBe(400);
+      const created = (await manager.post(base, { name: 'CI2', type: 'management' })).json();
+      expect((await manager.put(`${base}/${created.id}`, { name: 'CI2', cacheTtl: 10 })).statusCode).toBe(400);
     });
 
-    it('answers 404 for an id that is not a UUID, such as a token secret', async () => {
-      expect((await manager.get(`${base}/VVVVVVVVVVVVVVVVVVVV`)).statusCode).toBe(404);
-      expect((await manager.post(`${base}/VVVVVVVVVVVVVVVVVVVV/regenerate`)).statusCode).toBe(404);
+    it('filters by type', async () => {
+      expect((await manager.get(`${base}?type=management&limit=1`)).json().map((it: { type: string }) => it.type)).toEqual(['management']);
+      expect((await manager.get(`${base}?type=public`)).json().every((it: { type: string }) => it.type === 'public')).toBe(true);
+      expect((await manager.get(`${base}?type=DEV_TOOLS`)).statusCode).toBe(400);
+    });
+
+    it('keeps the type on edit: PUT takes a name and a cache TTL only', async () => {
+      const created = (await manager.post(base, { name: 'Site', type: 'public' })).json();
+      expect((await manager.put(`${base}/${created.id}`, { name: 'Site', type: 'preview' })).statusCode).toBe(400);
+      const updated = await manager.put(`${base}/${created.id}`, { name: 'Renamed', cacheTtl: 5 });
+      expect(updated.json()).toMatchObject({ id: created.id, type: 'public', name: 'Renamed', cacheTtl: 5 });
+    });
+
+    it('regenerates under a new value of the same type; the old value stops working at once', async () => {
+      const created = (await manager.post(base, { name: 'Legacy', type: 'public' })).json();
+      expect((await cdn(created.token)).statusCode).toBe(302); // now cached
+      const response = await manager.post(`${base}/${created.id}/regenerate`);
+      expect(response.json()).toMatchObject({ id: created.id, name: 'Legacy', type: 'public' });
+      expect(response.json().token).toMatch(/^pub_/);
+      expect(response.json().token).not.toBe(created.token);
+      await eventually(async () => expect((await cdn(created.token)).statusCode).toBe(401));
+      expect((await cdn(response.json().token)).statusCode).toBe(302);
+    });
+
+    it('returns a regenerated management value once', async () => {
+      const created = (await manager.post(base, { name: 'CI3', type: 'management' })).json();
+      const regenerated = (await manager.post(`${base}/${created.id}/regenerate`)).json();
+      expect(regenerated.token).toMatch(/^mgt_/);
+      expect(regenerated.token).not.toBe(created.token);
+      expect((await manager.get(`${base}/${created.id}`)).json()).not.toHaveProperty('token');
+    });
+
+    it('answers 404 for an id that is not a UUID, such as a token value', async () => {
+      const value = (await manager.post(base, { name: 'X', type: 'public' })).json().token;
+      expect((await manager.get(`${base}/${value}`)).statusCode).toBe(404);
+      expect((await manager.post(`${base}/${value}/regenerate`)).statusCode).toBe(404);
       expect((await manager.get(`${base}/${newUuid()}`)).statusCode).toBe(404);
     });
 
-    it('revokes a token for the public API immediately, despite its 5-minute cache', async () => {
-      const token = (await manager.post(base, { name: 'Short-lived', permissions: ['CONTENT_PUBLIC'] })).json();
-      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.token}` });
-      expect((await read()).statusCode).toBe(302); // now cached
+    it('revokes a token for the CDN immediately, despite its 5-minute cache', async () => {
+      const token = (await manager.post(base, { name: 'Short-lived', type: 'public' })).json();
+      expect((await cdn(token.token)).statusCode).toBe(302); // now cached
       expect((await manager.delete(`${base}/${token.id}`)).statusCode).toBe(204);
-      await eventually(async () => expect((await read()).statusCode).toBe(401));
+      await eventually(async () => expect((await cdn(token.token)).statusCode).toBe(401));
     });
 
-    it('applies permission edits immediately too', async () => {
-      const token = (await manager.post(base, { name: 'Editable', permissions: ['CONTENT_PUBLIC'] })).json();
-      const read = () => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${token.token}` });
-      expect((await read()).statusCode).toBe(302);
-      await manager.put(`${base}/${token.id}`, { name: 'Editable', permissions: ['TRANSLATION_PUBLIC'] });
-      await eventually(async () => expect((await read()).statusCode).toBe(403));
+    it('enforces token rules in the database', async () => {
+      const value = newApiToken(TokenType.MANAGEMENT);
+      const insert = (row: object) => t.db.insert(tokens).values({ ...tokenRow(S1, TokenType.MANAGEMENT, value, 'x'), ...row });
+      const violates = (constraint: string) => ({ cause: expect.objectContaining({ constraint }) });
+      await expect(insert({ token: value })).rejects.toMatchObject(violates('tokens_token_check'));
+      await expect(insert({ cacheTtl: 5 })).rejects.toMatchObject(violates('tokens_cache_ttl_check'));
+      await expect(insert({ type: 'public', token: null })).rejects.toMatchObject(violates('tokens_token_check'));
+      await insert({});
+      await expect(insert({ id: newUuid() })).rejects.toMatchObject(violates('tokens_token_hash_unique'));
     });
   });
 

@@ -9,6 +9,7 @@ import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-d
 import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/data-rules/translation-drafts.js';
 import { dropContentDrafts, dropContentLocale } from '../../../shared/data-rules/content-snapshots.js';
 import { findSpace, requireSpace, selectSpaces, type SpaceRow } from '../../../shared/queries/space.query.js';
+import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 
 type SpaceValues = Partial<Pick<typeof spaces.$inferInsert, 'name' | 'defaultLocaleId'>>;
 
@@ -33,12 +34,13 @@ export class SpacesRepository {
     return findSpace(this.db, spaceId);
   }
 
-  /** With its first locale, the default one. */
+  /** With its first locale, the default one, and its auto-generated preview token. */
   create(name: string, defaultLocaleId: string, tx?: Transaction): Promise<SpaceRow> {
     return transaction(this.db, tx, async t => {
       const id = newUuid();
       await t.insert(spaces).values({ id, name, defaultLocaleId });
       await t.insert(spaceLocales).values({ spaceId: id, localeId: defaultLocaleId, position: 0 });
+      await createPreviewToken(t, id);
       await this.events.publish({ spaceId: null, entity: 'spaces', id, op: 'created' }, t);
       return requireSpace(t, id);
     });

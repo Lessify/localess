@@ -1,6 +1,6 @@
 {
-  "id": "c3293ce4-c257-4485-bb58-65ab4a78ad57",
-  "prevId": "630f43b3-e198-428d-b223-df7c10258058",
+  "id": "19c63009-f5a5-4f4e-9e85-4e6bb42eba66",
+  "prevId": "e9ca2857-d699-4a20-a4fe-1a369e94853d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1605,8 +1605,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "token": {
-          "name": "token",
+        "type": {
+          "name": "type",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1617,12 +1617,23 @@
           "primaryKey": false,
           "notNull": true
         },
-        "permissions": {
-          "name": "permissions",
-          "type": "text[]",
+        "token": {
+          "name": "token",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'"
+          "notNull": false
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hint": {
+          "name": "hint",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         },
         "cache_ttl": {
           "name": "cache_ttl",
@@ -1685,19 +1696,27 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "tokens_token_unique": {
-          "name": "tokens_token_unique",
+        "tokens_token_hash_unique": {
+          "name": "tokens_token_hash_unique",
           "columns": [
-            "token"
+            "token_hash"
           ],
           "nullsNotDistinct": false
         }
       },
       "policies": {},
       "checkConstraints": {
-        "tokens_permissions_check": {
-          "name": "tokens_permissions_check",
-          "value": "\"tokens\".\"permissions\" <@ array['TRANSLATION_PUBLIC', 'TRANSLATION_DRAFT', 'CONTENT_PUBLIC', 'CONTENT_DRAFT', 'DEV_TOOLS']::text[]"
+        "tokens_type_check": {
+          "name": "tokens_type_check",
+          "value": "\"tokens\".\"type\" in ('public', 'preview', 'management')"
+        },
+        "tokens_token_check": {
+          "name": "tokens_token_check",
+          "value": "(\"tokens\".\"type\" = 'management') = (\"tokens\".\"token\" is null)"
+        },
+        "tokens_cache_ttl_check": {
+          "name": "tokens_cache_ttl_check",
+          "value": "\"tokens\".\"type\" <> 'management' or \"tokens\".\"cache_ttl\" is null"
         }
       },
       "isRLSEnabled": false

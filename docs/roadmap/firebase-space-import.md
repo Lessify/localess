@@ -10,7 +10,7 @@ on `refactor/monorepo-structure`. Plan: [firebase-space-import-plan.md](firebase
 An admin moves spaces from a running Firebase-era Localess environment into a self-hosted install from the admin
 UI, one space at a time, without a terminal. Each import creates a new space whose rows all have UUIDv7 ids and whose
 references are rewritten to them, so the space works as soon as the import finishes. Developers then publish, and
-update their SDK configuration (origin and space id; tokens keep their values).
+update their SDK configuration (origin, space id and new tokens: tokens are not imported, see [Auth Tokens](../auth-tokens.md)).
 
 The two environments run in parallel during the move. Backward compatibility is limited to asset URLs: an install
 reachable under the old custom domain keeps serving old asset URLs. Everything else is a clean cut.
@@ -19,7 +19,7 @@ reachable under the old custom domain keeps serving old asset URLs. Everything e
 
 | # | Decision |
 |---|---|
-| D1 | Imported from Firebase, per space: space details, locales and fallback locale, environments, tokens, webhooks, schemas, translations, assets (rows and files), contents (stored drafts). |
+| D1 | Imported from Firebase, per space: space details, locales and fallback locale, environments, webhooks, schemas, translations, assets (rows and files), contents (stored drafts). |
 | D2 | Not imported: users and global settings (admins re-invite users), published content and translation snapshots (users publish after the import), webhook logs, tasks. |
 | D3 | One space per import. Only one import runs per install at a time. |
 | D4 | An import always creates a new space; it never merges into an existing one. |
@@ -131,16 +131,15 @@ every 50 files, so polling shows movement.
 
 | # | Stage | What it does |
 |---|---|---|
-| 1 | `space` | Reads the space document. Creates the space (new UUIDv7, `name`) and sets the run's `space_id` in the same transaction, so the space is never seen without its import status. |
+| 1 | `space` | Reads the space document. Creates the space (new UUIDv7, `name`) with its Auto Generated Preview Token, and sets the run's `space_id` in the same transaction, so the space is never seen without its import status. Tokens are not imported: their values are the old format ([Auth Tokens](../auth-tokens.md)). |
 | 2 | `locales` | Keeps the locales found in the `locales` table, in their order; others are skipped with a warning (their values stay in the data, unused). `localeFallback` becomes the default locale when kept, else the first kept locale, else `en`. Count: kept locales. |
 | 3 | `environments` | Creates the space's `space_environments` rows, in order; one without a name or URL is skipped with a warning. Count: environments. |
-| 4 | `tokens` | Inserts each token: new UUIDv7 `id`, `token` = Firebase id, name, permissions (a V1 token, with no `version`, gets the four it had implicitly: `TRANSLATION_PUBLIC`, `TRANSLATION_DRAFT`, `CONTENT_PUBLIC`, `CONTENT_DRAFT`, and the default cache TTL), cacheTtl, timestamps. A `token` that already exists in another space fails the stage: "Token `<name>` already exists in space `<space name>`". |
-| 5 | `webhooks` | Inserts each webhook with a new UUIDv7, `enabled = false`; url, events, headers and secret copied. |
-| 6 | `translations` | Pages through translations; `key` = Firebase id; type, locales, labels, description, timestamps. |
-| 7 | `schemas` | Inserts schemas; `name` = Firebase id; fields and enum values checked one by one as the app checks them (they reference schemas by name): an invalid one is dropped with a warning (`"<schema>: field '<name>' is not valid, dropped"`), and a schema keeps only what its type has (fields and preview field for ROOT/NODE, values for ENUM). Then the rules across fields, once every schema is read: a repeated field name drops the later field, a block that is not a NODE leaves `schemas`, an option field whose `source` is not an ENUM is dropped, a preview that is not a previewable field is cleared, each with a warning. |
-| 8 | `assets` | Reads every page; gives each asset a UUIDv7 dated to its `createdAt`. Inserts rows with `legacy_id`, folders before what they hold; `parent_id` is the new id of the folder the Firebase `parentPath` ends with (missing, not a folder, or closing a loop of folders: the root, with a warning). Streams each file from `{origin}/api/v1/spaces/{source}/assets/{id}/original` into `spaces/{space}/assets/{uuid}/original` and records size and md5; extracts metadata when the document carries none. A file that answers `404` is a warning, the row is kept. `total`: files. |
-| 9 | `contents` | Reads every page; gives each document a UUIDv7 dated to its `createdAt`. Inserts rows as stored (`data` parsed if it is a string, then brought to the `ContentData` shape: legacy `schema` keys moved to `_schema`, a missing root `_id`/`_schema` filled in, a link without a target given `_self`, values of no known shape dropped, each change with a warning), `published_at = null`, references not yet rewritten, at the root under a placeholder slug (Firebase pages come in no tree order). After the last page, one transaction links the tree (`parent_id`) by the Firebase paths: a slug used twice under one parent is suffixed (`post-x7k2q`, as a clone does) with a warning (`"<path>: path used twice, imported as <new path>"`); a parent that is not a folder of the space leaves the item at the root, with a warning (`"<path>: parent folder '<parentSlug>' not found, imported at the root"`). |
-| 10 | `contentMigration` | Rewrites every document's references with the asset and content id maps (below). Count: documents changed. |
+| 4 | `webhooks` | Inserts each webhook with a new UUIDv7, `enabled = false`; url, events, headers and secret copied. |
+| 5 | `translations` | Pages through translations; `key` = Firebase id; type, locales, labels, description, timestamps. |
+| 6 | `schemas` | Inserts schemas; `name` = Firebase id; fields and enum values checked one by one as the app checks them (they reference schemas by name): an invalid one is dropped with a warning (`"<schema>: field '<name>' is not valid, dropped"`), and a schema keeps only what its type has (fields and preview field for ROOT/NODE, values for ENUM). Then the rules across fields, once every schema is read: a repeated field name drops the later field, a block that is not a NODE leaves `schemas`, an option field whose `source` is not an ENUM is dropped, a preview that is not a previewable field is cleared, each with a warning. |
+| 7 | `assets` | Reads every page; gives each asset a UUIDv7 dated to its `createdAt`. Inserts rows with `legacy_id`, folders before what they hold; `parent_id` is the new id of the folder the Firebase `parentPath` ends with (missing, not a folder, or closing a loop of folders: the root, with a warning). Streams each file from `{origin}/api/v1/spaces/{source}/assets/{id}/original` into `spaces/{space}/assets/{uuid}/original` and records size and md5; extracts metadata when the document carries none. A file that answers `404` is a warning, the row is kept. `total`: files. |
+| 8 | `contents` | Reads every page; gives each document a UUIDv7 dated to its `createdAt`. Inserts rows as stored (`data` parsed if it is a string, then brought to the `ContentData` shape: legacy `schema` keys moved to `_schema`, a missing root `_id`/`_schema` filled in, a link without a target given `_self`, values of no known shape dropped, each change with a warning), `published_at = null`, references not yet rewritten, at the root under a placeholder slug (Firebase pages come in no tree order). After the last page, one transaction links the tree (`parent_id`) by the Firebase paths: a slug used twice under one parent is suffixed (`post-x7k2q`, as a clone does) with a warning (`"<path>: path used twice, imported as <new path>"`); a parent that is not a folder of the space leaves the item at the root, with a warning (`"<path>: parent folder '<parentSlug>' not found, imported at the root"`). |
+| 9 | `contentMigration` | Rewrites every document's references with the asset and content id maps (below). Count: documents changed. |
 
 Then any content draft or `/links` list served while the run went is dropped, and the run is `FINISHED`.
 
@@ -201,8 +200,8 @@ The UUIDv7 work on `refactor/monorepo-structure` added legacy ids broadly. This 
 
 - A test HTTP server plays the Firebase migration API and the asset `/original` route with a fixture space: nested
   folders, files (one missing), documents with every reference kind at depth and in locale variants, a dangling
-  reference, V1 and V2 tokens, a webhook, translations over two pages.
-- An import runs end to end: every stage `DONE` with its counts; tokens authenticate on the public API; webhooks are
+  reference, V1 and V2 tokens (not imported), a webhook, translations over two pages.
+- An import runs end to end: every stage `DONE` with its counts; no token is imported and the space has its Auto Generated Preview Token; webhooks are
   disabled; files are served under the UUID; references point at the new UUIDs; warnings for the missing file and
   the dangling reference; the space is unpublished and has no import status.
 - `rewriteReferences` unit tests per shape, depth, locale variant and unmatched id.

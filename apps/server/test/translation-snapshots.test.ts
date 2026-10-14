@@ -4,7 +4,7 @@ import { translations, translationSnapshots } from '../src/infra/database/schema
 import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
 import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
 import { TranslationsService } from '../src/modules/translations/services/translations.service.js';
-import { seedSpace, seedTranslations, TOKEN_DEV, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
+import { seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
 
@@ -47,9 +47,9 @@ describe('translation snapshots', () => {
   const push = (values: Record<string, string>, locale = 'de') =>
     t.request({
       method: 'POST',
-      url: `/api/v1/spaces/${S1}/translations/${locale}`,
+      url: `/api/manage/v1/spaces/${S1}/translations/${locale}`,
       payload: { type: 'update-existing', values },
-      headers: { 'x-api-key': TOKEN_DEV },
+      headers: { authorization: `Bearer ${TOKEN_MANAGEMENT}` },
     });
 
   it('builds the draft of every locale at once, all answering to the same cv', async () => {

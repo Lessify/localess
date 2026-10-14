@@ -10,7 +10,7 @@ import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { translateErrorMessage } from '@core/utils/translate-error';
-import { CONTENT_DEFAULT_LOCALE, Locale, TokenPermission, Translation, TranslationCreate } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, Locale, TokenType, Translation, TranslationCreate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -32,6 +32,7 @@ import {
   TranslateLocaleDialogContext,
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
+import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -142,7 +143,8 @@ export class TranslationsComponent implements OnInit {
 
   selectedTranslation = signal<Translation | undefined>(undefined);
 
-  availableToken?: string = undefined;
+  /** API token values for the "open in API" links, by type. */
+  private readonly apiTokens: Partial<Record<TokenType, string>> = {};
 
   //Loadings
   isLoading = signal(true);
@@ -408,36 +410,28 @@ export class TranslationsComponent implements OnInit {
   }
 
   openDraftV1InNewTab(locale: string): void {
-    if (this.availableToken) {
-      this.openApiV1InNewTab(locale, this.availableToken, 'draft');
-    } else {
-      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_DRAFT).subscribe({
-        next: tokens => {
-          if (tokens.length === 1) {
-            this.availableToken = tokens[0].token;
-            this.openApiV1InNewTab(locale, this.availableToken, 'draft');
-          } else {
-            this.notificationService.error('Please create Access Token with Translation Draft Permission in your Space Settings');
-          }
-        },
-      });
-    }
+    this.withApiToken(TokenType.PREVIEW, token => this.openApiV1InNewTab(locale, token, 'draft'));
   }
 
   openPublishedV1InNewTab(locale: string): void {
-    if (this.availableToken) {
-      this.openApiV1InNewTab(locale, this.availableToken);
-    } else {
-      this.tokenService.findFirstByPermission(this.spaceId(), TokenPermission.TRANSLATION_PUBLIC).subscribe({
-        next: tokens => {
-          if (tokens.length === 1) {
-            this.availableToken = tokens[0].token;
-            this.openApiV1InNewTab(locale, this.availableToken);
-          } else {
-            this.notificationService.error('Please create Access Token with Translation Public Permission in your Space Settings');
-          }
-        },
+    this.withApiToken(TokenType.PUBLIC, token => this.openApiV1InNewTab(locale, token));
+  }
+
+  /** The first token of `type` (cached per type), or an error toast naming the type to create. */
+  private withApiToken(type: TokenType, open: (token: string) => void): void {
+    const cached = this.apiTokens[type];
+    if (cached) return open(cached);
+    this.tokenService
+      .findFirstByType(this.spaceId(), type)
+      .pipe(take(1))
+      .subscribe(tokens => {
+        const token = tokens[0]?.token;
+        if (!token) {
+          this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[type].label} Token in your Space Settings`);
+          return;
+        }
+        this.apiTokens[type] = token;
+        open(token);
       });
-    }
   }
 }

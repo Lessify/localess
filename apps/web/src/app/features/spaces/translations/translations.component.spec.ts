@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { Locale, Space, Token, TokenPermission, Translation } from '@localess/shared';
+import { Locale, Space, Token, TokenType, Translation } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
 import { TokenService } from '@core/services/token.service';
@@ -45,7 +45,7 @@ describe('TranslationsComponent', () => {
     const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
-    const findFirstByPermission = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
+    const findFirstByType = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -61,7 +61,7 @@ describe('TranslationsComponent', () => {
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
-        { provide: TokenService, useValue: { findFirstByPermission } },
+        { provide: TokenService, useValue: { findFirstByType } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(resolvedSpace) } },
       ],
     });
@@ -78,7 +78,7 @@ describe('TranslationsComponent', () => {
       createTranslationImportTask,
       createTranslationExportTask,
       translate,
-      findFirstByPermission,
+      findFirstByType,
       success,
       error,
       open,
@@ -350,56 +350,68 @@ describe('TranslationsComponent', () => {
 
   describe('token-gated API links', () => {
     it('openDraftV1InNewTab() fetches a draft token then opens the link', () => {
-      const { component, findFirstByPermission } = setup();
+      const { component, findFirstByType } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openDraftV1InNewTab('en');
 
-      expect(findFirstByPermission).toHaveBeenCalledWith('space-1', TokenPermission.TRANSLATION_DRAFT);
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PREVIEW);
       expect(openSpy).toHaveBeenCalled();
-      expect(component['availableToken']).toBe('token1');
+      expect(component['apiTokens'][TokenType.PREVIEW]).toBe('token1');
+      openSpy.mockRestore();
+    });
+
+    it('openPublishedV1InNewTab() after a draft link asks for a public token (no shared cache across types)', () => {
+      const { component, findFirstByType } = setup();
+      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+      component.openDraftV1InNewTab('en');
+      findFirstByType.mockClear();
+
+      component.openPublishedV1InNewTab('en');
+
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
       openSpy.mockRestore();
     });
 
     it('openDraftV1InNewTab() reuses the cached token on a second call', () => {
-      const { component, findFirstByPermission } = setup();
+      const { component, findFirstByType } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
       component.openDraftV1InNewTab('en');
-      findFirstByPermission.mockClear();
+      findFirstByType.mockClear();
 
       component.openDraftV1InNewTab('de');
 
-      expect(findFirstByPermission).not.toHaveBeenCalled();
+      expect(findFirstByType).not.toHaveBeenCalled();
       openSpy.mockRestore();
     });
 
-    it('openDraftV1InNewTab() notifies an error when no single token is available', () => {
-      const { component, findFirstByPermission, error } = setup();
-      findFirstByPermission.mockReturnValue(of([]));
+    it('openDraftV1InNewTab() notifies an error when the space has no such token', () => {
+      const { component, findFirstByType, error } = setup();
+      findFirstByType.mockReturnValue(of([]));
 
       component.openDraftV1InNewTab('en');
 
-      expect(error).toHaveBeenCalledWith('Please create Access Token with Translation Draft Permission in your Space Settings');
+      expect(error).toHaveBeenCalledWith('Please create a Preview Token in your Space Settings');
     });
 
     it('openPublishedV1InNewTab() fetches a public token then opens the link', () => {
-      const { component, findFirstByPermission } = setup();
+      const { component, findFirstByType } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openPublishedV1InNewTab('en');
 
-      expect(findFirstByPermission).toHaveBeenCalledWith('space-1', TokenPermission.TRANSLATION_PUBLIC);
+      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
       expect(openSpy).toHaveBeenCalled();
       openSpy.mockRestore();
     });
 
-    it('openPublishedV1InNewTab() notifies an error when no single token is available', () => {
-      const { component, findFirstByPermission, error } = setup();
-      findFirstByPermission.mockReturnValue(of([{ id: 'uuid-a', token: 'a' } as Token, { id: 'uuid-b', token: 'b' } as Token]));
+    it('openPublishedV1InNewTab() notifies an error when the space has no such token', () => {
+      const { component, findFirstByType, error } = setup();
+      findFirstByType.mockReturnValue(of([]));
 
       component.openPublishedV1InNewTab('en');
 
-      expect(error).toHaveBeenCalledWith('Please create Access Token with Translation Public Permission in your Space Settings');
+      expect(error).toHaveBeenCalledWith('Please create a Public Token in your Space Settings');
     });
   });
 });

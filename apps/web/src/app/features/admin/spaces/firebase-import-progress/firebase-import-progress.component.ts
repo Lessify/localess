@@ -5,7 +5,6 @@ const LABELS: Record<FirebaseImportStageName, string> = {
   space: 'Space',
   locales: 'Locales',
   environments: 'Environments',
-  tokens: 'Tokens',
   webhooks: 'Webhooks (imported disabled)',
   translations: 'Translations',
   schemas: 'Schemas',
