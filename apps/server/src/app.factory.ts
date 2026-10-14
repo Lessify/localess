@@ -45,6 +45,11 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
   await app.register(fastifyCors, {
     delegator: (request, callback) => callback(null, { origin: request.url?.startsWith('/api/v1/') ?? false }),
   });
+  // The Management API is live data: nothing under it may be cached, errors answered before its guard (bad JSON, an
+  // unsupported content type, an oversized body, an unknown route) included. The guard sets the same header.
+  fastify.addHook('onSend', async (request, reply) => {
+    if (request.url.startsWith('/api/manage/')) void reply.header('cache-control', 'no-store');
+  });
   // Asset and import uploads: one file per request, streamed to storage.
   await app.register(fastifyMultipart, { limits: { files: 1, fileSize: config.uploadMaxBytes, fields: 20, fieldSize: 64 * 1024 } });
   // gzip for compressible content types over 1 KB (JSON, SVG); images and videos are left alone.

@@ -141,7 +141,7 @@ The old dev-tools URLs are removed (404). CORS stays on `/api/v1/**` only; `/api
 ### Auto-generated preview token
 
 Every space starts with one `preview` token, `name = 'Auto Generated Preview Token'`, default `cacheTtl`, so the Visual Editor,
-preview sites and the app's draft "open in API" links work without setting anything up. It is an ordinary token afterwards:
+preview sites and the app's "open in API" links (draft and published) work without setting anything up. It is an ordinary token afterwards:
 it can be renamed, regenerated or deleted.
 
 It is written by a data rule, `createPreviewToken(tx, spaceId)` in `apps/server/src/shared/data-rules/space-tokens.ts`, inside
@@ -174,8 +174,11 @@ their sites and CI.
   (`localess login --origin … --space … --token …`), and "You won't see this token again".
 - List: a Type badge instead of the Permissions count and the Usage column; the Token column shows `hint`; Copy Token only for
   `public`/`preview`; Copy CLI Login is removed from the row (it lives in the show-once dialog).
-- Contents, Edit document and Translations "open in API" links use `findFirstByType`: `public` for published, `preview` for
-  drafts.
+- Contents, Edit document and Translations "open in API" links use `TokenService.firstValue(spaceId, types)`, asked on every
+  click (never cached, so a regenerated token is picked up): published links take a `public` token, or the space's
+  `preview` token when it has no public one (a preview token reads published content too, so the links work on a new
+  space); draft links take a `preview` token. No token: "Please create a … Token"; a failed lookup: "Tokens could not be
+  loaded".
 - Removed: `PERMISSION_TEXT`, `getTokenUsageInfo`, `TokenUsageCategory`; replaced by a `TOKEN_TYPE_INFO` map.
 
 ## Outside this repository

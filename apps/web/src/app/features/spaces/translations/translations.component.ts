@@ -143,9 +143,6 @@ export class TranslationsComponent implements OnInit {
 
   selectedTranslation = signal<Translation | undefined>(undefined);
 
-  /** API token values for the "open in API" links, by type. */
-  private readonly apiTokens: Partial<Record<TokenType, string>> = {};
-
   //Loadings
   isLoading = signal(true);
   isPublishLoading = signal(false);
@@ -410,28 +407,21 @@ export class TranslationsComponent implements OnInit {
   }
 
   openDraftV1InNewTab(locale: string): void {
-    this.withApiToken(TokenType.PREVIEW, token => this.openApiV1InNewTab(locale, token, 'draft'));
+    this.withApiToken([TokenType.PREVIEW], token => this.openApiV1InNewTab(locale, token, 'draft'));
   }
 
   openPublishedV1InNewTab(locale: string): void {
-    this.withApiToken(TokenType.PUBLIC, token => this.openApiV1InNewTab(locale, token));
+    this.withApiToken([TokenType.PUBLIC, TokenType.PREVIEW], token => this.openApiV1InNewTab(locale, token));
   }
 
-  /** The first token of `type` (cached per type), or an error toast naming the type to create. */
-  private withApiToken(type: TokenType, open: (token: string) => void): void {
-    const cached = this.apiTokens[type];
-    if (cached) return open(cached);
-    this.tokenService
-      .findFirstByType(this.spaceId(), type)
-      .pipe(take(1))
-      .subscribe(tokens => {
-        const token = tokens[0]?.token;
-        if (!token) {
-          this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[type].label} Token in your Space Settings`);
-          return;
-        }
-        this.apiTokens[type] = token;
-        open(token);
-      });
+  /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
+  private withApiToken(types: TokenType[], open: (token: string) => void): void {
+    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+      next: token => {
+        if (token) open(token);
+        else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);
+      },
+      error: () => this.notificationService.error('Tokens could not be loaded'),
+    });
   }
 }

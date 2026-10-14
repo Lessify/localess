@@ -235,6 +235,10 @@ export class TokensComponent implements AfterViewInit {
         cliLogin: `localess login --origin ${this.document.location.origin} --space ${spaceId} --token ${token.token}`,
       },
       contentClass: DIALOG_WIDTH_SM,
+      // The value is never shown again: only the dialog's own button closes it, not Escape, a stray click or the ✕.
+      disableClose: true,
+      closeOnOutsidePointerEvents: false,
+      showCloseButton: false,
     });
   }
 }

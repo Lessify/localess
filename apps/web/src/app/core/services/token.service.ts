@@ -4,7 +4,7 @@ import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { Token, TokenType } from '@localess/shared';
 import { TokenForm } from '@shared/models/token.model';
-import { Observable } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 
 /** API tokens of a space (`/api/app/spaces/:spaceId/tokens`); reads are live, newest first. */
 @Injectable({ providedIn: 'root' })
@@ -25,10 +25,18 @@ export class TokenService {
     return liveQueryWith(this.events, { spaceId, entities: ['tokens'] }, () => this.http.get<Token[]>(this.base(spaceId), { params }));
   }
 
-  /** The newest token of `type` (a list of at most one). */
-  findFirstByType(spaceId: string, type: TokenType): Observable<Token[]> {
+  /**
+   * The value of the newest token of the first of `types` the space has (`undefined`: none). Asked every time, never cached,
+   * so a regenerated or deleted token is never reused. For the "open in API" links: published `[PUBLIC, PREVIEW]` (a preview
+   * token reads published content too), drafts `[PREVIEW]`.
+   */
+  firstValue(spaceId: string, types: TokenType[]): Observable<string | undefined> {
+    const [type, ...rest] = types;
+    if (!type) return of(undefined);
     const params = new HttpParams().set('type', type).set('limit', 1);
-    return liveQueryWith(this.events, { spaceId, entities: ['tokens'] }, () => this.http.get<Token[]>(this.base(spaceId), { params }));
+    return this.http
+      .get<Token[]>(this.base(spaceId), { params })
+      .pipe(switchMap(tokens => (tokens[0]?.token ? of(tokens[0].token) : this.firstValue(spaceId, rest))));
   }
 
   findById(spaceId: string, id: string): Observable<Token> {

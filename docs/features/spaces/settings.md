@@ -173,6 +173,8 @@ is chosen on create and shown locked on edit (it can't change).
 
 **Show-once dialog** (`token-secret-dialog/`): after a management token is created or regenerated, its value and the
 `localess login --origin … --space … --token …` command, each with a copy button, and "You won't see this token again".
+It opens with `disableClose`, `closeOnOutsidePointerEvents: false` and no ✕: Escape or a stray click can't lose the value;
+only its "I've copied it" button closes it.
 
 **Key behaviour:**
 

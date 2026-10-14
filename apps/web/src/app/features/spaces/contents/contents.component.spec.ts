@@ -48,7 +48,7 @@ describe('ContentsComponent', () => {
     const unpublish = vi.fn().mockReturnValue(of(undefined));
     const createContentImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const createContentExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const findFirstByType = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
+    const firstValue = vi.fn().mockReturnValue(of('token1'));
     const navigate = vi.fn();
     const success = vi.fn();
     const error = vi.fn();
@@ -79,7 +79,7 @@ describe('ContentsComponent', () => {
           },
         },
         { provide: TaskService, useValue: { createContentImportTask, createContentExportTask } },
-        { provide: TokenService, useValue: { findFirstByType } },
+        { provide: TokenService, useValue: { firstValue } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
@@ -103,7 +103,7 @@ describe('ContentsComponent', () => {
       unpublish,
       createContentImportTask,
       createContentExportTask,
-      findFirstByType,
+      firstValue,
       navigate,
       success,
       error,
@@ -383,37 +383,47 @@ describe('ContentsComponent', () => {
     expect(findAllContents).toHaveBeenLastCalledWith('space-1', 'f2');
   });
 
-  describe('openLinksV1InNewTab', () => {
-    it('fetches a token then opens the link', () => {
-      const { component, findFirstByType } = setup();
+  describe('API links', () => {
+    it('openLinksV1InNewTab() opens the link with a public token, or the preview one when the space has no public token', () => {
+      const { component, firstValue } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openLinksV1InNewTab();
 
-      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
-      expect(openSpy).toHaveBeenCalled();
+      expect(firstValue).toHaveBeenCalledWith('space-1', [TokenType.PUBLIC, TokenType.PREVIEW]);
+      expect(String(openSpy.mock.calls[0][0])).toContain('token=token1');
       openSpy.mockRestore();
     });
 
-    it('reuses the cached token on a second call', () => {
-      const { component, findFirstByType } = setup();
+    it('openLinksV1InNewTab() asks again on every click (a regenerated token is picked up)', () => {
+      const { component, firstValue } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
       component.openLinksV1InNewTab();
-      findFirstByType.mockClear();
+      firstValue.mockReturnValue(of('token2'));
 
       component.openLinksV1InNewTab();
 
-      expect(findFirstByType).not.toHaveBeenCalled();
+      expect(firstValue).toHaveBeenCalledTimes(2);
+      expect(String(openSpy.mock.calls[1][0])).toContain('token=token2');
       openSpy.mockRestore();
     });
 
-    it('notifies an error when the space has no such token', () => {
-      const { component, findFirstByType, error } = setup();
-      findFirstByType.mockReturnValue(of([]));
+    it('openLinksV1InNewTab() says which token to create when the space has none', () => {
+      const { component, firstValue, error } = setup();
+      firstValue.mockReturnValue(of(undefined));
 
       component.openLinksV1InNewTab();
 
       expect(error).toHaveBeenCalledWith('Please create a Public Token in your Space Settings');
+    });
+
+    it('openLinksV1InNewTab() says when the tokens could not be loaded', () => {
+      const { component, firstValue, error } = setup();
+      firstValue.mockReturnValue(throwError(() => new Error('403')));
+
+      component.openLinksV1InNewTab();
+
+      expect(error).toHaveBeenCalledWith('Tokens could not be loaded');
     });
   });
 

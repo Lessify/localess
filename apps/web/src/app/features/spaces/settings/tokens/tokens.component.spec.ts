@@ -233,6 +233,19 @@ describe('TokensComponent', () => {
     );
   });
 
+  it('opens the secret dialog so that only its own button closes it (no Escape, outside click or ✕)', () => {
+    const { component, open, create } = setup([], space());
+    open.mockReturnValueOnce({ closed$: of({ name: 'CI', type: TokenType.MANAGEMENT }) });
+    create.mockReturnValue(of(token({ name: 'CI', type: TokenType.MANAGEMENT, token: 'mgt_x' })));
+
+    component.openAddDialog();
+
+    expect(open).toHaveBeenLastCalledWith(
+      TokenSecretDialogComponent,
+      expect.objectContaining({ disableClose: true, closeOnOutsidePointerEvents: false, showCloseButton: false }),
+    );
+  });
+
   it('does not open the secret dialog for a public or preview token', () => {
     const { component, open, create } = setup([], space());
     open.mockReturnValueOnce({ closed$: of({ name: 'Site', type: TokenType.PUBLIC }) });

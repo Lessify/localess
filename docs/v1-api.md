@@ -90,7 +90,7 @@ ignored and the untransformed image was returned; it now returns `400 invalid-ar
 
 ## Management API
 
-`Authorization: Bearer mgt_…` on every route (`spaces`, `schemas` and `translations` management controllers). Every response, errors included, is `Cache-Control: no-store`; the token is read from the database on every request.
+`Authorization: Bearer mgt_…` on every route (`spaces`, `schemas` and `translations` management controllers). Every response, errors included, is `Cache-Control: no-store` (set by the guard, and by an `onSend` hook in `apps/server/src/app.factory.ts` for errors answered before it: invalid JSON, an unsupported content type, an oversized body, an unknown route); the token is read from the database on every request.
 
 | Method | Path                                                  | Body / Response |
 |--------|-------------------------------------------------------|-----------------|
@@ -101,7 +101,7 @@ ignored and the untransformed image was returned; it now returns `400 invalid-ar
 | `GET`  | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |
 | `POST` | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `zTranslationManageUpdateSchema` (translation push, below) |
 
-These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) routes under `/api/v1`; the old URLs now answer 404. `GET …/translations/:locale/values` lost its `/values` suffix. A space that is being imported answers `503` here too.
+These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) routes under `/api/v1`; the old URLs now answer 404. `GET …/translations/:locale/values` lost its `/values` suffix. A space that is being imported (or whose import failed) answers `503` here too, but only after the token is checked: a caller without the space's management token gets the usual 401 and learns nothing about the import. (On the CDN API the 503 comes first, from the `space-id.ts` hook.)
 
 > **Breaking change (v3.3):** `GET /schemas` previously returned `Record<schemaId, Schema>` with raw Firestore timestamps. It now returns a `SchemaExport[]` array — the same shape the push endpoint accepts and the export zip contains.
 

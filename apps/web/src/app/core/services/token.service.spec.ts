@@ -60,11 +60,36 @@ describe('TokenService', () => {
     expect(await result).toEqual([{ id: 't1' }]);
   });
 
-  it('findFirstByType() filters by type and limits to 1', async () => {
+  it('firstValue() returns the value of the newest token of the first type', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findFirstByType('space-1', TokenType.PREVIEW));
+    const result = firstValueFrom(service.firstValue('space-1', [TokenType.PUBLIC, TokenType.PREVIEW]));
+    http.expectOne(`${BASE}?type=public&limit=1`).flush([{ id: 't1', token: 'pub_x' }]);
+    expect(await result).toBe('pub_x');
+  });
+
+  it('firstValue() falls back to the next type when the space has none of the first', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.firstValue('space-1', [TokenType.PUBLIC, TokenType.PREVIEW]));
+    http.expectOne(`${BASE}?type=public&limit=1`).flush([]);
+    http.expectOne(`${BASE}?type=preview&limit=1`).flush([{ id: 't2', token: 'prv_x' }]);
+    expect(await result).toBe('prv_x');
+  });
+
+  it('firstValue() returns undefined when the space has none of the types', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.firstValue('space-1', [TokenType.PREVIEW]));
     http.expectOne(`${BASE}?type=preview&limit=1`).flush([]);
-    expect(await result).toEqual([]);
+    expect(await result).toBeUndefined();
+  });
+
+  it('firstValue() asks the server every time (no cache), so a regenerated token is picked up', async () => {
+    const service = setup();
+    const first = firstValueFrom(service.firstValue('space-1', [TokenType.PUBLIC]));
+    http.expectOne(`${BASE}?type=public&limit=1`).flush([{ id: 't1', token: 'pub_old' }]);
+    expect(await first).toBe('pub_old');
+    const second = firstValueFrom(service.firstValue('space-1', [TokenType.PUBLIC]));
+    http.expectOne(`${BASE}?type=public&limit=1`).flush([{ id: 't1', token: 'pub_new' }]);
+    expect(await second).toBe('pub_new');
   });
 
   it('findById() reads one token', async () => {

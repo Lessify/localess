@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
-import { tokens } from '../../infra/database/schema.js';
+import { firebaseImports, tokens } from '../../infra/database/schema.js';
+import { importStatusOf, type SpaceImportStatus } from '../../shared/queries/space.query.js';
 import type { ApiToken } from '../utils/api-token.js';
 
 /** Space API tokens as the public APIs check them: read only (the tokens module manages them). */
@@ -16,5 +17,14 @@ export class ApiTokensRepository {
       .from(tokens)
       .where(and(eq(tokens.spaceId, spaceId), eq(tokens.tokenHash, tokenHash)));
     return row as ApiToken | undefined;
+  }
+
+  /** Whether the space's import from Firebase runs or failed (`null`: no import, or finished). */
+  async findImportStatus(spaceId: string): Promise<SpaceImportStatus | null> {
+    const [row] = await this.db
+      .select({ importStatus: importStatusOf(firebaseImports.status) })
+      .from(firebaseImports)
+      .where(eq(firebaseImports.spaceId, spaceId));
+    return row?.importStatus ?? null;
   }
 }

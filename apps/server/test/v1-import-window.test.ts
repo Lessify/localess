@@ -65,6 +65,10 @@ describe('v1 API while a space is being imported from Firebase', () => {
         });
         expect(manage.statusCode).toBe(503);
         expect(manage.json().message).toBe(message);
+        expect(manage.headers['cache-control']).toBe('no-store');
+        // …but only once the token is checked: without one, the import status stays hidden.
+        const anonymous = await t.request({ method: 'GET', url: `/api/manage/v1/spaces/${S1}/schemas` });
+        expect(anonymous.statusCode).toBe(401);
       } finally {
         await setSpace(null);
       }

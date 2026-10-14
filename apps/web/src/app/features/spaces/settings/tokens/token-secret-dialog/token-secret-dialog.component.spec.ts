@@ -36,6 +36,13 @@ describe('TokenSecretDialogComponent', () => {
     expect(text).toContain("You won't see this token again");
   });
 
+  it("closes only through its own button, labelled \"I've copied it\"", () => {
+    const { fixture } = setup();
+    const buttons = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].map(it => it.textContent?.trim());
+
+    expect(buttons).toContain("I've copied it");
+  });
+
   it('copied() names what was copied', () => {
     const { component, success } = setup();
 

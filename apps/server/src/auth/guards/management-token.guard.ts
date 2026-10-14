@@ -2,7 +2,9 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { TokenType } from '@localess/shared';
 import { V1Error } from '../../infra/http/v1/v1-error.js';
+import { isUuid } from '../../infra/database/id.js';
 import { assertValidIdParams, type Params } from '../../infra/http/v1/v1-request.js';
+import { importUnavailableMessage } from '../../shared/http/space-id.js';
 import { parseApiToken } from '../../shared/utils/api-token-format.js';
 import { TokenAuthService } from '../services/token-auth.service.js';
 
@@ -12,7 +14,8 @@ const BEARER = /^Bearer (\S+)$/i;
 
 /**
  * `Authorization: Bearer mgt_…` on the Management API, checked against the database on every request (no cache: a revoked
- * token stops at once). Any failure is the same 401 with `WWW-Authenticate: Bearer`. Every response is `no-store`.
+ * token stops at once). Any failure is the same 401 with `WWW-Authenticate: Bearer`; only then a space being imported
+ * answers 503. Every response is `no-store`.
  */
 @Injectable()
 export class ManagementTokenGuard implements CanActivate {
@@ -29,9 +32,18 @@ export class ManagementTokenGuard implements CanActivate {
       cacheControl: NO_STORE,
       headers: { 'www-authenticate': 'Bearer' },
     });
-    if (parseApiToken(value) !== TokenType.MANAGEMENT) throw unauthenticated;
+    // A well-formed id that is not a UUID names no space (spaces are UUIDs; old Firestore ids only reach the CDN's assets).
+    if (parseApiToken(value) !== TokenType.MANAGEMENT || !isUuid(params['spaceId'])) throw unauthenticated;
     const token = await this.tokens.find(params['spaceId'], value as string);
     if (!token || token.type !== TokenType.MANAGEMENT) throw unauthenticated;
+    // Only now, for a caller holding the space's token: a space whose import runs or failed is half there.
+    const importStatus = await this.tokens.findImportStatus(params['spaceId']);
+    if (importStatus) {
+      throw new V1Error(503, 'unavailable', importUnavailableMessage(importStatus), {
+        cacheControl: NO_STORE,
+        headers: { 'retry-after': '60' },
+      });
+    }
     request.apiToken = token;
     return true;
   }

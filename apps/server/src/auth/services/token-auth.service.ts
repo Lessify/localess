@@ -2,6 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { filter, Subscription } from 'rxjs';
 import { EventsService } from '../../infra/events/events.service.js';
 import { ApiTokensRepository } from '../repositories/api-tokens.repository.js';
+import type { SpaceImportStatus } from '../../shared/queries/space.query.js';
 import type { ApiToken } from '../utils/api-token.js';
 import { hashToken } from '../utils/token-hash.js';
 
@@ -48,6 +49,11 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
     if (token) this.cache.set(key, { token, expiresAt: Date.now() + TOKEN_CACHE_TTL_MS });
     else this.cache.delete(key);
     return token;
+  }
+
+  /** Whether the space's import runs or failed (`null`: usable). Not cached: it changes while the space imports. */
+  findImportStatus(spaceId: string): Promise<SpaceImportStatus | null> {
+    return this.tokens.findImportStatus(spaceId);
   }
 
   /** Drops the cached token with this row UUID, or every token of the space. */

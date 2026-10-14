@@ -81,6 +81,8 @@ that carry them (and their requests need no `X-Requested-With`: they send no coo
 2. Ids → 400.
 3. `Authorization: Bearer <value>` (scheme in any case, exactly one value), a `mgt_` value, found by hash in this space,
    uncached → otherwise the same 401 with `WWW-Authenticate: Bearer`.
+4. Only then: a space whose import from Firebase runs or failed → 503 (`Retry-After: 60`). The status stays hidden from a
+   caller without the token.
 
 Guards throw `V1Error`; `V1ExceptionFilter` writes the v1 body `{ details?, message, status }`. The accepted token is on
 `request.apiToken` (`@CurrentToken()`).

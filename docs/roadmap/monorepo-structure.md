@@ -170,7 +170,9 @@ Turborepo and Nx were compared; Turborepo is deferred, Nx rejected for this size
   and `assets` `*.public.controller.ts`, route methods moved verbatim. Shared plumbing (`validIdParams`, `cv`
   redirect, `sendJson`, `isDraft`, `identifySpaceLocale`, `requireV1Space`) is in `infra/http/v1/v1-request.ts`;
   the two DEV_TOOLS checks (`?token=` and `X-API-KEY`) are `TokenAuthService.authorizeDevTools/authorizeApiKey`
-  instead of a private copy per controller. `PublicContentService` split into `ContentDeliveryService`,
+  instead of a private copy per controller (later replaced by the token guards `@CdnToken` / `@ManagementToken`, the
+  `*.cdn.controller.ts` / `*.management.controller.ts` split and `/api/manage/v1`, see [Auth Tokens](../auth-tokens.md)).
+  `PublicContentService` split into `ContentDeliveryService`,
   `TranslationDeliveryService` and `SpacesService.findSpace`. `domain/` is gone: its helpers live with the feature
   that uses them; `row-mappers` became `schema-row.ts` / `translation-row.ts` over `infra/database/without-nulls.ts`.
 - Nest: `AppApiModule` and `PublicApiModule` replaced by `SpacesModule`, `SettingsModule`, `SchemasModule`,

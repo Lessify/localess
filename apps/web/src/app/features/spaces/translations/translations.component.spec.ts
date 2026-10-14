@@ -45,7 +45,7 @@ describe('TranslationsComponent', () => {
     const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
-    const findFirstByType = vi.fn().mockReturnValue(of([{ id: 'uuid-1', token: 'token1' } as Token]));
+    const firstValue = vi.fn().mockReturnValue(of('token1'));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -61,7 +61,7 @@ describe('TranslationsComponent', () => {
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
-        { provide: TokenService, useValue: { findFirstByType } },
+        { provide: TokenService, useValue: { firstValue } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(resolvedSpace) } },
       ],
     });
@@ -78,7 +78,7 @@ describe('TranslationsComponent', () => {
       createTranslationImportTask,
       createTranslationExportTask,
       translate,
-      findFirstByType,
+      firstValue,
       success,
       error,
       open,
@@ -348,70 +348,67 @@ describe('TranslationsComponent', () => {
     });
   });
 
-  describe('token-gated API links', () => {
-    it('openDraftV1InNewTab() fetches a draft token then opens the link', () => {
-      const { component, findFirstByType } = setup();
-      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-
-      component.openDraftV1InNewTab('en');
-
-      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PREVIEW);
-      expect(openSpy).toHaveBeenCalled();
-      expect(component['apiTokens'][TokenType.PREVIEW]).toBe('token1');
-      openSpy.mockRestore();
-    });
-
-    it('openPublishedV1InNewTab() after a draft link asks for a public token (no shared cache across types)', () => {
-      const { component, findFirstByType } = setup();
-      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-      component.openDraftV1InNewTab('en');
-      findFirstByType.mockClear();
-
-      component.openPublishedV1InNewTab('en');
-
-      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
-      openSpy.mockRestore();
-    });
-
-    it('openDraftV1InNewTab() reuses the cached token on a second call', () => {
-      const { component, findFirstByType } = setup();
-      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-      component.openDraftV1InNewTab('en');
-      findFirstByType.mockClear();
-
-      component.openDraftV1InNewTab('de');
-
-      expect(findFirstByType).not.toHaveBeenCalled();
-      openSpy.mockRestore();
-    });
-
-    it('openDraftV1InNewTab() notifies an error when the space has no such token', () => {
-      const { component, findFirstByType, error } = setup();
-      findFirstByType.mockReturnValue(of([]));
-
-      component.openDraftV1InNewTab('en');
-
-      expect(error).toHaveBeenCalledWith('Please create a Preview Token in your Space Settings');
-    });
-
-    it('openPublishedV1InNewTab() fetches a public token then opens the link', () => {
-      const { component, findFirstByType } = setup();
+  describe('API links', () => {
+    it('openPublishedV1InNewTab() opens the link with a public token, or the preview one when the space has no public token', () => {
+      const { component, firstValue } = setup();
       const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
 
       component.openPublishedV1InNewTab('en');
 
-      expect(findFirstByType).toHaveBeenCalledWith('space-1', TokenType.PUBLIC);
-      expect(openSpy).toHaveBeenCalled();
+      expect(firstValue).toHaveBeenCalledWith('space-1', [TokenType.PUBLIC, TokenType.PREVIEW]);
+      expect(String(openSpy.mock.calls[0][0])).toContain('token=token1');
       openSpy.mockRestore();
     });
 
-    it('openPublishedV1InNewTab() notifies an error when the space has no such token', () => {
-      const { component, findFirstByType, error } = setup();
-      findFirstByType.mockReturnValue(of([]));
+    it('openPublishedV1InNewTab() asks again on every click (a regenerated token is picked up)', () => {
+      const { component, firstValue } = setup();
+      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+      component.openPublishedV1InNewTab('en');
+      firstValue.mockReturnValue(of('token2'));
+
+      component.openPublishedV1InNewTab('en');
+
+      expect(firstValue).toHaveBeenCalledTimes(2);
+      expect(String(openSpy.mock.calls[1][0])).toContain('token=token2');
+      openSpy.mockRestore();
+    });
+
+    it('openPublishedV1InNewTab() says which token to create when the space has none', () => {
+      const { component, firstValue, error } = setup();
+      firstValue.mockReturnValue(of(undefined));
 
       component.openPublishedV1InNewTab('en');
 
       expect(error).toHaveBeenCalledWith('Please create a Public Token in your Space Settings');
+    });
+
+    it('openPublishedV1InNewTab() says when the tokens could not be loaded', () => {
+      const { component, firstValue, error } = setup();
+      firstValue.mockReturnValue(throwError(() => new Error('403')));
+
+      component.openPublishedV1InNewTab('en');
+
+      expect(error).toHaveBeenCalledWith('Tokens could not be loaded');
+    });
+
+    it('openDraftV1InNewTab() opens the draft link with a preview token only', () => {
+      const { component, firstValue } = setup();
+      const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+
+      component.openDraftV1InNewTab('en');
+
+      expect(firstValue).toHaveBeenCalledWith('space-1', [TokenType.PREVIEW]);
+      expect(String(openSpy.mock.calls[0][0])).toContain('version=draft');
+      openSpy.mockRestore();
+    });
+
+    it('openDraftV1InNewTab() says to create a Preview Token when the space has none', () => {
+      const { component, firstValue, error } = setup();
+      firstValue.mockReturnValue(of(undefined));
+
+      component.openDraftV1InNewTab('en');
+
+      expect(error).toHaveBeenCalledWith('Please create a Preview Token in your Space Settings');
     });
   });
 });

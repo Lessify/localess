@@ -312,6 +312,13 @@ describe('management API', () => {
       expect((await get(`/api/manage/v1/spaces/${S2}/schemas`, other)).statusCode).toBe(200);
     });
 
+    it('answers a well-formed space id that is not a UUID with the usual 401, revealing nothing', async () => {
+      const response = await get('/api/manage/v1/spaces/Firestore20charsId01/schemas', null);
+      expect(response.statusCode).toBe(401);
+      expect(response.headers['www-authenticate']).toBe('Bearer');
+      expect((await get('/api/manage/v1/spaces/Firestore20charsId01/schemas')).statusCode).toBe(401);
+    });
+
     it('answers a bad space id with 400 before checking the token', async () => {
       expect((await get('/api/manage/v1/spaces/bad%2Fid/schemas', null)).statusCode).toBe(400);
     });
@@ -320,6 +327,16 @@ describe('management API', () => {
       expect((await get(base)).headers['cache-control']).toBe('no-store');
       expect((await get(`${base}/translations/fr`)).headers['cache-control']).toBe('no-store'); // 400
       expect((await post(`${base}/schemas`, { bad: true })).headers['cache-control']).toBe('no-store'); // 400
+    });
+
+    it.each([
+      ['invalid JSON (400)', { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: '{not json', headers: { 'content-type': 'application/json' } }],
+      ['an unsupported content type (415)', { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: 'x', headers: { 'content-type': 'application/x-thing' } }],
+      ['an unknown route (404)', { method: 'GET', url: `/api/manage/v1/spaces/${S1}/nothing-here` }],
+    ] as const)('marks errors answered before the guard no-store too: %s', async (_, request) => {
+      const response = await t.request({ ...request, headers: { ...bearer(), ...('headers' in request ? request.headers : {}) } } as never);
+      expect(response.statusCode).toBeGreaterThanOrEqual(400);
+      expect(response.headers['cache-control']).toBe('no-store');
     });
 
     it('sends no CORS headers', async () => {
