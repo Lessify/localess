@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Content, ContentKind } from '@localess/shared';
 
+import { ContentValidator } from '../shared/content.validator';
 import { EditDialogContext } from './edit-dialog.model';
 import { EditDialogComponent } from './edit-dialog.component';
 
@@ -56,5 +57,23 @@ describe('EditDialogComponent', () => {
 
     expect(component.form.controls['name'].errors).toEqual({ reservedName: true });
     expect(component.form.controls['slug'].errors).toEqual({ reservedName: true });
+  });
+
+  it('lets a name and slug be as long as when they were created (the validator limit, not 50)', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: { content: folder({ name: 'N'.repeat(120), slug: 's'.repeat(120) }), reservedNames: [], reservedSlugs: [] } },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(EditDialogComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(fixture.componentInstance.form.valid).toBe(true);
+    for (const id of ['name', 'slug']) {
+      expect(el.querySelector(`#${id}`)?.getAttribute('maxlength')).toBe(String(ContentValidator.MAX_LENGTH));
+    }
+    expect(el.textContent?.replace(/\s+/g, '')).toContain(`120/${ContentValidator.MAX_LENGTH}`);
   });
 });

@@ -36,6 +36,7 @@ import { AddDocumentDialogContext, AddDocumentDialogResult } from './add-documen
 export class AddDocumentDialogComponent {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
+  readonly maxLength = ContentValidator.MAX_LENGTH;
   private readonly dialogRef = inject<BrnDialogRef<AddDocumentDialogResult>>(BrnDialogRef);
 
   /** Required, and read in the template: the schema picker is built from it. */

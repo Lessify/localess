@@ -7,7 +7,7 @@
     <div hlmInputGroup>
       <input hlmInputGroupInput id="name" type="text" formControlName="name" autocomplete="off" />
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-        >{{ form.controls['name'].value?.length || 0 }}/250</hlm-input-group-addon
+        >{{ form.controls['name'].value?.length || 0 }}/{{ maxLength }}</hlm-input-group-addon
       >
     </div>
     @if (form.controls['name'].errors; as errors) {
@@ -20,7 +20,7 @@
     <div hlmInputGroup>
       <input hlmInputGroupInput id="slug" type="text" formControlName="slug" autocomplete="off" />
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
-        >{{ form.controls['slug'].value?.length || 0 }}/250</hlm-input-group-addon
+        >{{ form.controls['slug'].value?.length || 0 }}/{{ maxLength }}</hlm-input-group-addon
       >
       <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeSlug()" hlmTooltip="Normalize Slug">
         <ng-icon hlm size="sm" name="lucideWandSparkles" />

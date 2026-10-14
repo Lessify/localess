@@ -25,6 +25,7 @@ import { EditDialogContext, EditDialogResult } from './edit-dialog.model';
 export class EditDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
+  readonly maxLength = ContentValidator.MAX_LENGTH;
   private readonly dialogRef = inject<BrnDialogRef<EditDialogResult>>(BrnDialogRef);
 
   /** Required: the content being edited plus the sibling names and slugs to validate against. */

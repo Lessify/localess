@@ -20,7 +20,9 @@
     <hlm-input-group>
       <textarea hlmInputGroupTextarea id="value" formControlName="value"></textarea>
       <hlm-input-group-addon align="block-end">
-        <span hlmInputGroupText class="text-muted-foreground text-xs">{{ form.controls['value'].value?.length || 0 }}/1000</span>
+        <span hlmInputGroupText class="text-muted-foreground text-xs"
+          >{{ form.controls['value'].value?.length || 0 }}/{{ valueMaxLength }}</span
+        >
       </hlm-input-group-addon>
     </hlm-input-group>
     @if (form.controls['value'].errors; as errors) {

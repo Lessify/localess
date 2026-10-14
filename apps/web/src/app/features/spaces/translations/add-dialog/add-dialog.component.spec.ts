@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
+import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
 
 import { AddDialogContext } from './add-dialog.model';
 import { AddDialogComponent } from './add-dialog.component';
@@ -77,5 +78,20 @@ describe('AddDialogComponent', () => {
     component.save();
 
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ key: 'greeting', value: 'Hello' }));
+  });
+
+  it('counts the value against the shared limit (10,000), not a hardcoded one', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: { reservedKeys: [] } },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(AddDialogComponent);
+    fixture.componentInstance.form.controls['value'].setValue('Hello');
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent?.replace(/\s+/g, '');
+    expect(text).toContain(`5/${TRANSLATION_VALUE_MAX_LENGTH}`);
   });
 });

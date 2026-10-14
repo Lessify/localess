@@ -5,9 +5,9 @@
   <div hlmField>
     <label hlmFieldLabel for="name">Name</label>
     <div hlmInputGroup>
-      <input hlmInputGroupInput id="name" type="text" formControlName="name" maxlength="50" autocomplete="off" />
+      <input hlmInputGroupInput id="name" type="text" formControlName="name" [maxlength]="maxLength" autocomplete="off" />
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
-        {{ form.controls['name'].value?.length || 0 }}/50
+        {{ form.controls['name'].value?.length || 0 }}/{{ maxLength }}
       </hlm-input-group-addon>
     </div>
     @if (form.controls['name'].errors; as errors) {
@@ -17,9 +17,9 @@
   <div hlmField>
     <label hlmFieldLabel for="slug">Slug</label>
     <div hlmInputGroup>
-      <input hlmInputGroupInput id="slug" type="text" formControlName="slug" maxlength="50" autocomplete="off" />
+      <input hlmInputGroupInput id="slug" type="text" formControlName="slug" [maxlength]="maxLength" autocomplete="off" />
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
-        {{ form.controls['slug'].value?.length || 0 }}/50
+        {{ form.controls['slug'].value?.length || 0 }}/{{ maxLength }}
       </hlm-input-group-addon>
     </div>
     @if (form.controls['slug'].errors; as errors) {

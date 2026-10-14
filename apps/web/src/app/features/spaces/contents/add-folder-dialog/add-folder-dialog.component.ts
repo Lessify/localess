@@ -27,6 +27,7 @@ import { AddFolderDialogContext, AddFolderDialogResult } from './add-folder-dial
 export class AddFolderDialogComponent {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
+  readonly maxLength = ContentValidator.MAX_LENGTH;
   private readonly dialogRef = inject<BrnDialogRef<AddFolderDialogResult>>(BrnDialogRef);
 
   /** Required: the caller always passes the sibling names and slugs the validators check against. */

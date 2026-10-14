@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
+import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCircleX } from '@ng-icons/lucide';
 import { CommonValidator } from '@shared/validators/common.validator';
@@ -38,6 +39,8 @@ import { AddDialogContext, AddDialogResult } from './add-dialog.model';
 export class AddDialogComponent {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
+  /** The value limit the validator and the server enforce, shown by the counter. */
+  readonly valueMaxLength = TRANSLATION_VALUE_MAX_LENGTH;
   private readonly dialogRef = inject<BrnDialogRef<AddDialogResult>>(BrnDialogRef);
 
   /** Required: the caller always passes the ids already taken, which the id validator needs. */
