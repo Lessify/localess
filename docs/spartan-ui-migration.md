@@ -381,7 +381,7 @@ that are both tall and full of input groups.
 
 Hiding the x axis clips nothing real — the only thing out there is the sub-pixel addon bleed, inside the group's own rounded border.
 
-### Capping the dialog's own height (full-screen dialogs)
+### Capping the dialog's own height (every dialog)
 
 A dialog whose **content** scrolls - a picker with a table or card grid rather than a form - needs the
 height cap on `contentClass` instead, with a three-row host:
@@ -398,8 +398,15 @@ content. `max-h` caps the box while the host grows past it, taking the footer of
 in the running app: 936px box, 2742px host, footer at 2786px against a 960px viewport). Adding
 `min-height: 0` to the host changes nothing, because the row is still `auto`-sized.
 
-What fixes it is forcing the row: **`grid-rows-[minmax(0,1fr)]` on `contentClass`**, which is why
-`DIALOG_WIDTH_FULL_SCREEN` carries it. `dialog-width.spec.ts` guards the pairing.
+What fixes it is forcing the row: **`grid-rows-[minmax(0,1fr)]` on `contentClass`**.
+
+Every `DIALOG_WIDTH_*` constant carries the cap (`DIALOG_HEIGHT_BOUND` in `dialog-width.ts`), not
+just the full-screen one. The CDK overlay pane is `position: fixed`, so a box taller than the
+viewport can never be scrolled into view - a references picker showing a long page of documents
+used to push its **Add** button off-screen. With the cap, a three-row host keeps its footer pinned
+and scrolls the middle; a plain `grid gap-4` host overflows its row and the box itself scrolls
+(`overflow-y-auto`, paired with `overflow-x-hidden` for the input-group bleed above). Always pass
+one of the constants - a hand-written `contentClass` silently drops the cap.
 
 Unchanged by the migration: the dialog still grows when a validation message appears (~28px per line), because that is content-driven.
 Reserve space for the message if the resize matters.
@@ -409,7 +416,7 @@ Reserve space for the message if the resize matters.
 1. `Context` / `Result` interfaces in the dialog's `*.model.ts`
 2. Component: `host: { class: 'grid gap-4' }`, `HlmDialogImports`, `injectBrnDialogContext` (+ `?.`), typed `BrnDialogRef`, `save()`
 3. Template: header/title(/description), content, footer; `hlmDialogClose` on the dismissing button
-4. Caller: `HlmDialogService.open<Result, Context>()`, `context: {…}`, width in `contentClass` with `!`, `closed$` + `take(1)`
+4. Caller: `HlmDialogService.open<Result, Context>()`, `context: {…}`, a `DIALOG_WIDTH_*` constant in `contentClass` (it carries the height cap), `closed$` + `take(1)`
 5. Specs: `DIALOG_DATA` + `BrnDialogRef` in the dialog spec, `HlmDialogService` + `closed$` in the caller spec
 6. Check it in the browser at the real width, and whether it needs a scroll cap
 

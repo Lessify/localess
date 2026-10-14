@@ -9,6 +9,7 @@ import {
   ConfirmationDialogContext,
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
+import { DIALOG_WIDTH_LG } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
@@ -106,7 +107,7 @@ export class LocalesComponent implements AfterViewInit {
     this.hlmDialog
       .open<LocaleDialogResult, LocaleDialogContext>(LocaleDialogComponent, {
         context: { locales },
-        contentClass: 'w-lg! max-w-lg!',
+        contentClass: DIALOG_WIDTH_LG,
       })
       .closed$.pipe(
         take(1),
