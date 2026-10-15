@@ -84,12 +84,22 @@ the UI, then the table (also after a reload), the API, and what the user can now
 
 ### 4. Me (profile)
 
+Each test uses its own user and follows **pre-check → action → post-check** (the page, after a reload, the API, and
+whether the account can sign in).
+
 | Scenario | How | Status |
 |---|---|---|
-| Profile shows the account; display name can be changed | UI | ✅ `me/profile` |
-| Password change; the old password stops working | UI + API | ✅ `me/profile` |
-| Locked user can not change their own data | UI | ✅ `me/profile` |
-| Email change (needs the current password) | UI + sign-in with the new email | ⬜ |
+| Opens from the user menu; shows email, verification, role and a custom user's permissions | UI | ✅ `me/profile` |
+| An admin has no permission list | UI | ✅ `me/profile` |
+| Display name: page, user menu, API, after a reload | UI + API | ✅ `me/profile` @smoke |
+| Avatar URL is used; an invalid URL is refused | UI + API | ✅ `me/profile` |
+| Cancelling the profile dialog keeps everything | UI + API | ✅ `me/profile` |
+| Email change: sign-in with the new email only, unverified, same account | UI + API + sign-in | ✅ `me/profile` |
+| Email change refused: wrong current password, email of another user | UI + API + sign-in | ✅ `me/profile` |
+| Password change: old one stops working, other sessions end, this one stays | UI + a second session + sign-in | ✅ `me/profile` @smoke |
+| Password change refused: wrong current password; under 6 characters can't be submitted | UI + sign-in | ✅ `me/profile` |
+| Locked user: message, no buttons, API refuses changes | UI + API | ✅ `me/profile` |
+| Google / Microsoft account (no password): email and password can't be changed here | Needs `oauth2-mock-server` as the issuer | ⬜ |
 
 ### 5. Spaces (admin) and space settings
 
