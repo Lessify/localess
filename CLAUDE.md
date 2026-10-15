@@ -35,6 +35,9 @@ pnpm test              # Vitest + happy-dom (via Angular's @angular/build:unit-t
 pnpm test:scripts      # node:test suites for tools/scripts and packages/visual-editor-sync
 pnpm server:test       # Server vitest suite (real embedded Postgres, one database per file)
 pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
+pnpm e2e               # Playwright end-to-end tests (apps/e2e): builds SPA + server, runs them on a fresh embedded Postgres
+pnpm e2e:run           # same, against the existing builds; `pnpm e2e:install` once to download Chromium
+pnpm e2e:smoke         # only the @smoke critical path (~30 s), against the existing builds
 
 # Server CLI (apps/server/src/cli; needs `pnpm server:build` first)
 pnpm localess <command>                       # db:migrate, check, admin:create --email <email>
@@ -67,6 +70,7 @@ pnpm workspace monorepo (one root `package.json`, `pnpm-workspace.yaml` and `pnp
 ```
 apps/web/                  # @localess/web — Angular app (its own angular.json)
 apps/server/               # @localess/server — NestJS server, Drizzle migrations in apps/server/drizzle
+apps/e2e/                  # @localess/e2e — Playwright end-to-end tests against the built server + SPA
 packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, permissions, locales, extractContent; zod validators in @localess/shared/zod
 packages/ui/               # @localess/ui — Spartan/Helm components (source only), imported as @spartan-ng/helm/*
 packages/visual-editor-sync/ # sync-v1.js for customer sites in the Visual Editor, built into the web assets
@@ -177,6 +181,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | **Server architecture** — layers (controller, service, transformer, repository), independent modules, the shared module, transactions, data rules | [docs/server-architecture.md](docs/server-architecture.md) | Any code in `apps/server/src/modules/`; read before adding or moving server code |
 | **Content and asset trees** — `parent_id` with cascade, slugs unique per parent, paths computed (`content-tree.query.ts`), the editor's folder map | [docs/roadmap/content-asset-tree.md](docs/roadmap/content-asset-tree.md) | Anything that creates, moves or deletes contents or assets, or needs a `fullSlug` |
 | Database structure review — per-table decisions (locales, default locale, environments), open TODOs | [docs/roadmap/database-structure.md](docs/roadmap/database-structure.md) | `apps/server/src/infra/database/schema.ts`, new tables or columns, space locales/environments |
+| End-to-end tests (Playwright) — how a run works, fixtures, error guard, page objects, conventions; the test plan (what is covered, planned, bugs found) | [apps/e2e/README.md](apps/e2e/README.md), [apps/e2e/TEST-PLAN.md](apps/e2e/TEST-PLAN.md) | Any `apps/e2e/` test, or any UI change to a covered flow (labels, button names, dialogs, toasts are what the tests look for) |
 | Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `apps/web/src/test-setup.ts` |
 | UUIDv7 ids (`newUuid()`), `legacy_id` (assets only; a space's Firestore id is its `firebase_imports.source_space_id`, for old asset URLs), schema `name` / translation `key` / token `token` as references; the original migration plan, superseded by the space import | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | Any new table or id, schema/translation/token keys |
 | **Deployment & self-hosting** | | |

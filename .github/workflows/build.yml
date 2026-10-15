@@ -57,3 +57,45 @@ jobs:
       # - run: pnpm prettier
       - run: pnpm build
       - run: pnpm server:build
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Installs the pnpm version pinned by `packageManager`; must run before setup-node so it can cache the store.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm e2e:install
+      # Builds the SPA and the server, then runs the whole suite (tests/**) against the built server on a fresh
+      # embedded Postgres. CI=true: 2 workers, 1 retry, a failed test keeps its trace, video and screenshot.
+      - run: pnpm e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report
+          retention-days: 14
+
+      - name: Upload traces of failed tests
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: apps/e2e/test-results
+          retention-days: 14

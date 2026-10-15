@@ -11,3 +11,6 @@
 docs
 tools/openapi
 *.log
+**/test-results
+**/playwright-report
+**/.auth
