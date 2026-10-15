@@ -13,6 +13,17 @@ export class AppApi {
     return this.send('post', '/api/app/spaces', { name });
   }
 
+  listSpaces(): Promise<SpaceDto[]> {
+    return this.get('/api/app/spaces');
+  }
+
+  /** The space, or undefined once it is gone. */
+  async findSpace(id: string): Promise<SpaceDto | undefined> {
+    const response = await this.request.get(`/api/app/spaces/${id}`);
+    if (response.status() === 404) return undefined;
+    return expectOk(response, `GET space ${id}`);
+  }
+
   async deleteSpace(id: string): Promise<void> {
     await this.request.delete(`/api/app/spaces/${id}`, { headers: CSRF });
   }
@@ -122,6 +133,14 @@ export class AppApi {
     return this.send('post', '/api/app/users', body);
   }
 
+  listUsers(): Promise<UserDto[]> {
+    return this.get('/api/app/users');
+  }
+
+  async findUserByEmail(email: string): Promise<UserDto | undefined> {
+    return (await this.listUsers()).find(it => it.email === email);
+  }
+
   async deleteUser(id: string): Promise<void> {
     await this.request.delete(`/api/app/users/${id}`, { headers: CSRF });
   }
@@ -140,6 +159,21 @@ export class AppApi {
     const response = await this.request[method](path, { headers: CSRF, ...(data === undefined ? {} : { data }) });
     return expectOk(response, `${method.toUpperCase()} ${path}`);
   }
+}
+
+export interface SpaceDto {
+  id: string;
+  name: string;
+}
+
+export interface UserDto {
+  id: string;
+  email: string;
+  displayName?: string;
+  role?: 'ADMIN' | 'CUSTOM' | null;
+  permissions?: string[];
+  lock?: boolean;
+  disabled?: boolean;
 }
 
 export interface SchemaFieldInput {

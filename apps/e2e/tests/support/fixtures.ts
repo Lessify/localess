@@ -59,6 +59,8 @@ interface Fixtures {
   createUser: (options?: UserOptions) => Promise<TestUser>;
   /** A page in its own browser context, signed in as the given user. */
   signInAs: (user: TestUser) => Promise<Page>;
+  /** Deletes, after the test, spaces and users a test creates through the UI (by name / email). */
+  cleanup: { space: (name: string) => void; user: (email: string) => void };
 }
 
 export const test = base.extend<Fixtures>({
@@ -106,6 +108,15 @@ export const test = base.extend<Fixtures>({
     });
     lifecycle.tearingDown = true;
     for (const id of created) await api.deleteUser(id);
+  },
+
+  cleanup: async ({ api, lifecycle }, use) => {
+    const spaces: string[] = [];
+    const users: string[] = [];
+    await use({ space: name => spaces.push(name), user: email => users.push(email) });
+    lifecycle.tearingDown = true;
+    for (const space of (await api.listSpaces()).filter(it => spaces.includes(it.name))) await api.deleteSpace(space.id);
+    for (const user of (await api.listUsers()).filter(it => users.includes(it.email))) await api.deleteUser(user.id);
   },
 
   signInAs: async ({ browser, baseURL, allowedAppErrors, lifecycle }, use) => {

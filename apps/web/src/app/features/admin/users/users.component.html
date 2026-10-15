@@ -37,9 +37,9 @@
         <th llHeaderCell *llHeaderCellDef>Active</th>
         <td llCell *llCellDef="let element">
           @if (element.disabled) {
-            <ng-icon name="lucideX" hlmTooltip="User is Disabled" />
+            <ng-icon name="lucideX" hlmTooltip="User is Disabled" role="img" aria-hidden="false" aria-label="User is Disabled" />
           } @else {
-            <ng-icon name="lucideCheck" hlmTooltip="User is Active" />
+            <ng-icon name="lucideCheck" hlmTooltip="User is Active" role="img" aria-hidden="false" aria-label="User is Active" />
           }
         </td>
       </ng-container>
@@ -65,7 +65,12 @@
           @if (element.role === 'CUSTOM') {
             <ng-icon name="lucideInfo" [hlmTooltip]="element.permissions?.join('\n')" position="right" />
             @if (element.lock) {
-              <ng-icon name="lucideLock" hlmTooltip="The user is not be able to change his password and other personal data." />
+              <ng-icon
+                name="lucideLock"
+                hlmTooltip="The user is not be able to change his password and other personal data."
+                role="img"
+                aria-hidden="false"
+                aria-label="Locked" />
             }
           }
         </td>

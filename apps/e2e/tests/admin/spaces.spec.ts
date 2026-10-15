@@ -1,45 +1,153 @@
 import { AdminSpacesPage } from '../pages/admin-spaces.page';
+import { Shell } from '../pages/shell.page';
 import { expect, test, uniqueName } from '../support/fixtures';
 
+// Every test: pre-check (UI and API) → action (UI) → post-check (UI, again after a reload, and API).
 test.describe('Admin → Spaces', () => {
-  test('creates a space, which then shows up in the space switcher @smoke', async ({ page, api }) => {
-    const spaces = new AdminSpacesPage(page);
-    const name = uniqueName('E2E Space');
-    await spaces.goto();
+  test.describe('create', () => {
+    test('creates a space, which then opens and shows in the space switcher @smoke', async ({ page, api, cleanup }) => {
+      const spaces = new AdminSpacesPage(page);
+      const name = uniqueName('E2E Space');
+      cleanup.space(name);
 
-    await spaces.create(name);
-    await expect(spaces.row(name)).toBeVisible();
-    const id = await spaces.idOf(name);
+      // Pre-check: the name is not taken.
+      await spaces.goto();
+      await expect(spaces.row(name)).toHaveCount(0);
+      expect((await api.listSpaces()).map(it => it.name)).not.toContain(name);
 
-    try {
-      // The new space opens like any other.
+      // Action
+      await spaces.create(name);
+
+      // Post-check: in the table (also after a reload), in the API, and usable.
+      await expect(spaces.row(name)).toBeVisible();
+      const id = await spaces.idOf(name);
+      expect(await api.findSpace(id)).toMatchObject({ id, name });
+      await page.reload();
+      await expect(spaces.row(name)).toBeVisible();
       await page.goto(`/features/spaces/${id}/settings/general`);
       await expect(page.getByRole('button', { name })).toBeVisible();
-    } finally {
-      await api.deleteSpace(id);
-    }
+      await new Shell(page).switchSpace('Hello World');
+      await expect(page.getByRole('button', { name: 'Hello World' })).toBeVisible();
+    });
+
+    test('cancelling the dialog creates nothing', async ({ page, api }) => {
+      const spaces = new AdminSpacesPage(page);
+      const name = uniqueName('E2E Cancel');
+
+      // Pre-check
+      await spaces.goto();
+      expect((await api.listSpaces()).map(it => it.name)).not.toContain(name);
+
+      // Action
+      const form = await spaces.openCreate(name);
+      await form.getByRole('button', { name: 'Cancel' }).click();
+      await expect(form).toBeHidden();
+
+      // Post-check
+      await expect(spaces.row(name)).toHaveCount(0);
+      expect((await api.listSpaces()).map(it => it.name)).not.toContain(name);
+    });
+
+    test('refuses a name shorter than 3 characters', async ({ page }) => {
+      const spaces = new AdminSpacesPage(page);
+      await spaces.goto();
+
+      // Pre-check: the dialog accepts a valid name.
+      const form = await spaces.openCreate('Valid name');
+      await expect(form.getByRole('button', { name: 'Create' })).toBeEnabled();
+
+      // Action
+      await form.getByLabel('Name', { exact: true }).fill('ab');
+      await form.getByLabel('Name', { exact: true }).blur();
+
+      // Post-check: an error, and no way to submit.
+      await expect(form.getByText('Minimum length is 3.')).toBeVisible();
+      await expect(form.getByRole('button', { name: 'Create' })).toBeDisabled();
+      await form.getByRole('button', { name: 'Cancel' }).click();
+      await expect(spaces.row('ab')).toHaveCount(0);
+    });
   });
 
-  test('renames a space', async ({ page, space }) => {
-    const spaces = new AdminSpacesPage(page);
-    const newName = uniqueName('E2E Renamed');
-    await spaces.goto();
+  test.describe('edit', () => {
+    test('renames a space', async ({ page, api, space }) => {
+      const spaces = new AdminSpacesPage(page);
+      const newName = uniqueName('E2E Renamed');
 
-    await spaces.rename(space.name, newName);
-    await expect(spaces.row(newName)).toBeVisible();
-    await page.reload();
-    await expect(spaces.row(newName)).toBeVisible();
-    await expect(spaces.row(space.name)).toHaveCount(0);
+      // Pre-check: listed under its name.
+      await spaces.goto();
+      await expect(spaces.row(space.name)).toBeVisible();
+      expect(await api.findSpace(space.id)).toMatchObject({ name: space.name });
+
+      // Action
+      await spaces.rename(space.name, newName);
+
+      // Post-check: the new name everywhere, the old one nowhere; same id.
+      await expect(spaces.row(newName)).toBeVisible();
+      await expect(spaces.row(space.name)).toHaveCount(0);
+      expect(await spaces.idOf(newName)).toBe(space.id);
+      expect(await api.findSpace(space.id)).toMatchObject({ name: newName });
+      await page.reload();
+      await expect(spaces.row(newName)).toBeVisible();
+      await expect(spaces.row(space.name)).toHaveCount(0);
+    });
+
+    test('cancelling the edit keeps the name', async ({ page, api, space }) => {
+      const spaces = new AdminSpacesPage(page);
+
+      // Pre-check
+      await spaces.goto();
+      await expect(spaces.row(space.name)).toBeVisible();
+
+      // Action
+      const form = await spaces.openRename(space.name, 'Not saved');
+      await form.getByRole('button', { name: 'Cancel' }).click();
+      await expect(form).toBeHidden();
+
+      // Post-check
+      await expect(spaces.row(space.name)).toBeVisible();
+      await expect(spaces.row('Not saved')).toHaveCount(0);
+      expect(await api.findSpace(space.id)).toMatchObject({ name: space.name });
+    });
   });
 
-  test('deletes a space', async ({ page, api }) => {
-    const { name } = await api.createSpace(uniqueName('E2E Delete'));
-    const spaces = new AdminSpacesPage(page);
-    await spaces.goto();
+  test.describe('delete', () => {
+    test('deletes a space with its content', async ({ page, api, space }) => {
+      await api.createTranslation(space.id, { key: 'gone.with.space', locales: { en: 'Bye' } });
+      const spaces = new AdminSpacesPage(page);
 
-    await spaces.delete(name);
-    await expect(spaces.row(name)).toHaveCount(0);
-    await page.reload();
-    await expect(spaces.row(name)).toHaveCount(0);
+      // Pre-check: listed, readable, with content.
+      await spaces.goto();
+      await expect(spaces.row(space.name)).toBeVisible();
+      expect(await api.findSpace(space.id)).toBeDefined();
+      expect(await api.get<unknown[]>(`/api/app/spaces/${space.id}/translations`)).toHaveLength(1);
+
+      // Action
+      await spaces.delete(space.name);
+
+      // Post-check: gone from the table (also after a reload) and from the API.
+      await expect(spaces.row(space.name)).toHaveCount(0);
+      expect(await api.findSpace(space.id)).toBeUndefined();
+      await page.reload();
+      await expect(spaces.row('Hello World')).toBeVisible();
+      await expect(spaces.row(space.name)).toHaveCount(0);
+    });
+
+    test('cancelling the confirmation keeps the space', async ({ page, api, space }) => {
+      const spaces = new AdminSpacesPage(page);
+
+      // Pre-check
+      await spaces.goto();
+      await expect(spaces.row(space.name)).toBeVisible();
+
+      // Action
+      await spaces.row(space.name).getByRole('button', { name: 'Delete' }).click();
+      const confirm = page.getByRole('dialog').filter({ hasText: 'Delete Space' });
+      await confirm.getByRole('button', { name: 'Cancel' }).click();
+      await expect(confirm).toBeHidden();
+
+      // Post-check
+      await expect(spaces.row(space.name)).toBeVisible();
+      expect(await api.findSpace(space.id)).toBeDefined();
+    });
   });
 });

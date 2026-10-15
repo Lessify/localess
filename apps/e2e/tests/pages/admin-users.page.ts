@@ -3,13 +3,23 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { choose, dialog, rowMenu } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
 
+export type RoleLabel = 'None' | 'Custom' | 'Admin';
+
 export interface InviteInput {
   email: string;
   password: string;
   displayName?: string;
-  role: 'None' | 'Custom' | 'Admin';
+  role: RoleLabel;
   /** Permission ids (`TRANSLATION_READ`, ...); for the Custom role. */
   permissions?: string[];
+}
+
+export interface AccessInput {
+  role: RoleLabel;
+  /** Permission ids to switch on or off (the checkboxes toggle); for the Custom role. */
+  togglePermissions?: string[];
+  /** Switches Lock User on or off; for the Custom role. */
+  toggleLock?: boolean;
 }
 
 /** Admin → Users (`/features/admin/users`). */
@@ -19,10 +29,28 @@ export class AdminUsersPage {
   async goto(): Promise<void> {
     await this.page.goto('/features/admin/users');
     await expect(this.page.getByRole('button', { name: 'Invite' })).toBeVisible();
+    // The table has loaded once the seeded admin is listed.
+    await expect(this.row('admin@e2e.localess.test')).toBeVisible();
   }
 
   row(email: string): Locator {
     return this.page.getByRole('row').filter({ hasText: email });
+  }
+
+  /** The Role column of a user's row: `ADMIN`, `CUSTOM` or `NONE`. */
+  roleCell(email: string): Locator {
+    // Email, Name, Active, Providers, Role, ...
+    return this.row(email).getByRole('cell').nth(4);
+  }
+
+  /** The lock icon of a locked custom user. */
+  lockIcon(email: string): Locator {
+    return this.roleCell(email).getByRole('img', { name: 'Locked' });
+  }
+
+  /** The Active column's icon: "User is Active" or "User is Disabled". */
+  status(email: string, status: 'Active' | 'Disabled'): Locator {
+    return this.row(email).getByRole('img', { name: `User is ${status}` });
   }
 
   async invite(input: InviteInput): Promise<void> {
@@ -37,6 +65,18 @@ export class AdminUsersPage {
     await form.getByRole('button', { name: 'Invite' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'User has been invited.');
+  }
+
+  /** Edit: role, permissions and Lock User (all the admin can change on an existing user). */
+  async editAccess(email: string, input: AccessInput): Promise<void> {
+    await this.action(email, 'Edit');
+    const form = await dialog(this.page, 'User');
+    await choose(this.page, form.locator('#role'), input.role);
+    if (input.toggleLock) await form.locator('label[for="lock"]').click();
+    for (const permission of input.togglePermissions ?? []) await form.locator(`[id="${permission}"]`).click();
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'User has been updated.');
   }
 
   async action(email: string, item: string): Promise<void> {
@@ -58,5 +98,12 @@ export class AdminUsersPage {
     await this.action(email, 'Delete');
     await confirmDialog(this.page, 'Delete User');
     await expectToast(this.page, `User '${email}' has been deleted.`);
+  }
+
+  /** Copies the user's password reset link to the clipboard (needs clipboard permissions) and returns it. */
+  async copyResetLink(email: string): Promise<string> {
+    await this.action(email, 'Copy password reset link');
+    await expectToast(this.page, `Password reset link for '${email}' copied to clipboard.`);
+    return this.page.evaluate(() => navigator.clipboard.readText());
   }
 }

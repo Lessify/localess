@@ -58,14 +58,24 @@ the API, not only by the toast.
 
 ### 3. Users and permissions
 
+Admin → Users tests follow **pre-check → action → post-check**: the state in the UI and the API before, the action in
+the UI, then the table (also after a reload), the API, and what the user can now do with their own session.
+
 | Scenario | How | Status |
 |---|---|---|
-| Invite a custom user with permissions; they can sign in with them | UI + API | ✅ `admin/users` |
-| Disable / enable a user | UI + API | ✅ `admin/users` |
-| Delete a user | UI | ✅ `admin/users` @smoke |
+| Invite as **Admin**: full access, admin area visible | UI + API + the user's session | ✅ `admin/users` |
+| Invite as **Custom**: exactly the chosen permissions | UI + API + the user's session | ✅ `admin/users` |
+| Invite as **None**: signs in, no access, asked to contact an administrator | UI + API + the user's session | ✅ `admin/users` |
+| Invite with a taken email is refused; the existing user is unchanged | UI + API | ✅ `admin/users` |
+| Change role Custom → Admin → None → Custom; access follows each change | UI + API + the user's session | ✅ `admin/users` |
+| Add / remove permissions of a custom user | UI + API + the user's session | ✅ `admin/users` |
+| Lock a custom user: they can no longer change their own data | UI + API + the user's session | ✅ `admin/users` |
+| Disable (sign-in refused) / enable | UI + API + the user's session | ✅ `admin/users` |
+| Disabling signs out a user who is signed in | UI + the user's open session | ✅ `admin/users` |
 | The admin can not disable themself | UI | ✅ `admin/users` |
-| Edit role and permissions of a user | UI, then `/api/auth/me` as that user | ⬜ |
-| Copy password reset link (clipboard) | UI with clipboard permissions | ⬜ |
+| Copy password reset link; the user sets a new password with it | UI (clipboard) + the user's browser | ✅ `admin/users` |
+| Delete a user (sign-in refused); cancelling keeps them | UI + API | ✅ `admin/users` @smoke |
+| Email, display name and password of another user | Not a feature: the admin sets them when inviting; later only a reset link (the user changes their own in Me) | ➖ |
 | A custom user with `USER_MANAGEMENT` can only grant what they hold | UI: checkboxes disabled; API: 403 | ⬜ |
 | Translator sees translations only; guards redirect elsewhere | UI | ✅ `auth/permissions` |
 | User without a role is asked to contact an administrator | UI | ✅ `auth/permissions` |
@@ -83,10 +93,14 @@ the API, not only by the toast.
 
 ### 5. Spaces (admin) and space settings
 
+Admin → Spaces tests follow **pre-check → action → post-check** (UI, after a reload, and API).
+
 | Scenario | How | Status |
 |---|---|---|
-| Create a space; it opens and shows in the switcher | UI | ✅ `admin/spaces` @smoke |
-| Rename / delete a space | UI | ✅ `admin/spaces` |
+| Create a space; it opens and shows in the switcher | UI + API | ✅ `admin/spaces` @smoke |
+| Create: cancelling creates nothing; a name under 3 characters is refused | UI + API | ✅ `admin/spaces` |
+| Rename a space (same id); cancelling keeps the name | UI + API | ✅ `admin/spaces` |
+| Delete a space with its content; cancelling keeps it | UI + API | ✅ `admin/spaces` |
 | Create a space from a template (schemas created) | UI + API | ⬜ |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
 | General: rename the space | UI | ✅ `space/general` |
