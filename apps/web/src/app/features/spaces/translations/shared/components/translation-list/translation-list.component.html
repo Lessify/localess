@@ -29,12 +29,12 @@
       [nodes]="translationTreeFiltered()"
       [expandedKeys]="expandedKeys()"
       (expandedKeysChange)="onExpandedKeysChange($event)"
-      [selectedKey]="selectedId()"
+      [selectedKey]="selectedKey()"
       [guides]="true"
       (nodeSelect)="onNodeSelect($event)">
       <ng-template llTreeNodeDef let-node>
         @if (translationMap().get(node.key); as translation) {
-          @if (isLocaleUpdateLoading() && translationUpdateId() === node.key) {
+          @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
             <hlm-spinner class="size-4" />
           } @else {
             <ll-translation-status [status]="identifyTranslationStatus(translation)" />

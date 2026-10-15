@@ -56,6 +56,8 @@ export class TranslationListComponent {
   });
   readonly translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
   readonly translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.key, it])));
+  /** The tree's nodes are keyed by translation key, while `selectedId` is the translation's id. */
+  readonly selectedKey = computed(() => this.translations().find(it => it.id === this.selectedId())?.key);
 
   /** True when any filter narrows the list — search text, labels or states. */
   readonly isFiltering = computed(() => {
