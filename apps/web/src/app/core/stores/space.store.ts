@@ -4,7 +4,7 @@ import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
-import { ContentDocument, Schema, Space, SpaceEnvironment } from '@localess/shared';
+import { ContentDocument, Schema, Space, SpaceEnvironment, UserPermission } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -133,6 +133,11 @@ export const SpaceStore = signalStore(
     const contentService = inject(ContentService);
     const schemaService = inject(SchemaService);
     const notificationService = inject(NotificationService);
+    const userStore = inject(UserStore);
+    // The same rules as the server's @RequirePermission on the two lists: without them every request is a 403,
+    // retried forever with a "Lost connection" toast (e.g. for a translator).
+    const can = (...permissions: UserPermission[]): boolean =>
+      userStore.role() === 'ADMIN' || permissions.some(it => userStore.permissions()?.includes(it));
 
     const listen = <T>(query: () => Observable<T>, logMessage: string, notification: string): Observable<T> =>
       defer(query).pipe(retryWithBackoff<T>(notificationService, logMessage, notification));
@@ -150,16 +155,20 @@ export const SpaceStore = signalStore(
           switchMap(spaceId =>
             spaceId
               ? merge(
-                  listen(
-                    () => contentService.findAllDocuments(spaceId),
-                    'findAllDocuments listener failed',
-                    'Lost connection to content updates. Retrying…',
-                  ).pipe(map(documents => ({ documents }))),
-                  listen(
-                    () => schemaService.findAll(spaceId),
-                    'schemaService.findAll listener failed',
-                    'Lost connection to schema updates. Retrying…',
-                  ).pipe(map(schemas => ({ schemas }))),
+                  can(UserPermission.CONTENT_READ)
+                    ? listen(
+                        () => contentService.findAllDocuments(spaceId),
+                        'findAllDocuments listener failed',
+                        'Lost connection to content updates. Retrying…',
+                      ).pipe(map(documents => ({ documents })))
+                    : EMPTY,
+                  can(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
+                    ? listen(
+                        () => schemaService.findAll(spaceId),
+                        'schemaService.findAll listener failed',
+                        'Lost connection to schema updates. Retrying…',
+                      ).pipe(map(schemas => ({ schemas })))
+                    : EMPTY,
                 )
               : EMPTY,
           ),
@@ -191,12 +200,12 @@ export const SpaceStore = signalStore(
                   const foundSpace = response.find(space => space.id === selectedSpaceId);
                   if (foundSpace) {
                     const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
+                    // Same space: the open content and asset folders stay. The list is live, so it reloads whenever
+                    // any space changes, and resetting here sent everyone back to the root folder mid-work.
                     patchState(state, {
                       spaces: response,
                       loaded: true,
                       selectedSpaceId: selectedSpaceId,
-                      assetFolderId: null,
-                      contentFolderId: null,
                       environment,
                     });
                     persistSpaceState(selectedSpaceId, selectedEnvironmentBySpaceId);
@@ -313,7 +322,9 @@ export const SpaceStore = signalStore(
       // sign-out would fail on the rules and retry forever. And only a space in the loaded list:
       // the id restored from localStorage may name a space that no longer exists (deleted, new
       // install), which would answer 404 and show "Lost connection" toasts until the list arrives.
-      store._syncSpaceData(computed(() => (userStore.isAuthenticated() ? store.selectedSpace()?.id : undefined)));
+      // `loaded` too: `isAuthenticated` comes from localStorage at first, before the role and
+      // permissions that decide which lists may be read are known.
+      store._syncSpaceData(computed(() => (userStore.loaded() && userStore.isAuthenticated() ? store.selectedSpace()?.id : undefined)));
     },
     onDestroy: store => {
       console.log('onDestroy', store);

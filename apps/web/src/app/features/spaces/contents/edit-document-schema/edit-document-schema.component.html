@@ -379,6 +379,7 @@
                     size="sm"
                     [hlmDropdownMenuTrigger]="menu"
                     hlmTooltip="Add Schema"
+                    aria-label="Add Schema"
                     [disabled]="data()[field.name]">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
@@ -424,7 +425,13 @@
                         }
                       </div>
                       <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="removeSchemaOne(field)"
+                          hlmTooltip="Delete"
+                          aria-label="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                       </div>
@@ -440,7 +447,13 @@
               <fieldset hlmFieldSet class="gap-2">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
-                  <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltip="Add Schema at the end">
+                  <button
+                    hlmBtn
+                    variant="ghost"
+                    size="sm"
+                    [hlmDropdownMenuTrigger]="menu"
+                    hlmTooltip="Add Schema at the end"
+                    aria-label="Add Schema at the end">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
                   <ng-template #menu>
@@ -492,7 +505,8 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuAbove"
-                          hlmTooltip="Add Schema above">
+                          hlmTooltip="Add Schema above"
+                          aria-label="Add Schema above">
                           <ng-icon hlm size="sm" name="tablerRowInsertTop" />
                         </button>
                         <ng-template #schemasMenuAbove>
@@ -509,7 +523,8 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuBelow"
-                          hlmTooltip="Add Schema below">
+                          hlmTooltip="Add Schema below"
+                          aria-label="Add Schema below">
                           <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
                         </button>
                         <ng-template #schemasMenuBelow>
@@ -529,10 +544,17 @@
                           size="icon"
                           variant="outline"
                           (click)="duplicateSchemaMany(field, item, index)"
-                          hlmTooltip="Clone the schema">
+                          hlmTooltip="Clone the schema"
+                          aria-label="Clone the schema">
                           <ng-icon hlm size="sm" name="lucideBookCopy" />
                         </button>
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="removeSchemaMany(field, item._id)"
+                          hlmTooltip="Delete"
+                          aria-label="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                         <button
@@ -541,7 +563,8 @@
                           variant="ghost"
                           cdkDragHandle
                           class="cursor-grab active:cursor-grabbing"
-                          hlmTooltip="Move">
+                          hlmTooltip="Move"
+                          aria-label="Move">
                           <ng-icon hlm size="sm" name="lucideGripVertical" />
                         </button>
                       </div>

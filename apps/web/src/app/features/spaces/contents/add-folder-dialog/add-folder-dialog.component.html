@@ -22,7 +22,13 @@
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
         >{{ form.controls['slug'].value?.length || 0 }}/{{ maxLength }}</hlm-input-group-addon
       >
-      <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeSlug()" hlmTooltip="Normalize Slug">
+      <button
+        hlmInputGroupButton
+        type="button"
+        variant="ghost"
+        (click)="normalizeSlug()"
+        hlmTooltip="Normalize Slug"
+        aria-label="Normalize Slug">
         <ng-icon hlm size="sm" name="lucideWandSparkles" />
       </button>
     </div>

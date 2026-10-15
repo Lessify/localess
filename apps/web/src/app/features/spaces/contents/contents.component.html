@@ -17,7 +17,7 @@
       </hlm-dropdown-menu>
     </ng-template>
   }
-  <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+  <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
     <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
   </button>
   <ng-template #extraMenu>
@@ -55,7 +55,7 @@
   <nav hlmBreadcrumb class="p-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
-        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+        <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
           <ng-icon name="lucideFolderRoot" />
         </button>
       </li>
@@ -130,7 +130,13 @@
       <ng-container llColumnDef="actions">
         <th llHeaderCell *llHeaderCellDef>Actions</th>
         <td llCell *llCellDef="let element">
-          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            aria-label="Actions"
+            [hlmDropdownMenuTrigger]="actionsMenu"
+            (click)="$event.stopPropagation()">
             <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
           </button>
           <ng-template #actionsMenu>

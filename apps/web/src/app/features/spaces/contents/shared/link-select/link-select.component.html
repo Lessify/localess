@@ -17,6 +17,7 @@
             variant="secondary"
             size="icon"
             hlmTooltip="Change link type"
+            aria-label="Change link type"
             [hlmDropdownMenuTrigger]="linkTypeMenu"
             [disabled]="default() && !component().translatable">
             <ng-icon [name]="linkType() === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />

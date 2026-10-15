@@ -1,6 +1,16 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, linkedSignal, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
@@ -98,11 +108,24 @@ export class TranslationDetailComponent {
   // Outputs
   readonly save = output<{ translation: Translation; locale: Locale; value: string }>();
 
-  selectedSourceLocale = linkedSignal(() => this.defaultLocale() ?? DEFAULT_LOCALE);
-  selectedTargetLocale = linkedSignal(() => this.defaultLocale() ?? DEFAULT_LOCALE);
-  selectedTranslationLocaleValue = linkedSignal(() => {
-    return this.translation()?.locales[this.selectedTargetLocale().id] || '';
+  // Live data arrives as new objects on every refresh (a change to any space or any translation), so the selection and
+  // the value being typed follow their inputs by value, not by identity. By identity, a refresh reset the target to
+  // the default locale mid-edit, and the text typed for German was saved over English.
+  private readonly initialLocale = computed(() => this.defaultLocale() ?? DEFAULT_LOCALE, {
+    equal: (a, b) => a.id === b.id,
   });
+  private readonly storedValue = computed(
+    () => {
+      const translation = this.translation();
+      const locale = this.selectedTargetLocale().id;
+      return { id: translation?.id, locale, value: translation?.locales[locale] || '' };
+    },
+    { equal: (a, b) => a.id === b.id && a.locale === b.locale && a.value === b.value },
+  );
+
+  selectedSourceLocale = linkedSignal(() => this.initialLocale());
+  selectedTargetLocale = linkedSignal(() => this.initialLocale());
+  selectedTranslationLocaleValue = linkedSignal(() => this.storedValue().value);
 
   isTranslateLoading = signal(false);
 

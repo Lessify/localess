@@ -56,6 +56,7 @@ describe('TranslationDetailComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      fixture,
       update,
       updateKey,
       deleteTranslation,
@@ -74,6 +75,42 @@ describe('TranslationDetailComponent', () => {
     expect(component.statusLabel(translation({ locales: {} }))).toBe('Untranslated');
     expect(component.statusLabel(translation({ locales: { en: 'Hi' } }))).toBe('Partially Translated');
     expect(component.statusLabel(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe('Translated');
+  });
+
+  describe('live refreshes (new objects, same values)', () => {
+    it('keep the chosen target locale', () => {
+      const { component, fixture } = setup();
+      component.selectedTargetLocale.set(de);
+
+      fixture.componentRef.setInput('defaultLocale', { ...en });
+      fixture.componentRef.setInput('translation', translation());
+      fixture.detectChanges();
+
+      expect(component.selectedTargetLocale()).toBe(de);
+    });
+
+    it('keep the value being typed', () => {
+      const { component, fixture } = setup();
+      component.selectedTargetLocale.set(de);
+      component.selectedTranslationLocaleValue.set('Hallo');
+
+      fixture.componentRef.setInput('translation', translation());
+      fixture.detectChanges();
+
+      expect(component.selectedTranslationLocaleValue()).toBe('Hallo');
+    });
+
+    it('still show a new stored value, and a new default locale', () => {
+      const { component, fixture } = setup();
+
+      fixture.componentRef.setInput('translation', translation({ locales: { en: 'Hello again' } }));
+      fixture.detectChanges();
+      expect(component.selectedTranslationLocaleValue()).toBe('Hello again');
+
+      fixture.componentRef.setInput('defaultLocale', de);
+      fixture.detectChanges();
+      expect(component.selectedTargetLocale()).toEqual(de);
+    });
   });
 
   it('identifyTranslationStatus() delegates to the shared util using availableLocales', () => {

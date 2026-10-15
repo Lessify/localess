@@ -291,7 +291,14 @@
       </div>
       <div id="header-actions" class="flex items-center gap-2 px-4">
         @if (isDebug) {
-          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings" position="bottom">
+          <button
+            hlmBtn
+            size="icon-sm"
+            variant="ghost"
+            (click)="showDebugSettings.set(true)"
+            hlmTooltip="App Settings"
+            aria-label="App Settings"
+            position="bottom">
             <ng-icon hlm name="lucideSettings" size="sm" />
           </button>
         }

@@ -22,7 +22,7 @@
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
         >{{ form.controls['name'].value?.length || 0 }}/50</hlm-input-group-addon
       >
-      <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeId()" hlmTooltip="Normalize ID">
+      <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeId()" hlmTooltip="Normalize ID" aria-label="Normalize ID">
         <ng-icon hlm size="sm" name="lucideWandSparkles" />
       </button>
     </div>

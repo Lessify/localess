@@ -326,6 +326,9 @@ export class FeaturesComponent implements OnInit {
             this.latestRelease.set(value);
           }
         },
+        // Best effort: GitHub rate-limits anonymous calls and an install may have no internet access. Unhandled,
+        // the error surfaced as an uncaught error on every page load.
+        error: () => undefined,
       });
     effect(async () => {
       if (!this.userStore.isAuthenticated()) {

@@ -68,7 +68,9 @@ export class GeneralComponent {
       )
       .subscribe({
         next: space => {
-          this.form.patchValue(space!);
+          // The space list is live and re-emits whenever any space changes: only an untouched form follows it, or
+          // the name being typed was overwritten (and Save then sent the old one).
+          if (!this.form.dirty) this.form.patchValue(space!);
           this.isLoading.set(false);
           this.cd.markForCheck();
         },
@@ -78,6 +80,7 @@ export class GeneralComponent {
   save(): void {
     this.spaceService.update(this.spaceStore.selectedSpaceId()!, this.form.value).subscribe({
       next: () => {
+        this.form.markAsPristine();
         this.notificationService.success('Space has been updated.');
       },
       error: (err: unknown) => {

@@ -62,17 +62,24 @@
               variant="ghost"
               [cdkCopyToClipboard]="element.token"
               (cdkCopyToClipboardCopied)="copied()"
-              hlmTooltip="Copy Token">
+              hlmTooltip="Copy Token"
+              aria-label="Copy Token">
               <ng-icon hlm size="sm" name="lucideCopy" />
             </button>
           }
-          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
+          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit" aria-label="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openRegenerateDialog(element)" hlmTooltip="Regenerate">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            (click)="openRegenerateDialog(element)"
+            hlmTooltip="Regenerate"
+            aria-label="Regenerate">
             <ng-icon hlm size="sm" name="lucideRefreshCw" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete">
+          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete" aria-label="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
         </td>

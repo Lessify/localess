@@ -262,9 +262,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {
       if (document.data === undefined) {
+        // The document's own schema name: the space's schemas may not have loaded yet (a deep link into another
+        // space), and an empty `_schema` left the editor without fields for good.
         this.documentData = {
           _id: v4(),
-          _schema: this.rootSchema()?.name || '',
+          _schema: document.schema,
         };
       } else if (typeof document.data === 'string') {
         this.documentData = normalizeContent(JSON.parse(document.data));

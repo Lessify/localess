@@ -42,13 +42,20 @@
           </p>
         </div>
         <div hlmItemActions class="mb-auto">
-          <button hlmBtn size="icon" variant="outline" (click)="openEditDialog(environment)" hlmTooltip="Edit">
+          <button hlmBtn size="icon" variant="outline" (click)="openEditDialog(environment)" hlmTooltip="Edit" aria-label="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
-          <button hlmBtn size="icon" variant="outline" (click)="openDeleteDialog(environment)" hlmTooltip="Delete">
+          <button hlmBtn size="icon" variant="outline" (click)="openDeleteDialog(environment)" hlmTooltip="Delete" aria-label="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            cdkDragHandle
+            class="cursor-grab active:cursor-grabbing"
+            hlmTooltip="Move"
+            aria-label="Move">
             <ng-icon hlm size="sm" name="lucideGripVertical" />
           </button>
         </div>

@@ -16,7 +16,7 @@
         <div hlmField>
           <label hlmFieldLabel for="space-id">Space ID</label>
           <div hlmInputGroup>
-            <input hlmInputGroupInput [value]="space.id" readonly />
+            <input hlmInputGroupInput id="space-id" [value]="space.id" readonly />
             <div hlmInputGroupAddon align="inline-end">
               <button
                 hlmInputGroupButton
@@ -37,8 +37,8 @@
           }
         </div>
         <div hlmField>
-          <label hlmFieldLabel for="space-id">Space Name</label>
-          <input hlmInput formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
+          <label hlmFieldLabel for="space-name">Space Name</label>
+          <input hlmInput id="space-name" formControlName="name" required minlength="3" maxlength="30" autocomplete="off" />
           @if (form.controls['name'].errors; as errors) {
             <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
           }

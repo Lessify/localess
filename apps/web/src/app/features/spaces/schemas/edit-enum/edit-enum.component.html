@@ -1,6 +1,6 @@
 <div class="flex items-center justify-between gap-2 p-2">
   <div class="flex items-center gap-2">
-    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Schemas" aria-label="Back to Schemas">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
@@ -69,10 +69,23 @@
                   </div>
 
                   <div hlmItemActions>
-                    <button hlmBtn size="icon" variant="outline" (click)="removeComponent($event, index)" hlmTooltip="Delete">
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="outline"
+                      (click)="removeComponent($event, index)"
+                      hlmTooltip="Delete"
+                      aria-label="Delete">
                       <ng-icon hlm size="sm" name="lucideTrash" />
                     </button>
-                    <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+                    <button
+                      hlmBtn
+                      size="icon"
+                      variant="ghost"
+                      cdkDragHandle
+                      class="cursor-grab active:cursor-grabbing"
+                      hlmTooltip="Move"
+                      aria-label="Move">
                       <ng-icon hlm size="sm" name="lucideGripVertical" />
                     </button>
                   </div>

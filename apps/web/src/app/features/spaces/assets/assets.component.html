@@ -6,10 +6,20 @@
     </span>
   }
   <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.assetLayout()">
-    <button hlmToggleGroupItem value="list" hlmTooltip="List Layout" (click)="settingsStore.setAssetLayout('list')">
+    <button
+      hlmToggleGroupItem
+      value="list"
+      hlmTooltip="List Layout"
+      aria-label="List Layout"
+      (click)="settingsStore.setAssetLayout('list')">
       <ng-icon hlm size="sm" name="lucideLayoutList" />
     </button>
-    <button hlmToggleGroupItem value="grid" hlmTooltip="Grid Layout" (click)="settingsStore.setAssetLayout('grid')">
+    <button
+      hlmToggleGroupItem
+      value="grid"
+      hlmTooltip="Grid Layout"
+      aria-label="Grid Layout"
+      (click)="settingsStore.setAssetLayout('grid')">
       <ng-icon hlm size="sm" name="lucideLayoutGrid" />
     </button>
   </hlm-toggle-group>
@@ -44,7 +54,7 @@
     </button>
   }
   @if ((importExportEnabled ? ['ASSET_IMPORT', 'ASSET_EXPORT'] : 'ASSET_REGEN_METADATA') | canUserPerform | async) {
-    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+    <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
@@ -85,7 +95,7 @@
   <nav hlmBreadcrumb class="p-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
-        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+        <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
           <ng-icon hlm size="sm" name="lucideFolderRoot" />
         </button>
       </li>
@@ -188,7 +198,13 @@
           <ng-container llColumnDef="actions">
             <th llHeaderCell *llHeaderCellDef>Actions</th>
             <td llCell *llCellDef="let element">
-              <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                aria-label="Actions"
+                [hlmDropdownMenuTrigger]="actionsMenu"
+                (click)="$event.stopPropagation()">
                 <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
               </button>
               <ng-template #actionsMenu>
@@ -249,22 +265,22 @@
         @for (item of dataSource.renderedData(); track item.id) {
           <ll-asset-card [item]="item" [spaceId]="spaceId()" [zoomCursor]="true" (assetSelect)="onAssetSelect($event)">
             @if (item.kind === 'FILE') {
-              <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download">
+              <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download" aria-label="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />
               </button>
             }
             @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(item)" hlmTooltip="Edit">
+              <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(item)" hlmTooltip="Edit" aria-label="Edit">
                 <ng-icon hlm size="sm" name="lucidePencil" />
               </button>
             }
             @if ('ASSET_UPDATE' | canUserPerform | async) {
-              <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move">
+              <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move" aria-label="Move">
                 <ng-icon hlm size="sm" name="lucideFolderInput" />
               </button>
             }
             @if ('ASSET_DELETE' | canUserPerform | async) {
-              <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(item)" hlmTooltip="Delete">
+              <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(item)" hlmTooltip="Delete" aria-label="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>
             }

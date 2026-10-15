@@ -115,6 +115,12 @@ describe('EditDocumentComponent', () => {
       expect(component.documentData._id).toBeTruthy();
     });
 
+    it("starts a new document with its schema before the space's schemas have loaded (deep link)", () => {
+      const { component } = setup(documentOf(undefined), { schemas: [] });
+
+      expect(component.documentData._schema).toBe('root1');
+    });
+
     it('starts a new document with the schema name in _schema, not the schema row id', () => {
       const page = { ...rootSchema, id: '0190a3b4-0000-7000-8000-000000000001', name: 'root1' } as Schema;
       const { component } = setup(documentOf(undefined), { schemas: [page, childSchema] });

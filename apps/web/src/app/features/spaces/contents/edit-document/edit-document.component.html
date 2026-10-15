@@ -1,6 +1,6 @@
 <div class="flex items-center justify-between gap-2 p-2">
   <div class="flex items-center gap-2">
-    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Contents">
+    <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Contents" aria-label="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
     <div>
@@ -46,7 +46,14 @@
     </ng-template>
 
     @if (contentErrors.length > 0) {
-      <button hlmBtn size="icon" variant="destructive" [hlmDropdownMenuTrigger]="contentErrorsMenu" side="bottom" hlmTooltip="Errors">
+      <button
+        hlmBtn
+        size="icon"
+        variant="destructive"
+        [hlmDropdownMenuTrigger]="contentErrorsMenu"
+        side="bottom"
+        hlmTooltip="Errors"
+        aria-label="Errors">
         <ng-icon hlm size="sm" name="lucideAlertCircle" />
       </button>
 
@@ -120,7 +127,7 @@
     }
     <ll-document-status [updatedAt]="documentUpdatedAt()" [publishedAt]="documentPublishedAt()" />
 
-    <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="extraMenu">
+    <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>

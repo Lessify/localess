@@ -1,7 +1,7 @@
 <div id="browser" class="browser flex h-full flex-col overflow-hidden rounded-t-xl border">
   @if (selectedEnvironment(); as environment) {
     <div id="browser-toolbar" class="flex flex-wrap items-center gap-2 border-b p-2">
-      <button hlmBtn size="icon" variant="outline" hlmTooltip="Reload" (click)="reloadEnvironment()">
+      <button hlmBtn size="icon" variant="outline" hlmTooltip="Reload" aria-label="Reload" (click)="reloadEnvironment()">
         <ng-icon hlm size="sm" name="lucideRefreshCcw" />
       </button>
       <div class="flex-grow">

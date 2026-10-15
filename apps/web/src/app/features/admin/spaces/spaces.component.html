@@ -48,13 +48,14 @@
             variant="ghost"
             [cdkCopyToClipboard]="element.id"
             (cdkCopyToClipboardCopied)="copied()"
-            hlmTooltip="Copy Space ID">
+            hlmTooltip="Copy Space ID"
+            aria-label="Copy Space ID">
             <ng-icon hlm size="sm" name="lucideCopy" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit">
+          <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(element)" hlmTooltip="Edit" aria-label="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete">
+          <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(element)" hlmTooltip="Delete" aria-label="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
         </td>
