@@ -127,15 +127,32 @@ Admin → Spaces tests follow **pre-check → action → post-check** (UI, after
 
 ### 6. Translations
 
+Every test uses a space with **English (default), German and Romanian** and follows **pre-check → action → post-check**
+(list, detail panel, after a reload, API, and the CDN where publishing matters). Machine translation uses the server's
+stub provider, so translated values are exact (`Hello : en -> de`). Specs in `tests/translations/`.
+
 | Scenario | How | Status |
 |---|---|---|
-| Add, publish, served by the CDN API | UI + API | ✅ `content/translations` @smoke |
-| Edit the value of a second locale | UI + API | ✅ `content/translations` |
-| Rename a key, delete a translation | UI | ✅ `content/translations` |
-| Search by key and value | UI | ✅ `content/translations` |
-| Live updates: a change elsewhere shows without reload | UI + API | ✅ `content/translations` |
-| Status and label filters, tree layout | UI | ⬜ |
-| Machine translation (stub provider): translate one value, "Translate Locale" for all | UI (`LOCALESS_TRANSLATE_PROVIDER=stub` is set) | ⬜ |
+| **Add** a key with value, description, labels | UI + API | ✅ `translations/add` @smoke |
+| Add with "Translate other locales": German and Romanian machine-translated | UI + API | ✅ `translations/add` |
+| Add refuses an existing key, also in other letter case | UI + API | ✅ `translations/add` |
+| Add refuses invalid keys (1 character, leading digit, trailing dot, space, non-ASCII); cancel creates nothing | UI + API | ✅ `translations/add` |
+| **Edit** the value in English, German and Romanian; the list shows the filter's language | UI + API | ✅ `translations/edit` |
+| Save disabled until the value changes | UI | ✅ `translations/edit` |
+| Rename a key (same id, all values kept); renaming to an existing key (any case) refused | UI + API | ✅ `translations/edit` |
+| Edit description and labels | UI + API | ✅ `translations/edit` |
+| An edit reaches the CDN only after Publish (de, ro, en) | UI + CDN | ✅ `translations/edit` @smoke |
+| **Delete** one key in all locales, the others stay, gone from the CDN after Publish; cancel keeps it | UI + API + CDN | ✅ `translations/delete` @smoke |
+| **Labels**: a single label; add and remove in Edit; duplicates, spaces and 1-character labels refused | UI + API | ✅ `translations/labels` |
+| Filter by label, by two labels (any of them), Reset | UI | ✅ `translations/labels` |
+| **Language**: the list shows the chosen language's values | UI | ✅ `translations/search` |
+| Search keys; search values in the chosen language only (German, Romanian words) | UI | ✅ `translations/search` |
+| Status filter: translated / partially over all locales; untranslated in Romanian, in German | UI | ✅ `translations/search` |
+| Search + label + status combined | UI | ✅ `translations/search` |
+| **Translate** one value into German and Romanian (saved only with Save); from another source; not into itself | UI + API | ✅ `translations/translate` |
+| "Translate Locale" fills only missing values; nothing left; with overwrite replaces all | UI + API | ✅ `translations/translate` |
+| **List view**: key and value per row, opening a key, 120 keys in the virtual list, live updates | UI + API | ✅ `translations/views` |
+| **Tree view**: groups by dots, expand / collapse, selection shown, search filters the tree, layout kept after reload | UI | ✅ `translations/views` |
 | Import / export | Hidden behind `FEATURE_FLAGS.importExport` | ➖ until enabled |
 
 ### 7. Schemas
@@ -231,6 +248,8 @@ regression test.
 | Translators got "Lost connection…" toasts and endless 403 retries for documents and schemas | `SpaceStore` only listens to what the user may read |
 | An install without internet access (or a GitHub rate limit) threw an uncaught error on every page | The release check handles its error |
 | The webhook detail page threw NG0951 and never paginated its logs | The paginator query is optional and wired when it appears |
+| Translation labels: the label rules were applied to the list, not each label: a single label made Save disabled (no message), while duplicates, labels with spaces and 1-character labels were accepted | Each label is checked when it is entered, with the reason shown; the list only keeps the server's limit (Add and Edit dialogs) |
+| Tree view of translations never showed the selected key (and never the saving spinner): it was given the translation's id, the nodes are keyed by key | The list passes the selected key |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -243,3 +262,6 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Finding | Where |
 |---|---|
 | Lists that update live re-render their rows and close an open row menu | Page objects retry opening (`rowMenu`, `expectRowMenu`) |
+| Machine translation of a single value (and "Translate other locales" on add) needs TRANSLATION_UPDATE **and** CONTENT_UPDATE (kept from the Firebase callable, pinned by a server test), while "Translate Locale" needs only TRANSLATION_UPDATE; a translator without CONTENT_UPDATE sees the Translate button and gets "Could not be translated." | Product decision; not asserted |
+| Tree view: a key that is also the prefix of other keys (`home` next to `home.title`) is a group node and can't be selected, so that translation can't be opened in the tree | Product decision; not asserted |
+| Key uniqueness: the UI refuses a key in any letter case, the server only the exact key (via the API `Home.Title` and `home.title` can both exist) | Not asserted |

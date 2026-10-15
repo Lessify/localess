@@ -51,10 +51,11 @@ TEST-PLAN.md                # the catalogue: what can be tested, how, and what i
 tests/
 ├── support/
 │   ├── env.ts              # port, seeded admin credentials, session file
-│   ├── fixtures.ts         # `test`: api, space, createUser, signInAs, error guard, offline browser
+│   ├── fixtures.ts         # `test`: api, space, createUser, signInAs, cleanup, error guard, offline browser
 │   ├── app-api.ts          # App API client for test data (spaces, translations, schemas, contents, assets, ...)
 │   ├── files.ts            # a 1×1 PNG for uploads
-│   └── webhook-receiver.ts # local HTTP endpoint for webhook deliveries
+│   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries
+│   └── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── api/                    # platform, CDN API (translations, contents, assets), Management API, permissions
@@ -62,7 +63,8 @@ tests/
 ├── admin/                  # Admin → Users, Admin → Spaces
 ├── me/                     # profile
 ├── space/                  # settings (general, locales, environments, tokens), dashboard, navigation
-├── content/                # translations, schemas, contents, assets
+├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
+├── content/                # schemas, contents, assets
 └── developers/             # webhooks
 ```
 
