@@ -5,6 +5,8 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  # By hand on any branch (`gh workflow run build.yml --ref <branch>`), e.g. one whose PR targets another feature branch.
+  workflow_dispatch:
 
 jobs:
   test:
