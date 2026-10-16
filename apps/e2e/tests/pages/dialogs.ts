@@ -7,6 +7,35 @@ export async function dialog(page: Page, title: string | RegExp): Promise<Locato
   return locator;
 }
 
+/**
+ * A form field refused with `message` (checked on blur): the message is shown and Save is disabled. The field must
+ * already hold the value.
+ */
+export async function expectRefused(form: Locator, field: Locator, message: string): Promise<void> {
+  await field.blur();
+  await expect(form.getByText(message, { exact: true })).toBeVisible();
+  await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
+}
+
+/** Cancels a form dialog and waits for it to close. */
+export async function cancel(form: Locator): Promise<void> {
+  await form.getByRole('button', { name: 'Cancel' }).click();
+  await expect(form).toBeHidden();
+}
+
+/**
+ * Answers the native `confirm()` the next click raises (the unsaved-changes guard), and returns its message.
+ * Register before the click: `const asked = answerConfirm(page, false); await click; expect(await asked)...`.
+ */
+export function answerConfirm(page: Page, accept: boolean): Promise<string> {
+  return new Promise(resolve =>
+    page.once('dialog', dialog => {
+      resolve(dialog.message());
+      void (accept ? dialog.accept() : dialog.dismiss());
+    }),
+  );
+}
+
 /** Picks an option of a Spartan select (`hlm-select`) or combobox inside `scope`. */
 export async function choose(page: Page, trigger: Locator, option: string | RegExp): Promise<void> {
   await trigger.click();

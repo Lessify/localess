@@ -10,6 +10,7 @@ import {
 
 import { AppApi, CSRF } from './app-api';
 import { AUTH_STATE } from './env';
+import { SessionProbe } from './sessions';
 
 /** A space created through the App API for one test, deleted afterwards. */
 export interface TestSpace {
@@ -61,6 +62,8 @@ interface Fixtures {
   signInAs: (user: TestUser) => Promise<Page>;
   /** A page in its own browser context, signed out (no session, no localStorage). */
   signedOutPage: () => Promise<Page>;
+  /** Signs in with an email and password in a client of its own, and probes what that user may do. */
+  probe: SessionProbe;
   /** Deletes, after the test, spaces and users a test creates through the UI (by name / email). */
   cleanup: { space: (name: string) => void; user: (email: string) => void };
 }
@@ -140,6 +143,12 @@ export const test = base.extend<Fixtures>({
     });
     for (const context of contexts) await context.close();
     await expectNoAppErrors(errors, allowedAppErrors);
+  },
+
+  probe: async ({ playwright, baseURL }, use) => {
+    const client = await anonymousRequest(playwright, baseURL, CSRF);
+    await use(new SessionProbe(client));
+    await client.dispose();
   },
 
   signedOutPage: async ({ browser, baseURL, allowedAppErrors, lifecycle }, use) => {

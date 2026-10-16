@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 import { choose, dialog, rowMenu } from './dialogs';
+import { ADMIN } from '../support/env';
 import { confirmDialog, expectToast } from './notifications';
 
 export type RoleLabel = 'None' | 'Custom' | 'Admin';
@@ -30,7 +31,7 @@ export class AdminUsersPage {
     await this.page.goto('/features/admin/users');
     await expect(this.page.getByRole('button', { name: 'Invite' })).toBeVisible();
     // The table has loaded once the seeded admin is listed.
-    await expect(this.row('admin@e2e.localess.test')).toBeVisible();
+    await expect(this.row(ADMIN.email)).toBeVisible();
   }
 
   row(email: string): Locator {

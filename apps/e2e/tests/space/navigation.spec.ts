@@ -1,4 +1,5 @@
 import { Shell } from '../pages/shell.page';
+import { ADMIN } from '../support/env';
 import { pngFile } from '../support/files';
 import { expect, test, uniqueId } from '../support/fixtures';
 
@@ -38,7 +39,7 @@ test.describe('Navigation', () => {
     await page.goto('/features/admin/spaces');
     await expect(page.getByRole('button', { name: 'Add Space' })).toBeVisible();
     await page.goto('/features/me');
-    await expect(page.getByText('Email: admin@e2e.localess.test')).toBeVisible();
+    await expect(page.getByText(`Email: ${ADMIN.email}`)).toBeVisible();
   });
 
   test('switches between spaces with the space switcher', async ({ page, api, space }) => {

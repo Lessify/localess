@@ -1,5 +1,3 @@
-import type { APIRequestContext } from '@playwright/test';
-
 import { MePage } from '../pages/me.page';
 import { Shell } from '../pages/shell.page';
 import { CSRF } from '../support/app-api';
@@ -8,19 +6,6 @@ import { anonymousRequest, expect, test, uniqueId } from '../support/fixtures';
 // Every test works on its own user (the shared admin must not change) and follows pre-check → action (UI) →
 // post-check (the page, again after a reload, the API, and what the account can now do).
 test.describe('Me → profile', () => {
-  let client: APIRequestContext;
-  test.beforeEach(async ({ playwright, baseURL }) => {
-    client = await anonymousRequest(playwright, baseURL, CSRF);
-  });
-  test.afterEach(async () => {
-    await client.dispose();
-  });
-
-  async function canSignIn(email: string, password: string): Promise<boolean> {
-    await client.post('/api/auth/logout');
-    return (await client.post('/api/auth/login', { data: { email, password } })).ok();
-  }
-
   test.describe('view', () => {
     test('opens from the user menu and shows a custom user with their permissions', async ({ createUser, signInAs }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ', 'CONTENT_READ'] });
@@ -125,7 +110,13 @@ test.describe('Me → profile', () => {
   });
 
   test.describe('update email', () => {
-    test('changes the email: sign-in works with the new one only, and it is unverified', async ({ api, createUser, signInAs, cleanup }) => {
+    test('changes the email: sign-in works with the new one only, and it is unverified', async ({
+      api,
+      createUser,
+      signInAs,
+      cleanup,
+      probe,
+    }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const newEmail = `${uniqueId('moved-')}@e2e.localess.test`;
       cleanup.user(newEmail);
@@ -134,8 +125,8 @@ test.describe('Me → profile', () => {
 
       // Pre-check
       await me.goto(user.email);
-      expect(await canSignIn(user.email, user.password)).toBe(true);
-      expect(await canSignIn(newEmail, user.password)).toBe(false);
+      expect(await probe.canSignIn(user.email, user.password)).toBe(true);
+      expect(await probe.canSignIn(newEmail, user.password)).toBe(false);
 
       // Action
       const form = await me.openEmail(user.password, newEmail);
@@ -147,11 +138,11 @@ test.describe('Me → profile', () => {
       await expect(me.field('Email Verified')).toHaveText('Email Verified: No');
       expect(await api.findUserByEmail(newEmail)).toMatchObject({ id: user.id });
       expect(await api.findUserByEmail(user.email)).toBeUndefined();
-      expect(await canSignIn(newEmail, user.password)).toBe(true);
-      expect(await canSignIn(user.email, user.password)).toBe(false);
+      expect(await probe.canSignIn(newEmail, user.password)).toBe(true);
+      expect(await probe.canSignIn(user.email, user.password)).toBe(false);
     });
 
-    test('refuses a wrong current password', async ({ api, createUser, signInAs }) => {
+    test('refuses a wrong current password', async ({ api, createUser, signInAs, probe }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const page = await signInAs(user);
       const me = new MePage(page);
@@ -168,10 +159,10 @@ test.describe('Me → profile', () => {
       await page.reload();
       await expect(me.field('Email')).toHaveText(`Email: ${user.email}`);
       expect(await api.findUserByEmail(newEmail)).toBeUndefined();
-      expect(await canSignIn(user.email, user.password)).toBe(true);
+      expect(await probe.canSignIn(user.email, user.password)).toBe(true);
     });
 
-    test('refuses an email another user has', async ({ api, createUser, signInAs }) => {
+    test('refuses an email another user has', async ({ api, createUser, signInAs, probe }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const other = await createUser({ permissions: ['TRANSLATION_READ'] });
       const page = await signInAs(user);
@@ -189,7 +180,7 @@ test.describe('Me → profile', () => {
       await expect(me.field('Email')).toHaveText(`Email: ${user.email}`);
       expect(await api.findUserByEmail(user.email)).toMatchObject({ id: user.id });
       expect(await api.findUserByEmail(other.email)).toMatchObject({ id: other.id });
-      expect(await canSignIn(other.email, other.password)).toBe(true);
+      expect(await probe.canSignIn(other.email, other.password)).toBe(true);
     });
   });
 
@@ -199,6 +190,7 @@ test.describe('Me → profile', () => {
       signInAs,
       playwright,
       baseURL,
+      probe,
     }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const page = await signInAs(user);
@@ -219,14 +211,14 @@ test.describe('Me → profile', () => {
         expect((await otherSession.get('/api/auth/me')).status()).toBe(401);
         await page.reload();
         await expect(me.field('Email')).toHaveText(`Email: ${user.email}`);
-        expect(await canSignIn(user.email, user.password)).toBe(false);
-        expect(await canSignIn(user.email, 'changed-password')).toBe(true);
+        expect(await probe.canSignIn(user.email, user.password)).toBe(false);
+        expect(await probe.canSignIn(user.email, 'changed-password')).toBe(true);
       } finally {
         await otherSession.dispose();
       }
     });
 
-    test('refuses a wrong current password', async ({ createUser, signInAs }) => {
+    test('refuses a wrong current password', async ({ createUser, signInAs, probe }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const page = await signInAs(user);
       const me = new MePage(page);
@@ -239,11 +231,11 @@ test.describe('Me → profile', () => {
       await me.save(form, 'Current password is incorrect');
 
       // Post-check
-      expect(await canSignIn(user.email, user.password)).toBe(true);
-      expect(await canSignIn(user.email, 'changed-password')).toBe(false);
+      expect(await probe.canSignIn(user.email, user.password)).toBe(true);
+      expect(await probe.canSignIn(user.email, 'changed-password')).toBe(false);
     });
 
-    test('a new password under 6 characters can not be submitted; cancelling changes nothing', async ({ createUser, signInAs }) => {
+    test('a new password under 6 characters can not be submitted; cancelling changes nothing', async ({ createUser, signInAs, probe }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const page = await signInAs(user);
       const me = new MePage(page);
@@ -262,7 +254,7 @@ test.describe('Me → profile', () => {
       await expect(form.getByRole('button', { name: 'Save' })).toBeEnabled();
       await form.getByRole('button', { name: 'Cancel' }).click();
       await expect(form).toBeHidden();
-      expect(await canSignIn(user.email, user.password)).toBe(true);
+      expect(await probe.canSignIn(user.email, user.password)).toBe(true);
     });
   });
 

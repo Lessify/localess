@@ -74,13 +74,16 @@ tests/
 │   ├── assets.ts           # asset read-back from the App API and the CDN
 │   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries (its answer status can be set)
 │   ├── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
-│   ├── schemas.ts          # schema read-back from the App API
+│   ├── schemas.ts          # schema read-back from the App API, `createEnum`
+│   ├── sessions.ts         # `SessionProbe` (the `probe` fixture)
+│   ├── text.ts             # `escapeRegExp` (names in a RegExp), `exactly` (a whole text, e.g. a count)
 │   ├── contents.ts         # content read-back, a CDN client (public / preview), a Root schema helper
 │   ├── preview-site.ts     # a local customer site for the Visual Editor (loads sync-v1.js)
 │   ├── app-routes.ts       # the App API routes and their access, read from the server's controllers
 │   ├── oauth.ts            # who the mock OpenID provider signs in (Google / Microsoft)
 │   └── mail.ts             # mails from the mail catcher ("forgot password")
-├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts, drag and drop)
+├── pages/                  # page objects (one per page) and shared helpers (dialogs: `dialog`, `expectRefused`, `cancel`,
+│                           # `answerConfirm`, row menus; toasts; drag and drop)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── seed.spec.ts            # where the Playwright Test Agents start (a fresh space)
 ├── api/                    # platform, CDN API, Management API (translations, schemas, OpenAPI), permission matrix, user managers
@@ -133,6 +136,7 @@ Import `test` and `expect` from `./support/fixtures` (not `@playwright/test`):
 | `signedOutPage()` | A page in its own browser context, signed out (no session, no localStorage), with the error guard and offline routing |
 | `page` | As usual, plus the **error guard** (below) |
 | `anonymousRequest()` | An HTTP client without the admin session (for token-only and signed-out checks) |
+| `probe` | Signs in with an email and password in a client of its own: `canSignIn`, `accessOf` (role, permissions, which App API areas answer), then `probe.request` as that user |
 
 **Error guard.** Every page (`page`, `signInAs` and `signedOutPage` pages, and popups they open) records uncaught
 errors, everything reported to Angular's `ErrorHandler` (what users see as the "An error occurred." toast) and every

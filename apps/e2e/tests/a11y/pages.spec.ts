@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
 import type { AppApi } from '../support/app-api';
+import { ADMIN } from '../support/env';
 import { pngFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
 
@@ -91,9 +92,9 @@ test.describe('Accessibility', () => {
   }
 
   for (const [name, path, ready] of [
-    ['Admin → Users', '/features/admin/users', 'admin@e2e.localess.test'],
+    ['Admin → Users', '/features/admin/users', ADMIN.email],
     ['Admin → Spaces', '/features/admin/spaces', 'Hello World'],
-    ['Me', '/features/me', 'admin@e2e.localess.test'],
+    ['Me', '/features/me', ADMIN.email],
   ]) {
     test(name, async ({ page }) => {
       await page.goto(path);

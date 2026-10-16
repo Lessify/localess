@@ -30,3 +30,15 @@ export function schemasOf(api: AppApi, spaceId: string): Promise<SchemaDto[]> {
 export async function schemaNamed(api: AppApi, spaceId: string, name: string): Promise<SchemaDto | undefined> {
   return (await schemasOf(api, spaceId)).find(it => it.name === name);
 }
+
+/** An Enum schema with these values (`name` is shown, `value` is stored). */
+export async function createEnum(
+  api: AppApi,
+  spaceId: string,
+  name: string,
+  values: { name: string; value: string }[],
+): Promise<{ id: string; name: string }> {
+  const schema = await api.createSchema(spaceId, { name, type: 'ENUM' });
+  await api.send('put', `/api/app/spaces/${spaceId}/schemas/${schema.id}`, { values });
+  return schema;
+}
