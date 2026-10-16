@@ -69,7 +69,7 @@ test.describe('Contents → form: simple field kinds', () => {
 
     // Pre-check
     await contents.gotoDocument(space.id, doc.id);
-    const editor = page.locator('#schema-field-body .ProseMirror');
+    const editor = contents.richText('Body');
     await expect(editor).toBeVisible();
 
     // Action: plain, bold (Ctrl+B), then a bullet list (Ctrl+Shift+8); Markdown typed as source.
@@ -85,20 +85,35 @@ test.describe('Contents → form: simple field kinds', () => {
     await contents.save();
     await contents.publish();
 
-    // Post-check: TipTap JSON with a bold mark and a bullet list; the Markdown string as typed.
+    // Post-check: TipTap JSON, the bold mark on "bold" only, then a bullet list; the Markdown string as typed.
+    const expected = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [
+            { type: 'text', text: 'Plain and ' },
+            { type: 'text', text: 'bold', marks: [{ type: 'bold' }] },
+          ],
+        },
+        {
+          type: 'bulletList',
+          content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'First item' }] }] }],
+        },
+      ],
+    };
+    type Doc = { content: { content: { marks?: unknown }[] }[] };
     const data = (await contentById(api, space.id, doc.id)).data!;
-    const body = JSON.stringify(data.body);
-    expect(body).toContain('"type":"doc"');
-    expect(body).toContain('"type":"bold"');
-    expect(body).toContain('"type":"bulletList"');
-    expect(body).toContain('First item');
+    expect(data.body).toMatchObject(expected);
+    expect((data.body as Doc).content[0].content[0].marks).toBeUndefined();
     expect(data.notes).toBe('# Heading\n\n- one\n- two');
     const cdn = (await new Cdn(request, api, space.id).get({ id: doc.id })).body?.data;
-    expect(JSON.stringify(cdn?.body)).toContain('"type":"bold"');
+    expect(cdn?.body).toMatchObject(expected);
     expect(cdn?.notes).toBe('# Heading\n\n- one\n- two');
     await page.reload();
-    await expect(page.locator('#schema-field-body .ProseMirror strong')).toHaveText('bold');
-    await expect(page.locator('#schema-field-body .ProseMirror li')).toHaveText('First item');
+    // TipTap's own markup: <strong> for the bold mark.
+    await expect(editor.locator('strong')).toHaveText('bold');
+    await expect(editor.getByRole('listitem')).toHaveText('First item');
   });
 
   test("open finding: a field's Default Value is stored on the schema but a new document does not get it", async ({ page, api, space }) => {

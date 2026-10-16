@@ -58,6 +58,17 @@ test.describe('Contents → locales', () => {
     });
     expect((await cdn.get({ id: doc.id }, { locale: 'ro' })).body?.data).toMatchObject({ title: 'Bună', sku: 'SKU-1' });
     expect((await cdn.get({ id: doc.id })).body?.data).toMatchObject({ title: 'Hello' });
+
+    // Post-check: the editor after a reload, per locale.
+    await page.reload();
+    await expect(contents.field('Title')).toHaveValue('Hello');
+    await expect(contents.field('SKU')).toHaveValue('SKU-1');
+    await contents.editorLocale('German');
+    await expect(contents.field('Title')).toHaveValue('Hallo');
+    await expect(contents.field('Subtitle')).toHaveValue('');
+    await expect(contents.field('Subtitle')).toHaveAttribute('placeholder', 'Only in English');
+    await contents.editorLocale('Romanian');
+    await expect(contents.field('Title')).toHaveValue('Bună');
   });
 
   test("translates one field from the field's menu", async ({ page, api, space }) => {
@@ -83,6 +94,9 @@ test.describe('Contents → locales', () => {
     expect((await contentById(api, space.id, doc.id)).data).toMatchObject({
       title_i18n_de: stubTranslation('Welcome', 'en', 'de'),
     });
+    await page.reload();
+    await contents.editorLocale('German');
+    await expect(contents.field('Title')).toHaveValue(stubTranslation('Welcome', 'en', 'de'));
   });
 
   test('"Translate Locale" translates the whole document, fields inside blocks too', async ({ page, api, space }) => {
@@ -123,5 +137,10 @@ test.describe('Contents → locales', () => {
     expect((data.cards as Record<string, unknown>[])[0]).toMatchObject({
       heading_i18n_ro: stubTranslation('First card', 'en', 'ro'),
     });
+    await page.reload();
+    await contents.editorLocale('Romanian');
+    await expect(contents.field('Title')).toHaveValue(stubTranslation('Landing', 'en', 'ro'));
+    await contents.blocks(contents.blockField('Cards')).first().click();
+    await expect(contents.field('Heading')).toHaveValue(stubTranslation('First card', 'en', 'ro'));
   });
 });

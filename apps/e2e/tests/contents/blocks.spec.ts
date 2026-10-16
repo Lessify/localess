@@ -1,4 +1,3 @@
-import type { Locator, Page } from '@playwright/test';
 import { isDeepStrictEqual } from 'node:util';
 
 import { ContentsPage } from '../pages/contents.page';
@@ -8,20 +7,10 @@ import { expect, test, uniqueId } from '../support/fixtures';
 
 type Block = { _id: string; _schema: string; [field: string]: unknown };
 
-/** A Schema / Schemas field of the editor, by its legend. */
-function blockField(page: Page, legend: string): Locator {
-  return page.locator('fieldset').filter({ has: page.locator('legend', { hasText: legend }) });
-}
-
-/** The blocks of a field, in order. */
-function blocks(field: Locator): Locator {
-  return field.locator('[role="listitem"]');
-}
-
 // Schema (one block) and Schemas (a list of blocks) fields. Pre-check → action (editor) → post-check (stored blocks,
 // their order, the CDN API).
 test.describe('Contents → form: nested blocks', () => {
-  test('a Schema field holds one block, edited in its own view and left by the breadcrumb', async ({ page, api, space }) => {
+  test('a Schema field holds one block, edited in its own view and left by the breadcrumb', async ({ page, api, space, request }) => {
     const card = uniqueId('Card');
     await api.createSchema(space.id, {
       name: card,
@@ -38,28 +27,39 @@ test.describe('Contents → form: nested blocks', () => {
 
     // Pre-check: no block.
     await contents.gotoDocument(space.id, doc.id);
-    const hero = blockField(page, 'Hero');
-    await expect(blocks(hero)).toHaveCount(0);
+    const hero = contents.blockField('Hero');
+    const blocks = contents.blocks(hero);
+    await expect(blocks).toHaveCount(0);
 
     // Action: add the block; only one is allowed.
     await hero.getByRole('button', { name: 'Add Schema', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Card' }).click();
-    await expect(blocks(hero)).toHaveCount(1);
+    await expect(blocks).toHaveCount(1);
     await expect(hero.getByRole('button', { name: 'Add Schema', exact: true })).toBeDisabled();
 
     // Open it, fill it, back to the document.
-    await blocks(hero).first().click();
-    await expect(page.locator('nav[hlmBreadcrumb] [aria-current="page"]').last()).toContainText('Card');
+    await blocks.first().click();
+    await expect(contents.openBlock).toHaveText('Card');
     await contents.field('Heading').fill('Hero heading');
-    await page.getByRole('button', { name: 'Document root' }).click();
+    await contents.backToDocumentRoot();
     await expect(contents.field('Title')).toBeVisible();
     await contents.field('Title').fill('Home');
     await contents.save();
+    await contents.publish();
 
-    // Post-check
+    // Post-check: stored, delivered by the CDN, and back after a reload.
     const data = (await contentById(api, space.id, doc.id)).data!;
+    expect(data.title).toBe('Home');
     expect(data.hero).toMatchObject({ _schema: card, heading: 'Hero heading' });
     expect((data.hero as Block)._id).toBeTruthy();
+    const cdn = (await new Cdn(request, api, space.id).get({ id: doc.id })).body?.data;
+    expect(cdn).toMatchObject({ title: 'Home', hero: { _id: (data.hero as Block)._id, _schema: card, heading: 'Hero heading' } });
+    await page.reload();
+    await expect(contents.field('Title')).toHaveValue('Home');
+    await expect(blocks).toHaveCount(1);
+    await expect(hero.getByRole('button', { name: 'Add Schema', exact: true })).toBeDisabled();
+    await blocks.first().click();
+    await expect(contents.field('Heading')).toHaveValue('Hero heading');
   });
 
   test('a Schemas field: add at the end and above, clone, move, delete; the order is kept @smoke', async ({
@@ -85,38 +85,39 @@ test.describe('Contents → form: nested blocks', () => {
     const schema = await pageSchema(api, space, [{ name: 'body', kind: 'SCHEMAS', displayName: 'Body', schemas: [card, quote] }]);
     const doc = await api.createDocument(space.id, { name: 'Landing', slug: 'landing', schema: schema.name });
     const contents = new ContentsPage(page);
-    const body = blockField(page, 'Body');
-    const order = async () => (await blocks(body).allInnerTexts()).map(it => (it.match(/#(\S+)/) ?? [])[1]);
+    const body = contents.blockField('Body');
+    const blocks = contents.blocks(body);
+    const order = () => contents.blockSchemas(body);
 
     // Pre-check
     await contents.gotoDocument(space.id, doc.id);
-    await expect(blocks(body)).toHaveCount(0);
+    await expect(blocks).toHaveCount(0);
 
     // Action: Card, Quote at the end; a Card above the Quote.
     for (const name of ['Card', 'Quote']) {
       await body.getByRole('button', { name: 'Add Schema at the end' }).click();
       await page.getByRole('menuitem', { name }).click();
     }
-    await blocks(body).nth(1).getByRole('button', { name: 'Add Schema above' }).click();
+    await blocks.nth(1).getByRole('button', { name: 'Add Schema above' }).click();
     await page.getByRole('menuitem', { name: 'Card' }).click();
     await expect.poll(order).toEqual([card, card, quote]);
 
     // Fill the first card and the quote.
-    await blocks(body).first().click();
+    await blocks.first().click();
     await contents.field('Heading').fill('First card');
-    await page.getByRole('button', { name: 'Document root' }).click();
-    await blocks(body).nth(2).click();
+    await contents.backToDocumentRoot();
+    await blocks.nth(2).click();
     await contents.field('Text').fill('A quote');
-    await page.getByRole('button', { name: 'Document root' }).click();
+    await contents.backToDocumentRoot();
 
     // Clone the first card: a copy right after it, with its value.
-    await blocks(body).first().getByRole('button', { name: 'Clone the schema' }).click();
+    await blocks.first().getByRole('button', { name: 'Clone the schema' }).click();
     await expect.poll(order).toEqual([card, card, card, quote]);
     // Delete the empty card (now third).
-    await blocks(body).nth(2).getByRole('button', { name: 'Delete' }).click();
+    await blocks.nth(2).getByRole('button', { name: 'Delete' }).click();
     await expect.poll(order).toEqual([card, card, quote]);
     // Move the quote to the top.
-    await dragAbove(page, blocks(body).nth(2).getByRole('button', { name: 'Move' }), blocks(body).first(), async () =>
+    await dragAbove(page, blocks.nth(2).getByRole('button', { name: 'Move' }), blocks.first(), async () =>
       isDeepStrictEqual(await order(), [quote, card, card]),
     );
     await contents.save();

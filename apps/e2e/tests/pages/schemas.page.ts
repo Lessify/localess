@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
+import { escapeRegExp } from '../support/text';
 import { choose, dialog, expectRowMenu, rowMenu } from './dialogs';
 import { dragAbove } from './drag';
 import { confirmDialog, expectToast } from './notifications';
@@ -53,14 +54,14 @@ export class SchemasPage {
     await expect(this.page.getByRole('button', { name: 'Add Schema' })).toBeVisible();
   }
 
-  /** A row, by the schema name (the list shows `#name`). */
+  /** A row, by the schema name (the name cell shows the display name, then `#name` on its own line). */
   row(name: string): Locator {
-    // The name cell ends with `#name` (the display name comes first).
-    return this.page.getByRole('row').filter({ has: this.page.getByRole('cell').filter({ hasText: new RegExp(`#${name}\\s*$`) }) });
+    return this.page.getByRole('row').filter({ has: this.page.getByText(`#${name}`, { exact: true }) });
   }
 
+  /** The schema rows (each has an Actions menu; the header and the "No schemas yet." row don't). */
   get rows(): Locator {
-    return this.page.locator('tr[ll-row]');
+    return this.page.getByRole('row').filter({ has: this.page.getByRole('button', { name: 'Actions', exact: true }) });
   }
 
   get empty(): Locator {
@@ -73,7 +74,7 @@ export class SchemasPage {
     const form = await dialog(this.page, 'Create new Schema');
     await form.getByLabel('Display Name').fill(input.displayName);
     if (input.id !== undefined) await form.getByLabel('ID', { exact: true }).fill(input.id);
-    if (input.type) await choose(this.page, form.locator('#type'), input.type);
+    if (input.type) await choose(this.page, form.getByLabel('Type', { exact: true }), input.type);
     return form;
   }
 
@@ -157,16 +158,21 @@ export class SchemasPage {
     await this.page.getByRole('tab', { name }).click();
   }
 
-  /** The editor's item rows (fields of a Root/Node, values of an Enum), by `#name`. */
+  /** The editor's rows: fields of a Root/Node, values of an Enum (the Fields / Values tab). */
+  get items(): Locator {
+    return this.page.getByRole('tabpanel').getByRole('listitem');
+  }
+
+  /** An editor row, by its `#name` (fields) or `#value` (enum values), shown in the row's title. */
   item(name: string): Locator {
-    // Matched in the row's title: the whole row's text runs `#name` into its badges ("#titleText").
-    return this.page.getByRole('listitem').filter({ has: this.page.locator('[hlmItemTitle]', { hasText: new RegExp(`#${name}\\s*$`) }) });
+    return this.items.filter({ has: this.page.getByText(`#${name}`, { exact: true }) });
   }
 
   /** The `#names` of the editor's rows, in order (read once: wrap in `expect.poll` after a reload). */
   async itemNames(): Promise<string[]> {
-    const titles = await this.page.locator('[cdkDropList] [role="listitem"] [hlmItemTitle]').allInnerTexts();
-    return titles.map(it => (it.match(/#(\S+)/) ?? [])[1] ?? it.trim());
+    // The title line reads `Display Name #name`; the badges follow on their own line.
+    const texts = await this.items.allInnerTexts();
+    return texts.map(it => (it.match(/#(\S+)/) ?? [])[1] ?? it.trim());
   }
 
   get sheetTitle(): Locator {
@@ -179,9 +185,9 @@ export class SchemasPage {
     await expect(this.sheetTitle).toBeHidden();
   }
 
-  /** The open side panel (Edit Field / Edit Value): the nearest ancestor of its title that holds the form. */
+  /** The open side panel (Edit Field / Edit Value). */
   get sheet(): Locator {
-    return this.sheetTitle.locator('xpath=ancestor::*[.//input[@id="name"]][1]');
+    return this.page.getByRole('dialog').filter({ has: this.sheetTitle });
   }
 
   // --- Root/Node editor: fields --------------------------------------------------------------------------------------
@@ -197,31 +203,33 @@ export class SchemasPage {
     await expect(this.sheetTitle).toHaveText('Edit Field');
   }
 
-  /** Opens a field's Edit Field panel and sets what is given, then closes it. */
+  /** Opens a field's Edit Field panel (it must be closed) and sets what is given, then closes it. */
   async editField(name: string, input: FieldInput): Promise<void> {
-    if (!(await this.sheetTitle.isVisible())) await this.item(name).click();
+    await this.item(name).click();
     await expect(this.sheetTitle).toHaveText('Edit Field');
     const sheet = this.sheet;
-    if (input.kind) await choose(this.page, sheet.locator('#kind'), input.kind);
+    if (input.kind) await choose(this.page, sheet.getByLabel('Kind', { exact: true }), input.kind);
     if (input.displayName !== undefined) await sheet.getByLabel('Display Name').fill(input.displayName);
     if (input.description !== undefined) await sheet.getByLabel('Description').fill(input.description);
-    if (input.required !== undefined) await this.setSwitch(sheet, 'required', input.required);
-    if (input.translatable !== undefined) await this.setSwitch(sheet, 'translatable', input.translatable);
-    if (input.source) await choose(this.page, sheet.locator('#source'), new RegExp(`${input.source}`));
+    if (input.required !== undefined) await this.setSwitch(sheet, 'Required', input.required);
+    if (input.translatable !== undefined) await this.setSwitch(sheet, 'Translatable', input.translatable);
+    // Source options read `name`, or `name (Display Name)`.
+    if (input.source)
+      await choose(this.page, sheet.getByLabel('Source', { exact: true }), new RegExp(`^${escapeRegExp(input.source)}(\\s|$)`));
     for (const schema of input.schemas ?? []) {
-      // A click while the list is still opening is lost: retried until the chip is there.
+      // A click while the list is still opening is lost: retried until the chip (its text, the display name) is there.
       await expect(async () => {
-        await sheet.locator('#schemas input').click();
-        await this.page.getByRole('option', { name: new RegExp(schema) }).click({ timeout: 2_000 });
-        await expect(sheet.locator('hlm-combobox-chip').filter({ hasText: schema })).toBeVisible({ timeout: 1_000 });
+        await sheet.getByLabel('Schema', { exact: true }).click();
+        await this.page.getByRole('option', { name: schema, exact: true }).click({ timeout: 2_000 });
+        await expect(sheet.getByText(schema, { exact: true })).toBeVisible({ timeout: 1_000 });
       }).toPass({ timeout: 15_000 });
     }
     await this.closeSheet();
   }
 
-  private async setSwitch(sheet: Locator, id: string, on: boolean): Promise<void> {
-    const control = sheet.locator(`[id="${id}"]`);
-    if ((await control.getAttribute('aria-checked')) !== String(on)) await sheet.locator(`label[for="${id}"]`).click();
+  private async setSwitch(sheet: Locator, label: 'Required' | 'Translatable', on: boolean): Promise<void> {
+    const control = sheet.getByRole('switch', { name: label, exact: true });
+    if ((await control.getAttribute('aria-checked')) !== String(on)) await control.click();
     await expect(control).toHaveAttribute('aria-checked', String(on));
   }
 
@@ -260,8 +268,9 @@ export class SchemasPage {
     await expect(this.sheetTitle).toHaveText('Edit Value');
   }
 
+  /** Opens a value's Edit Value panel (it must be closed), sets what is given, then closes it. */
   async editValue(name: string, input: { displayName?: string; value?: string }): Promise<void> {
-    if (!(await this.sheetTitle.isVisible())) await this.item(name).click();
+    await this.item(name).click();
     await expect(this.sheetTitle).toHaveText('Edit Value');
     if (input.displayName !== undefined) await this.sheet.getByLabel('Display Name').fill(input.displayName);
     if (input.value !== undefined) await this.sheet.getByLabel('Value', { exact: true }).fill(input.value);

@@ -1,4 +1,5 @@
 import { ContentsPage } from '../pages/contents.page';
+import { answerConfirm } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { Cdn, contentById, pageSchema } from '../support/contents';
 import { expect, test } from '../support/fixtures';
@@ -16,11 +17,10 @@ test.describe('Contents → document lifecycle', () => {
     const doc = await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: schema.name });
     const cdn = new Cdn(request, api, space.id);
     const contents = new ContentsPage(page);
-    const status = (name: 'Published' | 'Draft' | 'Not published') => page.getByRole('img', { name, exact: true });
 
     // Pre-check: never published.
     await contents.gotoDocument(space.id, doc.id);
-    await expect(status('Not published')).toBeVisible();
+    await expect(contents.editorStatus('Not published')).toBeVisible();
     expect((await cdn.get({ id: doc.id })).status).toBe(404);
 
     // Action 1: save and publish.
@@ -28,13 +28,13 @@ test.describe('Contents → document lifecycle', () => {
     await contents.save();
     expect((await cdn.get({ id: doc.id })).status).toBe(404);
     await contents.publish();
-    await expect(status('Published')).toBeVisible();
+    await expect(contents.editorStatus('Published')).toBeVisible();
     expect((await cdn.get({ id: doc.id })).body?.data).toMatchObject({ title: 'Version 1' });
 
     // Action 2: edit and save only. Post-check: Draft; public sees v1, preview sees v2.
     await contents.field('Title').fill('Version 2');
     await contents.save();
-    await expect(status('Draft')).toBeVisible();
+    await expect(contents.editorStatus('Draft')).toBeVisible();
     // The second save's toast reads like the first: wait for the stored value.
     await expect.poll(async () => (await contentById(api, space.id, doc.id)).data?.title).toBe('Version 2');
     expect((await cdn.get({ id: doc.id })).body?.data).toMatchObject({ title: 'Version 1' });
@@ -69,7 +69,7 @@ test.describe('Contents → document lifecycle', () => {
     expect((await contentById(api, space.id, doc.id)).data).toMatchObject({ title: 'Kept' });
     await page.reload();
     await expect(contents.field('Title')).toHaveValue('Kept');
-    await expect(page.getByRole('img', { name: 'Not published', exact: true })).toBeVisible();
+    await expect(contents.editorStatus('Not published')).toBeVisible();
   });
 
   test('Ctrl+S saves; leaving with unsaved changes asks; a reload keeps what was saved', async ({ page, api, space }) => {
@@ -88,19 +88,16 @@ test.describe('Contents → document lifecycle', () => {
 
     // Action: change, try to leave, stay. Post-check.
     await contents.field('Title').fill('Not saved');
-    let message = '';
-    page.once('dialog', dialog => {
-      message = dialog.message();
-      void dialog.dismiss();
-    });
+    const asked = answerConfirm(page, false);
     await page.getByRole('button', { name: 'Back to Contents' }).click();
-    expect(message).toContain('unsaved changes');
+    expect(await asked).toContain('unsaved changes');
     await expect(page).toHaveURL(new RegExp(`/contents/${doc.id}$`));
     await expect(contents.field('Title')).toHaveValue('Not saved');
 
     // Leave anyway: the saved value is what comes back.
-    page.once('dialog', dialog => void dialog.accept());
+    const leaving = answerConfirm(page, true);
     await page.getByRole('button', { name: 'Back to Contents' }).click();
+    expect(await leaving).toContain('unsaved changes');
     await expect(page).toHaveURL(/\/contents$/);
     await contents.gotoDocument(space.id, doc.id);
     await expect(contents.field('Title')).toHaveValue('Saved by keyboard');

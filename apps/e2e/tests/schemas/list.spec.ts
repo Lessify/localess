@@ -1,5 +1,6 @@
 import { SchemasPage } from '../pages/schemas.page';
 import { expect, test, uniqueId } from '../support/fixtures';
+import { schemaNamed } from '../support/schemas';
 
 // Pre-check → action (filter bar) → post-check (the rows shown).
 test.describe('Schemas → list', () => {
@@ -12,7 +13,7 @@ test.describe('Schemas → list', () => {
       [names.article, ['blog']],
       [names.author, ['blog', 'people']],
     ] as const) {
-      const schema = (await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/schemas`)).find(it => it.name === name)!;
+      const schema = (await schemaNamed(api, space.id, name))!;
       await api.send('put', `/api/app/spaces/${space.id}/schemas/${schema.id}`, { labels });
     }
     const schemas = new SchemasPage(page);

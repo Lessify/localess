@@ -3,20 +3,17 @@ import { choose } from '../pages/dialogs';
 import { SchemasPage } from '../pages/schemas.page';
 import { CSRF } from '../support/app-api';
 import { expect, test, uniqueId } from '../support/fixtures';
-import { schemaNamed } from '../support/schemas';
+import { createEnum, schemaNamed } from '../support/schemas';
 
 // Fields that refer to other schemas: Option/Options take values from an Enum, Schema/Schemas allow Node blocks.
 // Pre-check → action (UI, Save) → post-check (App API, the content editor).
 test.describe('Schemas → references between schemas', () => {
   test('an Option field takes its values from an Enum; the content editor offers them', async ({ page, api, space }) => {
     const colors = uniqueId('Colors');
-    const enumSchema = await api.createSchema(space.id, { name: colors, type: 'ENUM' });
-    await api.send('put', `/api/app/spaces/${space.id}/schemas/${enumSchema.id}`, {
-      values: [
-        { name: 'Red', value: 'red' },
-        { name: 'Green', value: 'green' },
-      ],
-    });
+    await createEnum(api, space.id, colors, [
+      { name: 'Red', value: 'red' },
+      { name: 'Green', value: 'green' },
+    ]);
     const pageName = uniqueId('Page');
     const root = await api.createSchema(space.id, { name: pageName, type: 'ROOT', fields: [{ name: 'color', kind: 'TEXT' }] });
     const doc = await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: pageName });
@@ -34,10 +31,11 @@ test.describe('Schemas → references between schemas', () => {
     expect((await schemaNamed(api, space.id, pageName))?.fields?.[0]).toMatchObject({ kind: 'OPTION', source: colors });
     const contents = new ContentsPage(page);
     await contents.gotoDocument(space.id, doc.id);
-    await page.getByLabel('Color').click();
+    await contents.field('Color').click();
     // Sorted by name in the content editor, whatever their order in the enum (TEST-PLAN.md, open findings).
     await expect(page.getByRole('option')).toHaveText([/Green/, /Red/]);
-    await page.getByRole('option', { name: 'Green' }).click();
+    await page.keyboard.press('Escape');
+    await contents.chooseOption('Color', 'Green');
     await contents.save();
     const stored = await api.get<{ data: Record<string, unknown> }>(`/api/app/spaces/${space.id}/contents/${doc.id}`);
     expect(stored.data.color).toBe('green');
@@ -65,7 +63,7 @@ test.describe('Schemas → references between schemas', () => {
     const contents = new ContentsPage(page);
     await contents.gotoDocument(space.id, doc.id);
     await page.getByRole('button', { name: 'Add Schema at the end' }).click();
-    await page.getByRole('menuitem', { name: /Card/ }).click();
+    await page.getByRole('menuitem', { name: 'Card', exact: true }).click();
     await contents.save();
     const stored = await api.get<{ data: { blocks?: { _schema: string }[] } }>(`/api/app/spaces/${space.id}/contents/${doc.id}`);
     expect(stored.data.blocks?.map(it => it._schema)).toEqual([card]);
@@ -101,9 +99,9 @@ test.describe('Schemas → references between schemas', () => {
     const schemas = new SchemasPage(page);
     await schemas.gotoEditor(space.id, editing);
     await schemas.item('f1').click();
-    await choose(page, schemas.sheet.locator('#kind'), 'Option (One)');
+    await choose(page, schemas.sheet.getByLabel('Kind', { exact: true }), 'Option (One)');
 
-    await schemas.sheet.locator('#source').click();
+    await schemas.sheet.getByLabel('Source', { exact: true }).click();
     await expect(page.getByRole('option')).toHaveCount(1);
     await expect(page.getByRole('option')).toContainText(names.enum);
   });

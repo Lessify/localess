@@ -25,11 +25,11 @@ test.describe('Schemas → settings', () => {
     // Action
     await page.getByLabel('Display Name').fill('Blog Article');
     await page.getByLabel('Description').fill('A post of the blog');
-    await choose(page, page.locator('#previewField'), /#title$/);
+    await choose(page, page.getByLabel('Preview Field', { exact: true }), /#title$/);
     await schemas.save();
 
-    // Post-check: the editor header, after a reload, the API, the list.
-    await expect(page.getByText('Blog Article').first()).toBeVisible();
+    // Post-check: the editor header (the display name above `#name`), after a reload, the API, the list.
+    await expect(page.getByText('Blog Article', { exact: true })).toBeVisible();
     await page.reload();
     await schemas.tab('Settings');
     await expect(page.getByLabel('Display Name')).toHaveValue('Blog Article');
@@ -67,6 +67,10 @@ test.describe('Schemas → settings', () => {
     await expect(page.getByRole('button', { name: 'marketing', exact: true })).toHaveCount(0);
     await schemas.save();
     await expect.poll(async () => (await schemaNamed(api, space.id, name))?.labels).toEqual(['blocks']);
+    await page.reload();
+    await schemas.tab('Settings');
+    await expect(page.getByRole('button', { name: 'blocks', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'marketing', exact: true })).toHaveCount(0);
     await schemas.goto(space.id);
     await expect(schemas.row(name)).toContainText('blocks');
   });

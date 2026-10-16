@@ -1,6 +1,6 @@
 import { SchemasPage } from '../pages/schemas.page';
 import { expect, test, uniqueId } from '../support/fixtures';
-import { schemaNamed } from '../support/schemas';
+import { createEnum, schemaNamed } from '../support/schemas';
 
 // Pre-check → action (Values tab, then Save) → post-check (after a reload, the App API).
 test.describe('Schemas → enum values', () => {
@@ -35,8 +35,7 @@ test.describe('Schemas → enum values', () => {
 
   test('refuses a value name that exists and a value with spaces', async ({ page, api, space }) => {
     const name = uniqueId('Sizes');
-    const schema = await api.createSchema(space.id, { name, type: 'ENUM' });
-    await api.send('put', `/api/app/spaces/${space.id}/schemas/${schema.id}`, { values: [{ name: 'Small', value: 'small' }] });
+    const schema = await createEnum(api, space.id, name, [{ name: 'Small', value: 'small' }]);
     const schemas = new SchemasPage(page);
     await schemas.gotoEditor(space.id, schema, 'enum');
     const add = page.getByRole('button', { name: 'Add', exact: true });
@@ -50,6 +49,7 @@ test.describe('Schemas → enum values', () => {
     // Action → post-check: a value with spaces makes the schema unsavable.
     await schemas.addValue('Extra Large');
     await schemas.closeSheet();
+    // The invalid row is only marked visually (no accessible state): checked by its class.
     await expect(schemas.item('Extra Large')).toHaveClass(/border-destructive/);
     await expect(schemas.saveButton).toBeDisabled();
     await schemas.editValue('Extra Large', { value: 'extra_large' });

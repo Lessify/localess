@@ -1,3 +1,4 @@
+import { cancel, expectRefused } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { SchemasPage } from '../pages/schemas.page';
 import { expect, test, uniqueId } from '../support/fixtures';
@@ -45,8 +46,8 @@ test.describe('Schemas → create', () => {
     await form.getByLabel('Display Name').fill('Something else');
     await expect(id).toHaveValue('my landing-page');
     await form.getByRole('button', { name: 'Normalize ID' }).click();
-    const normalized = await id.inputValue();
-    expect(normalized).toMatch(/^[a-zA-Z][a-zA-Z0-9]+$/);
+    const normalized = 'MyLandingPage';
+    await expect(id).toHaveValue(normalized);
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
     await expectToast(page, 'Schema has been created.');
@@ -66,12 +67,10 @@ test.describe('Schemas → create', () => {
 
     // Action
     const form = await schemas.openCreate({ displayName: 'Copy', id: name, type: 'Root' });
-    await form.getByLabel('ID', { exact: true }).blur();
 
     // Post-check
-    await expect(form.getByText('The value is already reserved.')).toBeVisible();
-    await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
-    await form.getByRole('button', { name: 'Cancel' }).click();
+    await expectRefused(form, form.getByLabel('ID', { exact: true }), 'The value is already reserved.');
+    await cancel(form);
     expect((await schemasOf(api, space.id)).filter(it => it.name === name)).toHaveLength(1);
     expect(await schemaNamed(api, space.id, name)).toMatchObject({ displayName: 'Original' });
   });
@@ -85,17 +84,23 @@ test.describe('Schemas → create', () => {
     const id = form.getByLabel('ID', { exact: true });
     await expect(form.getByRole('button', { name: 'Save' })).toBeEnabled();
 
-    // Action → post-check, for each invalid ID.
-    for (const invalid of ['Content', 'Translations', '1Page', 'P', 'with space', 'with-dash', 'with_underscore']) {
+    // Action → post-check, for each invalid ID: its message, Save disabled.
+    const pattern = 'Should contain only a-z, A-Z, and 0-9. Should start with a-z or A-Z and end with a-z or A-Z or 0-9.';
+    for (const [invalid, message] of [
+      ['Content', 'The value is already reserved.'],
+      ['Translations', 'The value is already reserved.'],
+      ['1Page', pattern],
+      ['P', 'Minimum length is 2.'],
+      ['with space', pattern],
+      ['with-dash', pattern],
+      ['with_underscore', pattern],
+    ]) {
       await id.fill(invalid);
-      await id.blur();
-      await expect(form.getByRole('button', { name: 'Save' }), invalid).toBeDisabled();
-      await expect(form.locator('hlm-field-error').first(), invalid).toBeVisible();
+      await test.step(invalid, () => expectRefused(form, id, message));
     }
 
     // Cancel
-    await form.getByRole('button', { name: 'Cancel' }).click();
-    await expect(form).toBeHidden();
+    await cancel(form);
     await expect(schemas.empty).toBeVisible();
     expect(await schemasOf(api, space.id)).toEqual([]);
   });

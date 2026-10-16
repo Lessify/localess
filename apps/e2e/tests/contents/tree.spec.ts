@@ -1,4 +1,4 @@
-import { dialog } from '../pages/dialogs';
+import { cancel, dialog, expectRefused, rowMenu } from '../pages/dialogs';
 import { ContentsPage } from '../pages/contents.page';
 import { expectToast } from '../pages/notifications';
 import { CSRF } from '../support/app-api';
@@ -50,7 +50,7 @@ test.describe('Contents → folders and documents', () => {
 
     // Action: the schema list has the Root only.
     const form = await contents.openAdd('Document', { name: 'Hello World' });
-    await form.locator('#schema').click();
+    await form.getByLabel('Schema', { exact: true }).click();
     await expect(page.getByRole('option')).toHaveText([schema.displayName]);
     await page.getByRole('option', { name: schema.displayName }).click();
     await expect(form.getByLabel('Slug', { exact: true })).toHaveValue('hello-world');
@@ -77,10 +77,8 @@ test.describe('Contents → folders and documents', () => {
 
     // A slug taken in this folder: refused in the dialog, and by the server (409).
     const form = await contents.openAdd('Document', { name: 'About again', slug: 'about', schema: schema.displayName });
-    await form.getByLabel('Slug', { exact: true }).blur();
-    await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
-    await expect(form.locator('hlm-field-error').first()).toBeVisible();
-    await form.getByRole('button', { name: 'Cancel' }).click();
+    await expectRefused(form, form.getByLabel('Slug', { exact: true }), 'The value is already reserved.');
+    await cancel(form);
     const taken = await request.post(`/api/app/spaces/${space.id}/contents`, {
       headers: CSRF,
       data: { kind: 'DOCUMENT', name: 'About again', slug: 'about', schema: schema.name },
@@ -91,12 +89,17 @@ test.describe('Contents → folders and documents', () => {
 
     // Invalid slugs: Save disabled; Normalize fixes one.
     const invalid = await contents.openAdd('Folder', { name: 'Odd', slug: 'has space' });
-    await invalid.getByLabel('Slug', { exact: true }).blur();
-    await expect(invalid.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await expectRefused(
+      invalid,
+      invalid.getByLabel('Slug', { exact: true }),
+      'Should contain with a-z, A-Z, 0-9, - and underscore (_). Should start with a-z and end with a-z or A-Z or 0-9.',
+    );
     await invalid.getByRole('button', { name: 'Normalize Slug' }).click();
-    await expect(invalid.getByLabel('Slug', { exact: true })).toHaveValue(/^[a-z0-9][a-z0-9_-]*$/);
+    await expect(invalid.getByLabel('Slug', { exact: true })).toHaveValue('has-space');
     await expect(invalid.getByRole('button', { name: 'Save' })).toBeEnabled();
-    await invalid.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(invalid);
+    // Cancelled: no folder made.
+    expect((await contentsIn(api, space.id)).map(it => it.name).sort()).toEqual(['About', 'Blog']);
 
     // The same slug in another folder is fine.
     await contents.openFolder('Blog');
@@ -125,8 +128,15 @@ test.describe('Contents → folders and documents', () => {
     // Post-check: the new path everywhere, the old one gone.
     await expect(contents.row('Post')).toContainText('#first-post');
     await expect.poll(async () => (await contentById(api, space.id, post.id)).fullSlug).toBe('journal/first-post');
+    expect(await contentById(api, space.id, blog.id)).toMatchObject({ name: 'Journal', slug: 'journal' });
     expect((await cdn.get({ slug: 'journal/first-post' })).body?.data).toMatchObject({ title: 'Hello' });
     expect((await cdn.get({ slug: 'blog/post' })).status).toBe(404);
+    await page.reload();
+    await contents.rootFolder.click();
+    await expect(contents.row('Journal')).toContainText('#journal');
+    await expect(contents.row('Blog')).toHaveCount(0);
+    await contents.openFolder('Journal');
+    await expect(contents.row('Post')).toContainText('#first-post');
   });
 
   test('moves a document, and a folder with its contents; a folder can not move into itself', async ({ page, api, space, request }) => {
@@ -149,20 +159,36 @@ test.describe('Contents → folders and documents', () => {
     // Action 2: the News folder (with its document) to the root.
     await contents.openFolder('Blog');
     await contents.move('News', 'Root');
+    await expect(contents.row('News')).toHaveCount(0);
+    expect(await contentById(api, space.id, news.id)).toMatchObject({ fullSlug: 'news' });
     expect(await contentById(api, space.id, inNews.id)).toMatchObject({ fullSlug: 'news/item' });
+
+    // After a reload: the root has Blog and News, Blog has the document.
+    await page.reload();
+    await contents.rootFolder.click();
+    await expect(contents.row('News')).toBeVisible();
+    await expect(contents.row('Loose')).toHaveCount(0);
+    await contents.openFolder('Blog');
+    await expect(contents.row('Loose')).toBeVisible();
+    await expect(contents.rows).toHaveCount(1);
 
     // A folder is not offered as a target inside itself; the server refuses it too.
     await contents.rootFolder.click();
     const form = await contents.openMove('News');
-    await form.getByPlaceholder('Search folders...').first().click();
-    await expect(page.getByRole('option').filter({ hasText: /^\s*News\b/ })).toHaveCount(0);
+    await form.getByRole('combobox').click();
+    await expect(contents.moveTarget('Blog')).toBeVisible();
+    await expect(contents.moveTarget('News')).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await form.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(form);
+    const before = await contentById(api, space.id, news.id);
     const self = await request.patch(`/api/app/spaces/${space.id}/contents/${news.id}`, {
       headers: CSRF,
       data: { parentId: news.id },
     });
     expect(self.status()).toBe(400);
+    const after = await contentById(api, space.id, news.id);
+    expect(after.parentId).toBe(before.parentId);
+    expect(after.fullSlug).toBe('news');
   });
 
   test('clones a document: a copy with a suffix, its data, never published', async ({ page, api, space, request }) => {
@@ -188,6 +214,10 @@ test.describe('Contents → folders and documents', () => {
     expect(copy.publishedAt).toBeUndefined();
     expect((await contentById(api, space.id, copy.id)).data).toMatchObject({ title: 'Copied text' });
     expect((await new Cdn(request, api, space.id).get({ id: copy.id })).status).toBe(404);
+    await page.reload();
+    await expect(contents.rows).toHaveCount(2);
+    await expect(contents.row(copy.name)).toContainText(`#${copy.slug}`);
+    await expect(contents.status(copy.name, 'Not published')).toBeVisible();
   });
 
   test('deletes a document and a folder with everything in it; cancel keeps it', async ({ page, api, space, request }) => {
@@ -205,10 +235,9 @@ test.describe('Contents → folders and documents', () => {
     await expect(contents.rows).toHaveCount(3);
 
     // Action: cancel once, then delete the document and the folder.
-    await contents.row('Keep').getByRole('button', { name: 'Actions', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Delete' }).click();
-    const confirm = await dialog(page, 'Delete Document');
-    await confirm.getByRole('button', { name: 'Cancel' }).click();
+    await rowMenu(page, contents.row('Keep'), 'Delete');
+    await cancel(await dialog(page, 'Delete Document'));
+    expect((await contentsIn(api, space.id)).map(it => it.name).sort()).toEqual(['Archive', 'Keep', 'Single']);
     await contents.delete('Single', 'Document');
     await contents.delete('Archive', 'Folder');
 
@@ -237,8 +266,7 @@ test.describe('Contents → folders and documents', () => {
         ['Copy Slug', 'Slug copied to clipboard.', 'post'],
         ['Copy Full Slug', 'Full Slug copied to clipboard.', 'blog/post'],
       ]) {
-        await contents.row('Post').getByRole('button', { name: 'Actions', exact: true }).click();
-        await page.getByRole('menuitem', { name: item, exact: true }).click();
+        await rowMenu(page, contents.row('Post'), item);
         await expectToast(page, toast);
         expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(value);
       }
@@ -269,5 +297,10 @@ test.describe('Contents → folders and documents', () => {
     await contents.unpublishRow('Blog', 'Folder');
     expect((await cdn.get({ id: a.id })).status).toBe(404);
     expect((await cdn.get({ id: b.id })).status).toBe(404);
+    await page.reload();
+    await contents.rootFolder.click();
+    await contents.openFolder('Blog');
+    await expect(contents.status('A', 'Not published')).toBeVisible();
+    await expect(contents.status('B', 'Not published')).toBeVisible();
   });
 });

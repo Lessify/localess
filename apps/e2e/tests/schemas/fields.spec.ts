@@ -1,5 +1,5 @@
 import { ContentsPage } from '../pages/contents.page';
-import { expectToast } from '../pages/notifications';
+import { answerConfirm } from '../pages/dialogs';
 import { SchemasPage } from '../pages/schemas.page';
 import { expect, test, type TestSpace, uniqueId } from '../support/fixtures';
 import type { AppApi } from '../support/app-api';
@@ -71,7 +71,14 @@ test.describe('Schemas → fields', () => {
     await expect(schemas.item('price')).toContainText('Number');
     await schemas.save();
 
-    // Post-check: the API.
+    // Post-check: the editor after a reload, the API.
+    await page.reload();
+    await expect(schemas.item('title')).toContainText('Title');
+    await expect(schemas.item('title')).toContainText('Translatable');
+    await expect(schemas.item('title')).toContainText('Required');
+    await expect(schemas.item('price')).toContainText('Price');
+    await expect(schemas.item('price')).toContainText('Number');
+    await expect(schemas.item('sku')).toContainText('SKU');
     expect((await schemaNamed(api, space.id, name))?.fields).toEqual([
       expect.objectContaining({ name: 'title', kind: 'TEXT', displayName: 'Title', translatable: true, required: true }),
       expect.objectContaining({ name: 'price', kind: 'NUMBER', displayName: 'Price', description: 'In EUR' }),
@@ -83,8 +90,7 @@ test.describe('Schemas → fields', () => {
     await contents.gotoDocument(space.id, doc.id);
     await expect(contents.field('Price')).toHaveAttribute('type', 'number');
     await contents.field('SKU').fill('SKU-1');
-    await page.getByRole('button', { name: /^Save/ }).click();
-    await expectToast(page, 'Content is not valid. Please check all fields are filled correctly.');
+    await contents.saveExpectInvalid();
     await contents.field('Title').fill('Hello');
     await contents.save();
     await contents.editorLocale('German');
@@ -93,7 +99,7 @@ test.describe('Schemas → fields', () => {
   });
 
   test('refuses invalid field names', async ({ page, api, space }) => {
-    const { schema } = await rootWithDocument(api, space, [{ name: 'title', kind: 'TEXT' }]);
+    const { schema, name } = await rootWithDocument(api, space, [{ name: 'title', kind: 'TEXT' }]);
     const schemas = new SchemasPage(page);
     await schemas.gotoEditor(space.id, schema);
     const add = page.getByRole('button', { name: 'Add', exact: true });
@@ -109,6 +115,8 @@ test.describe('Schemas → fields', () => {
       await expect(add, invalid).toBeDisabled();
     }
     await expect.poll(() => schemas.itemNames()).toEqual(['title']);
+    // Nothing reached the schema.
+    expect((await schemaNamed(api, space.id, name))?.fields?.map(it => it.name)).toEqual(['title']);
   });
 
   test('deletes a field; the content editor no longer shows it', async ({ page, api, space }) => {
@@ -153,12 +161,15 @@ test.describe('Schemas → fields', () => {
     await expect.poll(() => schemas.itemNames()).toEqual(['third', 'first', 'second']);
     await schemas.save();
 
-    // Post-check: the API and the content editor's order.
+    // Post-check: after a reload, the API and the content editor's order.
+    await page.reload();
+    await expect.poll(() => schemas.itemNames()).toEqual(['third', 'first', 'second']);
     expect((await schemaNamed(api, space.id, name))?.fields?.map(it => it.name)).toEqual(['third', 'first', 'second']);
     const contents = new ContentsPage(page);
     await contents.gotoDocument(space.id, doc.id);
-    const labels = await page.locator('form label[for^="schema-field-"]').allInnerTexts();
-    expect(labels.map(it => it.trim())).toEqual(['third', 'first', 'second']);
+    const inputs = page.getByRole('textbox');
+    await expect(inputs).toHaveCount(3);
+    for (const [index, label] of ['third', 'first', 'second'].entries()) await expect(inputs.nth(index)).toHaveAccessibleName(label);
   });
 
   test('leaving with unsaved changes asks first; Save keeps them', async ({ page, api, space }) => {
@@ -170,15 +181,11 @@ test.describe('Schemas → fields', () => {
 
     // Action: change, then try to leave; stay.
     await schemas.editField('title', { displayName: 'Headline' });
-    let message = '';
-    page.once('dialog', dialog => {
-      message = dialog.message();
-      void dialog.dismiss();
-    });
+    const asked = answerConfirm(page, false);
     await page.getByRole('button', { name: 'Back to Schemas' }).click();
 
     // Post-check: asked, still in the editor, the change still there and not stored; stored after Save.
-    expect(message).toContain('unsaved changes');
+    expect(await asked).toContain('unsaved changes');
     await expect(page).toHaveURL(/\/schemas\/comp\//);
     await expect(schemas.item('title')).toContainText('Headline');
     expect((await schemaNamed(api, space.id, name))?.fields?.[0].displayName).toBeUndefined();

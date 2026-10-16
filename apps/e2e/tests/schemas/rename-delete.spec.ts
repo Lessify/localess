@@ -1,4 +1,4 @@
-import { rowMenu } from '../pages/dialogs';
+import { cancel, dialog, rowMenu } from '../pages/dialogs';
 import { SchemasPage } from '../pages/schemas.page';
 import { CSRF } from '../support/app-api';
 import { expect, test, uniqueId } from '../support/fixtures';
@@ -82,11 +82,12 @@ test.describe('Schemas → edit ID and delete', () => {
     // Delete: a dialog with the usage, and only Close.
     await schemas.expectMenu(name, true);
     await rowMenu(page, schemas.row(name), 'Delete');
-    const info = page.getByRole('dialog').filter({ hasText: 'Delete Schema' });
+    const info = await dialog(page, 'Delete Schema');
     await expect(info).toContainText(`Schema '${name}' can not be deleted while it is in use.`);
     await expect(info).toContainText('Home');
     await expect(info.getByRole('button', { name: 'OK' })).toHaveCount(0);
     await info.getByRole('button', { name: 'Close', exact: true }).click();
+    await expect(info).toBeHidden();
 
     // Edit ID: the dialog names the usage and keeps Save disabled.
     const form = await schemas.openEditId(name, uniqueId('Renamed'));
@@ -110,9 +111,8 @@ test.describe('Schemas → edit ID and delete', () => {
 
     // Action: cancel once, then delete.
     await rowMenu(page, schemas.row(keep), 'Delete');
-    const confirm = page.getByRole('dialog').filter({ hasText: 'Delete Schema' });
-    await confirm.getByRole('button', { name: 'Cancel' }).click();
-    await expect(confirm).toBeHidden();
+    await cancel(await dialog(page, 'Delete Schema'));
+    expect((await schemasOf(api, space.id)).map(it => it.name).sort()).toEqual([drop, keep].sort());
     await schemas.delete(drop);
 
     // Post-check

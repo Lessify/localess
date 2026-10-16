@@ -23,18 +23,14 @@ test.describe('Contents → Visual Editor', () => {
     const blog = await api.createFolder(space.id, { name: 'Blog', slug: 'blog' });
     const doc = await api.createDocument(space.id, { name: 'Hello', slug: 'hello', schema: schema.name, parentId: blog.id });
     const contents = new ContentsPage(page);
-    const preview = page.locator('iframe#previewId');
+    const preview = contents.preview;
 
     // Pre-check: form mode, no preview.
     await contents.gotoDocument(space.id, doc.id);
     await expect(preview).toHaveCount(0);
 
     // Action: the Visual Editor. Post-check: the environment URL plus the full slug; German adds `de/`.
-    await page
-      .getByRole('radio', { name: 'Visual Editor' })
-      .or(page.getByLabel('Visual Editor', { exact: true }))
-      .first()
-      .click();
+    await contents.openVisualEditor();
     await expect(preview).toHaveAttribute('src', `${site.url}blog/hello`);
     await expect.poll(() => site.requests).toContain('/blog/hello');
     await contents.editorLocale('German');
@@ -51,12 +47,8 @@ test.describe('Contents → Visual Editor', () => {
 
     // Pre-check: the page loads and connects.
     await contents.gotoDocument(space.id, doc.id);
-    await page
-      .getByRole('radio', { name: 'Visual Editor' })
-      .or(page.getByLabel('Visual Editor', { exact: true }))
-      .first()
-      .click();
-    const frame = page.frameLocator('iframe#previewId');
+    await contents.openVisualEditor();
+    const frame = contents.previewFrame;
     await expect(frame.locator('#title')).toHaveText('Stored title');
     await expect(frame.locator('main[data-ll-hook="true"]')).toBeAttached();
 
@@ -90,7 +82,7 @@ test.describe('Contents → Visual Editor', () => {
     await api.addEnvironment(space.id, { name: 'Local', url: site.url });
     site.serve(syncedBlocksPage(new URL(baseURL!).origin, { id: doc.id, schema: schema.name }, body));
     const contents = new ContentsPage(page);
-    const frame = page.frameLocator('iframe#previewId');
+    const frame = contents.previewFrame;
     const sections = frame.locator('section[data-ll-id]');
     const headings = () => sections.locator('h2').allInnerTexts();
     const toolbar = frame.getByRole('toolbar', { name: 'Block actions' });
@@ -98,24 +90,16 @@ test.describe('Contents → Visual Editor', () => {
 
     // Pre-check: the page shows the stored blocks, connected; no toolbar before a block is selected.
     await contents.gotoDocument(space.id, doc.id);
-    await page
-      .getByRole('radio', { name: 'Visual Editor' })
-      .or(page.getByLabel('Visual Editor', { exact: true }))
-      .first()
-      .click();
+    await contents.openVisualEditor();
     await expect.poll(headings).toEqual(['First', 'Second', 'Third']);
     await expect(frame.locator('main[data-ll-hook="true"]')).toBeAttached();
     await expect(toolbar).toBeHidden();
 
     // Hover a block in the form: the page highlights it. Hover it on the page: the form marks it.
     // The form's rows show the schema, not the heading: by position.
-    const formBlock = (index: number) =>
-      page
-        .locator('fieldset')
-        .filter({ has: page.locator('legend', { hasText: 'Body' }) })
-        .locator('[role="listitem"]')
-        .nth(index);
+    const formBlock = (index: number) => contents.blocks(contents.blockField('Body')).nth(index);
     await formBlock(1).hover();
+    // Highlights are only visual (no accessible state): checked by their classes.
     await expect(sections.nth(1)).toHaveClass(/ll-hover-highlight/);
     await sections.nth(2).hover();
     await expect(formBlock(2)).toHaveClass(/border-primary/);
