@@ -28,6 +28,10 @@ export class AppApi {
     await this.request.delete(`/api/app/spaces/${id}`, { headers: CSRF });
   }
 
+  addEnvironment(spaceId: string, environment: { name: string; url: string }): Promise<unknown> {
+    return this.send('post', `/api/app/spaces/${spaceId}/environments`, environment);
+  }
+
   addLocale(spaceId: string, localeId: string): Promise<unknown> {
     return this.send('post', `/api/app/spaces/${spaceId}/locales`, { id: localeId });
   }
@@ -183,6 +187,18 @@ export interface SchemaFieldInput {
   displayName?: string;
   required?: boolean;
   translatable?: boolean;
+  description?: string;
+  defaultValue?: string;
+  /** OPTION / OPTIONS: the enum schema's name. */
+  source?: string;
+  /** SCHEMA / SCHEMAS: allowed node schema names. */
+  schemas?: string[];
+  minLength?: number;
+  maxLength?: number;
+  minValue?: number;
+  maxValue?: number;
+  minValues?: number;
+  maxValues?: number;
 }
 
 export interface ContentDto {

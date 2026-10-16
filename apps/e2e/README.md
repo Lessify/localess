@@ -57,7 +57,9 @@ tests/
 │   ├── assets.ts           # asset read-back from the App API and the CDN
 │   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries
 │   ├── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
-│   └── schemas.ts          # schema read-back from the App API
+│   ├── schemas.ts          # schema read-back from the App API
+│   ├── contents.ts         # content read-back, a CDN client (public / preview), a Root schema helper
+│   └── preview-site.ts     # a local customer site for the Visual Editor (loads sync-v1.js)
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── api/                    # platform, CDN API (translations, contents, assets), Management API, permissions
@@ -68,7 +70,7 @@ tests/
 ├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
 ├── assets/                 # upload, create folder, rename, delete
 ├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
-├── content/                # contents
+├── contents/               # folders and documents, lifecycle, every field kind, blocks, validation, locales, delivery, Visual Editor
 └── developers/             # webhooks
 ```
 
@@ -90,7 +92,7 @@ Angular's `ErrorHandler` (what users see as the "An error occurred." toast); the
 that expects one (a known issue) declares it: `test.use({ allowedAppErrors: [/403 \S+\/api\/app\/spaces /] })`.
 Errors after teardown has started deleting the test's data are ignored.
 
-**Offline.** Every browser context aborts requests to anything but the server under test (GitHub's release check,
+**Offline.** Every browser context aborts requests to anything but the server under test and `127.0.0.1` (sites a test serves itself, like the Visual Editor's preview site) (GitHub's release check,
 web fonts): runs don't depend on the internet, and the app is checked as an install without internet access.
 
 ## Writing tests
@@ -99,6 +101,8 @@ web fonts): runs don't depend on the internet, and the app is checked as an inst
   Tag the critical path with `@smoke` in the title; keep that set small and fast.
 - **Set up through the API, act through the UI, check both.** Only the flow under test goes through the browser.
   After the toast, check that the change was really saved: reload, or read it back through the API or the CDN.
+- **A toast proves little when the same message just appeared** (two saves in a row, three folders): the wait can
+  match the previous one. Confirm the result instead: the new row in the list, or `expect.poll` on the API.
 - **Own your data.** Use `space` / `createUser`; give anything else unique names (`uniqueName`, `uniqueId`). Never
   change the seeded admin or the "Hello World" space: tests run in parallel.
 - **Locate by role, label and text**, the way a user finds things. An icon-only button needs an `aria-label` (it

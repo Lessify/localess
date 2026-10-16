@@ -66,7 +66,7 @@ test.describe('Schemas → settings', () => {
     await page.getByRole('button', { name: 'marketing', exact: true }).click();
     await expect(page.getByRole('button', { name: 'marketing', exact: true })).toHaveCount(0);
     await schemas.save();
-    expect((await schemaNamed(api, space.id, name))?.labels).toEqual(['blocks']);
+    await expect.poll(async () => (await schemaNamed(api, space.id, name))?.labels).toEqual(['blocks']);
     await schemas.goto(space.id);
     await expect(schemas.row(name)).toContainText('blocks');
   });

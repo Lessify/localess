@@ -191,19 +191,45 @@ schema's effect shows). Specs in `tests/schemas/`.
 
 ### 8. Contents
 
+Pre-check → action → post-check (the list or the form, after a reload, the App API, and the **CDN API**, what a site
+receives). Specs in `tests/contents/`.
+
 | Scenario | How | Status |
 |---|---|---|
-| Folder → document → edit → save → publish → CDN by slug | UI + API | ✅ `content/contents` @smoke |
-| Edit survives a reload; unsaved changes warn before leaving | UI | ✅ `content/contents` |
-| Delete a folder with everything in it | UI + API | ✅ `content/contents` |
-| Move, clone, rename (slug change moves the full slug) | UI + CDN by new slug | ⬜ |
-| Unpublish → CDN 404 | UI + API | ⬜ |
-| Slug conflict in the same folder (409) | UI | ⬜ |
-| Required-field validation blocks saving | UI | ⬜ |
-| Translatable fields per locale | UI: switch locale, CDN `?locale=` | ⬜ |
-| Reference, link and asset fields; `resolveReference` on the CDN | UI + API | ⬜ |
-| Visual Editor: preview iframe with an environment, sync script | UI with a local preview page | ⬜ |
-| Draft / Published JSON menu items | UI (new tab) | ⬜ |
+| **Folders** three levels deep; the breadcrumb back to each level | UI + API | ✅ `contents/tree` |
+| A document in the open folder; only Root schemas offered; slug from the name | UI + API | ✅ `contents/tree` @smoke |
+| Slugs: taken in the folder refused (dialog and 409), fine in another; invalid refused, Normalize | UI + API | ✅ `contents/tree` |
+| Rename a folder's and a document's slug: the new CDN paths, the old ones 404 | UI + API + CDN | ✅ `contents/tree` |
+| Move a document, and a folder with its contents; a folder into itself refused | UI + API | ✅ `contents/tree` |
+| Clone: a suffixed copy with the data, never published | UI + API + CDN | ✅ `contents/tree` |
+| Delete a document, a folder with everything in it (CDN 404); cancel | UI + API + CDN | ✅ `contents/tree` |
+| Copy Slug / Copy Full Slug (clipboard) | UI | ✅ `contents/tree` |
+| Publish / unpublish a folder: its documents on and off the CDN | UI + CDN | ✅ `contents/tree` |
+| **Lifecycle**: Not published → Published → Draft; public sees the published version, preview the draft | UI + CDN | ✅ `contents/documents` @smoke |
+| Unpublish: CDN 404, the draft kept | UI + API + CDN | ✅ `contents/documents` |
+| Ctrl+S; leaving with unsaved changes asks; a reload shows what was saved | UI + API | ✅ `contents/documents` |
+| **Form**: Text, Text Area, Number, Color, Date, Date and Time, Boolean (input types, stored types, CDN) | UI + API + CDN | ✅ `contents/fields-basic` @smoke |
+| Rich Text (bold, a list: TipTap JSON) and Markdown (source) | UI + API + CDN | ✅ `contents/fields-basic` |
+| Option (one value) and Options (a list) from an Enum | UI + API + CDN | ✅ `contents/fields-relations` |
+| Link to a URL (new tab) and to a document; `resolveLink` | UI + API + CDN | ✅ `contents/fields-relations` |
+| Reference and References in the picker; `resolveReference`; removing one | UI + API + CDN | ✅ `contents/fields-relations` |
+| Asset and Assets in the picker; `resolveAsset`; the asset's usage | UI + API + CDN | ✅ `contents/fields-relations` |
+| Schema field: one block, edited in its own view, back by the breadcrumb | UI + API | ✅ `contents/blocks` |
+| Schemas field: add at the end and above, clone, delete, drag to reorder; order stored and on the CDN | UI + API + CDN | ✅ `contents/blocks` @smoke |
+| **Validation**: required fields of several kinds block Save, listed under Errors | UI + API | ✅ `contents/validation` @smoke |
+| Min/max length, min/max value (0 included), min/max number of options | UI + API | ✅ `contents/validation` |
+| An error in another locale found on Save | UI | ✅ `contents/validation` |
+| **Locales** (en / de / ro): translatable per locale, shared read-only elsewhere; CDN per locale with fallback | UI + API + CDN | ✅ `contents/locales` @smoke |
+| Translate one field from its menu (stub) | UI + API | ✅ `contents/locales` |
+| Translate Locale for the whole document, block fields included | UI + API | ✅ `contents/locales` |
+| **Delivery**: CDN `/links` (published, draft, per folder and kind) | API | ✅ `contents/delivery` |
+| `content.published` webhook with id and full slug | UI + webhook receiver | ✅ `contents/delivery` |
+| Live updates in the list | UI + API | ✅ `contents/delivery` |
+| Draft / Published JSON open the CDN with a preview / public token | UI (popup) | ✅ `contents/delivery` |
+| **Visual Editor**: the environment URL per document and locale | UI + a local site | ✅ `contents/visual-editor` |
+| A synced page follows typing live; a click on it focuses the field | UI + a local site with `sync-v1.js` | ✅ `contents/visual-editor` @smoke |
+| Visual Editor: block toolbar on the page (move, duplicate, delete), hover highlight | UI + a local site | ⬜ |
+| Field kinds' remaining settings (Asset file type filter, Reference path filter) | UI | ⬜ |
 
 ### 9. Assets
 
@@ -295,6 +321,11 @@ regression test.
 | Enum editor: an existing value name was not refused (the taken names were replaced, not emptied, on load), and deleting a value freed another value's name | Emptied in place; the deleted value's own name is freed |
 | Schema labels had no rules at all: duplicates, spaces, 1 character stored; adding one didn't count as an unsaved change | The same per-label check as translation labels (shared `LabelValidator`), a new list each time, the form marked changed |
 | Edit Field's Display Name and Description labels pointed at the Settings tab's inputs (duplicate ids); Option/Options labels in the content editor pointed at nothing (`for="kind"`) | Settings ids renamed; the content editor's labels point at their select |
+| Visual Editor: clicking a field of the document itself (not inside a block) on the preview did nothing | The field is focused after the walk through the blocks, not only inside it |
+| Number fields ignored a limit of 0 (`if (field.minValue)`): a "minimum 0" price took -5 | Limits checked with `!= null` |
+| Blocks in the editor showed `#<schema UUID>` (and the add-block menu fell back to it) instead of the schema's ID | The schema's name |
+| Publishing or unpublishing from the content list reported a failure as a success toast | An error toast |
+| Document status was an icon with a tooltip only (no text for assistive technology) | The status as the icon's accessible name; also names for the field's translate button and the editor's root breadcrumb |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -310,5 +341,8 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Machine translation of a single value (and "Translate other locales" on add) needs TRANSLATION_UPDATE **and** CONTENT_UPDATE (kept from the Firebase callable, pinned by a server test), while "Translate Locale" needs only TRANSLATION_UPDATE; a translator without CONTENT_UPDATE sees the Translate button and gets "Could not be translated." | Product decision; not asserted |
 | Tree view: a key that is also the prefix of other keys (`home` next to `home.title`) is a group node and can't be selected, so that translation can't be opened in the tree | Product decision; not asserted |
 | Key uniqueness: the UI refuses a key in any letter case, the server only the exact key (via the API `Home.Title` and `home.title` can both exist) | Not asserted |
+| A field's Default Value is stored on the schema but nothing in the content editor uses it | `contents/fields-basic` pins today's behaviour |
+| Content rules (required, lengths, limits) are checked in the browser only: the API stores content that breaks them | `contents/validation` pins today's behaviour |
+| The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |

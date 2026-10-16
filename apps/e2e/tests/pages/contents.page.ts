@@ -12,9 +12,87 @@ export class ContentsPage {
     await expect(this.page.getByRole('button', { name: 'Add Content' })).toBeVisible();
   }
 
-  /** A row, by the content name. */
+  /** A row, by the exact content name (the name cell shows `name #slug`). */
   row(name: string): Locator {
-    return this.page.getByRole('row').filter({ hasText: name });
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.page.getByRole('row').filter({ has: this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escaped}\\s*#`) }) });
+  }
+
+  get rows(): Locator {
+    return this.page.locator('tr[ll-row]');
+  }
+
+  get empty(): Locator {
+    return this.page.getByText('No content yet.');
+  }
+
+  /** The status icon of a row: "Published", "Draft" or "Not published". */
+  status(name: string, status: 'Published' | 'Draft' | 'Not published'): Locator {
+    return this.row(name).getByRole('img', { name: status, exact: true });
+  }
+
+  get rootFolder(): Locator {
+    return this.page.getByRole('button', { name: 'Root folder' });
+  }
+
+  /** A folder of the breadcrumb trail (not the current one). */
+  breadcrumb(name: string): Locator {
+    return this.page.locator('nav[hlmBreadcrumb]').last().getByRole('button', { name, exact: true });
+  }
+
+  /** Opens "Add Folder" or "Add Document" and fills it, without saving. */
+  async openAdd(kind: 'Folder' | 'Document', input: { name: string; slug?: string; schema?: string }): Promise<Locator> {
+    await this.page.getByRole('button', { name: 'Add Content' }).click();
+    await this.page.getByRole('menuitem', { name: kind }).click();
+    const form = await dialog(this.page, `Add ${kind}`);
+    await form.getByLabel('Name', { exact: true }).fill(input.name);
+    if (input.slug !== undefined) await form.getByLabel('Slug', { exact: true }).fill(input.slug);
+    if (input.schema) await choose(this.page, form.locator('#schema'), input.schema);
+    return form;
+  }
+
+  /** Edit (name and slug) from the row menu. */
+  async rename(name: string, input: { name?: string; slug?: string }): Promise<void> {
+    await rowMenu(this.page, this.row(name), 'Edit');
+    const form = await dialog(this.page, 'Edit Content');
+    if (input.name !== undefined) await form.getByLabel('Name', { exact: true }).fill(input.name);
+    if (input.slug !== undefined) await form.getByLabel('Slug', { exact: true }).fill(input.slug);
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Content has been updated.');
+  }
+
+  /** Move from the row menu; `folder` is the option text's start ("Root", or a folder's name). */
+  async openMove(name: string): Promise<Locator> {
+    await rowMenu(this.page, this.row(name), 'Move');
+    return dialog(this.page, 'Move');
+  }
+
+  async move(name: string, folder: string): Promise<void> {
+    const form = await this.openMove(name);
+    await form.getByPlaceholder('Search folders...').first().click();
+    await this.page.getByRole('option', { name: new RegExp(`^\\s*${folder}\\b`) }).click();
+    await form.getByRole('button', { name: 'Move' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Content has been moved.');
+  }
+
+  async clone(name: string): Promise<void> {
+    await rowMenu(this.page, this.row(name), 'Clone');
+    await confirmDialog(this.page, 'Clone Document');
+    await expectToast(this.page, `Document '${name}' has been cloned.`);
+  }
+
+  async publishRow(name: string, kind: 'Document' | 'Folder'): Promise<void> {
+    await rowMenu(this.page, this.row(name), 'Publish');
+    await confirmDialog(this.page, `Publish ${kind}`);
+    await expectToast(this.page, `${kind} '${name}' has been published.`);
+  }
+
+  async unpublishRow(name: string, kind: 'Document' | 'Folder'): Promise<void> {
+    await rowMenu(this.page, this.row(name), 'Unpublish');
+    await confirmDialog(this.page, `Unpublish ${kind}`);
+    await expectToast(this.page, `${kind} '${name}' has been unpublished.`);
   }
 
   async addFolder(name: string, slug: string): Promise<void> {
@@ -26,6 +104,8 @@ export class ContentsPage {
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'Folder has been created.');
+    // The toast may still be the previous one's: done once the row is there.
+    await expect(this.row(name)).toBeVisible();
   }
 
   async addDocument(name: string, slug: string, schema: string): Promise<void> {
@@ -38,6 +118,7 @@ export class ContentsPage {
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'Document has been created.');
+    await expect(this.row(name)).toBeVisible();
   }
 
   /** Opens a folder: done once it is the current breadcrumb (new content goes into the current folder). */

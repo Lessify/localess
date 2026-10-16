@@ -173,13 +173,15 @@ async function describeConsoleError(args: JSHandle[]): Promise<string> {
 }
 
 /**
- * Only the server under test answers: anything else (GitHub's release check, fonts, ...) is aborted. Keeps runs
+ * Only the server under test (and loopback, for sites a test serves) answers: anything else (GitHub's release check,
+ * fonts, ...) is aborted. Keeps runs
  * independent of the internet (and of GitHub's rate limit), and checks that the app works on an offline install.
  */
 async function offline(context: BrowserContext, baseURL: string | undefined): Promise<void> {
   const origin = new URL(baseURL ?? 'http://localhost').origin;
+  // Loopback stays reachable: pages a test serves itself (the Visual Editor's preview site).
   await context.route(
-    url => url.origin !== origin,
+    url => url.origin !== origin && url.hostname !== '127.0.0.1',
     route => route.abort('internetdisconnected'),
   );
 }

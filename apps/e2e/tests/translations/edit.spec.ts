@@ -29,11 +29,10 @@ test.describe('Translations → edit', () => {
     await translations.saveValue('Hello!');
 
     // Post-check: the API, the status, and the list in each locale of the filter.
-    expect((await translationsByKey(api, space.id)).get('greeting')?.locales).toEqual({
-      en: 'Hello!',
-      de: 'Hallo',
-      ro: 'Bună',
-    });
+    // Three saves with the same toast: read until the last one is in.
+    await expect
+      .poll(async () => (await translationsByKey(api, space.id)).get('greeting')?.locales)
+      .toEqual({ en: 'Hello!', de: 'Hallo', ro: 'Bună' });
     await page.reload();
     await translations.select('greeting');
     await expect(translations.detail('Status')).toContainText(/Status\s*Translated/);
@@ -156,6 +155,7 @@ test.describe('Translations → edit', () => {
     await translations.saveValue('Cumpără acum');
 
     // Post-check: not yet delivered; delivered after Publish.
+    await expect.poll(async () => (await translationsByKey(api, space.id)).get('cta')?.locales.ro).toBe('Cumpără acum');
     expect(await published(request, api, space.id, 'de')).toEqual({ cta: 'Kaufen' });
     await translations.publish();
     expect(await published(request, api, space.id, 'de')).toEqual({ cta: 'Jetzt kaufen' });

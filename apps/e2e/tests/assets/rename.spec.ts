@@ -1,4 +1,5 @@
 import { AssetsPage } from '../pages/assets.page';
+import { expectToast } from '../pages/notifications';
 import { assetNamed, assetsIn } from '../support/assets';
 import { pngFile, textFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
@@ -43,9 +44,10 @@ test.describe('Assets → rename', () => {
     await form.getByLabel('Alt Text').fill('A mountain at sunrise');
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
+    await expectToast(page, 'File has been updated.');
 
     // Post-check: stored, shown when editing again, the name unchanged.
-    expect(await assetNamed(api, space.id, 'hero')).toMatchObject({ alt: 'A mountain at sunrise' });
+    await expect.poll(async () => (await assetNamed(api, space.id, 'hero'))?.alt).toBe('A mountain at sunrise');
     await page.reload();
     const again = await assets.openEdit('hero.png', 'File');
     await expect(again.getByLabel('Alt Text')).toHaveValue('A mountain at sunrise');
