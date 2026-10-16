@@ -372,7 +372,7 @@
           <!--SCHEMA-->
           @case ('SCHEMA') {
             <div hlmFieldGroup>
-              <fieldset hlmFieldSet class="gap-2">
+              <fieldset hlmFieldSet class="gap-2" [attr.aria-label]="field.displayName || field.name">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
                   <button
@@ -446,7 +446,7 @@
           <!--SCHEMAS-->
           @case ('SCHEMAS') {
             <div hlmFieldGroup>
-              <fieldset hlmFieldSet class="gap-2">
+              <fieldset hlmFieldSet class="gap-2" [attr.aria-label]="field.displayName || field.name">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
                   <button

@@ -38,9 +38,9 @@
   </div>
 
   <div hlmField>
-    <label hlmFieldLabel for="schema">Schema</label>
+    <label hlmFieldLabel for="schema-trigger">Schema</label>
     <hlm-select id="schema" formControlName="schema" [itemToString]="schemaItemToString">
-      <hlm-select-trigger class="w-full">
+      <hlm-select-trigger class="w-full" buttonId="schema-trigger">
         <hlm-select-value placeholder="Select schema..." />
       </hlm-select-trigger>
       <hlm-select-content *hlmSelectPortal>

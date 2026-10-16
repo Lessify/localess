@@ -216,7 +216,7 @@
       class="flex justify-around overflow-hidden">
       <div class="flex h-full max-w-5xl min-w-96 grow flex-col gap-4 overflow-auto px-4 py-2">
         @if (rootSchema()) {
-          <nav hlmBreadcrumb>
+          <nav hlmBreadcrumb aria-label="Blocks">
             <ol hlmBreadcrumbList>
               @for (schemaPathItem of schemaPath(); track schemaPathItem.contentId; let isLast = $last; let isFirst = $first) {
                 @if (!isFirst) {

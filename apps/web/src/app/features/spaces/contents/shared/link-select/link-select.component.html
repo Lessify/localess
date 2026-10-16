@@ -1,5 +1,5 @@
 <form [formGroup]="form()" class="overflow-hidden">
-  <fieldset hlmFieldSet>
+  <fieldset hlmFieldSet [attr.aria-label]="component().displayName || component().name">
     <div hlmFieldGroup class="gap-2">
       <div hlmField class="gap-2">
         <label hlmFieldLabel [for]="component().name">
