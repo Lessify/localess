@@ -39,3 +39,19 @@ export const ADMIN = {
 
 /** Session of the signed-in admin, written by auth.setup.ts. */
 export const AUTH_STATE = resolve(import.meta.dirname, '../../.auth/admin.json');
+
+/**
+ * A second server for the tests that need low limits (tests/limits): its own port, data directory, embedded Postgres,
+ * mock OpenID provider and mail catcher, so the main suite's limits stay high. Same seeded admin.
+ */
+export const LIMITS = {
+  port: Number(process.env['E2E_LIMITS_PORT'] ?? 3110),
+  idpPort: Number(process.env['E2E_LIMITS_IDP_PORT'] ?? 3111),
+  mailPort: Number(process.env['E2E_LIMITS_MAIL_PORT'] ?? 3112),
+  pgPort: Number(process.env['E2E_LIMITS_PG_PORT'] ?? 5545),
+  dataDir: resolve(import.meta.dirname, '../../.data-limits'),
+  /** LOCALESS_UPLOAD_MAX_MB */
+  uploadMaxMb: 1,
+  /** LOCALESS_LOGIN_RATE_LIMIT: sign-in attempts per minute and address. */
+  loginRateLimit: 3,
+} as const;

@@ -31,7 +31,8 @@ two shards (`e2e`, `--shard=1/2` and `2/2`, each writing a blob report with `E2E
 report (`e2e-report`). A test that passes only on its retry fails the run (`failOnFlakyTests`).
 
 Environment: `E2E_PORT` (3100), `E2E_IDP_PORT` (3101), `E2E_MAIL_PORT` (3102, and 3103 for its mailbox), `E2E_PG_PORT`
-(5544), `E2E_WORKERS` (a number or a percentage; CI 2, locally half the cores).
+(5544), the limits server's `E2E_LIMITS_PORT` (3110), `E2E_LIMITS_IDP_PORT` (3111), `E2E_LIMITS_MAIL_PORT` (3112–3113),
+`E2E_LIMITS_PG_PORT` (5545), `E2E_WORKERS` (a number or a percentage; CI 2, locally half the cores).
 
 Two other setups, both run in CI (`.github/workflows/build.yml`):
 
@@ -59,9 +60,13 @@ Two other setups, both run in CI (`.github/workflows/build.yml`):
    may call loopback addresses (for the local receiver).
 4. The `setup` project (`tests/auth.setup.ts`) signs in through the login form and saves the session to
    `.auth/admin.json`. Two projects depend on it:
-   - `ui`: Chromium, every spec except `tests/api`.
+   - `ui`: Chromium, every spec except `tests/api` and `tests/limits`.
    - `api`: no browser, `tests/api` (CDN API, Management API, platform rules).
 5. Tests run in parallel against that one server. That works because every test owns its data (below).
+6. A second server starts next to it with low limits, for `tests/limits` only (project `limits`): uploads up to 1 MB
+   and 3 sign-in attempts a minute (`LIMITS` in `tests/support/env.ts`), on port 3110 with its own embedded Postgres
+   (5545), data directory (`.data-limits`), mock OpenID provider and mail catcher (3111–3113). Not started with
+   `E2E_BASE_URL`.
 
 ## Layout
 
@@ -100,7 +105,9 @@ tests/
 ├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
 ├── contents/               # folders and documents, lifecycle, every field kind, blocks, validation, locales, delivery, Visual Editor
 ├── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
-└── a11y/                   # axe-core scan (WCAG 2 A / AA) of the sign-in page, a space's pages, admin and profile
+├── confirmations/          # Cancel changes nothing: destructive confirmations and form dialogs
+├── limits/                 # on the second server (low limits): a too-large upload, the sign-in rate limit
+└── a11y/                   # axe-core scan (WCAG 2 A / AA): pages, dialogs, the Visual Editor
 ```
 
 ## Agents and skills

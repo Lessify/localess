@@ -52,7 +52,7 @@ the API, not only by the toast.
 | Without SMTP the reset page points to an administrator | Unit test (the e2e server has SMTP) | ➖ `reset.component.spec.ts` |
 | Reset by email: the mail's link sets a new password, once; an unknown address gets the same answer and no mail | A mail catcher next to the server (`scripts/start-server.mjs`) | ✅ `auth/password-reset` |
 | Google / Microsoft sign-in of an invited user (identity linked, shown in Admin → Users); no account, unverified email, disabled account refused with the reason | `oauth2-mock-server` as both issuers, next to the server | ✅ `auth/oauth` |
-| Login rate limit | API: N+1 attempts → 429 (own server with a low limit) | ⬜ |
+| Login rate limit: too many attempts are refused as such ("Too many sign-in attempts"), also with the right password, not as a wrong password | UI on the `limits` server (3 attempts a minute) | ✅ `limits/limits` |
 | Disabled user can not sign in | API | ✅ `api/permissions`, `admin/users` |
 | Disabling a signed-in user signs them out at once | UI: user's page gets sent to login after an admin disables them | ✅ `admin/users` |
 
@@ -268,7 +268,7 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Moving onto a name the folder has gives two | UI + API | ✅ `assets/move` (roadmap N2) |
 | Grid layout: a card per item with its actions, remembered after a reload; a folder card opens it | UI | ✅ `assets/views` |
 | Image preview from a row or a card (name, size, dimensions); other files open none | UI | ✅ `assets/views` |
-| Too large an upload (413) | API with `LOCALESS_UPLOAD_MAX_MB` low | ⬜ |
+| Too large an upload (413): the reason in a toast, nothing stored | UI on the `limits` server (`LOCALESS_UPLOAD_MAX_MB=1`), API | ✅ `limits/limits` |
 | Unsplash picker | Needs an API key | ➖ |
 
 ### 10. Dashboard, navigation, developers
@@ -360,6 +360,8 @@ regression test.
 | The remove button of a chip (webhook events, allowed schemas) had no name | "Remove <value>" (`removeLabel` on `hlm-combobox-chip`) |
 | The Visual Editor's resize handle (a focusable separator) had no value (`aria-valuenow`, required for a window splitter) | The size of the panel before it, in % |
 | Asset / Assets file type was ignored by the picker when set in the schema editor (it saves `fileType`, the picker read only `fileTypes`), and editing a template's schema dropped its filter | One rule, `assetFieldFileType` (`fileType`, else the first of `fileTypes`), in both pickers and the schema editor (unit tests) |
+| Schema editors: a live refetch that started before Save and answered after it put the old schema back into the (just saved, so pristine) form; a label removed then removed every label (found as a flake of `schemas/settings` under load) | An answer older than the version just saved, or than the form's, is ignored (unit tests, Root/Node and Enum editors) |
+| A rate-limited sign-in (429) said "User or password is wrong", also to someone typing the right password | "Too many sign-in attempts. Try again in a minute." (unit test; `limits/limits`) |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now

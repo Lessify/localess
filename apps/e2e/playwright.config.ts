@@ -10,6 +10,7 @@ import {
   E2E_MAIL_PORT,
   E2E_PG_PORT,
   E2E_PORT,
+  LIMITS,
 } from './tests/support/env';
 
 const baseURL = E2E_BASE_URL ?? `http://localhost:${E2E_PORT}`;
@@ -43,12 +44,20 @@ export default defineConfig({
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'ui',
-      testIgnore: /\/api\//,
+      testIgnore: [/\/api\//, /\/limits\//],
       use: { ...devices['Desktop Chrome'], storageState: AUTH_STATE },
       dependencies: ['setup'],
     },
     // The public CDN and Management APIs (tests/api): HTTP only, no browser. The admin session is there to create
     // test data through the App API.
+    // The second server, with low limits (upload size, sign-in rate): signed out, each test signs in itself.
+    {
+      name: 'limits',
+      testMatch: /\/limits\/.*\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${LIMITS.port}` },
+      // Not on a running server (E2E_BASE_URL): it has no second server.
+      ...(E2E_BASE_URL ? { testIgnore: /.*/ } : {}),
+    },
     {
       name: 'api',
       testMatch: /\/api\/.*\.spec\.ts/,
@@ -59,44 +68,74 @@ export default defineConfig({
   // None when E2E_BASE_URL names a running server (the Docker image in CI).
   webServer: E2E_BASE_URL
     ? undefined
-    : {
-        command: 'node scripts/start-server.mjs',
-        url: `${baseURL}/api/health`,
-        // A server already running on the port would carry data from an earlier run.
-        reuseExistingServer: false,
-        timeout: 120_000,
-        stdout: 'pipe',
-        gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
-        env: {
-          PORT: String(E2E_PORT),
-          HOST: '127.0.0.1',
-          LOCALESS_DATA_DIR: E2E_DATA_DIR,
-          LOCALESS_EMBEDDED_PG_PORT: String(E2E_PG_PORT),
+    : [
+        server({
+          port: E2E_PORT,
+          idpPort: E2E_IDP_PORT,
+          mailPort: E2E_MAIL_PORT,
+          pgPort: E2E_PG_PORT,
+          dataDir: E2E_DATA_DIR,
           // An external Postgres when set (the `e2e-postgres` CI job); the embedded one otherwise.
-          ...(E2E_DATABASE_URL ? { DATABASE_URL: E2E_DATABASE_URL } : {}),
-          LOCALESS_ADMIN_EMAIL: ADMIN.email,
-          LOCALESS_ADMIN_PASSWORD: ADMIN.password,
-          LOCALESS_LOGIN_RATE_LIMIT: '10000',
-          // Machine translation without a provider account: the stub echoes the text back.
-          LOCALESS_TRANSLATE_PROVIDER: 'stub',
-          // Webhook deliveries to the local receiver started by tests (see tests/support/webhook-receiver.ts).
-          LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
-          LOCALESS_LOG_LEVEL: 'warn',
-          // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
-          // issuers; tests/support/oauth.ts picks who signs in).
-          E2E_IDP_PORT: String(E2E_IDP_PORT),
-          // "Forgot password" emails go to a mail catcher (scripts/start-server.mjs; tests/support/mail.ts reads them).
-          E2E_MAIL_PORT: String(E2E_MAIL_PORT),
-          LOCALESS_AUTH_PROVIDERS: 'GOOGLE,MICROSOFT',
-          LOCALESS_GOOGLE_CLIENT_ID: 'e2e-google',
-          LOCALESS_GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
-          LOCALESS_MICROSOFT_CLIENT_ID: 'e2e-microsoft',
-          LOCALESS_MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
-        },
-      },
+          databaseUrl: E2E_DATABASE_URL,
+          loginRateLimit: 10_000,
+        }),
+        // Low limits for tests/limits (always on an embedded Postgres of its own).
+        server({ ...LIMITS, loginRateLimit: LIMITS.loginRateLimit, uploadMaxMb: LIMITS.uploadMaxMb }),
+      ],
 });
 
 function workersFrom(value: string | undefined): number | string | undefined {
   if (!value) return undefined;
   return /^\d+$/.test(value) ? Number(value) : value;
+}
+
+interface ServerOptions {
+  port: number;
+  idpPort: number;
+  mailPort: number;
+  pgPort: number;
+  dataDir: string;
+  databaseUrl?: string;
+  loginRateLimit: number;
+  uploadMaxMb?: number;
+}
+
+/** A built server started by scripts/start-server.mjs (with its mock OpenID provider and mail catcher). */
+function server(options: ServerOptions) {
+  const url = `http://localhost:${options.port}`;
+  return {
+    command: 'node scripts/start-server.mjs',
+    url: `${url}/api/health`,
+    // A server already running on the port would carry data from an earlier run.
+    reuseExistingServer: false,
+    timeout: 120_000,
+    stdout: 'pipe' as const,
+    gracefulShutdown: { signal: 'SIGTERM' as const, timeout: 10_000 },
+    env: {
+      PORT: String(options.port),
+      HOST: '127.0.0.1',
+      LOCALESS_DATA_DIR: options.dataDir,
+      LOCALESS_EMBEDDED_PG_PORT: String(options.pgPort),
+      ...(options.databaseUrl ? { DATABASE_URL: options.databaseUrl } : {}),
+      LOCALESS_ADMIN_EMAIL: ADMIN.email,
+      LOCALESS_ADMIN_PASSWORD: ADMIN.password,
+      LOCALESS_LOGIN_RATE_LIMIT: String(options.loginRateLimit),
+      ...(options.uploadMaxMb ? { LOCALESS_UPLOAD_MAX_MB: String(options.uploadMaxMb) } : {}),
+      // Machine translation without a provider account: the stub echoes the text back.
+      LOCALESS_TRANSLATE_PROVIDER: 'stub',
+      // Webhook deliveries to the local receiver started by tests (see tests/support/webhook-receiver.ts).
+      LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
+      LOCALESS_LOG_LEVEL: 'warn',
+      // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
+      // issuers; tests/support/oauth.ts picks who signs in).
+      E2E_IDP_PORT: String(options.idpPort),
+      // "Forgot password" emails go to a mail catcher (scripts/start-server.mjs; tests/support/mail.ts reads them).
+      E2E_MAIL_PORT: String(options.mailPort),
+      LOCALESS_AUTH_PROVIDERS: 'GOOGLE,MICROSOFT',
+      LOCALESS_GOOGLE_CLIENT_ID: 'e2e-google',
+      LOCALESS_GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
+      LOCALESS_MICROSOFT_CLIENT_ID: 'e2e-microsoft',
+      LOCALESS_MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
+    },
+  };
 }
