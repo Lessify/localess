@@ -1,5 +1,7 @@
 .auth
 test-results
 playwright-report
+blob-report
+all-blob-reports
 .data-demos
 demo-videos

@@ -26,8 +26,12 @@ for a test filter): `pnpm e2e:run tests/contents --headed`,
 A failed test keeps a screenshot, a video and a trace in `test-results/`; `pnpm exec playwright show-trace <trace.zip>`
 replays it step by step. In CI the HTML report (and the traces of failures) are uploaded as artifacts.
 
+CI (`.github/workflows/build.yml`) builds the SPA and the server once (`e2e-build`) for every e2e job, runs the suite in
+two shards (`e2e`, `--shard=1/2` and `2/2`, each writing a blob report with `E2E_BLOB=1`) and merges them into one HTML
+report (`e2e-report`). A test that passes only on its retry fails the run (`failOnFlakyTests`).
+
 Environment: `E2E_PORT` (3100), `E2E_IDP_PORT` (3101), `E2E_MAIL_PORT` (3102, and 3103 for its mailbox), `E2E_PG_PORT`
-(5544), `E2E_WORKERS` (CI 2, locally half the cores).
+(5544), `E2E_WORKERS` (a number or a percentage; CI 2, locally half the cores).
 
 Two other setups, both run in CI (`.github/workflows/build.yml`):
 

@@ -20,14 +20,18 @@ export default defineConfig({
   // One server and one database for the run, but every test works in its own space or user (see support/fixtures.ts),
   // so tests run in parallel. Nothing may change the shared admin.
   fullyParallel: true,
-  workers: process.env['E2E_WORKERS'] ?? (isCI ? 2 : '50%'),
+  // A number ("3") or a percentage of the cores ("50%"); Playwright refuses a number given as a string.
+  workers: workersFrom(process.env['E2E_WORKERS']) ?? (isCI ? 2 : '50%'),
   forbidOnly: isCI,
   // One retry in CI tells a flaky test from a broken one, but a flaky test still fails the run: a retry must not hide it.
   retries: isCI ? 1 : 0,
   failOnFlakyTests: isCI,
   timeout: 45_000,
   expect: { timeout: 10_000 },
-  reporter: isCI ? [['list'], ['github'], ['html', { open: 'never' }]] : [['list'], ['html', { open: 'on-failure' }]],
+  // A sharded CI run (E2E_BLOB=1) writes a blob report per shard; the `e2e-report` job merges them into one HTML report.
+  reporter: isCI
+    ? [['list'], ['github'], process.env['E2E_BLOB'] ? ['blob'] : ['html', { open: 'never' }]]
+    : [['list'], ['html', { open: 'on-failure' }]],
   use: {
     baseURL,
     trace: 'retain-on-failure',
@@ -91,3 +95,8 @@ export default defineConfig({
         },
       },
 });
+
+function workersFrom(value: string | undefined): number | string | undefined {
+  if (!value) return undefined;
+  return /^\d+$/.test(value) ? Number(value) : value;
+}
