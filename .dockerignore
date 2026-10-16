@@ -6,6 +6,8 @@
 **/dist
 **/dist-dev
 **/.data
+**/.data-demos
+**/demo-videos
 **/.angular
 **/*.tsbuildinfo
 docs

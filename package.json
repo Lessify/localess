@@ -20,6 +20,7 @@
     "e2e:smoke": "pnpm --filter @localess/e2e test:smoke",
     "e2e:ui": "pnpm --filter @localess/e2e test:ui",
     "e2e:install": "pnpm --filter @localess/e2e exec playwright install --with-deps chromium",
+    "demos": "pnpm --filter @localess/e2e demos",
     "test:scripts": "node --test \"tools/scripts/**/*.test.mjs\" && pnpm --filter @localess/visual-editor-sync test",
     "lint": "pnpm --filter @localess/web lint",
     "lint:fix": "pnpm --filter @localess/web lint:fix",

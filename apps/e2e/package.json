@@ -9,7 +9,8 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
-    "install-browsers": "playwright install chromium"
+    "install-browsers": "playwright install chromium",
+    "demos": "playwright test -c playwright.demos.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

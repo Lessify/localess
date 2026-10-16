@@ -19,7 +19,8 @@ pnpm e2e:ui        # Playwright UI mode: pick tests, watch them, time-travel thr
 ```
 
 Inside `apps/e2e` (or `pnpm --filter @localess/e2e <script>`): `test`, `test:smoke`, `test:ui`, `report` (open the
-last HTML report), `typecheck`. Playwright options pass through: `pnpm e2e:run -- tests/content --headed`,
+last HTML report), `typecheck`. Playwright options pass through, without a `--` (pnpm would hand it to Playwright, which then takes every option after it
+for a test filter): `pnpm e2e:run tests/contents --headed`,
 `--debug`, `--project=api`, `--repeat-each=3`, `--grep "Translations"`.
 
 A failed test keeps a screenshot, a video and a trace in `test-results/`; `pnpm exec playwright show-trace <trace.zip>`
@@ -93,6 +94,19 @@ tests/
 ├── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
 └── a11y/                   # axe-core scan (WCAG 2 A / AA) of the sign-in page, a space's pages, admin and profile
 ```
+
+## Product videos (`demos/`)
+
+Scripted walkthroughs for the website, recorded by Playwright, not tests: `pnpm demos` from the root (or one:
+`pnpm demos schemas`) records each `demos/*.demo.ts` into `demo-videos/<name>.webm` (1600×900, VP9; gitignored), and, with ffmpeg installed,
+`<name>.mp4` (H.264) and `<name>-poster.jpg` (the title card) for the website's `<video poster>`. They run
+on their own server (`playwright.demos.config.ts`: port 3300, `.data-demos`, admin "Alex Morgan"), so the e2e suite
+can run at the same time; each demo creates an "Acme Website" space with English, German and French and deletes it after.
+
+`demos/support/director.ts` makes them watchable: a title card, captions, a visible pointer with click ripples (kept in
+front of dialogs and menus, which are in the browser's top layer), the pointer gliding to each control, typing at a
+readable speed. `demos/support/images.ts` draws the sample pictures. A demo is a script: change the wording or the steps
+there, then record again. Requires the builds (`pnpm build:prod`, `pnpm server:build`).
 
 ## Fixtures (`tests/support/fixtures.ts`)
 
