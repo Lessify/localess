@@ -78,10 +78,20 @@ describe('LoginComponent', () => {
     component.form.setValue({ email: 'me@example.com', password: 'nope' });
     component.loginWithEmailAndPassword();
     http.expectOne('/api/auth/login').flush({ message: 'Invalid email or password' }, { status: 401, statusText: 'Unauthorized' });
-    expect(component.hasAuthError()).toBe(true);
+    expect(component.authError()).toBe('User or password is wrong');
     expect(component.pending()).toBe(false);
     expect(signedIn).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it('says so when sign-in is rate limited (429), instead of blaming the password', () => {
+    const { component, signedIn } = setup();
+    component.form.setValue({ email: 'me@example.com', password: 'right-password' });
+    component.loginWithEmailAndPassword();
+    http.expectOne('/api/auth/login').flush({ message: 'Rate limit exceeded' }, { status: 429, statusText: 'Too Many Requests' });
+    expect(component.authError()).toBe('Too many sign-in attempts. Try again in a minute.');
+    expect(component.pending()).toBe(false);
+    expect(signedIn).not.toHaveBeenCalled();
   });
 
   it('does nothing when the form is empty', () => {

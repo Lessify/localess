@@ -27,8 +27,8 @@
       }
     </div>
 
-    @if (hasAuthError()) {
-      <div class="text-destructive text-center text-sm"> User or password is wrong </div>
+    @if (authError(); as message) {
+      <div class="text-destructive text-center text-sm" role="alert">{{ message }}</div>
     }
 
     <div class="flex items-center justify-end text-sm">
