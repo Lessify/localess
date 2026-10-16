@@ -398,7 +398,7 @@ export class ContentsComponent implements AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.success(messageError);
+          this.notificationService.error(messageError);
         },
       });
   }
@@ -439,7 +439,7 @@ export class ContentsComponent implements AfterViewInit {
         },
         error: (err: unknown) => {
           console.error(err);
-          this.notificationService.success(messageError);
+          this.notificationService.error(messageError);
         },
       });
   }

@@ -131,6 +131,16 @@ describe('EditDocumentComponent', () => {
     });
   });
 
+  describe('onPreviewSchemaSelect', () => {
+    it("focuses a field of the document itself (no block in between) when it's clicked on the preview", () => {
+      const { component } = setup(documentOf({ _id: 'd1', _schema: 'root1', title: 'Hi' }));
+
+      component.onPreviewSchemaSelect({ id: 'd1', schema: 'root1', field: 'title' });
+
+      expect(component.clickSchemaField()).toBe('title');
+    });
+  });
+
   describe('ngOnInit', () => {
     it('generates a new document id/schema when the document has no data', () => {
       const { component } = setup(documentOf(undefined));

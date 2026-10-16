@@ -584,12 +584,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           }
         }
         selectedContentId = contentIdIteration.shift();
-        this.clickSchemaField.set(field);
       } else {
         console.warn(`onPreviewSchemaSelect: schema "${this.selectedDocumentData._schema}" not found`);
         return;
       }
     }
+    // After the walk, so a field of the document itself (no block in between) is focused too.
+    this.clickSchemaField.set(field);
   }
 
   onPreviewSchemaHover(event: { id: string; field?: string }): void {

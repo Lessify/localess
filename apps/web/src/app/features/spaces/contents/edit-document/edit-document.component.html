@@ -224,7 +224,7 @@
                 }
                 <li hlmBreadcrumbItem>
                   @if (isFirst) {
-                    <button hlmBreadcrumbButton (click)="navigateToSchemaBackwards(schemaPathItem)">
+                    <button hlmBreadcrumbButton aria-label="Document root" (click)="navigateToSchemaBackwards(schemaPathItem)">
                       <ng-icon hlm size="sm" name="lucideFolderRoot" />
                     </button>
                   } @else if (isLast) {

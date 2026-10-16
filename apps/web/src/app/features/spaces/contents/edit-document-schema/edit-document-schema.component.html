@@ -389,7 +389,7 @@
                     <hlm-dropdown-menu class="w-60">
                       @for (sch of filterSchema(field.schemas || []); track sch.id) {
                         <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltip]="sch.description || ''">
-                          {{ sch.displayName || sch.id }}
+                          {{ sch.displayName || sch.name }}
                         </button>
                       }
                     </hlm-dropdown-menu>
@@ -415,7 +415,7 @@
                       <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.name }}</span>
                           </div>
                           @if (sch.previewField) {
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
@@ -462,7 +462,7 @@
                     <hlm-dropdown-menu class="w-60">
                       @for (sch of filterSchema(field.schemas || []); track sch.id) {
                         <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltip]="sch.description || ''">
-                          {{ sch.displayName || sch.id }}
+                          {{ sch.displayName || sch.name }}
                         </button>
                       }
                     </hlm-dropdown-menu>
@@ -490,7 +490,7 @@
                       <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.name }}</span>
                           </div>
                           @if (sch.previewField) {
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
@@ -515,7 +515,7 @@
                           <hlm-dropdown-menu class="w-60">
                             @for (sch of filterSchema(field.schemas || []); track sch.id) {
                               <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
+                                {{ sch.displayName || sch.name }}
                               </button>
                             }
                           </hlm-dropdown-menu>
@@ -536,7 +536,7 @@
                                 hlmDropdownMenuItem
                                 (click)="addSchemaMany(field, sch, index + 1)"
                                 [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
+                                {{ sch.displayName || sch.name }}
                               </button>
                             }
                           </hlm-dropdown-menu>
