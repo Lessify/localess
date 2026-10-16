@@ -1,8 +1,10 @@
 import { ContentsPage } from '../pages/contents.page';
+import { dialog } from '../pages/dialogs';
+import { SchemasPage } from '../pages/schemas.page';
 import { Cdn, contentById, pageSchema } from '../support/contents';
-import { pngFile } from '../support/files';
+import { pdfFile, pngFile } from '../support/files';
 import { expect, test, uniqueId } from '../support/fixtures';
-import { createEnum } from '../support/schemas';
+import { createEnum, schemaNamed } from '../support/schemas';
 
 // Choices from an Enum, links, references to documents and assets. Post-check: the stored shape, the editor after a
 // reload, and what the CDN API delivers (with resolveLink / resolveReference / resolveAsset where they apply).
@@ -166,5 +168,61 @@ test.describe('Contents → form: choices and relations', () => {
     expect(await api.get(`/api/app/spaces/${space.id}/assets/${hero.id}/usage`)).toEqual({ contents: 1 });
     await page.reload();
     for (const name of ['hero.png', 'one.png', 'two.png']) await expect(contents.pickedAsset(name)).toBeVisible();
+  });
+
+  // The file type set in the schema editor (stored as `fileType`) and the one templates and older schemas carry
+  // (`fileTypes`) both narrow the picker; editing such a schema keeps its filter.
+  test('an Asset field with a file type offers only those files in the picker', async ({ page, api, space }) => {
+    await api.uploadAsset(space.id, pngFile('photo.png'));
+    await api.uploadAsset(space.id, pdfFile('terms.pdf'));
+    const schema = await pageSchema(api, space, [{ name: 'image', kind: 'ASSET', displayName: 'Image' }]);
+    const doc = await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: schema.name });
+    const schemas = new SchemasPage(page);
+    const contents = new ContentsPage(page);
+    const pickerRows = async () => {
+      await contents.gotoDocument(space.id, doc.id);
+      await page.getByRole('button', { name: 'Add Asset', exact: true }).click();
+      const picker = await dialog(page, 'Assets');
+      await expect(picker.getByRole('cell').filter({ hasText: 'photo.png' })).toBeVisible();
+      const names = await picker
+        .getByRole('cell')
+        .filter({ hasText: /\.(png|pdf)/ })
+        .allInnerTexts();
+      await page.keyboard.press('Escape');
+      return names.map(it => (it.match(/\S+\.(png|pdf)/) ?? [])[0]);
+    };
+
+    // Pre-check: any file.
+    expect(await pickerRows()).toEqual(['photo.png', 'terms.pdf']);
+
+    // Action: Images, in the schema editor.
+    await schemas.gotoEditor(space.id, schema);
+    await schemas.editField('image', { fileType: 'Images' });
+    await schemas.save();
+
+    // Post-check: stored, and the picker offers the picture only.
+    expect((await schemaNamed(api, space.id, schema.name))?.fields?.[0]).toMatchObject({ fileType: 'IMAGE' });
+    expect(await pickerRows()).toEqual(['photo.png']);
+  });
+
+  test('a schema whose Asset field carries `fileTypes` (templates) keeps its filter when edited', async ({ page, api, space }) => {
+    await api.uploadAsset(space.id, pngFile('photo.png'));
+    await api.uploadAsset(space.id, pdfFile('terms.pdf'));
+    const schema = await pageSchema(api, space, [{ name: 'image', kind: 'ASSET', displayName: 'Image', fileTypes: ['IMAGE'] } as never]);
+    const doc = await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: schema.name });
+    const schemas = new SchemasPage(page);
+
+    // Action: an unrelated edit, saved.
+    await schemas.gotoEditor(space.id, schema);
+    await schemas.editField('image', { displayName: 'Hero image' });
+    await schemas.save();
+
+    // Post-check: the filter is now stored as `fileType`, and the picker still offers the picture only.
+    expect((await schemaNamed(api, space.id, schema.name))?.fields?.[0]).toMatchObject({ displayName: 'Hero image', fileType: 'IMAGE' });
+    await new ContentsPage(page).gotoDocument(space.id, doc.id);
+    await page.getByRole('button', { name: 'Add Asset', exact: true }).click();
+    const picker = await dialog(page, 'Assets');
+    await expect(picker.getByRole('cell').filter({ hasText: 'photo.png' })).toBeVisible();
+    await expect(picker.getByRole('cell').filter({ hasText: 'terms.pdf' })).toHaveCount(0);
   });
 });

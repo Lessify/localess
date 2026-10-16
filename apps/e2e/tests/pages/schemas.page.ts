@@ -38,6 +38,8 @@ export interface FieldInput {
   source?: string;
   /** For Schema / Schemas: allowed node schemas, by the display name the picker shows. */
   schemas?: string[];
+  /** For Asset / Assets: the file type, as the select shows it ("Images", "Any File", ...). */
+  fileType?: string;
 }
 
 /**
@@ -216,6 +218,7 @@ export class SchemasPage {
     // Source options read `name`, or `name (Display Name)`.
     if (input.source)
       await choose(this.page, sheet.getByLabel('Source', { exact: true }), new RegExp(`^${escapeRegExp(input.source)}(\\s|$)`));
+    if (input.fileType) await choose(this.page, sheet.getByLabel('File Type', { exact: true }), input.fileType);
     for (const schema of input.schemas ?? []) {
       // A click while the list is still opening is lost: retried until the chip (its text, the display name) is there.
       await expect(async () => {
