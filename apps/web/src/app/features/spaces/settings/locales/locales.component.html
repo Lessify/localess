@@ -33,9 +33,9 @@
         <th llHeaderCell *llHeaderCellDef>Translate From</th>
         <td llCell *llCellDef="let element">
           @if (isTranslatableFrom(element.id)) {
-            <ng-icon name="lucideCheck" />
+            <ng-icon name="lucideCheck" role="img" aria-hidden="false" aria-label="Yes" />
           } @else {
-            <ng-icon name="lucideX" />
+            <ng-icon name="lucideX" role="img" aria-hidden="false" aria-label="No" />
           }
         </td>
       </ng-container>
@@ -43,9 +43,9 @@
         <th llHeaderCell *llHeaderCellDef>Translate To</th>
         <td llCell *llCellDef="let element">
           @if (isTranslatableTo(element.id)) {
-            <ng-icon name="lucideCheck" />
+            <ng-icon name="lucideCheck" role="img" aria-hidden="false" aria-label="Yes" />
           } @else {
-            <ng-icon name="lucideX" />
+            <ng-icon name="lucideX" role="img" aria-hidden="false" aria-label="No" />
           }
         </td>
       </ng-container>
@@ -53,7 +53,7 @@
         <th llHeaderCell *llHeaderCellDef>Default</th>
         <td llCell *llCellDef="let element">
           @if (spaceStore.selectedSpace()?.defaultLocale?.id === element.id) {
-            <ng-icon name="lucideCheck" />
+            <ng-icon name="lucideCheck" role="img" aria-hidden="false" aria-label="Default locale" />
           }
         </td>
       </ng-container>
