@@ -276,12 +276,18 @@ export class ContentsPage {
     // retried until the item can be clicked.
     const trigger = this.page.getByRole('button', { name: /^(English|German|Romanian)/ }).first();
     const menu = this.page.getByRole('menu');
+    // The default locale is listed as "English (Default)".
+    const label = new RegExp(`^${escapeRegExp(name)}( \\(Default\\))?$`);
+    const item = menu.getByRole('menuitemradio', { name: label });
     await expect(async () => {
       if (!(await menu.isVisible())) await trigger.click();
-      await menu.getByRole('menuitemradio', { name, exact: true }).click({ timeout: 2_000 });
+      await item.click({ timeout: 2_000 });
+      await expect(item).toBeChecked({ timeout: 1_000 });
     }).toPass({ timeout: 15_000 });
+    // A radio menu stays open after a pick.
+    await this.page.keyboard.press('Escape');
     await expect(menu).toHaveCount(0);
-    await expect(this.page.getByRole('button', { name, exact: true })).toBeVisible();
+    await expect(this.page.getByRole('button', { name: label })).toBeVisible();
   }
 
   async publish(): Promise<void> {
