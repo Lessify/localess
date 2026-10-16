@@ -24,13 +24,17 @@
           <label hlmFieldLabel [for]="template.id">
             <div hlmField orientation="horizontal">
               <div hlmFieldContent>
-                <div hlmFieldTitle>
+                <div hlmFieldTitle [id]="template.id + '-title'">
                   <ng-icon hlm size="sm" [name]="template.icon" />
                   {{ template.name }}
                 </div>
-                <div hlmFieldDescription>{{ template.description }}</div>
+                <div hlmFieldDescription [id]="template.id + '-description'">{{ template.description }}</div>
               </div>
-              <hlm-radio [value]="template.id" [inputId]="template.id">
+              <hlm-radio
+                [value]="template.id"
+                [inputId]="template.id"
+                [aria-labelledby]="template.id + '-title'"
+                [aria-describedby]="template.id + '-description'">
                 <hlm-radio-indicator indicator />
               </hlm-radio>
             </div>

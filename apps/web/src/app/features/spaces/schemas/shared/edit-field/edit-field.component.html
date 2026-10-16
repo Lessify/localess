@@ -184,7 +184,9 @@
               <hlm-combobox-chips>
                 <ng-container *hlmComboboxValues="let values">
                   @for (value of values; track value) {
-                    <hlm-combobox-chip [value]="value">{{ schemaIdToString(value) }}</hlm-combobox-chip>
+                    <hlm-combobox-chip [value]="value" [removeLabel]="'Remove ' + schemaIdToString(value)">{{
+                      schemaIdToString(value)
+                    }}</hlm-combobox-chip>
                   }
                 </ng-container>
                 <input hlmComboboxChipInput id="schemas-input" placeholder="Select schemas..." autocomplete="off" />
