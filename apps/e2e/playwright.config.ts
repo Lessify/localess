@@ -22,7 +22,9 @@ export default defineConfig({
   fullyParallel: true,
   workers: process.env['E2E_WORKERS'] ?? (isCI ? 2 : '50%'),
   forbidOnly: isCI,
+  // One retry in CI tells a flaky test from a broken one, but a flaky test still fails the run: a retry must not hide it.
   retries: isCI ? 1 : 0,
+  failOnFlakyTests: isCI,
   timeout: 45_000,
   expect: { timeout: 10_000 },
   reporter: isCI ? [['list'], ['github'], ['html', { open: 'never' }]] : [['list'], ['html', { open: 'on-failure' }]],

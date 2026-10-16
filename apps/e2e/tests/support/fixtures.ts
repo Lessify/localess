@@ -59,6 +59,8 @@ interface Fixtures {
   createUser: (options?: UserOptions) => Promise<TestUser>;
   /** A page in its own browser context, signed in as the given user. */
   signInAs: (user: TestUser) => Promise<Page>;
+  /** A page in its own browser context, signed out (no session, no localStorage). */
+  signedOutPage: () => Promise<Page>;
   /** Deletes, after the test, spaces and users a test creates through the UI (by name / email). */
   cleanup: { space: (name: string) => void; user: (email: string) => void };
 }
@@ -79,7 +81,7 @@ export const test = base.extend<Fixtures>({
   // Fails the test on an uncaught error in the app, or one reported to Angular's ErrorHandler (the "An error
   // occurred." toast): a broken page often still renders something.
   page: async ({ page, allowedAppErrors, lifecycle }, use) => {
-    const errors = watchAppErrors(page, lifecycle);
+    const errors = watchContext(page, lifecycle);
     await use(page);
     await expectNoAppErrors(errors, allowedAppErrors);
   },
@@ -107,7 +109,7 @@ export const test = base.extend<Fixtures>({
       return { id: user.id, email, password };
     });
     lifecycle.tearingDown = true;
-    for (const id of created) await api.deleteUser(id);
+    await settleAll(created.map(id => () => api.deleteUser(id)));
   },
 
   cleanup: async ({ api, lifecycle }, use) => {
@@ -115,28 +117,68 @@ export const test = base.extend<Fixtures>({
     const users: string[] = [];
     await use({ space: name => spaces.push(name), user: email => users.push(email) });
     lifecycle.tearingDown = true;
-    for (const space of (await api.listSpaces()).filter(it => spaces.includes(it.name))) await api.deleteSpace(space.id);
-    for (const user of (await api.listUsers()).filter(it => users.includes(it.email))) await api.deleteUser(user.id);
+    await settleAll([
+      ...(await api.listSpaces()).filter(it => spaces.includes(it.name)).map(it => () => api.deleteSpace(it.id)),
+      ...(await api.listUsers()).filter(it => users.includes(it.email)).map(it => () => api.deleteUser(it.id)),
+    ]);
   },
 
   signInAs: async ({ browser, baseURL, allowedAppErrors, lifecycle }, use) => {
-    const pages: { page: Page; errors: Promise<string>[] }[] = [];
+    const contexts: BrowserContext[] = [];
+    const errors: Promise<string>[] = [];
     await use(async user => {
-      const page = await signedInPage(browser, baseURL, user);
-      pages.push({ page, errors: watchAppErrors(page, lifecycle) });
+      const context = await signedOutContext(browser, baseURL);
+      contexts.push(context);
+      const response = await context.request.post('/api/auth/login', {
+        headers: CSRF,
+        data: { email: user.email, password: user.password },
+      });
+      expect(response.ok(), `sign in as ${user.email}: ${response.status()}`).toBeTruthy();
+      const page = await context.newPage();
+      errors.push(...watchContext(page, lifecycle));
       return page;
     });
-    for (const { page } of pages) await page.context().close();
-    await expectNoAppErrors(
-      pages.flatMap(it => it.errors),
-      allowedAppErrors,
-    );
+    for (const context of contexts) await context.close();
+    await expectNoAppErrors(errors, allowedAppErrors);
+  },
+
+  signedOutPage: async ({ browser, baseURL, allowedAppErrors, lifecycle }, use) => {
+    const contexts: BrowserContext[] = [];
+    const errors: Promise<string>[] = [];
+    await use(async () => {
+      const context = await signedOutContext(browser, baseURL);
+      contexts.push(context);
+      const page = await context.newPage();
+      errors.push(...watchContext(page, lifecycle));
+      return page;
+    });
+    for (const context of contexts) await context.close();
+    await expectNoAppErrors(errors, allowedAppErrors);
   },
 });
 
-/** Collects the app's errors in a page until teardown starts (see `lifecycle`). */
-function watchAppErrors(page: Page, lifecycle: { tearingDown: boolean }): Promise<string>[] {
+/** Runs every cleanup step, even when one fails, then fails with all their errors (a leak should not go unseen). */
+async function settleAll(steps: (() => Promise<unknown>)[]): Promise<void> {
+  const failed = (await Promise.allSettled(steps.map(step => step()))).filter(it => it.status === 'rejected');
+  expect(
+    failed.map(it => String(it.reason)),
+    'cleanup',
+  ).toEqual([]);
+}
+
+/**
+ * Collects the app's errors in a page and in every page later opened in its context (popups, new tabs), until
+ * teardown starts (see `lifecycle`). The array grows while the test runs: read it at teardown.
+ */
+function watchContext(page: Page, lifecycle: { tearingDown: boolean }): Promise<string>[] {
   const errors: Promise<string>[] = [];
+  watchAppErrors(page, lifecycle, errors);
+  page.context().on('page', other => watchAppErrors(other, lifecycle, errors));
+  return errors;
+}
+
+/** Collects a page's uncaught errors, errors reported to Angular's ErrorHandler and server errors (5xx) of its API calls. */
+function watchAppErrors(page: Page, lifecycle: { tearingDown: boolean }, errors: Promise<string>[]): void {
   page.on('pageerror', error => {
     if (lifecycle.tearingDown) return;
     errors.push(Promise.resolve(`uncaught ${error.name}: ${error.message} @ ${page.url()}\n${error.stack ?? ''}`));
@@ -147,7 +189,12 @@ function watchAppErrors(page: Page, lifecycle: { tearingDown: boolean }): Promis
       errors.push(describeConsoleError(message.args()).then(text => `ErrorHandler: ${text} @ ${page.url()}`));
     }
   });
-  return errors;
+  // A server error the app handles quietly (no toast, an empty list) still means something broke.
+  page.on('response', response => {
+    if (!lifecycle.tearingDown && response.status() >= 500 && new URL(response.url()).pathname.startsWith('/api/')) {
+      errors.push(Promise.resolve(`server ${response.status()} ${response.request().method()} ${response.url()} @ ${page.url()}`));
+    }
+  });
 }
 
 async function expectNoAppErrors(errors: Promise<string>[], allowed: RegExp[]): Promise<void> {
@@ -186,16 +233,11 @@ async function offline(context: BrowserContext, baseURL: string | undefined): Pr
   );
 }
 
-/** Signs in through the API (the login form has its own tests) and opens the app. */
-async function signedInPage(browser: Browser, baseURL: string | undefined, user: TestUser): Promise<Page> {
+/** A browser context like a fresh browser: no session cookie, no localStorage, offline (see `offline`). */
+async function signedOutContext(browser: Browser, baseURL: string | undefined): Promise<BrowserContext> {
   const context = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
   await offline(context, baseURL);
-  const response = await context.request.post('/api/auth/login', {
-    headers: CSRF,
-    data: { email: user.email, password: user.password },
-  });
-  expect(response.ok(), `sign in as ${user.email}: ${response.status()}`).toBeTruthy();
-  return context.newPage();
+  return context;
 }
 
 export { expect };

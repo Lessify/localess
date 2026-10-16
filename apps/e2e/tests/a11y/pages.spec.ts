@@ -59,18 +59,16 @@ async function withData(api: AppApi, spaceId: string): Promise<SpaceData> {
 }
 
 test.describe('Accessibility', () => {
-  test('the sign-in page', async ({ browser, baseURL }) => {
-    const context = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
-    const page = await context.newPage();
+  test('the sign-in page', async ({ signedOutPage }) => {
+    const page = await signedOutPage();
     await page.goto('/auth/login');
     await expect(page.getByRole('button', { name: /sign in/i }).first()).toBeVisible();
     expect(await scan(page)).toEqual([]);
-    await context.close();
   });
 
   // One test per page (each with its own space and data): a scan takes a few seconds.
   const SPACE_PAGES: { name: string; path: (data: SpaceData) => string; ready: string }[] = [
-    { name: 'Dashboard', path: () => 'dashboard', ready: 'Translations' },
+    { name: 'Dashboard', path: () => 'dashboard', ready: 'Translation Keys' }, // a card: shown once the overview loaded
     { name: 'Translations', path: () => 'translations', ready: 'home.title' },
     { name: 'Contents', path: () => 'contents', ready: 'Home' },
     { name: 'Document editor', path: data => `contents/${data.documentId}`, ready: 'Title' },

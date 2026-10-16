@@ -1,5 +1,5 @@
 import { LoginPage } from '../pages/login.page';
-import { expect, test } from '../support/fixtures';
+import { expect, test, uniqueId } from '../support/fixtures';
 import { decoded, mailsTo, waitForMail } from '../support/mail';
 
 // Starts signed out.
@@ -54,12 +54,15 @@ test.describe('Password reset', () => {
   });
 
   test('an address without an account gets the same answer, and no mail', async ({ page }) => {
-    const email = `nobody-${Date.now()}@e2e.localess.test`;
+    const email = `${uniqueId('nobody-')}@e2e.localess.test`;
     await page.goto('/auth/reset');
     await page.getByLabel('Email').fill(email);
+    // The server sends the mail before it answers, and the catcher stores it before it acknowledges: once the answer is
+    // in, a mail would be there.
+    const answered = page.waitForResponse(response => response.url().endsWith('/api/auth/password-reset/request'));
     await page.getByRole('button', { name: 'Reset Password' }).click();
+    expect((await answered).status()).toBe(204);
     await expect(page.getByRole('status')).toContainText('If an account exists for that address, a reset link is on its way.');
-    await new Promise(resolve => setTimeout(resolve, 1_500));
     expect(await mailsTo(email)).toEqual([]);
   });
 

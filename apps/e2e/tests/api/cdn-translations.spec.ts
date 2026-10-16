@@ -1,4 +1,8 @@
-import { expect, test } from '../support/fixtures';
+import { expect, test, uniqueName } from '../support/fixtures';
+
+// The CDN API is public (a token in the URL): `request` has no session cookie here, so a refusal can't be hidden by the
+// admin's session. Test data goes through `api`, which has its own.
+test.use({ storageState: { cookies: [], origins: [] } });
 
 const cdn = (spaceId: string, locale: string) => `/api/v1/spaces/${spaceId}/translations/${locale}`;
 
@@ -27,10 +31,7 @@ test.describe('CDN API → translations', () => {
     const pub = (await api.createToken(space.id, { name: 'Public', type: 'public' })).token;
     const prv = (await api.createToken(space.id, { name: 'Preview', type: 'preview' })).token;
 
-    await request.put(`/api/app/spaces/${space.id}/translations/${translation.id}/locales/en`, {
-      data: { value: 'Buy now' },
-      headers: { 'X-Requested-With': 'XMLHttpRequest' },
-    });
+    await api.send('put', `/api/app/spaces/${space.id}/translations/${translation.id}/locales/en`, { value: 'Buy now' });
 
     expect(await (await request.get(`${cdn(space.id, 'en')}?token=${pub}`)).json()).toEqual({ cta: 'Buy' });
     expect((await request.get(`${cdn(space.id, 'en')}?token=${pub}&version=draft`)).status()).toBe(403);
@@ -53,7 +54,7 @@ test.describe('CDN API → translations', () => {
   });
 
   test('a token of one space does not open another space', async ({ api, space, request }) => {
-    const other = await api.createSpace('E2E other space');
+    const other = await api.createSpace(uniqueName('E2E other'));
     try {
       await api.createTranslation(other.id, { key: 'k1', locales: { en: 'v' } });
       await api.publishTranslations(other.id);

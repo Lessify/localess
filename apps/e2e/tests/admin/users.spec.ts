@@ -320,7 +320,8 @@ test.describe('Admin → Users', () => {
       await expect(own).toHaveURL(/\/auth\/login/);
     });
 
-    test('the signed-in admin can not disable or delete themself', async ({ page }) => {
+    // Delete is offered (and allowed by the server): TEST-PLAN open finding.
+    test('the signed-in admin can not disable themself', async ({ page }) => {
       const users = new AdminUsersPage(page);
       await users.goto();
       await expectRowMenu(page, users.row(ADMIN_EMAIL), async menu => {
@@ -333,7 +334,7 @@ test.describe('Admin → Users', () => {
   test.describe('password reset link', () => {
     test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
-    test('copies a link that lets the user set a new password', async ({ page, browser, baseURL, createUser }) => {
+    test('copies a link that lets the user set a new password', async ({ page, signedOutPage, createUser }) => {
       const user = await createUser({ permissions: ['TRANSLATION_READ'] });
       const users = new AdminUsersPage(page);
 
@@ -344,14 +345,12 @@ test.describe('Admin → Users', () => {
       // Action: copy the link; the user opens it and sets a new password.
       const link = await users.copyResetLink(user.email);
       expect(link).toContain('/auth/reset/confirm?token=');
-      const context = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
-      const own = await context.newPage();
+      const own = await signedOutPage();
       await own.goto(link);
       await own.getByLabel('New password', { exact: true }).fill('reset-password');
       await own.getByLabel('Repeat new password').fill('reset-password');
       await own.getByRole('button', { name: 'Change password' }).click();
       await expect(own.getByRole('status')).toContainText('Your password has been changed');
-      await context.close();
 
       // Post-check: only the new password works.
       expect((await accessOf(user.email, user.password)).signIn).toBe(false);

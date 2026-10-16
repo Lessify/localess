@@ -1,7 +1,6 @@
-import { expect, test } from '@playwright/test';
-
 import { LoginPage } from '../pages/login.page';
 import { ADMIN } from '../support/env';
+import { expect, test } from '../support/fixtures';
 
 // Starts signed out, unlike the other specs.
 test.use({ storageState: { cookies: [], origins: [] } });

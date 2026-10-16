@@ -38,19 +38,30 @@ test.describe('Space settings → Access Tokens', () => {
     expect(await cdn.json()).toEqual({ k1: 'v' });
   });
 
-  test('shows a management token once, in a dialog that must be acknowledged', async ({ page, space }) => {
+  test('shows a management token once, in a dialog that must be acknowledged', async ({ page, api, space }) => {
     await page.goto(`/features/spaces/${space.id}/settings/tokens`);
 
     await createToken(page, 'CI pipeline', 'Management');
     const secret = await dialog(page, 'Copy your token');
-    await expect(secret.getByText(/^mgt_/)).toBeVisible();
+    const shown = secret.getByText(/^mgt_/);
+    await expect(shown).toBeVisible();
+    const value = (await shown.innerText()).trim();
     await expect(secret.getByText(/localess login/)).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(secret).toBeVisible();
     await secret.getByRole('button', { name: "I've copied it" }).click();
     await expect(secret).toBeHidden();
 
-    await expect(page.getByRole('row').filter({ hasText: 'CI pipeline' })).toContainText('Management');
+    // Once: the API lists the token without its value, and the page doesn't show it, also after a reload.
+    const row = page.getByRole('row').filter({ hasText: 'CI pipeline' });
+    await expect(row).toContainText('Management');
+    const tokens = await api.get<{ name: string; type: string; token?: string }[]>(`/api/app/spaces/${space.id}/tokens`);
+    const listed = tokens.find(it => it.name === 'CI pipeline');
+    expect(listed).toMatchObject({ type: 'management' });
+    expect(listed).not.toHaveProperty('token');
+    await page.reload();
+    await expect(row).toContainText('Management');
+    await expect(page.getByText(value)).toHaveCount(0);
   });
 
   test('regenerating a token cuts off the old value; deleting removes it', async ({ page, api, space, request }) => {

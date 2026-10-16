@@ -120,7 +120,10 @@ test.describe('Contents → form: choices and relations', () => {
     // Removing one reference.
     await page.locator('[role="listitem"]').filter({ hasText: 'Post A' }).getByRole('button', { name: 'Delete' }).click();
     await contents.save();
-    expect(((await contentById(api, space.id, doc.id)).data!.related as { uri: string }[]).map(it => it.uri)).toEqual([ids['Post B']]);
+    // The Save toast can still be the first one: the API is the proof.
+    await expect
+      .poll(async () => ((await contentById(api, space.id, doc.id)).data!.related as { uri: string }[]).map(it => it.uri))
+      .toEqual([ids['Post B']]);
   });
 
   test('Asset and Assets pick files in a dialog; the CDN resolves them', async ({ page, api, space, request }) => {

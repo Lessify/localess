@@ -12,17 +12,19 @@ test.describe('Space dashboard', () => {
     await api.uploadAsset(space.id, pngFile());
 
     await page.goto(`/features/spaces/${space.id}/dashboard`);
+    // The number in a card, exactly ("2", not "12"). Asset Files is twice: the count, then the storage.
     const card = (title: string) =>
       page
         .locator('[hlmCard]')
         .filter({ has: page.getByRole('heading', { name: title, exact: true }) })
-        .first();
-    await expect(card('Locales')).toContainText('2');
-    await expect(card('Translation Keys')).toContainText('2');
-    await expect(card('Content Documents')).toContainText('1');
-    await expect(card('Schemas')).toContainText('1');
-    await expect(card('Asset Files')).toContainText('1');
+        .first()
+        .locator('[hlmCardContent]');
+    await expect(card('Locales')).toHaveText(/^\s*2\s*$/);
+    await expect(card('Translation Keys')).toHaveText(/^\s*2\s*$/);
+    await expect(card('Content Documents')).toHaveText(/^\s*1\s*$/);
+    await expect(card('Schemas')).toHaveText(/^\s*1\s*$/);
+    await expect(card('Asset Files')).toHaveText(/^\s*1\s*$/);
     // Progress per locale: German has one of the two keys.
-    await expect(card('German')).toContainText('1 of 2');
+    await expect(card('German')).toHaveText(/^\s*50% - 1 of 2\s*$/);
   });
 });

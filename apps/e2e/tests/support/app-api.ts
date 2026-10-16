@@ -24,8 +24,9 @@ export class AppApi {
     return expectOk(response, `GET space ${id}`);
   }
 
-  async deleteSpace(id: string): Promise<void> {
-    await this.request.delete(`/api/app/spaces/${id}`, { headers: CSRF });
+  /** Deletes the space; one already gone (deleted by the test) is fine. */
+  deleteSpace(id: string): Promise<void> {
+    return this.delete(`/api/app/spaces/${id}`);
   }
 
   addEnvironment(spaceId: string, environment: { name: string; url: string }): Promise<unknown> {
@@ -146,8 +147,9 @@ export class AppApi {
     return (await this.listUsers()).find(it => it.email === email);
   }
 
-  async deleteUser(id: string): Promise<void> {
-    await this.request.delete(`/api/app/users/${id}`, { headers: CSRF });
+  /** Deletes the user; one already gone (deleted by the test) is fine. */
+  deleteUser(id: string): Promise<void> {
+    return this.delete(`/api/app/users/${id}`);
   }
 
   passwordResetLink(userId: string): Promise<{ url: string; expiresAt: string }> {
@@ -163,6 +165,13 @@ export class AppApi {
   async send<T>(method: 'post' | 'put' | 'patch', path: string, data?: unknown): Promise<T> {
     const response = await this.request[method](path, { headers: CSRF, ...(data === undefined ? {} : { data }) });
     return expectOk(response, `${method.toUpperCase()} ${path}`);
+  }
+
+  /** DELETE that fails on anything but success or 404 (already gone): a silent failure would leak test data. */
+  async delete(path: string): Promise<void> {
+    const response = await this.request.delete(path, { headers: CSRF });
+    if (response.status() === 404) return;
+    await expectOk(response, `DELETE ${path}`);
   }
 }
 

@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 
 import { WebhooksPage } from '../pages/webhooks.page';
 import type { AppApi } from '../support/app-api';
-import { expect, test } from '../support/fixtures';
+import { expect, test, uniqueId } from '../support/fixtures';
 import { WebhookReceiver } from '../support/webhook-receiver';
 
 interface WebhookDto {
@@ -19,14 +19,27 @@ function webhooks(api: AppApi, spaceId: string): Promise<WebhookDto[]> {
 
 /** Publishes the translations, which fires `translation.published`. */
 async function publish(api: AppApi, spaceId: string): Promise<void> {
-  await api.createTranslation(spaceId, { key: `k${Date.now()}${Math.random().toString(36).slice(2, 6)}`, locales: { en: 'v' } });
+  await api.createTranslation(spaceId, { key: uniqueId('k'), locales: { en: 'v' } });
   await api.publishTranslations(spaceId);
 }
 
-/** Waits long enough for a delivery that should not come (deliveries are sent right after the event). */
-async function expectNoDelivery(receiver: WebhookReceiver, count: number): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 2_000));
-  expect(receiver.requests).toHaveLength(count);
+/**
+ * Publishes, and checks that `receiver` gets no delivery for it. A witness webhook for the same event is the barrier: the
+ * server looks up every webhook of an event in one query and sends to all of them at once, so once the witness has its
+ * delivery, `receiver` would have had its own.
+ */
+async function publishExpectingNoDelivery(api: AppApi, spaceId: string, receiver: WebhookReceiver): Promise<void> {
+  const before = receiver.requests.length;
+  const witness = await WebhookReceiver.start();
+  try {
+    const hook = await api.createWebhook(spaceId, { name: 'Witness', url: witness.url, events: ['translation.published'] });
+    await publish(api, spaceId);
+    await expect.poll(() => witness.requests.length).toBe(1);
+    expect(receiver.requests).toHaveLength(before);
+    await api.delete(`/api/app/spaces/${spaceId}/webhooks/${hook.id}`);
+  } finally {
+    await witness.close();
+  }
 }
 
 test.describe('Developers → Webhooks', () => {
@@ -91,8 +104,7 @@ test.describe('Developers → Webhooks', () => {
 
     await expect(list.row('Toggle me')).toContainText('Disabled');
     expect((await webhooks(api, space.id))[0].enabled).toBe(false);
-    await publish(api, space.id);
-    await expectNoDelivery(receiver, 1);
+    await publishExpectingNoDelivery(api, space.id, receiver);
 
     await list.toggle('Toggle me', 'Enable');
 
@@ -113,8 +125,7 @@ test.describe('Developers → Webhooks', () => {
     await expect(list.row('Remove me')).toHaveCount(0);
     await expect(list.empty).toBeVisible();
     expect(await webhooks(api, space.id)).toEqual([]);
-    await publish(api, space.id);
-    await expectNoDelivery(receiver, 0);
+    await publishExpectingNoDelivery(api, space.id, receiver);
   });
 
   test('delivers a signed event on publish and logs it @smoke', async ({ page, api, space }) => {

@@ -50,8 +50,9 @@ test.describe('Translations → search and language', () => {
   test('searches values in the chosen language only', async ({ page, space }) => {
     const translations = new TranslationsPage(page);
 
-    // Pre-check: English is chosen; a German word finds nothing.
+    // Pre-check: the list is loaded, English is chosen; a German word finds nothing.
     await translations.goto(space.id);
+    await expect.poll(sortedKeys(translations)).toEqual(['farewell', 'greeting', 'thanks']);
     await translations.search('Hallo');
     await expect(translations.items).toHaveCount(0);
 

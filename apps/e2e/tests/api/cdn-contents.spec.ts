@@ -1,5 +1,9 @@
 import { expect, test, uniqueId } from '../support/fixtures';
 
+// The CDN API is public (a token in the URL): `request` has no session cookie here, so a refusal can't be hidden by the
+// admin's session. Test data goes through `api`, which has its own.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('CDN API → contents', () => {
   test('serves a published document by id and by full slug @smoke', async ({ api, space, request }) => {
     const schema = await api.createSchema(space.id, {

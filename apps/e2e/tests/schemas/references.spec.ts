@@ -66,7 +66,9 @@ test.describe('Schemas → references between schemas', () => {
     await contents.gotoDocument(space.id, doc.id);
     await page.getByRole('button', { name: 'Add Schema at the end' }).click();
     await page.getByRole('menuitem', { name: /Card/ }).click();
-    await expect(page.getByText(/Card/).first()).toBeVisible();
+    await contents.save();
+    const stored = await api.get<{ data: { blocks?: { _schema: string }[] } }>(`/api/app/spaces/${space.id}/contents/${doc.id}`);
+    expect(stored.data.blocks?.map(it => it._schema)).toEqual([card]);
   });
 
   test('refuses a reference to the wrong type of schema (server rule)', async ({ api, space, request }) => {

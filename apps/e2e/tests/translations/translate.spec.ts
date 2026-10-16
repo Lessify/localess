@@ -32,8 +32,10 @@ test.describe('Translations → machine translation', () => {
       await expect(translations.valueEditor).toHaveValue(stubTranslation('Hello', 'en', id));
       expect((await translationsByKey(api, space.id)).get('greeting')?.locales[id]).toBeUndefined();
       await translations.saveValueButton.click();
-      await expectToast(page, 'Translation has been updated.');
-      expect((await translationsByKey(api, space.id)).get('greeting')?.locales[id]).toBe(stubTranslation('Hello', 'en', id));
+      // The toast can still be the previous locale's: the API is the proof.
+      await expect
+        .poll(async () => (await translationsByKey(api, space.id)).get('greeting')?.locales[id])
+        .toBe(stubTranslation('Hello', 'en', id));
     }
   });
 

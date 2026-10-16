@@ -88,7 +88,7 @@ export class SchemasPage {
   async open(name: string): Promise<void> {
     await this.row(name).click();
     await expect(this.page).toHaveURL(/\/schemas\/(comp|enum)\/[0-9a-f-]{36}$/);
-    await expect(this.page.getByText(`#`, { exact: false }).first()).toBeVisible();
+    await expect(this.saveButton).toBeVisible();
   }
 
   /** Opens "Edit Schema ID" from the row menu and fills it, without saving. */

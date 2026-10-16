@@ -21,7 +21,7 @@ test.describe('Translations → delete', () => {
 
     // Pre-check
     await translations.goto(space.id);
-    expect(await translations.visibleKeys()).toHaveLength(3);
+    await expect(translations.items).toHaveCount(3);
     expect(await published(request, api, space.id, 'ro')).toHaveProperty(['nav.about'], 'Despre');
 
     // Action
@@ -31,8 +31,7 @@ test.describe('Translations → delete', () => {
     // Post-check: list, after a reload, API; the CDN after the next publish.
     await expect(translations.item('nav.about')).toHaveCount(0);
     await page.reload();
-    await expect(translations.item('nav.home')).toBeVisible();
-    expect((await translations.visibleKeys()).sort()).toEqual(['nav.contact', 'nav.home']);
+    await expect.poll(async () => (await translations.visibleKeys()).sort()).toEqual(['nav.contact', 'nav.home']);
     const all = await translationsByKey(api, space.id);
     expect([...all.keys()].sort()).toEqual(['nav.contact', 'nav.home']);
     expect(all.get('nav.home')?.locales).toEqual({ en: 'Home', de: 'Startseite', ro: 'Acasă' });

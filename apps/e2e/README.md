@@ -130,13 +130,17 @@ Import `test` and `expect` from `./support/fixtures` (not `@playwright/test`):
 | `api` | `AppApi` as the admin, for test data: `createTranslation`, `createSchema` (with fields), `createDocument`, `saveDocumentData`, `publishContent`, `uploadAsset`, `createToken`, `createWebhook`, `createUser`, ... It has its own session, so it works in specs that start signed out |
 | `createUser(options)` | A user with a unique email and known password (`role` CUSTOM unless given, `permissions`, `lock`), deleted after the test |
 | `signInAs(user)` | A page in its own browser context, signed in as that user (no localStorage: like a fresh browser) |
+| `signedOutPage()` | A page in its own browser context, signed out (no session, no localStorage), with the error guard and offline routing |
 | `page` | As usual, plus the **error guard** (below) |
 | `anonymousRequest()` | An HTTP client without the admin session (for token-only and signed-out checks) |
 
-**Error guard.** Every page (`page` and `signInAs` pages) records uncaught errors and everything reported to
-Angular's `ErrorHandler` (what users see as the "An error occurred." toast); the test fails if there were any. A test
+**Error guard.** Every page (`page`, `signInAs` and `signedOutPage` pages, and popups they open) records uncaught
+errors, everything reported to Angular's `ErrorHandler` (what users see as the "An error occurred." toast) and every
+server error (5xx) of an `/api/` call, also one the app handles quietly; the test fails if there were any. Open browser
+contexts through these fixtures, not `browser.newContext()`, or the page has no guard and reaches the internet. A test
 that expects one (a known issue) declares it: `test.use({ allowedAppErrors: [/403 \S+\/api\/app\/spaces /] })`.
-Errors after teardown has started deleting the test's data are ignored.
+Errors after teardown has started deleting the test's data are ignored. Teardown fails when it can't delete what a
+test created (a 404, already deleted by the test, is fine): leaked data would otherwise go unnoticed.
 
 **Offline.** Every browser context aborts requests to anything but the server under test and `127.0.0.1` (sites a test serves itself, like the Visual Editor's preview site) (GitHub's release check,
 web fonts): runs don't depend on the internet, and the app is checked as an install without internet access.

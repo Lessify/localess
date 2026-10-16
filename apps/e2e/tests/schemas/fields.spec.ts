@@ -197,9 +197,17 @@ test.describe('Schemas → fields', () => {
     await schemas.closeSheet();
     await expect.poll(() => schemas.itemNames()).toEqual(['title', 'unsaved']);
 
-    // Action: a colleague saves another schema (a live update reaches this editor).
+    // Action: a colleague saves another schema; the editor refetches the space's schemas (a live update).
+    const refetched = page.waitForResponse(
+      async response =>
+        response.request().method() === 'GET' &&
+        new URL(response.url()).pathname === `/api/app/spaces/${space.id}/schemas` &&
+        (await response.text()).includes('Changed elsewhere'),
+    );
     await api.send('put', `/api/app/spaces/${space.id}/schemas/${other.id}`, { displayName: 'Changed elsewhere' });
-    await page.waitForTimeout(1_500);
+    await refetched;
+    // Two frames: Angular has applied the new list (and would have reloaded the form) by then.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
     // Post-check: the unsaved field is still there, and Save stores it.
     expect(await schemas.itemNames()).toEqual(['title', 'unsaved']);
