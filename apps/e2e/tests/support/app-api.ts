@@ -182,6 +182,8 @@ export interface UserDto {
   permissions?: string[];
   lock?: boolean;
   disabled?: boolean;
+  /** `password`, `google.com`, `microsoft.com`. */
+  providers?: string[];
 }
 
 export interface SchemaFieldInput {

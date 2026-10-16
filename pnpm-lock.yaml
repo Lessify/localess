@@ -209,6 +209,9 @@ catalogs:
     ngx-scrollbar:
       specifier: ^19.1.5
       version: 19.1.5
+    oauth2-mock-server:
+      specifier: ^9.2.0
+      version: 9.2.0
     prettier:
       specifier: ^3.8.3
       version: 3.8.3
@@ -256,12 +259,18 @@ importers:
 
   apps/e2e:
     devDependencies:
+      '@axe-core/playwright':
+        specifier: ^4.13.0
+        version: 4.13.0(playwright-core@1.64.1)
       '@playwright/test':
         specifier: ^1.64.1
         version: 1.64.1
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.1
+      oauth2-mock-server:
+        specifier: 'catalog:'
+        version: 9.2.0
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -393,7 +402,7 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0(supports-color@8.1.1)
       oauth2-mock-server:
-        specifier: ^9.2.0
+        specifier: 'catalog:'
         version: 9.2.0
       openapi3-ts:
         specifier: ^4.6.1
@@ -1047,6 +1056,11 @@ packages:
     engines: {node: '>= 20'}
     peerDependencies:
       '@types/json-schema': ^7.0.15
+
+  '@axe-core/playwright@4.13.0':
+    resolution: {integrity: sha512-6YLx+kxXu5GJceG4ozFg+33a2EMTdjYwWGloJ3sb9Kta5pp+ZNS53uxGVog5JetIY8s++P5UrtX+cri+u0VAVg==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.29.7':
     resolution: {integrity: sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==}
@@ -5732,6 +5746,10 @@ packages:
 
   avvio@9.3.0:
     resolution: {integrity: sha512-g2tQ7LE7oOSqDfwEm3M+ZCMTJc7KiZCdJ4UwyZJb5ckTKyYu50OYmvv0mCFXPuYXoM4zkSt8zM9XQ9KCvxA74A==}
+
+  axe-core@4.13.0:
+    resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
+    engines: {node: '>=4'}
 
   axios@1.12.0:
     resolution: {integrity: sha512-oXTDccv8PcfjZmPGlWsPSwtOJCZ/b6W5jAMCNcfwJbCzDckwG0jrYJFaWH1yvivfCXjVzV/SPDEhMB3Q+DSurg==}
@@ -11851,6 +11869,11 @@ snapshots:
       '@types/json-schema': 7.0.15
       js-yaml: 4.3.2
 
+  '@axe-core/playwright@4.13.0(playwright-core@1.64.1)':
+    dependencies:
+      axe-core: 4.13.0
+      playwright-core: 1.64.1
+
   '@babel/code-frame@7.29.7':
     dependencies:
       '@babel/helper-validator-identifier': 7.29.7
@@ -16814,6 +16837,8 @@ snapshots:
     dependencies:
       '@fastify/error': 4.2.0
       fastq: 1.20.1
+
+  axe-core@4.13.0: {}
 
   axios@1.12.0(debug@4.4.3(supports-color@8.1.1)):
     dependencies:

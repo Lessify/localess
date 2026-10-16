@@ -33,7 +33,7 @@ the API, not only by the toast.
 | CSRF: state-changing calls need `X-Requested-With` (403) | API | ✅ `api/platform` |
 | Fresh install: migrations on boot, first admin and "Hello World" seeded | UI, every run starts on an empty database | ✅ `auth/login` |
 | Works without internet access (no GitHub, no fonts) | All external requests aborted in every UI test | ✅ (fixture) |
-| CLI `localess check`, `admin:create` | Run `node apps/server/dist/cli.js` against the e2e server's database | ⬜ |
+| CLI `check`, `admin:create` (password from the environment; the new admin signs in), usage | `node apps/server/dist/cli.js` next to the running server (it attaches to the same embedded Postgres) | ✅ `api/cli` |
 | Docker image boots and serves the app | `docker compose up`, then the smoke suite against it (`E2E_BASE_URL`) | ⬜ |
 | Upgrade: a database from the previous release migrates and works | Restore a dump of the last release, boot, run smoke | ⬜ |
 | External Postgres (`DATABASE_URL`) instead of embedded | CI service container, same suite | ⬜ |
@@ -49,9 +49,9 @@ the API, not only by the toast.
 | Logout ends the session | UI + API | ✅ `auth/logout` |
 | Reset link from an admin sets a new password; old one stops working | UI | ✅ `auth/password-reset` |
 | Invalid or used reset link is refused | UI | ✅ `auth/password-reset` |
-| Without SMTP the reset page points to an administrator | UI | ✅ `auth/password-reset` |
-| Reset by email (SMTP configured) | A local SMTP sink (e.g. `smtp-server` in a fixture), read the link from the mail | ⬜ |
-| Google / Microsoft sign-in | `oauth2-mock-server` (already a server devDependency) as the issuer; a second server config | ⬜ |
+| Without SMTP the reset page points to an administrator | Unit test (the e2e server has SMTP) | ➖ `reset.component.spec.ts` |
+| Reset by email: the mail's link sets a new password, once; an unknown address gets the same answer and no mail | A mail catcher next to the server (`scripts/start-server.mjs`) | ✅ `auth/password-reset` |
+| Google / Microsoft sign-in of an invited user (identity linked, shown in Admin → Users); no account, unverified email, disabled account refused with the reason | `oauth2-mock-server` as both issuers, next to the server | ✅ `auth/oauth` |
 | Login rate limit | API: N+1 attempts → 429 (own server with a low limit) | ⬜ |
 | Disabled user can not sign in | API | ✅ `api/permissions`, `admin/users` |
 | Disabling a signed-in user signs them out at once | UI: user's page gets sent to login after an admin disables them | ✅ `admin/users` |
@@ -100,7 +100,7 @@ whether the account can sign in).
 | Password change: old one stops working, other sessions end, this one stays | UI + a second session + sign-in | ✅ `me/profile` @smoke |
 | Password change refused: wrong current password; under 6 characters can't be submitted | UI + sign-in | ✅ `me/profile` |
 | Locked user: message, no buttons, API refuses changes | UI + API | ✅ `me/profile` |
-| Google / Microsoft account (no password): email and password can't be changed here | Needs `oauth2-mock-server` as the issuer | ⬜ |
+| Google / Microsoft account without a password: email and password can't be changed here | Such accounts come only from auto-register (off in e2e, so unknown accounts stay refused) or an import; needs a second server, or a component test of the Me template | ⬜ |
 
 ### 5. Spaces (admin) and space settings
 
@@ -113,7 +113,7 @@ the CDN where a setting changes what it serves).
 | Create: cancelling creates nothing; a name under 3 characters is refused | UI + API | ✅ `admin/spaces` |
 | Rename a space (same id); cancelling keeps the name | UI + API | ✅ `admin/spaces` |
 | Delete a space with its content; cancelling keeps it | UI + API | ✅ `admin/spaces` |
-| Create a space from a template (schemas created) | UI + API | ⬜ |
+| Create a space from each template (Empty, E-Commerce, Blog, Marketing Site): its schemas, complete; no templates without Schema Create | UI + API | ✅ `admin/space-templates` |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
 | General: rename the space | UI + API | ✅ `space/general` |
 | Locales: default locale can not be deleted; add a locale (at the end) | UI + API | ✅ `space/locales` |
@@ -305,7 +305,7 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Scenario | How | Status |
 |---|---|---|
 | No uncaught or reported errors on any page under test | `page` fixture | ✅ |
-| Accessibility scan of the main pages | `@axe-core/playwright`, fail on serious/critical | ⬜ |
+| Accessibility scan of the sign-in page, a space's pages, admin and profile | `@axe-core/playwright`, WCAG 2 A / AA, fails on serious / critical | ✅ `a11y/pages` |
 | Firefox and WebKit | Extra Playwright projects, nightly | ⬜ |
 | Visual regression of key pages | `toHaveScreenshot`, fixed data, one OS | ⬜ |
 | Dark theme renders | UI: theme switch + screenshot | ⬜ |
@@ -340,6 +340,8 @@ regression test.
 | Document status was an icon with a tooltip only (no text for assistive technology) | The status as the icon's accessible name; also names for the field's translate button and the editor's root breadcrumb |
 | Image preview: on a window under ~980 px high the caption and Close were below the screen (a fixed `min-h-[800px]` beat the maximum) | The minimum size is capped by the window |
 | Admin → Users offered "Regenerate Metadata" as a permission: it is an admin-only task kind, and the server refused the whole invite or save with it ticked | Not offered; a unit test checks the dialog offers exactly the server's permissions |
+| Google / Microsoft sign-in refused (no account, unverified email, disabled): the reason was never shown — the login page's session check (401) made the API interceptor navigate to `/auth/login`, dropping `?error=` | No redirect while on a sign-in page |
+| Accessibility scan: the sidebar's collapsible menu sat between `<ul>` and `<li>`; list items without a list (item groups, the translation list); unnamed page-size select, help link, progress bars and provider icons; a focusable button hidden from assistive technology; Settings tabs pointing at no panel | Fixed (item groups are lists, as in shadcn; labels; the routed page is the tab panel) |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -360,4 +362,6 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
 | Webhooks: the sidebar shows Developers → Webhooks for `DEV_WEBHOOK`, but every webhook route needs `SPACE_MANAGEMENT` (pinned by a server test): a user with only `DEV_WEBHOOK` opens a page whose requests are refused | Product decision; `api/permission-matrix` asserts the server's rule |
+| Color contrast: keyboard hints (`kbd`: the theme's muted text on muted, 4.34:1) and the inactive Danger Zone tab (destructive at 60 %, 3.06:1) are under WCAG AA's 4.5:1 | Theme decision; `a11y/pages` skips only these two |
+| The Content Security Policy (report-only) allows one script hash, but the build's inline critical-CSS loader (`data-beasties-media`) has another: enforced, the policy would block it | `apps/server/src/infra/static/static-site.ts`; not asserted |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload and move but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |

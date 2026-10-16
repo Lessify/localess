@@ -26,9 +26,10 @@
                 </hlm-select-content>
               </hlm-select>
             </div>
-            <button hlmBtn size="icon" variant="ghost" aria-hidden="true" tabindex="-1">
+            <!-- Decoration between the two selects: not a button (a hidden button could still take the focus). -->
+            <span class="inline-flex size-9 shrink-0 items-center justify-center" aria-hidden="true">
               <ng-icon hlm size="sm" name="lucideArrowRight" />
-            </button>
+            </span>
             <div hlmField>
               <label class="sr-only" for="translation-target-locale">Target Locale</label>
               <hlm-select [(value)]="selectedTargetLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">

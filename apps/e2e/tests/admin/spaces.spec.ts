@@ -5,7 +5,7 @@ import { expect, test, uniqueName } from '../support/fixtures';
 // Every test: pre-check (UI and API) → action (UI) → post-check (UI, again after a reload, and API).
 test.describe('Admin → Spaces', () => {
   test.describe('create', () => {
-    test('creates a space, which then opens and shows in the space switcher @smoke', async ({ page, api, cleanup }) => {
+    test('creates a space, which then opens and shows in the space switcher @smoke', async ({ page, api, cleanup, space }) => {
       const spaces = new AdminSpacesPage(page);
       const name = uniqueName('E2E Space');
       cleanup.space(name);
@@ -26,8 +26,9 @@ test.describe('Admin → Spaces', () => {
       await expect(spaces.row(name)).toBeVisible();
       await page.goto(`/features/spaces/${id}/settings/general`);
       await expect(page.getByRole('button', { name })).toBeVisible();
-      await new Shell(page).switchSpace('Hello World');
-      await expect(page.getByRole('button', { name: 'Hello World' })).toBeVisible();
+      // Another space (the test's own: names like "Hello World" can repeat, e.g. after `admin:create`).
+      await new Shell(page).switchSpace(space.name);
+      await expect(page.getByRole('button', { name: space.name })).toBeVisible();
     });
 
     test('cancelling the dialog creates nothing', async ({ page, api }) => {
@@ -128,7 +129,8 @@ test.describe('Admin → Spaces', () => {
       await expect(spaces.row(space.name)).toHaveCount(0);
       expect(await api.findSpace(space.id)).toBeUndefined();
       await page.reload();
-      await expect(spaces.row('Hello World')).toBeVisible();
+      // Loaded (the seeded space is listed; the CLI test may add a second one for a moment).
+      await expect(spaces.row('Hello World').first()).toBeVisible();
       await expect(spaces.row(space.name)).toHaveCount(0);
     });
 

@@ -8,9 +8,10 @@ test.describe('Platform', () => {
     expect(await response.json()).toEqual({ status: 'ok' });
   });
 
-  test('runtime config is public and lists no OAuth provider', async ({ request }) => {
+  test('runtime config is public and lists the OAuth providers', async ({ request }) => {
     const config = await (await request.get('/api/config')).json();
-    expect(config.auth.providers).toEqual([]);
+    // Set by playwright.config.ts (a mock OpenID provider stands in for both).
+    expect(config.auth.providers).toEqual(['GOOGLE', 'MICROSOFT']);
     // Set by playwright.config.ts (LOCALESS_TRANSLATE_PROVIDER=stub).
     expect(config.translate.enabled).toBe(true);
   });

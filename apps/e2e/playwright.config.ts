@@ -1,8 +1,6 @@
-import { resolve } from 'node:path';
-
 import { defineConfig, devices } from '@playwright/test';
 
-import { ADMIN, AUTH_STATE, E2E_PORT } from './tests/support/env';
+import { ADMIN, AUTH_STATE, E2E_DATA_DIR, E2E_IDP_PORT, E2E_MAIL_PORT, E2E_PG_PORT, E2E_PORT } from './tests/support/env';
 
 const baseURL = `http://localhost:${E2E_PORT}`;
 const isCI = !!process.env['CI'];
@@ -17,9 +15,7 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   timeout: 45_000,
   expect: { timeout: 10_000 },
-  reporter: isCI
-    ? [['list'], ['github'], ['html', { open: 'never' }]]
-    : [['list'], ['html', { open: 'on-failure' }]],
+  reporter: isCI ? [['list'], ['github'], ['html', { open: 'never' }]] : [['list'], ['html', { open: 'on-failure' }]],
   use: {
     baseURL,
     trace: 'retain-on-failure',
@@ -55,8 +51,8 @@ export default defineConfig({
     env: {
       PORT: String(E2E_PORT),
       HOST: '127.0.0.1',
-      LOCALESS_DATA_DIR: resolve(import.meta.dirname, '.data'),
-      LOCALESS_EMBEDDED_PG_PORT: process.env['E2E_PG_PORT'] ?? '5544',
+      LOCALESS_DATA_DIR: E2E_DATA_DIR,
+      LOCALESS_EMBEDDED_PG_PORT: String(E2E_PG_PORT),
       LOCALESS_ADMIN_EMAIL: ADMIN.email,
       LOCALESS_ADMIN_PASSWORD: ADMIN.password,
       LOCALESS_LOGIN_RATE_LIMIT: '10000',
@@ -65,6 +61,16 @@ export default defineConfig({
       // Webhook deliveries to the local receiver started by tests (see tests/support/webhook-receiver.ts).
       LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
       LOCALESS_LOG_LEVEL: 'warn',
+      // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
+      // issuers; tests/support/oauth.ts picks who signs in).
+      E2E_IDP_PORT: String(E2E_IDP_PORT),
+      // "Forgot password" emails go to a mail catcher (scripts/start-server.mjs; tests/support/mail.ts reads them).
+      E2E_MAIL_PORT: String(E2E_MAIL_PORT),
+      LOCALESS_AUTH_PROVIDERS: 'GOOGLE,MICROSOFT',
+      LOCALESS_GOOGLE_CLIENT_ID: 'e2e-google',
+      LOCALESS_GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
+      LOCALESS_MICROSOFT_CLIENT_ID: 'e2e-microsoft',
+      LOCALESS_MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
     },
   },
 });

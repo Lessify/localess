@@ -11,7 +11,8 @@ export class AdminSpacesPage {
     await this.page.goto('/features/admin/spaces');
     await expect(this.page.getByRole('button', { name: 'Add Space' })).toBeVisible();
     // The table has loaded once the seeded space is listed.
-    await expect(this.row('Hello World')).toBeVisible();
+    // `first`: the CLI test's `admin:create` adds another "Hello World" for a moment.
+    await expect(this.row('Hello World').first()).toBeVisible();
   }
 
   /** A row, by the exact space name. */

@@ -49,10 +49,10 @@
           @for (provider of element.providers; track provider) {
             @switch (provider) {
               @case ('password') {
-                <ng-icon name="lucideMail" hlmTooltip="Email & Password" />
+                <ng-icon name="lucideMail" hlmTooltip="Email & Password" role="img" aria-hidden="false" aria-label="Email & Password" />
               }
               @default {
-                <ng-icon name="lucideShieldCheck" [hlmTooltip]="provider" />
+                <ng-icon name="lucideShieldCheck" [hlmTooltip]="provider" role="img" aria-hidden="false" [attr.aria-label]="provider" />
               }
             }
           }

@@ -25,14 +25,18 @@ last HTML report), `typecheck`. Playwright options pass through: `pnpm e2e:run -
 A failed test keeps a screenshot, a video and a trace in `test-results/`; `pnpm exec playwright show-trace <trace.zip>`
 replays it step by step. In CI the HTML report (and the traces of failures) are uploaded as artifacts.
 
-Environment: `E2E_PORT` (3100), `E2E_PG_PORT` (5544), `E2E_WORKERS` (CI 2, locally half the cores).
+Environment: `E2E_PORT` (3100), `E2E_IDP_PORT` (3101), `E2E_MAIL_PORT` (3102, and 3103 for its mailbox), `E2E_PG_PORT`
+(5544), `E2E_WORKERS` (CI 2, locally half the cores).
 
 ## How a run works
 
 1. `playwright.config.ts` starts `scripts/start-server.mjs` (Playwright `webServer`) and waits for `/api/health`.
 2. The script deletes `apps/e2e/.data` and starts `apps/server/dist/main.js` on port 3100 with an embedded Postgres
    on port 5544, serving `apps/web/dist/browser`. It refuses to start if either build is missing. The ports differ
-   from `pnpm dev` (3000 / 5433), so both can run at once.
+   from `pnpm dev` (3000 / 5433), so both can run at once. Next to it the script starts a mock OpenID provider
+   (`oauth2-mock-server`, port 3101) that stands in for Google and Microsoft (`tests/support/oauth.ts` picks who
+   signs in), and a mail catcher for "forgot password" emails (SMTP on 3102, the received mails as JSON on 3103,
+   read by `tests/support/mail.ts`).
 3. The server seeds the first admin from `LOCALESS_ADMIN_EMAIL` / `LOCALESS_ADMIN_PASSWORD` (`tests/support/env.ts`)
    with the "Hello World" space, as on a new installation. Machine translation uses the `stub` provider, and webhooks
    may call loopback addresses (for the local receiver).
@@ -60,11 +64,13 @@ tests/
 │   ├── schemas.ts          # schema read-back from the App API
 │   ├── contents.ts         # content read-back, a CDN client (public / preview), a Root schema helper
 │   ├── preview-site.ts     # a local customer site for the Visual Editor (loads sync-v1.js)
-│   └── app-routes.ts       # the App API routes and their access, read from the server's controllers
+│   ├── app-routes.ts       # the App API routes and their access, read from the server's controllers
+│   ├── oauth.ts            # who the mock OpenID provider signs in (Google / Microsoft)
+│   └── mail.ts             # mails from the mail catcher ("forgot password")
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts, drag and drop)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── api/                    # platform, CDN API, Management API (translations, schemas, OpenAPI), permission matrix, user managers
-├── auth/                   # login, logout, deep links, password reset, what restricted users see
+├── auth/                   # login, logout, deep links, password reset (link and email), Google / Microsoft, restricted users
 ├── admin/                  # Admin → Users, Admin → Spaces
 ├── me/                     # profile
 ├── space/                  # settings (general, locales, environments, tokens, danger zone), dashboard, navigation
@@ -72,7 +78,8 @@ tests/
 ├── assets/                 # upload, create folder, rename, move, delete, grid layout and preview
 ├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
 ├── contents/               # folders and documents, lifecycle, every field kind, blocks, validation, locales, delivery, Visual Editor
-└── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
+├── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
+└── a11y/                   # axe-core scan (WCAG 2 A / AA) of the sign-in page, a space's pages, admin and profile
 ```
 
 ## Fixtures (`tests/support/fixtures.ts`)
