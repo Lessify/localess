@@ -311,6 +311,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 |---|---|---|
 | No uncaught or reported errors on any page under test | `page` fixture | ✅ |
 | Accessibility scan of the sign-in page, a space's pages, admin and profile | `@axe-core/playwright`, WCAG 2 A / AA, fails on serious / critical | ✅ `a11y/pages` |
+| Accessibility scan of dialogs (each has a name, then scanned on its own): Add Translation, Add Document / Folder, Create new Schema, asset folder and file dialogs, image preview, Token Form and the token secret, Add Locale, a confirmation, Edit Environment, Edit Webhook, User Invite / Edit, Create / Edit Space, the Me dialogs | `a11y/pages`, axe `include('[role="dialog"]')` | ✅ `a11y/pages` |
+| Accessibility scan of the Visual Editor (not the customer site in it), a webhook's page, Danger Zone, Forgot password and the reset-link page | `a11y/pages` | ✅ `a11y/pages` |
 | Cancelling a destructive confirmation changes nothing: Delete All Translations, Regenerate / Delete Token, Delete Locale, Change Default Locale, Delete Environment, Delete Webhook, Disable User, Delete Folder (contents, assets), Unpublish Document | UI (Cancel) → reload, API equal to the pre-check (and the CDN) | ✅ `confirmations/cancel` |
 | Cancelling a form dialog saves nothing: Token Edit, Webhook Edit, Edit Environment, Add Locale, User Edit, Update Email, Edit Translation | UI → reload, API | ✅ `confirmations/cancel` |
 | Firefox and WebKit | Extra Playwright projects, nightly | ⬜ |
@@ -353,6 +355,9 @@ regression test.
 | Image preview dialog had no accessible name (its `aria-labelledby` pointed at no element; the picture was "thumbnail") | A visually hidden title and the picture's alt are the file name (unit test; `assets/views` finds the dialog by name) |
 | Asset card picture (grid layout) was hidden from assistive technology yet clickable, and opened on any key press | A button "Open <file>" that opens with Enter or Space only (unit test) |
 | Every Link field's "Open in a new tab" switch had the id `target`: a second Link field's label pointed at the first one's switch | The id is per field (unit test) |
+| Choice cards (token type, space template): axe found the radios unlabelled (the label wraps the radio with its title and description) | Each radio is named by its title (`aria-labelledby`) and described by its description (unit test on the real template) |
+| The remove button of a chip (webhook events, allowed schemas) had no name | "Remove <value>" (`removeLabel` on `hlm-combobox-chip`) |
+| The Visual Editor's resize handle (a focusable separator) had no value (`aria-valuenow`, required for a window splitter) | The size of the panel before it, in % |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -373,7 +378,7 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
 | Webhooks: the sidebar shows Developers → Webhooks for `DEV_WEBHOOK`, but every webhook route needs `SPACE_MANAGEMENT` (pinned by a server test): a user with only `DEV_WEBHOOK` opens a page whose requests are refused | Product decision; `api/permission-matrix` asserts the server's rule |
-| Color contrast: keyboard hints (`kbd`: the theme's muted text on muted, 4.34:1) and the inactive Danger Zone tab (destructive at 60 %, 3.06:1) are under WCAG AA's 4.5:1 | Theme decision; `a11y/pages` skips only these two |
+| Color contrast: keyboard hints (`kbd`: the theme's muted text on muted, 4.34:1), the inactive Danger Zone tab (destructive at 60 %, 3.06:1), a choice card's description on the selected card (token type, space template: 4.27:1) and destructive buttons (a confirmation's OK) are under WCAG AA's 4.5:1 | Theme decision; `a11y/pages` skips only these two |
 | The Content Security Policy (report-only) allows one script hash, but the build's inline critical-CSS loader (`data-beasties-media`) has another: enforced, the policy would block it | `apps/server/src/infra/static/static-site.ts`; not asserted |
 | Admin → Users: an admin's own row offers Delete, and the server allows it (only disabling oneself is refused): the last admin can delete their account and leave the install without one | `apps/server/src/modules/users/services/users.service.ts` `delete`; `admin/users` asserts only that Disable is not offered |
 | Deleting a locale keeps its stored values (translations, content): the CDN no longer serves them, but adding the locale again brings the old values back | Product decision; `space/locales` pins today's behaviour |
