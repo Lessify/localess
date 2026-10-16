@@ -70,10 +70,11 @@ export class AppApi {
     return this.send('post', `/api/app/spaces/${spaceId}/contents`, { kind: 'DOCUMENT', ...body });
   }
 
-  saveDocumentData(spaceId: string, document: ContentDto, values: Record<string, unknown>): Promise<unknown> {
+  /** `assets`: ids of the assets the data uses (what asset usage counts). */
+  saveDocumentData(spaceId: string, document: ContentDto, values: Record<string, unknown>, assets: string[] = []): Promise<unknown> {
     return this.send('put', `/api/app/spaces/${spaceId}/contents/${document.id}/data`, {
       data: { _id: document.id, _schema: document.schema, ...values },
-      assets: [],
+      assets,
       links: [],
       references: [],
     });

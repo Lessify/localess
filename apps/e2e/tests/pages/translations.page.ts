@@ -73,12 +73,18 @@ export class TranslationsPage {
     return (await rows.allInnerTexts()).map(it => it.trim());
   }
 
+  /** Waits until no select list is open: one still closing doubles every option for a moment. */
+  private async closedLists(): Promise<void> {
+    await expect(this.page.getByRole('listbox')).toHaveCount(0);
+  }
+
   // --- Filter bar --------------------------------------------------------------------------------------------------
 
   /** The locale whose values the list shows and the search looks in. */
   async filterLocale(name: string): Promise<void> {
     await this.page.getByLabel('Locale', { exact: true }).click();
     await this.page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
+    await this.closedLists();
   }
 
   async search(text: string): Promise<void> {
@@ -163,11 +169,13 @@ export class TranslationsPage {
   async selectTargetLocale(name: string): Promise<void> {
     await this.page.getByLabel('Target Locale').click();
     await this.page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
+    await this.closedLists();
   }
 
   async selectSourceLocale(name: string): Promise<void> {
     await this.page.getByLabel('Source Locale').click();
     await this.page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
+    await this.closedLists();
   }
 
   async saveValue(value: string): Promise<void> {
@@ -227,8 +235,10 @@ export class TranslationsPage {
     const form = await dialog(this.page, 'Translate Locale');
     await form.getByLabel('Source Locale').click();
     await this.page.getByRole('option', { name: new RegExp(`^${source}`) }).click();
+    await this.closedLists();
     await form.getByLabel('Target Locale').click();
     await this.page.getByRole('option', { name: new RegExp(`^${target}`) }).click();
+    await this.closedLists();
     await expect(form.getByLabel('Target Locale')).toContainText(target);
     if (overwrite) await form.locator('label[for="overwrite"]').click();
     await form.getByRole('button', { name: 'Translate' }).click();

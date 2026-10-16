@@ -53,7 +53,8 @@ tests/
 │   ├── env.ts              # port, seeded admin credentials, session file
 │   ├── fixtures.ts         # `test`: api, space, createUser, signInAs, cleanup, error guard, offline browser
 │   ├── app-api.ts          # App API client for test data (spaces, translations, schemas, contents, assets, ...)
-│   ├── files.ts            # a 1×1 PNG for uploads
+│   ├── files.ts            # a 1×1 PNG, a PDF and a text file for uploads
+│   ├── assets.ts           # asset read-back from the App API and the CDN
 │   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries
 │   └── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts)
@@ -64,7 +65,8 @@ tests/
 ├── me/                     # profile
 ├── space/                  # settings (general, locales, environments, tokens), dashboard, navigation
 ├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
-├── content/                # schemas, contents, assets
+├── assets/                 # upload, create folder, rename, delete
+├── content/                # schemas, contents
 └── developers/             # webhooks
 ```
 

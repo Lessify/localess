@@ -11,6 +11,8 @@ export async function dialog(page: Page, title: string | RegExp): Promise<Locato
 export async function choose(page: Page, trigger: Locator, option: string | RegExp): Promise<void> {
   await trigger.click();
   await page.getByRole('option', { name: option, exact: typeof option === 'string' }).click();
+  // A list still closing doubles its options for the next select.
+  await expect(page.getByRole('listbox')).toHaveCount(0);
 }
 
 /**

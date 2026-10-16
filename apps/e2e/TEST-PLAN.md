@@ -184,16 +184,32 @@ stub provider, so translated values are exact (`Hello : en -> de`). Specs in `te
 
 ### 9. Assets
 
+Pre-check → action → post-check (the list, the breadcrumb, after a reload, the App API, the CDN API). Specs in
+`tests/assets/`. The name rules that differ between upload, dialogs and server are a roadmap to-do:
+[docs/roadmap/asset-names.md](../../docs/roadmap/asset-names.md); the tests marked "roadmap check" pin today's behaviour.
+
 | Scenario | How | Status |
 |---|---|---|
-| Upload a file; the CDN API serves it | UI + API | ✅ `content/assets` @smoke |
-| Create a folder and upload into it | UI + API | ✅ `content/assets` |
-| Delete a file | UI + API | ✅ `content/assets` |
-| CDN: original bytes, download, resized image, 404 | API | ✅ `api/cdn-assets` @smoke |
-| Rename, alt text, move | UI | ⬜ |
-| Grid layout, image preview dialog | UI | ⬜ |
+| **Upload** an image: type and size listed, name + extension stored, original bytes on the CDN | UI + API + CDN | ✅ `assets/upload` @smoke |
+| Upload several files of different types (PNG, PDF, text); the PDF downloads as an attachment | UI + API + CDN | ✅ `assets/upload` |
+| Upload by drag and drop | UI + API | ✅ `assets/upload` |
+| Upload from a link (the browser downloads it; the link answered by the test) | UI + API + CDN | ✅ `assets/upload` |
+| Upload into the open folder only | UI + API | ✅ `assets/upload` |
+| Upload a name the folder has: both kept | UI + API | ✅ `assets/upload` (roadmap N2) |
+| **Create folder**, a folder inside it, the breadcrumb back | UI + API | ✅ `assets/folders` @smoke |
+| A name the folder has (folder or file) refused; another folder may have it | UI + API | ✅ `assets/folders` (roadmap N2) |
+| Under 3 characters, spaces around refused; cancel creates nothing | UI + API | ✅ `assets/folders` |
+| **Rename** a file: extension kept, same id, the download uses the new name | UI + API + CDN | ✅ `assets/rename` @smoke |
+| Alt text of an image | UI + API | ✅ `assets/rename` |
+| Rename a folder; its files stay inside | UI + API | ✅ `assets/rename` |
+| A name another asset in the folder has refused (also another extension, or a folder); cancel keeps the name | UI + API | ✅ `assets/rename` (roadmap N2) |
+| A short file name blocks Edit; Edit Folder stops at 100 characters | UI | ✅ `assets/rename` (roadmap N1, N3) |
+| **Delete** a file: gone from the list, the API, the CDN (404) | UI + API + CDN | ✅ `assets/delete` @smoke |
+| Delete a folder with a subfolder and files: all gone, the file outside stays | UI + API + CDN | ✅ `assets/delete` |
+| Delete a file a content uses: the warning names it; the content stays | UI + API | ✅ `assets/delete` |
+| Cancel keeps the file | UI + CDN | ✅ `assets/delete` |
+| Move a file or folder, grid layout, image preview | UI | ⬜ |
 | Too large an upload (413) | API with `LOCALESS_UPLOAD_MAX_MB` low | ⬜ |
-| Delete warns when content uses the asset | UI | ⬜ |
 | Unsplash picker | Needs an API key | ➖ |
 
 ### 10. Dashboard, navigation, developers
@@ -265,3 +281,4 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Machine translation of a single value (and "Translate other locales" on add) needs TRANSLATION_UPDATE **and** CONTENT_UPDATE (kept from the Firebase callable, pinned by a server test), while "Translate Locale" needs only TRANSLATION_UPDATE; a translator without CONTENT_UPDATE sees the Translate button and gets "Could not be translated." | Product decision; not asserted |
 | Tree view: a key that is also the prefix of other keys (`home` next to `home.title`) is a group node and can't be selected, so that translation can't be opened in the tree | Product decision; not asserted |
 | Key uniqueness: the UI refuses a key in any letter case, the server only the exact key (via the API `Home.Title` and `home.title` can both exist) | Not asserted |
+| Asset names: a short file name blocks Edit; duplicates allowed on upload but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |
