@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 import { choose, dialog, expectRowMenu, rowMenu } from './dialogs';
+import { dragAbove } from './drag';
 import { confirmDialog, expectToast } from './notifications';
 
 export type SchemaTypeLabel = 'Root' | 'Node' | 'Enum';
@@ -229,33 +230,12 @@ export class SchemasPage {
     await expect(this.item(name)).toHaveCount(0);
   }
 
-  /**
-   * Drags a row by its handle to just above another row, so it takes that row's place (CDK drag and drop). Retried
-   * until the order shows it: a drag that starts while the list is still re-rendering is lost.
-   */
+  /** Drags a row by its handle to just above another row, so it takes that row's place. */
   async moveField(name: string, onto: string): Promise<void> {
-    await expect(async () => {
-      const handle = await this.item(name).getByRole('button', { name: 'Move' }).boundingBox();
-      const target = await this.item(onto).boundingBox();
-      if (!handle || !target) throw new Error(`can not drag ${name} onto ${onto}`);
-      await this.page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
-      await this.page.mouse.down();
-      // CDK starts dragging after a few pixels, then sorts by the pointer's position.
-      await this.page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2 - 10, { steps: 5 });
-      await this.page.mouse.move(target.x + target.width / 2, target.y + 2, { steps: 15 });
-      await this.page.mouse.up();
-      // The new order shows a moment after the drop; only a drag that did nothing is retried (a second one would
-      // move the row back).
-      await expect
-        .poll(
-          async () => {
-            const names = await this.itemNames();
-            return names.indexOf(name) < names.indexOf(onto);
-          },
-          { timeout: 3_000 },
-        )
-        .toBe(true);
-    }).toPass({ timeout: 20_000 });
+    await dragAbove(this.page, this.item(name).getByRole('button', { name: 'Move' }), this.item(onto), async () => {
+      const names = await this.itemNames();
+      return names.indexOf(name) < names.indexOf(onto);
+    });
   }
 
   // --- Settings tab --------------------------------------------------------------------------------------------------

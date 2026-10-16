@@ -74,4 +74,44 @@ test.describe('Space settings → Access Tokens', () => {
     await expect(row).toHaveCount(0);
     expect((await cdn(newValue)).status()).toBe(401);
   });
+
+  test('edits a token name and its Cache TTL, which sets the CDN redirect cache', async ({ page, api, space, request }) => {
+    await api.createTranslation(space.id, { key: 'k1', locales: { en: 'v' } });
+    await api.publishTranslations(space.id);
+    const { token } = await api.createToken(space.id, { name: 'Website', type: 'public' });
+    // The redirect to the current `cv`: its Cache-Control comes from the token.
+    const redirectCache = async () => {
+      const response = await request.get(`/api/v1/spaces/${space.id}/translations/en?token=${token}`, { maxRedirects: 0 });
+      expect(response.status()).toBe(302);
+      return response.headers()['cache-control'];
+    };
+    await page.goto(`/features/spaces/${space.id}/settings/tokens`);
+    const row = (name: string) => page.getByRole('row').filter({ hasText: name });
+    await expect(row('Website')).toContainText('Default (60s)');
+    expect(await redirectCache()).toBe('public, max-age=60, s-maxage=60');
+
+    const edit = async (name: string, ttl: string) => {
+      await row(name).getByRole('button', { name: 'Edit' }).click();
+      const form = await dialog(page, 'Token Form');
+      await form.getByLabel('Name', { exact: true }).fill(name === 'Website' ? 'Website EU' : name);
+      await form.getByLabel('Cache TTL', { exact: true }).fill(ttl);
+      await form.getByRole('button', { name: 'Save' }).click();
+      await expect(form).toBeHidden();
+      await expectToast(page, 'Token has been updated.');
+    };
+
+    await edit('Website', '300');
+
+    await expect(row('Website EU')).toContainText('300s');
+    expect(await redirectCache()).toBe('public, max-age=300, s-maxage=300');
+    // The value is unchanged: only the name and the TTL can be edited.
+    expect(await tokenNamed(api, space.id, 'Website EU')).toBe(token);
+
+    await edit('Website EU', '0');
+
+    await expect(row('Website EU')).toContainText('No Cache');
+    await expect.poll(redirectCache).toBe('no-cache');
+    await page.reload();
+    await expect(row('Website EU')).toContainText('No Cache');
+  });
 });

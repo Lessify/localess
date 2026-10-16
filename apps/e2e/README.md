@@ -55,23 +55,23 @@ tests/
 │   ├── app-api.ts          # App API client for test data (spaces, translations, schemas, contents, assets, ...)
 │   ├── files.ts            # a 1×1 PNG, a PDF and a text file for uploads
 │   ├── assets.ts           # asset read-back from the App API and the CDN
-│   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries
+│   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries (its answer status can be set)
 │   ├── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
 │   ├── schemas.ts          # schema read-back from the App API
 │   ├── contents.ts         # content read-back, a CDN client (public / preview), a Root schema helper
 │   └── preview-site.ts     # a local customer site for the Visual Editor (loads sync-v1.js)
-├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts)
+├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts, drag and drop)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── api/                    # platform, CDN API (translations, contents, assets), Management API, permissions
 ├── auth/                   # login, logout, deep links, password reset, what restricted users see
 ├── admin/                  # Admin → Users, Admin → Spaces
 ├── me/                     # profile
-├── space/                  # settings (general, locales, environments, tokens), dashboard, navigation
+├── space/                  # settings (general, locales, environments, tokens, danger zone), dashboard, navigation
 ├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
 ├── assets/                 # upload, create folder, rename, delete
 ├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
 ├── contents/               # folders and documents, lifecycle, every field kind, blocks, validation, locales, delivery, Visual Editor
-└── developers/             # webhooks
+└── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
 ```
 
 ## Fixtures (`tests/support/fixtures.ts`)

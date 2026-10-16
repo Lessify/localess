@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
+import { dragAbove } from './drag';
 import { confirmDialog, expectToast } from './notifications';
 
 export interface EnvironmentInput {
@@ -35,6 +36,20 @@ export class EnvironmentsPage {
     await this.item(currentName).getByRole('button', { name: 'Edit' }).click();
     await this.fillDialog('Edit Environment', environment);
     await expectToast(this.page, `Environment '${environment.name}' has been updated.`);
+  }
+
+  /** The environment names in order (the first is the default). */
+  async names(): Promise<string[]> {
+    const titles = await this.items().locator('[hlmItemTitle]').allInnerTexts();
+    return titles.map(it => it.replace('(default)', '').trim());
+  }
+
+  /** Drags an environment above another one. */
+  async moveAbove(name: string, above: string): Promise<void> {
+    await dragAbove(this.page, this.item(name).getByRole('button', { name: 'Move' }), this.item(above), async () => {
+      const names = await this.names();
+      return names.indexOf(name) < names.indexOf(above);
+    });
   }
 
   async delete(name: string): Promise<void> {

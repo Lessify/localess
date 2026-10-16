@@ -27,6 +27,27 @@ export class LocalesPage {
     await expectToast(this.page, 'Locale has been added.');
   }
 
+  /** The locale ids in the table's order (the space's order). */
+  async ids(): Promise<string[]> {
+    const cells = await this.page.locator('tr[ll-row] td:first-child').allInnerTexts();
+    return cells.map(it => it.trim());
+  }
+
+  /** The Default column's check mark. */
+  isDefault(localeId: string): Locator {
+    return this.row(localeId).locator('td').nth(5).locator('ng-icon');
+  }
+
+  async setDefault(localeId: string, localeName: string): Promise<void> {
+    await rowMenu(this.page, this.row(localeId), 'Set as Default');
+    await confirmDialog(this.page, 'Change Default Locale');
+    await expectToast(this.page, `Locale '${localeName}' is now the default locale.`);
+  }
+
+  async move(localeId: string, direction: 'Move Up' | 'Move Down'): Promise<void> {
+    await rowMenu(this.page, this.row(localeId), direction);
+  }
+
   async delete(localeId: string, localeName: string): Promise<void> {
     await rowMenu(this.page, this.row(localeId), 'Delete');
     await confirmDialog(this.page, 'Delete Locale');

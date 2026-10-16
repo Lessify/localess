@@ -54,7 +54,7 @@ the API, not only by the toast.
 | Google / Microsoft sign-in | `oauth2-mock-server` (already a server devDependency) as the issuer; a second server config | ⬜ |
 | Login rate limit | API: N+1 attempts → 429 (own server with a low limit) | ⬜ |
 | Disabled user can not sign in | API | ✅ `api/permissions`, `admin/users` |
-| Disabling a signed-in user signs them out at once | UI: user's page gets sent to login after an admin disables them | ⬜ |
+| Disabling a signed-in user signs them out at once | UI: user's page gets sent to login after an admin disables them | ✅ `admin/users` |
 
 ### 3. Users and permissions
 
@@ -103,7 +103,8 @@ whether the account can sign in).
 
 ### 5. Spaces (admin) and space settings
 
-Admin → Spaces tests follow **pre-check → action → post-check** (UI, after a reload, and API).
+Admin → Spaces and the space settings tests follow **pre-check → action → post-check** (UI, after a reload, and API;
+the CDN where a setting changes what it serves).
 
 | Scenario | How | Status |
 |---|---|---|
@@ -113,16 +114,18 @@ Admin → Spaces tests follow **pre-check → action → post-check** (UI, after
 | Delete a space with its content; cancelling keeps it | UI + API | ✅ `admin/spaces` |
 | Create a space from a template (schemas created) | UI + API | ⬜ |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
-| General: rename the space | UI | ✅ `space/general` |
-| Locales: default locale can not be deleted; add / remove a locale | UI | ✅ `space/locales` |
-| Locales: set default, reorder | UI + API | ⬜ |
-| Visual Editor environments: add / edit / remove | UI | ✅ `space/environments` |
-| Environments: reorder by drag and drop | UI (`dragTo`) | ⬜ |
+| General: rename the space | UI + API | ✅ `space/general` |
+| Locales: default locale can not be deleted; add a locale (at the end) | UI + API | ✅ `space/locales` |
+| Locales: remove a locale; the CDN serves the default locale's values for it | UI + API + CDN | ✅ `space/locales` |
+| Locales: set another default; the old one becomes deletable, missing values fall back to the new one | UI + API + CDN | ✅ `space/locales` |
+| Locales: Move Up / Move Down (first and last disabled); the order is not the default | UI + API | ✅ `space/locales` |
+| Visual Editor environments: add / edit / remove; the next one becomes the default | UI + API | ✅ `space/environments` |
+| Environments: reorder by drag and drop; `(default)` follows the first | UI + API | ✅ `space/environments` |
 | Access tokens: public token works on the CDN API | UI + API | ✅ `space/tokens` @smoke |
 | Management token shown once, must be acknowledged | UI | ✅ `space/tokens` |
 | Regenerate cuts off the old value; delete removes access | UI + API | ✅ `space/tokens` |
-| Token cache TTL edit | UI + CDN redirect `Cache-Control` | ⬜ |
-| Danger zone: delete all translations | UI + API | ⬜ |
+| Edit a token's name and Cache TTL (300 s, then No Cache); the value is kept | UI + CDN redirect `Cache-Control` | ✅ `space/tokens` |
+| Danger zone: delete all translations; published ones stay until the next publish, contents stay | UI + API + CDN | ✅ `space/danger-zone` |
 | Firebase import | Needs a Firebase fixture project | ➖ |
 
 ### 6. Translations
@@ -186,8 +189,8 @@ schema's effect shows). Specs in `tests/schemas/`.
 | A schema only contents use: Delete and Edit ID explain why not | UI | ✅ `schemas/rename-delete` |
 | **Delete** an unused schema; cancel keeps it | UI + API | ✅ `schemas/rename-delete` @smoke |
 | **List**: search by name, filter by one or another label, Reset | UI | ✅ `schemas/list` |
-| Field kind settings (min/max length and value, min/max values, path, file type) and their content validation | UI + content editor | ⬜ |
-| Schema (One) field, Reference / Link / Asset fields in the content editor | UI + content editor | ⬜ |
+| Field kind settings (min/max length and value, min/max values) and their content validation | UI + content editor | ✅ `contents/validation` |
+| Schema (One) field, Reference / Link / Asset fields in the content editor | UI + content editor | ✅ `contents/blocks`, `contents/fields-relations` |
 
 ### 8. Contents
 
@@ -268,9 +271,12 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Dashboard counts and per-locale progress | UI | ✅ `space/dashboard` @smoke |
 | Every page of a space opens without errors | UI | ✅ `space/navigation` @smoke |
 | Open API page renders | UI | ✅ `space/navigation` |
-| Webhooks: create in the UI | UI | ✅ `developers/webhooks` |
+| Webhooks: create in the UI; it receives its event | UI + API + receiver | ✅ `developers/webhooks` |
+| Webhooks: edit name, URL and events; deliveries go to the new URL only | UI + API + receiver | ✅ `developers/webhooks` |
+| Webhooks: disable (no delivery), enable again; delete (no delivery) | UI + API + receiver | ✅ `developers/webhooks` |
+| Webhooks: a failed delivery is logged with status code, error type and URL | UI + receiver answering 500 | ✅ `developers/webhooks` |
 | Webhooks: signed delivery on publish, logged | API + local receiver + UI | ✅ `developers/webhooks` @smoke |
-| Webhooks: disabled webhook does not deliver; content events carry id and full slug | API + receiver | ⬜ |
+| Webhooks: content events carry id and full slug | API + receiver | ✅ `contents/delivery` |
 | Tasks page | Hidden behind `FEATURE_FLAGS.importExport` | ➖ until enabled |
 
 ### 11. CDN and Management APIs
@@ -282,8 +288,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Missing, wrong, management or foreign token refused | API | ✅ `api/cdn-translations` |
 | Contents by id and full slug; unpublished 404 | API | ✅ `api/cdn-contents` @smoke |
 | Contents draft only for preview tokens | API | ✅ `api/cdn-contents` |
-| `cv` redirect and cache headers | API (`maxRedirects: 0`) | ⬜ |
-| `/links`, `resolveReference`, `resolveLink` | API | ⬜ |
+| `cv` redirect and cache headers (per-token TTL) | API (`maxRedirects: 0`) | ✅ `space/tokens` |
+| `/links`, `resolveReference`, `resolveLink` | API | ✅ `contents/delivery`, `contents/fields-relations` |
 | Management: read space, push translations | API | ✅ `api/management` @smoke |
 | Management: missing, public or foreign token refused | API | ✅ `api/management` |
 | Management: schemas pull/push, OpenAPI | API | ⬜ |

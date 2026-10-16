@@ -12,23 +12,31 @@ export interface ReceivedRequest {
  */
 export class WebhookReceiver {
   readonly requests: ReceivedRequest[] = [];
+  /** The status every delivery is answered with (a non-2xx one is logged as a failure). */
+  status = 200;
   private constructor(private readonly server: Server) {}
 
   static async start(): Promise<WebhookReceiver> {
     const requests: ReceivedRequest[] = [];
+    let receiver: WebhookReceiver | undefined = undefined;
     const server = createServer((request, response) => {
       const chunks: Buffer[] = [];
       request.on('data', chunk => chunks.push(chunk as Buffer));
       request.on('end', () => {
         requests.push({ headers: request.headers, body: Buffer.concat(chunks).toString('utf8') });
-        response.writeHead(200, { 'content-type': 'text/plain' }).end('ok');
+        response.writeHead(receiver?.status ?? 200, { 'content-type': 'text/plain' }).end('ok');
       });
     });
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-    const receiver = new WebhookReceiver(server);
+    receiver = new WebhookReceiver(server);
     receiver.requests.push = (...items) => Array.prototype.push.apply(requests, items);
     Object.defineProperty(receiver, 'requests', { get: () => requests });
     return receiver;
+  }
+
+  /** The events received, in order. */
+  get events(): string[] {
+    return this.requests.map(it => String(it.headers['x-webhook-event']));
   }
 
   get url(): string {

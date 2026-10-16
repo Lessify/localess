@@ -1,6 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
+import { isDeepStrictEqual } from 'node:util';
 
 import { ContentsPage } from '../pages/contents.page';
+import { dragAbove } from '../pages/drag';
 import { Cdn, contentById, pageSchema } from '../support/contents';
 import { expect, test, uniqueId } from '../support/fixtures';
 
@@ -114,17 +116,9 @@ test.describe('Contents → form: nested blocks', () => {
     await blocks(body).nth(2).getByRole('button', { name: 'Delete' }).click();
     await expect.poll(order).toEqual([card, card, quote]);
     // Move the quote to the top.
-    await expect(async () => {
-      const handle = await blocks(body).nth(2).getByRole('button', { name: 'Move' }).boundingBox();
-      const target = await blocks(body).first().boundingBox();
-      if (!handle || !target) throw new Error('no block to drag');
-      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(handle.x + handle.width / 2, handle.y - 10, { steps: 5 });
-      await page.mouse.move(target.x + target.width / 2, target.y + 2, { steps: 15 });
-      await page.mouse.up();
-      await expect.poll(order, { timeout: 3_000 }).toEqual([quote, card, card]);
-    }).toPass({ timeout: 20_000 });
+    await dragAbove(page, blocks(body).nth(2).getByRole('button', { name: 'Move' }), blocks(body).first(), async () =>
+      isDeepStrictEqual(await order(), [quote, card, card]),
+    );
     await contents.save();
     await contents.publish();
 

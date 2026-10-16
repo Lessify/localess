@@ -169,6 +169,9 @@ export class AppApi {
 export interface SpaceDto {
   id: string;
   name: string;
+  locales?: { id: string; name: string }[];
+  defaultLocale?: { id: string; name: string };
+  environments?: { id: string; name: string; url: string }[];
 }
 
 export interface UserDto {
