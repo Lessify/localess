@@ -126,6 +126,7 @@ the CDN where a setting changes what it serves).
 | Management token shown once, must be acknowledged | UI | ✅ `space/tokens` |
 | Regenerate cuts off the old value; delete removes access | UI + API | ✅ `space/tokens` |
 | Edit a token's name and Cache TTL (300 s, then No Cache); the value is kept | UI + CDN redirect `Cache-Control` | ✅ `space/tokens` |
+| Token Form: a name under 3 characters is refused (Save stays disabled); a valid name saves | UI + API | ✅ `space/token-validation` |
 | Danger zone: delete all translations; published ones stay until the next publish, contents stay | UI + API + CDN | ✅ `space/danger-zone` |
 | Firebase import | Needs a Firebase fixture project | ➖ |
 

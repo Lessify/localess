@@ -82,6 +82,7 @@ tests/
 │   └── mail.ts             # mails from the mail catcher ("forgot password")
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts, drag and drop)
 ├── auth.setup.ts           # signs in once for the other specs
+├── seed.spec.ts            # where the Playwright Test Agents start (a fresh space)
 ├── api/                    # platform, CDN API, Management API (translations, schemas, OpenAPI), permission matrix, user managers
 ├── auth/                   # login, logout, deep links, password reset (link and email), Google / Microsoft, restricted users
 ├── admin/                  # Admin → Users, Admin → Spaces
@@ -94,6 +95,17 @@ tests/
 ├── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
 └── a11y/                   # axe-core scan (WCAG 2 A / AA) of the sign-in page, a space's pages, admin and profile
 ```
+
+## Agents and skills
+
+- Project skills (`.claude/skills/`, sources in `.agents/skills/`): `writing-localess-e2e-tests` (how a test here is
+  written and verified), `covering-a-localess-feature` (from a feature to agreed scenarios, round by round), and the
+  vendored generic `playwright-best-practices` (Currents.dev; see its `SOURCE.md`).
+- Playwright Test Agents (`npx playwright init-agents --loop=claude`, Playwright 1.56+): `.claude/agents/` holds the
+  planner, generator and healer, `.mcp.json` (repo root) their MCP server (started in this workspace, headless), `tests/seed.spec.ts`
+  the environment they start from (the fixtures: own space, error guard), `specs/` their Markdown plans. Their output is
+  a draft, rewritten to the skill; each definition ends with a Localess section (re-add it after regenerating them,
+  e.g. after a Playwright upgrade). Restart Claude Code once so it loads `.mcp.json` and the agents.
 
 ## Product videos (`demos/`)
 
