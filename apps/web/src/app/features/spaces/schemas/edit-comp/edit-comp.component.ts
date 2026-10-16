@@ -12,6 +12,7 @@ import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import {
+  assetFieldFileType,
   AssetFileType,
   Schema,
   SCHEMA_PREVIEW_FIELD_KINDS,
@@ -382,18 +383,11 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        // Fallback to first file type if exists
-        if (element.fileTypes && element.fileTypes.length > 0) {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
-          );
-        } else {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
-          );
-        }
+        // `fileType`, else the first of `fileTypes` (older schemas, templates): the same rule as the content editor.
+        fieldForm.addControl(
+          'fileType',
+          this.fb.control<AssetFileType | undefined>(assetFieldFileType(element), SchemaValidator.FIELD_FILE_TYPES),
+        );
         break;
       }
       case SchemaFieldKind.ASSETS: {
@@ -401,18 +395,11 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        // Fallback to first file type if exists
-        if (element.fileTypes && element.fileTypes.length > 0) {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
-          );
-        } else {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
-          );
-        }
+        // `fileType`, else the first of `fileTypes` (older schemas, templates): the same rule as the content editor.
+        fieldForm.addControl(
+          'fileType',
+          this.fb.control<AssetFileType | undefined>(assetFieldFileType(element), SchemaValidator.FIELD_FILE_TYPES),
+        );
         break;
       }
       case SchemaFieldKind.SCHEMA: {

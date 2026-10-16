@@ -281,3 +281,11 @@ export function isSchemaArray(schema: SchemaField): boolean {
     schema.kind === SchemaFieldKind.ASSETS
   );
 }
+
+/**
+ * The file type an Asset or Assets field accepts: `fileType` (what the schema editor saves), else the first of
+ * `fileTypes` (older schemas and the space templates), else ANY.
+ */
+export function assetFieldFileType(field: SchemaFieldAsset | SchemaFieldAssets): AssetFileType {
+  return field.fileType ?? field.fileTypes?.[0] ?? AssetFileType.ANY;
+}

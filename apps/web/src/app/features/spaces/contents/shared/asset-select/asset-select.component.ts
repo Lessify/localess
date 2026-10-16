@@ -4,7 +4,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { AssetFile, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
+import { assetFieldFileType, AssetFile, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/components/dialog/dialog-width';
@@ -111,7 +111,7 @@ export class AssetSelectComponent implements OnInit {
         context: {
           spaceId: this.space().id,
           multiple: false,
-          fileType: this.component().fileTypes?.at(0),
+          fileType: assetFieldFileType(this.component()),
         },
         contentClass: DIALOG_WIDTH_FULL_SCREEN,
       })

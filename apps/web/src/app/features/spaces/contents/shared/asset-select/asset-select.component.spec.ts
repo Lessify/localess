@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { AssetFile, AssetKind, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
+import { AssetFile, AssetFileType, AssetKind, SchemaFieldAsset, SchemaFieldKind, Space } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 import { AssetSelectComponent } from './asset-select.component';
 
 describe('AssetSelectComponent', () => {
-  function setup(uri: string | null, kind: SchemaFieldKind.ASSET | null = SchemaFieldKind.ASSET) {
+  function setup(uri: string | null, kind: SchemaFieldKind.ASSET | null = SchemaFieldKind.ASSET, field: Partial<SchemaFieldAsset> = {}) {
     const findById = vi.fn().mockReturnValue(of({ id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png' } as AssetFile));
     const open = vi.fn();
 
@@ -24,11 +24,29 @@ describe('AssetSelectComponent', () => {
     const form = fb.group({ uri: fb.control(uri), kind: fb.control(kind) });
     const fixture = TestBed.createComponent(AssetSelectComponent);
     fixture.componentRef.setInput('form', form);
-    fixture.componentRef.setInput('component', { fileTypes: undefined } as unknown as SchemaFieldAsset);
+    fixture.componentRef.setInput('component', { fileTypes: undefined, ...field } as unknown as SchemaFieldAsset);
     fixture.componentRef.setInput('space', { id: 'space-1' } as Space);
     fixture.detectChanges();
     return { component: fixture.componentInstance, findById, open, form };
   }
+
+  it('openAssetSelectDialog() filters the dialog by fileType, what the schema editor saves', () => {
+    const { component, open } = setup(null, SchemaFieldKind.ASSET, { fileType: AssetFileType.IMAGE });
+    open.mockReturnValue({ closed$: of(undefined) });
+
+    component.openAssetSelectDialog();
+
+    expect(open.mock.calls[0][1].context.fileType).toBe(AssetFileType.IMAGE);
+  });
+
+  it('openAssetSelectDialog() falls back to the first of fileTypes (templates, older schemas)', () => {
+    const { component, open } = setup(null, SchemaFieldKind.ASSET, { fileTypes: [AssetFileType.VIDEO] });
+    open.mockReturnValue({ closed$: of(undefined) });
+
+    component.openAssetSelectDialog();
+
+    expect(open.mock.calls[0][1].context.fileType).toBe(AssetFileType.VIDEO);
+  });
 
   it('defaults the kind to ASSET when unset', () => {
     const { form } = setup(null, null);

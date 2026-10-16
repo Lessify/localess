@@ -225,9 +225,9 @@
         <!--ASSET and ASSETS-->
         @if (['ASSET', 'ASSETS'].includes(form().value.kind)) {
           <div hlmField>
-            <label hlmFieldLabel for="fileType"> File Type </label>
+            <label hlmFieldLabel for="fileType-trigger"> File Type </label>
             <hlm-select formControlName="fileType" id="fileType">
-              <hlm-select-trigger class="w-full">
+              <hlm-select-trigger class="w-full" buttonId="fileType-trigger">
                 <hlm-select-placeholder>Select file type</hlm-select-placeholder>
                 <ng-template hlmSelectValueTemplate let-value>
                   @if (assetFileTypeDescriptions[value]; as descriptor) {

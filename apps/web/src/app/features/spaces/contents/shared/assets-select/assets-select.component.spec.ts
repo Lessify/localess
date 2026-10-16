@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
-import { AssetFile, AssetKind, SchemaFieldAssets, SchemaFieldKind, Space } from '@localess/shared';
+import { AssetFile, AssetFileType, AssetKind, SchemaFieldAssets, SchemaFieldKind, Space } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
@@ -13,7 +13,7 @@ function file(id: string, name: string): AssetFile {
 }
 
 describe('AssetsSelectComponent', () => {
-  function setup(uris: string[] = [], results: AssetFile[] = []) {
+  function setup(uris: string[] = [], results: AssetFile[] = [], field: Partial<SchemaFieldAssets> = {}) {
     const findByIds = vi.fn().mockReturnValue(of(results));
     const open = vi.fn();
 
@@ -28,11 +28,29 @@ describe('AssetsSelectComponent', () => {
     const form = fb.array(uris.map(uri => fb.group({ uri: fb.control(uri), kind: fb.control(SchemaFieldKind.ASSET) })));
     const fixture = TestBed.createComponent(AssetsSelectComponent);
     fixture.componentRef.setInput('form', form);
-    fixture.componentRef.setInput('component', { fileTypes: undefined } as unknown as SchemaFieldAssets);
+    fixture.componentRef.setInput('component', { fileTypes: undefined, ...field } as unknown as SchemaFieldAssets);
     fixture.componentRef.setInput('space', { id: 'space-1' } as Space);
     fixture.detectChanges();
     return { component: fixture.componentInstance, findByIds, open, form };
   }
+
+  it('openAssetSelectDialog() filters the dialog by fileType, what the schema editor saves', () => {
+    const { component, open } = setup([], [], { fileType: AssetFileType.IMAGE });
+    open.mockReturnValue({ closed$: of(undefined) });
+
+    component.openAssetSelectDialog();
+
+    expect(open.mock.calls[0][1].context.fileType).toBe(AssetFileType.IMAGE);
+  });
+
+  it('openAssetSelectDialog() falls back to the first of fileTypes (templates, older schemas)', () => {
+    const { component, open } = setup([], [], { fileTypes: [AssetFileType.VIDEO] });
+    open.mockReturnValue({ closed$: of(undefined) });
+
+    component.openAssetSelectDialog();
+
+    expect(open.mock.calls[0][1].context.fileType).toBe(AssetFileType.VIDEO);
+  });
 
   it('does not load anything when there are no uris', () => {
     const { findByIds } = setup([]);
