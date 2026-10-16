@@ -80,8 +80,12 @@
         }
       </div>
       <div hlmField orientation="horizontal">
-        <hlm-switch inputId="target" [checked]="form().value.target === '_blank'" (checkedChange)="targetChange($event)" />
-        <label hlmFieldLabel for="target">Open in a new tab</label>
+        <!-- Per field: two Link fields in one form must not share the id the label points at. -->
+        <hlm-switch
+          [inputId]="component().name + '-target'"
+          [checked]="form().value.target === '_blank'"
+          (checkedChange)="targetChange($event)" />
+        <label hlmFieldLabel [for]="component().name + '-target'">Open in a new tab</label>
       </div>
     </div>
   </fieldset>

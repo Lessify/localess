@@ -63,6 +63,15 @@ describe('LinkSelectComponent', () => {
     }
   }
 
+  it("labels the 'Open in a new tab' switch with an id of its own field", () => {
+    setInputs({ form: makeForm() });
+    fixture.detectChanges();
+
+    const label = (fixture.nativeElement as HTMLElement).querySelector('label[for$="-target"]');
+    expect(label?.textContent?.trim()).toBe('Open in a new tab');
+    expect(label?.getAttribute('for')).toBe('link-target');
+  });
+
   // ── Regression: content type initialization ──────────────────────────────
 
   describe('initialization with type=content (regression)', () => {
