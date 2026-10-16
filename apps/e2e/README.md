@@ -28,6 +28,18 @@ replays it step by step. In CI the HTML report (and the traces of failures) are 
 Environment: `E2E_PORT` (3100), `E2E_IDP_PORT` (3101), `E2E_MAIL_PORT` (3102, and 3103 for its mailbox), `E2E_PG_PORT`
 (5544), `E2E_WORKERS` (CI 2, locally half the cores).
 
+Two other setups, both run in CI (`.github/workflows/build.yml`):
+
+- **External Postgres** (`e2e-postgres`): `E2E_DATABASE_URL=postgres://…` makes the server use that database
+  (`DATABASE_URL`) instead of the embedded one. The start script **empties it** (drops the `public` and `drizzle`
+  schemas) before every run, so point it at a throwaway database only.
+- **A server already running** (`e2e-docker`, the Docker image): `E2E_BASE_URL=http://localhost:3100 pnpm e2e:smoke`
+  starts no server and runs against that one. It must be set up for the tests it runs: the admin of
+  `tests/support/env.ts`, `LOCALESS_LOGIN_RATE_LIMIT=10000` and `LOCALESS_WEBHOOK_ALLOW_INTERNAL=true` for the smoke
+  suite, on the host network (the webhook receiver and the preview site listen on 127.0.0.1). The full suite also needs
+  the mock OpenID provider, the mail catcher, the translation stub and the CLI next to the server, so it runs only
+  with the server this suite starts.
+
 ## How a run works
 
 1. `playwright.config.ts` starts `scripts/start-server.mjs` (Playwright `webServer`) and waits for `/api/health`.

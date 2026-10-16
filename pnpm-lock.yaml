@@ -191,6 +191,9 @@ catalogs:
     '@types/node':
       specifier: ^24.19.1
       version: 24.19.1
+    '@types/pg':
+      specifier: ^8.23.1
+      version: 8.23.1
     class-variance-authority:
       specifier: ^0.7.1
       version: 0.7.1
@@ -212,6 +215,9 @@ catalogs:
     oauth2-mock-server:
       specifier: ^9.2.0
       version: 9.2.0
+    pg:
+      specifier: ^8.23.1
+      version: 8.23.1
     prettier:
       specifier: ^3.8.3
       version: 3.8.3
@@ -268,9 +274,15 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 24.19.1
+      '@types/pg':
+        specifier: 'catalog:'
+        version: 8.23.1
       oauth2-mock-server:
         specifier: 'catalog:'
         version: 9.2.0
+      pg:
+        specifier: 'catalog:'
+        version: 8.23.1
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -344,7 +356,7 @@ importers:
         specifier: ^6.8.8
         version: 6.8.8
       pg:
-        specifier: ^8.23.1
+        specifier: 'catalog:'
         version: 8.23.1
       reflect-metadata:
         specifier: ^0.2.2
@@ -387,7 +399,7 @@ importers:
         specifier: ^8.0.2
         version: 8.0.2
       '@types/pg':
-        specifier: ^8.23.1
+        specifier: 'catalog:'
         version: 8.23.1
       '@types/unzipper':
         specifier: ^0.10.11

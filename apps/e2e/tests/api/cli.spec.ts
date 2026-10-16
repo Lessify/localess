@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 import { CSRF } from '../support/app-api';
-import { E2E_DATA_DIR, E2E_PG_PORT } from '../support/env';
+import { E2E_BASE_URL, E2E_DATA_DIR, E2E_DATABASE_URL, E2E_PG_PORT } from '../support/env';
 import { anonymousRequest, expect, test, uniqueId } from '../support/fixtures';
 
 // The server CLI (apps/server/dist/cli.js) next to the running e2e server: it attaches to the same embedded Postgres.
@@ -12,7 +12,13 @@ const CLI = resolve(import.meta.dirname, '../../../server/dist/cli.js');
 async function cli(args: string[], env: Record<string, string> = {}): Promise<{ code: number; out: string }> {
   try {
     const { stdout, stderr } = await promisify(execFile)(process.execPath, [CLI, ...args], {
-      env: { ...process.env, LOCALESS_DATA_DIR: E2E_DATA_DIR, LOCALESS_EMBEDDED_PG_PORT: String(E2E_PG_PORT), ...env },
+      env: {
+        ...process.env,
+        LOCALESS_DATA_DIR: E2E_DATA_DIR,
+        LOCALESS_EMBEDDED_PG_PORT: String(E2E_PG_PORT),
+        ...(E2E_DATABASE_URL ? { DATABASE_URL: E2E_DATABASE_URL } : {}),
+        ...env,
+      },
       timeout: 60_000,
     });
     return { code: 0, out: stdout + stderr };
@@ -23,10 +29,13 @@ async function cli(args: string[], env: Record<string, string> = {}): Promise<{ 
 }
 
 test.describe('Server CLI', () => {
+  // The CLI runs next to the server, on its database: not against a server started elsewhere (E2E_BASE_URL).
+  test.skip(!!E2E_BASE_URL, 'needs the server started by this run');
+
   test('check reports a healthy install', async () => {
     const { code, out } = await cli(['check']);
     expect(code, out).toBe(0);
-    expect(out).toContain('✓ database: embedded Postgres');
+    expect(out).toContain(E2E_DATABASE_URL ? '✓ database: reachable, migrations applied' : '✓ database: embedded Postgres');
     expect(out).toMatch(/✓ admin user: \d+ admin\(s\)/);
     expect(out).toContain('✓ storage: writable');
   });

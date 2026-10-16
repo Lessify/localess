@@ -12,6 +12,19 @@ export const E2E_IDP_PORT = Number(process.env['E2E_IDP_PORT'] ?? 3101);
 /** SMTP port of the mail catcher (scripts/start-server.mjs); the received mails are at the next port. */
 export const E2E_MAIL_PORT = Number(process.env['E2E_MAIL_PORT'] ?? 3102);
 
+/**
+ * A server already running (e.g. the Docker image): tests run against it and no server is started. It must be
+ * configured like scripts/start-server.mjs does for the tests it runs (`pnpm e2e:smoke` needs the admin below, a
+ * high login rate limit and LOCALESS_WEBHOOK_ALLOW_INTERNAL; see the `e2e-docker` CI job).
+ */
+export const E2E_BASE_URL = process.env['E2E_BASE_URL'];
+
+/**
+ * An external Postgres instead of the embedded one (DATABASE_URL for the server). scripts/start-server.mjs empties
+ * it before every run, so use a throwaway database.
+ */
+export const E2E_DATABASE_URL = process.env['E2E_DATABASE_URL'];
+
 /** Where the server keeps its data (embedded Postgres, uploads); wiped at the start of every run. */
 export const E2E_DATA_DIR = resolve(import.meta.dirname, '../../.data');
 

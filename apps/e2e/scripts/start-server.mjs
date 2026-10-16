@@ -7,6 +7,7 @@ import { createServer as createTcpServer } from 'node:net';
 import { resolve } from 'node:path';
 
 import { OAuth2Server } from 'oauth2-mock-server';
+import pg from 'pg';
 
 const root = resolve(import.meta.dirname, '../../..');
 const serverMain = resolve(root, 'apps/server/dist/main.js');
@@ -28,6 +29,15 @@ if (!dataDir) {
 }
 
 rmSync(dataDir, { recursive: true, force: true });
+
+// An external Postgres (E2E_DATABASE_URL → DATABASE_URL): emptied like the data directory, so the server migrates a
+// blank database and seeds the first admin again.
+if (process.env.DATABASE_URL) {
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  await client.query('drop schema if exists drizzle cascade; drop schema if exists public cascade; create schema public');
+  await client.end();
+}
 
 // A mock OpenID provider for Google and Microsoft sign-in. It signs in whoever the test names: tests add `e2e_email`
 // (and optionally `e2e_sub`, `e2e_name`, `e2e_verified=false`) to the authorize URL (tests/support/oauth.ts); the

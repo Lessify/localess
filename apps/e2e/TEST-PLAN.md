@@ -34,9 +34,9 @@ the API, not only by the toast.
 | Fresh install: migrations on boot, first admin and "Hello World" seeded | UI, every run starts on an empty database | ✅ `auth/login` |
 | Works without internet access (no GitHub, no fonts) | All external requests aborted in every UI test | ✅ (fixture) |
 | CLI `check`, `admin:create` (password from the environment; the new admin signs in), usage | `node apps/server/dist/cli.js` next to the running server (it attaches to the same embedded Postgres) | ✅ `api/cli` |
-| Docker image boots and serves the app | `docker compose up`, then the smoke suite against it (`E2E_BASE_URL`) | ⬜ |
+| Docker image boots and serves the app | CI job `e2e-docker`: builds the image, runs it (embedded Postgres), then the smoke suite against it (`E2E_BASE_URL`) | ✅ CI |
 | Upgrade: a database from the previous release migrates and works | Restore a dump of the last release, boot, run smoke | ⬜ |
-| External Postgres (`DATABASE_URL`) instead of embedded | CI service container, same suite | ⬜ |
+| External Postgres (`DATABASE_URL`) instead of embedded | CI job `e2e-postgres`: a Postgres 18 service, the whole suite (`E2E_DATABASE_URL`) | ✅ CI |
 
 ### 2. Authentication
 

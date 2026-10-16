@@ -1,8 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { ADMIN, AUTH_STATE, E2E_DATA_DIR, E2E_IDP_PORT, E2E_MAIL_PORT, E2E_PG_PORT, E2E_PORT } from './tests/support/env';
+import {
+  ADMIN,
+  AUTH_STATE,
+  E2E_BASE_URL,
+  E2E_DATA_DIR,
+  E2E_DATABASE_URL,
+  E2E_IDP_PORT,
+  E2E_MAIL_PORT,
+  E2E_PG_PORT,
+  E2E_PORT,
+} from './tests/support/env';
 
-const baseURL = `http://localhost:${E2E_PORT}`;
+const baseURL = E2E_BASE_URL ?? `http://localhost:${E2E_PORT}`;
 const isCI = !!process.env['CI'];
 
 export default defineConfig({
@@ -40,37 +50,42 @@ export default defineConfig({
       dependencies: ['setup'],
     },
   ],
-  webServer: {
-    command: 'node scripts/start-server.mjs',
-    url: `${baseURL}/api/health`,
-    // A server already running on the port would carry data from an earlier run.
-    reuseExistingServer: false,
-    timeout: 120_000,
-    stdout: 'pipe',
-    gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
-    env: {
-      PORT: String(E2E_PORT),
-      HOST: '127.0.0.1',
-      LOCALESS_DATA_DIR: E2E_DATA_DIR,
-      LOCALESS_EMBEDDED_PG_PORT: String(E2E_PG_PORT),
-      LOCALESS_ADMIN_EMAIL: ADMIN.email,
-      LOCALESS_ADMIN_PASSWORD: ADMIN.password,
-      LOCALESS_LOGIN_RATE_LIMIT: '10000',
-      // Machine translation without a provider account: the stub echoes the text back.
-      LOCALESS_TRANSLATE_PROVIDER: 'stub',
-      // Webhook deliveries to the local receiver started by tests (see tests/support/webhook-receiver.ts).
-      LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
-      LOCALESS_LOG_LEVEL: 'warn',
-      // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
-      // issuers; tests/support/oauth.ts picks who signs in).
-      E2E_IDP_PORT: String(E2E_IDP_PORT),
-      // "Forgot password" emails go to a mail catcher (scripts/start-server.mjs; tests/support/mail.ts reads them).
-      E2E_MAIL_PORT: String(E2E_MAIL_PORT),
-      LOCALESS_AUTH_PROVIDERS: 'GOOGLE,MICROSOFT',
-      LOCALESS_GOOGLE_CLIENT_ID: 'e2e-google',
-      LOCALESS_GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
-      LOCALESS_MICROSOFT_CLIENT_ID: 'e2e-microsoft',
-      LOCALESS_MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
-    },
-  },
+  // None when E2E_BASE_URL names a running server (the Docker image in CI).
+  webServer: E2E_BASE_URL
+    ? undefined
+    : {
+        command: 'node scripts/start-server.mjs',
+        url: `${baseURL}/api/health`,
+        // A server already running on the port would carry data from an earlier run.
+        reuseExistingServer: false,
+        timeout: 120_000,
+        stdout: 'pipe',
+        gracefulShutdown: { signal: 'SIGTERM', timeout: 10_000 },
+        env: {
+          PORT: String(E2E_PORT),
+          HOST: '127.0.0.1',
+          LOCALESS_DATA_DIR: E2E_DATA_DIR,
+          LOCALESS_EMBEDDED_PG_PORT: String(E2E_PG_PORT),
+          // An external Postgres when set (the `e2e-postgres` CI job); the embedded one otherwise.
+          ...(E2E_DATABASE_URL ? { DATABASE_URL: E2E_DATABASE_URL } : {}),
+          LOCALESS_ADMIN_EMAIL: ADMIN.email,
+          LOCALESS_ADMIN_PASSWORD: ADMIN.password,
+          LOCALESS_LOGIN_RATE_LIMIT: '10000',
+          // Machine translation without a provider account: the stub echoes the text back.
+          LOCALESS_TRANSLATE_PROVIDER: 'stub',
+          // Webhook deliveries to the local receiver started by tests (see tests/support/webhook-receiver.ts).
+          LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
+          LOCALESS_LOG_LEVEL: 'warn',
+          // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
+          // issuers; tests/support/oauth.ts picks who signs in).
+          E2E_IDP_PORT: String(E2E_IDP_PORT),
+          // "Forgot password" emails go to a mail catcher (scripts/start-server.mjs; tests/support/mail.ts reads them).
+          E2E_MAIL_PORT: String(E2E_MAIL_PORT),
+          LOCALESS_AUTH_PROVIDERS: 'GOOGLE,MICROSOFT',
+          LOCALESS_GOOGLE_CLIENT_ID: 'e2e-google',
+          LOCALESS_GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
+          LOCALESS_MICROSOFT_CLIENT_ID: 'e2e-microsoft',
+          LOCALESS_MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
+        },
+      },
 });
