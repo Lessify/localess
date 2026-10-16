@@ -154,8 +154,8 @@
             <fieldset hlmFieldSet>
               <div hlmFieldGroup>
                 <div hlmField>
-                  <label hlmFieldLabel for="displayName"> Display Name </label>
-                  <input #displayName hlmInput id="displayName" formControlName="displayName" autocomplete="off" />
+                  <label hlmFieldLabel for="schema-display-name"> Display Name </label>
+                  <input #displayName hlmInput id="schema-display-name" formControlName="displayName" autocomplete="off" />
                   @if (form.controls['displayName']?.errors; as errors) {
                     <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
                   } @else {
@@ -163,8 +163,14 @@
                   }
                 </div>
                 <div hlmField>
-                  <label hlmFieldLabel for="description"> Description </label>
-                  <textarea hlmTextarea class="resize-none" #description id="description" formControlName="description" autocomplete="off">
+                  <label hlmFieldLabel for="schema-description"> Description </label>
+                  <textarea
+                    hlmTextarea
+                    class="resize-none"
+                    #description
+                    id="schema-description"
+                    formControlName="description"
+                    autocomplete="off">
                   </textarea>
                   @if (form.controls['description']?.errors; as errors) {
                     <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
@@ -201,7 +207,10 @@
                     id="labels"
                     autocomplete="off"
                     placeholder="Enter new label name"
-                    (keydown.enter)="$event.preventDefault(); addLabel(labelName.value); labelName.value = ''" />
+                    (keydown.enter)="$event.preventDefault(); addLabel(labelName)" />
+                  @if (labelError(); as error) {
+                    <hlm-field-error forceShow>{{ error }}</hlm-field-error>
+                  }
                   <div class="flex w-full flex-wrap gap-2">
                     @for (label of form.controls['labels'].value; track label) {
                       <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">

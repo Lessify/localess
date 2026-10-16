@@ -5,7 +5,7 @@ import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, filter, Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { EditCompComponent } from './edit-comp.component';
@@ -21,13 +21,20 @@ function rootSchema(overrides: Partial<Schema> = {}): Schema {
   } as unknown as Schema;
 }
 
+/** The label input as the template passes it: Enter calls addLabel(input). */
+function labelInput(value: string): HTMLInputElement {
+  const input = document.createElement('input');
+  input.value = value;
+  return input;
+}
+
 describe('EditCompComponent', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false) {
-    const findAll = vi.fn().mockReturnValue(of(allSchemas));
+  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false, allSchemas$?: Observable<Schema[]>) {
+    const findAll = vi.fn().mockReturnValue(allSchemas$ ?? of(allSchemas));
     const findById = vi.fn().mockReturnValue(of(entity));
     const updateComponent = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
@@ -47,7 +54,7 @@ describe('EditCompComponent', () => {
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.componentRef.setInput('schemaId', 'root1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, updateComponent, success, error, navigate };
+    return { component: fixture.componentInstance, updateComponent, findById, success, error, navigate };
   }
 
   it('loads the schema and populates the form on init', () => {
@@ -63,6 +70,45 @@ describe('EditCompComponent', () => {
 
     expect(component.fields.length).toBe(1);
     expect(component.fieldControlAt(0, 'name')?.value).toBe('title');
+  });
+
+  it("keeps unsaved edits when another schema of the space changes (live), but takes the new schema list", () => {
+    const all = new BehaviorSubject<Schema[]>([]);
+    const { component } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }), [], false, all);
+    component.addField();
+
+    const other = rootSchema({ id: 'other', name: 'other' });
+    all.next([other]);
+
+    expect(component.fields.length).toBe(2);
+    expect(component.isFormDirty).toBe(true);
+    expect(component.schemas).toEqual([other]);
+  });
+
+  it('save() marks the form saved and reloads the stored schema', () => {
+    const { component, findById } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
+    component.addField();
+    findById.mockClear();
+
+    component.save();
+
+    expect(findById).toHaveBeenCalledTimes(1);
+    expect(component.isFormDirty).toBe(false);
+    expect(component.fields.length).toBe(1);
+  });
+
+  it('save() does not reload over edits made before the reload answers', () => {
+    const { component, findById } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
+    const reload = new BehaviorSubject<Schema | undefined>(undefined);
+    findById.mockReturnValue(reload.pipe(filter((it): it is Schema => it !== undefined)));
+    component.addField();
+
+    component.save();
+    component.addField();
+    reload.next(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
+
+    expect(component.fields.length).toBe(3);
+    expect(component.isFormDirty).toBe(true);
   });
 
   it('addField() pushes a new TEXT field by default and selects it', () => {
@@ -183,8 +229,8 @@ describe('EditCompComponent', () => {
   it('addLabel()/removeLabel() manage the labels array', () => {
     const { component } = setup(rootSchema());
 
-    component.addLabel('one');
-    component.addLabel('two');
+    component.addLabel(labelInput('one'));
+    component.addLabel(labelInput('two'));
     expect(component.form.value['labels']).toEqual(['one', 'two']);
 
     component.removeLabel('one');
@@ -194,9 +240,23 @@ describe('EditCompComponent', () => {
   it('addLabel() ignores an empty value', () => {
     const { component } = setup(rootSchema());
 
-    component.addLabel('');
+    component.addLabel(labelInput(''));
 
     expect(component.form.value['labels']).toBeNull();
+  });
+
+  it('addLabel() refuses a duplicate or invalid label, keeps the text, and marks the form dirty when it adds', () => {
+    const { component } = setup(rootSchema());
+    component.addLabel(labelInput('ui'));
+    expect(component.form.dirty).toBe(true);
+
+    for (const value of ['ui', 'has space', 'x']) {
+      const input = labelInput(value);
+      component.addLabel(input);
+      expect(component.labelError()).toBeDefined();
+      expect(input.value).toBe(value);
+    }
+    expect(component.form.value['labels']).toEqual(['ui']);
   });
 
   it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {

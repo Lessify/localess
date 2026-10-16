@@ -141,6 +141,16 @@ describe('EditFieldComponent', () => {
     });
   });
 
+  it.each([SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS])(
+    '%s starts its allowed schemas as an empty list, so the multi-select can add to it',
+    kind => {
+      const { editField } = setup();
+      editField.selectFieldKind(kind);
+
+      expect(editField.form().controls['schemas'].value).toEqual([]);
+    },
+  );
+
   describe('nodeSchemas / enumSchemas', () => {
     it('filters to NODE type schemas, sorted', () => {
       const { editField } = setup();

@@ -208,12 +208,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   });
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
-  selectedLocale = linkedSignal<Locale>(() => {
-    const locales = this.availableLocales();
-    if (locales.length > 0) {
-      return locales[0];
-    }
-    return CONTENT_DEFAULT_LOCALE;
+  // Keeps the chosen locale while it exists: the space list is live and re-emits whenever any space changes, and
+  // following it reset the editor to the default locale mid-edit.
+  selectedLocale = linkedSignal<Locale[], Locale>({
+    source: this.availableLocales,
+    computation: (locales, previous) => locales.find(it => it.id === previous?.value.id) ?? locales[0] ?? CONTENT_DEFAULT_LOCALE,
   });
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);

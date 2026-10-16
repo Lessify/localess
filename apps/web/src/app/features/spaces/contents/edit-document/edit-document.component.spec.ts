@@ -54,7 +54,7 @@ describe('EditDocumentComponent', () => {
 
   function setup(document: ContentDocument, options: { schemas?: Schema[]; selectedSpace?: Space } = {}) {
     const schemas = options.schemas ?? [rootSchema, childSchema];
-    const selectedSpace = options.selectedSpace ?? space();
+    const selectedSpace = signal(options.selectedSpace ?? space());
 
     const publish = vi.fn().mockReturnValue(of(undefined));
     const unpublish = vi.fn().mockReturnValue(of(undefined));
@@ -82,7 +82,7 @@ describe('EditDocumentComponent', () => {
           useValue: {
             documents: signal([]),
             schemas: signal(schemas),
-            selectedSpace: signal(selectedSpace),
+            selectedSpace,
           },
         },
       ],
@@ -94,6 +94,8 @@ describe('EditDocumentComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      fixture,
+      selectedSpace,
       publish,
       unpublish,
       updateDocumentData,
@@ -106,6 +108,28 @@ describe('EditDocumentComponent', () => {
       open,
     };
   }
+
+  describe('selectedLocale', () => {
+    it('keeps the chosen locale when the live space list re-emits (new objects, same locales)', () => {
+      const { component, fixture, selectedSpace } = setup(documentOf(undefined));
+      component.selectedLocale.set(de);
+
+      selectedSpace.set(space());
+      fixture.detectChanges();
+
+      expect(component.selectedLocale().id).toBe('de');
+    });
+
+    it('falls back to the default locale when the chosen one is removed from the space', () => {
+      const { component, fixture, selectedSpace } = setup(documentOf(undefined));
+      component.selectedLocale.set(de);
+
+      selectedSpace.set(space({ locales: [en] }));
+      fixture.detectChanges();
+
+      expect(component.selectedLocale().id).toBe(CONTENT_DEFAULT_LOCALE.id);
+    });
+  });
 
   describe('ngOnInit', () => {
     it('generates a new document id/schema when the document has no data', () => {
