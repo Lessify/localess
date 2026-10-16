@@ -29,4 +29,25 @@ describe('ImagePreviewDialogComponent', () => {
 
     expect(fixture.componentInstance.context).toEqual(context);
   });
+
+  it('keeps the picture within the window, so the caption and Close stay on screen', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: DIALOG_DATA,
+          useValue: { spaceId: 'space-1', asset: { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png' } as AssetFile },
+        },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ImagePreviewDialogComponent);
+    fixture.detectChanges();
+
+    const classes = (fixture.nativeElement as HTMLElement).querySelector('img')!.className.split(/\s+/);
+    // A fixed minimum (`min-h-[800px]`) wins over the maximum and overflows a smaller window.
+    expect(classes).toContain('min-h-[min(800px,calc(100vh-180px))]');
+    expect(classes).toContain('min-w-[min(800px,calc(100vw-180px))]');
+    expect(classes.filter(it => /^min-[hw]-\[\d+px\]$/.test(it))).toEqual([]);
+  });
 });

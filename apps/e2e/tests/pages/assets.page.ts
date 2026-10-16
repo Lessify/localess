@@ -103,6 +103,59 @@ export class AssetsPage {
     await this.page.getByRole('menuitem', { name: 'From Link' }).click();
   }
 
+  // --- Move ---------------------------------------------------------------------------------------------------------
+
+  /** Opens Move from the row menu; returns the dialog. */
+  async openMove(name: string): Promise<Locator> {
+    await rowMenu(this.page, this.row(name), 'Move');
+    return dialog(this.page, 'Move');
+  }
+
+  /** The folder options the open Move dialog offers, as `name | path` (`Root | ~` for the root). */
+  async moveOptions(form: Locator): Promise<string[]> {
+    await form.getByPlaceholder('Search folders...').first().click();
+    const options = this.page.getByRole('option');
+    await expect(options.first()).toBeVisible();
+    return (await options.allInnerTexts()).map(it => it.replace(/\s+/g, ' ').trim());
+  }
+
+  /** Moves a file or folder; `folder` is the target's name (`Root` for the root). */
+  async move(name: string, folder: string): Promise<void> {
+    const form = await this.openMove(name);
+    await expect(async () => {
+      await form.getByPlaceholder('Search folders...').first().click();
+      await this.page.getByRole('option', { name: new RegExp(`^\\s*${folder}\\s*\\|`) }).click({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
+    await form.getByRole('button', { name: 'Move' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Asset has been moved.');
+  }
+
+  // --- Layouts and preview -------------------------------------------------------------------------------------------
+
+  async layout(name: 'List Layout' | 'Grid Layout'): Promise<void> {
+    await this.page.getByRole('button', { name }).click();
+  }
+
+  /** A card of the grid layout, by the name it shows (`hero.png`, `Images`). */
+  card(name: string): Locator {
+    return this.page.locator('hlm-card').filter({ has: this.page.getByRole('heading', { name, exact: true }) });
+  }
+
+  get cards(): Locator {
+    return this.page.locator('hlm-card');
+  }
+
+  /** Opens a card: a folder, or an image's preview (the picture area, hidden from assistive technology). */
+  async openCard(name: string): Promise<void> {
+    await this.card(name).locator('.cursor-pointer').first().click();
+  }
+
+  /** The image preview dialog (it has no title: a picture with a caption and Close). */
+  get preview(): Locator {
+    return this.page.getByRole('dialog').filter({ has: this.page.getByRole('img', { name: 'thumbnail' }) });
+  }
+
   // --- Edit and delete -----------------------------------------------------------------------------------------------
 
   /** Opens Edit on a file (`Edit File`) or a folder (`Edit Folder`). */

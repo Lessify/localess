@@ -68,7 +68,7 @@ tests/
 ├── me/                     # profile
 ├── space/                  # settings (general, locales, environments, tokens, danger zone), dashboard, navigation
 ├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
-├── assets/                 # upload, create folder, rename, delete
+├── assets/                 # upload, create folder, rename, move, delete, grid layout and preview
 ├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
 ├── contents/               # folders and documents, lifecycle, every field kind, blocks, validation, locales, delivery, Visual Editor
 └── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs

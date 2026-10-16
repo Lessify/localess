@@ -231,7 +231,7 @@ receives). Specs in `tests/contents/`.
 | Draft / Published JSON open the CDN with a preview / public token | UI (popup) | ✅ `contents/delivery` |
 | **Visual Editor**: the environment URL per document and locale | UI + a local site | ✅ `contents/visual-editor` |
 | A synced page follows typing live; a click on it focuses the field | UI + a local site with `sync-v1.js` | ✅ `contents/visual-editor` @smoke |
-| Visual Editor: block toolbar on the page (move, duplicate, delete), hover highlight | UI + a local site | ⬜ |
+| Visual Editor: block toolbar on the page (move, duplicate, delete with a second click), hover highlight both ways | UI + a local site rendering the blocks | ✅ `contents/visual-editor` |
 | Field kinds' remaining settings (Asset file type filter, Reference path filter) | UI | ⬜ |
 
 ### 9. Assets
@@ -260,7 +260,11 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Delete a folder with a subfolder and files: all gone, the file outside stays | UI + API + CDN | ✅ `assets/delete` |
 | Delete a file a content uses: the warning names it; the content stays | UI + API | ✅ `assets/delete` |
 | Cancel keeps the file | UI + CDN | ✅ `assets/delete` |
-| Move a file or folder, grid layout, image preview | UI | ⬜ |
+| Move a file into a folder and back (same id, URL works); move a folder with its subtree | UI + API + CDN | ✅ `assets/move` |
+| Move: the dialog leaves out where the item is, the folder itself and what is under it; the API refuses a cycle (400) | UI + API | ✅ `assets/move` |
+| Moving onto a name the folder has gives two | UI + API | ✅ `assets/move` (roadmap N2) |
+| Grid layout: a card per item with its actions, remembered after a reload; a folder card opens it | UI | ✅ `assets/views` |
+| Image preview from a row or a card (name, size, dimensions); other files open none | UI | ✅ `assets/views` |
 | Too large an upload (413) | API with `LOCALESS_UPLOAD_MAX_MB` low | ⬜ |
 | Unsplash picker | Needs an API key | ➖ |
 
@@ -332,6 +336,7 @@ regression test.
 | Blocks in the editor showed `#<schema UUID>` (and the add-block menu fell back to it) instead of the schema's ID | The schema's name |
 | Publishing or unpublishing from the content list reported a failure as a success toast | An error toast |
 | Document status was an icon with a tooltip only (no text for assistive technology) | The status as the icon's accessible name; also names for the field's translate button and the editor's root breadcrumb |
+| Image preview: on a window under ~980 px high the caption and Close were below the screen (a fixed `min-h-[800px]` beat the maximum) | The minimum size is capped by the window |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -351,4 +356,4 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Content rules (required, lengths, limits) are checked in the browser only: the API stores content that breaks them | `contents/validation` pins today's behaviour |
 | The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
-| Asset names: a short file name blocks Edit; duplicates allowed on upload but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |
+| Asset names: a short file name blocks Edit; duplicates allowed on upload and move but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |

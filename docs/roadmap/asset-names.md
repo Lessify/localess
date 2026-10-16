@@ -6,7 +6,7 @@
 The rules for an asset's name differ between upload, the dialogs and the server. Kept as they are for now; each item
 below says what happens today, where, and which e2e test pins it, so a fix updates that test too.
 
-| | Upload (file picker, drop, paste, link) | Create Folder / Edit File / Edit Folder | Server (`assets.controller.ts`) |
+| | Upload (file picker, drop, paste, link), Move | Create Folder / Edit File / Edit Folder | Server (`assets.controller.ts`) |
 |---|---|---|---|
 | Length | any (from the file name) | 3–250 (`AssetValidator.NAME`); the Edit Folder input stops at 100 | 1–500 (`name`, trimmed) |
 | Spaces around | kept as uploaded | refused (`noSpaceAround`) | trimmed |
@@ -25,6 +25,9 @@ Save stays disabled until the file is renamed, even to change only its alt text.
 
 - Uploading `logo.png` into a folder that has `logo.png` gives two `logo.png`
   (`assets/upload.spec.ts` › "a name that exists in the folder can be uploaded again").
+- Moving a file or folder into a folder that has the same name is allowed too: the Move dialog checks nothing and
+  the server neither, so moving `hero.png` into a folder with `hero.png` gives two (`assets/move.spec.ts` ›
+  "roadmap check: moving into a folder with the same name gives two").
 - Creating a folder, or renaming a file or folder, is refused when any asset in the folder has that name, compared
   without the extension: `logo.png` can't be renamed to `photo` while `photo.jpg` exists, and a folder can't be named
   like a file (`assets/rename.spec.ts` › "refuses a name another asset in the folder has", `assets/folders.spec.ts` ›

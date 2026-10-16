@@ -55,3 +55,37 @@ export function syncedPage(appOrigin: string, document: { id: string; schema: st
   </script>
 </body></html>`;
 }
+
+/**
+ * A synced page that renders the document's `body` blocks (`heading` each) as sections, from the stored data and then
+ * from every `input` / `change` (the order and the blocks follow what the editor sends).
+ */
+export function syncedBlocksPage(
+  appOrigin: string,
+  document: { id: string; schema: string },
+  body: { _id: string; _schema: string; heading?: string }[],
+): string {
+  return `<!doctype html>
+<html><head><title>Preview</title><script src="${appOrigin}/scripts/sync-v1.js"></script></head>
+<body>
+  <main data-ll-id="${document.id}" data-ll-schema="${document.schema}"><div id="body"></div></main>
+  <script>
+    function render(blocks) {
+      const host = document.getElementById('body');
+      host.replaceChildren(...(blocks ?? []).map(block => {
+        const section = document.createElement('section');
+        section.dataset.llId = block._id;
+        section.dataset.llSchema = block._schema;
+        section.style.cssText = 'display:block;height:120px;margin:12px;';
+        const h2 = document.createElement('h2');
+        h2.dataset.llField = 'heading';
+        h2.textContent = block.heading ?? '';
+        section.append(h2);
+        return section;
+      }));
+    }
+    render(${JSON.stringify(body)});
+    window.localess?.on(['input', 'change'], event => render(event.data?.body));
+  </script>
+</body></html>`;
+}
