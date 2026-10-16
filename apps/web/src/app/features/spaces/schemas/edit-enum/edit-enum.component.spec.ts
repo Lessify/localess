@@ -4,7 +4,7 @@ import { Schema, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { EditEnumComponent } from './edit-enum.component';
@@ -32,9 +32,15 @@ describe('EditEnumComponent', () => {
     vi.useRealTimers();
   });
 
-  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false, allSchemas$?: Observable<Schema[]>) {
+  function setup(
+    entity: Schema,
+    allSchemas: Schema[] = [],
+    isActionSave = false,
+    allSchemas$?: Observable<Schema[]>,
+    entity$?: Observable<Schema>,
+  ) {
     const findAll = vi.fn().mockReturnValue(allSchemas$ ?? of(allSchemas));
-    const findById = vi.fn().mockReturnValue(of(entity));
+    const findById = vi.fn().mockReturnValue(entity$ ?? of(entity));
     const updateEnum = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
     const error = vi.fn();
@@ -55,6 +61,19 @@ describe('EditEnumComponent', () => {
     fixture.detectChanges();
     return { component: fixture.componentInstance, updateEnum, findById, success, error, navigate };
   }
+
+  it('ignores a live answer older than the version just saved (a refetch that started before Save)', () => {
+    const v1 = enumSchema({ updatedAt: '2026-01-01T10:00:00.000Z' });
+    const live = new BehaviorSubject<Schema>(v1);
+    const { component, findById } = setup(v1, [], false, undefined, live);
+    findById.mockReturnValue(NEVER);
+    component.addLabel(labelInput('sizes'));
+
+    component.save();
+    live.next(enumSchema({ updatedAt: '2026-01-01T10:00:00.000Z' }));
+
+    expect(component.form.value['labels']).toEqual(['sizes']);
+  });
 
   it('shows the schema name under the title, like the component editor (not the internal id)', () => {
     TestBed.configureTestingModule({

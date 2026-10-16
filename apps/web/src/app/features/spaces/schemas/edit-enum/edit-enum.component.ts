@@ -128,13 +128,30 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
             this.cd.markForCheck();
             return;
           }
+          if (this.isStale(schema)) return;
           this.applySchema(schema);
         },
       });
   }
 
   /** Fills the form from the stored schema. */
+  /** The version a Save replaced: until a newer one arrives, an answer at or before it is stale. */
+  private savedOver?: string;
+
+  /**
+   * A live answer older than what the form shows, or not newer than the version just saved: a refetch that started
+   * before the Save and answered after it. Applying it would put the old values back (and a following edit would
+   * build on them).
+   */
+  private isStale(schema: Schema): boolean {
+    const at = Date.parse(schema.updatedAt);
+    if (Number.isNaN(at)) return false;
+    if (this.savedOver !== undefined && at <= Date.parse(this.savedOver)) return true;
+    return this.entity !== undefined && at < Date.parse(this.entity.updatedAt);
+  }
+
   private applySchema(schema: Schema): void {
+    this.savedOver = undefined;
     // Emptied in place: the new-value validator holds this array (a new one left it checking an empty list).
     this.fieldReservedNames.length = 0;
     this.entity = schema;
@@ -193,12 +210,13 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       next: () => {
         // Saved: live updates may reload the form again; it shows what was stored.
         this.form.markAsPristine();
+        this.savedOver = this.entity?.updatedAt;
         this.schemaService
           .findById(this.spaceId(), this.schemaId())
           .pipe(take(1))
           .subscribe(schema => {
             // Not over edits made since Save.
-            if (!this.form.dirty) this.applySchema(schema);
+            if (!this.form.dirty && !this.isStale(schema)) this.applySchema(schema);
           });
         this.notificationService.success('Schema has been updated.');
       },

@@ -5,7 +5,7 @@ import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
-import { BehaviorSubject, filter, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, filter, NEVER, Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { EditCompComponent } from './edit-comp.component';
@@ -33,9 +33,15 @@ describe('EditCompComponent', () => {
     vi.useRealTimers();
   });
 
-  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false, allSchemas$?: Observable<Schema[]>) {
+  function setup(
+    entity: Schema,
+    allSchemas: Schema[] = [],
+    isActionSave = false,
+    allSchemas$?: Observable<Schema[]>,
+    entity$?: Observable<Schema>,
+  ) {
     const findAll = vi.fn().mockReturnValue(allSchemas$ ?? of(allSchemas));
-    const findById = vi.fn().mockReturnValue(of(entity));
+    const findById = vi.fn().mockReturnValue(entity$ ?? of(entity));
     const updateComponent = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
     const error = vi.fn();
@@ -109,6 +115,26 @@ describe('EditCompComponent', () => {
 
     expect(component.fields.length).toBe(3);
     expect(component.isFormDirty).toBe(true);
+  });
+
+  it('ignores a live answer older than the version just saved (a refetch that started before Save)', () => {
+    const v1 = rootSchema({ updatedAt: '2026-01-01T10:00:00.000Z' });
+    const live = new BehaviorSubject<Schema>(v1);
+    const { component, findById } = setup(v1, [], false, undefined, live);
+    // The reload after Save has not answered yet.
+    findById.mockReturnValue(NEVER);
+    component.addLabel(labelInput('marketing'));
+
+    component.save();
+    // The stale answer: the schema as it was before the Save (no labels).
+    live.next(rootSchema({ updatedAt: '2026-01-01T10:00:00.000Z' }));
+
+    expect(component.form.value['labels']).toEqual(['marketing']);
+    // A newer version is taken.
+    const v2 = rootSchema({ updatedAt: '2026-01-01T10:00:05.000Z', labels: ['marketing'] });
+    live.next(v2);
+    expect(component.entity).toBe(v2);
+    expect(component.form.value['labels']).toEqual(['marketing']);
   });
 
   it('addField() pushes a new TEXT field by default and selects it', () => {
