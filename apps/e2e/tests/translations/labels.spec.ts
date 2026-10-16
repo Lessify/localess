@@ -1,3 +1,4 @@
+import { cancel } from '../pages/dialogs';
 import { TranslationsPage } from '../pages/translations.page';
 import { expect, test } from '../support/fixtures';
 import { translationsByKey, withThreeLocales } from '../support/translations';
@@ -13,23 +14,27 @@ test.describe('Translations → labels', () => {
 
     // Pre-check
     await translations.goto(space.id);
+    expect((await translationsByKey(api, space.id)).has('one.label')).toBe(false);
 
     // Action
     const form = await translations.openAdd({ key: 'one.label', value: 'Value' });
     await translations.addLabelChip(form, 'solo');
 
-    // Post-check: savable, and saved with that label.
+    // Post-check: savable, and saved with that label (the detail panel, after a reload, the API).
     await expect(translations.labelChip(form, 'solo')).toBeVisible();
     await expect(form.getByRole('button', { name: 'Save' })).toBeEnabled();
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
+    await translations.saveAdd(form);
     await expect(translations.item('one.label')).toBeVisible();
+    await page.reload();
+    await translations.select('one.label');
+    await expect(translations.detail('Labels')).toContainText('solo');
     expect((await translationsByKey(api, space.id)).get('one.label')?.labels).toEqual(['solo']);
   });
 
-  test('refuses a duplicate label, one with spaces and one too short', async ({ page, space }) => {
+  test('refuses a duplicate label, one with spaces and one too short', async ({ page, api, space }) => {
     const translations = new TranslationsPage(page);
     await translations.goto(space.id);
+    expect((await translationsByKey(api, space.id)).size).toBe(0);
     const form = await translations.openAdd({ key: 'labels.check', value: 'Value' });
     await translations.addLabelChip(form, 'ui');
     const input = form.getByLabel('Labels');
@@ -43,11 +48,14 @@ test.describe('Translations → labels', () => {
       await translations.addLabelChip(form, label);
 
       // Post-check: not added, the reason shown, the text kept to fix it.
-      await expect(form.getByText(error)).toBeVisible();
+      await expect(form.getByText(error, { exact: true })).toBeVisible();
       await expect(input).toHaveValue(label);
     }
     await expect(translations.labelChip(form, 'ui')).toHaveCount(1);
-    await form.getByRole('button', { name: 'Cancel' }).click();
+
+    // Post-check: cancelled, nothing saved.
+    await cancel(form);
+    expect((await translationsByKey(api, space.id)).size).toBe(0);
   });
 
   test('adds and removes labels of an existing translation', async ({ page, api, space }) => {

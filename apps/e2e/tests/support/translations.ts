@@ -1,4 +1,4 @@
-import type { APIRequestContext } from '@playwright/test';
+import { type APIRequestContext, expect } from '@playwright/test';
 
 import type { AppApi } from './app-api';
 import type { TestSpace } from './fixtures';
@@ -26,11 +26,33 @@ export async function translationsByKey(api: AppApi, spaceId: string): Promise<M
   return new Map(all.map(it => [it.key, it]));
 }
 
-/** What the CDN API serves for a locale (published data), with a public token. */
+/** The public token per space, created on first use (one per space is enough to read the CDN). */
+const publicTokens = new Map<string, Promise<string>>();
+
+function publicToken(api: AppApi, spaceId: string): Promise<string> {
+  let token = publicTokens.get(spaceId);
+  if (!token) {
+    token = api.createToken(spaceId, { name: 'CDN read-back', type: 'public' }).then(it => it.token);
+    publicTokens.set(spaceId, token);
+  }
+  return token;
+}
+
+/**
+ * What the CDN API serves for a locale (published data), with a public token. Anything but 200 fails, also a 404
+ * (nothing published yet): a test that expects "not delivered" checks the status with `publishedStatus`.
+ */
 export async function published(request: APIRequestContext, api: AppApi, spaceId: string, locale: string): Promise<Record<string, string>> {
-  const { token } = await api.createToken(spaceId, { name: `CDN ${locale}`, type: 'public' });
+  const token = await publicToken(api, spaceId);
   const response = await request.get(`/api/v1/spaces/${spaceId}/translations/${locale}?token=${token}`);
-  return response.status() === 404 ? {} : ((await response.json()) as Record<string, string>);
+  expect(response.status(), `CDN translations ${locale}: ${await response.text()}`).toBe(200);
+  return (await response.json()) as Record<string, string>;
+}
+
+/** The status the CDN API answers for a locale's translations (404: nothing published). */
+export async function publishedStatus(request: APIRequestContext, api: AppApi, spaceId: string, locale: string): Promise<number> {
+  const token = await publicToken(api, spaceId);
+  return (await request.get(`/api/v1/spaces/${spaceId}/translations/${locale}?token=${token}`)).status();
 }
 
 /** The machine-translation stub of the e2e server (LOCALESS_TRANSLATE_PROVIDER=stub). */

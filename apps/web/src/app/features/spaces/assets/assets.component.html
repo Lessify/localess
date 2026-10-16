@@ -92,7 +92,7 @@
   </hlm-progress>
 }
 <div class="mx-auto mt-3 px-2">
-  <nav hlmBreadcrumb class="p-2">
+  <nav hlmBreadcrumb aria-label="Folder path" class="p-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
         <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
@@ -111,7 +111,7 @@
       }
     </ol>
   </nav>
-  <div llFileDragDrop (filesChanges)="filesUpload($event)">
+  <div llFileDragDrop role="region" aria-label="Assets" (filesChanges)="filesUpload($event)">
     @if (settingsStore.assetLayout() === 'list') {
       <div llTableContainer>
         <table ll-table [dataSource]="dataSource" llTableSort>
@@ -261,9 +261,15 @@
         </table>
       </div>
     } @else {
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 pb-2">
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 pb-2" role="list" aria-label="Asset cards">
         @for (item of dataSource.renderedData(); track item.id) {
-          <ll-asset-card [item]="item" [spaceId]="spaceId()" [zoomCursor]="true" (assetSelect)="onAssetSelect($event)">
+          <ll-asset-card
+            role="listitem"
+            [attr.aria-label]="item.kind === 'FILE' ? item.name + (item.extension ?? '') : item.name"
+            [item]="item"
+            [spaceId]="spaceId()"
+            [zoomCursor]="true"
+            (assetSelect)="onAssetSelect($event)">
             @if (item.kind === 'FILE') {
               <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download" aria-label="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />

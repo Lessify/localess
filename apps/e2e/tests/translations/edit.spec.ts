@@ -1,3 +1,4 @@
+import { cancel, expectRefused } from '../pages/dialogs';
 import { TranslationsPage } from '../pages/translations.page';
 import { expect, test } from '../support/fixtures';
 import { published, translationsByKey, withThreeLocales } from '../support/translations';
@@ -97,11 +98,8 @@ test.describe('Translations → edit', () => {
     // Action → post-check, for the exact key and another letter case.
     for (const taken of ['first.key', 'First.Key']) {
       const form = await translations.openRename(taken);
-      await form.getByLabel('Key', { exact: true }).blur();
-      await expect(form.getByText('The value is already reserved.')).toBeVisible();
-      await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
-      await form.getByRole('button', { name: 'Cancel' }).click();
-      await expect(form).toBeHidden();
+      await expectRefused(form, form.getByLabel('Key', { exact: true }), 'The value is already reserved.');
+      await cancel(form);
     }
 
     // Post-check: both keys unchanged.

@@ -1,6 +1,6 @@
 import { AssetsPage } from '../pages/assets.page';
-import { expectToast } from '../pages/notifications';
-import { assetNamed, assetsIn } from '../support/assets';
+import { cancel, expectRefused } from '../pages/dialogs';
+import { assetNamed, assetsIn, listedName } from '../support/assets';
 import { pngFile, textFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
 
@@ -16,7 +16,7 @@ test.describe('Assets → rename', () => {
     const form = await assets.openEdit('draft.txt', 'File');
     await expect(form.getByLabel('Name', { exact: true })).toHaveValue('draft');
     await expect(form).toContainText('.txt');
-    await form.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(form);
 
     // Action
     await assets.rename('draft.txt', 'File', 'final-notes');
@@ -26,32 +26,31 @@ test.describe('Assets → rename', () => {
     await expect(assets.row('draft.txt')).toHaveCount(0);
     await page.reload();
     await expect(assets.row('final-notes.txt')).toBeVisible();
-    expect(await assetNamed(api, space.id, 'final-notes')).toMatchObject({ id: file.id, extension: '.txt' });
+    expect(await assetNamed(api, space.id, 'final-notes.txt')).toMatchObject({ id: file.id, extension: '.txt' });
     const download = await request.get(`/api/v1/spaces/${space.id}/assets/${file.id}/download`);
     expect(download.headers()['content-disposition']).toContain('final-notes.txt');
   });
 
   test("edits an image's alt text", async ({ page, api, space }) => {
-    await api.uploadAsset(space.id, pngFile('hero.png'));
+    const file = await api.uploadAsset(space.id, pngFile('hero.png'));
     const assets = new AssetsPage(page);
 
     // Pre-check: no alt text.
     await assets.goto(space.id);
-    expect((await assetNamed(api, space.id, 'hero'))?.alt).toBeUndefined();
+    expect((await assetNamed(api, space.id, 'hero.png'))?.alt).toBeUndefined();
 
     // Action
-    const form = await assets.openEdit('hero.png', 'File');
-    await form.getByLabel('Alt Text').fill('A mountain at sunrise');
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
-    await expectToast(page, 'File has been updated.');
+    await assets.editFile('hero.png', { alt: 'A mountain at sunrise' });
 
     // Post-check: stored, shown when editing again, the name unchanged.
-    await expect.poll(async () => (await assetNamed(api, space.id, 'hero'))?.alt).toBe('A mountain at sunrise');
+    await expect.poll(async () => (await assetNamed(api, space.id, 'hero.png'))?.alt).toBe('A mountain at sunrise');
+    expect(await assetNamed(api, space.id, 'hero.png')).toMatchObject({ id: file.id, name: 'hero', extension: '.png' });
     await page.reload();
+    await expect(assets.row('hero.png')).toBeVisible();
     const again = await assets.openEdit('hero.png', 'File');
     await expect(again.getByLabel('Alt Text')).toHaveValue('A mountain at sunrise');
-    await again.getByRole('button', { name: 'Cancel' }).click();
+    await expect(again.getByLabel('Name', { exact: true })).toHaveValue('hero');
+    await cancel(again);
   });
 
   test('renames a folder; what is inside stays inside', async ({ page, api, space }) => {
@@ -66,11 +65,14 @@ test.describe('Assets → rename', () => {
     // Action
     await assets.rename('Images', 'Folder', 'Photos');
 
-    // Post-check
+    // Post-check: the list, after a reload, the API, and what is inside.
+    await expect(assets.row('Photos')).toBeVisible();
+    await expect(assets.row('Images')).toHaveCount(0);
+    await page.reload();
     await expect(assets.row('Photos')).toBeVisible();
     await expect(assets.row('Images')).toHaveCount(0);
     expect(await assetNamed(api, space.id, 'Photos')).toMatchObject({ id: folder.id, kind: 'FOLDER' });
-    expect((await assetsIn(api, space.id, folder.id)).map(it => it.name)).toEqual(['inside']);
+    expect((await assetsIn(api, space.id, folder.id)).map(listedName)).toEqual(['inside.png']);
     await assets.openFolder('Photos');
     await expect(assets.row('inside.png')).toBeVisible();
   });
@@ -84,24 +86,22 @@ test.describe('Assets → rename', () => {
     // Pre-check
     await assets.goto(space.id);
     await expect(assets.rows).toHaveCount(3);
+    const before = await assetsIn(api, space.id);
+    expect(before.map(listedName).sort()).toEqual(['Images', 'logo.png', 'photo.jpg']);
 
     // Action → post-check: a file's name (another extension) and a folder's name, both refused.
     const form = await assets.openEdit('logo.png', 'File');
     const name = form.getByLabel('Name', { exact: true });
     for (const taken of ['photo', 'Images']) {
       await name.fill(taken);
-      await name.blur();
-      await expect(form.getByText('The value is already reserved.'), taken).toBeVisible();
-      await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
+      await test.step(taken, () => expectRefused(form, name, 'The value is already reserved.'));
     }
 
     // Cancel: unchanged.
     await name.fill('not-saved');
-    await form.getByRole('button', { name: 'Cancel' }).click();
-    await expect(form).toBeHidden();
+    await cancel(form);
     await expect(assets.row('logo.png')).toBeVisible();
-    expect(await assetNamed(api, space.id, 'logo')).toBeDefined();
-    expect(await assetNamed(api, space.id, 'not-saved')).toBeUndefined();
+    expect(await assetsIn(api, space.id)).toEqual(before);
   });
 
   test('roadmap check: a file with a short name can only be edited by renaming it', async ({ page, api, space }) => {
@@ -114,7 +114,7 @@ test.describe('Assets → rename', () => {
 
     // Today: the 3-character minimum blocks Save (docs/roadmap/asset-names.md, N1).
     await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
-    await form.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(form);
   });
 
   test('roadmap check: Edit Folder allows 100 characters, Create Folder 250', async ({ page, api, space }) => {
@@ -127,14 +127,14 @@ test.describe('Assets → rename', () => {
     // Today (docs/roadmap/asset-names.md, N3).
     const create = await assets.openCreateFolder(long);
     await expect(create.getByLabel('Name', { exact: true })).toHaveValue(long);
-    await create.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(create);
     const edit = await assets.openEdit('Images', 'Folder');
     await edit.getByLabel('Name', { exact: true }).fill(long);
     await expect(edit.getByLabel('Name', { exact: true })).toHaveValue('x'.repeat(100));
-    await edit.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(edit);
     // A folder created with a longer name can't be saved unchanged.
     const longFolder = await assets.openEdit('y'.repeat(150), 'Folder');
     await expect(longFolder.getByRole('button', { name: 'Save' })).toBeDisabled();
-    await longFolder.getByRole('button', { name: 'Cancel' }).click();
+    await cancel(longFolder);
   });
 });

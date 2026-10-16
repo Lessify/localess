@@ -1,6 +1,6 @@
 import { AssetsPage } from '../pages/assets.page';
-import { expectToast } from '../pages/notifications';
-import { allAssets, assetNamed, original } from '../support/assets';
+import { cancel } from '../pages/dialogs';
+import { allAssets, assetNamed, listedName, original } from '../support/assets';
 import { PNG_1X1, pngFile, textFile } from '../support/files';
 import { expect, test, uniqueId } from '../support/fixtures';
 
@@ -24,7 +24,7 @@ test.describe('Assets → delete', () => {
     await page.reload();
     await expect(assets.row('keep.txt')).toBeVisible();
     await expect(assets.row('old.png')).toHaveCount(0);
-    expect((await allAssets(api, space.id)).map(it => it.name)).toEqual(['keep']);
+    expect((await allAssets(api, space.id)).map(listedName)).toEqual(['keep.txt']);
     expect(await original(request, space.id, file.id)).toBe(404);
   });
 
@@ -38,15 +38,16 @@ test.describe('Assets → delete', () => {
 
     // Pre-check: five assets.
     await assets.goto(space.id);
+    await expect(assets.row('Archive')).toBeVisible();
     expect(await allAssets(api, space.id)).toHaveLength(5);
 
     // Action
-    const confirm = await assets.openDelete('Archive');
-    await expect(confirm).toContainText('Delete Folder');
-    await confirm.getByRole('button', { name: 'OK' }).click();
-    await expectToast(page, "Asset 'Archive' has been deleted.");
+    await assets.delete('Archive', 'Folder', 'Archive');
 
     // Post-check: the folder, its subfolder and both files are gone; the file outside stays.
+    await expect(assets.row('Archive')).toHaveCount(0);
+    await page.reload();
+    await expect(assets.row('outside.png')).toBeVisible();
     await expect(assets.row('Archive')).toHaveCount(0);
     expect((await allAssets(api, space.id)).map(it => it.id)).toEqual([outside.id]);
     expect(await original(request, space.id, inFolder.id)).toBe(404);
@@ -70,14 +71,15 @@ test.describe('Assets → delete', () => {
     expect(await api.get(`/api/app/spaces/${space.id}/assets/${file.id}/usage`)).toEqual({ contents: 1 });
 
     // Action: the confirmation names the usage.
-    const confirm = await assets.openDelete('used.png');
+    const confirm = await assets.openDelete('used.png', 'Asset');
     await expect(confirm).toContainText('It is used by 1 content, which will show it as missing.');
-    await confirm.getByRole('button', { name: 'OK' }).click();
-    await expectToast(page, "Asset 'used' has been deleted.");
+    await assets.confirmDelete(confirm, 'used');
 
     // Post-check: the file is gone, the content is not.
     await expect(assets.row('used.png')).toHaveCount(0);
-    expect(await assetNamed(api, space.id, 'used')).toBeUndefined();
+    await page.reload();
+    await expect(assets.emptyFolder).toBeVisible();
+    expect(await assetNamed(api, space.id, 'used.png')).toBeUndefined();
     const contents = await api.get<{ id: string }[]>(`/api/app/spaces/${space.id}/contents?kind=DOCUMENT`);
     expect(contents.map(it => it.id)).toEqual([doc.id]);
   });
@@ -89,14 +91,17 @@ test.describe('Assets → delete', () => {
     // Pre-check
     await assets.goto(space.id);
     await expect(assets.row('keep.png')).toBeVisible();
+    const before = await assetNamed(api, space.id, 'keep.png');
+    expect(before).toMatchObject({ id: file.id });
 
     // Action
-    const confirm = await assets.openDelete('keep.png');
-    await confirm.getByRole('button', { name: 'Cancel' }).click();
-    await expect(confirm).toBeHidden();
+    await cancel(await assets.openDelete('keep.png', 'Asset'));
 
-    // Post-check
+    // Post-check: still listed (also after a reload), the same asset in the same folder, the same bytes.
     await expect(assets.row('keep.png')).toBeVisible();
+    await page.reload();
+    await expect(assets.row('keep.png')).toBeVisible();
+    expect(await assetNamed(api, space.id, 'keep.png')).toEqual(before);
     expect(await original(request, space.id, file.id)).toEqual(PNG_1X1);
   });
 });

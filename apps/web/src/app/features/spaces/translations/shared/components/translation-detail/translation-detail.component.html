@@ -96,6 +96,7 @@
           <button
             hlmBtn
             variant="outline"
+            aria-label="Save"
             hlmTooltip="Save the changes"
             [disabled]="isLocaleUpdateLoading() || translation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()"
             (click)="save.emit({ translation: translation, locale: selectedTargetLocale(), value: selectedTranslationLocaleValue()! })">
@@ -131,7 +132,7 @@
         }
       </div>
       <hlm-separator />
-      <ul role="list" class="divide-y">
+      <ul role="list" aria-label="Translation details" class="divide-y">
         <li role="listitem" class="relative flex items-center p-2">
           <div class="min-w-0 flex-auto">
             <div class="flex items-center gap-x-3">

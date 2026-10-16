@@ -46,14 +46,20 @@ test.describe('Translations → machine translation', () => {
     // Pre-check
     await translations.goto(space.id);
     await translations.select('greeting');
+    expect((await translationsByKey(api, space.id)).get('greeting')?.locales).toEqual({ en: 'Hello', de: 'Hallo' });
 
-    // Action: German → Romanian.
+    // Action: German → Romanian, then Save.
     await translations.selectSourceLocale('German');
     await translations.selectTargetLocale('Romanian');
     await translations.translateButton.click();
 
-    // Post-check
+    // Post-check: translated from German (not English); stored with Save, the other locales unchanged.
     await expect(translations.valueEditor).toHaveValue(stubTranslation('Hallo', 'de', 'ro'));
+    expect((await translationsByKey(api, space.id)).get('greeting')?.locales.ro).toBeUndefined();
+    await translations.saveValueButton.click();
+    await expect
+      .poll(async () => (await translationsByKey(api, space.id)).get('greeting')?.locales)
+      .toEqual({ en: 'Hello', de: 'Hallo', ro: stubTranslation('Hallo', 'de', 'ro') });
   });
 
   test('can not translate a locale into itself', async ({ page, api, space }) => {
@@ -88,9 +94,11 @@ test.describe('Translations → machine translation', () => {
     expect(all.get('no.romanian.two')?.locales.ro).toBe(stubTranslation('Two', 'en', 'ro'));
     expect(all.get('no.romanian.one')?.locales.de).toBeUndefined();
 
-    // Action 2: again, nothing is missing any more.
+    // Action 2: again, nothing is missing any more. Post-check: nothing changed.
+    const afterFirst = await translationsByKey(api, space.id);
     await translations.translateLocale('English', 'Romanian', false);
     await expectToast(page, 'Nothing to translate.');
+    expect(await translationsByKey(api, space.id)).toEqual(afterFirst);
 
     // Action 3: with overwrite. Post-check: all three replaced.
     await translations.translateLocale('English', 'Romanian', true);

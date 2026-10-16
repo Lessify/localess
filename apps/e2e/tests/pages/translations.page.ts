@@ -1,7 +1,20 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { dialog } from './dialogs';
+import { escapeRegExp } from '../support/text';
+import { choose, dialog } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
+
+/** A locale in a select, by its name; the space's default locale is listed as `English (Default)`. */
+function localeOption(name: string): RegExp {
+  return new RegExp(`^${escapeRegExp(name)}( \\(Default\\))?$`);
+}
+
+/** Turns on a Spartan checkbox or switch: its state follows the click a moment later (no `check()`). */
+async function turnOn(control: Locator): Promise<void> {
+  await expect(control).not.toBeChecked();
+  await control.click();
+  await expect(control).toBeChecked();
+}
 
 export interface NewTranslation {
   key: string;
@@ -23,68 +36,74 @@ export class TranslationsPage {
 
   // --- List and tree -----------------------------------------------------------------------------------------------
 
-  /** A key in the list layout, by its exact key. */
+  /** The list layout (a virtual scroll: it renders only the rows in view). */
+  get list(): Locator {
+    return this.page.getByRole('list', { name: 'Translations', exact: true });
+  }
+
+  /** A key in the list layout, by its exact key (a row is named after its key). */
   item(key: string): Locator {
-    return this.page
-      .locator('cdk-virtual-scroll-viewport [role="listitem"]')
-      .filter({ has: this.page.locator('[hlmItemTitle]').getByText(key, { exact: true }) });
+    return this.list.getByRole('listitem', { name: key, exact: true });
   }
 
   /** All rows of the list layout. */
   get items(): Locator {
-    return this.page.locator('cdk-virtual-scroll-viewport [role="listitem"]');
+    return this.list.getByRole('listitem');
   }
 
   /** The keys the list shows, in order. */
   async visibleKeys(): Promise<string[]> {
-    const titles = await this.items.locator('[hlmItemTitle]').allInnerTexts();
-    return titles.map(it => it.trim());
+    return this.items.evaluateAll(rows => rows.map(row => row.getAttribute('aria-label') ?? ''));
   }
 
   /** The value a list row shows (the value of the locale chosen in the filter). */
   valueOf(key: string): Locator {
-    return this.item(key).locator('[hlmItemDescription]');
+    return this.item(key).getByRole('paragraph');
+  }
+
+  /** Scrolls the list layout to its end, as with the mouse wheel (the virtual scroll renders the last rows). */
+  async scrollToEnd(): Promise<void> {
+    await this.items.first().hover();
+    await this.page.mouse.wheel(0, 100_000);
   }
 
   async useLayout(layout: 'List' | 'Tree'): Promise<void> {
     await this.page.getByLabel(`${layout} Layout`, { exact: true }).click();
-    await expect(layout === 'Tree' ? this.tree : this.page.locator('cdk-virtual-scroll-viewport')).toBeVisible();
+    await expect(layout === 'Tree' ? this.tree : this.list).toBeVisible();
   }
 
   get tree(): Locator {
     return this.page.getByRole('tree');
   }
 
-  /** A node of the tree layout, by its own segment name (not its children's). */
+  /**
+   * A node of the tree layout, by its own segment name: the tree item that shows the name, but not only inside its
+   * group of children (an expanded parent contains its children's names too).
+   */
   treeNode(name: string): Locator {
-    return this.page.locator('li[data-slot="tree-item"]').filter({
-      has: this.page.locator(':scope > [data-slot="tree-item-row"]', { hasText: new RegExp(`^\\s*${name}\\s*$`) }),
-    });
+    const named = this.page.getByText(name, { exact: true });
+    return this.tree
+      .getByRole('treeitem')
+      .filter({ has: named })
+      .filter({ hasNot: this.page.getByRole('group').filter({ has: named }) });
   }
 
-  /** The clickable row of a tree node. */
+  /** The clickable name of a tree node. */
   treeRow(name: string): Locator {
-    return this.treeNode(name).locator(':scope > [data-slot="tree-item-row"]');
+    return this.treeNode(name).getByText(name, { exact: true });
   }
 
-  /** The segment names of the tree's top-level nodes. */
+  /** The segment names of the tree's top-level nodes (the first line of each: an expanded node lists its children below). */
   async treeRoots(): Promise<string[]> {
-    const rows = this.tree.locator(':scope > li > [data-slot="tree-item-row"]');
-    return (await rows.allInnerTexts()).map(it => it.trim());
-  }
-
-  /** Waits until no select list is open: one still closing doubles every option for a moment. */
-  private async closedLists(): Promise<void> {
-    await expect(this.page.getByRole('listbox')).toHaveCount(0);
+    const roots = await this.tree.getByRole('treeitem', { level: 1 }).allInnerTexts();
+    return roots.map(it => it.trim().split('\n')[0].trim());
   }
 
   // --- Filter bar --------------------------------------------------------------------------------------------------
 
   /** The locale whose values the list shows and the search looks in. */
   async filterLocale(name: string): Promise<void> {
-    await this.page.getByLabel('Locale', { exact: true }).click();
-    await this.page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
-    await this.closedLists();
+    await choose(this.page, this.page.getByLabel('Locale', { exact: true }), localeOption(name));
   }
 
   async search(text: string): Promise<void> {
@@ -119,12 +138,16 @@ export class TranslationsPage {
     await form.getByLabel('Value', { exact: true }).fill(input.value);
     if (input.description) await form.getByLabel('Description').fill(input.description);
     for (const label of input.labels ?? []) await this.addLabelChip(form, label);
-    if (input.autoTranslate) await form.locator('label[for="autoTranslate"]').click();
+    if (input.autoTranslate) await turnOn(form.getByRole('switch', { name: 'Translate other locales' }));
     return form;
   }
 
   async add(input: NewTranslation): Promise<void> {
-    const form = await this.openAdd(input);
+    await this.saveAdd(await this.openAdd(input));
+  }
+
+  /** Saves the open "Add Translation" dialog and waits for it to close and for the toast. */
+  async saveAdd(form: Locator): Promise<void> {
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'Translation has been added.');
@@ -152,9 +175,9 @@ export class TranslationsPage {
   /** A field of the detail panel (Key, Status, Description, Labels, ...). */
   detail(field: 'Key' | 'Status' | 'Description' | 'Labels'): Locator {
     return this.page
-      .locator('ul[role="list"] > li')
-      .filter({ has: this.page.getByText(field, { exact: true }) })
-      .first();
+      .getByRole('list', { name: 'Translation details', exact: true })
+      .getByRole('listitem')
+      .filter({ has: this.page.getByText(field, { exact: true }) });
   }
 
   get valueEditor(): Locator {
@@ -162,20 +185,16 @@ export class TranslationsPage {
   }
 
   get saveValueButton(): Locator {
-    return this.page.getByRole('button', { name: /^Save/ });
+    return this.page.getByRole('button', { name: 'Save', exact: true });
   }
 
   /** Picks the locale edited in the detail panel. */
   async selectTargetLocale(name: string): Promise<void> {
-    await this.page.getByLabel('Target Locale').click();
-    await this.page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
-    await this.closedLists();
+    await choose(this.page, this.page.getByLabel('Target Locale'), localeOption(name));
   }
 
   async selectSourceLocale(name: string): Promise<void> {
-    await this.page.getByLabel('Source Locale').click();
-    await this.page.getByRole('option', { name: new RegExp(`^${name}`) }).click();
-    await this.closedLists();
+    await choose(this.page, this.page.getByLabel('Source Locale'), localeOption(name));
   }
 
   async saveValue(value: string): Promise<void> {
@@ -195,6 +214,7 @@ export class TranslationsPage {
   async renameKey(newKey: string): Promise<void> {
     const form = await this.openRename(newKey);
     await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
     await expectToast(this.page, 'Translation key has been updated.');
   }
 
@@ -210,8 +230,14 @@ export class TranslationsPage {
     await expectToast(this.page, 'Translation has been updated.');
   }
 
-  async deleteSelected(): Promise<void> {
+  /** Opens the delete confirmation of the selected key and returns it, without confirming. */
+  async openDelete(): Promise<Locator> {
     await this.page.getByRole('button', { name: 'Delete', exact: true }).click();
+    return dialog(this.page, 'Delete Translation');
+  }
+
+  async deleteSelected(): Promise<void> {
+    await this.openDelete();
     await confirmDialog(this.page, 'Delete Translation');
     await expectToast(this.page, 'Translation has been deleted.');
   }
@@ -233,14 +259,10 @@ export class TranslationsPage {
     await this.page.getByRole('button', { name: 'More' }).click();
     await this.page.getByRole('menuitem', { name: 'Translate Locale' }).click();
     const form = await dialog(this.page, 'Translate Locale');
-    await form.getByLabel('Source Locale').click();
-    await this.page.getByRole('option', { name: new RegExp(`^${source}`) }).click();
-    await this.closedLists();
-    await form.getByLabel('Target Locale').click();
-    await this.page.getByRole('option', { name: new RegExp(`^${target}`) }).click();
-    await this.closedLists();
+    await choose(this.page, form.getByLabel('Source Locale'), localeOption(source));
+    await choose(this.page, form.getByLabel('Target Locale'), localeOption(target));
     await expect(form.getByLabel('Target Locale')).toContainText(target);
-    if (overwrite) await form.locator('label[for="overwrite"]').click();
+    if (overwrite) await turnOn(form.getByRole('checkbox', { name: 'Overwrite existing translations' }));
     await form.getByRole('button', { name: 'Translate' }).click();
     await expect(form).toBeHidden();
   }

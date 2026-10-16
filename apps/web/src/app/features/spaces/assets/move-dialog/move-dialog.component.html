@@ -5,13 +5,12 @@
   <div hlmField>
     <label hlmFieldLabel for="folder">Folder</label>
     <hlm-combobox
-      id="folder"
       [(search)]="search"
       [filter]="noOpFilter"
       [value]="selected()"
       (valueChange)="choose($event)"
       [itemToString]="displayItem">
-      <hlm-combobox-input placeholder="Search folders..." showClear />
+      <hlm-combobox-input inputId="folder" placeholder="Search folders..." showClear />
       <hlm-combobox-content *hlmComboboxPortal>
         <hlm-combobox-empty>No results found.</hlm-combobox-empty>
         <div hlmComboboxList>

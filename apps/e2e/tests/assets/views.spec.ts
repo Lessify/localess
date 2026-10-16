@@ -56,8 +56,13 @@ test.describe('Assets → grid layout and preview', () => {
     await assets.preview.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(assets.preview).toHaveCount(0);
 
-    // A PDF has no preview.
+    // A PDF has no preview. Barrier: the image clicked after it opens its preview, the only dialog (a dialog of the
+    // PDF would be open first, and would block the click on the image).
     await assets.row('terms.pdf').click();
+    await assets.row('hero.png').click();
+    await expect(assets.preview).toContainText('hero.png');
+    await expect(page.getByRole('dialog')).toHaveCount(1);
+    await assets.preview.getByRole('button', { name: 'Close', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
     // Grid layout: the picture opens it too.

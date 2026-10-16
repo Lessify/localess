@@ -1,5 +1,6 @@
 import { AssetsPage } from '../pages/assets.page';
-import { allAssets, assetNamed, assetsIn } from '../support/assets';
+import { cancel, expectRefused } from '../pages/dialogs';
+import { allAssets, assetNamed, assetsIn, listedName } from '../support/assets';
 import { pngFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
 
@@ -48,15 +49,14 @@ test.describe('Assets → create folder', () => {
     await expect(assets.row('Images')).toBeVisible();
 
     // Action → post-check: a folder's name, a file's name (without extension), both refused at the root.
+    const before = await assetsIn(api, space.id);
+    expect(before.map(listedName).sort()).toEqual(['Banner.png', 'Images']);
     for (const taken of ['Images', 'Banner']) {
       const form = await assets.openCreateFolder(taken);
-      await form.getByLabel('Name', { exact: true }).blur();
-      await expect(form.getByText('The value is already reserved.')).toBeVisible();
-      await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
-      await form.getByRole('button', { name: 'Cancel' }).click();
-      await expect(form).toBeHidden();
+      await expectRefused(form, form.getByLabel('Name', { exact: true }), 'The value is already reserved.');
+      await cancel(form);
     }
-    expect((await assetsIn(api, space.id)).map(it => it.name).sort()).toEqual(['Banner', 'Images']);
+    expect(await assetsIn(api, space.id)).toEqual(before);
 
     // Action → post-check: the same name inside another folder is fine.
     await assets.openFolder('Images');
@@ -74,16 +74,17 @@ test.describe('Assets → create folder', () => {
     await expect(form.getByRole('button', { name: 'Save' })).toBeEnabled();
 
     // Action → post-check, for each invalid name.
-    for (const invalid of ['ab', ' Leading', 'Trailing ']) {
+    for (const [invalid, message] of [
+      ['ab', 'Minimum length is 3.'],
+      [' Leading', 'No spaces at start and end.'],
+      ['Trailing ', 'No spaces at start and end.'],
+    ]) {
       await name.fill(invalid);
-      await name.blur();
-      await expect(form.getByRole('button', { name: 'Save' }), JSON.stringify(invalid)).toBeDisabled();
-      await expect(form.locator('hlm-field-error').first(), JSON.stringify(invalid)).toBeVisible();
+      await test.step(JSON.stringify(invalid), () => expectRefused(form, name, message));
     }
 
     // Cancel
-    await form.getByRole('button', { name: 'Cancel' }).click();
-    await expect(form).toBeHidden();
+    await cancel(form);
     await expect(assets.rows).toHaveCount(0);
     expect(await allAssets(api, space.id)).toEqual([]);
   });

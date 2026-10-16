@@ -1,3 +1,4 @@
+import { cancel } from '../pages/dialogs';
 import { TranslationsPage } from '../pages/translations.page';
 import { expect, test } from '../support/fixtures';
 import { published, translationsByKey, withThreeLocales } from '../support/translations';
@@ -49,14 +50,15 @@ test.describe('Translations → delete', () => {
     await translations.select('nav.about');
 
     // Action
-    await page.getByRole('button', { name: 'Delete', exact: true }).click();
-    const confirm = page.getByRole('dialog').filter({ hasText: 'Delete Translation' });
+    const confirm = await translations.openDelete();
     await expect(confirm).toContainText("'nav.about'");
-    await confirm.getByRole('button', { name: 'Cancel' }).click();
-    await expect(confirm).toBeHidden();
+    await cancel(confirm);
 
     // Post-check
     await expect(translations.item('nav.about')).toBeVisible();
+    await page.reload();
+    await expect(translations.item('nav.about')).toBeVisible();
+    expect((await translationsByKey(api, space.id)).get('nav.about')?.locales).toEqual({ en: 'About', de: 'Über uns', ro: 'Despre' });
     expect((await translationsByKey(api, space.id)).size).toBe(3);
   });
 });

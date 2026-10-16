@@ -39,7 +39,7 @@ test.describe('Translations → list view', () => {
     expect(await translations.items.count()).toBeLessThan(120);
 
     // Action: scroll to the end.
-    await page.locator('cdk-virtual-scroll-viewport').evaluate(viewport => viewport.scrollTo(0, viewport.scrollHeight));
+    await translations.scrollToEnd();
 
     // Post-check: the last key is rendered and opens.
     await expect(translations.item('bulk.key119')).toBeVisible();
