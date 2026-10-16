@@ -76,11 +76,12 @@ the UI, then the table (also after a reload), the API, and what the user can now
 | Copy password reset link; the user sets a new password with it | UI (clipboard) + the user's browser | ✅ `admin/users` |
 | Delete a user (sign-in refused); cancelling keeps them | UI + API | ✅ `admin/users` @smoke |
 | Email, display name and password of another user | Not a feature: the admin sets them when inviting; later only a reset link (the user changes their own in Me) | ➖ |
-| A custom user with `USER_MANAGEMENT` can only grant what they hold | UI: checkboxes disabled; API: 403 | ⬜ |
+| A custom user with `USER_MANAGEMENT` can only grant what they hold (no Admin role), and only manage users they outrank | UI: checkboxes disabled; API: 403, nothing changed | ✅ `admin/users`, `api/user-management` |
+| Invite with every permission the dialog offers: all stored | UI + API | ✅ `admin/users` |
 | Translator sees translations only; guards redirect elsewhere | UI | ✅ `auth/permissions` |
 | User without a role is asked to contact an administrator | UI | ✅ `auth/permissions` |
 | API refuses what the permissions don't allow | API | ✅ `api/permissions` |
-| Permission matrix: every App API route × each permission | API, data-driven from `@RequirePermission` | ⬜ |
+| Permission matrix: every App API route × each permission, no role, admin, no session (401 / 403 / let through, never a 5xx) | API, routes read from the server's access decorators | ✅ `api/permission-matrix` |
 
 ### 4. Me (profile)
 
@@ -296,7 +297,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | `/links`, `resolveReference`, `resolveLink` | API | ✅ `contents/delivery`, `contents/fields-relations` |
 | Management: read space, push translations | API | ✅ `api/management` @smoke |
 | Management: missing, public or foreign token refused | API | ✅ `api/management` |
-| Management: schemas pull/push, OpenAPI | API | ⬜ |
+| Management: schema export; push dry run, upsert (created / updated / unchanged), sync (deletes, but not a schema contents use) | API + App API | ✅ `api/management-schemas` |
+| Management: an invalid push is refused and stores nothing; OpenAPI document of the space's schemas | API | ✅ `api/management-schemas` |
 
 ### 12. Cross-cutting
 
@@ -337,6 +339,7 @@ regression test.
 | Publishing or unpublishing from the content list reported a failure as a success toast | An error toast |
 | Document status was an icon with a tooltip only (no text for assistive technology) | The status as the icon's accessible name; also names for the field's translate button and the editor's root breadcrumb |
 | Image preview: on a window under ~980 px high the caption and Close were below the screen (a fixed `min-h-[800px]` beat the maximum) | The minimum size is capped by the window |
+| Admin → Users offered "Regenerate Metadata" as a permission: it is an admin-only task kind, and the server refused the whole invite or save with it ticked | Not offered; a unit test checks the dialog offers exactly the server's permissions |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -356,4 +359,5 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Content rules (required, lengths, limits) are checked in the browser only: the API stores content that breaks them | `contents/validation` pins today's behaviour |
 | The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
+| Webhooks: the sidebar shows Developers → Webhooks for `DEV_WEBHOOK`, but every webhook route needs `SPACE_MANAGEMENT` (pinned by a server test): a user with only `DEV_WEBHOOK` opens a page whose requests are refused | Product decision; `api/permission-matrix` asserts the server's rule |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload and move but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |

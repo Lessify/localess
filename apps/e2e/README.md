@@ -59,10 +59,11 @@ tests/
 │   ├── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
 │   ├── schemas.ts          # schema read-back from the App API
 │   ├── contents.ts         # content read-back, a CDN client (public / preview), a Root schema helper
-│   └── preview-site.ts     # a local customer site for the Visual Editor (loads sync-v1.js)
+│   ├── preview-site.ts     # a local customer site for the Visual Editor (loads sync-v1.js)
+│   └── app-routes.ts       # the App API routes and their access, read from the server's controllers
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts, drag and drop)
 ├── auth.setup.ts           # signs in once for the other specs
-├── api/                    # platform, CDN API (translations, contents, assets), Management API, permissions
+├── api/                    # platform, CDN API, Management API (translations, schemas, OpenAPI), permission matrix, user managers
 ├── auth/                   # login, logout, deep links, password reset, what restricted users see
 ├── admin/                  # Admin → Users, Admin → Spaces
 ├── me/                     # profile

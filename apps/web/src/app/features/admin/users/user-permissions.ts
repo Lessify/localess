@@ -60,7 +60,6 @@ export const USER_PERMISSION_GROUPS: UserPermissionGroup[] = [
       { id: 'ASSET_UPDATE', label: 'Update', desc: 'Update Asset.' },
       { id: 'ASSET_DELETE', label: 'Delete', desc: 'Delete Asset.' },
       { id: 'ASSET_EXPORT', label: 'Export', desc: 'Export Asset.' },
-      { id: 'ASSET_REGEN_METADATA', label: 'Regenerate Metadata', desc: 'Regenerate Metadata related to media files.' },
       { id: 'ASSET_IMPORT', label: 'Import', desc: 'Import Asset.' },
     ],
   },

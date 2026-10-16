@@ -1,3 +1,5 @@
+import { UserPermission } from '@localess/shared';
+
 import { USER_PERMISSION_GROUPS } from './user-permissions';
 
 describe('USER_PERMISSION_GROUPS', () => {
@@ -22,5 +24,20 @@ describe('USER_PERMISSION_GROUPS', () => {
         expect(permission.desc).toBeTruthy();
       }
     }
+  });
+
+  // "Regenerate Metadata" (ASSET_REGEN_METADATA) was offered: it is a task kind for admins, not a permission, and the
+  // server refused the whole invite or save.
+  it('offers only permissions the server knows', () => {
+    const known = new Set<string>(Object.values(UserPermission));
+    const ids = USER_PERMISSION_GROUPS.flatMap(group => group.permissions.map(permission => permission.id));
+
+    expect(ids.filter(id => !known.has(id))).toEqual([]);
+  });
+
+  it('offers every permission the server knows', () => {
+    const ids = new Set(USER_PERMISSION_GROUPS.flatMap(group => group.permissions.map(permission => permission.id)));
+
+    expect(Object.values(UserPermission).filter(permission => !ids.has(permission))).toEqual([]);
   });
 });
