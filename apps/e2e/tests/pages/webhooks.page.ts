@@ -35,14 +35,19 @@ export class WebhooksPage {
 
   async create(input: WebhookInput & { name: string; url: string }): Promise<void> {
     await this.page.getByRole('button', { name: 'Add Webhook' }).click();
-    await this.fill('Add Webhook', input);
+    await this.save(await this.fill('Add Webhook', input));
     await expectToast(this.page, 'Webhook has been created.');
   }
 
   async edit(name: string, input: WebhookInput): Promise<void> {
-    await rowMenu(this.page, this.row(name), 'Edit');
-    await this.fill('Edit Webhook', input);
+    await this.save(await this.openEdit(name, input));
     await expectToast(this.page, 'Webhook has been updated.');
+  }
+
+  /** Opens "Edit Webhook" from the row menu and fills it, without saving. */
+  async openEdit(name: string, input: WebhookInput): Promise<Locator> {
+    await rowMenu(this.page, this.row(name), 'Edit');
+    return this.fill('Edit Webhook', input);
   }
 
   /** Enable or Disable from the row menu. */
@@ -71,7 +76,12 @@ export class WebhooksPage {
       .getByRole('definition');
   }
 
-  private async fill(title: string, input: WebhookInput): Promise<void> {
+  private async save(form: Locator): Promise<void> {
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+  }
+
+  private async fill(title: string, input: WebhookInput): Promise<Locator> {
     const form = await dialog(this.page, title);
     if (input.name !== undefined) await form.getByLabel('Name', { exact: true }).fill(input.name);
     if (input.url !== undefined) await form.getByLabel('URL', { exact: true }).fill(input.url);
@@ -86,7 +96,6 @@ export class WebhooksPage {
       await expect(this.page.getByRole('listbox')).toHaveCount(0);
     }
     if (input.secret !== undefined) await form.getByLabel('Secret (Optional)').fill(input.secret);
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
+    return form;
   }
 }

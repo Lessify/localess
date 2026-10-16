@@ -311,6 +311,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 |---|---|---|
 | No uncaught or reported errors on any page under test | `page` fixture | ✅ |
 | Accessibility scan of the sign-in page, a space's pages, admin and profile | `@axe-core/playwright`, WCAG 2 A / AA, fails on serious / critical | ✅ `a11y/pages` |
+| Cancelling a destructive confirmation changes nothing: Delete All Translations, Regenerate / Delete Token, Delete Locale, Change Default Locale, Delete Environment, Delete Webhook, Disable User, Delete Folder (contents, assets), Unpublish Document | UI (Cancel) → reload, API equal to the pre-check (and the CDN) | ✅ `confirmations/cancel` |
+| Cancelling a form dialog saves nothing: Token Edit, Webhook Edit, Edit Environment, Add Locale, User Edit, Update Email, Edit Translation | UI → reload, API | ✅ `confirmations/cancel` |
 | Firefox and WebKit | Extra Playwright projects, nightly | ⬜ |
 | Visual regression of key pages | `toHaveScreenshot`, fixed data, one OS | ⬜ |
 | Dark theme renders | UI: theme switch + screenshot | ⬜ |

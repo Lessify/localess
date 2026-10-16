@@ -29,14 +29,19 @@ export class EnvironmentsPage {
 
   async add(environment: EnvironmentInput): Promise<void> {
     await this.page.getByRole('button', { name: 'Add Environment' }).click();
-    await this.fillDialog('Add Environment', environment);
+    await this.save(await this.fillDialog('Add Environment', environment));
     await expectToast(this.page, 'Environment has been added.');
   }
 
   async edit(currentName: string, environment: EnvironmentInput): Promise<void> {
-    await this.item(currentName).getByRole('button', { name: 'Edit' }).click();
-    await this.fillDialog('Edit Environment', environment);
+    await this.save(await this.openEdit(currentName, environment));
     await expectToast(this.page, `Environment '${environment.name}' has been updated.`);
+  }
+
+  /** Opens "Edit Environment" and fills it, without saving. */
+  async openEdit(currentName: string, environment: EnvironmentInput): Promise<Locator> {
+    await this.item(currentName).getByRole('button', { name: 'Edit' }).click();
+    return this.fillDialog('Edit Environment', environment);
   }
 
   /** The environment names in order (the first is the default). */
@@ -59,11 +64,15 @@ export class EnvironmentsPage {
     await expectToast(this.page, `Environment '${name}' has been deleted.`);
   }
 
-  private async fillDialog(title: string, { name, url }: EnvironmentInput): Promise<void> {
+  private async save(form: Locator): Promise<void> {
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+  }
+
+  private async fillDialog(title: string, { name, url }: EnvironmentInput): Promise<Locator> {
     const form = await dialog(this.page, title);
     await form.getByLabel('Name').fill(name);
     await form.getByLabel('URL').fill(url);
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
+    return form;
   }
 }

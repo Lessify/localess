@@ -18,11 +18,17 @@ export class LocalesPage {
     return this.page.getByRole('row').filter({ has: this.page.getByRole('cell', { name: localeId, exact: true }) });
   }
 
-  async add(localeName: string): Promise<void> {
+  /** Opens "Add Locale" and picks the locale, without saving. */
+  async openAdd(localeName: string): Promise<Locator> {
     await this.page.getByRole('button', { name: 'Add Locale' }).click();
     const form = await dialog(this.page, 'Add Locale');
     await form.getByRole('combobox').fill(localeName);
     await this.page.getByRole('option', { name: localeName, exact: true }).click();
+    return form;
+  }
+
+  async add(localeName: string): Promise<void> {
+    const form = await this.openAdd(localeName);
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'Locale has been added.');

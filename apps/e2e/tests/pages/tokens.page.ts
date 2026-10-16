@@ -66,14 +66,20 @@ export class TokensPage {
 
   /** Edits the name and the Cache TTL (all that can be edited). */
   async edit(name: string, values: { name: string; cacheTtl: string }): Promise<void> {
+    const form = await this.openEdit(name, values);
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Token has been updated.');
+  }
+
+  /** Opens Edit and fills the name and Cache TTL, without saving. */
+  async openEdit(name: string, values: { name: string; cacheTtl: string }): Promise<Locator> {
     await this.row(name).getByRole('button', { name: 'Edit' }).click();
     const form = await dialog(this.page, 'Token Form');
     await expect(form.getByLabel('Name', { exact: true })).toHaveValue(name);
     await form.getByLabel('Name', { exact: true }).fill(values.name);
     await form.getByLabel('Cache TTL', { exact: true }).fill(values.cacheTtl);
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
-    await expectToast(this.page, 'Token has been updated.');
+    return form;
   }
 
   async regenerate(name: string): Promise<void> {

@@ -78,14 +78,20 @@ export class AdminUsersPage {
 
   /** Edit: role, permissions and Lock User (all the admin can change on an existing user). */
   async editAccess(email: string, input: AccessInput): Promise<void> {
+    const form = await this.openEditAccess(email, input);
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'User has been updated.');
+  }
+
+  /** Opens Edit and changes the role, Lock User and permissions, without saving. */
+  async openEditAccess(email: string, input: AccessInput): Promise<Locator> {
     await this.action(email, 'Edit');
     const form = await dialog(this.page, 'User');
     await choose(this.page, form.getByLabel('Role', { exact: true }), input.role);
     if (input.toggleLock) await form.getByRole('switch', { name: 'Lock User' }).click();
     for (const id of input.togglePermissions ?? []) await permission(form, id).click();
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
-    await expectToast(this.page, 'User has been updated.');
+    return form;
   }
 
   async action(email: string, item: string): Promise<void> {
