@@ -41,8 +41,8 @@ demo('Assets: upload, organize, preview, rename, move and delete', async ({ page
   await d.caption('See them as a gallery');
   await d.click(page.getByRole('button', { name: 'Grid Layout' }), 1_400);
   await d.caption('Preview any image');
-  await d.click(card('mountain-sunrise.png').locator('.cursor-pointer').first(), 2_200);
-  const preview = page.getByRole('dialog').filter({ has: page.getByRole('img', { name: 'thumbnail' }) });
+  await d.click(card('mountain-sunrise.png').getByRole('button', { name: 'Open mountain-sunrise.png', exact: true }), 2_200);
+  const preview = page.getByRole('dialog', { name: 'mountain-sunrise.png' });
   await d.click(preview.getByRole('button', { name: 'Close', exact: true }), 600);
   await d.caption(undefined);
 

@@ -17,8 +17,16 @@ import { expect, test } from '../support/fixtures';
 const KNOWN_CONTRAST = [/^kbd$/, /#brn-tabs-label-danger-zone$/];
 
 async function scan(page: Page): Promise<string[]> {
-  // Wait for enter animations (the logo fades in): a half-faded element fails contrast.
-  await page.evaluate(() => Promise.all(document.getAnimations().map(it => it.finished.catch(() => undefined))));
+  // Wait for enter animations (the logo fades in): a half-faded element fails contrast. Only finite ones: an endless
+  // animation (a spinner) never finishes, and waiting for it would hang the test.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter(it => it.effect?.getComputedTiming().iterations !== Infinity)
+        .map(it => it.finished.catch(() => undefined)),
+    ),
+  );
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   return violations
     .filter(it => it.impact === 'serious' || it.impact === 'critical')

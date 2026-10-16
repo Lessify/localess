@@ -50,6 +50,8 @@ test.describe('Assets → grid layout and preview', () => {
     // List layout: the row opens the preview.
     await assets.row('hero.png').click();
     await expect(assets.preview).toBeVisible();
+    await expect(assets.previewOf('hero.png')).toBeVisible();
+    await expect(assets.preview.getByRole('img', { name: 'hero.png' })).toBeVisible();
     await expect(assets.preview).toContainText('hero.png');
     await expect(assets.preview).toContainText('W1 x H1');
     // Exact: the corner button is "close".

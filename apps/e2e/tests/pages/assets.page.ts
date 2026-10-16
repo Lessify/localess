@@ -163,19 +163,21 @@ export class AssetsPage {
     return this.page.getByRole('list', { name: 'Asset cards', exact: true }).getByRole('listitem', { name, exact: true });
   }
 
-  /**
-   * Opens a card: a folder, or an image's preview. The picture at the top of the card is what opens it, and it is
-   * hidden from assistive technology and has no name (shared `ll-asset-card`, outside this area; its host is
-   * `display: contents`, so a click by position in the card does not work either): the one CSS locator left here.
-   * TODO: give the picture `role="button"` and an `aria-label` in `ll-asset-card`, then locate it by role.
-   */
+  /** Opens a card: a folder, or an image's preview (the picture at the top of the card, a button named "Open …"). */
   async openCard(name: string): Promise<void> {
-    await this.card(name).locator('.cursor-pointer').first().click();
+    await this.card(name)
+      .getByRole('button', { name: `Open ${name}`, exact: true })
+      .click();
   }
 
-  /** The image preview dialog (it has no title: a picture with a caption and Close). */
+  /** The image preview dialog: a picture with a caption and Close, named after the file (a visually hidden title). */
   get preview(): Locator {
-    return this.page.getByRole('dialog').filter({ has: this.page.getByRole('img', { name: 'thumbnail' }) });
+    return this.page.getByRole('dialog').filter({ has: this.page.getByRole('button', { name: 'Close', exact: true }) });
+  }
+
+  /** The preview dialog of this file, found by its accessible name. */
+  previewOf(fileName: string): Locator {
+    return this.page.getByRole('dialog', { name: fileName, exact: true });
   }
 
   // --- Edit and delete -----------------------------------------------------------------------------------------------
