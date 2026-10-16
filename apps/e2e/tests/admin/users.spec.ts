@@ -1,5 +1,7 @@
-import { AdminUsersPage } from '../pages/admin-users.page';
+import { AdminUsersPage, permission } from '../pages/admin-users.page';
 import { choose, dialog, expectRowMenu } from '../pages/dialogs';
+import { expectToast } from '../pages/notifications';
+import { ResetPasswordPage } from '../pages/reset-password.page';
 import { Shell } from '../pages/shell.page';
 import { CSRF } from '../support/app-api';
 import { ADMIN } from '../support/env';
@@ -28,11 +30,11 @@ test.describe('Admin → Users', () => {
       await users.invite({ email, password: 'admin-password', displayName: 'New Admin', role: 'Admin' });
 
       // Post-check
-      await expect(users.roleCell(email)).toHaveText('ADMIN');
+      await expect(await users.roleCell(email)).toHaveText('ADMIN');
       await expect(users.row(email)).toContainText('New Admin');
       await expect(users.status(email, 'Active')).toBeVisible();
       await page.reload();
-      await expect(users.roleCell(email)).toHaveText('ADMIN');
+      await expect(await users.roleCell(email)).toHaveText('ADMIN');
       expect(await api.findUserByEmail(email)).toMatchObject({ email, displayName: 'New Admin', role: 'ADMIN' });
       expect(await probe.accessOf(email, 'admin-password')).toMatchObject({ signIn: true, role: 'ADMIN', users: 200, spaces: 200 });
       const own = await signInAs({ id: '', email, password: 'admin-password' });
@@ -59,9 +61,9 @@ test.describe('Admin → Users', () => {
       });
 
       // Post-check
-      await expect(users.roleCell(email)).toHaveText('CUSTOM');
+      await expect(await users.roleCell(email)).toHaveText('CUSTOM');
       await page.reload();
-      await expect(users.roleCell(email)).toHaveText('CUSTOM');
+      await expect(await users.roleCell(email)).toHaveText('CUSTOM');
       expect(await api.findUserByEmail(email)).toMatchObject({
         role: 'CUSTOM',
         permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'],
@@ -83,8 +85,8 @@ test.describe('Admin → Users', () => {
       await users.goto();
       await page.getByRole('button', { name: 'Invite' }).click();
       const form = await dialog(page, 'User Invite');
-      await choose(page, form.locator('#role'), 'Custom');
-      const offered = await form.locator('[role="checkbox"][id]').evaluateAll(boxes => boxes.map(it => it.id));
+      await choose(page, form.getByLabel('Role', { exact: true }), 'Custom');
+      const offered = await form.getByRole('checkbox').evaluateAll(boxes => boxes.map(it => it.id));
       expect(offered.length).toBeGreaterThan(20);
       await form.getByRole('button', { name: 'Cancel' }).click();
       await expect(form).toBeHidden();
@@ -93,7 +95,7 @@ test.describe('Admin → Users', () => {
       await users.invite({ email, password: 'all-permissions', role: 'Custom', permissions: offered });
 
       // Post-check: every one stored (a permission the server does not know failed the whole invite).
-      await expect(users.roleCell(email)).toHaveText('CUSTOM');
+      await expect(await users.roleCell(email)).toHaveText('CUSTOM');
       expect([...((await api.findUserByEmail(email))?.permissions ?? [])].sort()).toEqual([...offered].sort());
     });
 
@@ -110,9 +112,9 @@ test.describe('Admin → Users', () => {
       await users.invite({ email, password: 'none-password', role: 'None' });
 
       // Post-check
-      await expect(users.roleCell(email)).toHaveText('NONE');
+      await expect(await users.roleCell(email)).toHaveText('NONE');
       await page.reload();
-      await expect(users.roleCell(email)).toHaveText('NONE');
+      await expect(await users.roleCell(email)).toHaveText('NONE');
       expect((await api.findUserByEmail(email))?.role ?? null).toBeNull();
       expect(await probe.accessOf(email, 'none-password')).toMatchObject({ signIn: true, role: null, users: 403, spaces: 403 });
       const own = await signInAs({ id: '', email, password: 'none-password' });
@@ -136,7 +138,7 @@ test.describe('Admin → Users', () => {
       await form.getByRole('button', { name: 'Invite' }).click();
 
       // Post-check: an error, still one user, and the old password still works.
-      await expect(page.locator('[data-sonner-toast]').filter({ hasText: 'User can not be invited.' })).toBeVisible();
+      await expectToast(page, 'User can not be invited.');
       await expect(users.row(existing.email)).toHaveCount(1);
       expect((await api.listUsers()).filter(it => it.email === existing.email)).toHaveLength(1);
       expect((await probe.accessOf(existing.email, existing.password)).signIn).toBe(true);
@@ -152,19 +154,19 @@ test.describe('Admin → Users', () => {
       const form = await dialog(own, 'User Invite');
 
       // No Admin among the roles.
-      await form.locator('#role').click();
+      await form.getByLabel('Role', { exact: true }).click();
       await expect(own.getByRole('option', { name: 'Custom' })).toBeVisible();
       await expect(own.getByRole('option', { name: 'Admin' })).toHaveCount(0);
       await own.getByRole('option', { name: 'Custom' }).click();
       await expect(own.getByRole('listbox')).toHaveCount(0);
 
       // Only the held permissions can be ticked.
-      const checkboxes = form.locator('[role="checkbox"][id]');
+      const checkboxes = form.getByRole('checkbox');
       const enabled = await checkboxes.evaluateAll(boxes =>
         boxes.filter(it => !it.hasAttribute('disabled') && it.getAttribute('aria-disabled') !== 'true').map(it => it.id),
       );
       expect(enabled.sort()).toEqual(['TRANSLATION_READ', 'USER_MANAGEMENT']);
-      await expect(form.locator('[id="SPACE_MANAGEMENT"]')).toBeDisabled();
+      await expect(permission(form, 'SPACE_MANAGEMENT')).toBeDisabled();
     });
   });
 
@@ -175,25 +177,25 @@ test.describe('Admin → Users', () => {
 
       // Pre-check: Custom, no admin access.
       await users.goto();
-      await expect(users.roleCell(user.email)).toHaveText('CUSTOM');
+      await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'CUSTOM', users: 403, spaces: 200 });
 
       // Action 1: → Admin. Post-check.
       await users.editAccess(user.email, { role: 'Admin' });
-      await expect(users.roleCell(user.email)).toHaveText('ADMIN');
+      await expect(await users.roleCell(user.email)).toHaveText('ADMIN');
       expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'ADMIN' });
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'ADMIN', users: 200, spaces: 200 });
 
       // Action 2: → None. Post-check.
       await users.editAccess(user.email, { role: 'None' });
-      await expect(users.roleCell(user.email)).toHaveText('NONE');
+      await expect(await users.roleCell(user.email)).toHaveText('NONE');
       expect((await api.findUserByEmail(user.email))?.role ?? null).toBeNull();
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: null, users: 403, spaces: 403 });
 
       // Action 3: → Custom with user management. Post-check (also after a reload).
       await users.editAccess(user.email, { role: 'Custom', togglePermissions: ['USER_MANAGEMENT'] });
       await page.reload();
-      await expect(users.roleCell(user.email)).toHaveText('CUSTOM');
+      await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
       expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'CUSTOM', permissions: ['USER_MANAGEMENT'] });
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'CUSTOM', users: 200 });
     });
@@ -226,7 +228,7 @@ test.describe('Admin → Users', () => {
 
       // Pre-check: not locked; the user can change their name.
       await users.goto();
-      await expect(users.lockIcon(user.email)).toHaveCount(0);
+      await expect(await users.lockIcon(user.email)).toHaveCount(0);
       expect(await api.findUserByEmail(user.email)).toMatchObject({ lock: false });
       await probe.accessOf(user.email, user.password);
       expect((await rename()).ok()).toBe(true);
@@ -236,7 +238,7 @@ test.describe('Admin → Users', () => {
 
       // Post-check: locked in the API and shown in the table; the user's own change is refused.
       expect(await api.findUserByEmail(user.email)).toMatchObject({ lock: true });
-      await expect(users.lockIcon(user.email)).toBeVisible();
+      await expect(await users.lockIcon(user.email)).toBeVisible();
       expect((await rename()).ok()).toBe(false);
     });
   });
@@ -312,10 +314,9 @@ test.describe('Admin → Users', () => {
       expect(link).toContain('/auth/reset/confirm?token=');
       const own = await signedOutPage();
       await own.goto(link);
-      await own.getByLabel('New password', { exact: true }).fill('reset-password');
-      await own.getByLabel('Repeat new password').fill('reset-password');
-      await own.getByRole('button', { name: 'Change password' }).click();
-      await expect(own.getByRole('status')).toContainText('Your password has been changed');
+      const reset = new ResetPasswordPage(own);
+      await reset.setPassword('reset-password');
+      await reset.expectChanged();
 
       // Post-check: only the new password works.
       expect((await probe.accessOf(user.email, user.password)).signIn).toBe(false);

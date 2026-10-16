@@ -1,4 +1,5 @@
 import { AdminSpacesPage } from '../pages/admin-spaces.page';
+import { cancel } from '../pages/dialogs';
 import { Shell } from '../pages/shell.page';
 import { expect, test, uniqueName } from '../support/fixtures';
 
@@ -49,7 +50,7 @@ test.describe('Admin → Spaces', () => {
       expect((await api.listSpaces()).map(it => it.name)).not.toContain(name);
     });
 
-    test('refuses a name shorter than 3 characters', async ({ page }) => {
+    test('refuses a name shorter than 3 characters', async ({ page, api }) => {
       const spaces = new AdminSpacesPage(page);
       await spaces.goto();
 
@@ -64,8 +65,10 @@ test.describe('Admin → Spaces', () => {
       // Post-check: an error, and no way to submit.
       await expect(form.getByText('Minimum length is 3.')).toBeVisible();
       await expect(form.getByRole('button', { name: 'Create' })).toBeDisabled();
-      await form.getByRole('button', { name: 'Cancel' }).click();
+      await cancel(form);
       await expect(spaces.row('ab')).toHaveCount(0);
+      // Other tests create spaces at the same time: only "ab" is checked.
+      expect((await api.listSpaces()).filter(it => it.name === 'ab')).toEqual([]);
     });
   });
 
@@ -112,8 +115,11 @@ test.describe('Admin → Spaces', () => {
   });
 
   test.describe('delete', () => {
-    test('deletes a space with its content', async ({ page, api, space }) => {
+    test('deletes a space with its content', async ({ page, api, space, request }) => {
       await api.createTranslation(space.id, { key: 'gone.with.space', locales: { en: 'Bye' } });
+      await api.publishTranslations(space.id);
+      const { token } = await api.createToken(space.id, { name: 'Website', type: 'public' });
+      const cdn = () => request.get(`/api/v1/spaces/${space.id}/translations/en?token=${token}`);
       const spaces = new AdminSpacesPage(page);
 
       // Pre-check: listed, readable, with content.
@@ -121,6 +127,7 @@ test.describe('Admin → Spaces', () => {
       await expect(spaces.row(space.name)).toBeVisible();
       expect(await api.findSpace(space.id)).toBeDefined();
       expect(await api.get<unknown[]>(`/api/app/spaces/${space.id}/translations`)).toHaveLength(1);
+      expect((await cdn()).status()).toBe(200);
 
       // Action
       await spaces.delete(space.name);
@@ -128,6 +135,9 @@ test.describe('Admin → Spaces', () => {
       // Post-check: gone from the table (also after a reload) and from the API.
       await expect(spaces.row(space.name)).toHaveCount(0);
       expect(await api.findSpace(space.id)).toBeUndefined();
+      // Its content went with it, and the CDN no longer finds the space.
+      expect(await api.get(`/api/app/spaces/${space.id}/translations`)).toEqual([]);
+      expect((await cdn()).status()).toBe(404);
       await page.reload();
       // Loaded (the seeded space is listed; the CLI test may add a second one for a moment).
       await expect(spaces.row('Hello World').first()).toBeVisible();

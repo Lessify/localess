@@ -23,7 +23,7 @@ test.describe('Space settings → Danger Zone', () => {
     await expect(translations.item('greeting')).toBeVisible();
     await page.goto(`/features/spaces/${space.id}/settings/danger-zone`);
 
-    await page.locator('#deleteTranslations').click();
+    await page.getByRole('button', { name: 'Delete All Translations' }).click();
     await confirmDialog(page, 'Delete All Translations');
 
     await expectToast(page, 'All translations have been deleted.');

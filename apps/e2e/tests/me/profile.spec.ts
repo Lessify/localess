@@ -79,6 +79,8 @@ test.describe('Me → profile', () => {
       // Action 1: a valid URL. Post-check.
       await me.updateProfile({ photoURL: avatarUrl });
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
+      await page.reload();
+      await expect(me.avatar).toHaveAttribute('src', avatarUrl);
       const users = await api.get<{ email: string; photoURL?: string }[]>('/api/app/users');
       expect(users.find(it => it.email === user.email)?.photoURL).toBe(avatarUrl);
 
@@ -87,6 +89,7 @@ test.describe('Me → profile', () => {
       await me.save(form, 'User can not be updated.');
       await page.reload();
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
+      expect((await api.findUserByEmail(user.email))?.photoURL).toBe(avatarUrl);
     });
 
     test('cancelling keeps the display name', async ({ api, createUser, signInAs }) => {

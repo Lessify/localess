@@ -44,6 +44,8 @@ export class WebhookReceiver {
   }
 
   async close(): Promise<void> {
+    // Keep-alive connections would hold close() open until they time out.
+    this.server.closeAllConnections();
     await new Promise<void>(resolve => this.server.close(() => resolve()));
   }
 }

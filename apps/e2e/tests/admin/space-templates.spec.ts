@@ -1,5 +1,4 @@
 import { AdminSpacesPage } from '../pages/admin-spaces.page';
-import { dialog } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { SchemasPage } from '../pages/schemas.page';
 import type { AppApi } from '../support/app-api';
@@ -33,11 +32,7 @@ test.describe('Admin → Spaces → templates', () => {
       await expect(form.getByRole('radio', { name: /^Empty/ })).toBeChecked();
 
       // Action
-      await form
-        .locator(`label`)
-        .filter({ hasText: new RegExp(`^\\s*${template}`) })
-        .click();
-      await expect(form.getByRole('radio', { name: new RegExp(`^${template}`) })).toBeChecked();
+      await spaces.chooseTemplate(form, template);
       await form.getByRole('button', { name: 'Create' }).click();
       await expect(form).toBeHidden();
       await expectToast(page, 'Space has been created.');
@@ -59,10 +54,7 @@ test.describe('Admin → Spaces → templates', () => {
     cleanup.space(name);
     await spaces.goto();
     const form = await spaces.openCreate(name);
-    await form
-      .locator('label')
-      .filter({ hasText: /^\s*Blog/ })
-      .click();
+    await spaces.chooseTemplate(form, 'Blog');
     await form.getByRole('button', { name: 'Create' }).click();
     await expectToast(page, 'Space has been created.');
     const id = await spaces.idOf(name);
@@ -74,21 +66,26 @@ test.describe('Admin → Spaces → templates', () => {
     );
     expect(post.type).toBe('ROOT');
     expect(post.fields?.length).toBeGreaterThan(2);
-    await api.createDocument(id, { name: 'Hello', slug: 'hello', schema: 'blogpost' });
+    const doc = await api.createDocument(id, { name: 'Hello', slug: 'hello', schema: 'blogpost' });
+    expect(await api.get(`/api/app/spaces/${id}/contents/${doc.id}`)).toMatchObject({ name: 'Hello', schema: 'blogpost' });
   });
 
-  test('a user who can not create schemas is not offered templates', async ({ createUser, signInAs, cleanup }) => {
+  test('a user who can not create schemas is not offered templates', async ({ api, createUser, signInAs, cleanup }) => {
     const user = await createUser({ permissions: ['SPACE_MANAGEMENT'] });
     const own = await signInAs(user);
     const name = uniqueName('E2E No Template');
     cleanup.space(name);
-    await own.goto('/features/admin/spaces');
-    await own.getByRole('button', { name: 'Add Space' }).click();
-    const form = await dialog(own, 'Create Space');
-    await form.getByLabel('Name', { exact: true }).fill(name);
+    const spaces = new AdminSpacesPage(own);
+    await spaces.goto();
+    const form = await spaces.openCreate(name);
     await expect(form.getByText('Template', { exact: true })).toHaveCount(0);
     await expect(form.getByRole('radio')).toHaveCount(0);
     await form.getByRole('button', { name: 'Create' }).click();
     await expectToast(own, 'Space has been created.');
+
+    // An empty space: no schemas.
+    await expect(spaces.row(name)).toBeVisible();
+    const id = await spaces.idOf(name);
+    expect(await schemaNames(api, id)).toEqual([]);
   });
 });

@@ -2,7 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 
 import { CSRF } from '../support/app-api';
 import { type AppRoute, appRoutes } from '../support/app-routes';
-import { anonymousRequest, expect, type TestUser, test } from '../support/fixtures';
+import { expect, type TestUser, test } from '../support/fixtures';
 
 // Every App API route × every permission, read from the server's access decorators (`@RequirePermission` and co.), so
 // a new route is covered as soon as it exists. Requests use ids that match nothing: a let-through request answers
@@ -96,8 +96,7 @@ test.describe('App API permission matrix', () => {
 
   test('each route answers 401 without a session, 403 without its permission, and lets the others through', async ({
     createUser,
-    playwright,
-    baseURL,
+    newClient,
   }) => {
     const routes = appRoutes();
     // One user per permission, one holding both of translate's (the only "all of" route), no role, an admin.
@@ -108,35 +107,30 @@ test.describe('App API permission matrix', () => {
       { label: 'admin', role: 'ADMIN', permissions: [] },
     ];
     const principals: Principal[] = [];
-    const anonymous = await anonymousRequest(playwright, baseURL);
-    try {
-      await inPool(specs, 8, async spec => {
-        const user: TestUser = await createUser({ role: spec.role, permissions: spec.permissions });
-        const client = await anonymousRequest(playwright, baseURL);
-        const login = await client.post('/api/auth/login', { headers: CSRF, data: { email: user.email, password: user.password } });
-        expect(login.ok(), `sign in as ${spec.label}`).toBeTruthy();
-        principals.push({ ...spec, client });
-      });
+    const anonymous = await newClient();
+    await inPool(specs, 8, async spec => {
+      const user: TestUser = await createUser({ role: spec.role, permissions: spec.permissions });
+      const client = await newClient();
+      const login = await client.post('/api/auth/login', { headers: CSRF, data: { email: user.email, password: user.password } });
+      expect(login.ok(), `sign in as ${spec.label}`).toBeTruthy();
+      principals.push({ ...spec, client });
+    });
 
-      const wrong: string[] = [];
-      await inPool(routes, 8, async route => {
-        const name = `${route.method} ${route.path} (${route.source})`;
-        const unauthenticated = await call(anonymous, route);
-        if (unauthenticated.status() !== 401) wrong.push(`${name}: no session → ${unauthenticated.status()}, expected 401`);
-        for (const who of principals) {
-          const status = (await call(who.client, route)).status();
-          const expectAllowed = allowed(route, who);
-          if (expectAllowed && (status === 401 || status === 403)) wrong.push(`${name}: ${who.label} → ${status}, expected to pass`);
-          // 501: a plugin that is not configured (Unsplash without a key).
-          if (expectAllowed && status >= 500 && status !== 501)
-            wrong.push(`${name}: ${who.label} → ${status} for an unknown id or an empty body`);
-          if (!expectAllowed && status !== 403) wrong.push(`${name}: ${who.label} → ${status}, expected 403`);
-        }
-      });
-      expect(wrong).toEqual([]);
-    } finally {
-      await anonymous.dispose();
-      for (const who of principals) await who.client.dispose();
-    }
+    const wrong: string[] = [];
+    await inPool(routes, 8, async route => {
+      const name = `${route.method} ${route.path} (${route.source})`;
+      const unauthenticated = await call(anonymous, route);
+      if (unauthenticated.status() !== 401) wrong.push(`${name}: no session → ${unauthenticated.status()}, expected 401`);
+      for (const who of principals) {
+        const status = (await call(who.client, route)).status();
+        const expectAllowed = allowed(route, who);
+        if (expectAllowed && (status === 401 || status === 403)) wrong.push(`${name}: ${who.label} → ${status}, expected to pass`);
+        // 501: a plugin that is not configured (Unsplash without a key).
+        if (expectAllowed && status >= 500 && status !== 501)
+          wrong.push(`${name}: ${who.label} → ${status} for an unknown id or an empty body`);
+        if (!expectAllowed && status !== 403) wrong.push(`${name}: ${who.label} → ${status}, expected 403`);
+      }
+    });
+    expect(wrong).toEqual([]);
   });
 });

@@ -187,6 +187,7 @@ export interface UserDto {
   id: string;
   email: string;
   displayName?: string;
+  photoURL?: string;
   role?: 'ADMIN' | 'CUSTOM' | null;
   permissions?: string[];
   lock?: boolean;

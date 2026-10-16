@@ -1,7 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { rowMenu } from './dialogs';
+import { dialog, rowMenu } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
+import { dataRows } from './table';
 
 /** Space → Settings → Locales (`/features/spaces/:spaceId/settings/locales`). */
 export class LocalesPage {
@@ -19,23 +20,23 @@ export class LocalesPage {
 
   async add(localeName: string): Promise<void> {
     await this.page.getByRole('button', { name: 'Add Locale' }).click();
-    const dialog = this.page.getByRole('dialog').filter({ hasText: 'Add Locale' });
-    await dialog.getByRole('combobox').fill(localeName);
+    const form = await dialog(this.page, 'Add Locale');
+    await form.getByRole('combobox').fill(localeName);
     await this.page.getByRole('option', { name: localeName, exact: true }).click();
-    await dialog.getByRole('button', { name: 'Save' }).click();
-    await expect(dialog).toBeHidden();
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
     await expectToast(this.page, 'Locale has been added.');
   }
 
   /** The locale ids in the table's order (the space's order). */
   async ids(): Promise<string[]> {
-    const cells = await this.page.locator('tr[ll-row] td:first-child').allInnerTexts();
-    return cells.map(it => it.trim());
+    const rows = await dataRows(this.page.getByRole('table')).all();
+    return Promise.all(rows.map(async row => (await row.getByRole('cell').first().innerText()).trim()));
   }
 
   /** The Default column's check mark. */
   isDefault(localeId: string): Locator {
-    return this.row(localeId).locator('td').nth(5).locator('ng-icon');
+    return this.row(localeId).getByRole('img', { name: 'Default locale' });
   }
 
   async setDefault(localeId: string, localeName: string): Promise<void> {

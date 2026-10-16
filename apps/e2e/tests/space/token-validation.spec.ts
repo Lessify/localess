@@ -1,21 +1,21 @@
 import { dialog } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
+import { TokensPage, tokensOf } from '../pages/tokens.page';
 import type { AppApi } from '../support/app-api';
 import { expect, test, uniqueName } from '../support/fixtures';
 
 async function tokenNames(api: AppApi, spaceId: string): Promise<string[]> {
-  const tokens = await api.get<{ name: string }[]>(`/api/app/spaces/${spaceId}/tokens`);
-  return tokens.map(it => it.name).sort();
+  return (await tokensOf(api, spaceId)).map(it => it.name).sort();
 }
 
 test.describe('Space settings → Access Tokens', () => {
   test('the Token Form refuses a name under 3 characters and saves a valid one', async ({ page, api, space }) => {
     const name = uniqueName('Website');
-    const row = (text: string) => page.getByRole('row').filter({ hasText: text });
+    const tokens = new TokensPage(page);
+    const row = (text: string) => tokens.row(text);
 
     // Pre-check: the space has only its auto-generated preview token, in the UI and the API.
-    await page.goto(`/features/spaces/${space.id}/settings/tokens`);
-    await expect(row('Auto Generated Preview Token')).toBeVisible();
+    await tokens.goto(space.id);
     expect(await tokenNames(api, space.id)).toEqual(['Auto Generated Preview Token']);
 
     await page.getByRole('button', { name: 'Add Token' }).click();
@@ -29,9 +29,10 @@ test.describe('Space settings → Access Tokens', () => {
     await nameInput.fill('ab');
     await nameInput.blur();
 
-    // Post-check: an error, and no way to save.
+    // Post-check: an error, no way to save, nothing stored.
     await expect(form.getByText('Minimum length is 3.')).toBeVisible();
     await expect(save).toBeDisabled();
+    expect(await tokenNames(api, space.id)).toEqual(['Auto Generated Preview Token']);
 
     // Action: a valid name.
     await nameInput.fill(name);

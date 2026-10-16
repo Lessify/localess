@@ -1,5 +1,5 @@
 import { CSRF } from '../support/app-api';
-import { anonymousRequest, expect, test } from '../support/fixtures';
+import { expect, test, uniqueName } from '../support/fixtures';
 
 test.describe('Platform', () => {
   test('health endpoint reports ok @smoke', async ({ request }) => {
@@ -25,18 +25,21 @@ test.describe('Platform', () => {
     }
   });
 
-  test('the App API needs a session', async ({ playwright, baseURL }) => {
-    const anonymous = await anonymousRequest(playwright, baseURL);
+  test('the App API needs a session', async ({ newClient }) => {
+    const anonymous = await newClient();
     expect((await anonymous.get('/api/app/spaces')).status()).toBe(401);
     expect((await anonymous.get('/api/auth/me')).status()).toBe(401);
-    await anonymous.dispose();
   });
 
-  test('state-changing App API calls need the X-Requested-With header (CSRF)', async ({ request }) => {
-    const withoutHeader = await request.post('/api/app/spaces', { data: { name: 'CSRF' } });
+  test('state-changing App API calls need the X-Requested-With header (CSRF)', async ({ request, api, cleanup }) => {
+    const refused = uniqueName('CSRF');
+    const accepted = uniqueName('CSRF check');
+    cleanup.space(refused);
+    cleanup.space(accepted);
+    const withoutHeader = await request.post('/api/app/spaces', { data: { name: refused } });
     expect(withoutHeader.status()).toBe(403);
-    const withHeader = await request.post('/api/app/spaces', { data: { name: 'CSRF check' }, headers: CSRF });
+    expect((await api.listSpaces()).map(it => it.name)).not.toContain(refused);
+    const withHeader = await request.post('/api/app/spaces', { data: { name: accepted }, headers: CSRF });
     expect(withHeader.ok()).toBeTruthy();
-    await request.delete(`/api/app/spaces/${(await withHeader.json()).id}`, { headers: CSRF });
   });
 });

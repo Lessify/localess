@@ -61,6 +61,8 @@ test.describe('Developers → Webhooks', () => {
 
     await expect(list.row('Deploy hook')).toContainText('Enabled');
     await expect(list.row('Deploy hook')).toContainText(receiver.url);
+    await page.reload();
+    await expect(list.row('Deploy hook')).toContainText(receiver.url);
     expect(await webhooks(api, space.id)).toMatchObject([
       { name: 'Deploy hook', url: receiver.url, events: ['translation.published'], enabled: true },
     ]);
@@ -80,6 +82,8 @@ test.describe('Developers → Webhooks', () => {
 
       await expect(list.row('New hook')).toContainText(receiver.url);
       await expect(list.row('Old hook')).toHaveCount(0);
+      await page.reload();
+      await expect(list.row('New hook')).toContainText(receiver.url);
       const [stored] = await webhooks(api, space.id);
       expect(stored).toMatchObject({ name: 'New hook', url: receiver.url, enabled: true });
       expect([...stored.events].sort()).toEqual(['translation.changed', 'translation.published']);
@@ -103,6 +107,8 @@ test.describe('Developers → Webhooks', () => {
     await list.toggle('Toggle me', 'Disable');
 
     await expect(list.row('Toggle me')).toContainText('Disabled');
+    await page.reload();
+    await expect(list.row('Toggle me')).toContainText('Disabled');
     expect((await webhooks(api, space.id))[0].enabled).toBe(false);
     await publishExpectingNoDelivery(api, space.id, receiver);
 
@@ -123,6 +129,8 @@ test.describe('Developers → Webhooks', () => {
     await list.delete('Remove me');
 
     await expect(list.row('Remove me')).toHaveCount(0);
+    await expect(list.empty).toBeVisible();
+    await page.reload();
     await expect(list.empty).toBeVisible();
     expect(await webhooks(api, space.id)).toEqual([]);
     await publishExpectingNoDelivery(api, space.id, receiver);
@@ -166,13 +174,8 @@ test.describe('Developers → Webhooks', () => {
     await expect(detail.logs).toHaveCount(1);
     await expect(detail.logs.first()).toContainText('Failure');
     await detail.logs.first().click();
-    const field = (term: string) =>
-      page
-        .locator('dl > div')
-        .filter({ has: page.locator('dt', { hasText: term }) })
-        .locator('dd');
-    await expect(field('Status Code')).toHaveText(/^\s*500\b/);
-    await expect(field('Error Type')).toHaveText(/^\s*http\s*$/i);
-    await expect(field('Target URL')).toHaveText(receiver.url);
+    await expect(detail.logField('Status Code')).toHaveText(/^\s*500\b/);
+    await expect(detail.logField('Error Type')).toHaveText(/^\s*http\s*$/i);
+    await expect(detail.logField('Target URL')).toHaveText(receiver.url);
   });
 });

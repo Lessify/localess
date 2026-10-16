@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
+import { dialog } from './dialogs';
 import { dragAbove } from './drag';
 import { confirmDialog, expectToast } from './notifications';
 
@@ -17,9 +18,9 @@ export class EnvironmentsPage {
     await expect(this.page.getByRole('button', { name: 'Add Environment' })).toBeVisible();
   }
 
-  /** The environment cards (the sidebar has list items too). */
+  /** The environment cards. */
   items(): Locator {
-    return this.page.locator('[role="listitem"][hlmItem]');
+    return this.page.getByRole('list', { name: 'Environments' }).getByRole('listitem');
   }
 
   item(name: string): Locator {
@@ -59,11 +60,10 @@ export class EnvironmentsPage {
   }
 
   private async fillDialog(title: string, { name, url }: EnvironmentInput): Promise<void> {
-    const dialog = this.page.getByRole('dialog').filter({ hasText: title });
-    await expect(dialog).toBeVisible();
-    await dialog.getByLabel('Name').fill(name);
-    await dialog.getByLabel('URL').fill(url);
-    await dialog.getByRole('button', { name: 'Save' }).click();
-    await expect(dialog).toBeHidden();
+    const form = await dialog(this.page, title);
+    await form.getByLabel('Name').fill(name);
+    await form.getByLabel('URL').fill(url);
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
   }
 }

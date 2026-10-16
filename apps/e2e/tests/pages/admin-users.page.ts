@@ -3,6 +3,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { choose, dialog, rowMenu } from './dialogs';
 import { ADMIN } from '../support/env';
 import { confirmDialog, expectToast } from './notifications';
+import { cellUnder } from './table';
 
 export type RoleLabel = 'None' | 'Custom' | 'Admin';
 
@@ -23,6 +24,14 @@ export interface AccessInput {
   toggleLock?: boolean;
 }
 
+/**
+ * A permission's checkbox in the invite or edit dialog, by the permission id (`TRANSLATION_READ`): its label ("Read")
+ * repeats in every group, the id is unique and is what the API stores.
+ */
+export function permission(form: Locator, id: string): Locator {
+  return form.locator(`[role="checkbox"][id="${id}"]`);
+}
+
 /** Admin → Users (`/features/admin/users`). */
 export class AdminUsersPage {
   constructor(private readonly page: Page) {}
@@ -39,14 +48,13 @@ export class AdminUsersPage {
   }
 
   /** The Role column of a user's row: `ADMIN`, `CUSTOM` or `NONE`. */
-  roleCell(email: string): Locator {
-    // Email, Name, Active, Providers, Role, ...
-    return this.row(email).getByRole('cell').nth(4);
+  roleCell(email: string): Promise<Locator> {
+    return cellUnder(this.page.getByRole('table'), this.row(email), 'Role');
   }
 
   /** The lock icon of a locked custom user. */
-  lockIcon(email: string): Locator {
-    return this.roleCell(email).getByRole('img', { name: 'Locked' });
+  async lockIcon(email: string): Promise<Locator> {
+    return (await this.roleCell(email)).getByRole('img', { name: 'Locked' });
   }
 
   /** The Active column's icon: "User is Active" or "User is Disabled". */
@@ -60,9 +68,9 @@ export class AdminUsersPage {
     await form.getByLabel('Email').fill(input.email);
     await form.getByLabel('Password').fill(input.password);
     if (input.displayName) await form.getByLabel('Display Name').fill(input.displayName);
-    await choose(this.page, form.locator('#role'), input.role);
+    await choose(this.page, form.getByLabel('Role', { exact: true }), input.role);
     // Checkbox labels repeat per group ("Read", "Create"), the ids are the permission ids.
-    for (const permission of input.permissions ?? []) await form.locator(`[id="${permission}"]`).click();
+    for (const id of input.permissions ?? []) await permission(form, id).click();
     await form.getByRole('button', { name: 'Invite' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'User has been invited.');
@@ -72,9 +80,9 @@ export class AdminUsersPage {
   async editAccess(email: string, input: AccessInput): Promise<void> {
     await this.action(email, 'Edit');
     const form = await dialog(this.page, 'User');
-    await choose(this.page, form.locator('#role'), input.role);
-    if (input.toggleLock) await form.locator('label[for="lock"]').click();
-    for (const permission of input.togglePermissions ?? []) await form.locator(`[id="${permission}"]`).click();
+    await choose(this.page, form.getByLabel('Role', { exact: true }), input.role);
+    if (input.toggleLock) await form.getByRole('switch', { name: 'Lock User' }).click();
+    for (const id of input.togglePermissions ?? []) await permission(form, id).click();
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'User has been updated.');

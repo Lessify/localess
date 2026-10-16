@@ -1,7 +1,9 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
+import { escapeRegExp } from '../support/text';
 import { dialog } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
+import { cellUnder } from './table';
 
 /** Admin → Spaces (`/features/admin/spaces`). */
 export class AdminSpacesPage {
@@ -28,6 +30,14 @@ export class AdminSpacesPage {
     return form;
   }
 
+  /** Picks a template in the open create dialog (a radio whose label starts with the template's name). */
+  async chooseTemplate(form: Locator, template: string): Promise<void> {
+    const radio = form.getByRole('radio', { name: new RegExp(`^${escapeRegExp(template)}`) });
+    // The radio input is visually hidden: click its label's title, as a user does.
+    await form.getByText(template, { exact: true }).click();
+    await expect(radio).toBeChecked();
+  }
+
   async create(name: string): Promise<void> {
     const form = await this.openCreate(name);
     await form.getByRole('button', { name: 'Create' }).click();
@@ -37,7 +47,7 @@ export class AdminSpacesPage {
 
   /** The id from the row's ID column. */
   async idOf(name: string): Promise<string> {
-    return (await this.row(name).getByRole('cell').first().innerText()).trim();
+    return (await (await cellUnder(this.page.getByRole('table'), this.row(name), 'ID')).innerText()).trim();
   }
 
   /** Opens the edit dialog of a space and fills the new name, without submitting. */

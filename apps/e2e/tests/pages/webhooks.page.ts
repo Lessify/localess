@@ -30,7 +30,7 @@ export class WebhooksPage {
   }
 
   row(name: string): Locator {
-    return this.page.locator('tr[ll-row]').filter({ hasText: name });
+    return this.page.getByRole('row').filter({ hasText: name });
   }
 
   async create(input: WebhookInput & { name: string; url: string }): Promise<void> {
@@ -60,6 +60,15 @@ export class WebhooksPage {
   /** The log rows of the webhook page (not their expanded details). */
   get logs(): Locator {
     return this.page.locator('tr[ll-row]').filter({ has: this.page.locator('td.font-mono') });
+  }
+
+  /** A value of an expanded log's details (a term / definition pair of its description list). */
+  logField(term: string): Locator {
+    // Each pair is wrapped in a <div> of the <dl>.
+    return this.page
+      .locator('dl > div')
+      .filter({ has: this.page.getByRole('term').filter({ hasText: term }) })
+      .getByRole('definition');
   }
 
   private async fill(title: string, input: WebhookInput): Promise<void> {

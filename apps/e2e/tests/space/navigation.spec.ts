@@ -18,19 +18,22 @@ test.describe('Navigation', () => {
     const shell = new Shell(page);
     await page.goto(`/features/spaces/${space.id}/dashboard`);
 
-    const pages: [string, RegExp, string | RegExp][] = [
+    const pages: [string, RegExp, string][] = [
       ['Translations', /\/translations$/, 'Add Translation'],
       ['Content', /\/contents$/, 'Add Content'],
       ['Assets', /\/assets$/, 'Upload Assets'],
       ['Schemas', /\/schemas$/, 'Add Schema'],
       ['Settings', /\/settings\/general$/, 'Save'],
-      ['Dashboard', /\/dashboard$/, /./],
     ];
     for (const [link, url, button] of pages) {
       await shell.navLink(link).click();
       await expect(page, link).toHaveURL(url);
-      if (typeof button === 'string') await expect(page.getByRole('button', { name: button })).toBeVisible();
+      await expect(page.getByRole('button', { name: button })).toBeVisible();
     }
+    // The Dashboard has no button of its own: its overview cards.
+    await shell.navLink('Dashboard').click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole('heading', { name: 'Translation Keys' })).toBeVisible();
 
     await page.goto(`/features/spaces/${space.id}/developers/open-api`);
     await expect(page.locator('elements-api')).toBeAttached();

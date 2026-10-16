@@ -64,6 +64,8 @@ interface Fixtures {
   signedOutPage: () => Promise<Page>;
   /** Signs in with an email and password in a client of its own, and probes what that user may do. */
   probe: SessionProbe;
+  /** HTTP clients without the admin session (token-only and signed-out calls), disposed after the test. */
+  newClient: (extraHTTPHeaders?: Record<string, string>) => Promise<APIRequestContext>;
   /** Deletes, after the test, spaces and users a test creates through the UI (by name / email). */
   cleanup: { space: (name: string) => void; user: (email: string) => void };
 }
@@ -143,6 +145,16 @@ export const test = base.extend<Fixtures>({
     });
     for (const context of contexts) await context.close();
     await expectNoAppErrors(errors, allowedAppErrors);
+  },
+
+  newClient: async ({ playwright, baseURL }, use) => {
+    const clients: APIRequestContext[] = [];
+    await use(async extraHTTPHeaders => {
+      const client = await anonymousRequest(playwright, baseURL, extraHTTPHeaders);
+      clients.push(client);
+      return client;
+    });
+    for (const client of clients) await client.dispose();
   },
 
   probe: async ({ playwright, baseURL }, use) => {

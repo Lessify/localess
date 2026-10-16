@@ -1,48 +1,36 @@
-import { dialog } from '../pages/dialogs';
-import { confirmDialog, expectToast } from '../pages/notifications';
-import type { Page } from '@playwright/test';
-import type { AppApi } from '../support/app-api';
+import { TokensPage, tokensOf, tokenValue } from '../pages/tokens.page';
 import { expect, test } from '../support/fixtures';
 
-async function createToken(page: Page, name: string, type: 'Public' | 'Preview' | 'Management'): Promise<void> {
-  await page.getByRole('button', { name: 'Add Token' }).click();
-  const form = await dialog(page, 'Token Form');
-  await form.getByLabel('Name', { exact: true }).fill(name);
-  // The radio's label also holds a description, so it is picked by the radio's id.
-  await form.locator(`label[for="token-type-${type.toLowerCase()}"]`).click();
-  await form.getByRole('button', { name: 'Save' }).click();
-  await expectToast(page, 'Token has been created.');
-}
-
-async function tokenNamed(api: AppApi, spaceId: string, name: string): Promise<string> {
-  const tokens = await api.get<{ name: string; token: string }[]>(`/api/app/spaces/${spaceId}/tokens`);
-  const token = tokens.find(it => it.name === name);
-  expect(token, `token '${name}'`).toBeDefined();
-  return token!.token;
-}
-
+// Pre-check → action (UI) → post-check (the list, again after a reload, the App API, and the CDN API with the value).
 test.describe('Space settings → Access Tokens', () => {
   test('creates a public token that opens the CDN API @smoke', async ({ page, api, space, request }) => {
     await api.createTranslation(space.id, { key: 'k1', locales: { en: 'v' } });
     await api.publishTranslations(space.id);
-    await page.goto(`/features/spaces/${space.id}/settings/tokens`);
-    // Every space starts with a preview token.
-    await expect(page.getByRole('row').filter({ hasText: 'Auto Generated Preview Token' })).toBeVisible();
+    const tokens = new TokensPage(page);
 
-    await createToken(page, 'Website', 'Public');
-    const row = page.getByRole('row').filter({ hasText: 'Website' });
-    await expect(row).toContainText('Public');
+    // Pre-check: only the auto-generated preview token.
+    await tokens.goto(space.id);
+    expect((await tokensOf(api, space.id)).map(it => it.name)).toEqual(['Auto Generated Preview Token']);
 
-    const token = await tokenNamed(api, space.id, 'Website');
+    // Action
+    await tokens.create('Website', 'Public');
+
+    // Post-check
+    await expect(tokens.row('Website')).toContainText('Public');
+    await page.reload();
+    await expect(tokens.row('Website')).toContainText('Public');
+    expect((await tokensOf(api, space.id)).find(it => it.name === 'Website')).toMatchObject({ type: 'public' });
+    const token = await tokenValue(api, space.id, 'Website');
     const cdn = await request.get(`/api/v1/spaces/${space.id}/translations/en?token=${token}`);
     expect(await cdn.json()).toEqual({ k1: 'v' });
   });
 
   test('shows a management token once, in a dialog that must be acknowledged', async ({ page, api, space }) => {
-    await page.goto(`/features/spaces/${space.id}/settings/tokens`);
+    const tokens = new TokensPage(page);
+    await tokens.goto(space.id);
 
-    await createToken(page, 'CI pipeline', 'Management');
-    const secret = await dialog(page, 'Copy your token');
+    await tokens.create('CI pipeline', 'Management');
+    const secret = await tokens.copiedDialog();
     const shown = secret.getByText(/^mgt_/);
     await expect(shown).toBeVisible();
     const value = (await shown.innerText()).trim();
@@ -53,36 +41,42 @@ test.describe('Space settings → Access Tokens', () => {
     await expect(secret).toBeHidden();
 
     // Once: the API lists the token without its value, and the page doesn't show it, also after a reload.
-    const row = page.getByRole('row').filter({ hasText: 'CI pipeline' });
-    await expect(row).toContainText('Management');
-    const tokens = await api.get<{ name: string; type: string; token?: string }[]>(`/api/app/spaces/${space.id}/tokens`);
-    const listed = tokens.find(it => it.name === 'CI pipeline');
+    await expect(tokens.row('CI pipeline')).toContainText('Management');
+    const listed = (await tokensOf(api, space.id)).find(it => it.name === 'CI pipeline');
     expect(listed).toMatchObject({ type: 'management' });
     expect(listed).not.toHaveProperty('token');
     await page.reload();
-    await expect(row).toContainText('Management');
+    await expect(tokens.row('CI pipeline')).toContainText('Management');
     await expect(page.getByText(value)).toHaveCount(0);
   });
 
   test('regenerating a token cuts off the old value; deleting removes it', async ({ page, api, space, request }) => {
     await api.createTranslation(space.id, { key: 'k1', locales: { en: 'v' } });
     await api.publishTranslations(space.id);
-    const { token: oldValue } = await api.createToken(space.id, { name: 'Rotate me', type: 'public' });
+    const { id, token: oldValue } = await api.createToken(space.id, { name: 'Rotate me', type: 'public' });
     const cdn = (token: string) => request.get(`/api/v1/spaces/${space.id}/translations/en?token=${token}`);
-    await page.goto(`/features/spaces/${space.id}/settings/tokens`);
-    const row = page.getByRole('row').filter({ hasText: 'Rotate me' });
+    const tokens = new TokensPage(page);
 
-    await row.getByRole('button', { name: 'Regenerate' }).click();
-    await confirmDialog(page, 'Regenerate Token');
-    await expectToast(page, "Token 'Rotate me' has been regenerated.");
+    // Pre-check
+    await tokens.goto(space.id);
+    await expect(tokens.row('Rotate me')).toBeVisible();
+    expect((await cdn(oldValue)).status()).toBe(200);
+
+    // Action: regenerate. Post-check: the same token (id), a new value; only the new one opens the CDN.
+    await tokens.regenerate('Rotate me');
+    const newValue = await tokenValue(api, space.id, 'Rotate me');
+    expect(newValue).not.toBe(oldValue);
+    expect((await tokensOf(api, space.id)).find(it => it.name === 'Rotate me')?.id).toBe(id);
     expect((await cdn(oldValue)).status()).toBe(401);
-    const newValue = await tokenNamed(api, space.id, 'Rotate me');
     expect((await cdn(newValue)).status()).toBe(200);
 
-    await row.getByRole('button', { name: 'Delete' }).click();
-    await confirmDialog(page, 'Delete Token');
-    await expectToast(page, "Token 'Rotate me' has been deleted.");
-    await expect(row).toHaveCount(0);
+    // Action: delete. Post-check: gone from the list (also after a reload) and the API; its value no longer works.
+    await tokens.delete('Rotate me');
+    await expect(tokens.row('Rotate me')).toHaveCount(0);
+    await page.reload();
+    await expect(tokens.row('Auto Generated Preview Token')).toBeVisible();
+    await expect(tokens.row('Rotate me')).toHaveCount(0);
+    expect((await tokensOf(api, space.id)).map(it => it.name)).toEqual(['Auto Generated Preview Token']);
     expect((await cdn(newValue)).status()).toBe(401);
   });
 
@@ -96,33 +90,25 @@ test.describe('Space settings → Access Tokens', () => {
       expect(response.status()).toBe(302);
       return response.headers()['cache-control'];
     };
-    await page.goto(`/features/spaces/${space.id}/settings/tokens`);
-    const row = (name: string) => page.getByRole('row').filter({ hasText: name });
-    await expect(row('Website')).toContainText('Default (60s)');
+    const tokens = new TokensPage(page);
+
+    // Pre-check
+    await tokens.goto(space.id);
+    await expect(tokens.row('Website')).toContainText('Default (60s)');
     expect(await redirectCache()).toBe('public, max-age=60, s-maxage=60');
 
-    const edit = async (name: string, ttl: string) => {
-      await row(name).getByRole('button', { name: 'Edit' }).click();
-      const form = await dialog(page, 'Token Form');
-      await form.getByLabel('Name', { exact: true }).fill(name === 'Website' ? 'Website EU' : name);
-      await form.getByLabel('Cache TTL', { exact: true }).fill(ttl);
-      await form.getByRole('button', { name: 'Save' }).click();
-      await expect(form).toBeHidden();
-      await expectToast(page, 'Token has been updated.');
-    };
-
-    await edit('Website', '300');
-
-    await expect(row('Website EU')).toContainText('300s');
+    // Action → post-check: a name and 300 s.
+    await tokens.edit('Website', { name: 'Website EU', cacheTtl: '300' });
+    await expect(tokens.row('Website EU')).toContainText('300s');
     expect(await redirectCache()).toBe('public, max-age=300, s-maxage=300');
     // The value is unchanged: only the name and the TTL can be edited.
-    expect(await tokenNamed(api, space.id, 'Website EU')).toBe(token);
+    expect(await tokenValue(api, space.id, 'Website EU')).toBe(token);
 
-    await edit('Website EU', '0');
-
-    await expect(row('Website EU')).toContainText('No Cache');
+    // Action → post-check: no cache.
+    await tokens.edit('Website EU', { name: 'Website EU', cacheTtl: '0' });
+    await expect(tokens.row('Website EU')).toContainText('No Cache');
     await expect.poll(redirectCache).toBe('no-cache');
     await page.reload();
-    await expect(row('Website EU')).toContainText('No Cache');
+    await expect(tokens.row('Website EU')).toContainText('No Cache');
   });
 });
