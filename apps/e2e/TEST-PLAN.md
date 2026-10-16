@@ -295,6 +295,10 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Contents by id and full slug; unpublished 404 | API | ✅ `api/cdn-contents` @smoke |
 | Contents draft only for preview tokens | API | ✅ `api/cdn-contents` |
 | `cv` redirect and cache headers (per-token TTL) | API (`maxRedirects: 0`) | ✅ `space/tokens` |
+| A publish moves `cv` (translations, contents by id and slug); an edit alone doesn't; the old `cv` is redirected, never served; the versioned 200 is cached a week, without ETag | API (`maxRedirects: 0`) | ✅ `api/cdn-caching` @smoke |
+| Drafts: an edit moves the draft `cv` only; drafts are cached like published versions; a TTL-0 token's redirects are `no-cache`, drafts too | API | ✅ `api/cdn-caching` |
+| 404 caching: an unpublished document 10 minutes; translations never published: no `Cache-Control` | API | ✅ `api/cdn-caching` |
+| Assets: a year with an ETag (`-orig` for the file, another for a rendition), 304 on `If-None-Match`; a bad parameter 400 (an hour); an unknown asset 404 (a week) | API | ✅ `api/cdn-caching` |
 | `/links`, `resolveReference`, `resolveLink` | API | ✅ `contents/delivery`, `contents/fields-relations` |
 | Management: read space, push translations | API | ✅ `api/management` @smoke |
 | Management: missing, public or foreign token refused | API | ✅ `api/management` |
