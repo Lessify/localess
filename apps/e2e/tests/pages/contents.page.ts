@@ -74,6 +74,21 @@ export class ContentsPage {
     await expectToast(this.page, 'Content has been saved in draft.');
   }
 
+  /** Opens a document in the editor by URL. */
+  async gotoDocument(spaceId: string, documentId: string): Promise<void> {
+    await this.page.goto(`/features/spaces/${spaceId}/contents/${documentId}`);
+    await expect(this.page.getByRole('button', { name: 'Back to Contents' })).toBeVisible();
+  }
+
+  /** The editor's locale menu: which locale's values the form shows. */
+  async editorLocale(name: string): Promise<void> {
+    await this.page
+      .getByRole('button', { name: /^(English|German|Romanian)/ })
+      .first()
+      .click();
+    await this.page.getByRole('menuitemradio', { name: new RegExp(name) }).click();
+  }
+
   async publish(): Promise<void> {
     await this.page.getByRole('button', { name: /^Publish/ }).click();
     await expectToast(this.page, 'Content has been published.');

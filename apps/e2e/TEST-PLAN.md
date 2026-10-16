@@ -157,14 +157,37 @@ stub provider, so translated values are exact (`Hello : en -> de`). Specs in `te
 
 ### 7. Schemas
 
+Pre-check → action → post-check (the list, the editor after a reload, the App API, and the **content editor**, where a
+schema's effect shows). Specs in `tests/schemas/`.
+
 | Scenario | How | Status |
 |---|---|---|
-| Create a root schema, add fields, save | UI + API | ✅ `content/schemas` @smoke |
-| Delete an unused schema | UI | ✅ `content/schemas` |
-| A schema in use can not be deleted | UI | ✅ `content/schemas` |
-| Enum schema: add values | UI + API | ⬜ |
-| Edit a schema ID (rename), conflict 409 | UI | ⬜ |
-| Field kinds and their settings (required, min/max, options source) | UI, then content validation | ⬜ |
+| **Create** a Root, a Node and an Enum schema; each opens its editor | UI + API | ✅ `schemas/create` @smoke |
+| The ID follows the display name until edited; Normalize ID | UI + API | ✅ `schemas/create` |
+| An existing ID refused | UI + API | ✅ `schemas/create` |
+| Reserved (`Content`, `Translations`) and invalid IDs refused; cancel creates nothing | UI + API | ✅ `schemas/create` |
+| **Fields**: added as Text, in order, stored only on Save | UI + API | ✅ `schemas/fields` @smoke |
+| Edit a field (kind, display name, required, translatable, description): the content editor shows the label, a number input, the required rule, German only for the translatable field | UI + API + content editor | ✅ `schemas/fields` |
+| Invalid field names refused (uppercase start, 1 character, `_id`, a duplicate, `_i18n_`, leading digit) | UI | ✅ `schemas/fields` |
+| Delete a field; the content editor no longer shows it | UI + API + content editor | ✅ `schemas/fields` |
+| Reorder fields by drag and drop; the content editor follows | UI + API + content editor | ✅ `schemas/fields` |
+| Leaving with unsaved changes asks first; Save keeps them | UI + API | ✅ `schemas/fields` |
+| Unsaved changes survive a colleague saving another schema | UI + API | ✅ `schemas/fields` |
+| **Settings**: display name, description, preview field; the list shows them | UI + API | ✅ `schemas/settings` @smoke |
+| Labels added and removed; duplicates, spaces, 1 character refused | UI + API | ✅ `schemas/settings` |
+| **References**: an Option field from an Enum; the content editor offers its values and stores the choice | UI + API + content editor | ✅ `schemas/references` |
+| A Schemas field allowing a Node; the content editor adds that block | UI + API + content editor | ✅ `schemas/references` |
+| A Root as a block or as an option source refused by the server | API | ✅ `schemas/references` |
+| Only Enum schemas offered as an option source | UI | ✅ `schemas/references` |
+| **Enum values**: add, edit, delete, reorder | UI + API | ✅ `schemas/enum` @smoke |
+| An existing value name refused; a value with spaces blocks Save until fixed | UI + API | ✅ `schemas/enum` |
+| **Edit ID** of an unused schema (same id); an existing ID refused | UI + API | ✅ `schemas/rename-delete` |
+| A schema another schema uses: Edit ID and Delete disabled, the server refuses (409, says where) | UI + API | ✅ `schemas/rename-delete` |
+| A schema only contents use: Delete and Edit ID explain why not | UI | ✅ `schemas/rename-delete` |
+| **Delete** an unused schema; cancel keeps it | UI + API | ✅ `schemas/rename-delete` @smoke |
+| **List**: search by name, filter by one or another label, Reset | UI | ✅ `schemas/list` |
+| Field kind settings (min/max length and value, min/max values, path, file type) and their content validation | UI + content editor | ⬜ |
+| Schema (One) field, Reference / Link / Asset fields in the content editor | UI + content editor | ⬜ |
 
 ### 8. Contents
 
@@ -266,6 +289,12 @@ regression test.
 | The webhook detail page threw NG0951 and never paginated its logs | The paginator query is optional and wired when it appears |
 | Translation labels: the label rules were applied to the list, not each label: a single label made Save disabled (no message), while duplicates, labels with spaces and 1-character labels were accepted | Each label is checked when it is entered, with the reason shown; the list only keeps the server's limit (Add and Edit dialogs) |
 | Tree view of translations never showed the selected key (and never the saving spinner): it was given the translation's id, the nodes are keyed by key | The list passes the selected key |
+| Schema editors: unsaved changes were wiped whenever anyone saved any other schema of the space (the live schema list reloaded the form) | The form reloads only without unsaved changes; Save reloads it once, and not over edits made since |
+| Content editor: the chosen locale jumped back to the default whenever any space changed (the live space list) | The chosen locale is kept while the space has it |
+| Edit Field: a Schema / Schemas field could allow no schema at all: the picker selected nothing (its value started as `undefined`) | The allowed schemas start as an empty list |
+| Enum editor: an existing value name was not refused (the taken names were replaced, not emptied, on load), and deleting a value freed another value's name | Emptied in place; the deleted value's own name is freed |
+| Schema labels had no rules at all: duplicates, spaces, 1 character stored; adding one didn't count as an unsaved change | The same per-label check as translation labels (shared `LabelValidator`), a new list each time, the form marked changed |
+| Edit Field's Display Name and Description labels pointed at the Settings tab's inputs (duplicate ids); Option/Options labels in the content editor pointed at nothing (`for="kind"`) | Settings ids renamed; the content editor's labels point at their select |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
@@ -281,4 +310,5 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Machine translation of a single value (and "Translate other locales" on add) needs TRANSLATION_UPDATE **and** CONTENT_UPDATE (kept from the Firebase callable, pinned by a server test), while "Translate Locale" needs only TRANSLATION_UPDATE; a translator without CONTENT_UPDATE sees the Translate button and gets "Could not be translated." | Product decision; not asserted |
 | Tree view: a key that is also the prefix of other keys (`home` next to `home.title`) is a group node and can't be selected, so that translation can't be opened in the tree | Product decision; not asserted |
 | Key uniqueness: the UI refuses a key in any letter case, the server only the exact key (via the API `Home.Title` and `home.title` can both exist) | Not asserted |
+| Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |

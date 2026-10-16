@@ -156,7 +156,7 @@ export class AppApi {
     return expectOk(await this.request.get(path), `GET ${path}`);
   }
 
-  private async send<T>(method: 'post' | 'put' | 'patch', path: string, data?: unknown): Promise<T> {
+  async send<T>(method: 'post' | 'put' | 'patch', path: string, data?: unknown): Promise<T> {
     const response = await this.request[method](path, { headers: CSRF, ...(data === undefined ? {} : { data }) });
     return expectOk(response, `${method.toUpperCase()} ${path}`);
   }

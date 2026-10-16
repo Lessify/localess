@@ -56,7 +56,8 @@ tests/
 │   ├── files.ts            # a 1×1 PNG, a PDF and a text file for uploads
 │   ├── assets.ts           # asset read-back from the App API and the CDN
 │   ├── webhook-receiver.ts # local HTTP endpoint for webhook deliveries
-│   └── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
+│   ├── translations.ts     # English / German / Romanian setup, API and CDN read-back, the translation stub
+│   └── schemas.ts          # schema read-back from the App API
 ├── pages/                  # page objects (one per page) and shared helpers (dialogs, row menus, toasts)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── api/                    # platform, CDN API (translations, contents, assets), Management API, permissions
@@ -66,7 +67,8 @@ tests/
 ├── space/                  # settings (general, locales, environments, tokens), dashboard, navigation
 ├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
 ├── assets/                 # upload, create folder, rename, delete
-├── content/                # schemas, contents
+├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
+├── content/                # contents
 └── developers/             # webhooks
 ```
 
