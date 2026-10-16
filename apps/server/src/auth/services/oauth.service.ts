@@ -164,6 +164,8 @@ export class OAuthService implements OnModuleInit {
           displayName: typeof claims['name'] === 'string' ? claims['name'] || null : null,
         });
       }
+      // A refused sign-in changes nothing: no identity for a disabled account.
+      if (user.disabled) throw new OAuthError('disabled', 'This account is disabled');
       await this.users.linkIdentity(user.id, provider, subject);
     } else if (provider === 'google') {
       // Re-check the domain on every sign-in, not just the first.

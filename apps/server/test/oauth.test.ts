@@ -117,9 +117,10 @@ describe('OAuth sign-in', () => {
       expect((await signIn(t)).headers.location).toBe('/auth/login?error=email-not-verified');
     });
 
-    it('refuses disabled accounts', async () => {
+    it('refuses disabled accounts, and links no identity to them', async () => {
       claims = { sub: 'blocked-sub', email: 'blocked@example.com', email_verified: true };
       expect((await signIn(t)).headers.location).toBe('/auth/login?error=disabled');
+      expect(await t.db.select().from(userIdentities).where(eq(userIdentities.providerSubject, 'blocked-sub'))).toEqual([]);
     });
 
     it('never links by a Microsoft email the directory did not verify', async () => {
