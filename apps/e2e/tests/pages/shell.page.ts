@@ -26,9 +26,16 @@ export class Shell {
     await expect(this.page).toHaveURL(/\/auth\/login/);
   }
 
+  /**
+   * Picks a space in the switcher. The space list updates live (other tests create and delete spaces) and a re-render
+   * closes the open menu, so opening is retried until the item can be clicked, as `rowMenu` does.
+   */
   async switchSpace(name: string): Promise<void> {
-    await this.sidebar.getByRole('button').first().click();
-    await this.page.getByRole('menuitemradio', { name }).click();
+    const menu = this.page.getByRole('menu');
+    await expect(async () => {
+      if (!(await menu.isVisible())) await this.sidebar.getByRole('button').first().click();
+      await this.page.getByRole('menuitemradio', { name }).click({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await expect(this.page).toHaveURL(/\/dashboard/);
   }
 }
