@@ -140,7 +140,7 @@ Import `test` and `expect` from `./support/fixtures` (not `@playwright/test`):
 
 | Fixture | What it gives |
 |---|---|
-| `space` | A new space (default locale English, plus its auto-generated preview token), deleted after the test |
+| `space` | A new space (default locale English, plus its auto-generated preview token), deleted after the test. With `test.use({ spaceTemplate: 'TRANSLATIONS_LARGE' })` it is made from that template in the same request (below) |
 | `api` | `AppApi` as the admin, for test data: `createTranslation`, `createSchema` (with fields), `createDocument`, `saveDocumentData`, `publishContent`, `uploadAsset`, `createToken`, `createWebhook`, `createUser`, ... It has its own session, so it works in specs that start signed out |
 | `createUser(options)` | A user with a unique email and known password (`role` CUSTOM unless given, `permissions`, `lock`), deleted after the test |
 | `signInAs(user)` | A page in its own browser context, signed in as that user (no localStorage: like a fresh browser) |
@@ -148,6 +148,13 @@ Import `test` and `expect` from `./support/fixtures` (not `@playwright/test`):
 | `page` | As usual, plus the **error guard** (below) |
 | `anonymousRequest()` | An HTTP client without the admin session (for token-only and signed-out checks) |
 | `probe` | Signs in with an email and password in a client of its own: `canSignIn`, `accessOf` (role, permissions, which App API areas answer), then `probe.request` as that user |
+
+**Prepared spaces.** Instead of building large test data call by call, a spec can start from a **test template**
+(offered only with `LOCALESS_TEST_TEMPLATES=true`, which the e2e server and `pnpm dev` set; never in production):
+`test.use({ spaceTemplate: 'TRANSLATIONS_LARGE' })` gives each test its own space with English, German and French and
+10,000 generated translations, nothing published. The data follows a fixed rule; `support/large-translations.ts`
+restates it for expectations (written separately from the server's generator, so a generator bug fails a test).
+Example: `translations/large-space.spec.ts`. Design: `docs/roadmap/space-templates.md`.
 
 **Error guard.** Every page (`page`, `signInAs` and `signedOutPage` pages, and popups they open) records uncaught
 errors, everything reported to Angular's `ErrorHandler` (what users see as the "An error occurred." toast) and every

@@ -1,11 +1,16 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { DEFAULT_LOCALE, type SpaceOverview } from '@localess/shared';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { canPerform, type SpaceOverview, type SpaceTemplateSummary, UserPermission } from '@localess/shared';
+import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
+import { toPrincipal } from '../../../shared/transformers/user.transformer.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
+import { SpaceTemplatesRepository } from '../repositories/space-templates.repository.js';
 import { SpacesRepository } from '../repositories/spaces.repository.js';
+import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
 /** `ids` lists each of `current` once, in any order. */
 function isPermutation(ids: string[], current: string[]): boolean {
@@ -21,6 +26,8 @@ export class SpacesService {
     private readonly locales: LocalesRepository,
     private readonly overviews: SpaceOverviewRepository,
     private readonly sweeper: StorageSweeperService,
+    private readonly spaceTemplates: SpaceTemplatesRepository,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   async list() {
@@ -37,8 +44,31 @@ export class SpacesService {
     return space && toPublicSpace(space);
   }
 
-  async create(name: string) {
-    return toSpace(await this.spaces.create(name, DEFAULT_LOCALE.id));
+  /** What the Create Space dialog offers this user, in order (docs/roadmap/space-templates.md). */
+  templates(user: UserRow): SpaceTemplateSummary[] {
+    return this.offered(user).map(({ id, name, description, icon }) => ({ id, name, description, icon }));
+  }
+
+  /**
+   * With everything its template holds, in one transaction (no template: Empty). An unknown template, or a test one
+   * while they are off, is a 400; one the user may not choose (a template other than Empty needs SCHEMA_CREATE), a 403.
+   */
+  async create(name: string, templateId: string | undefined, user: UserRow) {
+    const id = templateId ?? EMPTY_TEMPLATE_ID;
+    const template = this.available().find(it => it.id === id);
+    if (!template) throw new BadRequestException('Unknown template');
+    if (!this.offered(user).includes(template)) throw new ForbiddenException();
+    return toSpace(await this.spaceTemplates.createSpace(name, template));
+  }
+
+  /** Test templates only with LOCALESS_TEST_TEMPLATES. */
+  private available(): readonly SpaceTemplate[] {
+    return this.config.testTemplates ? SPACE_TEMPLATES : SPACE_TEMPLATES.filter(it => !it.test);
+  }
+
+  private offered(user: UserRow): readonly SpaceTemplate[] {
+    if (canPerform(toPrincipal(user), UserPermission.SCHEMA_CREATE)) return this.available();
+    return this.available().filter(it => it.id === EMPTY_TEMPLATE_ID);
   }
 
   async rename(spaceId: string, name: string) {

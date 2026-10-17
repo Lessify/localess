@@ -54,7 +54,9 @@ interface Fixtures {
   allowedAppErrors: RegExp[];
   /** The App API as the seeded admin. */
   api: AppApi;
-  /** A fresh space (default locale English) for this test. */
+  /** The template the `space` fixture is made from (`test.use({ spaceTemplate: 'TRANSLATIONS_LARGE' })`); none: empty. */
+  spaceTemplate: string | undefined;
+  /** A fresh space (default locale English) for this test, from `spaceTemplate` when set. */
   space: TestSpace;
   /** Creates users for this test (unique email, known password); they are deleted afterwards. */
   createUser: (options?: UserOptions) => Promise<TestUser>;
@@ -78,6 +80,8 @@ export const test = base.extend<Fixtures>({
 
   allowedAppErrors: [[], { option: true }],
 
+  spaceTemplate: [undefined, { option: true }],
+
   // Set up before `page`, `space` and `createUser`, so it is torn down after them.
   lifecycle: async ({}, use) => {
     await use({ tearingDown: false });
@@ -97,8 +101,8 @@ export const test = base.extend<Fixtures>({
     await request.dispose();
   },
 
-  space: async ({ api, lifecycle }, use) => {
-    const space = await api.createSpace(uniqueName('E2E'));
+  space: async ({ api, spaceTemplate, lifecycle }, use) => {
+    const space = await api.createSpace(uniqueName('E2E'), spaceTemplate);
     await use(space);
     lifecycle.tearingDown = true;
     await api.deleteSpace(space.id);

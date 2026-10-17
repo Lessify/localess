@@ -67,6 +67,24 @@ describe('SpaceService', () => {
     expect((await result).id).toBe('s1');
   });
 
+  it('create() sends the chosen template with the name', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.create({ name: 'Space 1', template: 'BLOG' }));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/spaces' });
+    expect(request.request.body).toEqual({ name: 'Space 1', template: 'BLOG' });
+    request.flush({ id: 's1', name: 'Space 1' });
+    expect((await result).id).toBe('s1');
+  });
+
+  it('templates() reads the templates the user may create a space from', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.templates());
+    http
+      .expectOne({ method: 'GET', url: '/api/app/spaces/templates' })
+      .flush([{ id: 'EMPTY', name: 'Empty', description: 'A blank space.', icon: 'lucideFile' }]);
+    expect((await result).map(it => it.id)).toEqual(['EMPTY']);
+  });
+
   it('update() patches the name', async () => {
     const service = setup();
     const done = firstValueFrom(service.update('s1', { name: 'Renamed' }));

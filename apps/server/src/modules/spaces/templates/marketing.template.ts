@@ -1,6 +1,6 @@
 import { AssetFileType, SchemaFieldKind, SchemaType } from '@localess/shared';
 
-import { SpaceTemplate } from '../space-template.model';
+import type { SpaceTemplate } from './space-template.model.js';
 
 /**
  * A composed page rather than a list of records, which is what the other templates already show.

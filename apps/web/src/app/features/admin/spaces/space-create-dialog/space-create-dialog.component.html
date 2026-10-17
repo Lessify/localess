@@ -20,7 +20,7 @@
       <legend hlmFieldLegend>Template</legend>
       <p hlmFieldDescription>Start from a ready-made set of schemas.</p>
       <hlm-radio-group formControlName="template">
-        @for (template of templates; track template.id) {
+        @for (template of templates(); track template.id) {
           <label hlmFieldLabel [for]="template.id">
             <div hlmField orientation="horizontal">
               <div hlmFieldContent>

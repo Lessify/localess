@@ -1,4 +1,4 @@
-import { SpaceTemplate } from '../space-template.model';
+import type { SpaceTemplate } from './space-template.model.js';
 
 /** The default. Applying it writes nothing at all - the space is created and that is that. */
 export const EMPTY_TEMPLATE: SpaceTemplate = {

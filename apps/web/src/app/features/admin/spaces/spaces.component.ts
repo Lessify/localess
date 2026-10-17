@@ -38,8 +38,7 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { Observable, of } from 'rxjs';
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { FirebaseImportDialogComponent } from './firebase-import-dialog/firebase-import-dialog.component';
 import { FirebaseImportsDialogComponent } from './firebase-imports-dialog/firebase-imports-dialog.component';
@@ -47,9 +46,6 @@ import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-d
 import { SpaceCreateDialogResult } from './space-create-dialog/space-create-dialog.model';
 import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
 import { SpaceEditDialogContext, SpaceEditDialogResult } from './space-edit-dialog/space-edit-dialog.model';
-import { SpaceTemplateId } from './space-template.model';
-import { SpaceTemplateService } from './space-template.service';
-import { SPACE_TEMPLATES } from './templates';
 
 /** `?action=create` opens the create dialog. Other values are ignored rather than dispatched. */
 const CREATE_ACTION = 'create';
@@ -83,7 +79,6 @@ const CREATE_ACTION = 'create';
 })
 export class SpacesComponent implements OnInit, AfterViewInit {
   private readonly spaceService = inject(SpaceService);
-  private readonly spaceTemplateService = inject(SpaceTemplateService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -176,43 +171,17 @@ export class SpacesComponent implements OnInit, AfterViewInit {
         take(1),
         tap(() => this.clearAction()),
         filter((result): result is SpaceCreateDialogResult => result !== undefined),
-        switchMap(model =>
-          this.spaceService.create({ name: model.name }).pipe(switchMap(ref => this.applyTemplate(ref.id, model.template))),
-        ),
+        // One request: the server writes the space and its template's content in one transaction.
+        switchMap(model => this.spaceService.create({ name: model.name, template: model.template })),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ templateFailed }) => {
-          if (templateFailed) {
-            this.notificationService.warning('Space has been created, but the template could not be applied.');
-          } else {
-            this.notificationService.success('Space has been created.');
-          }
-        },
+        next: () => this.notificationService.success('Space has been created.'),
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Space can not be created.');
         },
       });
-  }
-
-  private applyTemplate(spaceId: string, templateId: SpaceTemplateId): Observable<{ templateFailed: boolean }> {
-    const template = SPACE_TEMPLATES.find(it => it.id === templateId);
-    // EMPTY resolves to a template whose schemas array is empty, and apply() short-circuits on that
-    // without calling the server. An unknown id means nothing to apply either.
-    if (!template) return of({ templateFailed: false });
-
-    return this.spaceTemplateService.apply(spaceId, template).pipe(
-      map(() => ({ templateFailed: false })),
-      // The space exists and is usable, so a failed template is not a failed creation. Reporting it
-      // as one would be a lie, and would invite the user to retry a create that already succeeded.
-      // There is deliberately no rollback: deleting a space the user just watched appear is worse
-      // than leaving an empty one.
-      catchError((err: unknown) => {
-        console.error(err);
-        return of({ templateFailed: true });
-      }),
-    );
   }
 
   /** `replaceUrl` so a dismissed dialog is not one Back press away from reopening itself. */

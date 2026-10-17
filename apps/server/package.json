@@ -12,7 +12,7 @@
     "dev": "tsc -b ../../packages/shared && swc src -d dist-dev --strip-leading-paths --ignore \"**/*.test.ts\" -q && pnpm run \"/^dev:/\"",
     "dev:shared": "tsc -b ../../packages/shared --watch --preserveWatchOutput",
     "dev:swc": "swc src -d dist-dev --strip-leading-paths --ignore \"**/*.test.ts\" -q --watch",
-    "dev:node": "node --watch --enable-source-maps --env-file-if-exists=.env dist-dev/main.js",
+    "dev:node": "node --watch --enable-source-maps --env-file=dev.env --env-file-if-exists=.env dist-dev/main.js",
     "dev:types": "tsc -p tsconfig.build.json --noEmit --watch --preserveWatchOutput",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -56,6 +56,13 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LOCALESS_WEBHOOK_LOG_DAYS: '0' })).toThrow(/LOCALESS_WEBHOOK_LOG_DAYS/);
   });
 
+  it('turns test templates off unless LOCALESS_TEST_TEMPLATES=true', () => {
+    expect(loadConfig({}).testTemplates).toBe(false);
+    expect(loadConfig({ LOCALESS_TEST_TEMPLATES: 'true' }).testTemplates).toBe(true);
+    expect(loadConfig({ LOCALESS_TEST_TEMPLATES: 'false' }).testTemplates).toBe(false);
+    expect(() => loadConfig({ LOCALESS_TEST_TEMPLATES: 'yes' })).toThrow();
+  });
+
   it('rejects an invalid DATABASE_URL', () => {
     expect(() => loadConfig({ DATABASE_URL: 'not a url' })).toThrow();
   });

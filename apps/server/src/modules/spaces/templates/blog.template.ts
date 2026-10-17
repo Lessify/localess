@@ -1,6 +1,6 @@
 import { AssetFileType, SchemaFieldKind, SchemaType } from '@localess/shared';
 
-import { SpaceTemplate } from '../space-template.model';
+import type { SpaceTemplate } from './space-template.model.js';
 
 /**
  * `author` and `category` are ROOT rather than NODE because REFERENCE fields point at content

@@ -78,6 +78,11 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform(v => v === 'true'),
+  // Test-only space templates (large generated data): development and e2e, never production.
+  LOCALESS_TEST_TEMPLATES: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform(v => v === 'true'),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../../web/dist/browser')),
 });
 
@@ -100,6 +105,8 @@ export interface AppConfig {
   uploadMaxBytes: number;
   renditionCache: 'disk' | 'off';
   taskWorker: boolean;
+  /** LOCALESS_TEST_TEMPLATES: offer the test-only space templates (development and e2e). */
+  testTemplates: boolean;
   staticDir: string | undefined;
   logLevels: LogLevel[];
   firstAdmin: { email: string; password: string } | undefined;
@@ -189,6 +196,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     uploadMaxBytes: parsed.LOCALESS_UPLOAD_MAX_MB * 1024 * 1024,
     renditionCache: parsed.LOCALESS_RENDITION_CACHE,
     taskWorker: parsed.LOCALESS_TASK_WORKER,
+    testTemplates: parsed.LOCALESS_TEST_TEMPLATES,
     unsplash: parsed.UNSPLASH_API_KEY ? { apiKey: parsed.UNSPLASH_API_KEY, apiUrl: parsed.LOCALESS_UNSPLASH_API_URL } : undefined,
     storageDir: resolve(parsed.LOCALESS_STORAGE_DIR ?? resolve(dataDir, 'storage')),
     staticDir: parsed.LOCALESS_STATIC_DIR ? resolve(parsed.LOCALESS_STATIC_DIR) : undefined,

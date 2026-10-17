@@ -93,21 +93,6 @@ export class SchemasRepository {
   }
 
   /**
-   * Several schemas at once, all or nothing (was the space-template `writeBatch`). `lost`: schemas their fields refer
-   * to that are gone since the caller checked (nothing written).
-   */
-  createMany(spaceId: string, values: NewSchema[], tx?: Transaction): Promise<{ schemas?: SchemaEntity[]; lost?: string[] }> {
-    if (!values.length) return Promise.resolve({ schemas: [] });
-    const rows = values.map(it => ({ id: newUuid(), spaceId, ...it }));
-    return this.write<{ schemas?: SchemaEntity[]; lost?: string[] }>(spaceId, tx, async t => {
-      const lost = await lockSchemaReferences(t, spaceId, values);
-      if (lost.length) return { result: { lost }, changed: [] };
-      const result = await t.insert(schemas).values(rows).returning();
-      return { result: { schemas: result }, changed: rows.map(it => ({ id: it.id, op: 'created' as const })) };
-    });
-  }
-
-  /**
    * `undefined` when the space has no schema `id`. `lost`: schemas its fields refer to that are gone since the caller
    * checked (nothing written); the ones still there stay locked until the commit, so they can not go meanwhile.
    */

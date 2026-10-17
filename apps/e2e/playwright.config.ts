@@ -125,6 +125,8 @@ function server(options: ServerOptions) {
       LOCALESS_TRANSLATE_PROVIDER: 'stub',
       // Webhook deliveries to the local receiver started by tests (see tests/support/webhook-receiver.ts).
       LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
+      // The test-only space templates (prepared spaces: tests/support/fixtures.ts `spaceTemplate`).
+      LOCALESS_TEST_TEMPLATES: 'true',
       LOCALESS_LOG_LEVEL: 'warn',
       // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
       // issuers; tests/support/oauth.ts picks who signs in).

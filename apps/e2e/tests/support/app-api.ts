@@ -9,8 +9,9 @@ export class AppApi {
 
   // --- Spaces ---------------------------------------------------------------------------------------------
 
-  createSpace(name: string): Promise<{ id: string; name: string }> {
-    return this.send('post', '/api/app/spaces', { name });
+  /** A space, filled from a template in the same request (test templates: LOCALESS_TEST_TEMPLATES). */
+  createSpace(name: string, template?: string): Promise<{ id: string; name: string }> {
+    return this.send('post', '/api/app/spaces', template ? { name, template } : { name });
   }
 
   listSpaces(): Promise<SpaceDto[]> {

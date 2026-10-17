@@ -2,12 +2,14 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from
 import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
+import { CurrentUser } from '../../../auth/request-context.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { zPreviewUrl } from '../../../infra/http/zod.js';
 import { SpacesService } from '../services/spaces.service.js';
 
-const createSchema = z.object({ name: z.string().trim().min(1).max(200) });
+const createSchema = z.object({ name: z.string().trim().min(1).max(200), template: z.string().min(1).max(64).optional() });
 const updateSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
 const environmentSchema = z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl });
 const environmentOrderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(1000) });
@@ -25,6 +27,13 @@ export class SpacesController {
     return this.spaces.list();
   }
 
+  /** The templates this user may create a space from (before `:spaceId`, which would take `templates` as an id). */
+  @Get('templates')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  templates(@CurrentUser() user: UserRow) {
+    return this.spaces.templates(user);
+  }
+
   @Get(':spaceId')
   @RequireAnyRole()
   get(@Param('spaceId') spaceId: string) {
@@ -33,8 +42,8 @@ export class SpacesController {
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
-    return this.spaces.create(body.name);
+  create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>, @CurrentUser() user: UserRow) {
+    return this.spaces.create(body.name, body.template, user);
   }
 
   @Patch(':spaceId')

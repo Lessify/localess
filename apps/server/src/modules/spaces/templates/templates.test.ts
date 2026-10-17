@@ -1,12 +1,14 @@
-import { SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
-import { SpaceTemplateComponent, SpaceTemplateEnum } from '../space-template.model';
-
-import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index';
+import { type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { zSchemaExportArraySchema } from '@localess/shared/zod';
+import { describe, expect, it } from 'vitest';
+import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index.js';
+import type { SpaceTemplateComponent, SpaceTemplateEnum } from './space-template.model.js';
 
 describe('SPACE_TEMPLATES', () => {
-  it('offers every template, with EMPTY first', () => {
-    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING']);
+  it('offers every template, with EMPTY first and the test ones last', () => {
+    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING', 'TRANSLATIONS_LARGE']);
     expect(SPACE_TEMPLATES[0].id).toBe(EMPTY_TEMPLATE_ID);
+    expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual(['TRANSLATIONS_LARGE']);
   });
 
   it('gives every template a name, description and icon for the choice card', () => {
@@ -17,13 +19,15 @@ describe('SPACE_TEMPLATES', () => {
     }
   });
 
-  it('leaves EMPTY with no schemas, so applying it writes nothing', () => {
+  it('leaves EMPTY with nothing to write', () => {
     const empty = SPACE_TEMPLATES.find(t => t.id === EMPTY_TEMPLATE_ID)!;
     expect(empty.schemas).toEqual([]);
+    expect(empty.locales).toBeUndefined();
+    expect(empty.translations).toBeUndefined();
   });
 
-  it('ships schemas for every template except EMPTY', () => {
-    for (const template of SPACE_TEMPLATES.filter(t => t.id !== EMPTY_TEMPLATE_ID)) {
+  it('ships schemas for every template offered to users except EMPTY', () => {
+    for (const template of SPACE_TEMPLATES.filter(t => t.id !== EMPTY_TEMPLATE_ID && !t.test)) {
       expect(template.schemas.length).toBeGreaterThan(0);
     }
   });
@@ -35,13 +39,17 @@ describe('SPACE_TEMPLATES', () => {
     );
     const enumIds = new Set(template.schemas.filter(s => s.type === SchemaType.ENUM).map(s => s.id));
 
+    it('has schemas the import path accepts', () => {
+      expect(zSchemaExportArraySchema.safeParse(template.schemas).success).toBe(true);
+    });
+
     it('has unique schema ids', () => {
       expect(ids.size).toBe(template.schemas.length);
     });
 
     it('uses schema ids the import path would accept', () => {
-      // Mirrors packages/shared/src/models/schema.zod.test.ts: >= 2 chars, starts with a letter,
-      // and `contentdata` is reserved.
+      // Mirrors packages/shared/src/models/schema.zod.test.ts: >= 2 chars, starts with a letter, and `contentdata`
+      // is reserved.
       for (const schema of template.schemas) {
         expect(schema.id.length).toBeGreaterThanOrEqual(2);
         expect(schema.id).toMatch(/^[a-z][a-z0-9]*$/);

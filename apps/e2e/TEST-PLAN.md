@@ -114,6 +114,7 @@ the CDN where a setting changes what it serves).
 | Rename a space (same id); cancelling keeps the name | UI + API | ✅ `admin/spaces` |
 | Delete a space with its content; cancelling keeps it | UI + API | ✅ `admin/spaces` |
 | Create a space from each template (Empty, E-Commerce, Blog, Marketing Site): its schemas, complete; no templates without Schema Create | UI + API | ✅ `admin/space-templates` |
+| Test templates: the e2e server lists them; the production image (Docker) lists none and refuses one by id (400) | API | ✅ `api/space-templates` (the Docker check @smoke) |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
 | General: rename the space | UI + API | ✅ `space/general` |
 | Locales: default locale can not be deleted; add a locale (at the end) | UI + API | ✅ `space/locales` |
@@ -159,6 +160,18 @@ stub provider, so translated values are exact (`Hello : en -> de`). Specs in `te
 | **List view**: key and value per row, opening a key, 120 keys in the virtual list, live updates | UI + API | ✅ `translations/views` |
 | **Tree view**: groups by dots, expand / collapse, selection shown, search filters the tree, layout kept after reload | UI | ✅ `translations/views` |
 | Import / export | Hidden behind `FEATURE_FLAGS.importExport` | ➖ until enabled |
+
+**At scale** (`translations/large-space`): a prepared space from the test template "Translations (large)": English,
+German, French, 10,000 generated keys, nothing published (`support/large-translations.ts`).
+
+| Scenario | How | Status |
+|---|---|---|
+| A new space: published refused in every locale (404), the draft (Auto Generated Preview Token) has the generated values | CDN + API | ✅ `translations/large-space` |
+| Search a German value in German finds its page's 10 keys; in English, none | UI | ✅ `translations/large-space` |
+| Filter by label (`cta`), by status (Untranslated, Partially Translated, Translated) over the template's gaps | UI | ✅ `translations/large-space` |
+| Tree of 10,000 keys: 20 sections at the top; a search opens section → page → its 10 keys; collapse | UI | ✅ `translations/large-space` |
+| Add, edit (German) and remove one key among 10,000: UI, after a reload, API | UI + API | ✅ `translations/large-space` |
+| One English change: the draft has it, the published version not until Publish | UI + CDN | ✅ `translations/large-space` |
 
 ### 7. Schemas
 

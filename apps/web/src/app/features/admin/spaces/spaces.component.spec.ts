@@ -4,7 +4,6 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { Space } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceService } from '@core/services/space.service';
-import { SpaceTemplateService } from './space-template.service';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -19,7 +18,6 @@ function space(overrides: Partial<Space> = {}): Space {
 describe('SpacesComponent', () => {
   function setup(spaces: Space[] = []) {
     const findAll = vi.fn().mockReturnValue(of(spaces));
-    // `create` resolves to a DocumentReference: the component reads `ref.id` to apply a template.
     const create = vi.fn().mockReturnValue(of({ id: 'new-space' }));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteSpace = vi.fn().mockReturnValue(of(undefined));
@@ -27,7 +25,6 @@ describe('SpacesComponent', () => {
     const error = vi.fn();
     const warning = vi.fn();
     const open = vi.fn();
-    const apply = vi.fn().mockReturnValue(of(undefined));
 
     TestBed.overrideComponent(SpacesComponent, {
       // The sort defaults mirror the real template: by name, ascending.
@@ -38,8 +35,6 @@ describe('SpacesComponent', () => {
         { provide: SpaceService, useValue: { findAll, create, update, delete: deleteSpace } },
         { provide: NotificationService, useValue: { success, error, warning } },
         { provide: HlmDialogService, useValue: { open } },
-        // Stubbed rather than real: the real one talks to the API, which this spec has no use for.
-        { provide: SpaceTemplateService, useValue: { apply } },
       ],
     });
     const fixture = TestBed.createComponent(SpacesComponent);
@@ -64,7 +59,6 @@ describe('SpacesComponent', () => {
       error,
       warning,
       open,
-      apply,
       navigateWithAction,
     };
   }
@@ -172,41 +166,21 @@ describe('SpacesComponent', () => {
 
       navigateWithAction('create');
 
-      expect(create).toHaveBeenCalledWith({ name: 'New Space' });
+      expect(create).toHaveBeenCalledWith({ name: 'New Space', template: 'EMPTY' });
       expect(success).toHaveBeenCalledWith('Space has been created.');
     });
 
-    it('applies the chosen template to the created space', () => {
-      const { open, apply, navigateWithAction } = setup();
+    it('creates the space from the chosen template in one request', () => {
+      // The server applies the template in the creating transaction: there is no second step that could fail alone.
+      const { open, create, success, warning, navigateWithAction } = setup();
       open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
 
       navigateWithAction('create');
 
-      expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'BLOG' }));
-    });
-
-    it('hands EMPTY to a template service that short-circuits on it', () => {
-      const { open, apply, success, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
-
-      navigateWithAction('create');
-
-      expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'EMPTY', schemas: [] }));
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(create).toHaveBeenCalledWith({ name: 'New Space', template: 'BLOG' });
       expect(success).toHaveBeenCalledWith('Space has been created.');
-    });
-
-    it('reports the space as created when only the template failed', () => {
-      // The space exists and is usable. Calling this a failed creation would invite the user to
-      // retry a create that already succeeded.
-      const { open, apply, warning, error, success, navigateWithAction } = setup();
-      apply.mockReturnValue(throwError(() => new Error('permission-denied')));
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
-
-      navigateWithAction('create');
-
-      expect(warning).toHaveBeenCalledWith('Space has been created, but the template could not be applied.');
-      expect(error).not.toHaveBeenCalled();
-      expect(success).not.toHaveBeenCalled();
+      expect(warning).not.toHaveBeenCalled();
     });
 
     it('does not create anything when dismissed', () => {
