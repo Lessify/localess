@@ -6,7 +6,7 @@ import { BLOG_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 const USER_TEMPLATES = ['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING'];
-const TEST_TEMPLATES = ['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS'];
+const TEST_TEMPLATES = ['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS', 'ASSETS_LARGE'];
 
 async function counts(t: TestApp) {
   const rows = async (

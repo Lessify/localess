@@ -17,6 +17,9 @@ import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositori
 import { SpacesRepository } from '../repositories/spaces.repository.js';
 import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
+/** Template files stored in parallel, this many at a time. */
+const STORE_BATCH = 50;
+
 /** `ids` lists each of `current` once, in any order. */
 function isPermutation(ids: string[], current: string[]): boolean {
   const known = new Set(current);
@@ -80,13 +83,24 @@ export class SpacesService {
     const ids = files.map(() => newUuid());
     await this.spaceTemplates.guardFiles(spaceId, ids);
     try {
+      // In batches: a template can hold a thousand small files.
       const stored: StoredTemplateFile[] = [];
-      for (const [index, asset] of files.entries()) {
-        // The asset module's key for an original (modules/assets/utils/storage-keys.ts `originalKey`).
-        const key = `${assetFilesPrefix(spaceId, ids[index])}original`;
-        const info = await this.storage.put(key, await asset.file!.bytes());
-        const extracted = await this.metadata.extract(key, asset.file!.type, null);
-        stored.push({ key: asset.key, id: ids[index], size: info.size, md5: info.md5, metadata: extracted.metadata ?? null });
+      for (let start = 0; start < files.length; start += STORE_BATCH) {
+        const batch = files.slice(start, start + STORE_BATCH).map(async (asset, offset) => {
+          const id = ids[start + offset];
+          // The asset module's key for an original (modules/assets/utils/storage-keys.ts `originalKey`).
+          const key = `${assetFilesPrefix(spaceId, id)}original`;
+          const info = await this.storage.put(key, await asset.file!.bytes());
+          // Known from the generator, or read as for an upload.
+          const metadata = asset.file!.metadata ?? (await this.metadata.extract(key, asset.file!.type, null)).metadata ?? null;
+          return { key: asset.key, id, size: info.size, md5: info.md5, metadata };
+        });
+        // Every store of the batch settles before a failure is acted on: one still writing after the cleanup would
+        // recreate the folder with its guard already released, and stay for good.
+        const results = await Promise.allSettled(batch);
+        const failed = results.find(it => it.status === 'rejected');
+        if (failed) throw failed.reason;
+        stored.push(...results.map(it => (it as PromiseFulfilledResult<StoredTemplateFile>).value));
       }
       return toSpace(await this.spaceTemplates.createSpace(name, template, undefined, { spaceId, files: stored }));
     } catch (error) {

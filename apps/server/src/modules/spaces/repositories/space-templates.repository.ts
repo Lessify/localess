@@ -4,7 +4,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { newUuid } from '../../../infra/database/id.js';
 import { assets, contents, schemas, spaceLocales, translations } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { guardUpload, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
+import { guardUploads, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
 import { contentRefs } from '../templates/content-refs.js';
 import type { SpaceTemplate } from '../templates/index.js';
@@ -39,7 +39,7 @@ export class SpaceTemplatesRepository {
   /** Before storing a template's files: the sweeper removes them unless the space is created (as for an upload). */
   guardFiles(spaceId: string, assetIds: string[]): Promise<void> {
     return transaction(this.db, undefined, async t => {
-      for (const assetId of assetIds) await guardUpload(t, spaceId, assetId);
+      for (let start = 0; start < assetIds.length; start += CHUNK) await guardUploads(t, spaceId, assetIds.slice(start, start + CHUNK));
     });
   }
 
@@ -86,10 +86,11 @@ export class SpaceTemplatesRepository {
         return found;
       };
       const parentId = (key?: string) => (key ? id(key) : null);
-      for (const asset of template.assets ?? []) {
-        const stored = prepared?.files.find(it => it.key === asset.key);
+      const storedFiles = new Map((prepared?.files ?? []).map(it => [it.key, it]));
+      const assetRows = (template.assets ?? []).map(asset => {
+        const stored = storedFiles.get(asset.key);
         if (asset.kind === 'FILE' && !stored) throw new Error(`Template file not stored: ${asset.key}`);
-        await t.insert(assets).values({
+        return {
           id: id(asset.key),
           spaceId,
           kind: asset.kind,
@@ -98,14 +99,13 @@ export class SpaceTemplatesRepository {
           ...(asset.file && stored
             ? { extension: asset.file.extension, type: asset.file.type, size: stored.size, md5: stored.md5, metadata: stored.metadata }
             : {}),
-        });
-      }
-      if (prepared?.files.length)
-        await releaseUploadGuards(
-          t,
-          spaceId,
-          prepared.files.map(it => it.id),
-        );
+        };
+      });
+      // In chunks, in declaration order: a folder is declared before what it holds.
+      for (let start = 0; start < assetRows.length; start += CHUNK) await t.insert(assets).values(assetRows.slice(start, start + CHUNK));
+      const fileIds = prepared?.files.map(it => it.id) ?? [];
+      for (let start = 0; start < fileIds.length; start += CHUNK)
+        await releaseUploadGuards(t, spaceId, fileIds.slice(start, start + CHUNK));
       for (const content of template.contents ?? []) {
         const data = content.data ? ({ _id: id(content.key), _schema: content.schema!, ...content.data(id) } as ContentData) : null;
         await t.insert(contents).values({

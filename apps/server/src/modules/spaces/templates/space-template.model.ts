@@ -29,7 +29,8 @@ export interface TemplateAsset {
   name: string;
   /** Key of a FOLDER of the same template; none: at the root. */
   parent?: string;
-  file?: { extension: string; type: string; bytes: () => Promise<Buffer> };
+  /** `metadata`: known from the generator (stored as is, not read back from the file); none: read as for an upload. */
+  file?: { extension: string; type: string; bytes: () => Promise<Buffer>; metadata?: Record<string, unknown> };
 }
 
 /**

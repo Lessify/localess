@@ -4,7 +4,15 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { SpaceService } from '@core/services/space.service';
 import { provideIcons } from '@ng-icons/core';
-import { lucideFile, lucideFileStack, lucideLanguages, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart } from '@ng-icons/lucide';
+import {
+  lucideFile,
+  lucideFileStack,
+  lucideImages,
+  lucideLanguages,
+  lucideLayoutTemplate,
+  lucideNewspaper,
+  lucideShoppingCart,
+} from '@ng-icons/lucide';
 import { SpaceValidator } from '@shared/validators/space.validator';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -32,7 +40,9 @@ import { SpaceCreateDialogResult } from './space-create-dialog.model';
     HlmInputGroupImports,
     HlmRadioGroupImports,
   ],
-  providers: [provideIcons({ lucideFile, lucideFileStack, lucideLanguages, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart })],
+  providers: [
+    provideIcons({ lucideFile, lucideFileStack, lucideImages, lucideLanguages, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart }),
+  ],
 })
 export class SpaceCreateDialogComponent {
   private readonly fb = inject(FormBuilder);

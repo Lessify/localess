@@ -300,6 +300,18 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Too large an upload (413): the reason in a toast, nothing stored | UI on the `limits` server (`LOCALESS_UPLOAD_MAX_MB=1`), API | ✅ `limits/limits` |
 | Unsplash picker | Needs an API key | ➖ |
 
+**At scale** (`assets/template-large`): the test template "Assets (large)", 1,000 files in `Bulk` (every 10th a PNG,
+text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/assets-large.ts`).
+
+| Scenario | How | Status |
+|---|---|---|
+| Paging 1,000 files: 20 per page (50 pages), next, last, first; 100 per page (10 pages) | UI | ✅ `assets/template-large` |
+| Sorting by name (both ways), size (smallest / largest first), type (images grouped) | UI | ✅ `assets/template-large` |
+| Grid layout pages the same way | UI | ✅ `assets/template-large` |
+| Navigation `Nested/Deep` and back by the breadcrumb; `Empty` shows the empty state | UI | ✅ `assets/template-large` |
+| The picker at 1,000 files: an image-only field offers the 100 images (5 pages), an any-file field all 1,000; picking two saves them | UI + API | ✅ `assets/template-large` |
+| Uploading into the big folder: 1,001 files, the new one first by name | UI + API | ✅ `assets/template-large` |
+
 ### 10. Dashboard, navigation, developers
 
 | Scenario | How | Status |

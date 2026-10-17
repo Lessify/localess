@@ -22,6 +22,6 @@ test.describe('Space templates', () => {
   test('the e2e server offers the test templates after the others', async ({ api }) => {
     test.skip(!!E2E_BASE_URL, 'the e2e server only (LOCALESS_TEST_TEMPLATES=true)');
     const ids = (await api.get<{ id: string }[]>('/api/app/spaces/templates')).map(it => it.id);
-    expect(ids).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING', TEST_TEMPLATE, 'CONTENTS_FIELDS']);
+    expect(ids).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING', TEST_TEMPLATE, 'CONTENTS_FIELDS', 'ASSETS_LARGE']);
   });
 });

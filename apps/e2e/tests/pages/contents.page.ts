@@ -230,8 +230,15 @@ export class ContentsPage {
    * Opens the Assets dialog of an Asset ("Add Asset") or Assets ("Add Assets") field, in `folder` (at the root) when
    * given, and returns it with a way to find its rows.
    */
-  async openAssetPicker(button: 'Add Asset' | 'Add Assets', folder?: string): Promise<{ picker: Locator; row: (name: string) => Locator }> {
-    await this.page.getByRole('button', { name: button, exact: true }).click();
+  async openAssetPicker(
+    button: 'Add Asset' | 'Add Assets',
+    folder?: string,
+    field?: string,
+  ): Promise<{ picker: Locator; row: (name: string) => Locator }> {
+    // `field`: the field's label, when several fields have the same button (its group is named after the label and
+    // the button: "Images Add Assets").
+    const scope = field ? this.page.getByRole('group', { name: new RegExp(`^${escapeRegExp(field)} ${button}$`) }) : this.page;
+    await scope.getByRole('button', { name: button, exact: true }).click();
     const picker = await dialog(this.page, 'Assets');
     // The name cell reads `name.ext`, then the image size; a folder's just its name.
     const row = (name: string) =>
@@ -243,8 +250,8 @@ export class ContentsPage {
   }
 
   /** Picks files for an Asset ("Add Asset") or Assets ("Add Assets") field in the Assets dialog (in `folder`, if given). */
-  async pickAssets(button: 'Add Asset' | 'Add Assets', names: string[], folder?: string): Promise<void> {
-    const { picker, row } = await this.openAssetPicker(button, folder);
+  async pickAssets(button: 'Add Asset' | 'Add Assets', names: string[], folder?: string, field?: string): Promise<void> {
+    const { picker, row } = await this.openAssetPicker(button, folder, field);
     for (const name of names) await row(name).click();
     const add = names.length === 1 ? 'Add Selected Asset' : `Add Selected Assets (${names.length})`;
     await picker.getByRole('button', { name: add, exact: true }).click();

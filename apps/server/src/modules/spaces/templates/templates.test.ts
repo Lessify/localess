@@ -6,9 +6,17 @@ import type { SpaceTemplateComponent, SpaceTemplateEnum } from './space-template
 
 describe('SPACE_TEMPLATES', () => {
   it('offers every template, with EMPTY first and the test ones last', () => {
-    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING', 'TRANSLATIONS_LARGE', 'CONTENTS_FIELDS']);
+    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual([
+      'EMPTY',
+      'BLOG',
+      'ECOMMERCE',
+      'MARKETING',
+      'TRANSLATIONS_LARGE',
+      'CONTENTS_FIELDS',
+      'ASSETS_LARGE',
+    ]);
     expect(SPACE_TEMPLATES[0].id).toBe(EMPTY_TEMPLATE_ID);
-    expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual(['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS']);
+    expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual(['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS', 'ASSETS_LARGE']);
   });
 
   it('gives every template a name, description and icon for the choice card', () => {
