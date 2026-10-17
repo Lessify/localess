@@ -235,7 +235,7 @@ receives). Specs in `tests/contents/`.
 | A synced page follows typing live; a click on it focuses the field | UI + a local site with `sync-v1.js` | ✅ `contents/visual-editor` @smoke |
 | Visual Editor: block toolbar on the page (move, duplicate, delete with a second click), hover highlight both ways | UI + a local site rendering the blocks | ✅ `contents/visual-editor` |
 | Asset / Assets file type: set in the schema editor, the picker offers only those files; a schema carrying `fileTypes` (templates) keeps its filter when edited | UI (schema editor → content editor picker), API | ✅ `contents/fields-relations` |
-| Reference / References Path filter | UI | ⬜ (the setting has no effect today: open finding) |
+| Reference / References Path filter | UI | ⬜ (no effect today: roadmap to-do [reference-path-filter.md](../../docs/roadmap/reference-path-filter.md)) |
 
 ### 9. Assets
 
@@ -386,5 +386,5 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | The Content Security Policy (report-only) allows one script hash, but the build's inline critical-CSS loader (`data-beasties-media`) has another: enforced, the policy would block it | `apps/server/src/infra/static/static-site.ts`; not asserted |
 | Admin → Users: an admin's own row offers Delete, and the server allows it (only disabling oneself is refused): the last admin can delete their account and leave the install without one | `apps/server/src/modules/users/services/users.service.ts` `delete`; `admin/users` asserts only that Disable is not offered |
 | Deleting a locale keeps its stored values (translations, content): the CDN no longer serves them, but adding the locale again brings the old values back | Product decision; `space/locales` pins today's behaviour |
-| Reference / References: the field's Path ("Path to be filtered by") is stored but never used: the picker offers every document | Product decision (filter by full-slug prefix, open in that folder, or remove the setting) |
+| Reference / References: the field's Path ("Path to be filtered by") is stored but never used: the picker offers every document | Roadmap to-do [reference-path-filter.md](../../docs/roadmap/reference-path-filter.md) |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload and move but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |
