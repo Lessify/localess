@@ -1,4 +1,5 @@
 import { BLOG_TEMPLATE } from './blog.template.js';
+import { CONTENTS_FIELDS_TEMPLATE } from './contents-fields.template.js';
 import { ECOMMERCE_TEMPLATE } from './ecommerce.template.js';
 import { EMPTY_TEMPLATE } from './empty.template.js';
 import { MARKETING_TEMPLATE } from './marketing.template.js';
@@ -14,7 +15,8 @@ export const SPACE_TEMPLATES: readonly SpaceTemplate[] = [
   ECOMMERCE_TEMPLATE,
   MARKETING_TEMPLATE,
   TRANSLATIONS_LARGE_TEMPLATE,
+  CONTENTS_FIELDS_TEMPLATE,
 ];
 
-export { BLOG_TEMPLATE, ECOMMERCE_TEMPLATE, EMPTY_TEMPLATE, MARKETING_TEMPLATE, TRANSLATIONS_LARGE_TEMPLATE };
-export type { SpaceTemplate, TemplateTranslation } from './space-template.model.js';
+export { BLOG_TEMPLATE, CONTENTS_FIELDS_TEMPLATE, ECOMMERCE_TEMPLATE, EMPTY_TEMPLATE, MARKETING_TEMPLATE, TRANSLATIONS_LARGE_TEMPLATE };
+export type { SpaceTemplate, TemplateAsset, TemplateContent, TemplateTranslation } from './space-template.model.js';

@@ -252,6 +252,18 @@ receives). Specs in `tests/contents/`.
 | Asset / Assets file type: set in the schema editor, the picker offers only those files; a schema carrying `fileTypes` (templates) keeps its filter when edited | UI (schema editor → content editor picker), API | ✅ `contents/fields-relations` |
 | Reference / References Path filter | UI | ⬜ (no effect today: roadmap to-do [reference-path-filter.md](../../docs/roadmap/reference-path-filter.md)) |
 
+**With the prepared space** (`contents/template-fields`): the test template "Contents (all fields)", every field kind in
+English, German and French, files and reference targets, nothing published (`support/contents-fields.ts`).
+
+| Scenario | How | Status |
+|---|---|---|
+| A new space: every document's draft follows the rule in each locale (plain: the same value; translated: its own); nothing published (404) | CDN + API | ✅ `contents/template-fields` |
+| Not translatable: in German and French every plain field is read-only, the block title too; editable in English | UI | ✅ `contents/template-fields` |
+| Translatable: a German change (text, number, option) stays in German; English and French unchanged | UI + API + CDN | ✅ `contents/template-fields` |
+| Nested five levels: an edit at level 5 in German reaches the API and the German draft; other levels and locales unchanged | UI + API + CDN | ✅ `contents/template-fields` |
+| Publish, then Unpublish: published equals the draft in every locale and is in `/links`; after Unpublish 404 and gone from `/links`, the draft stays | UI + CDN | ✅ `contents/template-fields` |
+| Create a document with all 18 fields filled; the image-only picker hides the text file | UI + API + CDN | ✅ `contents/template-fields` |
+
 ### 9. Assets
 
 Pre-check → action → post-check (the list, the breadcrumb, after a reload, the App API, the CDN API). Specs in

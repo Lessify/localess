@@ -1,6 +1,11 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { Space } from '@localess/shared';
 import { canPerform, type SpaceOverview, type SpaceTemplateSummary, UserPermission } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import { newUuid } from '../../../infra/database/id.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
+import { assetFilesPrefix, spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
+import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
@@ -8,7 +13,7 @@ import { toPublicSpace, toSpace } from '../../../shared/transformers/space.trans
 import { toPrincipal } from '../../../shared/transformers/user.transformer.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
-import { SpaceTemplatesRepository } from '../repositories/space-templates.repository.js';
+import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositories/space-templates.repository.js';
 import { SpacesRepository } from '../repositories/spaces.repository.js';
 import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
@@ -28,6 +33,8 @@ export class SpacesService {
     private readonly sweeper: StorageSweeperService,
     private readonly spaceTemplates: SpaceTemplatesRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
+    private readonly metadata: AssetMetadataService,
   ) {}
 
   async list() {
@@ -58,7 +65,38 @@ export class SpacesService {
     const template = this.available().find(it => it.id === id);
     if (!template) throw new BadRequestException('Unknown template');
     if (!this.offered(user).includes(template)) throw new ForbiddenException();
-    return toSpace(await this.spaceTemplates.createSpace(name, template));
+    return this.createFromTemplate(name, template);
+  }
+
+  /**
+   * A template's files are stored before its transaction, the way an upload is: guarded first, so that if anything
+   * fails they are removed (at once here, or by the sweeper when the guard expires); the transaction releases the
+   * guards with the rows.
+   */
+  async createFromTemplate(name: string, template: SpaceTemplate): Promise<Space> {
+    const files = (template.assets ?? []).filter(it => it.file);
+    if (!files.length) return toSpace(await this.spaceTemplates.createSpace(name, template));
+    const spaceId = newUuid();
+    const ids = files.map(() => newUuid());
+    await this.spaceTemplates.guardFiles(spaceId, ids);
+    try {
+      const stored: StoredTemplateFile[] = [];
+      for (const [index, asset] of files.entries()) {
+        // The asset module's key for an original (modules/assets/utils/storage-keys.ts `originalKey`).
+        const key = `${assetFilesPrefix(spaceId, ids[index])}original`;
+        const info = await this.storage.put(key, await asset.file!.bytes());
+        const extracted = await this.metadata.extract(key, asset.file!.type, null);
+        stored.push({ key: asset.key, id: ids[index], size: info.size, md5: info.md5, metadata: extracted.metadata ?? null });
+      }
+      return toSpace(await this.spaceTemplates.createSpace(name, template, undefined, { spaceId, files: stored }));
+    } catch (error) {
+      const cleaned = await this.storage.deletePrefix(spaceFilesPrefix(spaceId)).then(
+        () => true,
+        () => false,
+      );
+      if (cleaned) await this.spaceTemplates.releaseFiles(spaceId, ids);
+      throw error;
+    }
   }
 
   /** Test templates only with LOCALESS_TEST_TEMPLATES. */

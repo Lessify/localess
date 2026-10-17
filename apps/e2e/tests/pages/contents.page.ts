@@ -204,29 +204,48 @@ export class ContentsPage {
     await expect(this.page.getByRole('listbox')).toHaveCount(0);
   }
 
-  /** Picks documents for a Reference ("Add Reference") or References ("Add References") field in the Contents dialog. */
-  async pickDocuments(button: 'Add Reference' | 'Add References', names: string[]): Promise<void> {
+  /**
+   * Picks documents for a Reference ("Add Reference") or References ("Add References") field in the Contents dialog,
+   * opening `folder` (at the root) first when the documents are in one.
+   */
+  async pickDocuments(button: 'Add Reference' | 'Add References', names: string[], folder?: string): Promise<void> {
     await this.page.getByRole('button', { name: button, exact: true }).click();
     const picker = await dialog(this.page, 'Contents');
-    for (const name of names) {
-      // The name cell reads `name #slug`.
-      const cell = this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}\\s*#`) });
-      await picker.getByRole('row').filter({ has: cell }).click();
+    // The name cell reads `name #slug`.
+    const row = (name: string) =>
+      picker
+        .getByRole('row')
+        .filter({ has: this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}\\s*#`) }) });
+    if (folder) {
+      await row(folder).click();
+      await expect(row(names[0])).toBeVisible();
     }
+    for (const name of names) await row(name).click();
     const add = names.length === 1 ? 'Add Selected Document' : `Add Selected Documents (${names.length})`;
     await picker.getByRole('button', { name: add, exact: true }).click();
     await expect(picker).toBeHidden();
   }
 
-  /** Picks files for an Asset ("Add Asset") or Assets ("Add Assets") field in the Assets dialog. */
-  async pickAssets(button: 'Add Asset' | 'Add Assets', names: string[]): Promise<void> {
+  /**
+   * Opens the Assets dialog of an Asset ("Add Asset") or Assets ("Add Assets") field, in `folder` (at the root) when
+   * given, and returns it with a way to find its rows.
+   */
+  async openAssetPicker(button: 'Add Asset' | 'Add Assets', folder?: string): Promise<{ picker: Locator; row: (name: string) => Locator }> {
     await this.page.getByRole('button', { name: button, exact: true }).click();
     const picker = await dialog(this.page, 'Assets');
-    for (const name of names) {
-      // The name cell reads `name.ext`, then the image size.
-      const cell = this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}(\\s|$)`) });
-      await picker.getByRole('row').filter({ has: cell }).click();
-    }
+    // The name cell reads `name.ext`, then the image size; a folder's just its name.
+    const row = (name: string) =>
+      picker
+        .getByRole('row')
+        .filter({ has: this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}(\\s|$)`) }) });
+    if (folder) await row(folder).click();
+    return { picker, row };
+  }
+
+  /** Picks files for an Asset ("Add Asset") or Assets ("Add Assets") field in the Assets dialog (in `folder`, if given). */
+  async pickAssets(button: 'Add Asset' | 'Add Assets', names: string[], folder?: string): Promise<void> {
+    const { picker, row } = await this.openAssetPicker(button, folder);
+    for (const name of names) await row(name).click();
     const add = names.length === 1 ? 'Add Selected Asset' : `Add Selected Assets (${names.length})`;
     await picker.getByRole('button', { name: add, exact: true }).click();
     await expect(picker).toBeHidden();
@@ -274,7 +293,7 @@ export class ContentsPage {
   async editorLocale(name: string): Promise<void> {
     // The trigger is named after the selected locale. A click while the last pick's menu is still closing is lost:
     // retried until the item can be clicked.
-    const trigger = this.page.getByRole('button', { name: /^(English|German|Romanian)/ }).first();
+    const trigger = this.page.getByRole('button', { name: /^(English|German|Romanian|French)/ }).first();
     const menu = this.page.getByRole('menu');
     // The default locale is listed as "English (Default)".
     const label = new RegExp(`^${escapeRegExp(name)}( \\(Default\\))?$`);

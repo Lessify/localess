@@ -34,10 +34,9 @@ export class SpacesRepository {
     return findSpace(this.db, spaceId);
   }
 
-  /** With its first locale, the default one, and its auto-generated preview token. */
-  create(name: string, defaultLocaleId: string, tx?: Transaction): Promise<SpaceRow> {
+  /** With its first locale, the default one, and its auto-generated preview token. `id`: one chosen beforehand. */
+  create(name: string, defaultLocaleId: string, tx?: Transaction, id: string = newUuid()): Promise<SpaceRow> {
     return transaction(this.db, tx, async t => {
-      const id = newUuid();
       await t.insert(spaces).values({ id, name, defaultLocaleId });
       await t.insert(spaceLocales).values({ spaceId: id, localeId: defaultLocaleId, position: 0 });
       await createPreviewToken(t, id);

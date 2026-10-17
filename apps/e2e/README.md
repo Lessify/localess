@@ -154,7 +154,10 @@ Import `test` and `expect` from `./support/fixtures` (not `@playwright/test`):
 `test.use({ spaceTemplate: 'TRANSLATIONS_LARGE' })` gives each test its own space with English, German and French and
 10,000 generated translations, nothing published. The data follows a fixed rule; `support/large-translations.ts`
 restates it for expectations (written separately from the server's generator, so a generator bug fails a test).
-Example: `translations/large-space.spec.ts`. Design: `docs/roadmap/space-templates.md`.
+Example: `translations/large-space.spec.ts`. `CONTENTS_FIELDS` gives every field kind in English, German and French
+(translatable and not, five nested levels), three files in `Media` and reference targets, restated in
+`support/contents-fields.ts`; example: `contents/template-fields.spec.ts`. Design: `docs/roadmap/space-templates.md`,
+`docs/roadmap/contents-template.md`.
 
 **Error guard.** Every page (`page`, `signInAs` and `signedOutPage` pages, and popups they open) records uncaught
 errors, everything reported to Angular's `ErrorHandler` (what users see as the "An error occurred." toast) and every

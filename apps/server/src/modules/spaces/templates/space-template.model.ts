@@ -1,4 +1,4 @@
-import type { SchemaComponentExport, SchemaEnumExport } from '@localess/shared';
+import type { ContentValue, SchemaComponentExport, SchemaEnumExport } from '@localess/shared';
 
 /**
  * A schema as a template declares it: the export format, where `id` is the schema's name (as in exports, the SDK and
@@ -20,6 +20,34 @@ export interface TemplateTranslation {
 }
 
 /**
+ * An asset a template creates: a folder, or a file whose bytes it generates (the same bytes every time). `parent` and
+ * the keys other items use are template keys, mapped to the new ids when the space is created.
+ */
+export interface TemplateAsset {
+  key: string;
+  kind: 'FOLDER' | 'FILE';
+  name: string;
+  /** Key of a FOLDER of the same template; none: at the root. */
+  parent?: string;
+  file?: { extension: string; type: string; bytes: () => Promise<Buffer> };
+}
+
+/**
+ * A folder or document a template creates. `data` gets `id(key)` for the ids of the template's contents and assets, and
+ * returns the document's fields (its `_id` and `_schema` are added when it is written); blocks carry their own `_id`.
+ */
+export interface TemplateContent {
+  key: string;
+  kind: 'FOLDER' | 'DOCUMENT';
+  name: string;
+  slug: string;
+  /** Key of a FOLDER of the same template; none: at the root. */
+  parent?: string;
+  schema?: string;
+  data?: (id: (key: string) => string) => Record<string, ContentValue>;
+}
+
+/**
  * A starting point offered when creating a space, written in the creating transaction (`SpaceTemplatesRepository`).
  * Typed data rather than loose JSON: a field missing its `source`, or given the wrong limit, does not compile; what
  * typing can not check (references resolve) is covered by templates.test.ts.
@@ -37,4 +65,7 @@ export interface SpaceTemplate {
   schemas: SpaceTemplateSchema[];
   /** Pure: the same output on every call (e2e tests depend on it). */
   translations?: () => TemplateTranslation[];
+  assets?: TemplateAsset[];
+  /** In order: a parent before its children. */
+  contents?: TemplateContent[];
 }

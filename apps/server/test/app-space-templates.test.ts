@@ -1,16 +1,20 @@
 import { count, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { schemas, spaceLocales, spaces, tokens, translations } from '../src/infra/database/schema.js';
+import { assets, contents, schemas, spaceLocales, spaces, tokens, translations } from '../src/infra/database/schema.js';
 import { SpaceTemplatesRepository } from '../src/modules/spaces/repositories/space-templates.repository.js';
 import { BLOG_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 const USER_TEMPLATES = ['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING'];
+const TEST_TEMPLATES = ['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS'];
 
 async function counts(t: TestApp) {
-  const rows = async (table: typeof spaces | typeof spaceLocales | typeof tokens | typeof schemas | typeof translations) =>
-    (await t.db.select({ n: count() }).from(table))[0].n;
+  const rows = async (
+    table: typeof spaces | typeof spaceLocales | typeof tokens | typeof schemas | typeof translations | typeof assets | typeof contents,
+  ) => (await t.db.select({ n: count() }).from(table))[0].n;
   return {
+    assets: await rows(assets),
+    contents: await rows(contents),
     spaces: await rows(spaces),
     spaceLocales: await rows(spaceLocales),
     tokens: await rows(tokens),
@@ -42,7 +46,7 @@ describe('app API: space templates', () => {
       const response = await admin.get('/api/app/spaces/templates');
       expect(response.statusCode).toBe(200);
       const list = response.json();
-      expect(list.map((it: { id: string }) => it.id)).toEqual([...USER_TEMPLATES, 'TRANSLATIONS_LARGE']);
+      expect(list.map((it: { id: string }) => it.id)).toEqual([...USER_TEMPLATES, ...TEST_TEMPLATES]);
       for (const it of list) expect(Object.keys(it).sort()).toEqual(['description', 'icon', 'id', 'name']);
       expect(list[4]).toEqual({
         id: 'TRANSLATIONS_LARGE',
