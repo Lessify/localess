@@ -2,7 +2,7 @@ import { type ContentValue, SchemaFieldKind, type SchemaField, SchemaType } from
 import type { SpaceTemplate, TemplateContent } from './space-template.model.js';
 
 /*
- * "Contents (large)": 2,000 documents and 66 folders, to test the Contents page, folder publishing, `/links`, the
+ * "Contents (large)": 2,000 documents and 67 folders, to test the Contents page, folder publishing, `/links`, the
  * references picker and the Link field at size. Test-only (LOCALESS_TEST_TEMPLATES), English only, nothing published.
  * The rule, which e2e tests restate (apps/e2e/tests/support/contents-large.ts); keys are full slugs:
  *

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { ContentData } from '@localess/shared';
 import { zContentData } from '@localess/shared/zod';
 import { describe, expect, it } from 'vitest';
@@ -49,9 +50,8 @@ describe('CONTENTS_LARGE_TEMPLATE', () => {
   });
 
   it('is stable', () => {
-    expect(contents.map(it => [it.key, it.name, it.slug, it.parent])).toEqual(
-      CONTENTS_LARGE_TEMPLATE.contents!.map(it => [it.key, it.name, it.slug, it.parent]),
-    );
-    expect(data('page-07')).toEqual(data('page-07'));
+    // The whole tree and every document's data, hashed: a change to either changes the hash.
+    const all = contents.map(it => [it.key, it.kind, it.name, it.slug, it.parent, it.data?.(id)]);
+    expect(createHash('sha256').update(JSON.stringify(all)).digest('hex')).toBe('bca0ef90886bafab3b6bfb687f9c5c1f18b72b05e55f73dbdcf6081586289913');
   });
 });

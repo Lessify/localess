@@ -258,12 +258,12 @@ receives). Specs in `tests/contents/`.
 
 | Scenario | How | Status |
 |---|---|---|
-| Paging a folder of 1,000 documents: 50 pages, next, last | UI | ✅ `contents/template-large` |
+| Paging a folder of 1,000 documents: 50 pages, next, last; 100 per page keeps the last page open (`Page 10 of 10`) | UI | ✅ `contents/template-large` |
 | Sorting a folder of 1,000 documents by name, both ways | UI | ✅ `contents/template-large` |
 | Three levels deep: a month holds its 16 posts; the breadcrumb leads back | UI | ✅ `contents/template-large` |
-| Publish, then unpublish a folder of 192 documents (`Blog/2024`): the published `/links` lists them, then none; drafts stay. Publish 2.2–2.7 s, unpublish 1.2–1.5 s | UI + CDN | ✅ `contents/template-large` |
+| Publish, then unpublish a folder of 192 documents (`Blog/2024`): the published `/links` lists them, then none, and its 12 month folders throughout; drafts stay. Publish 2.2–2.7 s, unpublish 1.2–1.5 s | UI + CDN | ✅ `contents/template-large` |
 | `/links` with 2,067 entries; `kind` and `parentSlug` + `excludeChildren` filters | CDN | ✅ `contents/template-large` |
-| The references picker: a document from page 50 of a 1,000-document folder | UI + API | ✅ `contents/template-large` |
+| The references picker: a document from page 50 of a 1,000-document folder; saved and delivered (draft CDN) | UI + API + CDN | ✅ `contents/template-large` |
 | The Link field's document list with 2,000 documents (all rendered): opens in 1.3–1.9 s; typing finds one; saved | UI + API | ✅ `contents/template-large` |
 
 **With the prepared space** (`contents/template-fields`): the test template "Contents (all fields)", every field kind in

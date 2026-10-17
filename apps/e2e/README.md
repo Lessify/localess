@@ -133,6 +133,8 @@ can run at the same time; each demo creates an "Acme Website" space with English
 front of dialogs and menus, which are in the browser's top layer), the pointer gliding to each control, typing at a
 readable speed. `demos/support/images.ts` draws the sample pictures. A demo is a script: change the wording or the steps
 there, then record again. Requires the builds (`pnpm build:prod`, `pnpm server:build`).
+What is still to come (a scenario and video per feature, doc screenshots, one shared "Acme" space):
+[docs/roadmap/documentation-media.md](../../docs/roadmap/documentation-media.md).
 
 ## Fixtures (`tests/support/fixtures.ts`)
 
