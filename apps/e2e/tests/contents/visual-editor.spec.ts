@@ -98,11 +98,16 @@ test.describe('Contents → Visual Editor', () => {
     // Hover a block in the form: the page highlights it. Hover it on the page: the form marks it.
     // The form's rows show the schema, not the heading: by position.
     const formBlock = (index: number) => contents.blocks(contents.blockField('Body')).nth(index);
-    await formBlock(1).hover();
-    // Highlights are only visual (no accessible state): checked by their classes.
-    await expect(sections.nth(1)).toHaveClass(/ll-hover-highlight/);
-    await sections.nth(2).hover();
-    await expect(formBlock(2)).toHaveClass(/border-primary/);
+    // Highlights are only visual (no accessible state): checked by their classes. A hover that crosses into or out of
+    // the preview's frame can be missed by the frame under load, so the pointer is moved there again until it lands.
+    await expect(async () => {
+      await formBlock(1).hover();
+      await expect(sections.nth(1)).toHaveClass(/ll-hover-highlight/, { timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
+    await expect(async () => {
+      await sections.nth(2).hover();
+      await expect(formBlock(2)).toHaveClass(/border-primary/, { timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
 
     // Select the first block: no Move up for it.
     await sections.nth(0).click();
