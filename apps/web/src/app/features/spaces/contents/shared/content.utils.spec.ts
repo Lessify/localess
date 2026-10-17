@@ -1,4 +1,14 @@
-import { CONTENT_DEFAULT_LOCALE, ContentAsset, ContentData, ContentReference, extractContent, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentAsset,
+  ContentData,
+  ContentReference,
+  extractContent,
+  SchemaComponent,
+  SchemaField,
+  SchemaFieldKind,
+  SchemaType,
+} from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
 import { collectTranslatableFields, extractReferences, extractSchemaContent } from './content.utils';
@@ -116,8 +126,6 @@ describe('content utils', () => {
     });
   });
 
-
-
   describe('extractReferences', () => {
     it('returns empty sets for undefined data', () => {
       expect(extractReferences(undefined, [], 'default')).toEqual([new Set(), new Set(), new Set()]);
@@ -139,6 +147,30 @@ describe('content utils', () => {
       const [assets, links, references] = extractReferences(data, [schema], 'default');
       expect(assets).toEqual(new Set(['asset-1']));
       expect(links).toEqual(new Set(['link-1']));
+      expect(references).toEqual(new Set(['ref-1']));
+    });
+
+    it('skips empty Asset, Link and Reference values (a field left empty in the editor)', () => {
+      const schema = rootSchema([
+        field({ name: 'cover', kind: SchemaFieldKind.ASSET }),
+        field({ name: 'link', kind: SchemaFieldKind.LINK }),
+        field({ name: 'ref', kind: SchemaFieldKind.REFERENCE }),
+        field({ name: 'refs', kind: SchemaFieldKind.REFERENCES }),
+      ]);
+      const data = {
+        _id: '1',
+        _schema: 'root-1',
+        cover: { kind: 'ASSET', uri: null },
+        link: { kind: 'LINK', type: 'content', target: '_self', uri: '' },
+        ref: { kind: 'REFERENCE', uri: null },
+        refs: [
+          { kind: 'REFERENCE', uri: 'ref-1' },
+          { kind: 'REFERENCE', uri: undefined },
+        ],
+      } as unknown as ContentData;
+      const [assets, links, references] = extractReferences(data, [schema], 'default');
+      expect(assets).toEqual(new Set());
+      expect(links).toEqual(new Set());
       expect(references).toEqual(new Set(['ref-1']));
     });
 

@@ -252,6 +252,20 @@ receives). Specs in `tests/contents/`.
 | Asset / Assets file type: set in the schema editor, the picker offers only those files; a schema carrying `fileTypes` (templates) keeps its filter when edited | UI (schema editor → content editor picker), API | ✅ `contents/fields-relations` |
 | Reference / References Path filter | UI | ⬜ (no effect today: roadmap to-do [reference-path-filter.md](../../docs/roadmap/reference-path-filter.md)) |
 
+**At scale** (`contents/template-large`): the test template "Contents (large)", 2,000 documents and 67 folders —
+`Archive` (1,000), `Blog/<year>/<month>` (16 posts each), 40 pages at the root; English only, nothing published
+(`support/contents-large.ts`). Timings recorded on the development machine (5 runs, in parallel with other tests).
+
+| Scenario | How | Status |
+|---|---|---|
+| Paging a folder of 1,000 documents: 50 pages, next, last | UI | ✅ `contents/template-large` |
+| Sorting a folder of 1,000 documents by name, both ways | UI | ✅ `contents/template-large` |
+| Three levels deep: a month holds its 16 posts; the breadcrumb leads back | UI | ✅ `contents/template-large` |
+| Publish, then unpublish a folder of 192 documents (`Blog/2024`): the published `/links` lists them, then none; drafts stay. Publish 2.2–2.7 s, unpublish 1.2–1.5 s | UI + CDN | ✅ `contents/template-large` |
+| `/links` with 2,067 entries; `kind` and `parentSlug` + `excludeChildren` filters | CDN | ✅ `contents/template-large` |
+| The references picker: a document from page 50 of a 1,000-document folder | UI + API | ✅ `contents/template-large` |
+| The Link field's document list with 2,000 documents (all rendered): opens in 1.3–1.9 s; typing finds one; saved | UI + API | ✅ `contents/template-large` |
+
 **With the prepared space** (`contents/template-fields`): the test template "Contents (all fields)", every field kind in
 English, German and French, files and reference targets, nothing published (`support/contents-fields.ts`).
 
@@ -368,6 +382,7 @@ regression test.
 
 | Bug | Fix |
 |---|---|
+| A document with an empty Reference, Asset or Link field could not be saved (the empty value was sent as a `null` id: 400), and after a failed save, publish or unpublish the editor's button kept spinning | `extractReferences` skips empty values; the editor stops its spinners on an error too (found by `contents/template-large`; regression test in `contents/fields-relations`) |
 | Text typed for a second locale was saved over the default locale, and unsaved text was discarded, whenever live data refreshed | Translation detail follows its inputs by value (locale id, stored value), not object identity |
 | The open content/asset folder jumped back to the root whenever any space changed (new documents landed in the root) | The live space list keeps the folders while the same space stays selected |
 | A space name being typed in Settings → General was overwritten by live updates (and Save sent the old name) | Only an untouched form follows live updates |
@@ -414,6 +429,7 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 
 | Finding | Where |
 |---|---|
+| After a failed request some buttons keep spinning (their loading flag is reset only when the request completes, which an error never does): the schema editors' Save (`edit-comp`, `edit-enum`), Translations' Publish and value save (`translations.component.ts`), the detail panel's Translate (`translation-detail`). Fixed in the document editor | To fix like the editor (reset on error too); not asserted |
 | Lists that update live re-render their rows and close an open row menu | Page objects retry opening (`rowMenu`, `expectRowMenu`) |
 | Machine translation of a single value (and "Translate other locales" on add) needs TRANSLATION_UPDATE **and** CONTENT_UPDATE (kept from the Firebase callable, pinned by a server test), while "Translate Locale" needs only TRANSLATION_UPDATE; a translator without CONTENT_UPDATE sees the Translate button and gets "Could not be translated." | Product decision; not asserted |
 | Tree view: a key that is also the prefix of other keys (`home` next to `home.title`) is a group node and can't be selected, so that translation can't be opened in the tree | Product decision; not asserted |

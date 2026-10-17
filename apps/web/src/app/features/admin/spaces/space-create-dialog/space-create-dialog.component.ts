@@ -7,6 +7,7 @@ import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
   lucideFileStack,
+  lucideFolderTree,
   lucideImages,
   lucideLanguages,
   lucideLayoutTemplate,
@@ -41,7 +42,16 @@ import { SpaceCreateDialogResult } from './space-create-dialog.model';
     HlmRadioGroupImports,
   ],
   providers: [
-    provideIcons({ lucideFile, lucideFileStack, lucideImages, lucideLanguages, lucideLayoutTemplate, lucideNewspaper, lucideShoppingCart }),
+    provideIcons({
+      lucideFile,
+      lucideFileStack,
+      lucideFolderTree,
+      lucideImages,
+      lucideLanguages,
+      lucideLayoutTemplate,
+      lucideNewspaper,
+      lucideShoppingCart,
+    }),
   ],
 })
 export class SpaceCreateDialogComponent {

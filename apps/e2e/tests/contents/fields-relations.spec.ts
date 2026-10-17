@@ -136,6 +136,35 @@ test.describe('Contents → form: choices and relations', () => {
     await expect(contents.pickedDocument('Post A')).toHaveCount(0);
   });
 
+  test('saves a document whose Reference, References, Asset and Link fields are left empty', async ({ page, api, space }) => {
+    // Was refused (400): the empty fields were sent as `null` ids. Fixed in content.utils.ts `extractReferences`.
+    const schema = await pageSchema(api, space, [
+      { name: 'title', kind: 'TEXT', displayName: 'Title' },
+      { name: 'author', kind: 'REFERENCE', displayName: 'Author' },
+      { name: 'related', kind: 'REFERENCES', displayName: 'Related' },
+      { name: 'cover', kind: 'ASSET', displayName: 'Cover' },
+      { name: 'site', kind: 'LINK', displayName: 'Site' },
+    ]);
+    const doc = await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: schema.name });
+    const contents = new ContentsPage(page);
+
+    // Pre-check
+    await contents.gotoDocument(space.id, doc.id);
+    expect((await contentById(api, space.id, doc.id)).data).toBeUndefined();
+
+    // Action: only the title.
+    await contents.field('Title').fill('Hello');
+    await contents.save();
+
+    // Post-check: stored, with no ids listed; after a reload the title is there.
+    const saved = await contentById(api, space.id, doc.id);
+    expect(saved.data).toMatchObject({ title: 'Hello' });
+    const lists = saved as unknown as { assets?: string[]; links?: string[]; references?: string[] };
+    expect([lists.assets ?? [], lists.links ?? [], lists.references ?? []]).toEqual([[], [], []]);
+    await page.reload();
+    await expect(contents.field('Title')).toHaveValue('Hello');
+  });
+
   test('Asset and Assets pick files in a dialog; the CDN resolves them', async ({ page, api, space, request }) => {
     const hero = await api.uploadAsset(space.id, pngFile('hero.png'));
     const one = await api.uploadAsset(space.id, pngFile('one.png'));

@@ -306,13 +306,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
@@ -326,13 +322,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be unpublished.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
@@ -368,18 +360,30 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
+          // An error ends the request without `complete`: Save must work again.
+          this.stopSaveLoading();
         },
-        complete: () => {
-          setTimeout(() => {
-            this.isSaveLoading.set(false);
-            this.cd.markForCheck();
-          }, 1000);
-        },
+        complete: () => this.stopSaveLoading(),
       });
     } else {
       this.notificationService.error('Content is not valid. Please check all fields are filled correctly.');
       this.isSaveLoading.set(false);
     }
+  }
+
+  /** After a publish or unpublish, failed or not (an error ends the request without `complete`). */
+  private stopPublishLoading(): void {
+    setTimeout(() => {
+      this.isPublishLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
+  }
+
+  private stopSaveLoading(): void {
+    setTimeout(() => {
+      this.isSaveLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   back(): void {

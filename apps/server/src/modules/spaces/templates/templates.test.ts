@@ -14,9 +14,15 @@ describe('SPACE_TEMPLATES', () => {
       'TRANSLATIONS_LARGE',
       'CONTENTS_FIELDS',
       'ASSETS_LARGE',
+      'CONTENTS_LARGE',
     ]);
     expect(SPACE_TEMPLATES[0].id).toBe(EMPTY_TEMPLATE_ID);
-    expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual(['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS', 'ASSETS_LARGE']);
+    expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual([
+      'TRANSLATIONS_LARGE',
+      'CONTENTS_FIELDS',
+      'ASSETS_LARGE',
+      'CONTENTS_LARGE',
+    ]);
   });
 
   it('gives every template a name, description and icon for the choice card', () => {

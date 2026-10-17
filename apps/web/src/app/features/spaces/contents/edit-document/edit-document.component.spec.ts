@@ -3,7 +3,18 @@ import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { CONTENT_DEFAULT_LOCALE, ContentDocument, ContentKind, Locale, Schema, SchemaFieldKind, SchemaType, Space, Token, TokenType } from '@localess/shared';
+import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentDocument,
+  ContentKind,
+  Locale,
+  Schema,
+  SchemaFieldKind,
+  SchemaType,
+  Space,
+  Token,
+  TokenType,
+} from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
@@ -225,13 +236,28 @@ describe('EditDocumentComponent', () => {
       expect(component.isPublishLoading()).toBe(false);
     });
 
-    it('publish() notifies an error on failure', () => {
+    it('publish() notifies an error on failure, and Publish can be pressed again', async () => {
+      vi.useFakeTimers();
       const { component, publish, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       publish.mockReturnValue(throwError(() => new Error('boom')));
 
       component.publish();
 
       expect(error).toHaveBeenCalledWith('Content can not be published.');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isPublishLoading()).toBe(false);
+    });
+
+    it('unpublish() notifies an error on failure, and the button works again', async () => {
+      vi.useFakeTimers();
+      const { component, unpublish, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+      unpublish.mockReturnValue(throwError(() => new Error('boom')));
+
+      component.unpublish();
+
+      expect(error).toHaveBeenCalledWith('Content can not be unpublished.');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isPublishLoading()).toBe(false);
     });
 
     it('unpublish() notifies success and clears publishedAt', () => {
@@ -274,13 +300,17 @@ describe('EditDocumentComponent', () => {
       expect(component.isSaveLoading()).toBe(false);
     });
 
-    it('notifies an error on a failed save', () => {
+    it('notifies an error on a failed save, and Save can be pressed again', async () => {
+      vi.useFakeTimers();
       const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       updateDocumentData.mockReturnValue(throwError(() => new Error('boom')));
 
       component.save();
 
       expect(error).toHaveBeenCalledWith('Content can not be saved.');
+      // An observable that errors never completes: the spinner must stop on the error too.
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isSaveLoading()).toBe(false);
     });
   });
 

@@ -106,9 +106,9 @@ export class SpaceTemplatesRepository {
       const fileIds = prepared?.files.map(it => it.id) ?? [];
       for (let start = 0; start < fileIds.length; start += CHUNK)
         await releaseUploadGuards(t, spaceId, fileIds.slice(start, start + CHUNK));
-      for (const content of template.contents ?? []) {
+      const contentRows = (template.contents ?? []).map(content => {
         const data = content.data ? ({ _id: id(content.key), _schema: content.schema!, ...content.data(id) } as ContentData) : null;
-        await t.insert(contents).values({
+        return {
           id: id(content.key),
           spaceId,
           kind: content.kind,
@@ -117,9 +117,12 @@ export class SpaceTemplatesRepository {
           parentId: parentId(content.parent),
           schema: content.schema ?? null,
           data,
-          ...(data ? contentRefs(data) : {}),
-        });
-      }
+          ...(data ? contentRefs(data) : { assets: null, links: null, references: null }),
+        };
+      });
+      // In chunks, in declaration order (a folder before what it holds): the parent key is checked when each insert ends.
+      for (let start = 0; start < contentRows.length; start += CHUNK)
+        await t.insert(contents).values(contentRows.slice(start, start + CHUNK));
       const rows = (template.translations?.() ?? []).map(it => ({
         id: newUuid(),
         spaceId,

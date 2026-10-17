@@ -158,7 +158,8 @@ Example: `translations/large-space.spec.ts`. `CONTENTS_FIELDS` gives every field
 (translatable and not, five nested levels), three files in `Media` and reference targets, restated in
 `support/contents-fields.ts`; example: `contents/template-fields.spec.ts`. Design: `docs/roadmap/space-templates.md`,
 `docs/roadmap/contents-template.md`. `ASSETS_LARGE` gives 1,000 files in one folder (`support/assets-large.ts`;
-example: `assets/template-large.spec.ts`; design `docs/roadmap/assets-template.md`).
+example: `assets/template-large.spec.ts`; design `docs/roadmap/assets-template.md`). `CONTENTS_LARGE` gives 2,000 documents in a deep tree
+(`support/contents-large.ts`; example: `contents/template-large.spec.ts`; design `docs/roadmap/contents-large-template.md`).
 
 **Error guard.** Every page (`page`, `signInAs` and `signedOutPage` pages, and popups they open) records uncaught
 errors, everything reported to Angular's `ErrorHandler` (what users see as the "An error occurred." toast) and every
