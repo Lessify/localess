@@ -39,6 +39,11 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   const pool = new pg.Pool({ connectionString: database.url });
+  // `pool.end()` resolves once each client is asked to disconnect, not once it has: `close()` then drops the database
+  // WITH (FORCE), which can terminate a client still disconnecting (57P01). Nobody listens to that client any more, so
+  // its error would be uncaught and fail the run. Connection loss of the test's own pool is never a test result.
+  pool.on('connect', client => client.on('error', () => undefined));
+  pool.on('error', () => undefined);
   return {
     app,
     db: drizzle(pool, { schema }),
