@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { SchemaType, UserPermission } from '@localess/shared';
-import { schemaEnumValueSchema, schemaFieldSchema, zSchemaTemplateSchema } from '@localess/shared/zod';
+import { schemaEnumValueSchema, schemaFieldSchema } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
@@ -48,29 +48,6 @@ export class SchemasController {
   @RequirePermission(UserPermission.SCHEMA_CREATE)
   create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
     return this.schemas.create(spaceId, body);
-  }
-
-  /** Applies a space template's schemas in one transaction. */
-  @Post('template')
-  @RequirePermission(UserPermission.SCHEMA_CREATE)
-  applyTemplate(
-    @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(zSchemaTemplateSchema)) body: z.infer<typeof zSchemaTemplateSchema>,
-  ) {
-    return this.schemas.createMany(
-      spaceId,
-      // Templates are in the export format, where `id` is the name.
-      body.schemas.map(schema => ({
-        name: schema.id,
-        type: schema.type,
-        displayName: schema.displayName,
-        description: schema.description,
-        labels: schema.labels,
-        previewField: 'previewField' in schema ? schema.previewField : undefined,
-        fields: 'fields' in schema ? schema.fields : undefined,
-        values: 'values' in schema ? schema.values : undefined,
-      })),
-    );
   }
 
   @Put(':id')

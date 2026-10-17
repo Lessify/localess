@@ -71,19 +71,6 @@ export class SchemasService {
   }
 
   /**
-   * Several schemas at once, all or nothing (was the space-template `writeBatch`). Their fields may refer to each
-   * other and to the space's schemas.
-   */
-  async createMany(spaceId: string, inputs: NewSchema[]): Promise<Schema[]> {
-    const types = await this.types(spaceId);
-    for (const input of inputs) types.set(input.name, input.type as SchemaType);
-    requireValidFields(inputs, types);
-    const outcome = await this.schemas.createMany(spaceId, inputs);
-    if (outcome.lost) throw new ConflictException(lostMessage(outcome.lost));
-    return outcome.schemas!.map(toSchema);
-  }
-
-  /**
    * Replaces the editable fields; absent ones are cleared (the UI's `deleteField()`). Only what the schema's type has
    * is stored: fields and the preview field for ROOT and NODE, values for ENUM (the type never changes). The fields
    * must keep the rules across fields (400, saying which); the schemas they refer to stay locked until the write

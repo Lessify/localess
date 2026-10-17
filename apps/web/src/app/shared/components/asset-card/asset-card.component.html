@@ -1,6 +1,13 @@
 @let asset = item();
 <hlm-card class="overflow-hidden pt-0!">
-  <div class="cursor-pointer border-b" aria-hidden="true" (click)="assetSelect.emit(asset)" (keydown)="assetSelect.emit(asset)">
+  <div
+    class="cursor-pointer border-b"
+    role="button"
+    tabindex="0"
+    [attr.aria-label]="'Open ' + asset.name + (asset.kind === 'FILE' ? (asset.extension ?? '') : '')"
+    (click)="assetSelect.emit(asset)"
+    (keydown.enter)="assetSelect.emit(asset)"
+    (keydown.space)="$event.preventDefault(); assetSelect.emit(asset)">
     @if (asset.kind === 'FILE' && filePreview(asset.type)) {
       <div class="relative aspect-square w-full">
         @if (asset.extension; as extension) {
@@ -10,7 +17,7 @@
           class="bg-primary-foreground aspect-square w-full object-contain"
           [class.cursor-zoom-in]="zoomCursor()"
           ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ asset.id }}"
-          alt="thumbnail"
+          alt=""
           width="600"
           height="600"
           loading="lazy"

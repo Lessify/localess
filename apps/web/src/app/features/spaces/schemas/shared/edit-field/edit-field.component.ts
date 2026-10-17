@@ -426,7 +426,8 @@ export class EditFieldComponent {
       }
       case SchemaFieldKind.SCHEMA: {
         // ADD
-        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined, Validators.required));
+        // [], not undefined: the multi-select adds to the array, and could pick nothing (required still fails on []).
+        this.form().addControl('schemas', this.fb.control<string[]>([], Validators.required));
         // REMOVE
         this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown
@@ -448,7 +449,8 @@ export class EditFieldComponent {
       }
       case SchemaFieldKind.SCHEMAS: {
         // ADD
-        this.form().addControl('schemas', this.fb.control<string[] | undefined>(undefined, Validators.required));
+        // [], not undefined: the multi-select adds to the array, and could pick nothing (required still fails on []).
+        this.form().addControl('schemas', this.fb.control<string[]>([], Validators.required));
         // REMOVE
         this.form().removeControl('translatable');
         // Text & TextArea & RichTex & Markdown

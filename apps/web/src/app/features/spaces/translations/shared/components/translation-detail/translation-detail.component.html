@@ -5,8 +5,9 @@
         <fieldset hlmFieldSet>
           <div hlmFieldGroup class="flex flex-row justify-center gap-2">
             <div hlmField>
+              <label class="sr-only" for="translation-source-locale">Source Locale</label>
               <hlm-select [(value)]="selectedSourceLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
-                <hlm-select-trigger class="w-full">
+                <hlm-select-trigger class="w-full" buttonId="translation-source-locale">
                   <hlm-select-placeholder>Source Locale</hlm-select-placeholder>
                   <ng-template hlmSelectValueTemplate let-value>
                     <div class="flex items-center">
@@ -25,12 +26,14 @@
                 </hlm-select-content>
               </hlm-select>
             </div>
-            <button hlmBtn size="icon" variant="ghost">
+            <!-- Decoration between the two selects: not a button (a hidden button could still take the focus). -->
+            <span class="inline-flex size-9 shrink-0 items-center justify-center" aria-hidden="true">
               <ng-icon hlm size="sm" name="lucideArrowRight" />
-            </button>
+            </span>
             <div hlmField>
+              <label class="sr-only" for="translation-target-locale">Target Locale</label>
               <hlm-select [(value)]="selectedTargetLocale" [isItemEqualToValue]="compareLocale" [itemToString]="localeToString">
-                <hlm-select-trigger class="w-full">
+                <hlm-select-trigger class="w-full" buttonId="translation-target-locale">
                   <hlm-select-placeholder>Target Locale</hlm-select-placeholder>
                   <ng-template hlmSelectValueTemplate let-value>
                     <div class="flex items-center">
@@ -54,6 +57,7 @@
               size="icon"
               variant="outline"
               (click)="translate()"
+              aria-label="Translate"
               [hlmTooltip]="translateTooltip()"
               [disabled]="!isLocaleTranslatable(selectedSourceLocale(), selectedTargetLocale())">
               @if (isTranslateLoading()) {
@@ -92,6 +96,7 @@
           <button
             hlmBtn
             variant="outline"
+            aria-label="Save"
             hlmTooltip="Save the changes"
             [disabled]="isLocaleUpdateLoading() || translation.locales[selectedTargetLocale().id] === selectedTranslationLocaleValue()"
             (click)="save.emit({ translation: translation, locale: selectedTargetLocale(), value: selectedTranslationLocaleValue()! })">
@@ -113,21 +118,21 @@
     <div>
       <div class="align-items-start flex gap-2 p-2">
         @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" (click)="openEditIdDialog(translation)">
+          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" aria-label="Edit Key" (click)="openEditIdDialog(translation)">
             <ng-icon hlm size="sm" name="lucideReplace" />
           </button>
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" (click)="openEditDialog(translation)">
+          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" aria-label="Edit" (click)="openEditDialog(translation)">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
         }
         @if ('TRANSLATION_DELETE' | canUserPerform | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" (click)="openDeleteDialog(translation)">
+          <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" aria-label="Delete" (click)="openDeleteDialog(translation)">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
         }
       </div>
       <hlm-separator />
-      <ul role="list" class="divide-y">
+      <ul role="list" aria-label="Translation details" class="divide-y">
         <li role="listitem" class="relative flex items-center p-2">
           <div class="min-w-0 flex-auto">
             <div class="flex items-center gap-x-3">
@@ -140,6 +145,7 @@
                 size="icon"
                 variant="ghost"
                 hlmTooltip="Copy Key"
+                aria-label="Copy Key"
                 [cdkCopyToClipboard]="translation.key"
                 (cdkCopyToClipboardCopied)="copied()">
                 <ng-icon hlm size="sm" name="lucideCopy" />

@@ -140,25 +140,10 @@ describe('app API: schemas', () => {
     expect((await editor.get(`${base}/${ids['page']}`)).json().name).toBe('article');
   });
 
-  it('applies a template all or nothing; templates name schemas by `id`, as exports do', async () => {
-    const template = {
-      schemas: [
-        { id: 'hero', type: 'NODE', fields: [{ name: 'heading', kind: 'TEXT' }] },
-        { id: 'colors', type: 'ENUM', values: [] },
-      ],
-    };
-    expect((await editor.post(`${base}/template`, template)).statusCode).toBe(409);
-    expect((await editor.get(base)).json().map((s: { name: string }) => s.name)).not.toContain('hero');
-    const broken = { schemas: [{ id: 'hero', type: 'NODE', fields: [{ name: 'size', kind: 'OPTION', source: 'gone' }] }] };
-    const refused = await editor.post(`${base}/template`, broken);
-    expect(refused.statusCode).toBe(400);
-    expect(refused.json().message).toBe("Schema 'hero' is not valid: field 'size' takes its options from 'gone', which does not exist");
-    template.schemas[1].id = 'sizes';
-    template.schemas[0].fields!.push({ name: 'size', kind: 'OPTION', source: 'sizes' } as never);
-    const created = (await editor.post(`${base}/template`, template)).json();
-    expect(created.map((s: { name: string }) => s.name)).toEqual(['hero', 'sizes']);
-    for (const schema of created) expect(schema.id).toMatch(UUID_V7);
-    ids['hero'] = created[0].id;
+  it('creates a schema to delete later', async () => {
+    const created = (await editor.post(base, { name: 'hero', type: 'NODE' })).json();
+    expect(created.id).toMatch(UUID_V7);
+    ids['hero'] = created.id;
   });
 
   describe('in use: referred to by another schema\'s fields, or the schema of contents', () => {

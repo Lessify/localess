@@ -323,6 +323,21 @@ describe('ContentsComponent', () => {
       expect(unpublish).toHaveBeenCalledWith('space-1', 'c1');
       expect(success).toHaveBeenCalledWith("Document 'Page' has been unpublished.");
     });
+
+    it('reports a failed publish or unpublish as an error, not a success', () => {
+      const { component, open, publish, unpublish, success, error } = setup();
+      open.mockReturnValue({ closed$: of(true) });
+      publish.mockReturnValue(throwError(() => new Error('boom')));
+      unpublish.mockReturnValue(throwError(() => new Error('boom')));
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      component.openPublishDialog(doc({ name: 'Page' }));
+      component.openUnpublishDialog(doc({ name: 'Page' }));
+
+      expect(error).toHaveBeenCalledWith("Document 'Page' can not be published.");
+      expect(error).toHaveBeenCalledWith("Document 'Page' can not be unpublished.");
+      expect(success).not.toHaveBeenCalled();
+    });
   });
 
   describe('onRowSelect', () => {

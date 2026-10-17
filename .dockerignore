@@ -6,8 +6,13 @@
 **/dist
 **/dist-dev
 **/.data
+**/.data-demos
+**/demo-videos
 **/.angular
 **/*.tsbuildinfo
 docs
 tools/openapi
 *.log
+**/test-results
+**/playwright-report
+**/.auth

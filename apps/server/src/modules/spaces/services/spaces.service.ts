@@ -1,11 +1,24 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { DEFAULT_LOCALE, type SpaceOverview } from '@localess/shared';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { Space } from '@localess/shared';
+import { canPerform, type SpaceOverview, type SpaceTemplateSummary, UserPermission } from '@localess/shared';
+import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import { newUuid } from '../../../infra/database/id.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
+import { assetFilesPrefix, spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
+import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
+import type { UserRow } from '../../../shared/models/user.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
+import { toPrincipal } from '../../../shared/transformers/user.transformer.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
+import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositories/space-templates.repository.js';
 import { SpacesRepository } from '../repositories/spaces.repository.js';
+import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
+
+/** Template files stored in parallel, this many at a time. */
+const STORE_BATCH = 50;
 
 /** `ids` lists each of `current` once, in any order. */
 function isPermutation(ids: string[], current: string[]): boolean {
@@ -21,6 +34,10 @@ export class SpacesService {
     private readonly locales: LocalesRepository,
     private readonly overviews: SpaceOverviewRepository,
     private readonly sweeper: StorageSweeperService,
+    private readonly spaceTemplates: SpaceTemplatesRepository,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
+    private readonly metadata: AssetMetadataService,
   ) {}
 
   async list() {
@@ -37,8 +54,73 @@ export class SpacesService {
     return space && toPublicSpace(space);
   }
 
-  async create(name: string) {
-    return toSpace(await this.spaces.create(name, DEFAULT_LOCALE.id));
+  /** What the Create Space dialog offers this user, in order (docs/roadmap/space-templates.md). */
+  templates(user: UserRow): SpaceTemplateSummary[] {
+    return this.offered(user).map(({ id, name, description, icon }) => ({ id, name, description, icon }));
+  }
+
+  /**
+   * With everything its template holds, in one transaction (no template: Empty). An unknown template, or a test one
+   * while they are off, is a 400; one the user may not choose (a template other than Empty needs SCHEMA_CREATE), a 403.
+   */
+  async create(name: string, templateId: string | undefined, user: UserRow) {
+    const id = templateId ?? EMPTY_TEMPLATE_ID;
+    const template = this.available().find(it => it.id === id);
+    if (!template) throw new BadRequestException('Unknown template');
+    if (!this.offered(user).includes(template)) throw new ForbiddenException();
+    return this.createFromTemplate(name, template);
+  }
+
+  /**
+   * A template's files are stored before its transaction, the way an upload is: guarded first, so that if anything
+   * fails they are removed (at once here, or by the sweeper when the guard expires); the transaction releases the
+   * guards with the rows.
+   */
+  async createFromTemplate(name: string, template: SpaceTemplate): Promise<Space> {
+    const files = (template.assets ?? []).filter(it => it.file);
+    if (!files.length) return toSpace(await this.spaceTemplates.createSpace(name, template));
+    const spaceId = newUuid();
+    const ids = files.map(() => newUuid());
+    await this.spaceTemplates.guardFiles(spaceId, ids);
+    try {
+      // In batches: a template can hold a thousand small files.
+      const stored: StoredTemplateFile[] = [];
+      for (let start = 0; start < files.length; start += STORE_BATCH) {
+        const batch = files.slice(start, start + STORE_BATCH).map(async (asset, offset) => {
+          const id = ids[start + offset];
+          // The asset module's key for an original (modules/assets/utils/storage-keys.ts `originalKey`).
+          const key = `${assetFilesPrefix(spaceId, id)}original`;
+          const info = await this.storage.put(key, await asset.file!.bytes());
+          // Known from the generator, or read as for an upload.
+          const metadata = asset.file!.metadata ?? (await this.metadata.extract(key, asset.file!.type, null)).metadata ?? null;
+          return { key: asset.key, id, size: info.size, md5: info.md5, metadata };
+        });
+        // Every store of the batch settles before a failure is acted on: one still writing after the cleanup would
+        // recreate the folder with its guard already released, and stay for good.
+        const results = await Promise.allSettled(batch);
+        const failed = results.find(it => it.status === 'rejected');
+        if (failed) throw failed.reason;
+        stored.push(...results.map(it => (it as PromiseFulfilledResult<StoredTemplateFile>).value));
+      }
+      return toSpace(await this.spaceTemplates.createSpace(name, template, undefined, { spaceId, files: stored }));
+    } catch (error) {
+      const cleaned = await this.storage.deletePrefix(spaceFilesPrefix(spaceId)).then(
+        () => true,
+        () => false,
+      );
+      if (cleaned) await this.spaceTemplates.releaseFiles(spaceId, ids);
+      throw error;
+    }
+  }
+
+  /** Test templates only with LOCALESS_TEST_TEMPLATES. */
+  private available(): readonly SpaceTemplate[] {
+    return this.config.testTemplates ? SPACE_TEMPLATES : SPACE_TEMPLATES.filter(it => !it.test);
+  }
+
+  private offered(user: UserRow): readonly SpaceTemplate[] {
+    if (canPerform(toPrincipal(user), UserPermission.SCHEMA_CREATE)) return this.available();
+    return this.available().filter(it => it.id === EMPTY_TEMPLATE_ID);
   }
 
   async rename(spaceId: string, name: string) {

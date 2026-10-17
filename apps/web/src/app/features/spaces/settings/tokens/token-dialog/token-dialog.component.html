@@ -29,13 +29,17 @@
         <label hlmFieldLabel [for]="'token-type-' + item.type">
           <div hlmField orientation="horizontal">
             <div hlmFieldContent>
-              <div hlmFieldTitle>
+              <div hlmFieldTitle [id]="'token-type-' + item.type + '-title'">
                 <ng-icon hlm size="sm" [name]="item.icon" />
                 {{ item.label }}
               </div>
-              <div hlmFieldDescription>{{ item.description }}</div>
+              <div hlmFieldDescription [id]="'token-type-' + item.type + '-description'">{{ item.description }}</div>
             </div>
-            <hlm-radio [value]="item.type" [inputId]="'token-type-' + item.type">
+            <hlm-radio
+              [value]="item.type"
+              [inputId]="'token-type-' + item.type"
+              [aria-labelledby]="'token-type-' + item.type + '-title'"
+              [aria-describedby]="'token-type-' + item.type + '-description'">
               <hlm-radio-indicator indicator />
             </hlm-radio>
           </div>
@@ -62,7 +66,7 @@
             placeholder="60" />
           <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs">
             seconds
-            <button hlmInputGroupButton size="icon-xs" (click)="resetCacheTtl()">
+            <button hlmInputGroupButton size="icon-xs" aria-label="Clear Cache TTL" (click)="resetCacheTtl()">
               <ng-icon name="lucideX" />
             </button>
           </hlm-input-group-addon>

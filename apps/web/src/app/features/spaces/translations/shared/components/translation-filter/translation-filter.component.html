@@ -2,8 +2,9 @@
   <fieldset hlmFieldSet>
     <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
       <div hlmField>
+        <label class="sr-only" for="translation-filter-locale">Locale</label>
         <hlm-select formControlName="locale" [itemToString]="localeIdToString">
-          <hlm-select-trigger class="w-full">
+          <hlm-select-trigger class="w-full" buttonId="translation-filter-locale">
             <hlm-select-placeholder>Search Locale</hlm-select-placeholder>
             <ng-template hlmSelectValueTemplate let-value>
               <div class="flex items-center">

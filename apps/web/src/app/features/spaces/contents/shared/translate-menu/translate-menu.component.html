@@ -13,6 +13,7 @@
   [class]="placementClass()"
   [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false || disabled()"
   [hlmDropdownMenuTrigger]="translationMenu"
+  aria-label="Translate the field"
   [hlmTooltip]="tooltip()">
   <ng-icon name="lucideLanguages" />
 </button>

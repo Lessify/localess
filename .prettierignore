@@ -1,0 +1,19 @@
+# Prettier run from the repository root (apps/web has its own .prettierignore for `pnpm prettier`).
+
+# Docs: written by hand, line breaks kept as they are (`proseWrap: always` would re-wrap every paragraph).
+*.md
+
+# Spartan/Helm components: generated source with its own style (tabs).
+packages/ui/
+
+# Build output, generated files, local data.
+dist/
+coverage/
+pnpm-lock.yaml
+apps/web/src/app/shared/generated/
+apps/e2e/test-results/
+apps/e2e/playwright-report/
+apps/e2e/demo-videos/
+.data/
+apps/e2e/.data/
+apps/e2e/.data-demos/

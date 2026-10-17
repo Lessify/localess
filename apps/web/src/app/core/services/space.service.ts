@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceUpdate } from '@localess/shared';
+import { Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceTemplateSummary, SpaceUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 const BASE = '/api/app/spaces';
@@ -22,9 +22,14 @@ export class SpaceService {
     return liveQueryWith(this.events, { entities: ['spaces'], id }, () => this.http.get<Space>(`${BASE}/${id}`));
   }
 
-  /** The server seeds `en` as the only and default locale. */
+  /** The server seeds `en` as the default locale, and writes the template's content in the same transaction. */
   create(entity: SpaceCreate): Observable<Space> {
-    return this.http.post<Space>(BASE, { name: entity.name });
+    return this.http.post<Space>(BASE, entity.template ? { name: entity.name, template: entity.template } : { name: entity.name });
+  }
+
+  /** The templates this user may create a space from, in the order to offer them. */
+  templates(): Observable<SpaceTemplateSummary[]> {
+    return this.http.get<SpaceTemplateSummary[]>(`${BASE}/templates`);
   }
 
   update(id: string, entity: SpaceUpdate): Observable<void> {

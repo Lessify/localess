@@ -3,7 +3,18 @@ import { TRANSLATE_NOT_CONFIGURED } from '@core/utils/translate-error';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { CONTENT_DEFAULT_LOCALE, ContentDocument, ContentKind, Locale, Schema, SchemaFieldKind, SchemaType, Space, Token, TokenType } from '@localess/shared';
+import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentDocument,
+  ContentKind,
+  Locale,
+  Schema,
+  SchemaFieldKind,
+  SchemaType,
+  Space,
+  Token,
+  TokenType,
+} from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
@@ -54,7 +65,7 @@ describe('EditDocumentComponent', () => {
 
   function setup(document: ContentDocument, options: { schemas?: Schema[]; selectedSpace?: Space } = {}) {
     const schemas = options.schemas ?? [rootSchema, childSchema];
-    const selectedSpace = options.selectedSpace ?? space();
+    const selectedSpace = signal(options.selectedSpace ?? space());
 
     const publish = vi.fn().mockReturnValue(of(undefined));
     const unpublish = vi.fn().mockReturnValue(of(undefined));
@@ -82,7 +93,7 @@ describe('EditDocumentComponent', () => {
           useValue: {
             documents: signal([]),
             schemas: signal(schemas),
-            selectedSpace: signal(selectedSpace),
+            selectedSpace,
           },
         },
       ],
@@ -94,6 +105,8 @@ describe('EditDocumentComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      fixture,
+      selectedSpace,
       publish,
       unpublish,
       updateDocumentData,
@@ -107,12 +120,50 @@ describe('EditDocumentComponent', () => {
     };
   }
 
+  describe('selectedLocale', () => {
+    it('keeps the chosen locale when the live space list re-emits (new objects, same locales)', () => {
+      const { component, fixture, selectedSpace } = setup(documentOf(undefined));
+      component.selectedLocale.set(de);
+
+      selectedSpace.set(space());
+      fixture.detectChanges();
+
+      expect(component.selectedLocale().id).toBe('de');
+    });
+
+    it('falls back to the default locale when the chosen one is removed from the space', () => {
+      const { component, fixture, selectedSpace } = setup(documentOf(undefined));
+      component.selectedLocale.set(de);
+
+      selectedSpace.set(space({ locales: [en] }));
+      fixture.detectChanges();
+
+      expect(component.selectedLocale().id).toBe(CONTENT_DEFAULT_LOCALE.id);
+    });
+  });
+
+  describe('onPreviewSchemaSelect', () => {
+    it("focuses a field of the document itself (no block in between) when it's clicked on the preview", () => {
+      const { component } = setup(documentOf({ _id: 'd1', _schema: 'root1', title: 'Hi' }));
+
+      component.onPreviewSchemaSelect({ id: 'd1', schema: 'root1', field: 'title' });
+
+      expect(component.clickSchemaField()).toBe('title');
+    });
+  });
+
   describe('ngOnInit', () => {
     it('generates a new document id/schema when the document has no data', () => {
       const { component } = setup(documentOf(undefined));
 
       expect(component.documentData._schema).toBe('root1');
       expect(component.documentData._id).toBeTruthy();
+    });
+
+    it("starts a new document with its schema before the space's schemas have loaded (deep link)", () => {
+      const { component } = setup(documentOf(undefined), { schemas: [] });
+
+      expect(component.documentData._schema).toBe('root1');
     });
 
     it('starts a new document with the schema name in _schema, not the schema row id', () => {
@@ -185,13 +236,28 @@ describe('EditDocumentComponent', () => {
       expect(component.isPublishLoading()).toBe(false);
     });
 
-    it('publish() notifies an error on failure', () => {
+    it('publish() notifies an error on failure, and Publish can be pressed again', async () => {
+      vi.useFakeTimers();
       const { component, publish, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       publish.mockReturnValue(throwError(() => new Error('boom')));
 
       component.publish();
 
       expect(error).toHaveBeenCalledWith('Content can not be published.');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isPublishLoading()).toBe(false);
+    });
+
+    it('unpublish() notifies an error on failure, and the button works again', async () => {
+      vi.useFakeTimers();
+      const { component, unpublish, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
+      unpublish.mockReturnValue(throwError(() => new Error('boom')));
+
+      component.unpublish();
+
+      expect(error).toHaveBeenCalledWith('Content can not be unpublished.');
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isPublishLoading()).toBe(false);
     });
 
     it('unpublish() notifies success and clears publishedAt', () => {
@@ -234,13 +300,17 @@ describe('EditDocumentComponent', () => {
       expect(component.isSaveLoading()).toBe(false);
     });
 
-    it('notifies an error on a failed save', () => {
+    it('notifies an error on a failed save, and Save can be pressed again', async () => {
+      vi.useFakeTimers();
       const { component, updateDocumentData, error } = setup(documentOf({ _id: 'd1', _schema: 'root1' }));
       updateDocumentData.mockReturnValue(throwError(() => new Error('boom')));
 
       component.save();
 
       expect(error).toHaveBeenCalledWith('Content can not be saved.');
+      // An observable that errors never completes: the spinner must stop on the error too.
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isSaveLoading()).toBe(false);
     });
   });
 

@@ -22,7 +22,7 @@
       <hlm-input-group-addon align="inline-end" class="text-muted-foreground text-xs"
         >{{ form.controls['name'].value?.length || 0 }}/50</hlm-input-group-addon
       >
-      <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeId()" hlmTooltip="Normalize ID">
+      <button hlmInputGroupButton type="button" variant="ghost" (click)="normalizeId()" hlmTooltip="Normalize ID" aria-label="Normalize ID">
         <ng-icon hlm size="sm" name="lucideWandSparkles" />
       </button>
     </div>
@@ -33,9 +33,9 @@
   </div>
 
   <div hlmField>
-    <label hlmFieldLabel for="type">Type</label>
+    <label hlmFieldLabel for="type-trigger">Type</label>
     <hlm-select id="type" formControlName="type" [itemToString]="typeItemToString">
-      <hlm-select-trigger class="w-full">
+      <hlm-select-trigger class="w-full" buttonId="type-trigger">
         <span class="flex items-center gap-2">
           <ng-icon hlm size="sm" [name]="schemaTypeDescriptions[type].icon" />
           <hlm-select-value />

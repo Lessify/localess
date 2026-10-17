@@ -1,16 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  Injector,
-  input,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, Injector, input, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
@@ -70,7 +59,7 @@ import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/web
     }),
   ],
 })
-export class WebhookDetailComponent implements OnInit, AfterViewInit {
+export class WebhookDetailComponent implements OnInit {
   private readonly webhookService = inject(WebHookService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
@@ -81,7 +70,12 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
 
   webhookId = input.required<string>();
 
-  paginator = viewChild.required(Paginator);
+  // Optional: the paginator is inside `@if (webhook())`, so it is not there until the webhook has loaded (a required
+  // query threw NG0951 and the logs were never paginated).
+  paginator = viewChild(Paginator);
+  private readonly wirePaginator = effect(() => {
+    this.dataSource.paginator = this.paginator() ?? null;
+  });
 
   isLoading = signal(true);
   isLogsLoading = signal(true);
@@ -138,10 +132,6 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
         this.logs.set(logs);
         this.isLogsLoading.set(false);
       });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator();
   }
 
   onFilterChange(value: FilterToolbarValue): void {

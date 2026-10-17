@@ -53,17 +53,24 @@ describe('TranslationValidator', () => {
     });
   });
 
-  describe('LABEL', () => {
-    it('is invalid when it contains a space', () => {
-      expect(new FormControl('a b', TranslationValidator.LABEL).hasError('noSpace')).toBe(true);
+  describe('labelError', () => {
+    it('refuses spaces, fewer than 2 or more than 50 characters, and a label already added', () => {
+      expect(TranslationValidator.labelError('a b', [])).toBe('A label can not contain spaces.');
+      expect(TranslationValidator.labelError('a', [])).toBe('A label needs at least 2 characters.');
+      expect(TranslationValidator.labelError('x'.repeat(51), [])).toBe('A label can have at most 50 characters.');
+      expect(TranslationValidator.labelError('ui', ['ui'])).toBe("'ui' is already added.");
     });
 
-    it('is invalid when shorter than 2 characters', () => {
-      expect(new FormControl('a', TranslationValidator.LABEL).hasError('minlength')).toBe(true);
+    it('accepts a well-formed new label', () => {
+      expect(TranslationValidator.labelError('label', ['other'])).toBeUndefined();
     });
+  });
 
-    it('is valid for a well-formed label', () => {
-      expect(new FormControl('label', TranslationValidator.LABEL).valid).toBe(true);
+  describe('LABELS', () => {
+    it('accepts a single label, and up to the server limit of 100', () => {
+      expect(new FormControl(['solo'], TranslationValidator.LABELS).valid).toBe(true);
+      expect(new FormControl(Array.from({ length: 100 }, (_, i) => `l${i}`), TranslationValidator.LABELS).valid).toBe(true);
+      expect(new FormControl(Array.from({ length: 101 }, (_, i) => `l${i}`), TranslationValidator.LABELS).valid).toBe(false);
     });
   });
 });

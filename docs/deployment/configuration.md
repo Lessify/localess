@@ -146,6 +146,7 @@ With none set, machine translation is off. The Translate actions stay visible; u
 | `LOCALESS_TASK_WORKER` | `true` | Run export/import/metadata tasks on this instance. Set `false` on API-only replicas |
 | `LOCALESS_WEBHOOK_LOG_DAYS` | `30` | Days a webhook delivery log is kept; older ones are deleted every hour |
 | `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks call loopback/private addresses. Local development only — it disables SSRF protection |
+| `LOCALESS_TEST_TEMPLATES` | `false` | Offer the test-only space templates (large generated data) — for development and e2e only; `pnpm dev` turns it on (`apps/server/dev.env`) |
 
 The task queue is the `tasks` table: any instance with the worker on claims the oldest pending task,
 one at a time. A task still running after an hour (for example because the process was killed) is

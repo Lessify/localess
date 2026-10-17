@@ -1,14 +1,16 @@
 <!--
-  No header: this is a picture with a caption, and Material had no title here either.
+  No visible header: this is a picture with a caption. The title is for assistive technology only: it names the dialog.
   The sizing below used to live in `_mat-dialog.scss` under `.image-preview`, keyed off the
   panelClass. It belongs to the image, so it moved here with it.
+  The minimum is capped by the window: a fixed 800px pushed the caption and Close below a smaller screen.
 -->
+<h2 hlmDialogTitle class="sr-only">{{ context.asset.name }}{{ context.asset.extension }}</h2>
 <img
-  class="image-bg max-h-[calc(100vh-180px)] min-h-[800px] max-w-[calc(100vw-180px)] min-w-[800px] object-contain"
+  class="image-bg max-h-[calc(100vh-180px)] min-h-[min(800px,calc(100vh-180px))] max-w-[calc(100vw-180px)] min-w-[min(800px,calc(100vw-180px))] object-contain"
   width="1000"
   height="1000"
   loading="lazy"
-  alt="thumbnail"
+  [alt]="context.asset.name + (context.asset.extension ?? '')"
   [loaderParams]="{ thumbnail: true }"
   ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ context.asset.id }}" />
 <hlm-dialog-footer class="justify-between!">

@@ -12,3 +12,6 @@ libs/
 
 src/app/shared/generated/
 
+
+# Docs keep their own line breaks.
+*.md

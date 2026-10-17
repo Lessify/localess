@@ -208,12 +208,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   });
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
-  selectedLocale = linkedSignal<Locale>(() => {
-    const locales = this.availableLocales();
-    if (locales.length > 0) {
-      return locales[0];
-    }
-    return CONTENT_DEFAULT_LOCALE;
+  // Keeps the chosen locale while it exists: the space list is live and re-emits whenever any space changes, and
+  // following it reset the editor to the default locale mid-edit.
+  selectedLocale = linkedSignal<Locale[], Locale>({
+    source: this.availableLocales,
+    computation: (locales, previous) => locales.find(it => it.id === previous?.value.id) ?? locales[0] ?? CONTENT_DEFAULT_LOCALE,
   });
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
@@ -262,9 +261,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {
       if (document.data === undefined) {
+        // The document's own schema name: the space's schemas may not have loaded yet (a deep link into another
+        // space), and an empty `_schema` left the editor without fields for good.
         this.documentData = {
           _id: v4(),
-          _schema: this.rootSchema()?.name || '',
+          _schema: document.schema,
         };
       } else if (typeof document.data === 'string') {
         this.documentData = normalizeContent(JSON.parse(document.data));
@@ -305,13 +306,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
@@ -325,13 +322,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be unpublished.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
@@ -367,18 +360,30 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
+          // An error ends the request without `complete`: Save must work again.
+          this.stopSaveLoading();
         },
-        complete: () => {
-          setTimeout(() => {
-            this.isSaveLoading.set(false);
-            this.cd.markForCheck();
-          }, 1000);
-        },
+        complete: () => this.stopSaveLoading(),
       });
     } else {
       this.notificationService.error('Content is not valid. Please check all fields are filled correctly.');
       this.isSaveLoading.set(false);
     }
+  }
+
+  /** After a publish or unpublish, failed or not (an error ends the request without `complete`). */
+  private stopPublishLoading(): void {
+    setTimeout(() => {
+      this.isPublishLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
+  }
+
+  private stopSaveLoading(): void {
+    setTimeout(() => {
+      this.isSaveLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   back(): void {
@@ -583,12 +588,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           }
         }
         selectedContentId = contentIdIteration.shift();
-        this.clickSchemaField.set(field);
       } else {
         console.warn(`onPreviewSchemaSelect: schema "${this.selectedDocumentData._schema}" not found`);
         return;
       }
     }
+    // After the walk, so a field of the document itself (no block in between) is focused too.
+    this.clickSchemaField.set(field);
   }
 
   onPreviewSchemaHover(event: { id: string; field?: string }): void {

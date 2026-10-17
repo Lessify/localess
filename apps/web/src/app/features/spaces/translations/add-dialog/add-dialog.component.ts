@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
@@ -50,19 +50,23 @@ export class AddDialogComponent {
     key: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedKeys)]),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
-    labels: this.fb.control([], TranslationValidator.LABEL),
+    labels: this.fb.control([], TranslationValidator.LABELS),
     autoTranslate: this.fb.control(false),
   });
 
-  addLabel(value: string): void {
-    if (value.trim()) {
-      const labels: string[] = this.form.controls['labels'].value;
-      if (labels instanceof Array) {
-        this.form.controls['labels'].setValue([...labels, value.trim()]);
-      } else {
-        this.form.controls['labels'].setValue([value.trim()]);
-      }
-    }
+  /** Why the label typed last was not added; cleared once one is. */
+  readonly labelError = signal<string | undefined>(undefined);
+
+  /** Adds the typed label (Enter); an invalid or duplicate one stays in the input with the reason shown. */
+  addLabel(input: HTMLInputElement): void {
+    const label = input.value.trim();
+    if (!label) return;
+    const labels: string[] = this.form.controls['labels'].value ?? [];
+    const error = TranslationValidator.labelError(label, labels);
+    this.labelError.set(error);
+    if (error) return;
+    this.form.controls['labels'].setValue([...labels, label]);
+    input.value = '';
   }
 
   removeLabel(label: string): void {

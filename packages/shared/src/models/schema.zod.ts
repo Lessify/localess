@@ -214,6 +214,3 @@ export const zSchemaPushSchema = z
       });
     });
   });
-
-/** App API `POST /api/app/spaces/{spaceId}/schemas/template` body: a space template's schemas. */
-export const zSchemaTemplateSchema = z.object({ schemas: zSchemaExportArraySchema });

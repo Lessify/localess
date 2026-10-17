@@ -53,8 +53,9 @@
               @for (item of userSideMenu(); track item.label) {
                 @if (item.permission | canUserPerform | async) {
                   @if (item.items) {
-                    <hlm-collapsible [expanded]="item.isOpen!()" (expandedChange)="item.isOpen!.set($event)">
-                      <li hlmSidebarMenuItem>
+                    <!-- The collapsible inside the item: a list may only hold list items. -->
+                    <li hlmSidebarMenuItem>
+                      <hlm-collapsible [expanded]="item.isOpen!()" (expandedChange)="item.isOpen!.set($event)">
                         <button hlmSidebarMenuButton hlmCollapsibleTrigger>
                           <ng-icon hlm [name]="item.icon" />
                           <span>{{ item.label }}</span>
@@ -79,8 +80,8 @@
                             }
                           </ul>
                         </hlm-collapsible-content>
-                      </li>
-                    </hlm-collapsible>
+                      </hlm-collapsible>
+                    </li>
                   } @else {
                     <li hlmSidebarMenuItem>
                       <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
@@ -277,7 +278,14 @@
                 @if (isLast) {
                   <span hlmBreadcrumbPage>{{ breadcrumb.label }}</span>
                   @if (breadcrumb.helpUrl) {
-                    <a hlmBtn variant="link" size="icon-sm" [href]="breadcrumb.helpUrl" target="_blank" hlmTooltip="Help Article">
+                    <a
+                      hlmBtn
+                      variant="link"
+                      size="icon-sm"
+                      [href]="breadcrumb.helpUrl"
+                      target="_blank"
+                      hlmTooltip="Help Article"
+                      aria-label="Help Article">
                       <ng-icon name="lucideBadgeInfo" />
                     </a>
                   }
@@ -291,7 +299,14 @@
       </div>
       <div id="header-actions" class="flex items-center gap-2 px-4">
         @if (isDebug) {
-          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings" position="bottom">
+          <button
+            hlmBtn
+            size="icon-sm"
+            variant="ghost"
+            (click)="showDebugSettings.set(true)"
+            hlmTooltip="App Settings"
+            aria-label="App Settings"
+            position="bottom">
             <ng-icon hlm name="lucideSettings" size="sm" />
           </button>
         }

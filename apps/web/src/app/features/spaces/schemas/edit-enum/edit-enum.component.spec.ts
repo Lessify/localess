@@ -4,7 +4,7 @@ import { Schema, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
-import { of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { EditEnumComponent } from './edit-enum.component';
@@ -20,14 +20,27 @@ function enumSchema(overrides: Partial<Schema> = {}): Schema {
   } as unknown as Schema;
 }
 
+/** The label input as the template passes it: Enter calls addLabel(input). */
+function labelInput(value: string): HTMLInputElement {
+  const input = document.createElement('input');
+  input.value = value;
+  return input;
+}
+
 describe('EditEnumComponent', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false) {
-    const findAll = vi.fn().mockReturnValue(of(allSchemas));
-    const findById = vi.fn().mockReturnValue(of(entity));
+  function setup(
+    entity: Schema,
+    allSchemas: Schema[] = [],
+    isActionSave = false,
+    allSchemas$?: Observable<Schema[]>,
+    entity$?: Observable<Schema>,
+  ) {
+    const findAll = vi.fn().mockReturnValue(allSchemas$ ?? of(allSchemas));
+    const findById = vi.fn().mockReturnValue(entity$ ?? of(entity));
     const updateEnum = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
     const error = vi.fn();
@@ -46,8 +59,21 @@ describe('EditEnumComponent', () => {
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.componentRef.setInput('schemaId', 'enum1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, updateEnum, success, error, navigate };
+    return { component: fixture.componentInstance, updateEnum, findById, success, error, navigate };
   }
+
+  it('ignores a live answer older than the version just saved (a refetch that started before Save)', () => {
+    const v1 = enumSchema({ updatedAt: '2026-01-01T10:00:00.000Z' });
+    const live = new BehaviorSubject<Schema>(v1);
+    const { component, findById } = setup(v1, [], false, undefined, live);
+    findById.mockReturnValue(NEVER);
+    component.addLabel(labelInput('sizes'));
+
+    component.save();
+    live.next(enumSchema({ updatedAt: '2026-01-01T10:00:00.000Z' }));
+
+    expect(component.form.value['labels']).toEqual(['sizes']);
+  });
 
   it('shows the schema name under the title, like the component editor (not the internal id)', () => {
     TestBed.configureTestingModule({
@@ -81,6 +107,44 @@ describe('EditEnumComponent', () => {
 
     expect(component.values.length).toBe(1);
     expect(component.valueControlAt(0, 'name')?.value).toBe('RED');
+  });
+
+  it('refuses a new value name the loaded schema already has', () => {
+    const { component } = setup(enumSchema({ values: [{ name: 'Small', value: 'small' }] }));
+
+    component.newFieldName.setValue('Small');
+
+    expect(component.newFieldName.hasError('reservedName')).toBe(true);
+  });
+
+  it('removing a value frees its own name, not another one', () => {
+    const { component } = setup(
+      enumSchema({
+        values: [
+          { name: 'Small', value: 'small' },
+          { name: 'Large', value: 'large' },
+        ],
+      }),
+    );
+    const event = { preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() } as unknown as MouseEvent;
+
+    component.removeComponent(event, 1);
+
+    component.newFieldName.setValue('Large');
+    expect(component.newFieldName.hasError('reservedName')).toBe(false);
+    component.newFieldName.setValue('Small');
+    expect(component.newFieldName.hasError('reservedName')).toBe(true);
+  });
+
+  it('keeps unsaved values when another schema of the space changes (live)', () => {
+    const all = new BehaviorSubject<Schema[]>([]);
+    const { component } = setup(enumSchema(), [], false, all);
+    component.newFieldName.setValue('BLUE');
+    component.addValueForm();
+
+    all.next([enumSchema({ id: 'other', name: 'other' })]);
+
+    expect(component.values.length).toBe(1);
   });
 
   it('addValueForm() with no argument pushes the pending new-field name and selects it', () => {
@@ -151,12 +215,26 @@ describe('EditEnumComponent', () => {
   it('addLabel()/removeLabel() manage the labels array', () => {
     const { component } = setup(enumSchema());
 
-    component.addLabel('one');
-    component.addLabel('two');
+    component.addLabel(labelInput('one'));
+    component.addLabel(labelInput('two'));
     expect(component.form.value['labels']).toEqual(['one', 'two']);
 
     component.removeLabel('one');
     expect(component.form.value['labels']).toEqual(['two']);
+  });
+
+  it('addLabel() refuses a duplicate or invalid label, keeps the text, and marks the form dirty when it adds', () => {
+    const { component } = setup(enumSchema());
+    component.addLabel(labelInput('ui'));
+    expect(component.form.dirty).toBe(true);
+
+    for (const value of ['ui', 'has space', 'x']) {
+      const input = labelInput(value);
+      component.addLabel(input);
+      expect(component.labelError()).toBeDefined();
+      expect(input.value).toBe(value);
+    }
+    expect(component.form.value['labels']).toEqual(['ui']);
   });
 
   it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {

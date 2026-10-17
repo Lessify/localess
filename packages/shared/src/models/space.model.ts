@@ -38,6 +38,17 @@ export interface SpaceEnvironmentInput {
 // App API requests
 export interface SpaceCreate {
   name: string;
+  /** A template id from `GET /api/app/spaces/templates`; none is Empty. */
+  template?: string;
+}
+
+/** A template the Create Space dialog offers (the server holds the templates themselves). */
+export interface SpaceTemplateSummary {
+  id: string;
+  name: string;
+  description: string;
+  /** An @ng-icons lucide name. */
+  icon: string;
 }
 
 export interface SpaceUpdate {

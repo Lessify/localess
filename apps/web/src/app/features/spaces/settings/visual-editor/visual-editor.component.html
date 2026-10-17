@@ -24,7 +24,7 @@
     <code>{{ 'https://site.com/{locale/}blog/{slug}/' }}</code
     >. The first environment is the default one; drag them to change the order.
   </p>
-  <div hlmItemGroup class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="drop($event)">
+  <div hlmItemGroup aria-label="Environments" class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="drop($event)">
     @for (environment of environments(); track environment.id; let idx = $index) {
       <div hlmItem role="listitem" cdkDrag variant="outline" cdkDragPreviewContainer="parent">
         <div hlmItemContent class="gap-1">
@@ -42,13 +42,20 @@
           </p>
         </div>
         <div hlmItemActions class="mb-auto">
-          <button hlmBtn size="icon" variant="outline" (click)="openEditDialog(environment)" hlmTooltip="Edit">
+          <button hlmBtn size="icon" variant="outline" (click)="openEditDialog(environment)" hlmTooltip="Edit" aria-label="Edit">
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
-          <button hlmBtn size="icon" variant="outline" (click)="openDeleteDialog(environment)" hlmTooltip="Delete">
+          <button hlmBtn size="icon" variant="outline" (click)="openDeleteDialog(environment)" hlmTooltip="Delete" aria-label="Delete">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>
-          <button hlmBtn size="icon" variant="ghost" cdkDragHandle class="cursor-grab active:cursor-grabbing" hlmTooltip="Move">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            cdkDragHandle
+            class="cursor-grab active:cursor-grabbing"
+            hlmTooltip="Move"
+            aria-label="Move">
             <ng-icon hlm size="sm" name="lucideGripVertical" />
           </button>
         </div>

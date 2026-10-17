@@ -244,7 +244,8 @@
           <!--OPTION-->
           @case ('OPTION') {
             <div hlmField class="gap-2">
-              <label hlmFieldLabel for="kind">
+              <!-- The trigger is the control; the host keeps schema-field-<name> for focus and highlight. -->
+              <label hlmFieldLabel [for]="'schema-field-' + field.name + '-trigger'">
                 {{ field.displayName || field.name }}
                 @if (field.description) {
                   <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
@@ -257,7 +258,7 @@
                 [id]="'schema-field-' + field.name"
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
-                <hlm-select-trigger class="w-full">
+                <hlm-select-trigger class="w-full" [buttonId]="'schema-field-' + field.name + '-trigger'">
                   <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
@@ -287,7 +288,8 @@
           <!--OPTIONS-->
           @case ('OPTIONS') {
             <div hlmField class="gap-2">
-              <label hlmFieldLabel for="kind">
+              <!-- The trigger is the control; the host keeps schema-field-<name> for focus and highlight. -->
+              <label hlmFieldLabel [for]="'schema-field-' + field.name + '-trigger'">
                 {{ field.displayName || field.name }}
                 @if (field.description) {
                   <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="field.description" />
@@ -300,7 +302,7 @@
                 [id]="'schema-field-' + field.name"
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
-                <hlm-select-trigger class="w-full">
+                <hlm-select-trigger class="w-full" [buttonId]="'schema-field-' + field.name + '-trigger'">
                   <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
@@ -370,7 +372,7 @@
           <!--SCHEMA-->
           @case ('SCHEMA') {
             <div hlmFieldGroup>
-              <fieldset hlmFieldSet class="gap-2">
+              <fieldset hlmFieldSet class="gap-2" [attr.aria-label]="field.displayName || field.name">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
                   <button
@@ -379,6 +381,7 @@
                     size="sm"
                     [hlmDropdownMenuTrigger]="menu"
                     hlmTooltip="Add Schema"
+                    aria-label="Add Schema"
                     [disabled]="data()[field.name]">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
@@ -386,7 +389,7 @@
                     <hlm-dropdown-menu class="w-60">
                       @for (sch of filterSchema(field.schemas || []); track sch.id) {
                         <button hlmDropdownMenuItem (click)="addSchemaOne(field, sch)" [hlmTooltip]="sch.description || ''">
-                          {{ sch.displayName || sch.id }}
+                          {{ sch.displayName || sch.name }}
                         </button>
                       }
                     </hlm-dropdown-menu>
@@ -412,7 +415,7 @@
                       <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.name }}</span>
                           </div>
                           @if (sch.previewField) {
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
@@ -424,7 +427,13 @@
                         }
                       </div>
                       <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaOne(field)" hlmTooltip="Delete">
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="removeSchemaOne(field)"
+                          hlmTooltip="Delete"
+                          aria-label="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                       </div>
@@ -437,17 +446,23 @@
           <!--SCHEMAS-->
           @case ('SCHEMAS') {
             <div hlmFieldGroup>
-              <fieldset hlmFieldSet class="gap-2">
+              <fieldset hlmFieldSet class="gap-2" [attr.aria-label]="field.displayName || field.name">
                 <legend hlmFieldLegend class="flex w-full justify-between">
                   {{ field.displayName || field.name }}
-                  <button hlmBtn variant="ghost" size="sm" [hlmDropdownMenuTrigger]="menu" hlmTooltip="Add Schema at the end">
+                  <button
+                    hlmBtn
+                    variant="ghost"
+                    size="sm"
+                    [hlmDropdownMenuTrigger]="menu"
+                    hlmTooltip="Add Schema at the end"
+                    aria-label="Add Schema at the end">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
                   <ng-template #menu>
                     <hlm-dropdown-menu class="w-60">
                       @for (sch of filterSchema(field.schemas || []); track sch.id) {
                         <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch)" [hlmTooltip]="sch.description || ''">
-                          {{ sch.displayName || sch.id }}
+                          {{ sch.displayName || sch.name }}
                         </button>
                       }
                     </hlm-dropdown-menu>
@@ -475,7 +490,7 @@
                       <div hlmItemContent class="min-w-0 overflow-hidden">
                         @if (schemaCompNodeByName().get(item._schema); as sch) {
                           <div hlmItemTitle class="line-clamp-1">
-                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.id }}</span>
+                            {{ sch.displayName }} <span class="text-muted-foreground">#{{ sch.name }}</span>
                           </div>
                           @if (sch.previewField) {
                             <p hlmItemDescription class="line-clamp-1"> {{ previewText(item, sch, selectedLocaleId()) }}</p>
@@ -492,14 +507,15 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuAbove"
-                          hlmTooltip="Add Schema above">
+                          hlmTooltip="Add Schema above"
+                          aria-label="Add Schema above">
                           <ng-icon hlm size="sm" name="tablerRowInsertTop" />
                         </button>
                         <ng-template #schemasMenuAbove>
                           <hlm-dropdown-menu class="w-60">
                             @for (sch of filterSchema(field.schemas || []); track sch.id) {
                               <button hlmDropdownMenuItem (click)="addSchemaMany(field, sch, index)" [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
+                                {{ sch.displayName || sch.name }}
                               </button>
                             }
                           </hlm-dropdown-menu>
@@ -509,7 +525,8 @@
                           variant="outline"
                           size="sm"
                           [hlmDropdownMenuTrigger]="schemasMenuBelow"
-                          hlmTooltip="Add Schema below">
+                          hlmTooltip="Add Schema below"
+                          aria-label="Add Schema below">
                           <ng-icon hlm size="sm" name="tablerRowInsertBottom" />
                         </button>
                         <ng-template #schemasMenuBelow>
@@ -519,7 +536,7 @@
                                 hlmDropdownMenuItem
                                 (click)="addSchemaMany(field, sch, index + 1)"
                                 [hlmTooltip]="sch.description || ''">
-                                {{ sch.displayName || sch.id }}
+                                {{ sch.displayName || sch.name }}
                               </button>
                             }
                           </hlm-dropdown-menu>
@@ -529,10 +546,17 @@
                           size="icon"
                           variant="outline"
                           (click)="duplicateSchemaMany(field, item, index)"
-                          hlmTooltip="Clone the schema">
+                          hlmTooltip="Clone the schema"
+                          aria-label="Clone the schema">
                           <ng-icon hlm size="sm" name="lucideBookCopy" />
                         </button>
-                        <button hlmBtn size="icon" variant="outline" (click)="removeSchemaMany(field, item._id)" hlmTooltip="Delete">
+                        <button
+                          hlmBtn
+                          size="icon"
+                          variant="outline"
+                          (click)="removeSchemaMany(field, item._id)"
+                          hlmTooltip="Delete"
+                          aria-label="Delete">
                           <ng-icon hlm size="sm" name="lucideTrash" />
                         </button>
                         <button
@@ -541,7 +565,8 @@
                           variant="ghost"
                           cdkDragHandle
                           class="cursor-grab active:cursor-grabbing"
-                          hlmTooltip="Move">
+                          hlmTooltip="Move"
+                          aria-label="Move">
                           <ng-icon hlm size="sm" name="lucideGripVertical" />
                         </button>
                       </div>

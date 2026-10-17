@@ -12,6 +12,7 @@ import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import {
+  assetFieldFileType,
   AssetFileType,
   Schema,
   SCHEMA_PREVIEW_FIELD_KINDS,
@@ -50,6 +51,7 @@ import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
 import { assetFileTypeDescriptions, schemaFieldKindDescriptions } from '@shared/models/schema.model';
 import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { CommonValidator } from '@shared/validators/common.validator';
+import { LabelValidator } from '@shared/validators/label.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -68,7 +70,7 @@ import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { combineLatest } from 'rxjs';
+import { combineLatest, take } from 'rxjs';
 
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 import { SchemaValidator } from '../shared/schema.validator';
@@ -185,23 +187,51 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
-          // Emptied in place: the new-field-name validator holds this array.
-          this.fieldReservedNames.length = 0;
           this.schemas = schemas;
-          this.entity = schema;
-
-          this.form.reset();
-          this.form.patchValue(schema);
-
-          if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
-            this.fields.clear();
-            schema.fields?.forEach(it => this.addField(it));
+          // Live: any change to the space's schemas re-emits. Unsaved edits are kept (a reload wiped them when a
+          // colleague saved another schema); the form reloads after Save.
+          if (this.form.dirty) {
+            this.cd.markForCheck();
+            return;
           }
-
-          this.isLoading.set(false);
-          this.cd.markForCheck();
+          if (this.isStale(schema)) return;
+          this.applySchema(schema);
         },
       });
+  }
+
+  /** Fills the form from the stored schema. */
+  /** The version a Save replaced: until a newer one arrives, an answer at or before it is stale. */
+  private savedOver?: string;
+
+  /**
+   * A live answer older than what the form shows, or not newer than the version just saved: a refetch that started
+   * before the Save and answered after it. Applying it would put the old values back (and a following edit would
+   * build on them).
+   */
+  private isStale(schema: Schema): boolean {
+    const at = Date.parse(schema.updatedAt);
+    if (Number.isNaN(at)) return false;
+    if (this.savedOver !== undefined && at <= Date.parse(this.savedOver)) return true;
+    return this.entity !== undefined && at < Date.parse(this.entity.updatedAt);
+  }
+
+  private applySchema(schema: Schema): void {
+    this.savedOver = undefined;
+    // Emptied in place: the new-field-name validator holds this array.
+    this.fieldReservedNames.length = 0;
+    this.entity = schema;
+
+    this.form.reset();
+    this.form.patchValue(schema);
+
+    if (schema.type === SchemaType.NODE || schema.type === SchemaType.ROOT) {
+      this.fields.clear();
+      schema.fields?.forEach(it => this.addField(it));
+    }
+
+    this.isLoading.set(false);
+    this.cd.markForCheck();
   }
 
   get isFormDirty(): boolean {
@@ -216,23 +246,28 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     }
   }
 
-  addLabel(value: string): void {
-    if (value) {
-      const labels = this.form.controls['labels'].value;
-      if (labels instanceof Array) {
-        labels.push(value);
-      } else {
-        this.form.controls['labels'].setValue([value]);
-      }
-    }
+  /** Why the label typed last was not added; cleared once one is. */
+  readonly labelError = signal<string | undefined>(undefined);
+
+  /**
+   * Adds the typed label (Enter); an invalid or duplicate one stays in the input with the reason shown. A new array,
+   * and the form marked dirty: it was pushed in place, so neither the form nor the leave guard saw the change.
+   */
+  addLabel(input: HTMLInputElement): void {
+    const label = input.value.trim();
+    if (!label) return;
+    const labels: string[] = this.form.controls['labels'].value ?? [];
+    const error = LabelValidator.error(label, labels);
+    this.labelError.set(error);
+    if (error) return;
+    this.form.controls['labels'].setValue([...labels, label]);
+    this.form.markAsDirty();
+    input.value = '';
   }
 
   removeLabel(label: string): void {
-    const labels = this.form.controls['labels'].value;
-    if (labels instanceof Array) {
-      const index: number = labels.indexOf(label);
-      labels.splice(index, 1);
-    }
+    const labels: string[] = this.form.controls['labels'].value ?? [];
+    this.form.controls['labels'].setValue(labels.filter(it => it !== label));
     this.form.markAsDirty();
   }
 
@@ -365,18 +400,11 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        // Fallback to first file type if exists
-        if (element.fileTypes && element.fileTypes.length > 0) {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
-          );
-        } else {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
-          );
-        }
+        // `fileType`, else the first of `fileTypes` (older schemas, templates): the same rule as the content editor.
+        fieldForm.addControl(
+          'fileType',
+          this.fb.control<AssetFileType | undefined>(assetFieldFileType(element), SchemaValidator.FIELD_FILE_TYPES),
+        );
         break;
       }
       case SchemaFieldKind.ASSETS: {
@@ -384,18 +412,11 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           'translatable',
           this.fb.control<boolean | undefined>(element.translatable, SchemaValidator.FIELD_TRANSLATABLE),
         );
-        // Fallback to first file type if exists
-        if (element.fileTypes && element.fileTypes.length > 0) {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileTypes[0], SchemaValidator.FIELD_FILE_TYPES),
-          );
-        } else {
-          fieldForm.addControl(
-            'fileType',
-            this.fb.control<AssetFileType | undefined>(element.fileType || AssetFileType.ANY, SchemaValidator.FIELD_FILE_TYPES),
-          );
-        }
+        // `fileType`, else the first of `fileTypes` (older schemas, templates): the same rule as the content editor.
+        fieldForm.addControl(
+          'fileType',
+          this.fb.control<AssetFileType | undefined>(assetFieldFileType(element), SchemaValidator.FIELD_FILE_TYPES),
+        );
         break;
       }
       case SchemaFieldKind.SCHEMA: {
@@ -427,6 +448,16 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
     this.schemaService.updateComponent(this.spaceId(), this.schemaId(), this.form.value as SchemaComponentUpdate).subscribe({
       next: () => {
+        // Saved: live updates may reload the form again; it shows what was stored.
+        this.form.markAsPristine();
+        this.savedOver = this.entity?.updatedAt;
+        this.schemaService
+          .findById(this.spaceId(), this.schemaId())
+          .pipe(take(1))
+          .subscribe(schema => {
+            // Not over edits made since Save.
+            if (!this.form.dirty && !this.isStale(schema)) this.applySchema(schema);
+          });
         this.notificationService.success('Schema has been updated.');
       },
       error: (err: unknown) => {

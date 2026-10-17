@@ -8,7 +8,14 @@
             <ng-icon hlm size="sm" name="lucideLanguages" hlmTooltip="The field is translatable" />
           }
         </span>
-        <button hlmBtn variant="ghost" size="sm" hlmTooltip="Add Asset" [disabled]="locked()" (click)="openAssetSelectDialog()">
+        <button
+          hlmBtn
+          variant="ghost"
+          size="sm"
+          hlmTooltip="Add Asset"
+          aria-label="Add Asset"
+          [disabled]="locked()"
+          (click)="openAssetSelectDialog()">
           <ng-icon hlm size="sm" name="lucideFilePlusCorner" />
         </button>
       </legend>
@@ -54,7 +61,14 @@
                 </p>
               </div>
               <div role="none" hlmItemActions (click)="$event.preventDefault(); $event.stopImmediatePropagation()">
-                <button hlmBtn size="icon" variant="outline" [disabled]="locked()" (click)="deleteAsset()" hlmTooltip="Delete">
+                <button
+                  hlmBtn
+                  size="icon"
+                  variant="outline"
+                  [disabled]="locked()"
+                  (click)="deleteAsset()"
+                  hlmTooltip="Delete"
+                  aria-label="Delete">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                 </button>
               </div>

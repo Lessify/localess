@@ -24,18 +24,19 @@ describe('GeneralComponent', () => {
     const update = vi.fn().mockReturnValue(of(undefined));
     const success = vi.fn();
     const error = vi.fn();
+    const selected = signal(selectedSpace);
 
     TestBed.overrideComponent(GeneralComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: SpaceService, useValue: { update } },
         { provide: NotificationService, useValue: { success, error } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal(selectedSpaceId) } },
+        { provide: SpaceStore, useValue: { selectedSpace: selected, selectedSpaceId: signal(selectedSpaceId) } },
       ],
     });
     const fixture = TestBed.createComponent(GeneralComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, update, success, error };
+    return { component: fixture.componentInstance, fixture, selected, update, success, error };
   }
 
   it('starts loading until a space is selected', () => {
@@ -49,6 +50,30 @@ describe('GeneralComponent', () => {
 
     expect(component.form.value.name).toBe('My Space');
     expect(component.isLoading()).toBe(false);
+  });
+
+  it('keeps a name being typed when the live space list re-emits', () => {
+    const { component, fixture, selected } = setup(space({ name: 'My Space' }));
+    component.form.controls['name'].setValue('Typing a new name');
+    component.form.markAsDirty();
+
+    // Any change to any space re-emits the list, with new objects.
+    selected.set(space({ name: 'My Space' }));
+    fixture.detectChanges();
+
+    expect(component.form.value.name).toBe('Typing a new name');
+  });
+
+  it('follows live updates again after saving', () => {
+    const { component, fixture, selected } = setup(space({ name: 'My Space' }));
+    component.form.setValue({ name: 'Renamed' });
+    component.form.markAsDirty();
+    component.save();
+
+    selected.set(space({ name: 'Renamed elsewhere' }));
+    fixture.detectChanges();
+
+    expect(component.form.value.name).toBe('Renamed elsewhere');
   });
 
   it('save() updates the space and notifies success', () => {

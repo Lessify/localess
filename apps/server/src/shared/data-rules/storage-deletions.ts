@@ -41,10 +41,16 @@ export async function scheduleSpaceFilesDeletion(executor: Executor, spaceId: st
  * (an import reusing an asset id) is pushed back too, so it can't remove the file about to be written.
  */
 export async function guardUpload(executor: Executor, spaceId: string, assetId: string): Promise<void> {
+  await guardUploads(executor, spaceId, [assetId]);
+}
+
+/** `guardUpload` for several files at once (a template's files), in one statement. */
+export async function guardUploads(executor: Executor, spaceId: string, assetIds: string[]): Promise<void> {
+  if (!assetIds.length) return;
   const notBefore = sql`now() + ${`${UPLOAD_GUARD_MS} milliseconds`}::interval`;
   await executor
     .insert(storageDeletions)
-    .values({ prefix: assetFilesPrefix(spaceId, assetId), spaceId, assetId, notBefore })
+    .values(assetIds.map(assetId => ({ prefix: assetFilesPrefix(spaceId, assetId), spaceId, assetId, notBefore })))
     .onConflictDoUpdate({ target: storageDeletions.prefix, set: { notBefore } });
 }
 

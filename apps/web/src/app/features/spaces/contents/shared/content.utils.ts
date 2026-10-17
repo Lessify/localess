@@ -106,6 +106,10 @@ export function extractReferences(
   const inUseLinks = new Set<string>();
   const inUseReferences = new Set<string>();
   const schemasByName = new Map<string, Schema>(schemas.map(it => [it.name, it]));
+  // A field left empty in the editor holds its kind without a uri: nothing to list.
+  const add = (ids: Set<string>, uri: unknown) => {
+    if (typeof uri === 'string' && uri) ids.add(uri);
+  };
   if (data === undefined) return [inUseAssets, inUseLinks, inUseReferences];
   const contentIteration = [data];
   // Iterative traversing content and extracting references.
@@ -122,19 +126,19 @@ export function extractReferences(
           if (content.some(it => it.kind === SchemaFieldKind.ASSET)) {
             // Assets
             const assets: ContentAsset[] = content;
-            assets.forEach(it => inUseAssets.add(it.uri));
+            assets.forEach(it => add(inUseAssets, it.uri));
           } else if (content.some(it => it.kind === SchemaFieldKind.REFERENCE)) {
             // References
             const references: ContentReference[] = content;
-            references.forEach(it => inUseReferences.add(it.uri));
+            references.forEach(it => add(inUseReferences, it.uri));
           }
         } else {
           if (isContentAsset(content)) {
-            inUseAssets.add(content.uri);
+            add(inUseAssets, content.uri);
           } else if (isContentReference(content)) {
-            inUseReferences.add(content.uri);
+            add(inUseReferences, content.uri);
           } else if (isContentLink(content) && content.type === 'content') {
-            inUseLinks.add(content.uri);
+            add(inUseLinks, content.uri);
           }
         }
       });

@@ -3,9 +3,9 @@
   <div class="flex items-center gap-8">
     @if (!hidePageSize()) {
       <div class="flex items-center gap-2">
-        <span class="text-muted-foreground text-sm">Rows per page</span>
+        <label class="text-muted-foreground text-sm" [for]="pageSizeId">Rows per page</label>
         <hlm-select [value]="pageSize()" [disabled]="disabled()" (valueChange)="onPageSizeChange($event)">
-          <hlm-select-trigger class="w-20">
+          <hlm-select-trigger class="w-20" [buttonId]="pageSizeId">
             <hlm-select-value />
           </hlm-select-trigger>
           <hlm-select-content *hlmSelectPortal>

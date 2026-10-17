@@ -35,6 +35,17 @@ describe('TranslationListComponent', () => {
     expect(spy).toHaveBeenCalledWith(t);
   });
 
+  it("selectedKey is the selected translation's key, which the tree's nodes are keyed by (not its id)", () => {
+    const { component, fixture } = setup([
+      translation({ id: '0190a1b2-0000-7000-8000-000000000001', key: 'nav.about' }),
+      translation({ id: '0190a1b2-0000-7000-8000-000000000002', key: 'nav.home' }),
+    ]);
+
+    fixture.componentRef.setInput('selectedId', '0190a1b2-0000-7000-8000-000000000002');
+
+    expect(component.selectedKey()).toBe('nav.home');
+  });
+
   describe('filterTranslations', () => {
     it('returns all items when no filter is active', () => {
       const { component } = setup();

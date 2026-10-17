@@ -15,6 +15,7 @@
                 class="rounded-full"
                 size="icon-xs"
                 hlmTooltip="Edit the name"
+                aria-label="Edit the name"
                 (click)="nameReadonly = !nameReadonly">
                 <ng-icon [name]="nameReadonly ? 'lucidePencilOff' : 'lucidePencil'" />
               </button>
@@ -27,9 +28,9 @@
           }
         </div>
         <div hlmField>
-          <label hlmFieldLabel for="kind"> Kind </label>
+          <label hlmFieldLabel for="kind-trigger"> Kind </label>
           <hlm-select formControlName="kind" id="kind">
-            <hlm-select-trigger class="w-full">
+            <hlm-select-trigger class="w-full" buttonId="kind-trigger">
               <hlm-select-placeholder>Select kind</hlm-select-placeholder>
               <ng-template hlmSelectValueTemplate let-value>
                 @if (schemaFieldKindDescriptions[value]; as descriptor) {
@@ -154,9 +155,9 @@
             </div>
           }
           <div hlmField>
-            <label hlmFieldLabel for="source"> Source </label>
+            <label hlmFieldLabel for="source-trigger"> Source </label>
             <hlm-select formControlName="source" id="source" [itemToString]="enumSchemaIdToString">
-              <hlm-select-trigger class="w-full">
+              <hlm-select-trigger class="w-full" buttonId="source-trigger">
                 <hlm-select-value />
               </hlm-select-trigger>
               <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
@@ -178,15 +179,17 @@
         <!--SCHEMA and SCHEMAS-->
         @if (['SCHEMA', 'SCHEMAS'].includes(form().value.kind)) {
           <div hlmField>
-            <label hlmFieldLabel for="schemas"> Schema </label>
+            <label hlmFieldLabel for="schemas-input"> Schema </label>
             <hlm-combobox-multiple formControlName="schemas" id="schemas" [itemToString]="schemaIdToString" autoHighlight>
               <hlm-combobox-chips>
                 <ng-container *hlmComboboxValues="let values">
                   @for (value of values; track value) {
-                    <hlm-combobox-chip [value]="value">{{ schemaIdToString(value) }}</hlm-combobox-chip>
+                    <hlm-combobox-chip [value]="value" [removeLabel]="'Remove ' + schemaIdToString(value)">{{
+                      schemaIdToString(value)
+                    }}</hlm-combobox-chip>
                   }
                 </ng-container>
-                <input hlmComboboxChipInput placeholder="Select schemas..." autocomplete="off" />
+                <input hlmComboboxChipInput id="schemas-input" placeholder="Select schemas..." autocomplete="off" />
               </hlm-combobox-chips>
               <hlm-combobox-content *hlmComboboxPortal>
                 <hlm-combobox-empty>No schemas found.</hlm-combobox-empty>
@@ -222,9 +225,9 @@
         <!--ASSET and ASSETS-->
         @if (['ASSET', 'ASSETS'].includes(form().value.kind)) {
           <div hlmField>
-            <label hlmFieldLabel for="fileType"> File Type </label>
+            <label hlmFieldLabel for="fileType-trigger"> File Type </label>
             <hlm-select formControlName="fileType" id="fileType">
-              <hlm-select-trigger class="w-full">
+              <hlm-select-trigger class="w-full" buttonId="fileType-trigger">
                 <hlm-select-placeholder>Select file type</hlm-select-placeholder>
                 <ng-template hlmSelectValueTemplate let-value>
                   @if (assetFileTypeDescriptions[value]; as descriptor) {

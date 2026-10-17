@@ -29,4 +29,51 @@ describe('ImagePreviewDialogComponent', () => {
 
     expect(fixture.componentInstance.context).toEqual(context);
   });
+
+  it('keeps the picture within the window, so the caption and Close stay on screen', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: DIALOG_DATA,
+          useValue: { spaceId: 'space-1', asset: { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png' } as AssetFile },
+        },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ImagePreviewDialogComponent);
+    fixture.detectChanges();
+
+    const classes = (fixture.nativeElement as HTMLElement).querySelector('img')!.className.split(/\s+/);
+    // A fixed minimum (`min-h-[800px]`) wins over the maximum and overflows a smaller window.
+    expect(classes).toContain('min-h-[min(800px,calc(100vh-180px))]');
+    expect(classes).toContain('min-w-[min(800px,calc(100vw-180px))]');
+    expect(classes.filter(it => /^min-[hw]-\[\d+px\]$/.test(it))).toEqual([]);
+  });
+
+  it('is named after the file (a visually hidden title), and so is the picture', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: DIALOG_DATA,
+          useValue: {
+            spaceId: 'space-1',
+            asset: { id: 'a1', kind: AssetKind.FILE, name: 'photo', extension: '.png', type: 'image/png' } as AssetFile,
+          },
+        },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(ImagePreviewDialogComponent);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const title = element.querySelector('h2')!;
+    expect(title.textContent?.trim()).toBe('photo.png');
+    expect(title.classList).toContain('sr-only');
+    // The dialog's aria-labelledby points at the title's id.
+    expect(title.id).toBeTruthy();
+    expect(element.querySelector('img')!.getAttribute('alt')).toBe('photo.png');
+  });
 });

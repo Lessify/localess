@@ -49,6 +49,19 @@ describe('ContentHelperService', () => {
       expect(form.controls['count'].errors).toEqual({ max: { max: 10, actual: 11 } });
     });
 
+    it('applies a limit of 0 for number fields (a minimum of 0 refuses negatives)', () => {
+      const { service } = setup();
+      const schema = rootSchema([
+        field({ name: 'price', kind: SchemaFieldKind.NUMBER, minValue: 0 }),
+        field({ name: 'debt', kind: SchemaFieldKind.NUMBER, maxValue: 0 }),
+      ]);
+      const form = service.generateSchemaForm(schema, true);
+      form.controls['price'].setValue(-5);
+      expect(form.controls['price'].errors).toEqual({ min: { min: 0, actual: -5 } });
+      form.controls['debt'].setValue(3);
+      expect(form.controls['debt'].errors).toEqual({ max: { max: 0, actual: 3 } });
+    });
+
     it('disables non-translatable fields on non-default locales, and keeps translatable fields enabled', () => {
       const { service } = setup();
       const schema = rootSchema([

@@ -35,6 +35,9 @@ describe('SpaceStore', () => {
     findAllSchemas?: (spaceId: string) => Observable<unknown>;
     notifyError?: ReturnType<typeof vi.fn>;
     isAuthenticated?: ReturnType<typeof signal<boolean>>;
+    /** The signed-in user; an admin unless a test says otherwise. */
+    role?: 'ADMIN' | 'CUSTOM';
+    permissions?: string[];
   };
 
   /** The space data listeners stay silent unless a test hands them something to emit. */
@@ -45,7 +48,15 @@ describe('SpaceStore', () => {
         { provide: ContentService, useValue: { findAllDocuments: listeners.findAllDocuments ?? (() => NEVER) } },
         { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
         { provide: NotificationService, useValue: { error: listeners.notifyError ?? vi.fn() } },
-        { provide: UserStore, useValue: { isAuthenticated: listeners.isAuthenticated ?? signal(true) } },
+        {
+          provide: UserStore,
+          useValue: {
+            isAuthenticated: listeners.isAuthenticated ?? signal(true),
+            loaded: signal(true),
+            role: signal(listeners.role ?? 'ADMIN'),
+            permissions: signal(listeners.permissions ?? []),
+          },
+        },
       ],
     });
     return TestBed.inject(SpaceStore);
@@ -216,6 +227,30 @@ describe('SpaceStore', () => {
       expect(findAllDocuments.mock.calls).toEqual([['a']]);
     });
 
+    it('only listens to what the user may read (a translator reads neither documents nor schemas)', () => {
+      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
+      createStore([space('a')], { findAllDocuments, findAllSchemas, role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
+      TestBed.tick();
+
+      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findAllSchemas).not.toHaveBeenCalled();
+    });
+
+    it('reads schemas, but not documents, with SCHEMA_READ alone', () => {
+      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const store = createStore([space('a')], {
+        findAllDocuments,
+        findAllSchemas: () => of([{ id: 'schema' }]),
+        role: 'CUSTOM',
+        permissions: ['SCHEMA_READ'],
+      });
+      TestBed.tick();
+
+      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(store.schemas()).toEqual([{ id: 'schema' }]);
+    });
+
     it("closes the previous space's listeners and drops its data when the space changes", () => {
       const documents = subjectsBySpace();
       const schemas = subjectsBySpace();
@@ -323,6 +358,21 @@ describe('SpaceStore', () => {
     store.changeContentFolder('f1');
     store.changeAssetFolder('a1');
 
+    expect(store.contentFolderId()).toBe('f1');
+    expect(store.assetFolderId()).toBe('a1');
+  });
+
+  it('keeps the open folders when the live space list reloads with the same space selected', () => {
+    const spaces = new Subject<Space[]>();
+    const store = configure(() => spaces);
+    spaces.next([space('a'), space('b')]);
+    store.changeContentFolder('f1');
+    store.changeAssetFolder('a1');
+
+    // Any change to any space (a colleague adds one) re-emits the list.
+    spaces.next([space('a'), space('b'), space('c')]);
+
+    expect(store.selectedSpace()?.id).toBe('a');
     expect(store.contentFolderId()).toBe('f1');
     expect(store.assetFolderId()).toBe('a1');
   });

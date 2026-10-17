@@ -28,8 +28,8 @@
 
   <div hlmField>
     <label hlmFieldLabel for="role">Role</label>
-    <hlm-select id="role" formControlName="role" [itemToString]="roleItemToString">
-      <hlm-select-trigger class="w-full">
+    <hlm-select formControlName="role" [itemToString]="roleItemToString">
+      <hlm-select-trigger class="w-full" buttonId="role">
         <hlm-select-value placeholder="None" />
       </hlm-select-trigger>
       <hlm-select-content *hlmSelectPortal>

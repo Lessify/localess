@@ -1,5 +1,5 @@
 <form [formGroup]="form()" class="overflow-hidden">
-  <fieldset hlmFieldSet>
+  <fieldset hlmFieldSet [attr.aria-label]="component().displayName || component().name">
     <div hlmFieldGroup class="gap-2">
       <div hlmField class="gap-2">
         <label hlmFieldLabel [for]="component().name">
@@ -17,6 +17,7 @@
             variant="secondary"
             size="icon"
             hlmTooltip="Change link type"
+            aria-label="Change link type"
             [hlmDropdownMenuTrigger]="linkTypeMenu"
             [disabled]="default() && !component().translatable">
             <ng-icon [name]="linkType() === 'content' ? 'lucideFileSymlink' : 'lucideLink'" />
@@ -79,8 +80,12 @@
         }
       </div>
       <div hlmField orientation="horizontal">
-        <hlm-switch inputId="target" [checked]="form().value.target === '_blank'" (checkedChange)="targetChange($event)" />
-        <label hlmFieldLabel for="target">Open in a new tab</label>
+        <!-- Per field: two Link fields in one form must not share the id the label points at. -->
+        <hlm-switch
+          [inputId]="component().name + '-target'"
+          [checked]="form().value.target === '_blank'"
+          (checkedChange)="targetChange($event)" />
+        <label hlmFieldLabel [for]="component().name + '-target'">Open in a new tab</label>
       </div>
     </div>
   </fieldset>
