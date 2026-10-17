@@ -113,8 +113,8 @@ tests/
 ## Agents and skills
 
 - Project skills (`.claude/skills/`, sources in `.agents/skills/`): `writing-localess-e2e-tests` (how a test here is
-  written and verified), `covering-a-localess-feature` (from a feature to agreed scenarios, round by round), and the
-  vendored generic `playwright-best-practices` (Currents.dev; see its `SOURCE.md`).
+  written and verified, and how a whole feature is covered: agreed scenarios, round by round), and the vendored generic
+  `playwright-best-practices` (Currents.dev; see its `SOURCE.md`).
 - Playwright Test Agents (`npx playwright init-agents --loop=claude`, Playwright 1.56+): `.claude/agents/` holds the
   planner, generator and healer, `.mcp.json` (repo root) their MCP server (started in this workspace, headless), `tests/seed.spec.ts`
   the environment they start from (the fixtures: own space, error guard), `specs/` their Markdown plans. Their output is
