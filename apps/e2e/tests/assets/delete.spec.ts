@@ -55,6 +55,51 @@ test.describe('Assets → delete', () => {
     expect(await original(request, space.id, outside.id)).toEqual(PNG_1X1);
   });
 
+  test('deleting a folder three levels deep removes every file under it, originals and thumbnails', async ({
+    page,
+    api,
+    space,
+    request,
+  }) => {
+    // Photos/2026/June with a file at every level; Logos beside it must stay.
+    const photos = await api.createAssetFolder(space.id, 'Photos');
+    const year = await api.createAssetFolder(space.id, '2026', photos.id);
+    const june = await api.createAssetFolder(space.id, 'June', year.id);
+    const files = [
+      await api.uploadAsset(space.id, pngFile('a.png'), photos.id),
+      await api.uploadAsset(space.id, pngFile('b.png'), year.id),
+      await api.uploadAsset(space.id, pngFile('c.png'), june.id),
+    ];
+    const logos = await api.createAssetFolder(space.id, 'Logos');
+    const logo = await api.uploadAsset(space.id, pngFile('logo.png'), logos.id);
+    const thumbnail = async (id: string) => (await request.get(`/api/v1/spaces/${space.id}/assets/${id}?w=40&thumbnail`)).status();
+    const assets = new AssetsPage(page);
+
+    // Pre-check: every file served, original and thumbnail (the thumbnail is stored as a rendition).
+    await assets.goto(space.id);
+    await expect(assets.row('Photos')).toBeVisible();
+    for (const it of [...files, logo]) {
+      expect(await original(request, space.id, it.id)).toEqual(PNG_1X1);
+      expect(await thumbnail(it.id)).toBe(200);
+    }
+
+    // Action
+    await assets.delete('Photos', 'Folder', 'Photos');
+
+    // Post-check: the list, after a reload, the API, and nothing served under the deleted folder.
+    await expect(assets.row('Photos')).toHaveCount(0);
+    await page.reload();
+    await expect(assets.row('Logos')).toBeVisible();
+    await expect(assets.row('Photos')).toHaveCount(0);
+    expect((await allAssets(api, space.id)).map(it => it.id).sort()).toEqual([logos.id, logo.id].sort());
+    for (const it of files) {
+      expect(await original(request, space.id, it.id)).toBe(404);
+      expect(await thumbnail(it.id)).toBe(404);
+    }
+    expect(await original(request, space.id, logo.id)).toEqual(PNG_1X1);
+    expect(await thumbnail(logo.id)).toBe(200);
+  });
+
   test('warns when a content uses the file; the content stays', async ({ page, api, space }) => {
     const file = await api.uploadAsset(space.id, pngFile('used.png'));
     const schema = await api.createSchema(space.id, {

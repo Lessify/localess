@@ -251,6 +251,59 @@ test.describe('Contents → folders and documents', () => {
     expect((await cdn.get({ id: keep.id })).status).toBe(200);
   });
 
+  test('deleting a folder three levels deep removes every document under it, from the API, the CDN and /links', async ({
+    page,
+    api,
+    space,
+    request,
+  }) => {
+    // Blog/2026/June with a document at every level; About/Team beside it must stay.
+    const schema = await pageSchema(api, space);
+    const blog = await api.createFolder(space.id, { name: 'Blog', slug: 'blog' });
+    const year = await api.createFolder(space.id, { name: '2026', slug: '2026', parentId: blog.id });
+    const june = await api.createFolder(space.id, { name: 'June', slug: 'june', parentId: year.id });
+    const docs = [
+      await api.createDocument(space.id, { name: 'Intro', slug: 'intro', schema: schema.name, parentId: blog.id }),
+      await api.createDocument(space.id, { name: 'Recap', slug: 'recap', schema: schema.name, parentId: year.id }),
+      await api.createDocument(space.id, { name: 'Post', slug: 'post', schema: schema.name, parentId: june.id }),
+    ];
+    const deleted = [blog.id, year.id, june.id, ...docs.map(it => it.id)];
+    const about = await api.createFolder(space.id, { name: 'About', slug: 'about' });
+    const team = await api.createDocument(space.id, { name: 'Team', slug: 'team', schema: schema.name, parentId: about.id });
+    for (const it of [...docs, team]) await api.publishContent(space.id, it.id);
+    const cdn = new Cdn(request, api, space.id);
+    const contents = new ContentsPage(page);
+
+    // Pre-check: every document delivered, published and draft, and listed in /links.
+    await contents.goto(space.id);
+    await expect(contents.rows).toHaveCount(2);
+    for (const it of docs) {
+      expect((await cdn.get({ id: it.id })).status).toBe(200);
+      expect((await cdn.get({ id: it.id }, { version: 'draft' })).status).toBe(200);
+    }
+    expect(Object.keys(await cdn.links())).toEqual(expect.arrayContaining(docs.map(it => it.id)));
+
+    // Action
+    await contents.delete('Blog', 'Folder');
+
+    // Post-check: the list, after a reload, the API at every level, the CDN in both versions, /links.
+    await expect(contents.row('Blog')).toHaveCount(0);
+    await page.reload();
+    await expect(contents.row('About')).toBeVisible();
+    await expect(contents.rows).toHaveCount(1);
+    const left = (await api.get<{ id: string }[]>(`/api/app/spaces/${space.id}/contents`)).map(it => it.id);
+    expect(left.sort()).toEqual([about.id, team.id].sort());
+    for (const it of docs) {
+      expect((await cdn.get({ id: it.id })).status).toBe(404);
+      expect((await cdn.get({ id: it.id }, { version: 'draft' })).status).toBe(404);
+    }
+    for (const links of [await cdn.links(), await cdn.links({ version: 'draft' })]) {
+      expect(Object.keys(links)).toContain(team.id);
+      for (const id of deleted) expect(Object.keys(links)).not.toContain(id);
+    }
+    expect((await cdn.get({ id: team.id })).status).toBe(200);
+  });
+
   test.describe('clipboard', () => {
     test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 

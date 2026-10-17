@@ -221,6 +221,8 @@ receives). Specs in `tests/contents/`.
 | Move a document, and a folder with its contents; a folder into itself refused | UI + API | ✅ `contents/tree` |
 | Clone: a suffixed copy with the data, never published | UI + API + CDN | ✅ `contents/tree` |
 | Delete a document, a folder with everything in it (CDN 404); cancel | UI + API + CDN | ✅ `contents/tree` |
+| Delete a folder three levels deep with a document at every level: gone from the list, the API, the CDN (published and draft) and both `/links` lists; the sibling tree stays | UI + API + CDN | ✅ `contents/tree` |
+| Nothing left behind after a nested delete: no child rows, snapshots or `/links` entries of gone contents; the cascades exist | Server test (database) | ➖ `apps/server/test/nested-delete.test.ts` |
 | Copy Slug / Copy Full Slug (clipboard) | UI | ✅ `contents/tree` |
 | Publish / unpublish a folder: its documents on and off the CDN | UI + CDN | ✅ `contents/tree` |
 | **Lifecycle**: Not published → Published → Draft; public sees the published version, preview the draft | UI + CDN | ✅ `contents/documents` @smoke |
@@ -274,6 +276,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | A short file name blocks Edit; Edit Folder stops at 100 characters | UI | ✅ `assets/rename` (roadmap N1, N3) |
 | **Delete** a file: gone from the list, the API, the CDN (404) | UI + API + CDN | ✅ `assets/delete` @smoke |
 | Delete a folder with a subfolder and files: all gone, the file outside stays | UI + API + CDN | ✅ `assets/delete` |
+| Delete a folder three levels deep with a file at every level: originals and thumbnails 404, the sibling folder stays | UI + API + CDN | ✅ `assets/delete` |
+| Nothing left behind after a nested delete: no child rows, no stored files (originals, renditions), no queued deletions | Server test (database, storage) | ➖ `apps/server/test/nested-delete.test.ts` |
 | Delete a file a content uses: the warning names it; the content stays | UI + API | ✅ `assets/delete` |
 | Cancel keeps the file | UI + CDN | ✅ `assets/delete` |
 | Move a file into a folder and back (same id, URL works); move a folder with its subtree | UI + API + CDN | ✅ `assets/move` |
