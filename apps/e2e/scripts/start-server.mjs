@@ -128,12 +128,21 @@ const server = spawn(process.execPath, ['--enable-source-maps', serverMain], {
   },
   stdio: 'inherit',
 });
+// Playwright ends the run with SIGTERM: the stop asked for, whose exit code is passed on as it is (the server answers
+// SIGTERM with 143). Any other end of the server (killed by the system, a crash) is reported and fails, so a run does
+// not show only "connection refused" with no cause.
+let stopping = false;
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
+    stopping = true;
     server.kill(signal);
     void idp.stop();
     smtp.close();
     mailbox.close();
   });
 }
-server.on('exit', code => process.exit(code ?? 0));
+server.on('exit', (code, signal) => {
+  if (stopping) process.exit(code ?? 0);
+  console.error(`[e2e] the server stopped unexpectedly (${signal ? `killed by ${signal}` : `exit code ${code}`})`);
+  process.exit(code ?? 1);
+});
