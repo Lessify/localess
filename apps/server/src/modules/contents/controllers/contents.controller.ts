@@ -23,7 +23,9 @@ const createSchema = z.discriminatedUnion('kind', [
 ]);
 const updateSchema = z.object({ name: name.optional(), slug: slug.optional(), parentId });
 // Blocks of known values (`zContentData`): `_id`, `_schema`, and each value one of the shapes the editor stores.
-const dataSchema = z.object({ data: zContentData, assets: ids, links: ids, references: ids });
+// `assets`, `links`, `references`: still accepted from clients that send them (an editor tab open across a deploy),
+// and ignored: the server works them out from the data.
+const dataSchema = z.object({ data: zContentData, assets: ids.optional(), links: ids.optional(), references: ids.optional() });
 const listSchema = z.object({
   // '': the root's children; absent: any parent.
   parentId: z.union([z.uuid(), z.literal('')]).optional(),
@@ -101,7 +103,7 @@ export class ContentsController {
     @Param('id', UuidParamPipe) id: string,
     @Body(new ZodValidationPipe(dataSchema)) body: z.infer<typeof dataSchema>,
   ) {
-    return this.contents.updateData(spaceId, id, body);
+    return this.contents.updateData(spaceId, id, body.data);
   }
 
   @Delete(':id')

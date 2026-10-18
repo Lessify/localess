@@ -33,6 +33,9 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **Locale fallback** — If the requested locale doesn't exist in the space, falls back to the space's `defaultLocale`.
 - **`resolveLink=true`** — Expands cross-content link IDs to full `ContentLink` objects.
 - **`resolveReference=true`** — Inlines referenced content documents at the resolved locale.
+- What a document points to (the ids `resolveLink`, `resolveReference` and `resolveAsset` look up) is stored with it and
+  worked out by the server from the data on every save (`shared/data-rules/content-refs.ts`); a field left empty
+  points to nothing.
 - **`resolveAsset=true`** — Expands referenced asset IDs to full asset metadata via `ContentDeliveryService.resolveAssets()` (`apps/server/src/modules/contents/services/content-delivery.service.ts`). References are asset UUIDs (an import from Firebase rewrites them).
 
 Space, document and asset ids are UUIDv7s; `GET /links` is keyed by UUID.

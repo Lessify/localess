@@ -6,7 +6,7 @@ import { assets, contents, schemas, spaceLocales, translations } from '../../../
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { guardUploads, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
-import { contentRefs } from '../templates/content-refs.js';
+import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import type { SpaceTemplate } from '../templates/index.js';
 import { SpacesRepository } from './spaces.repository.js';
 

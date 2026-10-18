@@ -214,17 +214,46 @@ describe('app API: contents', () => {
   });
 
   describe('editing', () => {
-    it('saves data with its references and fires content.changed after commit', async () => {
+    it('saves data and fires content.changed after commit', async () => {
       const response = await editor.put(`${base}/${post.id}/data`, {
         data: { _id: 'r', _schema: 'page', title: 'Hello', title_i18n_de: 'Hallo' },
-        assets: ['a1'],
-        links: [],
-        references: [],
       });
-      expect(response.json()).toMatchObject({ data: { title: 'Hello' }, assets: ['a1'] });
+      expect(response.json()).toMatchObject({ data: { title: 'Hello' } });
       expect(await deliveries()).toEqual([
         { event: 'content.changed', spaceId: S1, timestamp: expect.any(String), data: { id: post.id, fullSlug: 'blog/post' } },
       ]);
+    });
+
+    it('works out what the data points to itself, whatever lists the request sends (every locale, every block)', async () => {
+      const data = {
+        _id: 'r',
+        _schema: 'page',
+        title: 'Hello',
+        title_i18n_de: 'Hallo',
+        image: { kind: 'ASSET', uri: 'asset-en' },
+        image_i18n_de: { kind: 'ASSET', uri: 'asset-de' },
+        related: { kind: 'REFERENCE', uri: 'doc-ref' },
+        blocks: [
+          {
+            _id: 'b1',
+            _schema: 'card',
+            gallery: [{ kind: 'ASSET', uri: 'asset-block' }, { kind: 'ASSET', uri: 'asset-en' }],
+            more: { kind: 'LINK', type: 'content', target: '_self', uri: 'doc-link' },
+            web: { kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com' },
+          },
+        ],
+      };
+      // Lists that do not match the data: ignored.
+      const response = await editor.put(`${base}/${post.id}/data`, { data, assets: ['wrong'], links: [], references: ['wrong'] });
+      expect(response.statusCode).toBe(200);
+      expect(await row(post.id)).toMatchObject({
+        assets: ['asset-block', 'asset-de', 'asset-en'],
+        links: ['doc-link'],
+        references: ['doc-ref'],
+      });
+      // None sent: the same.
+      await editor.put(`${base}/${post.id}/data`, { data: { ...data, related: undefined } });
+      expect(await row(post.id)).toMatchObject({ assets: ['asset-block', 'asset-de', 'asset-en'], links: ['doc-link'], references: [] });
     });
 
     it('refuses data that is not blocks of known values, naming where', async () => {

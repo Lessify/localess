@@ -158,18 +158,13 @@ describe('ContentService', () => {
     await toFolder;
   });
 
-  it('updateDocumentData() puts the normalized data as an object with its references', async () => {
+  it('updateDocumentData() puts the normalized data only (the server works out what it points to)', async () => {
     const service = setup();
     // A legacy block keyed by `schema`: normalizeContent stores it as `_schema`.
     const data = { _id: 'root', schema: 'page', title: 'Hi' };
-    const done = firstValueFrom(service.updateDocumentData('space-1', 'd1', data as never, [new Set(['a1']), new Set(['l1']), new Set()]));
+    const done = firstValueFrom(service.updateDocumentData('space-1', 'd1', data as never));
     const request = http.expectOne({ method: 'PUT', url: `${BASE}/d1/data` });
-    expect(request.request.body).toEqual({
-      data: { _id: 'root', _schema: 'page', title: 'Hi' },
-      assets: ['a1'],
-      links: ['l1'],
-      references: [],
-    });
+    expect(request.request.body).toEqual({ data: { _id: 'root', _schema: 'page', title: 'Hi' } });
     request.flush({});
     await done;
   });

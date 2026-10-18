@@ -55,7 +55,7 @@ describe('content snapshots', () => {
   const tick = () => new Promise(resolve => setTimeout(resolve, 5));
   const contents = () => t.app.get(ContentsService);
   const saveData = (id: string, title: string) =>
-    contents().updateData(S1, id, { data: { _id: `${id}-root`, _schema: 'page', title }, assets: [], links: [], references: [] });
+    contents().updateData(S1, id, { _id: `${id}-root`, _schema: 'page', title });
 
   describe('documents', () => {
     it('answers a published document with the built_at of its snapshot', async () => {

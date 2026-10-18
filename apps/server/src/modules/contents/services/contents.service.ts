@@ -3,6 +3,7 @@ import { type Content, type ContentData, type ContentFolderSummary, WebHookEvent
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toContent } from '../../../shared/transformers/content.transformer.js';
 import { toDto } from '../../../shared/transformers/dto.transformer.js';
+import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import { type ContentQuery, ContentsRepository, type ContentWithPath } from '../repositories/contents.repository.js';
 import { randomSuffix } from '../utils/slug.utils.js';
 
@@ -91,13 +92,9 @@ export class ContentsService {
     return toContent(result.content);
   }
 
-  /** Saves the editor's data and the ids it references (assets, links, references). */
-  async updateData(
-    spaceId: string,
-    id: string,
-    input: { data: ContentData; assets: string[]; links: string[]; references: string[] },
-  ): Promise<Content> {
-    const content = found(await this.contents.updateData(spaceId, id, input));
+  /** Saves the editor's data, with the ids it points to worked out here (`contentRefs`), not taken from the client. */
+  async updateData(spaceId: string, id: string, data: ContentData): Promise<Content> {
+    const content = found(await this.contents.updateData(spaceId, id, { data, ...contentRefs(data) }));
     if ('notDocument' in content) throw new BadRequestException('Only documents have data');
     this.changed(spaceId, content);
     return toContent(content);

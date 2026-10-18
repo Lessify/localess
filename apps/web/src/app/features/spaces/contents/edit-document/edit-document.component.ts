@@ -102,7 +102,7 @@ import {
   moveBlockUp,
   removeBlock,
 } from '../shared/block-actions';
-import { collectTranslatableFields, extractReferences } from '../shared/content.utils';
+import { collectTranslatableFields } from '../shared/content.utils';
 import { ContentHelperService } from '../shared/content-helper.service';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
 import { SchemaPathItem } from './edit-document.model';
@@ -340,20 +340,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
 
     if (this.contentErrors.length === 0) {
-      const refs = this.availableLocales()
-        .map(it => extractReferences(this.documentData, this.schemas(), it.id))
-        .reduce(
-          (acc, val) => {
-            const [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc] = acc;
-            const [inUseAssetsVal, inUseLinksVal, inUseReferencesVal] = val;
-            inUseAssetsVal.forEach(it => inUseAssetsAcc.add(it));
-            inUseLinksVal.forEach(it => inUseLinksAcc.add(it));
-            inUseReferencesVal.forEach(it => inUseReferencesAcc.add(it));
-            return [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc];
-          },
-          [new Set<string>(), new Set<string>(), new Set<string>()],
-        );
-      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
+      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.previewComponent()?.sendEvent({ type: 'save', documentId: this.contentId() });

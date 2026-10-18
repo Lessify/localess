@@ -117,13 +117,9 @@ export class ContentService {
    * Update Document Data
    * @param refs Tuple of Sets: [assets, links, references]
    */
-  updateDocumentData(spaceId: string, id: string, data: ContentData, refs: [Set<string>, Set<string>, Set<string>]): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}/data`, {
-      data: normalizeContent(data),
-      assets: [...refs[0]],
-      links: [...refs[1]],
-      references: [...refs[2]],
-    });
+  /** Saves the document's data; the server works out what it points to (assets, links, references). */
+  updateDocumentData(spaceId: string, id: string, data: ContentData): Observable<void> {
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/data`, { data: normalizeContent(data) });
   }
 
   cloneDocument(spaceId: string, entity: ContentDocument): Observable<ContentDocument> {

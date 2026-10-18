@@ -11,7 +11,7 @@ import {
 } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
-import { collectTranslatableFields, extractReferences, extractSchemaContent } from './content.utils';
+import { collectTranslatableFields, extractSchemaContent } from './content.utils';
 
 function field(partial: Partial<SchemaField> & Pick<SchemaField, 'name' | 'kind'>): SchemaField {
   return partial as SchemaField;
@@ -123,81 +123,6 @@ describe('content utils', () => {
         children: [{ _id: '2', _schema: 'child-1', label: 'A' }],
       };
       expect(extractContent(content, schemas, 'default')['children']).toEqual([{ _id: '2', _schema: 'child-1', label: 'A' }]);
-    });
-  });
-
-  describe('extractReferences', () => {
-    it('returns empty sets for undefined data', () => {
-      expect(extractReferences(undefined, [], 'default')).toEqual([new Set(), new Set(), new Set()]);
-    });
-
-    it('collects asset, link and reference uris from top-level fields', () => {
-      const schema = rootSchema([
-        field({ name: 'cover', kind: SchemaFieldKind.ASSET }),
-        field({ name: 'link', kind: SchemaFieldKind.LINK }),
-        field({ name: 'ref', kind: SchemaFieldKind.REFERENCE }),
-      ]);
-      const data: ContentData = {
-        _id: '1',
-        _schema: 'root-1',
-        cover: { kind: 'ASSET', uri: 'asset-1' } as ContentAsset,
-        link: { kind: 'LINK', type: 'content', target: '_self', uri: 'link-1' },
-        ref: { kind: 'REFERENCE', uri: 'ref-1' } as ContentReference,
-      };
-      const [assets, links, references] = extractReferences(data, [schema], 'default');
-      expect(assets).toEqual(new Set(['asset-1']));
-      expect(links).toEqual(new Set(['link-1']));
-      expect(references).toEqual(new Set(['ref-1']));
-    });
-
-    it('skips empty Asset, Link and Reference values (a field left empty in the editor)', () => {
-      const schema = rootSchema([
-        field({ name: 'cover', kind: SchemaFieldKind.ASSET }),
-        field({ name: 'link', kind: SchemaFieldKind.LINK }),
-        field({ name: 'ref', kind: SchemaFieldKind.REFERENCE }),
-        field({ name: 'refs', kind: SchemaFieldKind.REFERENCES }),
-      ]);
-      const data = {
-        _id: '1',
-        _schema: 'root-1',
-        cover: { kind: 'ASSET', uri: null },
-        link: { kind: 'LINK', type: 'content', target: '_self', uri: '' },
-        ref: { kind: 'REFERENCE', uri: null },
-        refs: [
-          { kind: 'REFERENCE', uri: 'ref-1' },
-          { kind: 'REFERENCE', uri: undefined },
-        ],
-      } as unknown as ContentData;
-      const [assets, links, references] = extractReferences(data, [schema], 'default');
-      expect(assets).toEqual(new Set());
-      expect(links).toEqual(new Set());
-      expect(references).toEqual(new Set(['ref-1']));
-    });
-
-    it('collects uris from ASSETS/REFERENCES arrays', () => {
-      const schema = rootSchema([field({ name: 'assets', kind: SchemaFieldKind.ASSETS })]);
-      const data: ContentData = {
-        _id: '1',
-        _schema: 'root-1',
-        assets: [
-          { kind: 'ASSET', uri: 'asset-1' },
-          { kind: 'ASSET', uri: 'asset-2' },
-        ],
-      };
-      const [assets] = extractReferences(data, [schema], 'default');
-      expect(assets).toEqual(new Set(['asset-1', 'asset-2']));
-    });
-
-    it('recurses into nested SCHEMA/SCHEMAS content', () => {
-      const childSchema = rootSchema([field({ name: 'cover', kind: SchemaFieldKind.ASSET })], 'child-1');
-      const parentSchema = rootSchema([field({ name: 'child', kind: SchemaFieldKind.SCHEMA })], 'root-1');
-      const data: ContentData = {
-        _id: '1',
-        _schema: 'root-1',
-        child: { _id: '2', _schema: 'child-1', cover: { kind: 'ASSET', uri: 'nested-asset' } },
-      };
-      const [assets] = extractReferences(data, [parentSchema, childSchema], 'default');
-      expect(assets).toEqual(new Set(['nested-asset']));
     });
   });
 

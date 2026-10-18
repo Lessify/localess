@@ -29,4 +29,15 @@ describe('contentRefs', () => {
     });
     expect(refs).toEqual({ assets: ['a1', 'a2', 'a3'], references: ['r1', 'r2'], links: ['c1'] });
   });
+
+  it('leaves out a field left empty in the editor (its kind, without a uri or with an empty one)', () => {
+    const refs = contentRefs({
+      _id: 'doc',
+      _schema: 'page',
+      image: { kind: 'ASSET', uri: '' },
+      author: { kind: 'REFERENCE' },
+      site: { kind: 'LINK', type: 'content', target: '_self', uri: '' },
+    } as never);
+    expect(refs).toEqual({ assets: [], references: [], links: [] });
+  });
 });
