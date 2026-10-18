@@ -65,10 +65,27 @@ describe('app API: the contents template (CONTENTS_FIELDS)', () => {
       id: string;
       name: string;
       extension: string;
-      metadata?: { width?: number; height?: number };
+      metadata?: Record<string, unknown>;
     }[];
     expect(files.map(it => `${it.name}${it.extension}`).sort()).toEqual(['blue.jpg', 'readme.txt', 'red.png']);
-    expect(files.find(it => it.name === 'red')?.metadata).toMatchObject({ width: 64, height: 48 });
+    // Read as an upload's would be (exiftool, then sharp): the PNG and the JPEG path both.
+    expect(files.find(it => it.name === 'red')?.metadata).toEqual({
+      type: 'image',
+      format: 'png',
+      width: 64,
+      height: 48,
+      orientation: 'landscape',
+      hasAlpha: false,
+    });
+    expect(files.find(it => it.name === 'blue')?.metadata).toEqual({
+      type: 'image',
+      format: 'jpg',
+      width: 32,
+      height: 32,
+      orientation: 'squarish',
+      hasAlpha: false,
+    });
+    expect(files.find(it => it.name === 'readme')?.metadata ?? {}).toEqual({});
     expect((await storedAssetDirs(t, space.id)).sort()).toEqual(files.map(it => it.id).sort());
 
     // Contents: the tree, all drafts.

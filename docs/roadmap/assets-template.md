@@ -55,7 +55,7 @@ size, or that the page stays usable with 1,000 files.
   deleted on failure.
 - **Metadata without reading back**: the PNG's width and height are known from the generator (`{ type: 'image',
   width: 16, height: 16 }`), so the create does not run the metadata reader 100 times (my call, for speed); text files
-  get none, as an upload does.
+  get none, as an upload does. A server test reads one of the stored PNGs with the real reader and compares: the declared metadata must equal an upload's (`orientation` and `hasAlpha` included, *added 2026-10-18*).
 - **One image's bytes reused** for the 100 PNGs; each still gets its own stored file (a file per asset, as uploads do).
 - Rows inserted in chunks (as translations are).
 

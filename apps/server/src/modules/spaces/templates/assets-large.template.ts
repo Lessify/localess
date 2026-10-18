@@ -14,7 +14,8 @@ import type { SpaceTemplate, TemplateAsset } from './space-template.model.js';
 
 const FILES = 1_000;
 const PATTERN = 'Localess test file. ';
-const IMAGE_METADATA = { type: 'image', format: 'png', width: 16, height: 16 };
+/** What AssetMetadataService reads from the PNG below, declared (reading 100 files per create is slow); a test compares. */
+const IMAGE_METADATA = { type: 'image', format: 'png', width: 16, height: 16, orientation: 'squarish', hasAlpha: false };
 
 let png: Promise<Buffer> | undefined;
 /** One small PNG, generated once and shared by every image of the template. */

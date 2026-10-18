@@ -1,11 +1,12 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { count, like } from 'drizzle-orm';
+import { and, count, eq, like } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, spaces, storageDeletions } from '../src/infra/database/schema.js';
 import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
 import { ASSETS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { AssetMetadataService } from '../src/shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { orphansOf, storedAssetDirs } from './orphans.js';
 import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWithAccess } from './test-app.js';
@@ -57,6 +58,19 @@ describe('app API: the large assets template (ASSETS_LARGE)', () => {
     expect(bulk.find(it => it.name === 'file-0999')).toMatchObject({ type: 'text/plain', size: 999 });
     expect(await storedAssetDirs(t, space.id)).toHaveLength(1_002);
     expect(await orphansOf(t, space.id)).toEqual([]);
+  });
+
+  it('declares for its images exactly the metadata an upload of the same file gets (read by AssetMetadataService)', async () => {
+    const response = await admin.post('/api/app/spaces', { name: 'Metadata', template: 'ASSETS_LARGE' });
+    expect(response.statusCode, response.body).toBe(201);
+    const spaceId = response.json().id;
+    const [image] = await t.db
+      .select({ id: assets.id, metadata: assets.metadata })
+      .from(assets)
+      .where(and(eq(assets.spaceId, spaceId), eq(assets.name, 'file-0010')));
+    const read = await t.app.get(AssetMetadataService).extract(`spaces/${spaceId}/assets/${image.id}/original`, 'image/png', null);
+    expect(read.metadata).toBeDefined();
+    expect(image.metadata).toEqual(read.metadata);
   });
 
   it('leaves no file behind when one store fails while others in its batch are still writing', async () => {
