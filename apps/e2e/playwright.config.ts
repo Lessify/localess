@@ -116,7 +116,8 @@ function server(options: ServerOptions) {
       HOST: '127.0.0.1',
       LOCALESS_DATA_DIR: options.dataDir,
       LOCALESS_EMBEDDED_PG_PORT: String(options.pgPort),
-      ...(options.databaseUrl ? { DATABASE_URL: options.databaseUrl } : {}),
+      // Always set, so a value in the shell never reaches the script (it empties this database).
+      E2E_SERVER_DATABASE_URL: options.databaseUrl ?? '',
       LOCALESS_ADMIN_EMAIL: ADMIN.email,
       LOCALESS_ADMIN_PASSWORD: ADMIN.password,
       LOCALESS_LOGIN_RATE_LIMIT: String(options.loginRateLimit),

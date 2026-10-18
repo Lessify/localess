@@ -30,10 +30,13 @@ if (!dataDir) {
 
 rmSync(dataDir, { recursive: true, force: true });
 
-// An external Postgres (E2E_DATABASE_URL → DATABASE_URL): emptied like the data directory, so the server migrates a
-// blank database and seeds the first admin again.
-if (process.env.DATABASE_URL) {
-  const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
+// An external Postgres only when the config names one (E2E_DATABASE_URL → E2E_SERVER_DATABASE_URL): emptied like the
+// data directory, so the server migrates a blank database and seeds the first admin again. Playwright passes the whole
+// shell environment on, so a DATABASE_URL from there (a developer's own database) is dropped, never used or emptied.
+const databaseUrl = process.env.E2E_SERVER_DATABASE_URL || undefined;
+delete process.env.DATABASE_URL;
+if (databaseUrl) {
+  const client = new pg.Client({ connectionString: databaseUrl });
   await client.connect();
   await client.query('drop schema if exists drizzle cascade; drop schema if exists public cascade; create schema public');
   await client.end();
@@ -117,6 +120,7 @@ await new Promise(resolve => mailbox.listen(mailPort + 1, '127.0.0.1', resolve))
 const server = spawn(process.execPath, ['--enable-source-maps', serverMain], {
   env: {
     ...process.env,
+    ...(databaseUrl ? { DATABASE_URL: databaseUrl } : {}),
     LOCALESS_STATIC_DIR: staticDir,
     LOCALESS_GOOGLE_ISSUER: idp.issuer.url,
     LOCALESS_MICROSOFT_ISSUER: idp.issuer.url,

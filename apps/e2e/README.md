@@ -38,7 +38,8 @@ Two other setups, both run in CI (`.github/workflows/build.yml`):
 
 - **External Postgres** (`e2e-postgres`): `E2E_DATABASE_URL=postgres://…` makes the server use that database
   (`DATABASE_URL`) instead of the embedded one. The start script **empties it** (drops the `public` and `drizzle`
-  schemas) before every run, so point it at a throwaway database only.
+  schemas) before every run, so point it at a throwaway database only. Only `E2E_DATABASE_URL` is used: a
+  `DATABASE_URL` in your shell is ignored (removed before the server starts), so a run never touches your own database.
 - **A server already running** (`e2e-docker`, the Docker image): `E2E_BASE_URL=http://localhost:3100 pnpm e2e:smoke`
   starts no server and runs against that one. It must be set up for the tests it runs: the admin of
   `tests/support/env.ts`, `LOCALESS_LOGIN_RATE_LIMIT=10000` and `LOCALESS_WEBHOOK_ALLOW_INTERNAL=true` for the smoke

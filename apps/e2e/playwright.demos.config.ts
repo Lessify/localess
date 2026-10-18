@@ -48,6 +48,8 @@ export default defineConfig({
       HOST: '127.0.0.1',
       LOCALESS_DATA_DIR: resolve(import.meta.dirname, '.data-demos'),
       LOCALESS_EMBEDDED_PG_PORT: String(PORT + 2254),
+      // The embedded Postgres, always (the start script would empty a database named here).
+      E2E_SERVER_DATABASE_URL: '',
       LOCALESS_ADMIN_EMAIL: DEMO_ADMIN.email,
       LOCALESS_ADMIN_PASSWORD: DEMO_ADMIN.password,
       LOCALESS_LOGIN_RATE_LIMIT: '10000',
