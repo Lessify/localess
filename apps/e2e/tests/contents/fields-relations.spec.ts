@@ -69,6 +69,8 @@ test.describe('Contents → form: choices and relations', () => {
     // A link to a document.
     await internal.getByRole('button', { name: 'Change link type' }).click();
     await page.getByRole('menuitemradio', { name: 'Internal Reference' }).click();
+    // The type menu closes on the pick.
+    await expect(page.getByRole('menu')).toHaveCount(0);
     await internal.getByRole('combobox').click();
     await page.getByRole('option', { name: 'Contact | contact', exact: true }).click();
     await contents.save();

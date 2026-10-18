@@ -36,7 +36,11 @@
     <ng-template #localeMenu>
       <hlm-dropdown-menu>
         @for (locale of availableLocales(); track locale.id) {
-          <button hlmDropdownMenuRadio [checked]="locale.id === selectedLocale().id" (click)="selectedLocale.set(locale)">
+          <button
+            hlmDropdownMenuRadio
+            [keepOpen]="false"
+            [checked]="locale.id === selectedLocale().id"
+            (click)="selectedLocale.set(locale)">
             <hlm-dropdown-menu-radio-indicator />
             <ll-locale-icon [locale]="locale.id" [defaultLocale]="selectedSpace()?.defaultLocale?.id" />
             <span> {{ locale.name }} </span>

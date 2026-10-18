@@ -24,12 +24,12 @@
           </button>
           <ng-template #linkTypeMenu>
             <hlm-dropdown-menu>
-              <button hlmDropdownMenuRadio [checked]="linkType() === 'url'" (click)="onTypeChange('url')">
+              <button hlmDropdownMenuRadio [keepOpen]="false" [checked]="linkType() === 'url'" (click)="onTypeChange('url')">
                 <hlm-dropdown-menu-radio-indicator />
                 <ng-icon name="lucideLink" class="mr-2" />
                 <span>Public URL</span>
               </button>
-              <button hlmDropdownMenuRadio [checked]="linkType() === 'content'" (click)="onTypeChange('content')">
+              <button hlmDropdownMenuRadio [keepOpen]="false" [checked]="linkType() === 'content'" (click)="onTypeChange('content')">
                 <hlm-dropdown-menu-radio-indicator />
                 <ng-icon name="lucideFileSymlink" class="mr-2" />
                 <span>Internal Reference</span>

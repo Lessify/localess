@@ -36,6 +36,8 @@ export class Shell {
       if (!(await menu.isVisible())) await this.sidebar.getByRole('button').first().click();
       await this.page.getByRole('menuitemradio', { name }).click({ timeout: 2_000 });
     }).toPass({ timeout: 15_000 });
+    // The menu closes on the pick.
+    await expect(menu).toHaveCount(0);
     await expect(this.page).toHaveURL(/\/dashboard/);
   }
 }

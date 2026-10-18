@@ -308,10 +308,8 @@ export class ContentsPage {
     await expect(async () => {
       if (!(await menu.isVisible())) await trigger.click();
       await item.click({ timeout: 2_000 });
-      await expect(item).toBeChecked({ timeout: 1_000 });
     }).toPass({ timeout: 15_000 });
-    // A radio menu stays open after a pick.
-    await this.page.keyboard.press('Escape');
+    // The menu closes on the pick; the trigger then names the locale.
     await expect(menu).toHaveCount(0);
     await expect(this.page.getByRole('button', { name: label })).toBeVisible();
   }
