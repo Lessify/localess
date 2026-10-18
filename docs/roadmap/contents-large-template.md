@@ -71,7 +71,7 @@ tests them:
 
 ## Seen while designing (not in scope)
 
-- No search on the Contents page or in the references picker.
+- No search on the Contents page or in the references picker: roadmap [search.md](search.md).
 - The Link field renders all documents of the space as options, and the space loads all documents with their data when
   it opens (`findAllDocuments`); at much larger sizes both will need paging or search on the server.
 - Publishing a large folder holds the space's contents lock for the whole transaction.

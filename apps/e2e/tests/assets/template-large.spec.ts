@@ -138,8 +138,9 @@ test.describe('Assets → a folder of 1,000 files', () => {
     await contents.save();
 
     // Post-check: the API.
-    const files20 = await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/assets?name=file-00`);
-    const id = (name: string) => files20.find(it => it.name === name)!.id;
+    // `?name=` is a name prefix: `file-0001` … `file-0099`, which hold the two picked.
+    const firstFiles = await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/assets?name=file-00`);
+    const id = (name: string) => firstFiles.find(it => it.name === name)!.id;
     const data = (await contentById(api, space.id, gallery)).data as { images?: { uri: string }[] };
     expect(data.images?.map(it => it.uri)).toEqual([id('file-0010'), id('file-0020')]);
   });
