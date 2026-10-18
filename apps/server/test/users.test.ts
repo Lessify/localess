@@ -50,7 +50,7 @@ describe('user management', () => {
     expect((await call(readerCookie, 'GET', '/api/app/users')).statusCode).toBe(403);
     const response = await call(managerCookie, 'GET', '/api/app/users');
     expect(response.statusCode).toBe(200);
-    expect(response.json().map((u: { email: string }) => u.email)).toEqual([
+    expect(response.json().items.map((u: { email: string }) => u.email)).toEqual([
       'admin@example.com',
       'manager@example.com',
       'powerful@example.com',
@@ -230,7 +230,8 @@ describe('user management', () => {
 
     // Earlier cases invited other admins: `admin` becomes the only one.
     beforeAll(async () => {
-      for (const user of await usersService.list()) {
+      const all = await usersService.page({ page: 0, size: 100, sort: 'email', direction: 'asc' });
+      for (const user of all.items) {
         if (user.role === 'ADMIN' && user.id !== ids.admin) await usersService.updateAccess(user.id, { role: null });
       }
     });

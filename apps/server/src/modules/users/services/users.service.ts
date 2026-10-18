@@ -1,10 +1,11 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { canGrant, canManageUser, UserPermission, UserRole } from '@localess/shared';
+import { canGrant, canManageUser, type Page, UserPermission, UserRole } from '@localess/shared';
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { toPrincipal, toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
-import { UsersRepository } from '../repositories/users.repository.js';
+import { toPage } from '../../../shared/utils/paging.js';
+import { type UserQuery, UsersRepository } from '../repositories/users.repository.js';
 
 export interface CreateUser {
   email: string;
@@ -50,8 +51,10 @@ export class UsersService {
     private readonly passwordReset: PasswordResetService,
   ) {}
 
-  async list(): Promise<UserDto[]> {
-    return this.toDtos(await this.users.findAll());
+  /** One page of Admin → Users. */
+  async page(query: UserQuery): Promise<Page<UserDto>> {
+    const { rows, total } = await this.users.findPage(query);
+    return toPage(await this.toDtos(rows), total, query, it => it);
   }
 
   async getById(id: string): Promise<UserRow> {

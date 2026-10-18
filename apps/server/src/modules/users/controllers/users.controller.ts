@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { USER_PERMISSIONS, USER_ROLES, UserPermission } from '@localess/shared';
+import { type Page, USER_PERMISSIONS, USER_ROLES, UserPermission } from '@localess/shared';
+import { zPageable } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { PASSWORD_MIN_LENGTH } from '../../../auth/utils/password.js';
@@ -11,6 +12,7 @@ import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
+import { USER_SORT_FIELDS } from '../repositories/users.repository.js';
 import { UsersService } from '../services/users.service.js';
 
 const roleSchema = z.enum(USER_ROLES).nullish();
@@ -26,6 +28,10 @@ const inviteSchema = z.object({
 });
 
 const statusSchema = z.object({ disabled: z.boolean() });
+const listSchema = zPageable(USER_SORT_FIELDS, 'email').extend({
+  search: z.string().trim().max(200).optional(),
+  active: z.enum(['active', 'inactive']).optional(),
+});
 
 const accessSchema = z.object({
   role: roleSchema,
@@ -46,9 +52,10 @@ export class UsersController {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
+  /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (email or display name), `?active=active|inactive`. */
   @Get()
-  list(): Promise<UserDto[]> {
-    return this.users.list();
+  list(@Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>): Promise<Page<UserDto>> {
+    return this.users.page(query);
   }
 
   @Get(':id')

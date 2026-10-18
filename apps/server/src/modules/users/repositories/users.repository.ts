@@ -1,5 +1,6 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, sql } from 'drizzle-orm';
+import type { Pageable } from '@localess/shared';
+import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { sessions, userCredentials, users } from '../../../infra/database/schema.js';
@@ -7,6 +8,14 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { findUserLogins } from '../../../shared/queries/user.query.js';
+import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
+
+/** The fields Admin → Users may sort by (`name`: the display name). */
+export const USER_SORT_FIELDS = ['email', 'name', 'role', 'createdAt', 'updatedAt'] as const;
+export type UserSortField = (typeof USER_SORT_FIELDS)[number];
+export type UserQuery = Pageable<UserSortField> & { search?: string; active?: 'active' | 'inactive' };
+
+const SORT_COLUMNS = { email: users.email, name: users.displayName, role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt };
 
 export type UserValues = Pick<UserRow, 'email' | 'emailVerified' | 'displayName' | 'role' | 'permissions' | 'lock'>;
 export type UserUpdate = Partial<Pick<UserRow, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role' | 'permissions' | 'lock'>>;
@@ -23,9 +32,25 @@ export class UsersRepository {
     private readonly events: EventsService,
   ) {}
 
-  /** By email. */
-  findAll(): Promise<UserRow[]> {
-    return this.db.select().from(users).orderBy(asc(users.email));
+  /** One page by the query's sort (then the id, so ties page stably), and how many match its filters. */
+  async findPage(query: UserQuery): Promise<{ rows: UserRow[]; total: number }> {
+    const conditions: SQL[] = [];
+    if (query.search) {
+      const pattern = containsPattern(query.search);
+      conditions.push(or(ilike(users.email, pattern), ilike(users.displayName, pattern)) as SQL);
+    }
+    if (query.active) conditions.push(eq(users.disabled, query.active === 'inactive'));
+    const where = and(...conditions);
+    const order = query.direction === 'desc' ? desc : asc;
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(where)
+      .orderBy(order(SORT_COLUMNS[query.sort]), asc(users.id))
+      .limit(query.size)
+      .offset(offsetOf(query));
+    const [{ total }] = await this.db.select({ total: count() }).from(users).where(where);
+    return { rows, total };
   }
 
   async findById(id: string): Promise<UserRow | undefined> {
