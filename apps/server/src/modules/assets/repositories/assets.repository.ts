@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, isNull, like, or, sql, SQL } from 'drizzle-orm';
+import { escapeLike } from '../../../shared/utils/paging.js';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { assets, contents } from '../../../infra/database/schema.js';
@@ -42,7 +43,6 @@ interface WriteResult<T> {
   changed: { id: string; op: 'created' | 'updated' | 'deleted' }[];
 }
 
-const escapeLike = (value: string) => value.replace(/[\\%_]/g, m => `\\${m}`);
 
 export type MoveResult = { asset: AssetEntity } | { noParent: true } | { intoItself: true };
 
