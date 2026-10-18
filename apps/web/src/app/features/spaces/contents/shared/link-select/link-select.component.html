@@ -2,7 +2,7 @@
   <fieldset hlmFieldSet [attr.aria-label]="component().displayName || component().name">
     <div hlmFieldGroup class="gap-2">
       <div hlmField class="gap-2">
-        <label hlmFieldLabel [for]="component().name">
+        <label hlmFieldLabel [for]="'schema-field-' + component().name">
           {{ component().displayName || component().name }}
           @if (component().description; as description) {
             <ng-icon hlm size="sm" name="lucideInfo" [hlmTooltip]="description" />
@@ -43,7 +43,7 @@
               } @else {
                 <input
                   hlmInput
-                  [id]="component().name"
+                  [id]="'schema-field-' + component().name"
                   type="url"
                   formControlName="uri"
                   autocomplete="off"
@@ -82,10 +82,10 @@
       <div hlmField orientation="horizontal">
         <!-- Per field: two Link fields in one form must not share the id the label points at. -->
         <hlm-switch
-          [inputId]="component().name + '-target'"
+          [inputId]="'schema-field-' + component().name + '-target'"
           [checked]="form().value.target === '_blank'"
           (checkedChange)="targetChange($event)" />
-        <label hlmFieldLabel [for]="component().name + '-target'">Open in a new tab</label>
+        <label hlmFieldLabel [for]="'schema-field-' + component().name + '-target'">Open in a new tab</label>
       </div>
     </div>
   </fieldset>

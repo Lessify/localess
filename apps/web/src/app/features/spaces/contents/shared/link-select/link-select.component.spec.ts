@@ -63,13 +63,24 @@ describe('LinkSelectComponent', () => {
     }
   }
 
-  it("labels the 'Open in a new tab' switch with an id of its own field", () => {
+  it("labels the 'Open in a new tab' switch with an id of its own field, prefixed like every field's", () => {
     setInputs({ form: makeForm() });
     fixture.detectChanges();
 
-    const label = (fixture.nativeElement as HTMLElement).querySelector('label[for$="-target"]');
+    const host = fixture.nativeElement as HTMLElement;
+    const label = host.querySelector('label[for$="-target"]');
     expect(label?.textContent?.trim()).toBe('Open in a new tab');
-    expect(label?.getAttribute('for')).toBe('link-target');
+    expect(label?.getAttribute('for')).toBe('schema-field-link-target');
+    expect(host.querySelector('#schema-field-link-target')).not.toBeNull();
+  });
+
+  it('labels the URL input with the field id, prefixed like every field\'s', () => {
+    setInputs({ form: makeForm() });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('label[for="schema-field-link"]')).not.toBeNull();
+    expect(host.querySelector('input#schema-field-link')).not.toBeNull();
   });
 
   // ── Regression: content type initialization ──────────────────────────────
