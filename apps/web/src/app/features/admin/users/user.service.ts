@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { User, UserInvite, UserUpdate } from '@localess/shared';
+import { Page, User, UserInvite, UserUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 const BASE = '/api/app/users';
@@ -18,8 +18,9 @@ export class UserService {
   private readonly http = inject(HttpClient);
   private readonly events = inject(ChangeEventsService);
 
-  findAll(): Observable<User[]> {
-    return liveQueryWith(this.events, { entities: ['users'] }, () => this.http.get<User[]>(BASE));
+  /** One page (`params`: a `PagedList`'s query); read again whenever a user changes. */
+  findPage(params: HttpParams): Observable<Page<User>> {
+    return liveQueryWith(this.events, { entities: ['users'] }, () => this.http.get<Page<User>>(BASE, { params }));
   }
 
   findById(id: string): Observable<User> {

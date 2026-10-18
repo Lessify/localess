@@ -1,21 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  DestroyRef,
-  inject,
-  Injector,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
 import { UserStore } from '@core/stores/user.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { User } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -41,8 +30,8 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -93,7 +82,7 @@ import { canManageUser } from './user-management';
     }),
   ],
 })
-export class UsersComponent implements OnInit, AfterViewInit {
+export class UsersComponent implements OnInit {
   private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
@@ -101,10 +90,10 @@ export class UsersComponent implements OnInit, AfterViewInit {
   private readonly injector = inject(Injector);
   private readonly userStore = inject(UserStore);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
+  /** The page shown: paged, sorted and filtered on the server (`GET /api/app/users`). */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly users = signal<User[]>([]);
   readonly dataSource = new TableDataSource<User>(this.users, this.injector);
   displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
@@ -124,16 +113,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<User>({
-      searchFields: user => [user.email, user.displayName],
-      filterFields: [{ key: 'active', accessor: user => (user.disabled ? 'inactive' : 'active') }],
-    });
     this.loadData();
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
   }
 
   /** Whether the signed-in user may edit or delete `element` - the same limits the server enforces. */
@@ -141,17 +121,28 @@ export class UsersComponent implements OnInit, AfterViewInit {
     return canManageUser({ id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() }, element);
   }
 
+  /** The search box (email or display name) and the Active filter, on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+    const active = value['active'];
+    this.list.setFilters({ search: value.search?.trim() || undefined, active: typeof active === 'string' ? active : undefined });
   }
 
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
+  }
+
+  /** The current query's page, again whenever the query changes or a user does (live). */
   loadData(): void {
-    this.userService
-      .findAll()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params => this.userService.findPage(params)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
-        next: users => {
-          this.users.set(users);
+        next: page => {
+          this.users.set(page.items);
+          this.total.set(page.total);
+          this.list.onLoaded(page);
           this.isLoading.set(false);
           this.cd.markForCheck();
         },

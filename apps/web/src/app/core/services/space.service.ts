@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceTemplateId, SpaceUpdate } from '@localess/shared';
+import { Page, Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceTemplateId, SpaceUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 const BASE = '/api/app/spaces';
@@ -16,6 +16,11 @@ export class SpaceService {
   /** Ordered by name (server side). */
   findAll(): Observable<Space[]> {
     return liveQueryWith(this.events, { entities: ['spaces'] }, () => this.http.get<Space[]>(BASE));
+  }
+
+  /** One page (`params`: a `PagedList`'s query); read again whenever a space changes. */
+  findPage(params: HttpParams): Observable<Page<Space>> {
+    return liveQueryWith(this.events, { entities: ['spaces'] }, () => this.http.get<Page<Space>>(BASE, { params }));
   }
 
   findById(id: string): Observable<Space> {

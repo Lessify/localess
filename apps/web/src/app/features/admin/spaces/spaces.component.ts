@@ -1,7 +1,6 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -12,13 +11,12 @@ import {
   linkedSignal,
   OnInit,
   signal,
-  viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceService } from '@core/services/space.service';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
@@ -30,8 +28,8 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -77,16 +75,16 @@ const CREATE_ACTION = 'create';
     }),
   ],
 })
-export class SpacesComponent implements OnInit, AfterViewInit {
+export class SpacesComponent implements OnInit {
   private readonly spaceService = inject(SpaceService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
+  /** The page shown: paged, sorted and searched on the server (`GET /api/app/spaces`); by name unless sorted. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly spaces = signal<Space[]>([]);
   readonly dataSource = new TableDataSource<Space>(this.spaces, this.injector);
   displayedColumns: string[] = ['id', 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
@@ -110,32 +108,29 @@ export class SpacesComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<Space>({
-      searchFields: space => [space.id, space.name],
-    });
-    // Names compare case-insensitively, the order the server lists spaces in.
-    this.dataSource.sortingDataAccessor = (space, column) => {
-      const value = (space as unknown as Record<string, unknown>)[column];
-      return column === 'name' ? space.name.toLowerCase() : ((value ?? '') as string | number);
-    };
     this.loadData();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
-  }
-
+  /** The search box (name, or the id), on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+    this.list.setFilters({ search: value.search?.trim() || undefined });
   }
 
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
+  }
+
+  /** The current query's page, again whenever the query changes or a space does (live). */
   loadData(): void {
-    this.spaceService
-      .findAll()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(response => {
-        this.spaces.set(response);
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params => this.spaceService.findPage(params)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        this.spaces.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
         this.isLoading.set(false);
       });
   }

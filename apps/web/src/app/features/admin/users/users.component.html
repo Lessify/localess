@@ -18,7 +18,7 @@
     [filters]="filters"
     (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="email">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="email">Email</th>
         <td llCell *llCellDef="let element" class="break-all">
@@ -149,5 +149,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

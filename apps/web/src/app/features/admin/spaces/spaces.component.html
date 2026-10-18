@@ -14,7 +14,13 @@
 <div class="mx-auto mt-3 px-2">
   <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort llTableSortActive="name" llTableSortDirection="asc">
+    <table
+      ll-table
+      [dataSource]="dataSource"
+      llTableSort
+      llTableSortActive="name"
+      llTableSortDirection="asc"
+      (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="id">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="id">ID</th>
         <td llCell *llCellDef="let element">{{ element.id }}</td>
@@ -68,5 +74,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

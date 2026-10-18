@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { User, UserPermission } from '@localess/shared';
+import { Page, User, UserPermission } from '@localess/shared';
 import { UserService } from './user.service';
 
 describe('UserService', () => {
@@ -26,28 +26,31 @@ describe('UserService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the users', async () => {
+  const params = new HttpParams().set('page', 1).set('size', 25).set('search', 'ali');
+  const page = (items: User[]): Page<User> => ({ items, page: 1, size: 25, total: 26 });
+
+  it('findPage() reads one page with the given query', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll());
-    http.expectOne({ method: 'GET', url: '/api/app/users' }).flush([{ id: 'u1' }]);
-    expect(await result).toEqual([{ id: 'u1' }]);
+    const result = firstValueFrom(service.findPage(params));
+    http.expectOne({ method: 'GET', url: '/api/app/users?page=1&size=25&search=ali' }).flush(page([{ id: 'u1' } as User]));
+    expect(await result).toEqual(page([{ id: 'u1' } as User]));
   });
 
-  it('findAll() refetches when a user changes', async () => {
+  it('findPage() reads the page again when a user changes', async () => {
     vi.useFakeTimers();
     const service = setup();
-    const results: User[][] = [];
-    const subscription = service.findAll().subscribe(it => results.push(it));
-    http.expectOne('/api/app/users').flush([]);
+    const results: Page<User>[] = [];
+    const subscription = service.findPage(params).subscribe(it => results.push(it));
+    http.expectOne('/api/app/users?page=1&size=25&search=ali').flush(page([]));
 
     events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone('/api/app/users');
+    http.expectNone(() => true);
 
     events.next({ spaceId: null, entity: 'users', id: 'u1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne('/api/app/users').flush([{ id: 'u1' } as User]);
-    expect(results).toEqual([[], [{ id: 'u1' }]]);
+    http.expectOne('/api/app/users?page=1&size=25&search=ali').flush(page([{ id: 'u1' } as User]));
+    expect(results.map(it => it.items.length)).toEqual([0, 1]);
     subscription.unsubscribe();
   });
 

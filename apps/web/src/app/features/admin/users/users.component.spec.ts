@@ -1,12 +1,12 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { User } from '@localess/shared';
+import { Page, User } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { UserService } from './user.service';
 import { UserStore } from '@core/stores/user.store';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { UsersComponent } from './users.component';
@@ -28,13 +28,20 @@ function userStoreOf(user: CurrentUser) {
   return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
 }
 
+const pageOf = <T>(items: T[], params: HttpParams): Page<T> => ({
+  items,
+  page: Number(params.get('page')),
+  size: Number(params.get('size')),
+  total: items.length,
+});
+
 describe('UsersComponent', () => {
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  function setup(users: User[] = [], findAllImpl?: () => ReturnType<typeof of>, currentUser = ADMIN) {
-    const findAll = findAllImpl ? vi.fn(findAllImpl) : vi.fn().mockReturnValue(of(users));
+  function setup(users: User[] = [], findPageImpl?: (params: HttpParams) => Observable<Page<User>>, currentUser = ADMIN) {
+    const findPage = vi.fn(findPageImpl ?? ((params: HttpParams) => of(pageOf(users, params))));
     const invite = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteUser = vi.fn().mockReturnValue(of(undefined));
@@ -51,7 +58,7 @@ describe('UsersComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserService, useValue: { findAll, invite, update, delete: deleteUser, passwordResetLink, setDisabled } },
+        { provide: UserService, useValue: { findPage, invite, update, delete: deleteUser, passwordResetLink, setDisabled } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         userStoreOf(currentUser),
@@ -59,16 +66,49 @@ describe('UsersComponent', () => {
     });
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, invite, update, deleteUser, setDisabled, passwordResetLink, success, error, open };
+    const lastQuery = () => findPage.mock.calls.at(-1)![0].toString();
+    return { fixture, component: fixture.componentInstance, findPage, lastQuery, invite, update, deleteUser, setDisabled, passwordResetLink, success, error, open };
   }
 
-  it('loads users on init', () => {
+  it('loads the first page on init, and shows the total', () => {
     const users = [user({ id: 'u1' }), user({ id: 'u2' })];
-    const { component, findAll } = setup(users);
+    const { component, lastQuery } = setup(users);
 
-    expect(findAll).toHaveBeenCalled();
+    expect(lastQuery()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(users);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
+  });
+
+  it('asks the server for the search and the Active filter, from the first page', () => {
+    const { fixture, component, lastQuery } = setup();
+    component.list.page.set(2);
+
+    component.onFilterChange({ search: 'ali', active: 'inactive' });
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=0&size=20&search=ali&active=inactive');
+  });
+
+  it('asks the server for the sorted column and direction', () => {
+    const { fixture, component, lastQuery } = setup();
+
+    component.onSortChange({ active: 'role', direction: 'desc' });
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=0&size=20&sort=role&direction=desc');
+  });
+
+  it('moves to the last page when the page shown is past the end (users deleted meanwhile)', () => {
+    const { fixture, component, lastQuery } = setup([], params =>
+      of({ items: Number(params.get('page')) > 2 ? [] : [user({ id: 'u' })], page: Number(params.get('page')), size: 20, total: 45 }),
+    );
+
+    component.list.page.set(5);
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=2&size=20');
   });
 
   it('notifies an error and stops loading when users fail to load', () => {
@@ -76,14 +116,6 @@ describe('UsersComponent', () => {
 
     expect(error).toHaveBeenCalledWith('Users can not be loaded.');
     expect(component.isLoading()).toBe(false);
-  });
-
-  it('onFilterChange() serializes the filter value onto the data source', () => {
-    const { component } = setup();
-
-    component.onFilterChange({ search: 'user' });
-
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'user' }));
   });
 
   it('inviteDialog() invites the user and notifies success when confirmed', () => {

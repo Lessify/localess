@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Space } from '@localess/shared';
+import { Page, Space } from '@localess/shared';
 import { SpaceService } from './space.service';
 
 describe('SpaceService', () => {
@@ -48,6 +48,23 @@ describe('SpaceService', () => {
     await vi.advanceTimersByTimeAsync(200);
     http.expectOne('/api/app/spaces').flush([{ id: 's1' } as Space]);
     expect(results).toEqual([[], [{ id: 's1' }]]);
+    subscription.unsubscribe();
+  });
+
+  it('findPage() reads one page with the given query, and again when a space changes', async () => {
+    vi.useFakeTimers();
+    const service = setup();
+    const params = new HttpParams().set('page', 0).set('size', 10).set('search', 'mark');
+    const results: Page<Space>[] = [];
+    const subscription = service.findPage(params).subscribe(it => results.push(it));
+    http.expectOne({ method: 'GET', url: '/api/app/spaces?page=0&size=10&search=mark' }).flush({ items: [], page: 0, size: 10, total: 0 });
+
+    events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http
+      .expectOne('/api/app/spaces?page=0&size=10&search=mark')
+      .flush({ items: [{ id: 's1' } as Space], page: 0, size: 10, total: 1 });
+    expect(results.map(it => it.total)).toEqual([0, 1]);
     subscription.unsubscribe();
   });
 
