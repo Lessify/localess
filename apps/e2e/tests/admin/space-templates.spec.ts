@@ -70,22 +70,27 @@ test.describe('Admin → Spaces → templates', () => {
     expect(await api.get(`/api/app/spaces/${id}/contents/${doc.id}`)).toMatchObject({ name: 'Hello', schema: 'blogpost' });
   });
 
-  test('a user who can not create schemas is not offered templates', async ({ api, createUser, signInAs, cleanup }) => {
+  test('a user who may create spaces, and nothing else, is offered the templates and gets one', async ({
+    api,
+    createUser,
+    signInAs,
+    cleanup,
+  }) => {
+    // A template is part of creating a space: SPACE_MANAGEMENT is enough, though the template writes schemas.
     const user = await createUser({ permissions: ['SPACE_MANAGEMENT'] });
     const own = await signInAs(user);
-    const name = uniqueName('E2E No Template');
+    const name = uniqueName('E2E Manager');
     cleanup.space(name);
     const spaces = new AdminSpacesPage(own);
     await spaces.goto();
     const form = await spaces.openCreate(name);
-    await expect(form.getByText('Template', { exact: true })).toHaveCount(0);
-    await expect(form.getByRole('radio')).toHaveCount(0);
+    await expect(form.getByRole('radio', { name: /^Empty/ })).toBeChecked();
+    await spaces.chooseTemplate(form, 'Blog');
     await form.getByRole('button', { name: 'Create' }).click();
     await expectToast(own, 'Space has been created.');
 
-    // An empty space: no schemas.
     await expect(spaces.row(name)).toBeVisible();
     const id = await spaces.idOf(name);
-    expect(await schemaNames(api, id)).toEqual([]);
+    await expect.poll(() => schemaNames(api, id)).toEqual([...TEMPLATES.Blog]);
   });
 });

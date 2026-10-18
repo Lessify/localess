@@ -113,7 +113,7 @@ the CDN where a setting changes what it serves).
 | Create: cancelling creates nothing; a name under 3 characters is refused | UI + API | ✅ `admin/spaces` |
 | Rename a space (same id); cancelling keeps the name | UI + API | ✅ `admin/spaces` |
 | Delete a space with its content; cancelling keeps it | UI + API | ✅ `admin/spaces` |
-| Create a space from each template (Empty, E-Commerce, Blog, Marketing Site): its schemas, complete; no templates without Schema Create | UI + API | ✅ `admin/space-templates` |
+| Create a space from each template (Empty, E-Commerce, Blog, Marketing Site): its schemas, complete; Space Management alone is enough to choose one | UI + API | ✅ `admin/space-templates` |
 | Test templates: the e2e server lists them; the production image (Docker) lists none and refuses one by id (400) | API | ✅ `api/space-templates` (the Docker check @smoke) |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
 | General: rename the space | UI + API | ✅ `space/general` |
