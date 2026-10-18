@@ -36,7 +36,8 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take, tap } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { FirebaseImportDialogComponent } from './firebase-import-dialog/firebase-import-dialog.component';
 import { FirebaseImportsDialogComponent } from './firebase-imports-dialog/firebase-imports-dialog.component';
@@ -120,11 +121,22 @@ export class SpacesComponent implements OnInit {
     this.list.setSort(sort.active, sort.direction);
   }
 
-  /** The current query's page, again whenever the query changes or a space does (live). */
+  /**
+   * The current query's page, again whenever the query changes or a space does (live). A failed load is told and
+   * ends only that request: the next query change (page, sort, search) fetches again.
+   */
   loadData(): void {
     toObservable(this.list.params, { injector: this.injector })
       .pipe(
-        switchMap(params => this.spaceService.findPage(params)),
+        switchMap(params =>
+          this.spaceService.findPage(params).pipe(
+            catchError(() => {
+              this.notificationService.error('Spaces can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(page => {

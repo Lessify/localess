@@ -38,8 +38,8 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { of } from 'rxjs';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { EMPTY, of } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { UserService } from './user.service';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
@@ -131,26 +131,31 @@ export class UsersComponent implements OnInit {
     this.list.setSort(sort.active, sort.direction);
   }
 
-  /** The current query's page, again whenever the query changes or a user does (live). */
+  /**
+   * The current query's page, again whenever the query changes or a user does (live). A failed load is told and
+   * ends only that request: the next query change (page, sort, search) fetches again.
+   */
   loadData(): void {
     toObservable(this.list.params, { injector: this.injector })
       .pipe(
-        switchMap(params => this.userService.findPage(params)),
+        switchMap(params =>
+          this.userService.findPage(params).pipe(
+            catchError(() => {
+              this.notificationService.error('Users can not be loaded.');
+              this.isLoading.set(false);
+              this.cd.markForCheck();
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: page => {
-          this.users.set(page.items);
-          this.total.set(page.total);
-          this.list.onLoaded(page);
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
-        error: () => {
-          this.notificationService.error('Users can not be loaded.');
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
+      .subscribe(page => {
+        this.users.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
+        this.cd.markForCheck();
       });
   }
 

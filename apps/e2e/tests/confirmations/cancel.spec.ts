@@ -104,7 +104,7 @@ test.describe('Cancelling a confirmation changes nothing', () => {
   test('Admin → Users → Disable', async ({ page, api, createUser, probe }) => {
     const user = await createUser({ permissions: ['TRANSLATION_READ'] });
     const users = new AdminUsersPage(page);
-    await users.goto();
+    await users.goto(user.email);
     await expect(users.status(user.email, 'Active')).toBeVisible();
 
     await users.action(user.email, 'Disable');
@@ -221,7 +221,7 @@ test.describe('Cancelling a form dialog saves nothing', () => {
   test("Admin → Users → Edit (a user's role)", async ({ page, api, createUser }) => {
     const user = await createUser({ permissions: ['TRANSLATION_READ'] });
     const users = new AdminUsersPage(page);
-    await users.goto();
+    await users.goto(user.email);
 
     await cancel(await users.openEditAccess(user.email, { role: 'Admin' }));
 

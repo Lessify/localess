@@ -25,8 +25,8 @@ test.describe('Admin → Spaces → templates', () => {
       const name = uniqueName('E2E Template');
       cleanup.space(name);
 
-      // Pre-check
-      await spaces.goto();
+      // Pre-check (the table narrowed to the new name: one page is listed)
+      await spaces.goto(name);
       const form = await spaces.openCreate(name);
       // Empty is the default.
       await expect(form.getByRole('radio', { name: /^Empty/ })).toBeChecked();
@@ -52,7 +52,7 @@ test.describe('Admin → Spaces → templates', () => {
     const spaces = new AdminSpacesPage(page);
     const name = uniqueName('E2E Blog');
     cleanup.space(name);
-    await spaces.goto();
+    await spaces.goto(name);
     const form = await spaces.openCreate(name);
     await spaces.chooseTemplate(form, 'Blog');
     await form.getByRole('button', { name: 'Create' }).click();
@@ -82,7 +82,7 @@ test.describe('Admin → Spaces → templates', () => {
     const name = uniqueName('E2E Manager');
     cleanup.space(name);
     const spaces = new AdminSpacesPage(own);
-    await spaces.goto();
+    await spaces.goto(name);
     const form = await spaces.openCreate(name);
     await expect(form.getByRole('radio', { name: /^Empty/ })).toBeChecked();
     await spaces.chooseTemplate(form, 'Blog');

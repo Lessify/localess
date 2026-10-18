@@ -11,8 +11,8 @@ test.describe('Admin → Spaces', () => {
       const name = uniqueName('E2E Space');
       cleanup.space(name);
 
-      // Pre-check: the name is not taken.
-      await spaces.goto();
+      // Pre-check: the name is not taken (the table narrowed to it: one page is listed).
+      await spaces.goto(name);
       await expect(spaces.row(name)).toHaveCount(0);
       expect((await api.listSpaces()).map(it => it.name)).not.toContain(name);
 
@@ -24,6 +24,7 @@ test.describe('Admin → Spaces', () => {
       const id = await spaces.idOf(name);
       expect(await api.findSpace(id)).toMatchObject({ id, name });
       await page.reload();
+      await spaces.find(name);
       await expect(spaces.row(name)).toBeVisible();
       await page.goto(`/features/spaces/${id}/settings/general`);
       await expect(page.getByRole('button', { name })).toBeVisible();
@@ -37,7 +38,7 @@ test.describe('Admin → Spaces', () => {
       const name = uniqueName('E2E Cancel');
 
       // Pre-check
-      await spaces.goto();
+      await spaces.goto(name);
       expect((await api.listSpaces()).map(it => it.name)).not.toContain(name);
 
       // Action
@@ -52,7 +53,7 @@ test.describe('Admin → Spaces', () => {
 
     test('refuses a name shorter than 3 characters', async ({ page, api }) => {
       const spaces = new AdminSpacesPage(page);
-      await spaces.goto();
+      await spaces.goto('ab');
 
       // Pre-check: the dialog accepts a valid name.
       const form = await spaces.openCreate('Valid name');
@@ -78,7 +79,7 @@ test.describe('Admin → Spaces', () => {
       const newName = uniqueName('E2E Renamed');
 
       // Pre-check: listed under its name.
-      await spaces.goto();
+      await spaces.goto(space.name);
       await expect(spaces.row(space.name)).toBeVisible();
       expect(await api.findSpace(space.id)).toMatchObject({ name: space.name });
 
@@ -86,12 +87,15 @@ test.describe('Admin → Spaces', () => {
       await spaces.rename(space.name, newName);
 
       // Post-check: the new name everywhere, the old one nowhere; same id.
-      await expect(spaces.row(newName)).toBeVisible();
       await expect(spaces.row(space.name)).toHaveCount(0);
+      await spaces.find(newName);
+      await expect(spaces.row(newName)).toBeVisible();
       expect(await spaces.idOf(newName)).toBe(space.id);
       expect(await api.findSpace(space.id)).toMatchObject({ name: newName });
       await page.reload();
+      await spaces.find(newName);
       await expect(spaces.row(newName)).toBeVisible();
+      await spaces.find(space.name);
       await expect(spaces.row(space.name)).toHaveCount(0);
     });
 
@@ -99,7 +103,7 @@ test.describe('Admin → Spaces', () => {
       const spaces = new AdminSpacesPage(page);
 
       // Pre-check
-      await spaces.goto();
+      await spaces.goto(space.name);
       await expect(spaces.row(space.name)).toBeVisible();
 
       // Action
@@ -109,6 +113,7 @@ test.describe('Admin → Spaces', () => {
 
       // Post-check
       await expect(spaces.row(space.name)).toBeVisible();
+      await spaces.find('Not saved');
       await expect(spaces.row('Not saved')).toHaveCount(0);
       expect(await api.findSpace(space.id)).toMatchObject({ name: space.name });
     });
@@ -123,7 +128,7 @@ test.describe('Admin → Spaces', () => {
       const spaces = new AdminSpacesPage(page);
 
       // Pre-check: listed, readable, with content.
-      await spaces.goto();
+      await spaces.goto(space.name);
       await expect(spaces.row(space.name)).toBeVisible();
       expect(await api.findSpace(space.id)).toBeDefined();
       expect(await api.get<unknown[]>(`/api/app/spaces/${space.id}/translations`)).toHaveLength(1);
@@ -139,8 +144,7 @@ test.describe('Admin → Spaces', () => {
       expect(await api.get(`/api/app/spaces/${space.id}/translations`)).toEqual([]);
       expect((await cdn()).status()).toBe(404);
       await page.reload();
-      // Loaded (the seeded space is listed; the CLI test may add a second one for a moment).
-      await expect(spaces.row('Hello World').first()).toBeVisible();
+      await spaces.find(space.name);
       await expect(spaces.row(space.name)).toHaveCount(0);
     });
 
@@ -148,7 +152,7 @@ test.describe('Admin → Spaces', () => {
       const spaces = new AdminSpacesPage(page);
 
       // Pre-check
-      await spaces.goto();
+      await spaces.goto(space.name);
       await expect(spaces.row(space.name)).toBeVisible();
 
       // Action

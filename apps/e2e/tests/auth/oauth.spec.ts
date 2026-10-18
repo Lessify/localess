@@ -50,7 +50,7 @@ test.describe('Sign in with Google or Microsoft', () => {
 
       // The admin sees the new provider; the Me page still offers email and password (the account has one).
       const users = new AdminUsersPage(page);
-      await users.goto();
+      await users.goto(user.email);
       await expect(users.row(user.email).getByRole('img', { name: id })).toBeVisible();
       await expect(users.row(user.email).getByRole('img', { name: 'Email & Password' })).toBeVisible();
       await own.goto('/features/me');

@@ -49,10 +49,12 @@ describe('app API: spaces, one page at a time', () => {
     expect(items.map(it => it.updatedAt)).toEqual([...items.map(it => it.updatedAt)].sort().reverse());
   });
 
-  it('searches the name, case-insensitive and anywhere in it, or the exact id', async () => {
+  it('searches the name and the id, case-insensitive and anywhere in them', async () => {
     expect((await list('?search=TWIN')).items.map(it => it.name)).toEqual(['Twin', 'Twin']);
     expect(await list('?search=ce 1')).toMatchObject({ total: 10 });
     expect((await list(`?search=${created[5].id}`)).items.map(it => it.id)).toEqual([created[5].id]);
+    // Part of an id, as the table shows it (the search box matched any part of the id before paging moved to the server).
+    expect((await list(`?search=${created[5].id.slice(-12).toUpperCase()}`)).items.map(it => it.id)).toEqual([created[5].id]);
   });
 
   it('matches a search with LIKE wildcards literally', async () => {

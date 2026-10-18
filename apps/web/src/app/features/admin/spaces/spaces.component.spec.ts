@@ -82,6 +82,21 @@ describe('SpacesComponent', () => {
     expect(component.isLoading()).toBe(false);
   });
 
+  it('tells about a failed load and keeps answering the table: the next query change fetches again', () => {
+    const { fixture, component, findPage, error } = setup();
+    findPage.mockImplementationOnce(() => throwError(() => new Error('boom')));
+    component.onFilterChange({ search: 'fails' });
+    fixture.detectChanges();
+    expect(error).toHaveBeenCalledWith('Spaces can not be loaded.');
+    expect(component.isLoading()).toBe(false);
+
+    component.onFilterChange({ search: 'works' });
+    fixture.detectChanges();
+
+    expect(findPage.mock.calls.at(-1)![0].toString()).toBe('page=0&size=20&search=works');
+    expect(findPage).toHaveBeenCalledTimes(3);
+  });
+
   it('asks the server for the search, from the first page', () => {
     const { fixture, component, lastQuery } = setup();
     component.list.page.set(1);

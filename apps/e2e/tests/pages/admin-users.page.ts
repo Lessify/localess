@@ -36,11 +36,22 @@ export function permission(form: Locator, id: string): Locator {
 export class AdminUsersPage {
   constructor(private readonly page: Page) {}
 
-  async goto(): Promise<void> {
+  /** The list; with `search`, narrowed to it (one page is listed: a given user may be on another). */
+  async goto(search?: string): Promise<void> {
     await this.page.goto('/features/admin/users');
     await expect(this.page.getByRole('button', { name: 'Invite' })).toBeVisible();
     // The table has loaded once its total shows (one page is listed: a given user may be on another).
     await expect(this.page.getByText(/^\d+ total items$/)).toBeVisible();
+    if (search !== undefined) await this.find(search);
+  }
+
+  /** Narrows the table to rows matching `text` (server-side search), once the server has answered it. */
+  async find(text: string): Promise<void> {
+    const answered = this.page.waitForResponse(
+      response => response.url().includes('/api/app/users?') && new URL(response.url()).searchParams.get('search') === (text.trim() || null),
+    );
+    await this.page.getByPlaceholder(/^Search/).fill(text);
+    await answered;
   }
 
   row(email: string): Locator {

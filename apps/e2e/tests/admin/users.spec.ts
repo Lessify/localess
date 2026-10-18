@@ -21,7 +21,7 @@ test.describe('Admin → Users', () => {
       cleanup.user(email);
 
       // Pre-check: no such user.
-      await users.goto();
+      await users.goto(email);
       await expect(users.row(email)).toHaveCount(0);
       expect(await api.findUserByEmail(email)).toBeUndefined();
       expect((await probe.accessOf(email, 'admin-password')).signIn).toBe(false);
@@ -34,6 +34,7 @@ test.describe('Admin → Users', () => {
       await expect(users.row(email)).toContainText('New Admin');
       await expect(users.status(email, 'Active')).toBeVisible();
       await page.reload();
+      await users.find(email);
       await expect(await users.roleCell(email)).toHaveText('ADMIN');
       expect(await api.findUserByEmail(email)).toMatchObject({ email, displayName: 'New Admin', role: 'ADMIN' });
       expect(await probe.accessOf(email, 'admin-password')).toMatchObject({ signIn: true, role: 'ADMIN', users: 200, spaces: 200 });
@@ -48,7 +49,7 @@ test.describe('Admin → Users', () => {
       cleanup.user(email);
 
       // Pre-check
-      await users.goto();
+      await users.goto(email);
       await expect(users.row(email)).toHaveCount(0);
       expect(await api.findUserByEmail(email)).toBeUndefined();
 
@@ -63,6 +64,7 @@ test.describe('Admin → Users', () => {
       // Post-check
       await expect(await users.roleCell(email)).toHaveText('CUSTOM');
       await page.reload();
+      await users.find(email);
       await expect(await users.roleCell(email)).toHaveText('CUSTOM');
       expect(await api.findUserByEmail(email)).toMatchObject({
         role: 'CUSTOM',
@@ -82,7 +84,7 @@ test.describe('Admin → Users', () => {
       cleanup.user(email);
 
       // Pre-check: the checkboxes the dialog offers (ids are the permission ids).
-      await users.goto();
+      await users.goto(email);
       await page.getByRole('button', { name: 'Invite' }).click();
       const form = await dialog(page, 'User Invite');
       await choose(page, form.getByLabel('Role', { exact: true }), 'Custom');
@@ -105,7 +107,7 @@ test.describe('Admin → Users', () => {
       cleanup.user(email);
 
       // Pre-check
-      await users.goto();
+      await users.goto(email);
       await expect(users.row(email)).toHaveCount(0);
 
       // Action
@@ -114,6 +116,7 @@ test.describe('Admin → Users', () => {
       // Post-check
       await expect(await users.roleCell(email)).toHaveText('NONE');
       await page.reload();
+      await users.find(email);
       await expect(await users.roleCell(email)).toHaveText('NONE');
       expect((await api.findUserByEmail(email))?.role ?? null).toBeNull();
       expect(await probe.accessOf(email, 'none-password')).toMatchObject({ signIn: true, role: null, users: 403, spaces: 403 });
@@ -127,7 +130,7 @@ test.describe('Admin → Users', () => {
       const users = new AdminUsersPage(page);
 
       // Pre-check: one user with that email.
-      await users.goto();
+      await users.goto(existing.email);
       await expect(users.row(existing.email)).toHaveCount(1);
 
       // Action
@@ -176,7 +179,7 @@ test.describe('Admin → Users', () => {
       const users = new AdminUsersPage(page);
 
       // Pre-check: Custom, no admin access.
-      await users.goto();
+      await users.goto(user.email);
       await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'CUSTOM', users: 403, spaces: 200 });
 
@@ -195,6 +198,7 @@ test.describe('Admin → Users', () => {
       // Action 3: → Custom with user management. Post-check (also after a reload).
       await users.editAccess(user.email, { role: 'Custom', togglePermissions: ['USER_MANAGEMENT'] });
       await page.reload();
+      await users.find(user.email);
       await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
       expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'CUSTOM', permissions: ['USER_MANAGEMENT'] });
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'CUSTOM', users: 200 });
@@ -206,7 +210,7 @@ test.describe('Admin → Users', () => {
       const contents = () => probe.request.get(`/api/app/spaces/${space.id}/contents`);
 
       // Pre-check: may read translations, not contents.
-      await users.goto();
+      await users.goto(user.email);
       expect(await api.findUserByEmail(user.email)).toMatchObject({ permissions: ['TRANSLATION_READ'] });
       await probe.accessOf(user.email, user.password);
       expect((await contents()).status()).toBe(403);
@@ -227,7 +231,7 @@ test.describe('Admin → Users', () => {
       const rename = () => probe.request.patch('/api/app/me', { data: { displayName: 'Changed by me' } });
 
       // Pre-check: not locked; the user can change their name.
-      await users.goto();
+      await users.goto(user.email);
       await expect(await users.lockIcon(user.email)).toHaveCount(0);
       expect(await api.findUserByEmail(user.email)).toMatchObject({ lock: false });
       await probe.accessOf(user.email, user.password);
@@ -249,7 +253,7 @@ test.describe('Admin → Users', () => {
       const users = new AdminUsersPage(page);
 
       // Pre-check: active, can sign in.
-      await users.goto();
+      await users.goto(user.email);
       await expect(users.status(user.email, 'Active')).toBeVisible();
       expect(await api.findUserByEmail(user.email)).toMatchObject({ disabled: false });
       expect((await probe.accessOf(user.email, user.password)).signIn).toBe(true);
@@ -260,6 +264,7 @@ test.describe('Admin → Users', () => {
       expect(await api.findUserByEmail(user.email)).toMatchObject({ disabled: true });
       expect((await probe.accessOf(user.email, user.password)).signIn).toBe(false);
       await page.reload();
+      await users.find(user.email);
       await expect(users.status(user.email, 'Disabled')).toBeVisible();
 
       // Action: enable. Post-check.
@@ -278,7 +283,7 @@ test.describe('Admin → Users', () => {
       expect((await own.request.get('/api/auth/me')).status()).toBe(200);
 
       // Action
-      await users.goto();
+      await users.goto(user.email);
       await users.disable(user.email);
 
       // Post-check: the session is gone.
@@ -290,7 +295,7 @@ test.describe('Admin → Users', () => {
     // Delete is offered (and allowed by the server): TEST-PLAN open finding.
     test('the signed-in admin can not disable themself', async ({ page }) => {
       const users = new AdminUsersPage(page);
-      await users.goto();
+      await users.goto(ADMIN.email);
       await expectRowMenu(page, users.row(ADMIN.email), async menu => {
         await expect(menu.getByRole('menuitem', { name: 'Edit' })).toBeVisible({ timeout: 1_000 });
         await expect(menu.getByRole('menuitem', { name: 'Disable' })).toHaveCount(0);
@@ -306,7 +311,7 @@ test.describe('Admin → Users', () => {
       const users = new AdminUsersPage(page);
 
       // Pre-check: the current password works.
-      await users.goto();
+      await users.goto(user.email);
       expect((await probe.accessOf(user.email, user.password)).signIn).toBe(true);
 
       // Action: copy the link; the user opens it and sets a new password.
@@ -330,7 +335,7 @@ test.describe('Admin → Users', () => {
       const users = new AdminUsersPage(page);
 
       // Pre-check
-      await users.goto();
+      await users.goto(user.email);
       await expect(users.row(user.email)).toBeVisible();
       expect(await api.findUserByEmail(user.email)).toBeDefined();
       expect((await probe.accessOf(user.email, user.password)).signIn).toBe(true);
@@ -343,7 +348,7 @@ test.describe('Admin → Users', () => {
       expect(await api.findUserByEmail(user.email)).toBeUndefined();
       expect((await probe.accessOf(user.email, user.password)).signIn).toBe(false);
       await page.reload();
-      await expect(users.row(ADMIN.email)).toBeVisible();
+      await users.find(user.email);
       await expect(users.row(user.email)).toHaveCount(0);
     });
 
@@ -352,7 +357,7 @@ test.describe('Admin → Users', () => {
       const users = new AdminUsersPage(page);
 
       // Pre-check
-      await users.goto();
+      await users.goto(user.email);
       await expect(users.row(user.email)).toBeVisible();
 
       // Action

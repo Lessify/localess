@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Pageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, max, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { firebaseImports, keepUpdatedAt, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
@@ -40,8 +40,9 @@ export class SpacesRepository {
   async findPage(query: SpaceQuery): Promise<{ rows: SpaceRow[]; total: number }> {
     const conditions: SQL[] = [];
     if (query.search) {
-      const byName = ilike(spaces.name, containsPattern(query.search));
-      conditions.push(isUuid(query.search) ? (or(byName, eq(spaces.id, query.search)) as SQL) : byName);
+      // The name, or any part of the id (as the table shows it), case-insensitive.
+      const pattern = containsPattern(query.search);
+      conditions.push(or(ilike(spaces.name, pattern), ilike(sql`${spaces.id}::text`, pattern)) as SQL);
     }
     if (query.importing === false) {
       conditions.push(

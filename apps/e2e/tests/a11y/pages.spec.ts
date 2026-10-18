@@ -259,7 +259,7 @@ test.describe('Accessibility of dialogs', () => {
   test('Admin → Users: User Invite and User (edit)', async ({ page, createUser }) => {
     const user = await createUser({ permissions: ['TRANSLATION_READ'] });
     const users = new AdminUsersPage(page);
-    await users.goto();
+    await users.goto(user.email);
     await page.getByRole('button', { name: 'Invite' }).click();
     const invite = await dialog(page, 'User Invite');
     await expectAccessible(page, invite);
@@ -270,7 +270,7 @@ test.describe('Accessibility of dialogs', () => {
 
   test('Admin → Spaces: Create Space and Edit Space', async ({ page, space }) => {
     const spaces = new AdminSpacesPage(page);
-    await spaces.goto();
+    await spaces.goto(space.name);
     const create = await spaces.openCreate('Scanned');
     await expectAccessible(page, create);
     await cancel(create);
