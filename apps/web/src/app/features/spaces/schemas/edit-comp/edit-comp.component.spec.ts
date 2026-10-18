@@ -5,7 +5,7 @@ import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
-import { BehaviorSubject, filter, NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, filter, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { EditCompComponent } from './edit-comp.component';
@@ -115,6 +115,25 @@ describe('EditCompComponent', () => {
 
     expect(component.fields.length).toBe(3);
     expect(component.isFormDirty).toBe(true);
+  });
+
+  it('save() keeps edits made while the request is in flight: still dirty, not reloaded over', () => {
+    const { component, updateComponent, findById } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
+    const answer = new Subject<void>();
+    updateComponent.mockReturnValue(answer);
+    component.form.controls['displayName'].setValue('Sent');
+    component.form.markAsDirty();
+    findById.mockClear();
+
+    component.save();
+    component.form.controls['displayName'].setValue('Typed while saving');
+    answer.next();
+    answer.complete();
+
+    expect(updateComponent.mock.calls[0][2]).toMatchObject({ displayName: 'Sent' });
+    expect(component.form.controls['displayName'].value).toBe('Typed while saving');
+    expect(component.isFormDirty).toBe(true);
+    expect(findById).not.toHaveBeenCalled();
   });
 
   it('ignores a live answer older than the version just saved (a refetch that started before Save)', () => {

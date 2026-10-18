@@ -4,7 +4,7 @@ import { Schema, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
-import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { EditEnumComponent } from './edit-enum.component';
@@ -270,6 +270,37 @@ describe('EditEnumComponent', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(component.isSaveLoading()).toBe(false);
+  });
+
+  it('save() keeps edits made while the request is in flight: still dirty, not reloaded over', () => {
+    const { component, updateEnum, findById } = setup(enumSchema());
+    const answer = new Subject<void>();
+    updateEnum.mockReturnValue(answer);
+    component.form.controls['displayName'].setValue('Sent');
+    component.form.markAsDirty();
+    findById.mockClear();
+
+    component.save();
+    component.form.controls['displayName'].setValue('Typed while saving');
+    answer.next();
+    answer.complete();
+
+    expect(updateEnum.mock.calls[0][2]).toMatchObject({ displayName: 'Sent' });
+    expect(component.form.controls['displayName'].value).toBe('Typed while saving');
+    expect(component.form.dirty).toBe(true);
+    expect(findById).not.toHaveBeenCalled();
+  });
+
+  it('save() marks the form saved and reloads the stored schema when nothing changed while saving', () => {
+    const { component, findById } = setup(enumSchema());
+    component.form.controls['displayName'].setValue('Sent');
+    component.form.markAsDirty();
+    findById.mockClear();
+
+    component.save();
+
+    expect(component.form.dirty).toBe(false);
+    expect(findById).toHaveBeenCalledTimes(1);
   });
 
   it('save() notifies an error on failure', () => {

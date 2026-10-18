@@ -11,6 +11,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { formValueKey } from '@core/utils/form-value';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
@@ -206,11 +207,16 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   save(): void {
     //console.group('save')
     this.isSaveLoading.set(true);
+    const sent = formValueKey(this.form.value);
     this.schemaService.updateEnum(this.spaceId(), this.schemaId(), this.form.value as SchemaEnumUpdate).subscribe({
       next: () => {
+        this.savedOver = this.entity?.updatedAt;
+        this.notificationService.success('Schema has been updated.');
+        // Edits made while the request was in flight were not sent: they stay unsaved (dirty, the leave guard warns)
+        // and are not reloaded over; the next Save sends them.
+        if (formValueKey(this.form.value) !== sent) return;
         // Saved: live updates may reload the form again; it shows what was stored.
         this.form.markAsPristine();
-        this.savedOver = this.entity?.updatedAt;
         this.schemaService
           .findById(this.spaceId(), this.schemaId())
           .pipe(take(1))
@@ -218,7 +224,6 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
             // Not over edits made since Save.
             if (!this.form.dirty && !this.isStale(schema)) this.applySchema(schema);
           });
-        this.notificationService.success('Schema has been updated.');
       },
       error: () => {
         this.notificationService.error('Schema can not be updated.');
