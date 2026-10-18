@@ -39,8 +39,8 @@ export class AdminUsersPage {
   async goto(): Promise<void> {
     await this.page.goto('/features/admin/users');
     await expect(this.page.getByRole('button', { name: 'Invite' })).toBeVisible();
-    // The table has loaded once the seeded admin is listed.
-    await expect(this.row(ADMIN.email)).toBeVisible();
+    // The table has loaded once its total shows (one page is listed: a given user may be on another).
+    await expect(this.page.getByText(/^\d+ total items$/)).toBeVisible();
   }
 
   row(email: string): Locator {

@@ -24,20 +24,20 @@ apps/web/src/app/features/admin/users/
 
 ## UsersComponent
 
-Displays a searchable, paginated `ll-table` (`LlTableImports`) of all users in the platform.
+Displays one page of users (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/users` answers a `Page<User>` (`?page=&size=&sort=&direction=`, `?search=` on email or display name, `?active=active|inactive`; sorts: `email` (default), `name`, `role`, `createdAt`, `updatedAt`). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
 
 **Injected services:** `HlmDialogService`, `ChangeDetectorRef`, `NotificationService`, `UserService`, `Injector`
 
 **Key behaviour:**
 - `loadData()` — fetches all users via `UserService`
-- `onFilterChange(value: FilterToolbarValue)` — updates the table filter from the `LlFilterToolbarImports` toolbar; the actual predicate is built once in `ngOnInit()` via `FilterPredicateUtils.create()`, searching across email/display name and filtering by active/inactive
+- `onFilterChange(value: FilterToolbarValue)` — sends the toolbar's search and the Active filter to the server, from the first page; `onSortChange()` sends the sorted column and direction
 - `inviteDialog()` — opens `UserInviteDialogComponent`
 - `openEditDialog(user)` — opens `UserDialogComponent` to edit role/permissions/lock
 - `openDeleteDialog(user)` — opens `ConfirmationDialogComponent`, then deletes
 - `toggleDisabled(user)` — **Disable** (after a confirmation) or **Enable** via `UserService.setDisabled()` (`PATCH /api/app/users/:id/status` `{ disabled }`). Disabling deletes the user's sessions, so they are signed out at once; password and OAuth sign-in are refused while `users.disabled` is set, and the list shows them as *inactive*. Offered only on users the caller may manage and never on their own account (`canChangeStatus()`); the server enforces both (403). Replaces the Firebase Authentication console's "Disable account"
 - `copyPasswordResetLink(user)` — calls `UserService.passwordResetLink()` (`POST /api/app/users/:id/password-reset-link`) and copies the returned one-hour reset link to the clipboard. This is how passwords get reset when the server has no SMTP configured. The server requires that the caller may manage the target user (`canManageUser`)
 
-The list is live: `UserService.findAll()` is a `liveQuery` that refetches on `users` change events from the SSE stream. There is no "Sync" action any more — role and permissions live only in the `users` table, so there is nothing to sync.
+The list is live: `UserService.findPage(params)` is a `liveQuery` that reads the current page again on `users` change events from the SSE stream. There is no "Sync" action any more — role and permissions live only in the `users` table, so there is nothing to sync.
 
 ## Dialogs
 

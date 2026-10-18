@@ -114,6 +114,8 @@ the CDN where a setting changes what it serves).
 | Rename a space (same id); cancelling keeps the name | UI + API | ✅ `admin/spaces` |
 | Delete a space with its content; cancelling keeps it | UI + API | ✅ `admin/spaces` |
 | Create a space from each template (Empty, E-Commerce, Blog, Marketing Site): its schemas, complete; Space Management alone is enough to choose one | UI + API | ✅ `admin/space-templates` |
+| Users and Spaces page, sort and search on the server: 25 rows → 20 + 5, sort by Email descending from page 1, a case-insensitive search, an invited user found by the search at once (live) | UI + API | ✅ `admin/paging` |
+| More than 100 spaces: a link to the 101st opens it (the store loads every page); past 20 the switcher has a search box (part of a name, "No spaces found") | UI + API | ✅ `admin/paging` |
 | Test templates: the e2e server lists them; the production image (Docker) lists none and refuses one by id (400) | API | ✅ `api/space-templates` (the Docker check @smoke) |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
 | General: rename the space | UI + API | ✅ `space/general` |

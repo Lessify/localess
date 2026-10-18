@@ -23,13 +23,13 @@ apps/web/src/app/features/admin/spaces/
 
 ## SpacesComponent
 
-Displays a paginated `ll-table` (`LlTableImports`) of all spaces in the platform, with a `LlFilterToolbarImports` search toolbar. It is sorted by name by default, case-insensitively (`sortingDataAccessor` lowercases `name`), the order the server lists spaces in (`lower(name), id`).
+Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/spaces` answers a `Page<Space>` (`?page=&size=&sort=&direction=`, `?search=` on the name or the exact id, `?importing=false` to leave out spaces being imported; sorts: `name` (default, case-insensitive), `id`, `updatedAt`; ties by id). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
 
 **Injected services:** `SpaceService`, `HlmDialogService`, `NotificationService`, `Injector`
 
 **Key behaviour:**
 - `loadData()` — fetches all spaces via `SpaceService`
-- `onFilterChange(value: FilterToolbarValue)` — updates the table filter from the toolbar; the predicate is built in `ngOnInit()` via `FilterPredicateUtils.create()`, searching across space `id` and `name`
+- `onFilterChange(value: FilterToolbarValue)` — sends the toolbar's search to the server, from the first page; `onSortChange()` sends the sorted column and direction
 - `openEditDialog(space)` — opens `SpaceEditDialogComponent`
 - `openDeleteDialog(space)` — confirmation dialog then deletes space and all its content
 - `copied()` — shows snackbar when space ID is copied to clipboard
@@ -116,9 +116,9 @@ normally, because the input passes through `undefined` on the way.
 
 ### After creation
 
-No manual refresh. `SpaceService.findAll()` is a `liveQuery` over `GET /api/app/spaces`, so the
-`spaces` change event the create emits over SSE makes it refetch, and the new space reaches the admin
-table and `SpaceStore` — and since the store selects `response[0]` when
+No manual refresh. `SpaceService.findPage()` (the admin table) and `findAllPages()` (`SpaceStore`) are
+`liveQuery`s over `GET /api/app/spaces`, so the `spaces` change event the create emits over SSE makes them
+refetch, and the new space reaches the admin table and `SpaceStore` — and since the store selects `response[0]` when
 nothing is selected, a user's first space also becomes their current one, filling the sidebar behind
 the dialog. The user stays on the spaces list.
 

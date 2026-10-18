@@ -4,6 +4,14 @@ import { type APIRequestContext, type APIResponse, expect } from '@playwright/te
  * The App API (`/api/app/**`) with the signed-in admin's session, for creating test data without the UI.
  * State-changing calls need `X-Requested-With` (CSRF guard, apps/server/src/auth/auth.guard.ts).
  */
+/** One page of a paged App API list (`Page<T>` of @localess/shared). */
+interface Page<T> {
+  items: T[];
+  page: number;
+  size: number;
+  total: number;
+}
+
 export class AppApi {
   constructor(private readonly request: APIRequestContext) {}
 
@@ -14,8 +22,9 @@ export class AppApi {
     return this.send('post', '/api/app/spaces', template ? { name, template } : { name });
   }
 
+  /** Every space, page after page (`GET /api/app/spaces` answers one page). */
   listSpaces(): Promise<SpaceDto[]> {
-    return this.get('/api/app/spaces');
+    return this.everyPage<SpaceDto>('/api/app/spaces');
   }
 
   /** The space, or undefined once it is gone. */
@@ -140,12 +149,25 @@ export class AppApi {
     return this.send('post', '/api/app/users', body);
   }
 
+  /** Every user, page after page (`GET /api/app/users` answers one page). */
   listUsers(): Promise<UserDto[]> {
-    return this.get('/api/app/users');
+    return this.everyPage<UserDto>('/api/app/users');
   }
 
+  /** By the server's search (email or display name contains), then the exact email. */
   async findUserByEmail(email: string): Promise<UserDto | undefined> {
-    return (await this.listUsers()).find(it => it.email === email);
+    const page = await this.get<Page<UserDto>>(`/api/app/users?size=100&search=${encodeURIComponent(email)}`);
+    return page.items.find(it => it.email === email);
+  }
+
+  /** All items of a paged list, 100 at a time. */
+  private async everyPage<T>(path: string): Promise<T[]> {
+    const items: T[] = [];
+    for (let page = 0; ; page++) {
+      const answer = await this.get<Page<T>>(`${path}?page=${page}&size=100`);
+      items.push(...answer.items);
+      if ((page + 1) * answer.size >= answer.total) return items;
+    }
   }
 
   /** Deletes the user; one already gone (deleted by the test) is fine. */

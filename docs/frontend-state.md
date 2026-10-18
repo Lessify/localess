@@ -74,6 +74,8 @@ Loads all spaces the user has access to (a `liveQuery` over `GET /api/app/spaces
 
 // Key computed
 selectedSpace: computed(() => spaces().find(s => s.id === selectedSpaceId()))
+// `spaces`: every space the user can open, from SpaceService.findAllPages(): GET /api/app/spaces 100 at a time
+// (sort=name, importing=false) until `total`, again on each `spaces` event; the space guard reads the same list
 hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on loaded so it is not true before the first response
 ```
 

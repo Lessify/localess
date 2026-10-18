@@ -81,8 +81,7 @@ test.describe('Me → profile', () => {
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
       await page.reload();
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
-      const users = await api.get<{ email: string; photoURL?: string }[]>('/api/app/users');
-      expect(users.find(it => it.email === user.email)?.photoURL).toBe(avatarUrl);
+      expect((await api.findUserByEmail(user.email))?.photoURL).toBe(avatarUrl);
 
       // Action 2: not a URL. Post-check: refused, the valid one stays.
       const form = await me.openProfile({ photoURL: 'not a url' });
