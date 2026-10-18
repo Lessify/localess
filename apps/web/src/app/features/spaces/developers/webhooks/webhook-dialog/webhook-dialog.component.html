@@ -29,7 +29,7 @@
       <hlm-combobox-chips>
         <ng-container *hlmComboboxValues="let values">
           @for (value of values; track value) {
-            <hlm-combobox-chip [value]="value" [removeLabel]="'Remove ' + value">{{ value }}</hlm-combobox-chip>
+            <hlm-combobox-chip [value]="value" [llChipRemoveLabel]="'Remove ' + value">{{ value }}</hlm-combobox-chip>
           }
         </ng-container>
         <input hlmComboboxChipInput placeholder="Select events..." autocomplete="off" />

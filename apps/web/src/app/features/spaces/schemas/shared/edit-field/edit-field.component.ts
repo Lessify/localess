@@ -29,6 +29,7 @@ import {
   lucideType,
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
+import { ChipRemoveLabelDirective } from '@shared/directives/chip-remove-label.directive';
 import { assetFileTypeDescriptions, schemaFieldKindDescriptions, sortSchema } from '@shared/models/schema.model';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
@@ -59,6 +60,7 @@ import { SchemaValidator } from '../schema.validator';
     HlmInputGroupImports,
     HlmSelectImports,
     HlmComboboxImports,
+    ChipRemoveLabelDirective,
     HlmSwitchImports,
     HlmTextareaImports,
   ],

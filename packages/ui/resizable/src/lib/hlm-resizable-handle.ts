@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, ElementRef, inject } from '@angular/core';
-import { BrnResizableGroup, BrnResizableHandle } from '@spartan-ng/brain/resizable';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { BrnResizableHandle } from '@spartan-ng/brain/resizable';
 import { classes } from '@spartan-ng/helm/utils';
 
 @Component({
@@ -9,10 +9,6 @@ import { classes } from '@spartan-ng/helm/utils';
 	hostDirectives: [{ directive: BrnResizableHandle, inputs: ['withHandle', 'disabled'] }],
 	host: {
 		'data-slot': 'resizable-handle',
-		// A focusable separator is a window splitter: it needs a value (the size of the panel before it, in %).
-		'[attr.aria-valuenow]': '_valueNow()',
-		'aria-valuemin': '0',
-		'aria-valuemax': '100',
 	},
 	template: `
 		@if (_brnResizableHandle.withHandle()) {
@@ -22,18 +18,6 @@ import { classes } from '@spartan-ng/helm/utils';
 })
 export class HlmResizableHandle {
 	protected readonly _brnResizableHandle = inject(BrnResizableHandle);
-
-	private readonly _group = inject(BrnResizableGroup);
-	private readonly _host = inject<ElementRef<HTMLElement>>(ElementRef);
-
-	/** The size of the panel before this handle, in % (the group's layout is in panel order). */
-	protected readonly _valueNow = computed(() => {
-		const layout = this._group.layout();
-		const host = this._host.nativeElement;
-		const panels = Array.from(host.parentElement?.querySelectorAll('[data-slot="resizable-panel"]') ?? []);
-		const size = layout[panels.indexOf(host.previousElementSibling as Element)];
-		return size === undefined ? null : Math.round(size);
-	});
 
 	constructor() {
 		classes(() => [

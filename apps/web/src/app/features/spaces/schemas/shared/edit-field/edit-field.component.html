@@ -184,7 +184,7 @@
               <hlm-combobox-chips>
                 <ng-container *hlmComboboxValues="let values">
                   @for (value of values; track value) {
-                    <hlm-combobox-chip [value]="value" [removeLabel]="'Remove ' + schemaIdToString(value)">{{
+                    <hlm-combobox-chip [value]="value" [llChipRemoveLabel]="'Remove ' + schemaIdToString(value)">{{
                       schemaIdToString(value)
                     }}</hlm-combobox-chip>
                   }

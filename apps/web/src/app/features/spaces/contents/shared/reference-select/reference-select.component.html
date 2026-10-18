@@ -18,7 +18,7 @@
         <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
       }
       <hlm-field-separator />
-      <div hlmItemGroup class="gap-2">
+      <div hlmItemGroup role="list" class="gap-2">
         @if (content(); as content) {
           @if (content.kind === 'DOCUMENT') {
             <div hlmItem variant="outline" role="listitem">

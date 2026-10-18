@@ -22,7 +22,7 @@
       <p hlmFieldDescription class="line-clamp-2">{{ description }}</p>
     }
     <hlm-field-separator />
-    <div hlmItemGroup class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="assetDropDrop($event)">
+    <div hlmItemGroup role="list" class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="assetDropDrop($event)">
       @for (asset of assets(); track asset.id; let idx = $index) {
         <div
           hlmItem

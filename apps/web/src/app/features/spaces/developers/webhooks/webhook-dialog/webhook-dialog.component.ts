@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { WebHookEvent } from '@localess/shared';
+import { ChipRemoveLabelDirective } from '@shared/directives/chip-remove-label.directive';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmComboboxImports } from '@spartan-ng/helm/combobox';
@@ -28,6 +29,7 @@ import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog.mode
     HlmInputGroupImports,
     HlmInputImports,
     HlmComboboxImports,
+    ChipRemoveLabelDirective,
   ],
 })
 export class WebhookDialogComponent {

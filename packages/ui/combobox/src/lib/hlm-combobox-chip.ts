@@ -17,7 +17,7 @@ import { HlmComboboxChipRemove } from './hlm-combobox-chip-remove';
 		<ng-content />
 
 		@if (showRemove()) {
-			<button hlmComboboxChipRemove [attr.aria-label]="removeLabel()">
+			<button hlmComboboxChipRemove>
 				<ng-icon name="lucideX" />
 			</button>
 		}
@@ -25,8 +25,6 @@ import { HlmComboboxChipRemove } from './hlm-combobox-chip-remove';
 })
 export class HlmComboboxChip {
 	public readonly showRemove = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
-	/** The remove button's accessible name (it shows only an icon), e.g. "Remove translation.published". */
-	public readonly removeLabel = input<string>('Remove');
 
 	constructor() {
 		classes(

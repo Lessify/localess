@@ -49,7 +49,7 @@
                 </div>
               </div>
             </div>
-            <div hlmItemGroup class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
+            <div hlmItemGroup role="list" class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="fieldDropDrop($event)">
               @for (field of values.controls; track field.value.name; let index = $index) {
                 <div
                   hlmItem

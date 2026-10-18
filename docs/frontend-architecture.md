@@ -106,6 +106,11 @@ A custom `IMAGE_LOADER` is registered in `app.config.ts` that automatically appe
 
 Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json` map these to `packages/ui/<component-name>/src/index.ts`).
 
+**Do not edit `packages/ui/`**: it is kept as Spartan ships it, so a sync with the Spartan CLI does not lose changes.
+Add what a component lacks from the app instead: attributes on the Helm element in the template (`role="list"` on
+`hlmItemGroup`), or a directive in `shared/directives/` (`llChipRemoveLabel` names a combobox chip's remove button,
+`llSplitterValue` gives a resize handle its `aria-valuenow`).
+
 ---
 
 ## `core/` Module

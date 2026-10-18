@@ -65,6 +65,7 @@ import {
   TranslateLocaleDialogContext,
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
+import { SplitterValueDirective } from '@shared/directives/splitter-value.directive';
 import { ContentError } from '@shared/models/content.model';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
@@ -121,6 +122,7 @@ import { SchemaPathItem } from './edit-document.model';
     ContentPreviewComponent,
     EditDocumentSchemaComponent,
     HlmResizableImports,
+    SplitterValueDirective,
     HlmBreadcrumbImports,
     HlmIconImports,
     HlmButtonImports,

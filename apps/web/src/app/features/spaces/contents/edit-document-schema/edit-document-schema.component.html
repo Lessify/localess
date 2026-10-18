@@ -399,7 +399,7 @@
                   <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
                 }
                 <hlm-field-separator />
-                <div hlmItemGroup class="gap-2">
+                <div hlmItemGroup role="list" class="gap-2">
                   @if (data()[field.name]; as item) {
                     <div
                       [id]="item._id"
@@ -472,7 +472,7 @@
                   <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
                 }
                 <hlm-field-separator />
-                <div hlmItemGroup class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data()[field.name])">
+                <div hlmItemGroup role="list" class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data()[field.name])">
                   @for (item of data()[field.name] || []; track item; let index = $index) {
                     <div
                       [id]="item._id"
