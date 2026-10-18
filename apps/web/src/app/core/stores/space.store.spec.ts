@@ -36,7 +36,8 @@ describe('SpaceStore', () => {
     notifyError?: ReturnType<typeof vi.fn>;
     isAuthenticated?: ReturnType<typeof signal<boolean>>;
     /** The signed-in user; an admin unless a test says otherwise. */
-    role?: 'ADMIN' | 'CUSTOM';
+    /** `null`: no role (signed up, no access yet). */
+    role?: 'ADMIN' | 'CUSTOM' | null;
     permissions?: string[];
   };
 
@@ -53,7 +54,7 @@ describe('SpaceStore', () => {
           useValue: {
             isAuthenticated: listeners.isAuthenticated ?? signal(true),
             loaded: signal(true),
-            role: signal(listeners.role ?? 'ADMIN'),
+            role: signal(listeners.role === undefined ? 'ADMIN' : listeners.role),
             permissions: signal(listeners.permissions ?? []),
           },
         },
@@ -231,6 +232,16 @@ describe('SpaceStore', () => {
       const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
       const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
       createStore([space('a')], { findAllDocuments, findAllSchemas, role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
+      TestBed.tick();
+
+      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findAllSchemas).not.toHaveBeenCalled();
+    });
+
+    it('listens to nothing for a user without a role, whatever permissions are left on the account (as the server)', () => {
+      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
+      createStore([space('a')], { findAllDocuments, findAllSchemas, role: null, permissions: ['CONTENT_READ', 'SCHEMA_READ'] });
       TestBed.tick();
 
       expect(findAllDocuments).not.toHaveBeenCalled();

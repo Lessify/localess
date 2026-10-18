@@ -4,6 +4,7 @@ import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
+import { canAny } from '@core/utils/permissions';
 import { ContentDocument, Schema, Space, SpaceEnvironment, UserPermission } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
@@ -134,10 +135,9 @@ export const SpaceStore = signalStore(
     const schemaService = inject(SchemaService);
     const notificationService = inject(NotificationService);
     const userStore = inject(UserStore);
-    // The same rules as the server's @RequirePermission on the two lists: without them every request is a 403,
-    // retried forever with a "Lost connection" toast (e.g. for a translator).
-    const can = (...permissions: UserPermission[]): boolean =>
-      userStore.role() === 'ADMIN' || permissions.some(it => userStore.permissions()?.includes(it));
+    // The server's rule for the two lists (canAny → canPerform): without it every request is a 403, retried forever
+    // with a "Lost connection" toast (e.g. for a translator).
+    const can = (...permissions: UserPermission[]): boolean => canAny(userStore, ...permissions);
 
     const listen = <T>(query: () => Observable<T>, logMessage: string, notification: string): Observable<T> =>
       defer(query).pipe(retryWithBackoff<T>(notificationService, logMessage, notification));

@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { CanActivateFn, Router } from '@angular/router';
 import { UserStore } from '@core/stores/user.store';
+import { canAny } from '@core/utils/permissions';
 import { UserPermission } from '@localess/shared';
 import { filter, map, take } from 'rxjs';
 
@@ -17,9 +18,7 @@ export function permissionGuard(...permissions: UserPermission[]): CanActivateFn
       filter(Boolean),
       take(1),
       map(() => {
-        const role = userStore.role();
-        const granted = role === 'ADMIN' || (role === 'CUSTOM' && permissions.some(it => userStore.permissions()?.includes(it)));
-        return granted || router.createUrlTree(['features']);
+        return canAny(userStore, ...permissions) || router.createUrlTree(['features']);
       }),
     );
   };
