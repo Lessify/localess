@@ -4,3 +4,4 @@ export * from './models/asset.zod.js';
 export * from './models/content.zod.js';
 export * from './models/schema.zod.js';
 export * from './models/translation.zod.js';
+export * from './models/page.zod.js';
