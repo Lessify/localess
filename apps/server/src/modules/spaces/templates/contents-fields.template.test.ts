@@ -59,8 +59,6 @@ describe('CONTENTS_FIELDS_TEMPLATE', () => {
   it('is a test template with German and French', () => {
     expect(template).toMatchObject({
       id: 'CONTENTS_FIELDS',
-      name: 'Contents (all fields)',
-      icon: 'lucideFileStack',
       test: true,
       locales: ['de', 'fr'],
     });

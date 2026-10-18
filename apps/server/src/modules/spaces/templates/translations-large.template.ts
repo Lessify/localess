@@ -53,9 +53,6 @@ export function largeTranslations(): TemplateTranslation[] {
 /** A space to test the Translations page and the CDN at scale. Test-only (LOCALESS_TEST_TEMPLATES). */
 export const TRANSLATIONS_LARGE_TEMPLATE: SpaceTemplate = {
   id: 'TRANSLATIONS_LARGE',
-  name: 'Translations (large)',
-  description: '10,000 translated keys in English, German and French. For testing.',
-  icon: 'lucideLanguages',
   test: true,
   locales: ['de', 'fr'],
   schemas: [],

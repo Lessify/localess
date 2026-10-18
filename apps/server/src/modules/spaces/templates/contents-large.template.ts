@@ -83,9 +83,6 @@ function tree(): TemplateContent[] {
 
 export const CONTENTS_LARGE_TEMPLATE: SpaceTemplate = {
   id: 'CONTENTS_LARGE',
-  name: 'Contents (large)',
-  description: '2,000 documents in a deep folder tree. For testing.',
-  icon: 'lucideFolderTree',
   test: true,
   schemas: [
     {

@@ -14,9 +14,6 @@ import type { SpaceTemplate } from './space-template.model.js';
  */
 export const MARKETING_TEMPLATE: SpaceTemplate = {
   id: 'MARKETING',
-  name: 'Marketing Site',
-  description: 'Landing pages assembled from reusable blocks.',
-  icon: 'lucideLayoutTemplate',
   schemas: [
     {
       id: 'cta',

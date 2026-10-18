@@ -17,9 +17,8 @@ Platform-level management of Spaces — create new spaces, edit space names, del
 ```
 apps/web/src/app/features/admin/spaces/
   spaces.component.ts/html/scss      ← space list, and the whole create flow
-  space-create-dialog/               ← the form: name + template choice
+  space-create-dialog/               ← the form: name + template choice; each template's title, description, icon (space-templates.ts)
   space-edit-dialog/                 ← rename
-  templates/                         ← Empty / Blog / E-Commerce / Marketing schema sets
 ```
 
 ## SpacesComponent
@@ -126,8 +125,8 @@ the dialog. The user stays on the spaces list.
 ## Dialogs
 
 ### SpaceCreateDialogComponent
-Space `name` plus a [template](#space-templates) choice. Returns `{ name, template }`, or
-`undefined` when dismissed.
+Space `name` plus a [template](#space-templates) choice. Returns `{ name, template? }` (no `template` for
+Empty), or `undefined` when dismissed.
 
 ### SpaceEditDialogComponent
 Space `name` only. Returns `{ name }`.
@@ -149,16 +148,18 @@ inverted.
 
 ## Space templates
 
-Creating a space offers a template. The templates live on the server
-(`apps/server/src/modules/spaces/templates/`); the dialog lists the ones the user may choose
-(`GET /api/app/spaces/templates`) and sends the chosen id with the create request (`POST /api/app/spaces`
-`{ name, template }`). The server writes the space and everything the template holds **in one transaction**
+Creating a space offers a template. The ids are one union in `@localess/shared` (`SPACE_TEMPLATE_IDS`,
+`SpaceTemplateId`). What a template creates lives on the server (`apps/server/src/modules/spaces/templates/`);
+its title, description and icon live in the dialog (`space-create-dialog/space-templates.ts`, a
+`Record<SpaceTemplateId, …>`, so a new id does not compile without them). The server lists the ids the user may
+choose (`GET /api/app/spaces/templates` → `SpaceTemplateId[]`), and the dialog sends the chosen one with the create
+request (`POST /api/app/spaces` `{ name, template? }`; an id outside the union is a 400 from validation). The server writes the space and everything the template holds **in one transaction**
 (`SpaceTemplatesRepository`): the space is complete or not created at all. Design:
 [docs/roadmap/space-templates.md](../../roadmap/space-templates.md).
 
 | Template | Writes |
 |----------|--------|
-| **Empty** | nothing — a blank space |
+| **Empty** (no `template`) | nothing — the space alone: its default locale and preview token |
 | **Blog** | schemas `author`, `category`, `blogtag` (ENUM), `blogpost` |
 | **E-Commerce** | schemas `size` (ENUM), `variant` (NODE), `category`, `product` |
 | **Marketing Site** | schemas `cta`, `hero`, `feature`, `featuregrid`, `testimonial` (all NODE), `page` |
@@ -172,8 +173,8 @@ composed page**: `page.sections` is a single `SCHEMAS` field accepting *several*
 editor assembles a page from interchangeable blocks rather than filling a fixed form. `hero.action`
 shows the other half of the pair — `SCHEMA`, one nested node rather than many.
 
-**Empty is selected by default and writes nothing**, so creating a space is unchanged unless you
-choose otherwise. No template publishes anything or creates tokens (every space gets its Auto Generated
+**Empty is not a template**: it is the dialog's first card, selected by default, and sends no `template`; the
+server then creates the space alone. No template publishes anything or creates tokens (every space gets its Auto Generated
 Preview Token).
 
 Schemas are typed as `SpaceTemplateSchema[]` (the export format) so the compiler validates every field
@@ -191,11 +192,11 @@ e2e tests know what to expect: see `translations-large.template.ts`.
 
 ### Permissions
 
-Creating a space needs `SPACE_MANAGEMENT`. A template other than Empty also needs `SCHEMA_CREATE` (or the
-`ADMIN` role); the server enforces it on the create request (403) and lists only Empty to anyone else, so
-the dialog shows no template control to them. Permissions are to be reworked separately.
+Creating a space needs `SPACE_MANAGEMENT`. A template also needs `SCHEMA_CREATE` (or the
+`ADMIN` role); the server enforces it on the create request (403) and lists no template to anyone else, so
+the dialog shows no template control to them (and sends none). Permissions are to be reworked separately.
 
 ### Failure
 
-Everything is one transaction: an unknown template is a 400, and a failure while writing the template
+Everything is one transaction: an unknown template (or a test one while they are off) is a 400, and a failure while writing the template
 leaves no space behind. The dialog's success toast means the space and its template are both there.

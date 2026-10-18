@@ -162,11 +162,11 @@ describe('SpacesComponent', () => {
 
     it('creates the space and notifies success when confirmed', () => {
       const { open, create, success, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
+      open.mockReturnValue(closesWith({ name: 'New Space' }));
 
       navigateWithAction('create');
 
-      expect(create).toHaveBeenCalledWith({ name: 'New Space', template: 'EMPTY' });
+      expect(create).toHaveBeenCalledWith({ name: 'New Space' });
       expect(success).toHaveBeenCalledWith('Space has been created.');
     });
 
@@ -195,7 +195,7 @@ describe('SpacesComponent', () => {
     it('notifies an error when the space itself cannot be created', () => {
       const { open, create, error, navigateWithAction } = setup();
       create.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
+      open.mockReturnValue(closesWith({ name: 'New Space' }));
 
       navigateWithAction('create');
 

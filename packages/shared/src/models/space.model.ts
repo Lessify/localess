@@ -36,19 +36,26 @@ export interface SpaceEnvironmentInput {
 }
 
 // App API requests
+/**
+ * The templates a space can be created from, in the order the Create Space dialog lists them; the test-only ones
+ * (`LOCALESS_TEST_TEMPLATES`) last. The server holds what each one creates, the web app its title, description and icon.
+ */
+export const SPACE_TEMPLATE_IDS = [
+  'BLOG',
+  'ECOMMERCE',
+  'MARKETING',
+  'TRANSLATIONS_LARGE',
+  'CONTENTS_FIELDS',
+  'ASSETS_LARGE',
+  'CONTENTS_LARGE',
+] as const;
+
+export type SpaceTemplateId = (typeof SPACE_TEMPLATE_IDS)[number];
+
 export interface SpaceCreate {
   name: string;
-  /** A template id from `GET /api/app/spaces/templates`; none is Empty. */
-  template?: string;
-}
-
-/** A template the Create Space dialog offers (the server holds the templates themselves). */
-export interface SpaceTemplateSummary {
-  id: string;
-  name: string;
-  description: string;
-  /** An @ng-icons lucide name. */
-  icon: string;
+  /** One of `GET /api/app/spaces/templates`; none: the space alone (default locale and preview token), nothing else. */
+  template?: SpaceTemplateId;
 }
 
 export interface SpaceUpdate {

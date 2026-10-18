@@ -203,9 +203,6 @@ const target = (key: string, name: string) => ({
 
 export const CONTENTS_FIELDS_TEMPLATE: SpaceTemplate = {
   id: 'CONTENTS_FIELDS',
-  name: 'Contents (all fields)',
-  description: 'Every field kind in English, German and French, with files and documents to point to. For testing.',
-  icon: 'lucideFileStack',
   test: true,
   locales: ['de', 'fr'],
   schemas: SCHEMAS,

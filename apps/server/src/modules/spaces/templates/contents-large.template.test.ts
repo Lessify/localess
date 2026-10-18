@@ -14,7 +14,7 @@ const data = (key: string) => ({ _id: id(key), _schema: 'article', ...byKey.get(
 
 describe('CONTENTS_LARGE_TEMPLATE', () => {
   it('is a test template in English only', () => {
-    expect(CONTENTS_LARGE_TEMPLATE).toMatchObject({ id: 'CONTENTS_LARGE', name: 'Contents (large)', icon: 'lucideFolderTree', test: true });
+    expect(CONTENTS_LARGE_TEMPLATE).toMatchObject({ id: 'CONTENTS_LARGE', test: true });
     expect(CONTENTS_LARGE_TEMPLATE.locales ?? []).toEqual([]);
   });
 

@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { z } from 'zod';
-import { UserPermission } from '@localess/shared';
+import { SPACE_TEMPLATE_IDS, UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
@@ -9,7 +9,7 @@ import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { zPreviewUrl } from '../../../infra/http/zod.js';
 import { SpacesService } from '../services/spaces.service.js';
 
-const createSchema = z.object({ name: z.string().trim().min(1).max(200), template: z.string().min(1).max(64).optional() });
+const createSchema = z.object({ name: z.string().trim().min(1).max(200), template: z.enum(SPACE_TEMPLATE_IDS).optional() });
 const updateSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
 const environmentSchema = z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl });
 const environmentOrderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(1000) });

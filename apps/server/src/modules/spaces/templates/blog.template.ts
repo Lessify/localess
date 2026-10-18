@@ -8,9 +8,6 @@ import type { SpaceTemplate } from './space-template.model.js';
  */
 export const BLOG_TEMPLATE: SpaceTemplate = {
   id: 'BLOG',
-  name: 'Blog',
-  description: 'Posts with authors, categories and tags.',
-  icon: 'lucideNewspaper',
   schemas: [
     {
       id: 'author',

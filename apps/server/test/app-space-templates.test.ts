@@ -5,7 +5,7 @@ import { SpaceTemplatesRepository } from '../src/modules/spaces/repositories/spa
 import { BLOG_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
-const USER_TEMPLATES = ['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING'];
+const USER_TEMPLATES = ['BLOG', 'ECOMMERCE', 'MARKETING'];
 const TEST_TEMPLATES = ['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS', 'ASSETS_LARGE', 'CONTENTS_LARGE'];
 
 async function counts(t: TestApp) {
@@ -42,18 +42,10 @@ describe('app API: space templates', () => {
 
     afterAll(() => t?.close());
 
-    it('lists the templates in order, test ones last', async () => {
+    it('lists the template ids in order, test ones last (the web app has their titles and icons)', async () => {
       const response = await admin.get('/api/app/spaces/templates');
       expect(response.statusCode).toBe(200);
-      const list = response.json();
-      expect(list.map((it: { id: string }) => it.id)).toEqual([...USER_TEMPLATES, ...TEST_TEMPLATES]);
-      for (const it of list) expect(Object.keys(it).sort()).toEqual(['description', 'icon', 'id', 'name']);
-      expect(list[4]).toEqual({
-        id: 'TRANSLATIONS_LARGE',
-        name: 'Translations (large)',
-        description: '10,000 translated keys in English, German and French. For testing.',
-        icon: 'lucideLanguages',
-      });
+      expect(response.json()).toEqual([...USER_TEMPLATES, ...TEST_TEMPLATES]);
     });
 
     it('creates the large translations space: three locales, 10,000 drafts, nothing published', async () => {
@@ -101,13 +93,20 @@ describe('app API: space templates', () => {
     afterAll(() => t?.close());
 
     it('lists no test template', async () => {
-      const ids = (await admin.get('/api/app/spaces/templates')).json().map((it: { id: string }) => it.id);
-      expect(ids).toEqual(USER_TEMPLATES);
+      expect((await admin.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
     });
 
-    it('offers only Empty without SCHEMA_CREATE', async () => {
-      expect((await manager.get('/api/app/spaces/templates')).json().map((it: { id: string }) => it.id)).toEqual(['EMPTY']);
-      expect((await designer.get('/api/app/spaces/templates')).json().map((it: { id: string }) => it.id)).toEqual(USER_TEMPLATES);
+    it('offers no template without SCHEMA_CREATE', async () => {
+      expect((await manager.get('/api/app/spaces/templates')).json()).toEqual([]);
+      expect((await designer.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
+    });
+
+    it('creates the space alone without a template: default locale and preview token, nothing else', async () => {
+      const before = await counts(t);
+      const response = await designer.post('/api/app/spaces', { name: 'Plain' });
+      expect(response.statusCode).toBe(201);
+      expect(response.json().locales.map((it: { id: string }) => it.id)).toEqual(['en']);
+      expect(await counts(t)).toEqual({ ...before, spaces: before.spaces + 1, spaceLocales: before.spaceLocales + 1, tokens: before.tokens + 1 });
     });
 
     it('creates a space from the Blog template in one request', async () => {
@@ -123,19 +122,18 @@ describe('app API: space templates', () => {
 
     it('refuses an unknown template, and a test template while turned off', async () => {
       const before = await counts(t);
-      const unknown = await admin.post('/api/app/spaces', { name: 'Nope', template: 'NOPE' });
-      expect(unknown.statusCode).toBe(400);
-      expect(unknown.json().message).toBe('Unknown template');
+      expect((await admin.post('/api/app/spaces', { name: 'Nope', template: 'NOPE' })).statusCode).toBe(400);
+      expect((await admin.post('/api/app/spaces', { name: 'Nope', template: 'EMPTY' })).statusCode).toBe(400);
       const test = await admin.post('/api/app/spaces', { name: 'Nope', template: 'TRANSLATIONS_LARGE' });
       expect(test.statusCode).toBe(400);
+      expect(test.json().message).toBe('Unknown template');
       expect(await counts(t)).toEqual(before);
     });
 
-    it('refuses a template to a user without SCHEMA_CREATE, but not Empty', async () => {
+    it('refuses a template to a user without SCHEMA_CREATE, but not a space without one', async () => {
       const before = await counts(t);
       expect((await manager.post('/api/app/spaces', { name: 'Nope', template: 'BLOG' })).statusCode).toBe(403);
       expect(await counts(t)).toEqual(before);
-      expect((await manager.post('/api/app/spaces', { name: 'Plain', template: 'EMPTY' })).statusCode).toBe(201);
       expect((await manager.post('/api/app/spaces', { name: 'Plain too' })).statusCode).toBe(201);
     });
 

@@ -8,9 +8,6 @@ import type { SpaceTemplate } from './space-template.model.js';
  */
 export const ECOMMERCE_TEMPLATE: SpaceTemplate = {
   id: 'ECOMMERCE',
-  name: 'E-Commerce',
-  description: 'Products with variants, and categories.',
-  icon: 'lucideShoppingCart',
   schemas: [
     {
       id: 'size',

@@ -172,7 +172,7 @@ export class SpacesComponent implements OnInit, AfterViewInit {
         tap(() => this.clearAction()),
         filter((result): result is SpaceCreateDialogResult => result !== undefined),
         // One request: the server writes the space and its template's content in one transaction.
-        switchMap(model => this.spaceService.create({ name: model.name, template: model.template })),
+        switchMap(model => this.spaceService.create(model)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({

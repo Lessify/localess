@@ -1,22 +1,12 @@
-import { type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { type SchemaField, SchemaFieldKind, SchemaType, SPACE_TEMPLATE_IDS } from '@localess/shared';
 import { zSchemaExportArraySchema } from '@localess/shared/zod';
 import { describe, expect, it } from 'vitest';
-import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES } from './index.js';
+import { SPACE_TEMPLATES } from './index.js';
 import type { SpaceTemplateComponent, SpaceTemplateEnum } from './space-template.model.js';
 
 describe('SPACE_TEMPLATES', () => {
-  it('offers every template, with EMPTY first and the test ones last', () => {
-    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual([
-      'EMPTY',
-      'BLOG',
-      'ECOMMERCE',
-      'MARKETING',
-      'TRANSLATIONS_LARGE',
-      'CONTENTS_FIELDS',
-      'ASSETS_LARGE',
-      'CONTENTS_LARGE',
-    ]);
-    expect(SPACE_TEMPLATES[0].id).toBe(EMPTY_TEMPLATE_ID);
+  it('holds one template per id, in the order of SPACE_TEMPLATE_IDS, the test ones last', () => {
+    expect(SPACE_TEMPLATES.map(t => t.id)).toEqual([...SPACE_TEMPLATE_IDS]);
     expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual([
       'TRANSLATIONS_LARGE',
       'CONTENTS_FIELDS',
@@ -25,23 +15,8 @@ describe('SPACE_TEMPLATES', () => {
     ]);
   });
 
-  it('gives every template a name, description and icon for the choice card', () => {
-    for (const template of SPACE_TEMPLATES) {
-      expect(template.name.length).toBeGreaterThan(0);
-      expect(template.description.length).toBeGreaterThan(0);
-      expect(template.icon.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('leaves EMPTY with nothing to write', () => {
-    const empty = SPACE_TEMPLATES.find(t => t.id === EMPTY_TEMPLATE_ID)!;
-    expect(empty.schemas).toEqual([]);
-    expect(empty.locales).toBeUndefined();
-    expect(empty.translations).toBeUndefined();
-  });
-
-  it('ships schemas for every template offered to users except EMPTY', () => {
-    for (const template of SPACE_TEMPLATES.filter(t => t.id !== EMPTY_TEMPLATE_ID && !t.test)) {
+  it('ships schemas for every template offered to users', () => {
+    for (const template of SPACE_TEMPLATES.filter(t => !t.test)) {
       expect(template.schemas.length).toBeGreaterThan(0);
     }
   });

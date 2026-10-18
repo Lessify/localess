@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Space } from '@localess/shared';
-import { canPerform, type SpaceOverview, type SpaceTemplateSummary, UserPermission } from '@localess/shared';
+import { canPerform, DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId, UserPermission } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
@@ -15,7 +15,7 @@ import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositories/space-templates.repository.js';
 import { SpacesRepository } from '../repositories/spaces.repository.js';
-import { EMPTY_TEMPLATE_ID, SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
+import { SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
 /** Template files stored in parallel, this many at a time. */
 const STORE_BATCH = 50;
@@ -55,17 +55,18 @@ export class SpacesService {
   }
 
   /** What the Create Space dialog offers this user, in order (docs/roadmap/space-templates.md). */
-  templates(user: UserRow): SpaceTemplateSummary[] {
-    return this.offered(user).map(({ id, name, description, icon }) => ({ id, name, description, icon }));
+  templates(user: UserRow): SpaceTemplateId[] {
+    return this.offered(user).map(it => it.id);
   }
 
   /**
-   * With everything its template holds, in one transaction (no template: Empty). An unknown template, or a test one
-   * while they are off, is a 400; one the user may not choose (a template other than Empty needs SCHEMA_CREATE), a 403.
+   * With everything its template holds, in one transaction; no template: the space alone (its default locale and preview
+   * token). A test template while they are off is a 400 (an unknown id is refused by the controller's schema); one the
+   * user may not choose (every template needs SCHEMA_CREATE), a 403.
    */
-  async create(name: string, templateId: string | undefined, user: UserRow) {
-    const id = templateId ?? EMPTY_TEMPLATE_ID;
-    const template = this.available().find(it => it.id === id);
+  async create(name: string, templateId: SpaceTemplateId | undefined, user: UserRow) {
+    if (!templateId) return toSpace(await this.spaces.create(name, DEFAULT_LOCALE.id));
+    const template = this.available().find(it => it.id === templateId);
     if (!template) throw new BadRequestException('Unknown template');
     if (!this.offered(user).includes(template)) throw new ForbiddenException();
     return this.createFromTemplate(name, template);
@@ -119,8 +120,7 @@ export class SpacesService {
   }
 
   private offered(user: UserRow): readonly SpaceTemplate[] {
-    if (canPerform(toPrincipal(user), UserPermission.SCHEMA_CREATE)) return this.available();
-    return this.available().filter(it => it.id === EMPTY_TEMPLATE_ID);
+    return canPerform(toPrincipal(user), UserPermission.SCHEMA_CREATE) ? this.available() : [];
   }
 
   async rename(spaceId: string, name: string) {

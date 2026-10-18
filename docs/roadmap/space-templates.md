@@ -66,6 +66,8 @@ creates a space, in the same transaction.
   template is marked as one (e.g. `test: true`).
 - **List endpoint**: `GET /api/app/spaces/templates` → `{ id, name, description, icon }[]`, in display order (Empty
   first, as today). Test templates are included only when test templates are on.
+  *Changed after review (2026-10-18):* the list is ids only (`SpaceTemplateId[]`, a union in `@localess/shared`);
+  titles, descriptions and icons moved to the dialog, and Empty is no template at all (none sent: the space alone).
 - **Create**: `POST /api/app/spaces` accepts an optional `template` (a template id). Absent means Empty. An unknown id,
   or a test template while they are off, is refused (400) and nothing is created.
 - **One transaction**: the space, its default locale, the preview token (as today), then the template's locales,

@@ -10,8 +10,7 @@ const TEST_TEMPLATE = 'TRANSLATIONS_LARGE';
 test.describe('Space templates', () => {
   test('the production image offers no test templates @smoke', async ({ api, request }) => {
     test.skip(!E2E_BASE_URL, 'only against a running server (the Docker image as shipped)');
-    const ids = (await api.get<{ id: string }[]>('/api/app/spaces/templates')).map(it => it.id);
-    expect(ids).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING']);
+    expect(await api.get<string[]>('/api/app/spaces/templates')).toEqual(['BLOG', 'ECOMMERCE', 'MARKETING']);
 
     const name = uniqueName('E2E Refused');
     const response = await request.post('/api/app/spaces', { headers: CSRF, data: { name, template: TEST_TEMPLATE } });
@@ -21,7 +20,14 @@ test.describe('Space templates', () => {
 
   test('the e2e server offers the test templates after the others', async ({ api }) => {
     test.skip(!!E2E_BASE_URL, 'the e2e server only (LOCALESS_TEST_TEMPLATES=true)');
-    const ids = (await api.get<{ id: string }[]>('/api/app/spaces/templates')).map(it => it.id);
-    expect(ids).toEqual(['EMPTY', 'BLOG', 'ECOMMERCE', 'MARKETING', TEST_TEMPLATE, 'CONTENTS_FIELDS', 'ASSETS_LARGE', 'CONTENTS_LARGE']);
+    expect(await api.get<string[]>('/api/app/spaces/templates')).toEqual([
+      'BLOG',
+      'ECOMMERCE',
+      'MARKETING',
+      TEST_TEMPLATE,
+      'CONTENTS_FIELDS',
+      'ASSETS_LARGE',
+      'CONTENTS_LARGE',
+    ]);
   });
 });

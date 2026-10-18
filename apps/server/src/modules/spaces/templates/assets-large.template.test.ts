@@ -10,7 +10,7 @@ const byName = (name: string) => bulk.find(it => it.name === name)!;
 
 describe('ASSETS_LARGE_TEMPLATE', () => {
   it('is a test template in English only', () => {
-    expect(template).toMatchObject({ id: 'ASSETS_LARGE', name: 'Assets (large)', icon: 'lucideImages', test: true });
+    expect(template).toMatchObject({ id: 'ASSETS_LARGE', test: true });
     expect(template.locales ?? []).toEqual([]);
   });
 

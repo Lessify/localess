@@ -81,8 +81,8 @@ describe('SpaceService', () => {
     const result = firstValueFrom(service.templates());
     http
       .expectOne({ method: 'GET', url: '/api/app/spaces/templates' })
-      .flush([{ id: 'EMPTY', name: 'Empty', description: 'A blank space.', icon: 'lucideFile' }]);
-    expect((await result).map(it => it.id)).toEqual(['EMPTY']);
+      .flush(['BLOG', 'MARKETING']);
+    expect(await result).toEqual(['BLOG', 'MARKETING']);
   });
 
   it('update() patches the name', async () => {

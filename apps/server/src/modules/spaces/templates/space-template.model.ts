@@ -1,4 +1,4 @@
-import type { ContentValue, SchemaComponentExport, SchemaEnumExport } from '@localess/shared';
+import type { ContentValue, SchemaComponentExport, SchemaEnumExport, SpaceTemplateId } from '@localess/shared';
 
 /**
  * A schema as a template declares it: the export format, where `id` is the schema's name (as in exports, the SDK and
@@ -54,11 +54,8 @@ export interface TemplateContent {
  * typing can not check (references resolve) is covered by templates.test.ts.
  */
 export interface SpaceTemplate {
-  id: string;
-  name: string;
-  description: string;
-  /** An @ng-icons lucide name, registered by the Create Space dialog. */
-  icon: string;
+  /** Its title, description and icon are the web app's (the Create Space dialog). */
+  id: SpaceTemplateId;
   /** Offered only with LOCALESS_TEST_TEMPLATES (development and e2e). */
   test?: boolean;
   /** Locale ids added after the default locale (English), in this order. */

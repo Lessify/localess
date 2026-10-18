@@ -49,9 +49,6 @@ const field = (name: string, displayName: string, imagesOnly: boolean): SchemaFi
 
 export const ASSETS_LARGE_TEMPLATE: SpaceTemplate = {
   id: 'ASSETS_LARGE',
-  name: 'Assets (large)',
-  description: '1,000 files in one folder, with folders to navigate and a document to pick them into. For testing.',
-  icon: 'lucideImages',
   test: true,
   schemas: [
     {
