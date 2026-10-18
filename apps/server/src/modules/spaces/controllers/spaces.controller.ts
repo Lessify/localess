@@ -1,13 +1,19 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { z } from 'zod';
 import { SPACE_TEMPLATE_IDS, UserPermission } from '@localess/shared';
+import { zPageable } from '@localess/shared/zod';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { zPreviewUrl } from '../../../infra/http/zod.js';
+import { SPACE_SORT_FIELDS } from '../repositories/spaces.repository.js';
 import { SpacesService } from '../services/spaces.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(1).max(200), template: z.enum(SPACE_TEMPLATE_IDS).optional() });
+const listSchema = zPageable(SPACE_SORT_FIELDS, 'name').extend({
+  search: z.string().trim().max(200).optional(),
+  importing: z.enum(['true', 'false']).transform(it => it === 'true').optional(),
+});
 const updateSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
 const environmentSchema = z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl });
 const environmentOrderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(1000) });
@@ -19,10 +25,11 @@ const localeOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).min
 export class SpacesController {
   constructor(private readonly spaces: SpacesService) {}
 
+  /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name, or the id), `?importing=false`. */
   @Get()
   @RequireAnyRole()
-  list() {
-    return this.spaces.list();
+  list(@Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
+    return this.spaces.page(query);
   }
 
   /** The templates a space may be created from (before `:spaceId`, which would take `templates` as an id). */

@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Space } from '@localess/shared';
+import type { Page, Space } from '@localess/shared';
 import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -9,10 +9,11 @@ import { AssetMetadataService } from '../../../shared/services/asset-metadata.se
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
+import { toPage } from '../../../shared/utils/paging.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositories/space-templates.repository.js';
-import { SpacesRepository } from '../repositories/spaces.repository.js';
+import { type SpaceQuery, SpacesRepository } from '../repositories/spaces.repository.js';
 import { SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
 /** Template files stored in parallel, this many at a time. */
@@ -38,8 +39,10 @@ export class SpacesService {
     private readonly metadata: AssetMetadataService,
   ) {}
 
-  async list() {
-    return (await this.spaces.findAll()).map(toSpace);
+  /** One page of spaces (Admin → Spaces, and every page of it for the space switcher). */
+  async page(query: SpaceQuery): Promise<Page<Space>> {
+    const { rows, total } = await this.spaces.findPage(query);
+    return toPage(rows, total, query, toSpace);
   }
 
   async get(spaceId: string) {

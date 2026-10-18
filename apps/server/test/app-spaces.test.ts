@@ -80,7 +80,7 @@ describe('app API: spaces, locales, instance label', () => {
       await admin.post('/api/app/spaces', { name: 'alpha' });
       await admin.post('/api/app/spaces', { name: 'Beta' });
       // Case-insensitive, whatever the database collation.
-      expect((await reader.get('/api/app/spaces')).json().map((s: { name: string }) => s.name)).toEqual(['alpha', 'Beta', 'Marketing']);
+      expect((await reader.get('/api/app/spaces')).json().items.map((s: { name: string }) => s.name)).toEqual(['alpha', 'Beta', 'Marketing']);
       expect((await noRole.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().name).toBe('Marketing');
       expect((await reader.get('/api/app/spaces/missing')).statusCode).toBe(404);

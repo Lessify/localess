@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, max, sql } from 'drizzle-orm';
+import type { Pageable } from '@localess/shared';
+import { and, asc, count, desc, eq, ilike, max, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { newUuid } from '../../../infra/database/id.js';
-import { keepUpdatedAt, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
+import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { firebaseImports, keepUpdatedAt, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
@@ -10,6 +11,13 @@ import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/da
 import { dropContentDrafts, dropContentLocale } from '../../../shared/data-rules/content-snapshots.js';
 import { findSpace, requireSpace, selectSpaces, type SpaceRow } from '../../../shared/queries/space.query.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
+import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
+
+/** The fields Admin → Spaces may sort by (`name`: case-insensitive). */
+export const SPACE_SORT_FIELDS = ['name', 'id', 'updatedAt'] as const;
+export type SpaceSortField = (typeof SPACE_SORT_FIELDS)[number];
+/** `importing: false`: leave out spaces whose import from Firebase runs or failed (they can not be opened). */
+export type SpaceQuery = Pageable<SpaceSortField> & { search?: string; importing?: boolean };
 
 type SpaceValues = Partial<Pick<typeof spaces.$inferInsert, 'name' | 'defaultLocaleId'>>;
 
@@ -25,9 +33,31 @@ export class SpacesRepository {
     private readonly events: EventsService,
   ) {}
 
-  /** By name, case-insensitive whatever the database collation; the id keeps equal names in a stable order. */
-  findAll(): Promise<SpaceRow[]> {
-    return selectSpaces(this.db).orderBy(asc(sql`lower(${spaces.name})`), asc(spaces.id));
+  /**
+   * One page by the query's sort (`name` case-insensitive whatever the database collation), then the id so equal
+   * values page stably; and how many match its filters.
+   */
+  async findPage(query: SpaceQuery): Promise<{ rows: SpaceRow[]; total: number }> {
+    const conditions: SQL[] = [];
+    if (query.search) {
+      const byName = ilike(spaces.name, containsPattern(query.search));
+      conditions.push(isUuid(query.search) ? (or(byName, eq(spaces.id, query.search)) as SQL) : byName);
+    }
+    if (query.importing === false) {
+      conditions.push(
+        sql`not exists (select 1 from ${firebaseImports} fi where fi.space_id = ${spaces.id} and fi.status in ('RUNNING', 'FAILED'))`,
+      );
+    }
+    const where = and(...conditions);
+    const order = query.direction === 'desc' ? desc : asc;
+    const column = { name: sql`lower(${spaces.name})`, id: spaces.id, updatedAt: spaces.updatedAt }[query.sort];
+    const rows = await selectSpaces(this.db)
+      .where(where)
+      .orderBy(order(column), asc(spaces.id))
+      .limit(query.size)
+      .offset(offsetOf(query));
+    const [{ total }] = await this.db.select({ total: count() }).from(spaces).where(where);
+    return { rows, total };
   }
 
   findById(spaceId: string): Promise<SpaceRow | undefined> {
