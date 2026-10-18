@@ -59,6 +59,35 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
   };
 }
 
+/**
+ * The SQL statements run while `action` does (every `pg` client: the app's pool and its transactions). For checking how
+ * work is batched (one insert per chunk, not per row) rather than how fast the machine is.
+ */
+export async function statementsDuring<T>(action: () => Promise<T>): Promise<{ result: T; statements: string[] }> {
+  const original = pg.Client.prototype.query;
+  const statements: string[] = [];
+  pg.Client.prototype.query = function (this: pg.Client, ...args: unknown[]) {
+    const [query] = args;
+    statements.push(typeof query === 'string' ? query : ((query as { text?: string } | undefined)?.text ?? ''));
+    return (original as (...a: unknown[]) => unknown).apply(this, args);
+  } as typeof original;
+  try {
+    return { result: await action(), statements };
+  } finally {
+    pg.Client.prototype.query = original;
+  }
+}
+
+/** How many `insert` statements went to each table. */
+export function insertsByTable(statements: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const statement of statements) {
+    const table = /^\s*insert into "?(\w+)"?/i.exec(statement)?.[1];
+    if (table) counts[table] = (counts[table] ?? 0) + 1;
+  }
+  return counts;
+}
+
 /** Same-origin XHR header the Angular app sends on every state-changing request. */
 export const XHR = { 'x-requested-with': 'XMLHttpRequest' };
 

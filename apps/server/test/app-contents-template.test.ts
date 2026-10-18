@@ -7,7 +7,7 @@ import { SpacesService } from '../src/modules/spaces/services/spaces.service.js'
 import { CONTENTS_FIELDS_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { orphansOf, storedAssetDirs } from './orphans.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWithAccess } from './test-app.js';
 
 // One app in this file: image metadata is read by a process-wide exiftool, which closing an app ends.
 
@@ -44,11 +44,16 @@ describe('app API: the contents template (CONTENTS_FIELDS)', () => {
 
   afterAll(() => t?.close());
 
-  it('creates files, rows and drafts in one request, nothing published', async () => {
+  it('creates files, rows and drafts in one request, nothing published', async ({ annotate }) => {
     const started = Date.now();
-    const response = await admin.post('/api/app/spaces', { name: 'Fields', template: 'CONTENTS_FIELDS' });
+    const { result: response, statements } = await statementsDuring(() =>
+      admin.post('/api/app/spaces', { name: 'Fields', template: 'CONTENTS_FIELDS' }),
+    );
     expect(response.statusCode, response.body).toBe(201);
-    expect(Date.now() - started).toBeLessThan(3_000);
+    // One insert for all the contents and one for all the assets, whatever this machine's speed.
+    expect(insertsByTable(statements)).toMatchObject({ contents: 1, assets: 1 });
+    expect(statements.length).toBeLessThan(50);
+    await annotate(`created in ${Date.now() - started} ms, ${statements.length} statements`);
     const space = response.json();
     expect(space.locales.map((it: { id: string }) => it.id)).toEqual(['en', 'de', 'fr']);
 

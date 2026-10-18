@@ -8,7 +8,7 @@ import { ASSETS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js'
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { orphansOf, storedAssetDirs } from './orphans.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWithAccess } from './test-app.js';
 
 // One app in this file: image metadata is read by a process-wide exiftool, which closing an app ends.
 
@@ -29,11 +29,17 @@ describe('app API: the large assets template (ASSETS_LARGE)', () => {
     contents: (await t.db.select({ n: count() }).from(contents))[0].n,
   });
 
-  it('creates 1,000 files in Bulk in one request, under 3 seconds', async () => {
+  it('creates 1,000 files in Bulk in one request, the rows and upload guards in chunks', async ({ annotate }) => {
     const started = Date.now();
-    const response = await admin.post('/api/app/spaces', { name: 'Assets', template: 'ASSETS_LARGE' });
+    const { result: response, statements } = await statementsDuring(() =>
+      admin.post('/api/app/spaces', { name: 'Assets', template: 'ASSETS_LARGE' }),
+    );
     expect(response.statusCode, response.body).toBe(201);
-    expect(Date.now() - started).toBeLessThan(3_000);
+    // How the rows are written, not how fast this machine is: 1,003 asset rows and their upload guards in chunks of
+    // 1,000 (one statement per file took 8.1 s).
+    expect(insertsByTable(statements)).toMatchObject({ assets: 2, storage_deletions: 2 });
+    expect(statements.length).toBeLessThan(50);
+    await annotate(`created in ${Date.now() - started} ms, ${statements.length} statements`);
     const space = response.json();
 
     const base = `/api/app/spaces/${space.id}/assets`;

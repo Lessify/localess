@@ -85,4 +85,4 @@ tests them:
 ## Left to the builder
 
 - Names of files and helpers; how the generator builds the tree; server tests (counts, a sample document's data and
-  references, stability, create under 3 s, a failed create leaves nothing).
+  references, stability, rows written in chunks (counted statements, not a time limit: *changed 2026-10-18*), a failed create leaves nothing).

@@ -90,4 +90,4 @@ The expectations are restated in an e2e helper from the rule, not imported from 
 ## Left to the builder
 
 - File and helper names in the spaces module; how the generator shares the image bytes.
-- Server tests: counts, sizes and types follow the rule; a failure leaves nothing; the create time under 3 s.
+- Server tests: counts, sizes and types follow the rule; a failure leaves nothing; rows and upload guards written in chunks (counted statements, not a time limit: *changed 2026-10-18*, a wall-clock limit is flaky on CI).

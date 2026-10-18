@@ -4,7 +4,7 @@ import { contents, spaces } from '../src/infra/database/schema.js';
 import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
 import { CONTENTS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { orphansOf } from './orphans.js';
-import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWithAccess } from './test-app.js';
 
 /** A CDN GET, following the `cv` redirect once. */
 async function cdn(t: TestApp, url: string) {
@@ -24,11 +24,17 @@ describe('app API: the large contents template (CONTENTS_LARGE)', () => {
 
   afterAll(() => t?.close());
 
-  it('creates 2,000 documents and 67 folders in one request, under 3 seconds', async () => {
+  it('creates 2,000 documents and 67 folders in one request, the rows in chunks', async ({ annotate }) => {
     const started = Date.now();
-    const response = await admin.post('/api/app/spaces', { name: 'Contents', template: 'CONTENTS_LARGE' });
+    const { result: response, statements } = await statementsDuring(() =>
+      admin.post('/api/app/spaces', { name: 'Contents', template: 'CONTENTS_LARGE' }),
+    );
     expect(response.statusCode, response.body).toBe(201);
-    expect(Date.now() - started).toBeLessThan(3_000);
+    // How the rows are written, not how fast this machine is: 2,067 rows in chunks of 1,000 (one insert per row would
+    // be thousands of statements, and took 4.4 s).
+    expect(insertsByTable(statements)).toMatchObject({ contents: 3 });
+    expect(statements.length).toBeLessThan(50);
+    await annotate(`created in ${Date.now() - started} ms, ${statements.length} statements`);
     const space = response.json();
 
     const kinds = await t.db
