@@ -177,8 +177,9 @@ export const SpaceStore = signalStore(
       ),
       load: rxMethod<void>(
         pipe(
-          // A space being imported from Firebase, or whose import failed, cannot be opened (Admin → Spaces shows it).
-          switchMap(() => spaceService.findAll().pipe(map(spaces => spaces.filter(space => !space.importStatus)))),
+          // Every page; the server leaves out a space being imported from Firebase, or whose import failed: it cannot
+          // be opened (Admin → Spaces shows it).
+          switchMap(() => spaceService.findAllPages()),
           tapResponse({
             next: response => {
               console.log('Loaded spaces', response);

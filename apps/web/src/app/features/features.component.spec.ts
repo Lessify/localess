@@ -30,6 +30,8 @@ function configureModule(overrides: {
   latestRelease?: Partial<Release> | null;
   /** ISO build date served by version.json; omit to simulate it not having loaded. */
   buildDate?: string;
+  /** The spaces the store holds (the space switcher's list). */
+  spaces?: { id: string; name: string }[];
 }) {
   TestBed.overrideComponent(FeaturesComponent, { set: { template: '<div></div>' } });
   TestBed.configureTestingModule({
@@ -61,6 +63,7 @@ function configureModule(overrides: {
         provide: SpaceStore,
         useValue: {
           selectedSpaceId: signal('space-1'),
+          spaces: signal(overrides.spaces ?? []),
         },
       },
       { provide: UserStore, useValue: { isAuthenticated: signal(true) } },
@@ -76,6 +79,37 @@ function configureModule(overrides: {
   });
   return TestBed.createComponent(FeaturesComponent);
 }
+
+describe('FeaturesComponent: the space switcher', () => {
+  const named = (names: string[]) => names.map((name, i) => ({ id: `s${i}`, name }));
+  const create = (spaces: { id: string; name: string }[]) => {
+    const fixture = configureModule({ notifyError: vi.fn(), spaces });
+    fixture.detectChanges();
+    return fixture.componentInstance;
+  };
+
+  it('offers a search box only past 20 spaces', () => {
+    expect(create(named(Array.from({ length: 20 }, (_, i) => `Space ${i}`))).showSpaceSearch()).toBe(false);
+    TestBed.resetTestingModule();
+    expect(create(named(Array.from({ length: 21 }, (_, i) => `Space ${i}`))).showSpaceSearch()).toBe(true);
+  });
+
+  it('lists the spaces whose name holds the search, case-insensitive; all of them without one', () => {
+    const component = create(named(['Marketing', 'Shop', 'Remarketing EU', 'Blog']));
+    expect(component.filteredSpaces().map(it => it.name)).toEqual(['Marketing', 'Shop', 'Remarketing EU', 'Blog']);
+    component.spaceSearch.set('MARK');
+    expect(component.filteredSpaces().map(it => it.name)).toEqual(['Marketing', 'Remarketing EU']);
+    component.spaceSearch.set('nothing like it');
+    expect(component.filteredSpaces()).toEqual([]);
+  });
+
+  it('clears the search when the menu closes', () => {
+    const component = create(named(['Marketing']));
+    component.spaceSearch.set('mark');
+    component.onSpaceMenuClosed();
+    expect(component.spaceSearch()).toBe('');
+  });
+});
 
 describe('FeaturesComponent', () => {
   afterEach(() => {

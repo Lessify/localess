@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { Page, Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceTemplateId, SpaceUpdate } from '@localess/shared';
-import { Observable } from 'rxjs';
+import { EMPTY, expand, Observable, reduce } from 'rxjs';
 
 const BASE = '/api/app/spaces';
 
@@ -14,8 +14,21 @@ export class SpaceService {
   private readonly events = inject(ChangeEventsService);
 
   /** Ordered by name (server side). */
-  findAll(): Observable<Space[]> {
-    return liveQueryWith(this.events, { entities: ['spaces'] }, () => this.http.get<Space[]>(BASE));
+  /**
+   * Every space a user can open (not being imported), by name: page after page of 100 until `total`, emitted once
+   * all are in; again whenever a space changes. The space switcher, the selected space and the space guard read it.
+   */
+  findAllPages(): Observable<Space[]> {
+    const get = (page: number) =>
+      this.http.get<Page<Space>>(BASE, {
+        params: new HttpParams().set('page', page).set('size', 100).set('sort', 'name').set('direction', 'asc').set('importing', 'false'),
+      });
+    return liveQueryWith(this.events, { entities: ['spaces'] }, () =>
+      get(0).pipe(
+        expand(it => ((it.page + 1) * it.size < it.total ? get(it.page + 1) : EMPTY)),
+        reduce((all, it) => [...all, ...it.items], [] as Space[]),
+      ),
+    );
   }
 
   /** One page (`params`: a `PagedList`'s query); read again whenever a space changes. */

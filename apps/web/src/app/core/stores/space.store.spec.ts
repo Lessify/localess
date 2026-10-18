@@ -45,7 +45,7 @@ describe('SpaceStore', () => {
   function configure(findAll: () => Observable<Space[]>, listeners: Listeners = {}) {
     TestBed.configureTestingModule({
       providers: [
-        { provide: SpaceService, useValue: { findAll } },
+        { provide: SpaceService, useValue: { findAllPages: findAll } },
         { provide: ContentService, useValue: { findAllDocuments: listeners.findAllDocuments ?? (() => NEVER) } },
         { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
         { provide: NotificationService, useValue: { error: listeners.notifyError ?? vi.fn() } },
@@ -67,10 +67,12 @@ describe('SpaceStore', () => {
     return configure(() => of(spaces), listeners);
   }
 
-  it('leaves out spaces that are being imported or whose import failed: they cannot be opened', () => {
-    const store = createStore([{ ...space('importing'), importStatus: 'IMPORTING' }, { ...space('failed'), importStatus: 'FAILED' }, space('ready')]);
-    expect(store.spaces().map(it => it.id)).toEqual(['ready']);
-    expect(store.selectedSpace()?.id).toBe('ready');
+  it('holds every space the server lists, more than one page of them (the server leaves out imports)', () => {
+    const spaces = Array.from({ length: 250 }, (_, i) => space(`s${i}`));
+    const store = createStore(spaces);
+    expect(store.spaces()).toHaveLength(250);
+    store.changeSpace(spaces[249]);
+    expect(store.selectedSpace()?.id).toBe('s249');
   });
 
   it('selects no space and clears paths when the response is empty', () => {

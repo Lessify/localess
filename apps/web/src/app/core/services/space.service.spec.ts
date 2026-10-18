@@ -26,31 +26,6 @@ describe('SpaceService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the spaces', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findAll());
-    http.expectOne({ method: 'GET', url: '/api/app/spaces' }).flush([{ id: 's1', name: 'Space 1' }]);
-    expect(await result).toEqual([{ id: 's1', name: 'Space 1' }]);
-  });
-
-  it('findAll() refetches when a space changes', async () => {
-    vi.useFakeTimers();
-    const service = setup();
-    const results: Space[][] = [];
-    const subscription = service.findAll().subscribe(it => results.push(it));
-    http.expectOne('/api/app/spaces').flush([]);
-
-    events.next({ spaceId: null, entity: 'users', id: 'u', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone('/api/app/spaces');
-
-    events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne('/api/app/spaces').flush([{ id: 's1' } as Space]);
-    expect(results).toEqual([[], [{ id: 's1' }]]);
-    subscription.unsubscribe();
-  });
-
   it('findPage() reads one page with the given query, and again when a space changes', async () => {
     vi.useFakeTimers();
     const service = setup();
@@ -66,6 +41,29 @@ describe('SpaceService', () => {
       .flush({ items: [{ id: 's1' } as Space], page: 0, size: 10, total: 1 });
     expect(results.map(it => it.total)).toEqual([0, 1]);
     subscription.unsubscribe();
+  });
+
+  it('findAllPages() loads every space the user can open, 100 at a time, by name, without imports', async () => {
+    const service = setup();
+    const spaces = (from: number, n: number) => Array.from({ length: n }, (_, i) => ({ id: `s${from + i}` }) as Space);
+    const result = firstValueFrom(service.findAllPages());
+    const url = (page: number) => `/api/app/spaces?page=${page}&size=100&sort=name&direction=asc&importing=false`;
+    http.expectOne(url(0)).flush({ items: spaces(0, 100), page: 0, size: 100, total: 250 });
+    http.expectOne(url(1)).flush({ items: spaces(100, 100), page: 1, size: 100, total: 250 });
+    http.expectOne(url(2)).flush({ items: spaces(200, 50), page: 2, size: 100, total: 250 });
+    http.expectNone(url(3));
+    const all = await result;
+    expect(all).toHaveLength(250);
+    expect(all.at(-1)?.id).toBe('s249');
+  });
+
+  it('findAllPages() stops after one request when everything fits on the first page', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findAllPages());
+    http
+      .expectOne('/api/app/spaces?page=0&size=100&sort=name&direction=asc&importing=false')
+      .flush({ items: [{ id: 's1' } as Space], page: 0, size: 100, total: 1 });
+    expect(await result).toEqual([{ id: 's1' }]);
   });
 
   it('findById() reads one space', async () => {

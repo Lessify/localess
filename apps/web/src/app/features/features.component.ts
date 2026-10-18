@@ -74,6 +74,7 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmHoverCardImports } from '@spartan-ng/helm/hover-card';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
@@ -119,6 +120,7 @@ interface SideMenuItem {
     HlmHoverCardImports,
     HlmTooltipImports,
     HlmDropdownMenuImports,
+    HlmInputImports,
     HlmAvatarImports,
     HlmButtonImports,
     HlmSeparatorImports,
@@ -381,6 +383,20 @@ export class FeaturesComponent implements OnInit {
           this.currentVersion.set(remoteVersion);
         }
       });
+  }
+
+  /** What is typed in the space switcher's search box (shown past 20 spaces). */
+  readonly spaceSearch = signal('');
+  readonly showSpaceSearch = computed(() => this.spaceStore.spaces().length > 20);
+  /** The switcher's spaces: those whose name holds the search, case-insensitive; all of them without one. */
+  readonly filteredSpaces = computed(() => {
+    const search = this.spaceSearch().trim().toLowerCase();
+    const spaces = this.spaceStore.spaces();
+    return search ? spaces.filter(it => it.name.toLowerCase().includes(search)) : spaces;
+  });
+
+  onSpaceMenuClosed(): void {
+    this.spaceSearch.set('');
   }
 
   /** The URL selects the space (see `spaceSelectionGuard`), so an unsaved-changes prompt can still cancel it. */

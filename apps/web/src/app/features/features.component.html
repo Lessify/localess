@@ -12,13 +12,26 @@
       <ul hlmSidebarMenu>
         @if (spaceStore.spaces().length > 0) {
           <li hlmSidebarMenuItem>
-            <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
+            <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom" (hlmDropdownMenuClosed)="onSpaceMenuClosed()">
               <ng-icon hlm name="tablerSpaces" /> <span>{{ spaceStore.selectedSpace()?.name }}</span>
               <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
             </button>
             <ng-template #spaceMenu>
-              <hlm-dropdown-menu class="w-60">
-                @for (space of spaceStore.spaces(); track space.id) {
+              <hlm-dropdown-menu class="max-h-96 w-60 overflow-y-auto">
+                @if (showSpaceSearch()) {
+                  <!-- Keys typed here are the search's: the menu's own keyboard handling (typeahead, arrows) stays out. -->
+                  <input
+                    hlmInput
+                    type="search"
+                    class="mb-1 h-8 w-full"
+                    placeholder="Search spaces..."
+                    aria-label="Search spaces"
+                    autocomplete="off"
+                    [value]="spaceSearch()"
+                    (input)="spaceSearch.set($any($event.target).value)"
+                    (keydown)="$event.stopPropagation()" />
+                }
+                @for (space of filteredSpaces(); track space.id) {
                   <button
                     hlmDropdownMenuRadio
                     [keepOpen]="false"
@@ -26,6 +39,8 @@
                     (click)="onSpaceSelection(space)">
                     <hlm-dropdown-menu-radio-indicator /> <span> {{ space.name }} </span>
                   </button>
+                } @empty {
+                  <p class="text-muted-foreground px-2 py-1.5 text-sm">No spaces found</p>
                 }
               </hlm-dropdown-menu>
             </ng-template>
