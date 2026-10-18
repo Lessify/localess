@@ -2,8 +2,6 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from
 import { z } from 'zod';
 import { SPACE_TEMPLATE_IDS, UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
-import { CurrentUser } from '../../../auth/request-context.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { zPreviewUrl } from '../../../infra/http/zod.js';
@@ -27,11 +25,11 @@ export class SpacesController {
     return this.spaces.list();
   }
 
-  /** The templates this user may create a space from (before `:spaceId`, which would take `templates` as an id). */
+  /** The templates a space may be created from (before `:spaceId`, which would take `templates` as an id). */
   @Get('templates')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  templates(@CurrentUser() user: UserRow) {
-    return this.spaces.templates(user);
+  templates() {
+    return this.spaces.templates();
   }
 
   @Get(':spaceId')
@@ -42,8 +40,8 @@ export class SpacesController {
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>, @CurrentUser() user: UserRow) {
-    return this.spaces.create(body.name, body.template, user);
+  create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
+    return this.spaces.create(body.name, body.template);
   }
 
   @Patch(':spaceId')

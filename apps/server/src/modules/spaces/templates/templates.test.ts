@@ -32,6 +32,11 @@ describe('SPACE_TEMPLATES', () => {
       expect(zSchemaExportArraySchema.safeParse(template.schemas).success).toBe(true);
     });
 
+    it('has unique keys across its assets and contents (each key becomes one id)', () => {
+      const keys = [...(template.assets ?? []), ...(template.contents ?? [])].map(it => it.key);
+      expect(keys.filter((key, i) => keys.indexOf(key) !== i)).toEqual([]);
+    });
+
     it('has unique schema ids', () => {
       expect(ids.size).toBe(template.schemas.length);
     });

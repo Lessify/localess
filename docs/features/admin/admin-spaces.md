@@ -192,9 +192,10 @@ e2e tests know what to expect: see `translations-large.template.ts`.
 
 ### Permissions
 
-Creating a space needs `SPACE_MANAGEMENT`. A template also needs `SCHEMA_CREATE` (or the
-`ADMIN` role); the server enforces it on the create request (403) and lists no template to anyone else, so
-the dialog shows no template control to them (and sends none). Permissions are to be reworked separately.
+Creating a space needs `SPACE_MANAGEMENT`, and so does choosing a template: a template is part of creating the
+space, so it asks for nothing more, even though it writes schemas, documents, files or translations. Both routes
+(`GET /api/app/spaces/templates`, `POST /api/app/spaces`) refuse anyone else (403). Permissions are to be reworked
+separately.
 
 ### Failure
 

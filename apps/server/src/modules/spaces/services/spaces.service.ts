@@ -1,16 +1,14 @@
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Space } from '@localess/shared';
-import { canPerform, DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId, UserPermission } from '@localess/shared';
+import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { assetFilesPrefix, spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
-import { toPrincipal } from '../../../shared/transformers/user.transformer.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositories/space-templates.repository.js';
@@ -54,21 +52,23 @@ export class SpacesService {
     return space && toPublicSpace(space);
   }
 
-  /** What the Create Space dialog offers this user, in order (docs/roadmap/space-templates.md). */
-  templates(user: UserRow): SpaceTemplateId[] {
-    return this.offered(user).map(it => it.id);
+  /**
+   * What the Create Space dialog offers, in order (docs/roadmap/space-templates.md). Whoever may create a space may
+   * create it from any template (the route needs SPACE_MANAGEMENT, as creating does).
+   */
+  templates(): SpaceTemplateId[] {
+    return this.available().map(it => it.id);
   }
 
   /**
    * With everything its template holds, in one transaction; no template: the space alone (its default locale and preview
-   * token). A test template while they are off is a 400 (an unknown id is refused by the controller's schema); one the
-   * user may not choose (every template needs SCHEMA_CREATE), a 403.
+   * token). A test template while they are off is a 400 (an unknown id is refused by the controller's schema). No
+   * permission beyond creating a space (SPACE_MANAGEMENT): a template is part of creating one.
    */
-  async create(name: string, templateId: SpaceTemplateId | undefined, user: UserRow) {
+  async create(name: string, templateId: SpaceTemplateId | undefined) {
     if (!templateId) return toSpace(await this.spaces.create(name, DEFAULT_LOCALE.id));
     const template = this.available().find(it => it.id === templateId);
     if (!template) throw new BadRequestException('Unknown template');
-    if (!this.offered(user).includes(template)) throw new ForbiddenException();
     return this.createFromTemplate(name, template);
   }
 
@@ -119,9 +119,6 @@ export class SpacesService {
     return this.config.testTemplates ? SPACE_TEMPLATES : SPACE_TEMPLATES.filter(it => !it.test);
   }
 
-  private offered(user: UserRow): readonly SpaceTemplate[] {
-    return canPerform(toPrincipal(user), UserPermission.SCHEMA_CREATE) ? this.available() : [];
-  }
 
   async rename(spaceId: string, name: string) {
     await this.require(spaceId);

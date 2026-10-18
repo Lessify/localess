@@ -79,6 +79,7 @@ describe('app API: space templates', () => {
     let admin: ReturnType<typeof api>;
     let manager: ReturnType<typeof api>;
     let designer: ReturnType<typeof api>;
+    let reader: ReturnType<typeof api>;
 
     beforeAll(async () => {
       t = await createTestApp();
@@ -88,6 +89,7 @@ describe('app API: space templates', () => {
         t,
         await userWithAccess(t, 'designer@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT', 'SCHEMA_CREATE'] }),
       );
+      reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['SCHEMA_CREATE', 'CONTENT_CREATE'] }));
     });
 
     afterAll(() => t?.close());
@@ -96,9 +98,10 @@ describe('app API: space templates', () => {
       expect((await admin.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
     });
 
-    it('offers no template without SCHEMA_CREATE', async () => {
-      expect((await manager.get('/api/app/spaces/templates')).json()).toEqual([]);
+    it('offers every template to whoever may create a space (SPACE_MANAGEMENT), and none to anyone else', async () => {
+      expect((await manager.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
       expect((await designer.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
+      expect((await reader.get('/api/app/spaces/templates')).statusCode).toBe(403);
     });
 
     it('creates the space alone without a template: default locale and preview token, nothing else', async () => {
@@ -130,11 +133,12 @@ describe('app API: space templates', () => {
       expect(await counts(t)).toEqual(before);
     });
 
-    it('refuses a template to a user without SCHEMA_CREATE, but not a space without one', async () => {
+    it('needs only the permission to create a space: a template asks for nothing more', async () => {
+      expect((await manager.post('/api/app/spaces', { name: 'Blog too', template: 'BLOG' })).statusCode).toBe(201);
       const before = await counts(t);
-      expect((await manager.post('/api/app/spaces', { name: 'Nope', template: 'BLOG' })).statusCode).toBe(403);
+      expect((await reader.post('/api/app/spaces', { name: 'Nope', template: 'BLOG' })).statusCode).toBe(403);
+      expect((await reader.post('/api/app/spaces', { name: 'Nope' })).statusCode).toBe(403);
       expect(await counts(t)).toEqual(before);
-      expect((await manager.post('/api/app/spaces', { name: 'Plain too' })).statusCode).toBe(201);
     });
 
     it('rolls back everything when the template fails', async () => {
@@ -142,6 +146,17 @@ describe('app API: space templates', () => {
       await expect(
         t.app.get(SpaceTemplatesRepository).createSpace('Broken', { ...BLOG_TEMPLATE, locales: ['xx-not-a-locale'] }),
       ).rejects.toThrow();
+      expect(await counts(t)).toEqual(before);
+    });
+
+    it('refuses a template that repeats a key across its assets and contents, writing nothing', async () => {
+      const before = await counts(t);
+      const broken = {
+        ...BLOG_TEMPLATE,
+        assets: [{ key: 'shared', kind: 'FOLDER' as const, name: 'Shared' }],
+        contents: [{ key: 'shared', kind: 'FOLDER' as const, name: 'Shared', slug: 'shared' }],
+      };
+      await expect(t.app.get(SpaceTemplatesRepository).createSpace('Broken', broken)).rejects.toThrow('Duplicate template key: shared');
       expect(await counts(t)).toEqual(before);
     });
   });

@@ -77,9 +77,16 @@ export class SpaceTemplatesRepository {
           })),
         );
       }
-      // Template keys → the new ids: the files stored beforehand keep theirs.
+      // Template keys → the new ids: the files stored beforehand keep theirs. One key, one item, across assets and
+      // contents: a repeated key would hand the second item the first one's id.
+      const items = [...(template.assets ?? []), ...(template.contents ?? [])];
+      const keys = new Set<string>();
+      for (const { key } of items) {
+        if (keys.has(key)) throw new Error(`Duplicate template key: ${key}`);
+        keys.add(key);
+      }
       const ids = new Map<string, string>((prepared?.files ?? []).map(it => [it.key, it.id]));
-      for (const item of [...(template.assets ?? []), ...(template.contents ?? [])]) if (!ids.has(item.key)) ids.set(item.key, newUuid());
+      for (const { key } of items) if (!ids.has(key)) ids.set(key, newUuid());
       const id = (key: string): string => {
         const found = ids.get(key);
         if (!found) throw new Error(`Unknown template key: ${key}`);
