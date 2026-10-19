@@ -13,6 +13,7 @@ import {
   UserPermission,
 } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
+import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceService } from '../services/space.service.js';
 
 /** Spaces and the dashboard overview (their locales and environments: `SpaceLocaleController`, `SpaceEnvironmentController`) (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */
@@ -46,7 +47,7 @@ export class SpaceController {
 
   @Get(':spaceId')
   @RequireAnyRole()
-  findOne(@Param('spaceId') spaceId: string): Promise<Space> {
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<Space> {
     return this.spaceService.findOne(spaceId);
   }
 
@@ -58,28 +59,28 @@ export class SpaceController {
 
   @Patch(':spaceId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  update(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate): Promise<Space> {
+  update(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate): Promise<Space> {
     return this.spaceService.update(spaceId, body);
   }
 
   /** Apart from `PATCH`: a different process (the locale must be the space's; the drafts that read the default go). */
   @Put(':spaceId/default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  setDefaultLocale(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate): Promise<Space> {
+  setDefaultLocale(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate): Promise<Space> {
     return this.spaceService.setDefaultLocale(spaceId, body);
   }
 
   @Delete(':spaceId')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async remove(@Param('spaceId') spaceId: string): Promise<void> {
+  async remove(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<void> {
     await this.spaceService.remove(spaceId);
   }
 
   /** Same audience as reading the space: the dashboard shows it to anyone who opens it. */
   @Get(':spaceId/overview')
   @RequireAnyRole()
-  findOverview(@Param('spaceId') spaceId: string): Promise<SpaceOverview> {
+  findOverview(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<SpaceOverview> {
     return this.spaceService.findOverview(spaceId);
   }
 }

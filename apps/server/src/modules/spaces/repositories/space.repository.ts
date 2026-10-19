@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { SpacePageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { firebaseImports, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
@@ -60,7 +60,6 @@ export class SpaceRepository {
 
   /** The space with its default locale and its locales (each with its locale), in position order. */
   findOne(spaceId: string): Promise<SpaceWithLocales | undefined> {
-    if (!isUuid(spaceId)) return Promise.resolve(undefined);
     return this.db.query.spaces.findFirst({
       where: eq(spaces.id, spaceId),
       with: {

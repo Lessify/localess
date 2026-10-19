@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, ilike, max, or, sql, type SQL } from 'drizzle-orm';
 import type { SpaceEnvironmentCreate, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { keepUpdatedAt, spaceEnvironments } from '../../../infra/database/schema.js';
 import type { Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
@@ -53,7 +53,6 @@ export class SpaceEnvironmentRepository {
   }
 
   findOne(spaceId: string, environmentId: string): Promise<SpaceEnvironmentEntity | undefined> {
-    if (!isUuid(environmentId)) return Promise.resolve(undefined);
     return this.db.query.spaceEnvironments.findFirst({ where: this.environment(spaceId, environmentId) });
   }
 

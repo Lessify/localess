@@ -51,6 +51,7 @@ export class SpaceLocaleService {
 
   async remove(spaceId: string, localeId: string): Promise<void> {
     const space = await this.require(spaceId);
+    if (!space.spaceLocales.some(it => it.localeId === localeId)) throw new NotFoundException('Space locale not found');
     if (space.defaultLocaleId === localeId) {
       throw new BadRequestException('The default locale cannot be removed; make another locale the default first');
     }

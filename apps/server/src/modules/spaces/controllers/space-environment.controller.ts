@@ -22,34 +22,34 @@ export class SpaceEnvironmentController {
   /** One page for Space Settings → Visual Editor: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name or URL). */
   @Get()
   @RequireAnyRole()
-  findAll(@Param('spaceId') spaceId: string, @Query({ schema: zSpaceEnvironmentPageable }) query: SpaceEnvironmentPageable): Promise<Page<SpaceEnvironment>> {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zSpaceEnvironmentPageable }) query: SpaceEnvironmentPageable): Promise<Page<SpaceEnvironment>> {
     return this.spaceEnvironmentService.findAll(spaceId, query);
   }
 
   /** Every environment of the space, in its order, as `{ id, name, url }`: the Visual Editor's list (before `:environmentId`). */
   @Get('names')
   @RequireAnyRole()
-  findAllNames(@Param('spaceId') spaceId: string): Promise<IdNameUrl[]> {
+  findAllNames(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<IdNameUrl[]> {
     return this.spaceEnvironmentService.findAllNames(spaceId);
   }
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate): Promise<SpaceEnvironment> {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate): Promise<SpaceEnvironment> {
     return this.spaceEnvironmentService.create(spaceId, body);
   }
 
   @Put('order')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentOrder }) body: SpaceEnvironmentOrder): Promise<void> {
+  async reorder(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceEnvironmentOrder }) body: SpaceEnvironmentOrder): Promise<void> {
     await this.spaceEnvironmentService.reorder(spaceId, body);
   }
 
   @Patch(':environmentId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   update(
-    @Param('spaceId') spaceId: string,
+    @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,
     @Body({ schema: zSpaceEnvironmentUpdate }) body: SpaceEnvironmentUpdate,
   ): Promise<SpaceEnvironment> {
@@ -59,7 +59,7 @@ export class SpaceEnvironmentController {
   @Delete(':environmentId')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async remove(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string): Promise<void> {
+  async remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string): Promise<void> {
     await this.spaceEnvironmentService.remove(spaceId, environmentId);
   }
 }

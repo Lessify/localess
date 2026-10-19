@@ -265,6 +265,11 @@ describe('app API: spaces, locales, instance label', () => {
       expect(removed.statusCode).toBe(204);
       expect(removed.body).toBe('');
       expect(localesOf((await reader.get(base)).json())).toEqual([{ id: 'en', name: 'English' }]);
+      // One the space does not have: a 404 that changes nothing (no touch, no event).
+      const before = (await reader.get(base)).json().updatedAt;
+      expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(404);
+      expect((await manager.delete(`${base}/locales/xx`)).statusCode).toBe(404);
+      expect((await reader.get(base)).json().updatedAt).toBe(before);
       expect((await manager.post(`/api/app/spaces/${S2}/locales`, { id: 'de' })).statusCode).toBe(404);
       expect((await reader.post(`${base}/locales`, { id: 'de' })).statusCode).toBe(403);
     });
@@ -379,6 +384,27 @@ describe('app API: spaces, locales, instance label', () => {
         payload: '{"name":"x","__proto__":{"admin":true}}',
       });
       expect(poisoned.statusCode).toBe(400);
+    });
+
+    it('answers 404 for a space id that is not a UUID, on every route', async () => {
+      const base = '/api/app/spaces/not-a-uuid';
+      const requests = [
+        reader.get(base),
+        reader.get(`${base}/overview`),
+        reader.get(`${base}/locales`),
+        reader.get(`${base}/locales/names`),
+        reader.get(`${base}/environments`),
+        reader.get(`${base}/environments/names`),
+        manager.patch(base, { name: 'X' }),
+        manager.put(`${base}/default-locale`, { id: 'en' }),
+        manager.post(`${base}/locales`, { id: 'de' }),
+        manager.put(`${base}/locales/order`, { ids: ['en'] }),
+        manager.delete(`${base}/locales/en`),
+        manager.post(`${base}/environments`, { name: 'A', url: 'https://a.example.com' }),
+        manager.put(`${base}/environments/order`, { ids: [newUuid()] }),
+        manager.delete(base),
+      ];
+      for (const response of await Promise.all(requests)) expect(response.statusCode, response.body).toBe(404);
     });
 
     it('deletes a space with all its rows and files', async () => {

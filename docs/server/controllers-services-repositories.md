@@ -34,7 +34,10 @@ transaction; the three repositories call it.
     `@Query('type', { schema: zSchemaTypeFilter })`; the global `StandardSchemaValidationPipe` (`app.factory.ts`)
     hands the handler the parsed value (coerced, defaulted, trimmed). A refused one is a 400 with the NestJS body:
     `{ statusCode, error, message: ["path: issue", …] }` (the web shows `message[0]`).
-  - An id in the path: `@Param('id', UuidParamPipe)`, which answers 404 (not 400) for a malformed one.
+  - An id in the path, `:spaceId` included: `@Param('spaceId', UuidParamPipe)`, which answers 404 (not 400) for a
+    malformed one. The service then checks that the row exists (404); a repository does not check an id's format.
+    Done in the Spaces module; the others still lean on `isUuid` in their repositories (and in
+    `SpaceLookupRepository`) until they are reworked. The v1 controllers answer their own error body, not the pipe's.
   - Permissions: `@RequirePermission(...)` (or `@RequireAnyRole()`, `@RequireAllPermissions(...)`) on each method,
     the same the UI checks.
   - Multipart fields and the v1 Management API's own error bodies are parsed with `zX.safeParse` in the handler.
