@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zPreviewUrl } from './common.zod.js';
+import { zBoolean, zPreviewUrl } from './common.zod.js';
 import { zPageable } from './page.zod.js';
 import { SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
 
@@ -21,10 +21,7 @@ export type SpaceUpdate = z.infer<typeof zSpaceUpdate>;
  */
 export const zSpacePageable = zPageable(SPACE_SORT_FIELDS, 'name').extend({
   search: z.string().trim().max(200).optional(),
-  importing: z
-    .enum(['true', 'false'])
-    .transform(it => it === 'true')
-    .optional(),
+  importing: zBoolean.optional(),
 });
 export type SpacePageable = z.infer<typeof zSpacePageable>;
 

@@ -3,6 +3,12 @@ import { z } from 'zod';
 // The WHATWG URL parser, a global in browsers and Node; this package compiles without DOM or Node types.
 declare const URL: new (url: string) => { protocol: string };
 
+/**
+ * A boolean sent as text (a query parameter, an environment variable): exactly `true` or `false`, lowercase; anything
+ * else is refused. Not `z.coerce.boolean()`, which reads `"false"` as `true` (any non-empty string is).
+ */
+export const zBoolean = z.stringbool({ truthy: ['true'], falsy: ['false'], case: 'sensitive' });
+
 /** A schema's or translation's labels. */
 export const zLabels = z.array(z.string().max(200)).max(100);
 

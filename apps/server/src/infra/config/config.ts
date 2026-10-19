@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import type { LogLevel } from '@nestjs/common';
 import { INSTANCE_COLORS, type InstanceLabel } from '@localess/shared';
+import { zBoolean } from '@localess/shared/zod';
 import { z } from 'zod';
 import type { OAuthProviderId } from './oauth-providers.js';
 
@@ -35,10 +36,7 @@ const envSchema = z.object({
   // Google: required `hd` (Workspace domain). Microsoft: the tenant (domain or id) — required for Microsoft.
   LOCALESS_AUTH_CUSTOM_DOMAIN: z.string().default(''),
   // Create an account (with no role) on first OAuth sign-in instead of requiring an existing user.
-  LOCALESS_AUTH_AUTO_REGISTER: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform(v => v === 'true'),
+  LOCALESS_AUTH_AUTO_REGISTER: zBoolean.default(false),
   LOCALESS_GOOGLE_CLIENT_ID: z.string().optional(),
   LOCALESS_GOOGLE_CLIENT_SECRET: z.string().optional(),
   LOCALESS_GOOGLE_ISSUER: z.string().url().default('https://accounts.google.com'),
@@ -53,10 +51,7 @@ const envSchema = z.object({
   // Lets webhooks reach loopback/private addresses (local development only; SSRF protection otherwise).
   // Days a webhook delivery log is kept.
   LOCALESS_WEBHOOK_LOG_DAYS: z.coerce.number().int().positive().default(30),
-  LOCALESS_WEBHOOK_ALLOW_INTERNAL: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform(v => v === 'true'),
+  LOCALESS_WEBHOOK_ALLOW_INTERNAL: zBoolean.default(false),
   // Machine translation. DeepL when DEEPL_API_KEY is set, else Google Cloud Translation when
   // GOOGLE_CLOUD_PROJECT is set (credentials via GOOGLE_APPLICATION_CREDENTIALS / ADC).
   // LOCALESS_TRANSLATE_PROVIDER=stub echoes inputs (development and tests).
@@ -74,15 +69,9 @@ const envSchema = z.object({
   // Largest accepted asset/import upload, in megabytes.
   LOCALESS_UPLOAD_MAX_MB: z.coerce.number().int().positive().default(1024),
   // Run export/import tasks on this instance (turn off on API-only replicas).
-  LOCALESS_TASK_WORKER: z
-    .enum(['true', 'false'])
-    .default('true')
-    .transform(v => v === 'true'),
+  LOCALESS_TASK_WORKER: zBoolean.default(true),
   // Test-only space templates (large generated data): development and e2e, never production.
-  LOCALESS_TEST_TEMPLATES: z
-    .enum(['true', 'false'])
-    .default('false')
-    .transform(v => v === 'true'),
+  LOCALESS_TEST_TEMPLATES: zBoolean.default(false),
   LOCALESS_STATIC_DIR: z.string().default(resolve(import.meta.dirname, '../../../../web/dist/browser')),
 });
 
