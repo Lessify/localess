@@ -82,7 +82,7 @@ function tree(): TemplateContent[] {
 }
 
 export const CONTENTS_LARGE_TEMPLATE: SpaceTemplate = {
-  id: 'CONTENTS_LARGE',
+  id: 'contents_large',
   test: true,
   schemas: [
     {

@@ -1,9 +1,9 @@
 /**
- * What the "Contents (large)" test template (`CONTENTS_LARGE`) holds, restated from its rule
+ * What the "Contents (large)" test template (`contents_large`) holds, restated from its rule
  * (docs/roadmap/contents-large-template.md), not imported from the server. English only; nothing published.
  */
 export const LARGE_CONTENTS = {
-  template: 'CONTENTS_LARGE',
+  template: 'contents_large',
   documents: 2_000,
   folders: 67,
   archive: 1_000,

@@ -13,7 +13,7 @@ async function cdn(t: TestApp, url: string) {
   return t.request({ method: 'GET', url: first.headers.location as string });
 }
 
-describe('app API: the large contents template (CONTENTS_LARGE)', () => {
+describe('app API: the large contents template (contents_large)', () => {
   let t: TestApp;
   let admin: ReturnType<typeof api>;
 
@@ -27,7 +27,7 @@ describe('app API: the large contents template (CONTENTS_LARGE)', () => {
   it('creates 2,000 documents and 67 folders in one request, the rows in chunks', async ({ annotate }) => {
     const started = Date.now();
     const { result: response, statements } = await statementsDuring(() =>
-      admin.post('/api/app/spaces', { name: 'Contents', template: 'CONTENTS_LARGE' }),
+      admin.post('/api/app/spaces', { name: 'Contents', template: 'contents_large' }),
     );
     expect(response.statusCode, response.body).toBe(201);
     // How the rows are written, not how fast this machine is: 2,067 rows in chunks of 1,000 (one insert per row would

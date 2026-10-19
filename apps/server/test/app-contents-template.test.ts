@@ -33,7 +33,7 @@ async function cdn(t: TestApp, url: string) {
   return t.request({ method: 'GET', url: first.headers.location as string });
 }
 
-describe('app API: the contents template (CONTENTS_FIELDS)', () => {
+describe('app API: the contents template (contents_fields)', () => {
   let t: TestApp;
   let admin: ReturnType<typeof api>;
 
@@ -47,7 +47,7 @@ describe('app API: the contents template (CONTENTS_FIELDS)', () => {
   it('creates files, rows and drafts in one request, nothing published', async ({ annotate }) => {
     const started = Date.now();
     const { result: response, statements } = await statementsDuring(() =>
-      admin.post('/api/app/spaces', { name: 'Fields', template: 'CONTENTS_FIELDS' }),
+      admin.post('/api/app/spaces', { name: 'Fields', template: 'contents_fields' }),
     );
     expect(response.statusCode, response.body).toBe(201);
     // One insert for all the contents and one for all the assets, whatever this machine's speed.

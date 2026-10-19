@@ -202,7 +202,7 @@ const target = (key: string, name: string) => ({
 });
 
 export const CONTENTS_FIELDS_TEMPLATE: SpaceTemplate = {
-  id: 'CONTENTS_FIELDS',
+  id: 'contents_fields',
   test: true,
   locales: ['de', 'fr'],
   schemas: SCHEMAS,

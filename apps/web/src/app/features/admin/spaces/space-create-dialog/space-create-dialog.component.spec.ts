@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 import { SpaceCreateDialogComponent } from './space-create-dialog.component';
 import { SPACE_TEMPLATE_VIEWS } from './space-templates';
 
-const SOME: SpaceTemplateId[] = ['BLOG', 'ECOMMERCE', 'TRANSLATIONS_LARGE'];
+const SOME: SpaceTemplateId[] = ['blog', 'ecommerce', 'translations_large'];
 
 /** Set by `setup`; the dialog hands its result back through `BrnDialogRef.close()`. */
 let close: ReturnType<typeof vi.fn>;
@@ -86,10 +86,10 @@ describe('SpaceCreateDialogComponent', () => {
 
   it('closes with the chosen template when saved', async () => {
     const fixture = await setup(SOME);
-    fixture.componentInstance.form.patchValue({ name: 'New Space', template: 'BLOG' });
+    fixture.componentInstance.form.patchValue({ name: 'New Space', template: 'blog' });
 
     fixture.componentInstance.save();
 
-    expect(close).toHaveBeenCalledWith({ name: 'New Space', template: 'BLOG' });
+    expect(close).toHaveBeenCalledWith({ name: 'New Space', template: 'blog' });
   });
 });

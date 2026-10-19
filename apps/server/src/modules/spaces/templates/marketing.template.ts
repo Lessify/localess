@@ -13,7 +13,7 @@ import type { SpaceTemplate } from './space-template.model.js';
  * exists to translate.
  */
 export const MARKETING_TEMPLATE: SpaceTemplate = {
-  id: 'MARKETING',
+  id: 'marketing',
   schemas: [
     {
       id: 'cta',

@@ -54,7 +54,7 @@ interface Fixtures {
   allowedAppErrors: RegExp[];
   /** The App API as the seeded admin. */
   api: AppApi;
-  /** The template the `space` fixture is made from (`test.use({ spaceTemplate: 'TRANSLATIONS_LARGE' })`); none: empty. */
+  /** The template the `space` fixture is made from (`test.use({ spaceTemplate: 'translations_large' })`); none: empty. */
   spaceTemplate: string | undefined;
   /** A fresh space (default locale English) for this test, from `spaceTemplate` when set. */
   space: TestSpace;

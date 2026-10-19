@@ -5,8 +5,8 @@ import { SpaceTemplateRepository } from '../src/modules/spaces/repositories/spac
 import { BLOG_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
-const USER_TEMPLATES = ['BLOG', 'ECOMMERCE', 'MARKETING'];
-const TEST_TEMPLATES = ['TRANSLATIONS_LARGE', 'CONTENTS_FIELDS', 'ASSETS_LARGE', 'CONTENTS_LARGE'];
+const USER_TEMPLATES = ['blog', 'ecommerce', 'marketing'];
+const TEST_TEMPLATES = ['translations_large', 'contents_fields', 'assets_large', 'contents_large'];
 
 async function counts(t: TestApp) {
   const rows = async (
@@ -49,7 +49,7 @@ describe('app API: space templates', () => {
     });
 
     it('creates the large translations space: three locales, 10,000 drafts, nothing published', async () => {
-      const response = await admin.post('/api/app/spaces', { name: 'Large', template: 'TRANSLATIONS_LARGE' });
+      const response = await admin.post('/api/app/spaces', { name: 'Large', template: 'translations_large' });
       expect(response.statusCode).toBe(201);
       const space = response.json();
       expect(space.spaceLocales.map((it: { localeId: string }) => it.localeId)).toEqual(['en', 'de', 'fr']);
@@ -113,7 +113,7 @@ describe('app API: space templates', () => {
     });
 
     it('creates a space from the Blog template in one request', async () => {
-      const response = await designer.post('/api/app/spaces', { name: 'Blog', template: 'BLOG' });
+      const response = await designer.post('/api/app/spaces', { name: 'Blog', template: 'blog' });
       expect(response.statusCode).toBe(201);
       const id = response.json().id;
       const names = (await admin.get(`/api/app/spaces/${id}/schemas`)).json().map((it: { name: string }) => it.name);
@@ -127,16 +127,16 @@ describe('app API: space templates', () => {
       const before = await counts(t);
       expect((await admin.post('/api/app/spaces', { name: 'Nope', template: 'NOPE' })).statusCode).toBe(400);
       expect((await admin.post('/api/app/spaces', { name: 'Nope', template: 'EMPTY' })).statusCode).toBe(400);
-      const test = await admin.post('/api/app/spaces', { name: 'Nope', template: 'TRANSLATIONS_LARGE' });
+      const test = await admin.post('/api/app/spaces', { name: 'Nope', template: 'translations_large' });
       expect(test.statusCode).toBe(400);
       expect(test.json().message).toBe('Unknown template');
       expect(await counts(t)).toEqual(before);
     });
 
     it('needs only the permission to create a space: a template asks for nothing more', async () => {
-      expect((await manager.post('/api/app/spaces', { name: 'Blog too', template: 'BLOG' })).statusCode).toBe(201);
+      expect((await manager.post('/api/app/spaces', { name: 'Blog too', template: 'blog' })).statusCode).toBe(201);
       const before = await counts(t);
-      expect((await reader.post('/api/app/spaces', { name: 'Nope', template: 'BLOG' })).statusCode).toBe(403);
+      expect((await reader.post('/api/app/spaces', { name: 'Nope', template: 'blog' })).statusCode).toBe(403);
       expect((await reader.post('/api/app/spaces', { name: 'Nope' })).statusCode).toBe(403);
       expect(await counts(t)).toEqual(before);
     });

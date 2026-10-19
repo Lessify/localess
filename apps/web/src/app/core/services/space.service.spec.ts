@@ -93,9 +93,9 @@ describe('SpaceService', () => {
 
   it('create() sends the chosen template with the name', async () => {
     const service = setup();
-    const result = firstValueFrom(service.create({ name: 'Space 1', template: 'BLOG' }));
+    const result = firstValueFrom(service.create({ name: 'Space 1', template: 'blog' }));
     const request = http.expectOne({ method: 'POST', url: '/api/app/spaces' });
-    expect(request.request.body).toEqual({ name: 'Space 1', template: 'BLOG' });
+    expect(request.request.body).toEqual({ name: 'Space 1', template: 'blog' });
     request.flush({ id: 's1', name: 'Space 1' });
     expect((await result).id).toBe('s1');
   });
@@ -105,8 +105,8 @@ describe('SpaceService', () => {
     const result = firstValueFrom(service.templates());
     http
       .expectOne({ method: 'GET', url: '/api/app/spaces/templates' })
-      .flush(['BLOG', 'MARKETING']);
-    expect(await result).toEqual(['BLOG', 'MARKETING']);
+      .flush(['blog', 'marketing']);
+    expect(await result).toEqual(['blog', 'marketing']);
   });
 
   it('update() patches the name', async () => {

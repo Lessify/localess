@@ -85,7 +85,7 @@ creates a space, in the same transaction.
 - **Production** (the Docker image, `node dist/main.js`) never has it unless someone sets it on purpose. It is not
   inferred from `NODE_ENV`: a server started without `NODE_ENV` must not offer test templates.
 
-### "Translations, large" (`TRANSLATIONS_LARGE`)
+### "Translations, large" (`translations_large`)
 
 - **Locales**: English (default), German, French.
 - **10,000 translation keys**, filled in every locale, except a fixed set of gaps (below).
@@ -108,7 +108,7 @@ creates a space, in the same transaction.
 
 ### E2E
 
-- The `space` fixture takes an option for the template (e.g. `test.use({ spaceTemplate: 'TRANSLATIONS_LARGE' })`);
+- The `space` fixture takes an option for the template (e.g. `test.use({ spaceTemplate: 'translations_large' })`);
   without it, a space is created as today. `AppApi.createSpace(name, template?)` passes it.
 - Each test still gets its own space, deleted afterwards.
 - E2E expectations are **written independently** of the server's generator: counts and a few literal keys and values

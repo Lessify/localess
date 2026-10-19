@@ -18,7 +18,7 @@ tests them:
 
 ## Goals
 
-1. A test template `CONTENTS_LARGE` ("Contents (large)"), same rule as the other test templates; nothing published.
+1. A test template `contents_large` ("Contents (large)"), same rule as the other test templates; nothing published.
 2. **2,000 documents and 67 folders** in a known tree (below), each document with a little data.
 3. Fast enough to create per test (under 3 s), stable output.
 4. **E2E tests** at that size: paging and sorting a folder of 1,000, deep navigation, publishing and unpublishing a

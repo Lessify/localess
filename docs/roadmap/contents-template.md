@@ -15,7 +15,7 @@ change one thing.
 
 ## Goals
 
-1. A test template `CONTENTS_FIELDS` ("Contents (all fields)"), offered and accepted under the same rule as
+1. A test template `contents_fields` ("Contents (all fields)"), offered and accepted under the same rule as
    "Translations (large)" (only with `LOCALESS_TEST_TEMPLATES`, never in production).
 2. It creates **schemas covering all 18 field kinds**, **assets with real generated files**, **reference target
    documents** and **three prefilled documents** (below), in English (default), German and French.
@@ -125,7 +125,7 @@ imported from the server.
 
 ## Calls made in writing this (check these)
 
-- Template id and name: `CONTENTS_FIELDS`, "Contents (all fields)".
+- Template id and name: `contents_fields`, "Contents (all fields)".
 - The three files (PNG, JPEG, text) and their sizes; a text file rather than a PDF as the non-image.
 - One ENUM `colour` shared by both field schemas; two block schemas, `cardplain` (title not translatable) and `card`
   (translatable), so the plain document has nothing translatable anywhere.

@@ -1,9 +1,9 @@
 /**
- * What the "Assets (large)" test template (`ASSETS_LARGE`) holds, restated from its rule
+ * What the "Assets (large)" test template (`assets_large`) holds, restated from its rule
  * (docs/roadmap/assets-template.md), not imported from the server. Nothing published; ids differ per run.
  */
 export const LARGE_ASSETS = {
-  template: 'ASSETS_LARGE',
+  template: 'assets_large',
   files: 1_000,
   images: 100,
   pageSize: 20,

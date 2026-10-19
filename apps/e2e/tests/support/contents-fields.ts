@@ -1,10 +1,10 @@
 /**
- * What the "Contents (all fields)" test template (`CONTENTS_FIELDS`) holds, restated from its rule
+ * What the "Contents (all fields)" test template (`contents_fields`) holds, restated from its rule
  * (docs/superpowers/plans/2026-10-17-contents-template.md), not imported from the server: a mistake in the template must
  * fail a test, not move its expectation. Nothing is published; ids differ per run (find items by name).
  */
 export const FIELDS = {
-  template: 'CONTENTS_FIELDS',
+  template: 'contents_fields',
   locales: ['en', 'de', 'fr'] as const,
   documents: { plain: 'All fields (plain)', translated: 'All fields (translated)', nested: 'Nested page' },
   targets: ['Alpha', 'Beta', 'Gamma'],

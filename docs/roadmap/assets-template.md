@@ -13,7 +13,7 @@ size, or that the page stays usable with 1,000 files.
 
 ## Goals
 
-1. A test template `ASSETS_LARGE` ("Assets (large)"), same rule as the other test templates (only with
+1. A test template `assets_large` ("Assets (large)"), same rule as the other test templates (only with
    `LOCALESS_TEST_TEMPLATES`, never in production; nothing published).
 2. **1,000 files in one folder**, with names, sizes and types a test can compute, plus a few folders for navigation.
 3. **Fast enough to create per test**: the files are tiny, generated once per create, metadata known without reading

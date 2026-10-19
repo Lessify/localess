@@ -52,7 +52,7 @@ export function largeTranslations(): TemplateTranslation[] {
 
 /** A space to test the Translations page and the CDN at scale. Test-only (LOCALESS_TEST_TEMPLATES). */
 export const TRANSLATIONS_LARGE_TEMPLATE: SpaceTemplate = {
-  id: 'TRANSLATIONS_LARGE',
+  id: 'translations_large',
   test: true,
   locales: ['de', 'fr'],
   schemas: [],

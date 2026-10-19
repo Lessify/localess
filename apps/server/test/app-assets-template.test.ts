@@ -13,7 +13,7 @@ import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWith
 
 // One app in this file: image metadata is read by a process-wide exiftool, which closing an app ends.
 
-describe('app API: the large assets template (ASSETS_LARGE)', () => {
+describe('app API: the large assets template (assets_large)', () => {
   let t: TestApp;
   let admin: ReturnType<typeof api>;
 
@@ -33,7 +33,7 @@ describe('app API: the large assets template (ASSETS_LARGE)', () => {
   it('creates 1,000 files in Bulk in one request, the rows and upload guards in chunks', async ({ annotate }) => {
     const started = Date.now();
     const { result: response, statements } = await statementsDuring(() =>
-      admin.post('/api/app/spaces', { name: 'Assets', template: 'ASSETS_LARGE' }),
+      admin.post('/api/app/spaces', { name: 'Assets', template: 'assets_large' }),
     );
     expect(response.statusCode, response.body).toBe(201);
     // How the rows are written, not how fast this machine is: 1,003 asset rows and their upload guards in chunks of
@@ -61,7 +61,7 @@ describe('app API: the large assets template (ASSETS_LARGE)', () => {
   });
 
   it('declares for its images exactly the metadata an upload of the same file gets (read by AssetMetadataService)', async () => {
-    const response = await admin.post('/api/app/spaces', { name: 'Metadata', template: 'ASSETS_LARGE' });
+    const response = await admin.post('/api/app/spaces', { name: 'Metadata', template: 'assets_large' });
     expect(response.statusCode, response.body).toBe(201);
     const spaceId = response.json().id;
     const [image] = await t.db

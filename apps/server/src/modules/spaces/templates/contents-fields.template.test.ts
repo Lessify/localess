@@ -58,7 +58,7 @@ const withoutBlockIds = (value: unknown): unknown =>
 describe('CONTENTS_FIELDS_TEMPLATE', () => {
   it('is a test template with German and French', () => {
     expect(template).toMatchObject({
-      id: 'CONTENTS_FIELDS',
+      id: 'contents_fields',
       test: true,
       locales: ['de', 'fr'],
     });

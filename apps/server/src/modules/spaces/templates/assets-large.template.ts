@@ -49,7 +49,7 @@ const field = (name: string, displayName: string, imagesOnly: boolean): SchemaFi
   ({ name, kind: SchemaFieldKind.ASSETS, displayName, ...(imagesOnly ? { fileType: AssetFileType.IMAGE } : {}) }) as SchemaField;
 
 export const ASSETS_LARGE_TEMPLATE: SpaceTemplate = {
-  id: 'ASSETS_LARGE',
+  id: 'assets_large',
   test: true,
   schemas: [
     {

@@ -7,7 +7,7 @@ import type { SpaceTemplate } from './space-template.model.js';
  * own - which is exactly what the SCHEMAS field kind is for.
  */
 export const ECOMMERCE_TEMPLATE: SpaceTemplate = {
-  id: 'ECOMMERCE',
+  id: 'ecommerce',
   schemas: [
     {
       id: 'size',

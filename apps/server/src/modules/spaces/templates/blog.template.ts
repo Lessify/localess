@@ -7,7 +7,7 @@ import type { SpaceTemplate } from './space-template.model.js';
  * documents - so the things being referenced have to be documents in their own right.
  */
 export const BLOG_TEMPLATE: SpaceTemplate = {
-  id: 'BLOG',
+  id: 'blog',
   schemas: [
     {
       id: 'author',

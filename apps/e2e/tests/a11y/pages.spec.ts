@@ -31,7 +31,7 @@ const KNOWN_CONTRAST = [
   /^kbd$/,
   /#brn-tabs-label-danger-zone$/,
   // The description of a choice card (token type, space template) on the selected card's background: 4.27:1.
-  /^#(token-type-\w+|EMPTY|BLOG|ECOMMERCE|MARKETING)-description$/,
+  /^#(token-type-\w+|EMPTY|blog|ecommerce|marketing)-description$/,
   // The destructive button: white on the destructive colour (a confirmation's OK, the Danger Zone's button).
   /\.spartan-button-variant-destructive$/,
   /^#deleteTranslations$/,

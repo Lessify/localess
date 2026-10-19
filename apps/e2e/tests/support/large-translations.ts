@@ -1,5 +1,5 @@
 /**
- * What the "Translations (large)" template (`TRANSLATIONS_LARGE`, a test template) holds, written from its rule in
+ * What the "Translations (large)" template (`translations_large`, a test template) holds, written from its rule in
  * docs/superpowers/plans/2026-10-17-space-templates.md, not imported from the server: a generator bug must fail a test,
  * not move its expectation along.
  *
@@ -8,7 +8,7 @@
  * `cta` on `button` keys; page 50 has no French value; page 49 `hint` has no value at all. Nothing is published.
  */
 export const LARGE = {
-  template: 'TRANSLATIONS_LARGE',
+  template: 'translations_large',
   locales: { en: 'English', de: 'German', fr: 'French' },
   keys: 10_000,
   sections: 20,

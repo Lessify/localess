@@ -203,12 +203,12 @@ describe('SpacesComponent', () => {
     it('creates the space from the chosen template in one request', () => {
       // The server applies the template in the creating transaction: there is no second step that could fail alone.
       const { open, create, success, warning, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'blog' }));
 
       navigateWithAction('create');
 
       expect(create).toHaveBeenCalledTimes(1);
-      expect(create).toHaveBeenCalledWith({ name: 'New Space', template: 'BLOG' });
+      expect(create).toHaveBeenCalledWith({ name: 'New Space', template: 'blog' });
       expect(success).toHaveBeenCalledWith('Space has been created.');
       expect(warning).not.toHaveBeenCalled();
     });

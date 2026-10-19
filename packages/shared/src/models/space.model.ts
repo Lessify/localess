@@ -54,13 +54,13 @@ export interface SpaceEnvironment {
  * (`LOCALESS_TEST_TEMPLATES`) last. The server holds what each one creates, the web app its title, description and icon.
  */
 export const SPACE_TEMPLATE_IDS = [
-  'BLOG',
-  'ECOMMERCE',
-  'MARKETING',
-  'TRANSLATIONS_LARGE',
-  'CONTENTS_FIELDS',
-  'ASSETS_LARGE',
-  'CONTENTS_LARGE',
+  'blog',
+  'ecommerce',
+  'marketing',
+  'translations_large',
+  'contents_fields',
+  'assets_large',
+  'contents_large',
 ] as const;
 
 export type SpaceTemplateId = (typeof SPACE_TEMPLATE_IDS)[number];

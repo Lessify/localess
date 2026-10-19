@@ -8,10 +8,10 @@ describe('SPACE_TEMPLATES', () => {
   it('holds one template per id, in the order of SPACE_TEMPLATE_IDS, the test ones last', () => {
     expect(SPACE_TEMPLATES.map(t => t.id)).toEqual([...SPACE_TEMPLATE_IDS]);
     expect(SPACE_TEMPLATES.filter(t => t.test).map(t => t.id)).toEqual([
-      'TRANSLATIONS_LARGE',
-      'CONTENTS_FIELDS',
-      'ASSETS_LARGE',
-      'CONTENTS_LARGE',
+      'translations_large',
+      'contents_fields',
+      'assets_large',
+      'contents_large',
     ]);
   });
 
