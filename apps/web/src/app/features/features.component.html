@@ -17,7 +17,8 @@
               <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
             </button>
             <ng-template #spaceMenu>
-              <hlm-dropdown-menu class="max-h-96 w-60 overflow-y-auto">
+              <hlm-dropdown-menu class="w-60">
+                <!-- The list scrolls, not the menu: the search box stays on top. -->
                 @if (showSpaceSearch()) {
                   <!-- Keys typed here are the search's: the menu's own keyboard handling (typeahead, arrows) stays out. -->
                   <input
@@ -31,17 +32,19 @@
                     (input)="spaceSearch.set($any($event.target).value)"
                     (keydown)="$event.stopPropagation()" />
                 }
-                @for (space of filteredSpaces(); track space.id) {
-                  <button
-                    hlmDropdownMenuRadio
-                    [keepOpen]="false"
-                    [checked]="space.id === spaceStore.selectedSpaceId()"
-                    (click)="onSpaceSelection(space)">
-                    <hlm-dropdown-menu-radio-indicator /> <span> {{ space.name }} </span>
-                  </button>
-                } @empty {
-                  <p class="text-muted-foreground px-2 py-1.5 text-sm">No spaces found</p>
-                }
+                <div class="max-h-80 overflow-y-auto">
+                  @for (space of filteredSpaces(); track space.id) {
+                    <button
+                      hlmDropdownMenuRadio
+                      [keepOpen]="false"
+                      [checked]="space.id === spaceStore.selectedSpaceId()"
+                      (click)="onSpaceSelection(space)">
+                      <hlm-dropdown-menu-radio-indicator /> <span> {{ space.name }} </span>
+                    </button>
+                  } @empty {
+                    <p class="text-muted-foreground px-2 py-1.5 text-sm">No spaces found</p>
+                  }
+                </div>
               </hlm-dropdown-menu>
             </ng-template>
           </li>

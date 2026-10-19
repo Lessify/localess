@@ -103,7 +103,7 @@ test.describe('Space switcher with more than 100 spaces', () => {
     await page.goto(`/features/spaces/${last.id}/dashboard`);
     await expect(switcher).toContainText(last.name);
 
-    // Action → post-check: past 20 spaces the switcher has a search box; it finds a space by part of its name.
+    // Action → post-check: past 10 spaces the switcher has a search box; it finds a space by part of its name.
     const menu = page.getByRole('menu');
     // A live re-render of the sidebar can swallow the first click (as Shell.switchSpace retries).
     await expect(async () => {

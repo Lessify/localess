@@ -88,10 +88,10 @@ describe('FeaturesComponent: the space switcher', () => {
     return fixture.componentInstance;
   };
 
-  it('offers a search box only past 20 spaces', () => {
-    expect(create(named(Array.from({ length: 20 }, (_, i) => `Space ${i}`))).showSpaceSearch()).toBe(false);
+  it('offers a search box only past 10 spaces', () => {
+    expect(create(named(Array.from({ length: 10 }, (_, i) => `Space ${i}`))).showSpaceSearch()).toBe(false);
     TestBed.resetTestingModule();
-    expect(create(named(Array.from({ length: 21 }, (_, i) => `Space ${i}`))).showSpaceSearch()).toBe(true);
+    expect(create(named(Array.from({ length: 11 }, (_, i) => `Space ${i}`))).showSpaceSearch()).toBe(true);
   });
 
   it('lists the spaces whose name holds the search, case-insensitive; all of them without one', () => {

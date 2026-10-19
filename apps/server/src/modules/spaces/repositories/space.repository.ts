@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { IdName, SpacePageable } from '@localess/shared';
+import type { SpacePageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -11,6 +11,7 @@ import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import type { SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
+import { IdNameEntity } from '../../../shared/entities/id-name.entity.js';
 
 /**
  * Spaces (their locales and environments: `SpaceLocaleRepository`, `SpaceEnvironmentRepository`). Reads answer
@@ -47,7 +48,7 @@ export class SpaceRepository {
   }
 
   /** Every space that can be opened (not importing, no failed import), by name: the sidebar list. */
-  findAllNames(): Promise<IdName[]> {
+  findAllNames(): Promise<IdNameEntity[]> {
     return this.db.query.spaces.findMany({
       columns: { id: true, name: true },
       where: this.openable(),

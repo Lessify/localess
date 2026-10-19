@@ -385,9 +385,9 @@ export class FeaturesComponent implements OnInit {
       });
   }
 
-  /** What is typed in the space switcher's search box (shown past 20 spaces). */
+  /** What is typed in the space switcher's search box (shown past 10 spaces). */
   readonly spaceSearch = signal('');
-  readonly showSpaceSearch = computed(() => this.spaceStore.spaces().length > 20);
+  readonly showSpaceSearch = computed(() => this.spaceStore.spaces().length > 10);
   /** The switcher's spaces: those whose name holds the search, case-insensitive; all of them without one. */
   readonly filteredSpaces = computed(() => {
     const search = this.spaceSearch().trim().toLowerCase();
