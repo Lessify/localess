@@ -10,13 +10,15 @@ import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
 import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
+import { DB_SCHEMA, type Database } from '../src/infra/database/database.module.js';
+import type { SpaceInsertEntity } from '../src/shared/entities/space.entity.js';
 import { TranslationSnapshotRepository } from '../src/modules/translations/repositories/translation-snapshot.repository.js';
 
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {
   app: NestFastifyApplication;
-  db: ReturnType<typeof drizzle<typeof schema>>;
+  db: Database;
   database: TestDatabase;
   storageDir: string;
   request(options: InjectOptions): Promise<LightMyRequestResponse>;
@@ -46,7 +48,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
   pool.on('error', () => undefined);
   return {
     app,
-    db: drizzle(pool, { schema }),
+    db: drizzle(pool, { schema: DB_SCHEMA }),
     database,
     storageDir,
     request: options => app.getHttpAdapter().getInstance().inject(options),
@@ -126,7 +128,7 @@ export function api(t: TestApp, cookie: string) {
   };
 }
 
-type SpaceInsert = Omit<typeof schema.spaces.$inferInsert, 'defaultLocaleId'> & {
+type SpaceInsert = Omit<SpaceInsertEntity, 'defaultLocaleId'> & {
   locales: { id: string; name?: string }[];
   defaultLocale?: { id: string; name?: string };
 };

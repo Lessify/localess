@@ -6,8 +6,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { lockTranslations } from '../../../shared/data-rules/translation-drafts.js';
 import { buildTranslationMap } from '../utils/translation.utils.js';
-
-export type TranslationSnapshotEntity = typeof translationSnapshots.$inferSelect;
+import type { TranslationSnapshotEntity } from '../../../shared/entities/translation-snapshot.entity.js';
 
 /**
  * The maps the public API serves (`translation_snapshots`), each answering to `cv` = its `built_at`. A publish stores

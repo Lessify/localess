@@ -5,11 +5,11 @@ import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TaskService } from '../services/task.service.js';
 import { assertCanManage, TASK_READ_PERMISSIONS } from '../utils/task-permissions.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
@@ -57,7 +57,7 @@ export class TaskController {
   create(
     @Param('spaceId') spaceId: string,
     @Body({ schema: zTaskCreate }) body: TaskCreate,
-    @CurrentUser() user: UserRow,
+    @CurrentUser() user: UserEntity,
   ) {
     return this.tasks.create(spaceId, body, user);
   }
@@ -68,7 +68,7 @@ export class TaskController {
    */
   @Post('import')
   @RequirePermission(...TASK_READ_PERMISSIONS)
-  async createImport(@Param('spaceId') spaceId: string, @Req() request: FastifyRequest, @CurrentUser() user: UserRow) {
+  async createImport(@Param('spaceId') spaceId: string, @Req() request: FastifyRequest, @CurrentUser() user: UserEntity) {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
@@ -90,7 +90,7 @@ export class TaskController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(...TASK_READ_PERMISSIONS)
-  remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow): Promise<void> {
+  remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity): Promise<void> {
     return this.tasks.remove(spaceId, id, user);
   }
 }

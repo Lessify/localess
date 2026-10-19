@@ -6,8 +6,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventService } from '../../../infra/events/event.service.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import type { SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
-
-export type SchemaEntity = typeof schemas.$inferSelect;
+import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
 /** The `schemas` rows the schema export reads and the schema import writes. */
 @Injectable()

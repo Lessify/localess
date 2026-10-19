@@ -2,10 +2,10 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { canGrant, canManageUser, type Page, type UserPageable, UserPermission, UserRole } from '@localess/shared';
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { toPrincipal, toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 export interface CreateUser {
   email: string;
@@ -35,7 +35,7 @@ export function normalizeAccess(update: AccessUpdate): { role: UserRole | null; 
   }
 }
 
-function found(user: UserRow | undefined): UserRow {
+function found(user: UserEntity | undefined): UserEntity {
   if (!user) throw new NotFoundException('User not found');
   return user;
 }
@@ -57,7 +57,7 @@ export class UserService {
     return toPage(await this.toDtos(rows), total, query, it => it);
   }
 
-  async findOneRow(id: string): Promise<UserRow> {
+  async findOneRow(id: string): Promise<UserEntity> {
     return found(await this.users.findById(id));
   }
 
@@ -66,12 +66,12 @@ export class UserService {
   }
 
   /** A new user, invited by `caller`: they may only give what they hold themselves. */
-  async invite(caller: UserRow, input: CreateUser): Promise<UserDto> {
+  async invite(caller: UserEntity, input: CreateUser): Promise<UserDto> {
     if (!canGrant(toPrincipal(caller), input.role, input.permissions)) throw new ForbiddenException();
     return this.toDto(await this.create(input));
   }
 
-  async create(input: CreateUser): Promise<UserRow> {
+  async create(input: CreateUser): Promise<UserEntity> {
     if (await this.users.findByEmail(input.email)) {
       throw new ConflictException('A user with this email already exists');
     }
@@ -88,7 +88,7 @@ export class UserService {
   }
 
   /** Role and permissions of another user, changed by `caller`. */
-  async changeAccess(caller: UserRow, id: string, update: AccessUpdate): Promise<UserDto> {
+  async changeAccess(caller: UserEntity, id: string, update: AccessUpdate): Promise<UserDto> {
     const principal = toPrincipal(caller);
     const target = await this.findOneRow(id);
     if (!canManageUser(principal, toPrincipal(target)) || !canGrant(principal, update.role, update.permissions)) {
@@ -97,12 +97,12 @@ export class UserService {
     return this.toDto(await this.updateAccess(id, update));
   }
 
-  async updateAccess(id: string, update: AccessUpdate): Promise<UserRow> {
+  async updateAccess(id: string, update: AccessUpdate): Promise<UserEntity> {
     return found(await this.users.update(id, { ...normalizeAccess(update) }));
   }
 
   /** Blocks (or restores) sign-in; disabling signs the user out at once. */
-  async changeStatus(caller: UserRow, id: string, disabled: boolean): Promise<UserDto> {
+  async changeStatus(caller: UserEntity, id: string, disabled: boolean): Promise<UserDto> {
     const target = await this.findOneRow(id);
     // Nobody disables themselves: an admin could lock the install out of user management.
     if (caller.id === target.id || !canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
@@ -110,25 +110,25 @@ export class UserService {
   }
 
   /** A one-hour reset link for another user, at the app's public `origin`. */
-  async createPasswordResetLink(caller: UserRow, id: string, origin: string): Promise<{ url: string; expiresAt: Date }> {
+  async createPasswordResetLink(caller: UserEntity, id: string, origin: string): Promise<{ url: string; expiresAt: Date }> {
     const target = await this.findOneRow(id);
     if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     return this.passwordReset.createLink(target, origin);
   }
 
-  async remove(caller: UserRow, id: string): Promise<void> {
+  async remove(caller: UserEntity, id: string): Promise<void> {
     const target = await this.findOneRow(id);
     if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     // Sessions, credentials and identities cascade.
     if (!(await this.users.delete(id))) throw new NotFoundException('User not found');
   }
 
-  async toDto(user: UserRow): Promise<UserDto> {
+  async toDto(user: UserEntity): Promise<UserDto> {
     const [dto] = await this.toDtos([user]);
     return dto;
   }
 
-  async toDtos(rows: UserRow[]): Promise<UserDto[]> {
+  async toDtos(rows: UserEntity[]): Promise<UserDto[]> {
     if (!rows.length) return [];
     const logins = await this.users.findLogins(rows.map(it => it.id));
     return rows.map(user => toUser(user, logins.get(user.id)));

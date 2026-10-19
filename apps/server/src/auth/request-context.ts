@@ -1,12 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import type { UserRow } from '../shared/models/user.js';
 import type { ApiToken } from './utils/api-token.js';
+import type { UserEntity } from '../shared/entities/user.entity.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
     /** Set by AuthGuard for session-authenticated requests. */
-    user?: UserRow;
+    user?: UserEntity;
     sessionId?: string;
     /** Set by the token guards (`@CdnToken`, `@ManagementToken`). */
     apiToken?: ApiToken;
@@ -14,8 +14,8 @@ declare module 'fastify' {
 }
 
 /** The signed-in user (routes behind AuthGuard always have one). */
-export const CurrentUser = createParamDecorator((_: unknown, context: ExecutionContext): UserRow => {
-  return context.switchToHttp().getRequest<FastifyRequest>().user as UserRow;
+export const CurrentUser = createParamDecorator((_: unknown, context: ExecutionContext): UserEntity => {
+  return context.switchToHttp().getRequest<FastifyRequest>().user as UserEntity;
 });
 
 export const CurrentSessionId = createParamDecorator((_: unknown, context: ExecutionContext): string => {

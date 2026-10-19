@@ -10,10 +10,10 @@ import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queri
 import { folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { fieldRefersTo, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
+import type { SchemaInsertEntity, SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
-export type SchemaEntity = typeof schemas.$inferSelect;
 export type SchemaColumns = Pick<
-  typeof schemas.$inferInsert,
+  SchemaInsertEntity,
   'type' | 'displayName' | 'description' | 'labels' | 'previewField' | 'fields' | 'values'
 >;
 export type NewSchema = { name: string } & SchemaColumns;

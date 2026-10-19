@@ -4,10 +4,10 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { contents, keepUpdatedAt } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { folderPaths } from '../../../shared/queries/content-tree.query.js';
+import type { ContentEntity, ContentInsertEntity } from '../../../shared/entities/content.entity.js';
 
-export type NewImportedContent = typeof contents.$inferInsert;
 /** The columns the reference rewrite reads and writes (`parentId`, `slug`: for the path in its warnings). */
-export type ContentReferences = Pick<typeof contents.$inferSelect, 'id' | 'parentId' | 'slug' | 'data' | 'assets' | 'links' | 'references'>;
+export type ContentReferences = Pick<ContentEntity, 'id' | 'parentId' | 'slug' | 'data' | 'assets' | 'links' | 'references'>;
 /** Where an imported item goes in the tree. */
 export type ContentLink = { id: string; parentId: string | null; slug: string };
 
@@ -16,7 +16,7 @@ export type ContentLink = { id: string; parentId: string | null; slug: string };
 export class ContentImportRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  insertMany(rows: NewImportedContent[], tx?: Transaction): Promise<void> {
+  insertMany(rows: ContentInsertEntity[], tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(contents).values(rows);
     });

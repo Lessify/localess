@@ -3,7 +3,8 @@ import type { WebHookEvent } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
-import { type WebhookEntity, WebhookRepository } from '../repositories/webhook.repository.js';
+import { WebhookRepository } from '../repositories/webhook.repository.js';
+import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 
 export interface WebhookInput {
   name: string;

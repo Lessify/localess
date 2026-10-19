@@ -2,8 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { desc, eq, lt } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { webhookLogs } from '../../../infra/database/schema.js';
-
-export type WebhookLogEntity = typeof webhookLogs.$inferSelect;
+import type { WebhookLogEntity } from '../../../shared/entities/webhook-log.entity.js';
 
 /** Webhook delivery logs: one row per delivery, written by `WebhookDispatcher` (shared), deleted after some days. */
 @Injectable()

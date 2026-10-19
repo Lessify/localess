@@ -1,12 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import type { UserRow } from '../../shared/models/user.js';
 import { MailService } from '../../shared/services/mail.service.js';
 import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import { PasswordResetTokenRepository } from '../repositories/password-reset-token.repository.js';
 import { hashPassword } from '../utils/password.js';
 import { hashToken } from '../utils/token-hash.js';
 import { SessionService } from './session.service.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 
 export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 export const RESET_PATH = '/auth/reset/confirm';
@@ -23,7 +23,7 @@ export class PasswordResetService {
   ) {}
 
   /** A single-use link valid for one hour. Only the token's hash is stored. */
-  async createLink(user: UserRow, origin: string): Promise<{ url: string; expiresAt: Date }> {
+  async createLink(user: UserEntity, origin: string): Promise<{ url: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
     await this.resetTokens.create({ tokenHash: hashToken(token), userId: user.id, expiresAt });

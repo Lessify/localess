@@ -5,11 +5,10 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { firebaseImports, spaces } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { RunAbandoned } from '../utils/firebase-import.utils.js';
+import type { FirebaseImportEntity, FirebaseImportInsertEntity } from '../../../shared/entities/firebase-import.entity.js';
 
-export type FirebaseImportEntity = typeof firebaseImports.$inferSelect;
-export type NewFirebaseImport = typeof firebaseImports.$inferInsert;
 /** What a run's progress save may set besides its stages. */
-export type FirebaseImportUpdate = Partial<Pick<NewFirebaseImport, 'status' | 'finishedAt'>>;
+export type FirebaseImportUpdate = Partial<Pick<FirebaseImportInsertEntity, 'status' | 'finishedAt'>>;
 
 /**
  * The `firebase_imports` runs. One RUNNING run per install (a partial unique index); every write of the runner is
@@ -47,7 +46,7 @@ export class FirebaseImportRepository {
   }
 
   /** A new RUNNING run; a conflict while another one runs. */
-  create(values: NewFirebaseImport, tx?: Transaction): Promise<void> {
+  create(values: FirebaseImportInsertEntity, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       try {
         await t.insert(firebaseImports).values(values);
@@ -93,7 +92,7 @@ export class FirebaseImportRepository {
     });
   }
 
-  private update(id: string, values: Partial<NewFirebaseImport>, tx?: Transaction): Promise<void> {
+  private update(id: string, values: Partial<FirebaseImportInsertEntity>, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       const updated = await t
         .update(firebaseImports)

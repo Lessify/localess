@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { TaskEntity } from '../repositories/task.repository.js';
 import { AssetTransferService } from '../services/asset-transfer.service.js';
 import { SchemaTransferService } from '../services/schema-transfer.service.js';
 import { TranslationTransferService } from '../services/translation-transfer.service.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 
 /**
  * The export/import jobs, ported from functions/src/tasks.ts with the same archive layouts and file

@@ -2,10 +2,10 @@ import { Controller, MessageEvent, Query, Sse } from '@nestjs/common';
 import { filter, interval, map, merge, Observable } from 'rxjs';
 import { RequireAnyRole } from '../../auth/decorators.js';
 import { CurrentUser } from '../../auth/request-context.js';
-import type { UserRow } from '../models/user.js';
 import { toPrincipal } from '../transformers/user.transformer.js';
 import { canReceive } from './event-access.js';
 import { EventService } from '../../infra/events/event.service.js';
+import type { UserEntity } from '../entities/user.entity.js';
 
 const HEARTBEAT_MS = 25_000;
 
@@ -20,7 +20,7 @@ export class EventController {
 
   @Sse()
   @RequireAnyRole()
-  stream(@CurrentUser() user: UserRow, @Query('spaceId') spaceId?: string): Observable<MessageEvent> {
+  stream(@CurrentUser() user: UserEntity, @Query('spaceId') spaceId?: string): Observable<MessageEvent> {
     const principal = toPrincipal(user);
     return merge(
       this.events.stream(spaceId).pipe(

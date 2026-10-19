@@ -5,9 +5,8 @@ import { newUuid } from '../../../infra/database/id.js';
 import { taskLogs } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import type { TaskEntity } from './task.repository.js';
-
-export type TaskLogEntity = typeof taskLogs.$inferSelect;
+import type { TaskLogEntity } from '../../../shared/entities/task-log.entity.js';
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 
 /** The steps of a task (`task_logs`); they cascade with it. Every write publishes a `task_logs` event. */
 @Injectable()

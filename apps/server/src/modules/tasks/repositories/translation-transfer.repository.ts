@@ -6,11 +6,10 @@ import { translations } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
-
-export type TranslationEntity = typeof translations.$inferSelect;
+import type { TranslationInsertEntity, TranslationEntity } from '../../../shared/entities/translation.entity.js';
 
 /** The columns a full translation import writes. */
-export type TranslationImportColumns = Pick<typeof translations.$inferInsert, 'locales' | 'description' | 'labels'>;
+export type TranslationImportColumns = Pick<TranslationInsertEntity, 'locales' | 'description' | 'labels'>;
 
 /** One key of a full translation import: an existing translation updated, or a new one created. */
 export interface TranslationImportWrite {

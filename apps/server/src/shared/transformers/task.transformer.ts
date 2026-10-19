@@ -1,9 +1,7 @@
 import type { Task, TaskLog } from '@localess/shared';
-import type { taskLogs, tasks } from '../../infra/database/schema.js';
 import { toDto } from './dto.transformer.js';
-
-type TaskEntity = typeof tasks.$inferSelect;
-type TaskLogEntity = typeof taskLogs.$inferSelect;
+import type { TaskLogEntity } from '../entities/task-log.entity.js';
+import type { TaskEntity } from '../entities/task.entity.js';
 
 /** A `tasks` row as the App API's DTO: `null` columns left out, `spaceId` and the worker's lock dropped. */
 export const toTask = (entity: TaskEntity): Task => toDto(entity, ['spaceId', 'lockedBy', 'lockedAt']) as unknown as Task;

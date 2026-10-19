@@ -4,10 +4,11 @@ import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdo
 import { filter, Subscription } from 'rxjs';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import { type TaskEntity, TaskRepository } from '../repositories/task.repository.js';
+import { TaskRepository } from '../repositories/task.repository.js';
 import { TaskLogService } from '../services/task-log.service.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 import { TaskRunner } from './task-runner.service.js';
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 
 const POLL_INTERVAL_MS = 30_000;
 /** A task still IN_PROGRESS after this long was interrupted (crash, deploy); nothing runs this long. */

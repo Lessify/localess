@@ -4,9 +4,10 @@ import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
 import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
-import { type TranslationEntity, TranslationRepository } from '../repositories/translation.repository.js';
+import { TranslationRepository } from '../repositories/translation.repository.js';
 import { toTranslation } from '../../../shared/transformers/translation.transformer.js';
 import { TranslateService } from './translate.service.js';
+import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';
 
 /** Values are written only for the space's locales (removing one is allowed for any locale). */
 function requireSpaceLocales(space: Pick<SpaceRow, 'locales'>, localeIds: string[]): void {

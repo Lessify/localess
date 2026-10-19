@@ -7,9 +7,10 @@ import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
 import { FirebaseImportRepository } from './firebase-import.repository.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
+import type { SpaceEnvironmentInsertEntity } from '../../../shared/entities/space-environment.entity.js';
+import type { SpaceInsertEntity } from '../../../shared/entities/space.entity.js';
 
-export type NewImportedSpace = typeof spaces.$inferInsert & { id: string };
-export type NewImportedEnvironment = typeof spaceEnvironments.$inferInsert;
+export type NewImportedSpace = SpaceInsertEntity & { id: string };
 
 /** The imported space: its `spaces` row, its `space_locales` and `space_environments`, and the end of the import. */
 @Injectable()
@@ -39,7 +40,7 @@ export class SpaceImportRepository {
     });
   }
 
-  insertEnvironments(rows: NewImportedEnvironment[], tx?: Transaction): Promise<void> {
+  insertEnvironments(rows: SpaceEnvironmentInsertEntity[], tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(spaceEnvironments).values(rows);
     });

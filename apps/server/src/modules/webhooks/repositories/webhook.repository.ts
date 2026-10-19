@@ -5,8 +5,8 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { spaces, webhooks } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
+import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 
-export type WebhookEntity = typeof webhooks.$inferSelect;
 export type WebhookValues = Pick<WebhookEntity, 'name' | 'url' | 'events'> & Partial<Pick<WebhookEntity, 'headers' | 'secret' | 'enabled'>>;
 
 /** A space's webhooks (their delivery logs: `WebhookLogRepository`). Every change publishes a `webhooks` event. */

@@ -3,10 +3,11 @@ import { isTranslationKey, type TranslationUpdateResponse, WebHookEvent } from '
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
-import { type TranslationSnapshotEntity, TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
+import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
 import { TranslationRepository } from '../repositories/translation.repository.js';
 import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
 import { planTranslationUpdate, storedLocaleValues } from '../utils/translation.utils.js';
+import type { TranslationSnapshotEntity } from '../../../shared/entities/translation-snapshot.entity.js';
 
 export type TranslationPushType = 'add-missing' | 'update-existing' | 'delete-missing-key' | 'delete-missing-value';
 

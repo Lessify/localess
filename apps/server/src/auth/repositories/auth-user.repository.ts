@@ -4,25 +4,24 @@ import { DATABASE, type Database } from '../../infra/database/database.module.js
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { userCredentials, userIdentities, users } from '../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../infra/database/transaction.js';
-import type { UserRow } from '../../shared/models/user.js';
 import { findUserLogins } from '../../shared/queries/user.query.js';
 import type { OAuthProviderId } from '../../infra/config/oauth-providers.js';
-
-export type CredentialEntity = typeof userCredentials.$inferSelect;
+import type { UserCredentialEntity } from '../../shared/entities/user-credential.entity.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 
 /** Users, their passwords and OAuth identities, as sign-in, OAuth and password reset need them. */
 @Injectable()
 export class AuthUserRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async findById(id: string): Promise<UserRow | undefined> {
+  async findById(id: string): Promise<UserEntity | undefined> {
     if (!isUuid(id)) return undefined;
     const [user] = await this.db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   /** Case-insensitive. */
-  async findByEmail(email: string): Promise<UserRow | undefined> {
+  async findByEmail(email: string): Promise<UserEntity | undefined> {
     const [user] = await this.db
       .select()
       .from(users)
@@ -30,7 +29,7 @@ export class AuthUserRepository {
     return user;
   }
 
-  async findCredential(userId: string): Promise<CredentialEntity | undefined> {
+  async findCredential(userId: string): Promise<UserCredentialEntity | undefined> {
     const [credential] = await this.db.select().from(userCredentials).where(eq(userCredentials.userId, userId));
     return credential;
   }
@@ -50,7 +49,7 @@ export class AuthUserRepository {
   }
 
   /** A user signing up with a provider (LOCALESS_AUTH_AUTO_REGISTER): no password, no role. */
-  create(values: { email: string; emailVerified: boolean; displayName: string | null }, tx?: Transaction): Promise<UserRow> {
+  create(values: { email: string; emailVerified: boolean; displayName: string | null }, tx?: Transaction): Promise<UserEntity> {
     return transaction(this.db, tx, async t => {
       const [user] = await t
         .insert(users)

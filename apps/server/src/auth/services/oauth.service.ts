@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import * as client from 'openid-client';
 import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../../infra/config/config.js';
-import type { UserRow } from '../../shared/models/user.js';
 import { AuthUserRepository } from '../repositories/auth-user.repository.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {
@@ -109,7 +109,7 @@ export class OAuthService implements OnModuleInit {
     return { url: client.buildAuthorizationUrl(configuration, parameters), flow };
   }
 
-  async finish(flow: OAuthFlow, callbackUrl: URL): Promise<UserRow> {
+  async finish(flow: OAuthFlow, callbackUrl: URL): Promise<UserEntity> {
     const configuration = await this.configuration(flow.provider);
     let claims: client.IDToken | undefined;
     try {
@@ -148,7 +148,7 @@ export class OAuthService implements OnModuleInit {
     return email;
   }
 
-  private async resolveUser(provider: OAuthProviderId, claims: client.IDToken): Promise<UserRow> {
+  private async resolveUser(provider: OAuthProviderId, claims: client.IDToken): Promise<UserEntity> {
     const subject = claims.sub;
     const identityUserId = await this.users.findIdentityUserId(provider, subject);
 

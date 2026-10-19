@@ -4,9 +4,8 @@ import type { WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { webhookLogs, webhooks } from '../../infra/database/schema.js';
 import { EventService } from '../../infra/events/event.service.js';
-
-export type WebhookEntity = typeof webhooks.$inferSelect;
-export type NewWebhookLog = typeof webhookLogs.$inferInsert;
+import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
+import type { WebhookEntity } from '../entities/webhook.entity.js';
 
 /** What a webhook delivery reads and writes: the subscribed webhooks, and one `webhook_logs` row per delivery. */
 @Injectable()
@@ -25,7 +24,7 @@ export class WebhookDeliveryRepository {
   }
 
   /** The delivery's log row, announced to the webhook's log view. */
-  async saveLog(spaceId: string, log: NewWebhookLog): Promise<void> {
+  async saveLog(spaceId: string, log: WebhookLogInsertEntity): Promise<void> {
     await this.db.insert(webhookLogs).values(log);
     await this.events.publish({ spaceId, entity: 'webhook_logs', id: log.webhookId, op: 'created' });
   }

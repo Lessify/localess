@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import type { Database } from '../../infra/database/database.module.js';
 import { contents } from '../../infra/database/schema.js';
+import type { ContentEntity } from '../entities/content.entity.js';
 
 /*
  * The content tree is linked by `parent_id` (null: root). Paths are computed, never stored: an item's `fullSlug` is its
@@ -11,7 +12,7 @@ import { contents } from '../../infra/database/schema.js';
 export type Executor = Pick<Database, 'select' | 'execute'>;
 
 /** A `contents` row with its computed paths: what transformers, snapshots and webhooks read. */
-export type ContentWithPath = typeof contents.$inferSelect & { parentSlug: string; fullSlug: string };
+export type ContentWithPath = ContentEntity & { parentSlug: string; fullSlug: string };
 
 /** Folder id → its `fullSlug`, for every folder of the space. */
 export async function folderPaths(db: Pick<Database, 'select'>, spaceId: string): Promise<Map<string, string>> {

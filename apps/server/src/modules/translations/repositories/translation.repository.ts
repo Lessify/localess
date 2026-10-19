@@ -6,8 +6,8 @@ import { translations } from '../../../infra/database/schema.js';
 import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
+import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';
 
-export type TranslationEntity = typeof translations.$inferSelect;
 export type NewTranslation = Pick<TranslationEntity, 'key' | 'locales' | 'labels' | 'description'>;
 export type TranslationUpdate = Partial<Pick<TranslationEntity, 'key' | 'labels' | 'description'>>;
 

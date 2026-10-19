@@ -8,9 +8,9 @@ import { EventService } from '../../../infra/events/event.service.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
+import type { TaskInsertEntity, TaskEntity } from '../../../shared/entities/task.entity.js';
 
-export type TaskEntity = typeof tasks.$inferSelect;
-export type NewTask = Omit<typeof tasks.$inferInsert, 'spaceId' | 'status'>;
+export type NewTask = Omit<TaskInsertEntity, 'spaceId' | 'status'>;
 
 /**
  * The `tasks` rows (the queue) and their `task_logs`. Every write publishes its `tasks` / `task_logs` change event in

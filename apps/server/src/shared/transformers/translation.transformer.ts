@@ -1,8 +1,6 @@
 import type { Translation } from '@localess/shared';
-import type { translations } from '../../infra/database/schema.js';
 import { withoutNulls } from '../../infra/database/without-nulls.js';
-
-type TranslationEntity = typeof translations.$inferSelect;
+import type { TranslationEntity } from '../entities/translation.entity.js';
 
 /**
  * A `translations` row as the shared model, the App API's DTO: `id` the UUID, `key` the translation key, `null`

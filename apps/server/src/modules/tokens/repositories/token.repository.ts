@@ -6,8 +6,8 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { spaces, tokens } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
+import type { TokenEntity } from '../../../shared/entities/token.entity.js';
 
-export type TokenEntity = typeof tokens.$inferSelect;
 export type TokenValues = Pick<TokenEntity, 'type' | 'token' | 'tokenHash' | 'hint' | 'name' | 'cacheTtl'>;
 
 /**

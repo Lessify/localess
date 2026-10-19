@@ -4,8 +4,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { assets } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-
-export type AssetEntity = typeof assets.$inferSelect;
+import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 
 /** The `assets` rows the metadata refresh reads and updates. */
 @Injectable()

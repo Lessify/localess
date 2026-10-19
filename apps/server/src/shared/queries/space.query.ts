@@ -3,6 +3,7 @@ import { type AnyColumn, eq, getTableColumns, type SQL, sql } from 'drizzle-orm'
 import type { Database } from '../../infra/database/database.module.js';
 import { isUuid } from '../../infra/database/id.js';
 import { firebaseImports, type Locale, locales, spaceEnvironments, spaceLocales, spaces } from '../../infra/database/schema.js';
+import type { SpaceEntity } from '../entities/space.entity.js';
 
 type Executor = Pick<Database, 'select' | 'update'>;
 
@@ -24,7 +25,7 @@ export const importStatusOf = (status: SQL | AnyColumn) =>
  * environments (by `position`) from `space_environments`, and for a space imported from Firebase its Firestore id
  * (`legacyId`) and import status from `firebase_imports`.
  */
-export type SpaceRow = typeof spaces.$inferSelect & {
+export type SpaceRow = SpaceEntity & {
   locales: Locale[];
   defaultLocale: Locale;
   environments: SpaceEnvironment[];

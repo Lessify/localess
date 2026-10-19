@@ -1,9 +1,7 @@
 import { type AssetMetadata, type Content, ContentKind, type ContentMetadata } from '@localess/shared';
-import type { assets } from '../../infra/database/schema.js';
 import type { ContentWithPath } from '../queries/content-tree.query.js';
 import { toDto } from './dto.transformer.js';
-
-type AssetEntity = typeof assets.$inferSelect;
+import type { AssetEntity } from '../entities/asset.entity.js';
 
 /** A `contents` row with its computed paths as the App API's DTO: `null` columns left out and `spaceId` dropped. */
 export const toContent = (entity: ContentWithPath): Content => toDto(entity) as unknown as Content;

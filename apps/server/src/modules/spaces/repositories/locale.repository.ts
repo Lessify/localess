@@ -2,8 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { locales } from '../../../infra/database/schema.js';
-
-export type LocaleEntity = typeof locales.$inferSelect;
+import type { LocaleEntity } from '../../../shared/entities/locale.entity.js';
 
 /** Every locale a space can add: database data, seeded and changed by migrations. */
 @Injectable()

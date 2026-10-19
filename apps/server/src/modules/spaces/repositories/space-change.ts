@@ -4,9 +4,10 @@ import { spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import type { EventService } from '../../../infra/events/event.service.js';
 import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
+import type { SpaceInsertEntity } from '../../../shared/entities/space.entity.js';
 
 /** Values of the space row itself a change may set with its touch. */
-export type SpaceValues = Partial<Pick<typeof spaces.$inferInsert, 'name' | 'defaultLocaleId'>>;
+export type SpaceValues = Partial<Pick<SpaceInsertEntity, 'name' | 'defaultLocaleId'>>;
 
 /**
  * The rule every change of a space, its locales or its environments follows, in one transaction: the change, then the

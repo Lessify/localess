@@ -20,8 +20,8 @@ import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 import { startsWith } from '../utils/slug.utils.js';
+import type { ContentEntity } from '../../../shared/entities/content.entity.js';
 
-export type ContentEntity = typeof contents.$inferSelect;
 export type { ContentWithPath };
 
 export interface ContentQuery {

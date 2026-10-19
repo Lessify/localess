@@ -3,9 +3,9 @@ import { and, eq, gt, lt, ne } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { sessions, users } from '../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../infra/database/transaction.js';
-import type { UserRow } from '../../shared/models/user.js';
+import type { SessionEntity } from '../../shared/entities/session.entity.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 
-export type SessionEntity = typeof sessions.$inferSelect;
 export type NewSession = Pick<SessionEntity, 'id' | 'userId' | 'expiresAt'> & Partial<Pick<SessionEntity, 'userAgent' | 'ip'>>;
 
 /** Sign-in sessions; `id` is the hash of the cookie value. */
@@ -20,7 +20,7 @@ export class SessionRepository {
   }
 
   /** The session `id` not expired at `now`, with its user. */
-  async findActive(id: string, now: Date): Promise<{ session: SessionEntity; user: UserRow } | undefined> {
+  async findActive(id: string, now: Date): Promise<{ session: SessionEntity; user: UserEntity } | undefined> {
     const [row] = await this.db
       .select({ session: sessions, user: users })
       .from(sessions)

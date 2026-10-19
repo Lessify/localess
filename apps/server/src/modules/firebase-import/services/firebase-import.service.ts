@@ -12,12 +12,13 @@ import {
 import { FIREBASE_IMPORT_STAGES, type FirebaseImport, type FirebaseSourceSpace } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { toFirebaseImport } from '../../../shared/transformers/firebase-import.transformer.js';
-import { type FirebaseImportEntity, FirebaseImportRepository } from '../repositories/firebase-import.repository.js';
+import { FirebaseImportRepository } from '../repositories/firebase-import.repository.js';
 import { FirebaseClient, FirebaseConnectionError } from '../utils/firebase-client.js';
 import { HEARTBEAT_MS } from '../utils/firebase-import.utils.js';
 import { FirebaseImportRunner } from '../workers/firebase-import.runner.js';
+import type { FirebaseImportEntity } from '../../../shared/entities/firebase-import.entity.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /** Admin → Spaces → Import from Firebase: one run at a time per install, runs kept as history. */
 @Injectable()
@@ -53,7 +54,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   }
 
   /** Stops a running import: failed at the stage it reached; the half-imported space is deleted like any failed one. */
-  async cancel(id: string, user: UserRow): Promise<FirebaseImport> {
+  async cancel(id: string, user: UserEntity): Promise<FirebaseImport> {
     const run = isUuid(id) ? await this.runs.findById(id) : undefined;
     if (!run) throw new NotFoundException('Import not found');
     const cancelled = run.status === 'RUNNING' ? await this.failAtCurrentStage(run, `Cancelled by ${user.email}`) : undefined;
@@ -97,7 +98,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     });
   }
 
-  async start(origin: string, token: string, sourceSpaceId: string, user: UserRow): Promise<FirebaseImport> {
+  async start(origin: string, token: string, sourceSpaceId: string, user: UserEntity): Promise<FirebaseImport> {
     const client = this.client(origin, token);
     const [existing] = await this.importedAs([sourceSpaceId]);
     if (existing) throw new ConflictException(`This space is already imported as '${existing.name}'`);

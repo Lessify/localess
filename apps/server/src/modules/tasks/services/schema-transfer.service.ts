@@ -5,11 +5,11 @@ import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/stora
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
 import { docSchemaToExport, planSchemaPush } from '../../../shared/utils/schema.utils.js';
 import { SchemaTransferRepository } from '../repositories/schema-transfer.repository.js';
-import type { TaskEntity } from '../repositories/task.repository.js';
 import { MAX_JSON_BYTES, taskFileKey, type TaskOutcome } from '../utils/task.utils.js';
 import { writeZip } from '../utils/zip.js';
 import { ImportFileService } from './import-file.service.js';
 import { TaskLogService } from './task-log.service.js';
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 
 /** SCHEMA_EXPORT and SCHEMA_IMPORT. */
 @Injectable()

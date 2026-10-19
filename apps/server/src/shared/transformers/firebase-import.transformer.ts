@@ -1,7 +1,5 @@
 import type { FirebaseImport } from '@localess/shared';
-import type { firebaseImports } from '../../infra/database/schema.js';
-
-type FirebaseImportEntity = typeof firebaseImports.$inferSelect;
+import type { FirebaseImportEntity } from '../entities/firebase-import.entity.js';
 
 /**
  * A `firebase_imports` run as the App API's DTO: unset columns left out, the heartbeat dropped, the error of a failed

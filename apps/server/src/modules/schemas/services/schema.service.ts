@@ -2,8 +2,9 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { type Schema, type SchemaExport, type SchemaField, SchemaType, type SchemaUsage } from '@localess/shared';
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
 import { checkSchemaFields, docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
-import { type NewSchema, type SchemaColumns, type SchemaEntity, SchemaRepository } from '../repositories/schema.repository.js';
+import { type NewSchema, type SchemaColumns, SchemaRepository } from '../repositories/schema.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
+import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
 /** "Schema 'card' is in use: referenced by 'page' field 'items'; used by 6 contents: Home (home), … and 1 more". */
 function inUseMessage(name: string, usage: SchemaUsage): string {

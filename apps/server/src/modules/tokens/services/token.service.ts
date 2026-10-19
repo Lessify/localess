@@ -2,7 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { TokenType } from '@localess/shared';
 import { newApiToken, tokenColumns } from '../../../shared/utils/api-token-format.js';
 import { toToken } from '../../../shared/transformers/token.transformer.js';
-import { type TokenEntity, TokenRepository } from '../repositories/token.repository.js';
+import { TokenRepository } from '../repositories/token.repository.js';
+import type { TokenEntity } from '../../../shared/entities/token.entity.js';
 
 export interface TokenInput {
   name: string;

@@ -2,17 +2,17 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi
 import { UserPermission } from '@localess/shared';
 import { passwordResetTokens } from '../src/infra/database/schema.js';
 import { MailMessage, MailService } from '../src/shared/services/mail.service.js';
-import type { UserRow } from '../src/shared/models/user.js';
 import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import type { UserEntity } from '../src/shared/entities/user.entity.js';
 
 const tokenFrom = (url: string) => new URL(url).searchParams.get('token') as string;
 
 describe('password reset', () => {
   let t: TestApp;
   let send: MockInstance<(message: MailMessage) => Promise<void>>;
-  let target: UserRow;
-  let admin: UserRow;
+  let target: UserEntity;
+  let admin: UserEntity;
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_SMTP_URL: 'smtp://127.0.0.1:2525', LOCALESS_PUBLIC_URL: 'https://cms.example.com' });

@@ -7,9 +7,9 @@ import { CurrentUser } from '../../../auth/request-context.js';
 import { publicOrigin } from '../../../auth/utils/public-url.js';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
 import { UserService } from '../services/user.service.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /**
  * Admin → Users. Enforces what firestore.rules enforced on `users/{uid}` plus the `user.invite`
@@ -37,7 +37,7 @@ export class UserController {
 
   @Post()
   async invite(
-    @CurrentUser() caller: UserRow,
+    @CurrentUser() caller: UserEntity,
     @Body({ schema: zUserInvite }) body: UserInvite,
   ): Promise<UserDto> {
     return this.users.invite(caller, body);
@@ -45,7 +45,7 @@ export class UserController {
 
   @Patch(':id')
   async updateAccess(
-    @CurrentUser() caller: UserRow,
+    @CurrentUser() caller: UserEntity,
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zUserUpdate }) body: UserUpdate,
   ): Promise<UserDto> {
@@ -55,7 +55,7 @@ export class UserController {
   /** Blocks (or restores) sign-in without deleting the user; was the Firebase Auth console's "Disable account". */
   @Patch(':id/status')
   async updateStatus(
-    @CurrentUser() caller: UserRow,
+    @CurrentUser() caller: UserEntity,
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zUserStatusUpdate }) body: UserStatusUpdate,
   ): Promise<UserDto> {
@@ -65,7 +65,7 @@ export class UserController {
   /** A one-hour reset link to hand to the user — the way to reset passwords when SMTP isn't configured. */
   @Post(':id/password-reset-link')
   async passwordResetLink(
-    @CurrentUser() caller: UserRow,
+    @CurrentUser() caller: UserEntity,
     @Param('id', UuidParamPipe) id: string,
     @Req() request: FastifyRequest,
   ): Promise<{ url: string; expiresAt: string }> {
@@ -75,7 +75,7 @@ export class UserController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@CurrentUser() caller: UserRow, @Param('id', UuidParamPipe) id: string): Promise<void> {
+  async remove(@CurrentUser() caller: UserEntity, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.users.remove(caller, id);
   }
 }

@@ -9,8 +9,7 @@ import { EventService } from '../../../infra/events/event.service.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
-
-export type AssetEntity = typeof assets.$inferSelect;
+import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 
 export interface AssetQuery {
   /** `null`: the root's children; absent: any parent. */
@@ -42,7 +41,6 @@ interface WriteResult<T> {
   result: T;
   changed: { id: string; op: 'created' | 'updated' | 'deleted' }[];
 }
-
 
 export type MoveResult = { asset: AssetEntity } | { noParent: true } | { intoItself: true };
 

@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import type { UserRow } from '../../shared/models/user.js';
 import { SessionRepository } from '../repositories/session.repository.js';
 import { hashToken } from '../utils/token-hash.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 // Sliding expiry is only written back this often, so ordinary requests stay read-only.
@@ -10,7 +10,7 @@ const TOUCH_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 export interface ActiveSession {
   id: string;
-  user: UserRow;
+  user: UserEntity;
 }
 
 @Injectable()

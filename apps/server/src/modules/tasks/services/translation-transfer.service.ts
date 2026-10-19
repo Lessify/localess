@@ -6,7 +6,6 @@ import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.s
 import { translationToExport } from '../../../shared/transformers/transfer.transformer.js';
 import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import type { TaskEntity } from '../repositories/task.repository.js';
 import {
   type TranslationImportWrite,
   type TranslationLocaleWrite,
@@ -17,6 +16,7 @@ import { MAX_JSON_BYTES, taskFileKey, type TaskOutcome } from '../utils/task.uti
 import { writeZip } from '../utils/zip.js';
 import { ImportFileService } from './import-file.service.js';
 import { TaskLogService } from './task-log.service.js';
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 
 /** TRANSLATION_EXPORT and TRANSLATION_IMPORT: the whole archive, or one locale as a flat JSON file (`task.locale`). */
 @Injectable()

@@ -57,6 +57,32 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 - **Example:** `modules/spaces/repositories/space-locale.repository.ts`.
 - **Don't:** `get*`, `list*`, `remove*`, or HTTP errors in a repository.
 
+## Entities
+
+- **Rule:** `apps/server/src/shared/entities/<entity>.entity.ts`, one file per table, singular, holds three types:
+
+  ```ts
+  export type SpaceEntity = typeof spaces.$inferSelect;        // the row
+  export type SpaceInsertEntity = typeof spaces.$inferInsert;  // the row to insert
+  export type SpaceSelect = SpaceEntity & {                    // the row with its relations
+    defaultLocale?: LocaleSelect | null;
+    spaceLocales?: SpaceLocaleSelect[] | null;
+    environments?: SpaceEnvironmentSelect[] | null;
+    // …
+  };
+  ```
+
+  The relations are those of `infra/database/relations.ts` (one per foreign key, camelCase; a table related to itself
+  names its pair: `parent` / `children`), each optional: present when the relational query asked for it
+  (`db.query.spaces.findFirst({ with: { environments: true } })`). A shape built from an entity otherwise is named
+  for what it is (`StoredContentSnapshot = Pick<ContentSnapshotEntity, …>`; the query results `SpaceRow`,
+  `ContentWithPath`, until relational reads replace them).
+- **Why:** an entity (what the database holds, `…Entity`) is never mistaken for a model the web sees (`@localess/shared`,
+  no suffix); one definition per table instead of one per repository.
+- **Example:** `shared/entities/asset.entity.ts`, used by `AssetRepository`, the asset transformer and the transfers.
+- **Don't:** `typeof table.$inferSelect` anywhere else (the architecture test refuses it); `Row`, `Record`, `New…` or
+  `NewImported…` names for a table's type; a relation in `<X>Select` that `relations.ts` does not have.
+
 ## Models
 
 - **Rule:** an App API request (body, query, multipart fields) is defined once, in `@localess/shared`:

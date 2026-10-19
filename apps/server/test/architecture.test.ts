@@ -118,6 +118,32 @@ describe('server rules: method names', () => {
   });
 });
 
+describe('server rules: entities (the database rows)', () => {
+  it('a table type is declared only in shared/entities: no $inferSelect / $inferInsert elsewhere', () => {
+    expect(
+      breaks(
+        file => (/\$infer(Select|Insert)/.test(file.source.text) ? ['uses $infer: import <Entity>Entity / <Entity>InsertEntity from shared/entities'] : []),
+        file => !file.name.startsWith('shared/entities/') && file.name !== 'infra/database/schema.ts',
+      ),
+    ).toEqual([]);
+  });
+
+  it('an entity file is <entity>.entity.ts with <Entity>Entity, <Entity>InsertEntity and <Entity>Select', () => {
+    expect(
+      breaks(
+        file => {
+          const base = file.name.split('/').pop()!;
+          if (!base.endsWith('.entity.ts')) return ['is not named <entity>.entity.ts'];
+          const stem = pascal(base.replace(/\.entity\.ts$/, ''));
+          const types = file.source.statements.filter(ts.isTypeAliasDeclaration).map(it => it.name.text);
+          return [`${stem}Entity`, `${stem}InsertEntity`, `${stem}Select`].filter(it => !types.includes(it)).map(it => `has no ${it}`);
+        },
+        file => file.name.startsWith('shared/entities/'),
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('server rules: request models (one definition in @localess/shared)', () => {
   const SHARED = join(import.meta.dirname, '../../../packages/shared/src');
   /**

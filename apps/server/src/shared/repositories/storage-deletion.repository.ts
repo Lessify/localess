@@ -2,8 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, lte, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { assets, spaces, storageDeletions } from '../../infra/database/schema.js';
-
-export type StorageDeletionEntity = typeof storageDeletions.$inferSelect;
+import type { StorageDeletionEntity } from '../entities/storage-deletion.entity.js';
 
 /** The sweeper's side of the `storage_deletions` queue. */
 @Injectable()

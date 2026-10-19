@@ -6,14 +6,14 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { sessions, userCredentials, users } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import type { UserRow } from '../../../shared/models/user.js';
 import { findUserLogins } from '../../../shared/queries/user.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 const SORT_COLUMNS = { email: users.email, name: users.displayName, role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt };
 
-export type UserValues = Pick<UserRow, 'email' | 'emailVerified' | 'displayName' | 'role' | 'permissions' | 'lock'>;
-export type UserUpdate = Partial<Pick<UserRow, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role' | 'permissions' | 'lock'>>;
+export type UserValues = Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'role' | 'permissions' | 'lock'>;
+export type UserUpdate = Partial<Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role' | 'permissions' | 'lock'>>;
 
 /**
  * Users and their passwords (Admin → Users, the own profile). Every change of a user publishes a global `users`
@@ -28,7 +28,7 @@ export class UserRepository {
   ) {}
 
   /** One page by the query's sort (then the id, so ties page stably), and how many match its filters. */
-  async findPage(query: UserPageable): Promise<{ rows: UserRow[]; total: number }> {
+  async findPage(query: UserPageable): Promise<{ rows: UserEntity[]; total: number }> {
     const conditions: SQL[] = [];
     if (query.search) {
       const pattern = containsPattern(query.search);
@@ -48,14 +48,14 @@ export class UserRepository {
     return { rows, total };
   }
 
-  async findById(id: string): Promise<UserRow | undefined> {
+  async findById(id: string): Promise<UserEntity | undefined> {
     if (!isUuid(id)) return undefined;
     const [user] = await this.db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
   /** Case-insensitive. */
-  async findByEmail(email: string): Promise<UserRow | undefined> {
+  async findByEmail(email: string): Promise<UserEntity | undefined> {
     const [user] = await this.db
       .select()
       .from(users)
@@ -69,7 +69,7 @@ export class UserRepository {
   }
 
   /** A new user, with an argon2id password hash when given one. */
-  create(values: UserValues, passwordHash?: string, tx?: Transaction): Promise<UserRow> {
+  create(values: UserValues, passwordHash?: string, tx?: Transaction): Promise<UserEntity> {
     return transaction(this.db, tx, async t => {
       const [user] = await t
         .insert(users)
@@ -84,7 +84,7 @@ export class UserRepository {
   }
 
   /** `undefined` when there is no user `id`. */
-  update(id: string, values: UserUpdate, tx?: Transaction): Promise<UserRow | undefined> {
+  update(id: string, values: UserUpdate, tx?: Transaction): Promise<UserEntity | undefined> {
     return transaction(this.db, tx, async t => {
       if (values.role !== undefined && values.role !== 'ADMIN') await this.keepAnActiveAdmin(t, id);
       const [user] = await t.update(users).set(values).where(eq(users.id, id)).returning();
@@ -94,7 +94,7 @@ export class UserRepository {
   }
 
   /** Sets `disabled`; disabling also deletes the user's sessions, so they are signed out at once. */
-  setDisabled(id: string, disabled: boolean, tx?: Transaction): Promise<UserRow | undefined> {
+  setDisabled(id: string, disabled: boolean, tx?: Transaction): Promise<UserEntity | undefined> {
     return transaction(this.db, tx, async t => {
       if (disabled) await this.keepAnActiveAdmin(t, id);
       const [user] = await t.update(users).set({ disabled }).where(eq(users.id, id)).returning();

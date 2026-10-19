@@ -3,8 +3,10 @@ import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/commo
 import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { newUuid } from '../../infra/database/id.js';
-import { type NewWebhookLog, type WebhookEntity, WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
+import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
+import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
+import type { WebhookEntity } from '../entities/webhook.entity.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
@@ -82,7 +84,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       data: payload.data,
     };
 
-    let log: NewWebhookLog;
+    let log: WebhookLogInsertEntity;
     try {
       const checked = checkWebhookUrl(webhook.url, this.config.webhookAllowInternal);
       if (!checked.ok) throw Object.assign(new Error(`Webhook URL is not allowed: ${checked.reason}`), { code: 'EBLOCKEDURL' });

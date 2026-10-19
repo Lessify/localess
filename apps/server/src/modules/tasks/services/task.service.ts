@@ -1,15 +1,16 @@
 import type { Readable } from 'node:stream';
 import { Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import type { Page, Task, TaskPageable } from '@localess/shared';
-import type { UserRow } from '../../../shared/models/user.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { toTask } from '../../../shared/transformers/task.transformer.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import { type TaskEntity, TaskRepository } from '../repositories/task.repository.js';
+import { TaskRepository } from '../repositories/task.repository.js';
 import { assertCanManage } from '../utils/task-permissions.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { taskFileKey, taskFilesPrefix } from '../utils/task.utils.js';
+import type { TaskEntity } from '../../../shared/entities/task.entity.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /** An export or metadata regeneration, as the client asks for it. */
 export type ExportTaskInput =
@@ -65,7 +66,7 @@ export class TaskService {
   }
 
   /** Exports and metadata regeneration. */
-  async create(spaceId: string, input: ExportTaskInput, user: UserRow): Promise<Task> {
+  async create(spaceId: string, input: ExportTaskInput, user: UserEntity): Promise<Task> {
     assertCanManage(user, input.kind);
     return toTask(await this.tasks.create(spaceId, { id: newUuid(), ...input }));
   }
@@ -96,7 +97,7 @@ export class TaskService {
   }
 
   /** Logs cascade; the task's files go too. */
-  async remove(spaceId: string, id: string, user: UserRow): Promise<void> {
+  async remove(spaceId: string, id: string, user: UserEntity): Promise<void> {
     const task = await this.find(spaceId, id);
     assertCanManage(user, task.kind);
     await this.tasks.delete(spaceId, id);
