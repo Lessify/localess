@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { SpacePageable } from '@localess/shared';
-import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { firebaseImports, spaceLocales, spaces } from '../../../infra/database/schema.js';
@@ -11,9 +11,6 @@ import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import type { SpaceEntity, SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
-
-/** A space whose import from Firebase runs or failed: it can not be opened (left out of the sidebar list). */
-const importingOrFailed = sql`exists (select 1 from ${firebaseImports} fi where fi.space_id = ${spaces.id} and fi.status in ('RUNNING', 'FAILED'))`;
 
 /**
  * Spaces (their locales and environments: `SpaceLocaleRepository`, `SpaceEnvironmentRepository`). Reads answer
@@ -53,7 +50,7 @@ export class SpaceRepository {
   findAllNames(): Promise<Pick<SpaceEntity, 'id' | 'name'>[]> {
     return this.db.query.spaces.findMany({
       columns: { id: true, name: true },
-      where: sql`not ${importingOrFailed}`,
+      where: this.openable(),
       orderBy: [asc(sql`lower(${spaces.name})`), asc(spaces.id)],
     });
   }
@@ -110,7 +107,17 @@ export class SpaceRepository {
       const pattern = containsPattern(query.search);
       conditions.push(or(ilike(spaces.name, pattern), ilike(sql`${spaces.id}::text`, pattern)) as SQL);
     }
-    if (query.importing === false) conditions.push(sql`not ${importingOrFailed}`);
+    if (query.importing === false) conditions.push(this.openable());
     return and(...conditions);
+  }
+
+  /** Not importing from Firebase, and no failed import: a space that can be opened. */
+  private openable(): SQL {
+    return notExists(
+      this.db
+        .select({ id: firebaseImports.id })
+        .from(firebaseImports)
+        .where(and(eq(firebaseImports.spaceId, spaces.id), inArray(firebaseImports.status, ['RUNNING', 'FAILED']))),
+    );
   }
 }

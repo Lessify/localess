@@ -14,6 +14,6 @@ export class LocaleRepository {
   }
 
   async exists(localeId: string): Promise<boolean> {
-    return (await this.db.query.locales.findFirst({ where: eq(locales.id, localeId), columns: { id: true } })) !== undefined;
+    return (await this.db.$count(locales, eq(locales.id, localeId))) > 0;
   }
 }

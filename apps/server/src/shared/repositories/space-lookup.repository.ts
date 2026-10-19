@@ -18,8 +18,7 @@ export class SpaceLookupRepository {
   /** False for an id that is not a UUID (a legacy id is resolved before a controller sees it). */
   async exists(spaceId: string, tx?: Transaction): Promise<boolean> {
     if (!isUuid(spaceId)) return false;
-    const space = await (tx ?? this.db).query.spaces.findFirst({ where: eq(spaces.id, spaceId), columns: { id: true } });
-    return space !== undefined;
+    return (await (tx ?? this.db).$count(spaces, eq(spaces.id, spaceId))) > 0;
   }
 
   /** The space with its default locale and its locales in position order (ties: the one added first). */
