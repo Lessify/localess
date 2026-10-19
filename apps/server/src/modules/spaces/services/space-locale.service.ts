@@ -37,8 +37,7 @@ export class SpaceLocaleService {
   }
 
   /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */
-  async create(spaceId: string, spaceLocale: SpaceLocaleCreate): Promise<SpaceLocale> {
-    const localeId = spaceLocale.id;
+  async create(spaceId: string, { localeId }: SpaceLocaleCreate): Promise<SpaceLocale> {
     const space = await this.require(spaceId);
     if (!space.spaceLocales.some(it => it.localeId === localeId)) {
       if (!(await this.localeRepository.exists(localeId))) throw new BadRequestException(`Unknown locale ${localeId}`);

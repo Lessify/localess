@@ -28,7 +28,7 @@ export class SpaceLocaleService {
 
   /** Adds a locale of the catalog at the end of the space's list; the server takes only its id. */
   create(spaceId: string, locale: Locale): Observable<SpaceLocale> {
-    return this.http.post<SpaceLocale>(this.base(spaceId), { id: locale.id } satisfies SpaceLocaleCreate);
+    return this.http.post<SpaceLocale>(this.base(spaceId), { localeId: locale.id } satisfies SpaceLocaleCreate);
   }
 
   /** `localeIds`: every locale of the space, in the new order. */

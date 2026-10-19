@@ -243,24 +243,24 @@ describe('app API: spaces, locales, instance label', () => {
 
     it('manages locales: add by id (idempotent, known locales only), set the default, refuse removing it, remove', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      expect((await manager.post(`${base}/locales`, { id: 'xx-unknown' })).statusCode).toBe(400);
-      const added = await manager.post(`${base}/locales`, { id: 'de' });
+      expect((await manager.post(`${base}/locales`, { localeId: 'xx-unknown' })).statusCode).toBe(400);
+      const added = await manager.post(`${base}/locales`, { localeId: 'de' });
       expect(added.statusCode).toBe(201);
       expect(added.json()).toMatchObject({ spaceId, localeId: 'de', position: 1, locale: { id: 'de', name: 'German' } });
       // Again: the same space locale, not a second one.
-      expect((await manager.post(`${base}/locales`, { id: 'de' })).json()).toEqual(added.json());
+      expect((await manager.post(`${base}/locales`, { localeId: 'de' })).json()).toEqual(added.json());
       expect(localesOf((await reader.get(base)).json())).toEqual([
         { id: 'en', name: 'English' },
         { id: 'de', name: 'German' },
       ]);
-      const setDefault = await manager.put(`${base}/default-locale`, { id: 'de' });
+      const setDefault = await manager.put(`${base}/default-locale`, { defaultLocaleId: 'de' });
       expect(setDefault.json()).toMatchObject({ defaultLocaleId: 'de', defaultLocale: { id: 'de', name: 'German' } });
-      expect((await manager.put(`${base}/default-locale`, { id: 'fr' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/default-locale`, { defaultLocaleId: 'fr' })).statusCode).toBe(400);
       // Its own route only: the space's update takes the name alone.
       expect((await manager.patch(base, { name: 'Space', defaultLocaleId: 'en' })).statusCode).toBe(400);
-      expect((await reader.put(`${base}/default-locale`, { id: 'en' })).statusCode).toBe(403);
+      expect((await reader.put(`${base}/default-locale`, { defaultLocaleId: 'en' })).statusCode).toBe(403);
       expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(400);
-      await manager.put(`${base}/default-locale`, { id: 'en' });
+      await manager.put(`${base}/default-locale`, { defaultLocaleId: 'en' });
       const removed = await manager.delete(`${base}/locales/de`);
       expect(removed.statusCode).toBe(204);
       expect(removed.body).toBe('');
@@ -270,14 +270,14 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(404);
       expect((await manager.delete(`${base}/locales/xx`)).statusCode).toBe(404);
       expect((await reader.get(base)).json().updatedAt).toBe(before);
-      expect((await manager.post(`/api/app/spaces/${S2}/locales`, { id: 'de' })).statusCode).toBe(404);
-      expect((await reader.post(`${base}/locales`, { id: 'de' })).statusCode).toBe(403);
+      expect((await manager.post(`/api/app/spaces/${S2}/locales`, { localeId: 'de' })).statusCode).toBe(404);
+      expect((await reader.post(`${base}/locales`, { localeId: 'de' })).statusCode).toBe(403);
     });
 
     it('reorders locales: every locale of the space, each once', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      await manager.post(`${base}/locales`, { id: 'de' });
-      await manager.post(`${base}/locales`, { id: 'fr' });
+      await manager.post(`${base}/locales`, { localeId: 'de' });
+      await manager.post(`${base}/locales`, { localeId: 'fr' });
       const reordered = await manager.put(`${base}/locales/order`, { ids: ['fr', 'en', 'de'] });
       expect(reordered.statusCode).toBe(204);
       expect(localesOf((await reader.get(base)).json()).map(it => it.id)).toEqual(['fr', 'en', 'de']);
@@ -287,7 +287,7 @@ describe('app API: spaces, locales, instance label', () => {
         { id: 'de', name: 'German' },
       ]);
       // A locale added later goes last.
-      await manager.post(`${base}/locales`, { id: 'it' });
+      await manager.post(`${base}/locales`, { localeId: 'it' });
       expect(localesOf((await reader.get(base)).json()).map(it => it.id)).toEqual(['fr', 'en', 'de', 'it']);
       for (const ids of [['fr', 'en', 'de'], ['fr', 'en', 'de', 'it', 'it'], ['fr', 'en', 'de', 'es']]) {
         expect((await manager.put(`${base}/locales/order`, { ids })).statusCode, ids.join()).toBe(400);
@@ -307,8 +307,8 @@ describe('app API: spaces, locales, instance label', () => {
 
     it('computes the overview on request for any role: counts, asset storage, translation progress', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      await manager.post(`${base}/locales`, { id: 'de' });
-      await manager.post(`${base}/locales`, { id: 'fr' });
+      await manager.post(`${base}/locales`, { localeId: 'de' });
+      await manager.post(`${base}/locales`, { localeId: 'fr' });
       await t.db.insert(translations).values([
         { id: newUuid(), spaceId, key: 'hello', locales: { en: 'Hello', de: 'Hallo' } },
         { id: newUuid(), spaceId, key: 'bye', locales: { en: 'Bye', de: '' } },
@@ -396,8 +396,8 @@ describe('app API: spaces, locales, instance label', () => {
         reader.get(`${base}/environments`),
         reader.get(`${base}/environments/names`),
         manager.patch(base, { name: 'X' }),
-        manager.put(`${base}/default-locale`, { id: 'en' }),
-        manager.post(`${base}/locales`, { id: 'de' }),
+        manager.put(`${base}/default-locale`, { defaultLocaleId: 'en' }),
+        manager.post(`${base}/locales`, { localeId: 'de' }),
         manager.put(`${base}/locales/order`, { ids: ['en'] }),
         manager.delete(`${base}/locales/en`),
         manager.post(`${base}/environments`, { name: 'A', url: 'https://a.example.com' }),

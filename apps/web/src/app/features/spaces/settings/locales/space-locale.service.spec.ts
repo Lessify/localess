@@ -47,7 +47,7 @@ describe('SpaceLocaleService', () => {
     const service = setup();
     const result = firstValueFrom(service.create('space-1', german));
     const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/space-1/locales' });
-    expect(request.request.body).toEqual({ id: 'de' });
+    expect(request.request.body).toEqual({ localeId: 'de' });
     request.flush({ spaceId: 'space-1', localeId: 'de' });
     expect((await result).localeId).toBe('de');
   });

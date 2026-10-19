@@ -98,7 +98,7 @@ describe('translation snapshots', () => {
   it('rebuilds the draft when a locale is added, and serves the published default locale until the next publish', async () => {
     const draft = await cvOf(draftUrl('fr'));
     const publishedEn = await cvOf(publishedUrl('en'));
-    await t.app.get(SpaceLocaleService).create(S1, { id: 'fr' });
+    await t.app.get(SpaceLocaleService).create(S1, { localeId: 'fr' });
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await snapshots('draft')).map(it => it.locale).sort()).toEqual(['de', 'en', 'fr']);
     expect(await follow(draftUrl('fr'))).toEqual({ farewell: 'Bye', greeting: 'Hello', 'new.key': 'New (draft only)' });
@@ -107,10 +107,10 @@ describe('translation snapshots', () => {
 
   it('rebuilds the draft when the default locale changes', async () => {
     const draft = await cvOf(draftUrl('fr'));
-    await t.app.get(SpaceService).setDefaultLocale(S1, { id: 'de' });
+    await t.app.get(SpaceService).setDefaultLocale(S1, { defaultLocaleId: 'de' });
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await follow(draftUrl('fr'))).greeting).toBe('Servus');
-    await t.app.get(SpaceService).setDefaultLocale(S1, { id: 'en' });
+    await t.app.get(SpaceService).setDefaultLocale(S1, { defaultLocaleId: 'en' });
   });
 
   it('drops both snapshots of a removed locale', async () => {

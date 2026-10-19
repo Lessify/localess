@@ -49,7 +49,7 @@ export class AppApi {
   }
 
   addLocale(spaceId: string, localeId: string): Promise<unknown> {
-    return this.send('post', `/api/app/spaces/${spaceId}/locales`, { id: localeId });
+    return this.send('post', `/api/app/spaces/${spaceId}/locales`, { localeId });
   }
 
   // --- Translations ---------------------------------------------------------------------------------------

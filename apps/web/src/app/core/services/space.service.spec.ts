@@ -104,7 +104,7 @@ describe('SpaceService', () => {
     const service = setup();
     const result = firstValueFrom(service.setDefaultLocale('s1', { id: 'de', name: 'German' }));
     const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/s1/default-locale' });
-    expect(request.request.body).toEqual({ id: 'de' });
+    expect(request.request.body).toEqual({ defaultLocaleId: 'de' });
     request.flush({ id: 's1', defaultLocaleId: 'de' });
     expect((await result).defaultLocaleId).toBe('de');
   });

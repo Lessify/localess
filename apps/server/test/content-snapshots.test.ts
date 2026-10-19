@@ -126,10 +126,10 @@ describe('content snapshots', () => {
     it('changing the default locale drops every draft and keeps the published snapshots', async () => {
       await cvOf(draftUrl(C.home));
       const published = await snapshots('published');
-      await t.app.get(SpaceService).setDefaultLocale(S1, { id: 'de' });
+      await t.app.get(SpaceService).setDefaultLocale(S1, { defaultLocaleId: 'de' });
       expect(await snapshots('draft')).toEqual([]);
       expect(await snapshots('published')).toEqual(published);
-      await t.app.get(SpaceService).setDefaultLocale(S1, { id: 'en' });
+      await t.app.get(SpaceService).setDefaultLocale(S1, { defaultLocaleId: 'en' });
     });
 
     it('removing a locale drops its snapshots, draft and published', async () => {
@@ -141,7 +141,7 @@ describe('content snapshots', () => {
     });
 
     it('an added locale stores nothing: published requests get the default locale', async () => {
-      await t.app.get(SpaceLocaleService).create(S1, { id: 'de' });
+      await t.app.get(SpaceLocaleService).create(S1, { localeId: 'de' });
       expect((await snapshots('published')).filter(it => it.locale === 'de')).toEqual([]);
       expect(await follow(documentUrl(C.home, '&locale=de'))).toMatchObject({ locale: 'en', data: { title: 'Home' } });
     });

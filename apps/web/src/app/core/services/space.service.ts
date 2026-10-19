@@ -58,7 +58,7 @@ export class SpaceService {
 
   /** Apart from `update`: its own process on the server (the drafts that read the default go). Answers the space. */
   setDefaultLocale(id: string, locale: Locale): Observable<Space> {
-    return this.http.put<Space>(`${BASE}/${id}/default-locale`, { id: locale.id } satisfies SpaceDefaultLocaleUpdate);
+    return this.http.put<Space>(`${BASE}/${id}/default-locale`, { defaultLocaleId: locale.id } satisfies SpaceDefaultLocaleUpdate);
   }
 
   remove(id: string): Observable<void> {

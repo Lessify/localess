@@ -54,7 +54,7 @@ export const zSpaceLocalePageable = zPageable(SPACE_LOCALE_SORT_FIELDS, 'positio
 export type SpaceLocalePageable = z.infer<typeof zSpaceLocalePageable>;
 
 /** `POST …/locales`: a locale of the catalog, added at the end of the space's list. */
-export const zSpaceLocaleCreate = z.object({ id: zLocaleId });
+export const zSpaceLocaleCreate = z.object({ localeId: zLocaleId });
 export type SpaceLocaleCreate = z.infer<typeof zSpaceLocaleCreate>;
 
 /** `PUT …/locales/order`: every locale's id, in the new order. */
@@ -62,5 +62,5 @@ export const zSpaceLocaleOrder = z.object({ ids: z.array(zLocaleId).min(1).max(1
 export type SpaceLocaleOrder = z.infer<typeof zSpaceLocaleOrder>;
 
 /** `PUT /api/app/spaces/:spaceId/default-locale`: one of the space's locales. */
-export const zSpaceDefaultLocaleUpdate = z.object({ id: zLocaleId });
+export const zSpaceDefaultLocaleUpdate = z.object({ defaultLocaleId: zLocaleId });
 export type SpaceDefaultLocaleUpdate = z.infer<typeof zSpaceDefaultLocaleUpdate>;

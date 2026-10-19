@@ -132,11 +132,10 @@ export class SpaceService {
    * Its own process, not an update: the locale must be one of the space's, and the drafts that read the default go
    * (content stored for the default is read as the new locale from then on).
    */
-  async setDefaultLocale(spaceId: string, defaultLocale: SpaceDefaultLocaleUpdate): Promise<Space> {
-    const localeId = defaultLocale.id;
+  async setDefaultLocale(spaceId: string, { defaultLocaleId }: SpaceDefaultLocaleUpdate): Promise<Space> {
     const space = await this.require(spaceId);
-    if (!space.spaceLocales.some(it => it.localeId === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
-    await this.spaceRepository.setDefaultLocale(spaceId, localeId);
+    if (!space.spaceLocales.some(it => it.localeId === defaultLocaleId)) throw new BadRequestException(`Locale ${defaultLocaleId} is not in space locales`);
+    await this.spaceRepository.setDefaultLocale(spaceId, defaultLocaleId);
     return this.findOne(spaceId);
   }
 

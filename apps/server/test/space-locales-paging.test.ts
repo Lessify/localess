@@ -21,7 +21,7 @@ describe('app API: space locales, one page at a time', () => {
     noRole = api(t, await userWithAccess(t, 'new@example.com', { role: null }));
     const spaceId = (await manager.post('/api/app/spaces', { name: 'Locales' })).json().id;
     base = `/api/app/spaces/${spaceId}/locales`;
-    for (const id of ADDED.slice(1)) await manager.post(base, { id });
+    for (const localeId of ADDED.slice(1)) await manager.post(base, { localeId });
   });
 
   afterAll(() => t?.close());
