@@ -145,10 +145,15 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   ```
 
   The service maps the entity to it in a transformer (`shared/transformers/space.transformer.ts`: `toSpace`,
-  `toSpaceLocale`, `toSpaceEnvironment`), leaving out columns the web must never see. A list that only names things
-  answers `IdName` (`{ id, name }`).
+  `toSpaceLocale`, `toSpaceEnvironment`), leaving out columns the web must never see.
+
+  A list the web needs whole, to pick from (the sidebar, a picker), answers a narrow model of `id-name.model.ts` from
+  `GET …/names`, unpaged: `IdName` (`{ id, name }`), or `IdNameUrl` (`{ id, name, url }`) when the pick needs where it
+  points (the Visual Editor's environments). A new narrow shape is added there, named by its fields (columns only,
+  never a computed one).
 - **Why:** what an endpoint answers is visible from what its query loaded; one shape per table on both sides.
 - **Example:** Admin → Spaces answers `Space` with `firebaseImport`; the selected space (`GET /spaces/:spaceId`) with
-  `defaultLocale` and `spaceLocales`; the sidebar `IdName[]`.
+  `defaultLocale` and `spaceLocales`; the sidebar `IdName[]` (`GET /spaces/names`); the Visual Editor `IdNameUrl[]`
+  (`GET /spaces/:spaceId/environments/names`).
 - **Don't:** a computed field for the web's convenience (`importStatus`, `legacyId`, a flattened `locales`).
 - **Reworked so far:** spaces. The other models keep their shapes until their module is reworked.
