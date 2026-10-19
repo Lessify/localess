@@ -15,43 +15,22 @@ import {
 } from '@nestjs/common';
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyRequest } from 'fastify';
-import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import {
+  type AssetFolderCreate,
+  type AssetListQuery,
+  type AssetMove,
+  type AssetUpdate,
+  zAssetFolderCreate,
+  zAssetListQuery,
+  zAssetMove,
+  zAssetUpdate,
+  zAssetUploadFields,
+} from '../models/asset.models.js';
 import { AssetsService } from '../services/assets.service.js';
-
-/** The folder; null or absent: the root. */
-const parentId = z.uuid().nullable().optional();
-const name = z.string().trim().min(1).max(500);
-const listSchema = z.object({
-  // '': the root's children; absent: any parent.
-  parentId: z.union([z.uuid(), z.literal('')]).optional(),
-  kind: z.enum(['FOLDER', 'FILE']).optional(),
-  name: z.string().max(500).optional(),
-  fileType: z.string().max(100).optional(),
-  ids: z
-    .string()
-    .transform(it => (it ? it.split(',') : []))
-    .optional(),
-  limit: z.coerce.number().int().min(1).max(1000).optional(),
-});
-// A folder is a name in a place: file fields are refused, not ignored.
-const folderSchema = z.object({ parentId, name }).strict();
-const updateSchema = z.object({ name: name.optional(), alt: z.string().max(2000).optional() });
-const moveSchema = z.object({ parentId: z.uuid().nullable() });
-const uploadFields = z.object({
-  // A multipart field: absent or '' for the root.
-  parentId: z.union([z.uuid(), z.literal('')]).optional(),
-  name: name.optional(),
-  extension: z
-    .string()
-    .regex(/^(\.[^./\\\s]{1,31})?$/, 'extension is empty or starts with a dot (.png)')
-    .optional(),
-  alt: z.string().max(2000).optional(),
-  source: z.string().max(2048).optional(),
-});
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
@@ -71,7 +50,7 @@ export class AssetsController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
+  async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(zAssetListQuery)) query: AssetListQuery) {
     const { parentId, ...rest } = query;
     return this.assets.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
@@ -104,7 +83,7 @@ export class AssetsController {
 
   @Post('folders')
   @RequirePermission(UserPermission.ASSET_CREATE)
-  async createFolder(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(folderSchema)) body: z.infer<typeof folderSchema>) {
+  async createFolder(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zAssetFolderCreate)) body: AssetFolderCreate) {
     return this.assets.createFolder(spaceId, body.parentId ?? null, body.name);
   }
 
@@ -118,7 +97,7 @@ export class AssetsController {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
-    const fields = uploadFields.safeParse(fieldValues(file));
+    const fields = zAssetUploadFields.safeParse(fieldValues(file));
     if (!fields.success) {
       file.file.resume();
       throw new BadRequestException(fields.error.issues.map(it => `${it.path.join('.')}: ${it.message}`).join('; '));
@@ -143,7 +122,7 @@ export class AssetsController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
+    @Body(new ZodValidationPipe(zAssetUpdate)) body: AssetUpdate,
   ) {
     return this.assets.update(spaceId, id, body);
   }
@@ -153,7 +132,7 @@ export class AssetsController {
   async move(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(moveSchema)) body: z.infer<typeof moveSchema>,
+    @Body(new ZodValidationPipe(zAssetMove)) body: AssetMove,
   ) {
     return this.assets.move(spaceId, id, body.parentId);
   }

@@ -1,24 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { z } from 'zod';
-import { SPACE_TEMPLATE_IDS, UserPermission } from '@localess/shared';
-import { zPageable } from '@localess/shared/zod';
+import { type SpaceCreate, type SpaceEnvironmentInput, type SpaceUpdate, UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
-import { zPreviewUrl } from '../../../infra/http/zod.js';
-import { SPACE_SORT_FIELDS } from '../repositories/spaces.repository.js';
+import { type EnvironmentOrder, zEnvironmentOrder, zSpaceEnvironmentInput } from '../models/environment.models.js';
+import { type LocaleId, type LocaleOrder, zLocaleId, zLocaleOrder } from '../models/locale.models.js';
+import { type SpacePageable, zSpaceCreate, zSpacePageable, zSpaceUpdate } from '../models/space.models.js';
 import { SpacesService } from '../services/spaces.service.js';
-
-const createSchema = z.object({ name: z.string().trim().min(1).max(200), template: z.enum(SPACE_TEMPLATE_IDS).optional() });
-const listSchema = zPageable(SPACE_SORT_FIELDS, 'name').extend({
-  search: z.string().trim().max(200).optional(),
-  importing: z.enum(['true', 'false']).transform(it => it === 'true').optional(),
-});
-const updateSchema = z.object({ name: z.string().trim().min(1).max(200) }).strict();
-const environmentSchema = z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl });
-const environmentOrderSchema = z.object({ ids: z.array(z.uuid()).min(1).max(1000) });
-const localeIdSchema = z.object({ id: z.string().min(1).max(64) });
-const localeOrderSchema = z.object({ ids: z.array(z.string().min(1).max(64)).min(1).max(1000) });
 
 /** Spaces, their locales and environments, and the dashboard overview (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */
 @Controller('api/app/spaces')
@@ -28,7 +16,7 @@ export class SpacesController {
   /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name, or the id), `?importing=false`. */
   @Get()
   @RequireAnyRole()
-  list(@Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
+  list(@Query(new ZodValidationPipe(zSpacePageable)) query: SpacePageable) {
     return this.spaces.page(query);
   }
 
@@ -47,13 +35,13 @@ export class SpacesController {
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
+  create(@Body(new ZodValidationPipe(zSpaceCreate)) body: SpaceCreate) {
     return this.spaces.create(body.name, body.template);
   }
 
   @Patch(':spaceId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  update(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>) {
+  update(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zSpaceUpdate)) body: SpaceUpdate) {
     return this.spaces.rename(spaceId, body.name);
   }
 
@@ -75,7 +63,7 @@ export class SpacesController {
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   createEnvironment(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(environmentSchema)) body: z.infer<typeof environmentSchema>,
+    @Body(new ZodValidationPipe(zSpaceEnvironmentInput)) body: SpaceEnvironmentInput,
   ) {
     return this.spaces.createEnvironment(spaceId, body);
   }
@@ -84,7 +72,7 @@ export class SpacesController {
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   reorderEnvironments(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(environmentOrderSchema)) body: z.infer<typeof environmentOrderSchema>,
+    @Body(new ZodValidationPipe(zEnvironmentOrder)) body: EnvironmentOrder,
   ) {
     return this.spaces.reorderEnvironments(spaceId, body.ids);
   }
@@ -94,7 +82,7 @@ export class SpacesController {
   updateEnvironment(
     @Param('spaceId') spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,
-    @Body(new ZodValidationPipe(environmentSchema)) body: z.infer<typeof environmentSchema>,
+    @Body(new ZodValidationPipe(zSpaceEnvironmentInput)) body: SpaceEnvironmentInput,
   ) {
     return this.spaces.updateEnvironment(spaceId, environmentId, body);
   }
@@ -107,7 +95,7 @@ export class SpacesController {
 
   @Post(':spaceId/locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  addLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>) {
+  addLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zLocaleId)) body: LocaleId) {
     return this.spaces.addLocale(spaceId, body.id);
   }
 
@@ -115,7 +103,7 @@ export class SpacesController {
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   reorderLocales(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(localeOrderSchema)) body: z.infer<typeof localeOrderSchema>,
+    @Body(new ZodValidationPipe(zLocaleOrder)) body: LocaleOrder,
   ) {
     return this.spaces.reorderLocales(spaceId, body.ids);
   }
@@ -128,7 +116,7 @@ export class SpacesController {
 
   @Put(':spaceId/default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  setDefaultLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(localeIdSchema)) body: z.infer<typeof localeIdSchema>) {
+  setDefaultLocale(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zLocaleId)) body: LocaleId) {
     return this.spaces.setDefaultLocale(spaceId, body.id);
   }
 }

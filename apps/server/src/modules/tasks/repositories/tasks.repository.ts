@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Pageable, TaskKind, TaskStatus } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -8,15 +7,12 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventsService } from '../../../infra/events/events.service.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
+import type { TaskPageable } from '../models/task.models.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 
 export type TaskEntity = typeof tasks.$inferSelect;
 export type TaskLogEntity = typeof taskLogs.$inferSelect;
 export type NewTask = Omit<typeof tasks.$inferInsert, 'spaceId' | 'status'>;
-
-/** The field the Tasks page may sort by: newest first by default. */
-export const TASK_SORT_FIELDS = ['createdAt'] as const;
-export type TaskQuery = Pageable<(typeof TASK_SORT_FIELDS)[number]> & { search?: string; kind?: TaskKind[]; status?: TaskStatus[] };
 
 /**
  * The `tasks` rows (the queue) and their `task_logs`. Every write publishes its `tasks` / `task_logs` change event in
@@ -30,7 +26,7 @@ export class TasksRepository {
   ) {}
 
   /** One page of the space's tasks by creation time (then the id, so ties page stably), and how many match. */
-  async findPage(spaceId: string, query: TaskQuery): Promise<{ rows: TaskEntity[]; total: number }> {
+  async findPage(spaceId: string, query: TaskPageable): Promise<{ rows: TaskEntity[]; total: number }> {
     const conditions: SQL[] = [eq(tasks.spaceId, spaceId)];
     if (query.search) {
       const pattern = containsPattern(query.search);

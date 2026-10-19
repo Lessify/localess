@@ -1,27 +1,21 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
-import { z } from 'zod';
-import { UserPermission } from '@localess/shared';
-import { zTranslationKey, zTranslationValue } from '@localess/shared/zod';
+import { type TranslationCreate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { zLabels } from '../../../infra/http/zod.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import {
+  type TranslateLocale,
+  type TranslationLocaleValue,
+  type TranslationPatch,
+  type TranslationRename,
+  zTranslateLocale,
+  zTranslationCreate,
+  zTranslationLocaleValue,
+  zTranslationPatch,
+  zTranslationRename,
+} from '../models/translation.models.js';
 import { TranslationsService } from '../services/translations.service.js';
 
-const createSchema = z.object({
-  key: zTranslationKey,
-  locales: z.record(z.string(), zTranslationValue),
-  labels: zLabels.optional(),
-  description: z.string().max(2000).optional(),
-});
-const updateSchema = z.object({ labels: zLabels.optional(), description: z.string().max(2000).optional() });
-const localeValueSchema = z.object({ value: zTranslationValue });
-const renameSchema = z.object({ key: zTranslationKey });
-const translateLocaleSchema = z.object({
-  sourceLocaleId: z.string().min(1),
-  targetLocaleId: z.string().min(1),
-  overwrite: z.boolean().optional(),
-});
 /**
  * Translation keys (was direct `spaces/{s}/translations` access plus the `translation-*` callables). `:id` is the
  * UUID; `key` is the translation key.
@@ -52,7 +46,7 @@ export class TranslationsController {
   @RequirePermission(UserPermission.TRANSLATION_CREATE)
   create(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>,
+    @Body(new ZodValidationPipe(zTranslationCreate)) body: TranslationCreate,
   ) {
     return this.translations.create(spaceId, body);
   }
@@ -62,7 +56,7 @@ export class TranslationsController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
+    @Body(new ZodValidationPipe(zTranslationPatch)) body: TranslationPatch,
   ) {
     return this.translations.update(spaceId, id, body);
   }
@@ -73,7 +67,7 @@ export class TranslationsController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Param('locale') locale: string,
-    @Body(new ZodValidationPipe(localeValueSchema)) body: z.infer<typeof localeValueSchema>,
+    @Body(new ZodValidationPipe(zTranslationLocaleValue)) body: TranslationLocaleValue,
   ) {
     return this.translations.updateLocale(spaceId, id, locale, body.value);
   }
@@ -83,7 +77,7 @@ export class TranslationsController {
   rename(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(renameSchema)) body: z.infer<typeof renameSchema>,
+    @Body(new ZodValidationPipe(zTranslationRename)) body: TranslationRename,
   ) {
     return this.translations.rename(spaceId, id, body.key);
   }
@@ -114,7 +108,7 @@ export class TranslationsController {
   @RequirePermission(UserPermission.TRANSLATION_UPDATE)
   translateLocale(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(translateLocaleSchema)) body: z.infer<typeof translateLocaleSchema>,
+    @Body(new ZodValidationPipe(zTranslateLocale)) body: TranslateLocale,
   ) {
     return this.translations.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }

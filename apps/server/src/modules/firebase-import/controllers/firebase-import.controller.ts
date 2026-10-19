@@ -1,14 +1,11 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
-import { z } from 'zod';
 import { RequireAdmin } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import { type FirebaseConnection, type FirebaseImportStart, zFirebaseConnection, zFirebaseImportStart } from '../models/firebase-import.models.js';
 import { FirebaseImportService } from '../services/firebase-import.service.js';
-
-const connection = z.object({ origin: z.string().min(1).max(2048), token: z.string().min(1).max(500) });
-const startSchema = connection.extend({ spaceId: z.string().min(1).max(128) });
 
 /** Admin → Spaces → Import from Firebase. The migration token is used for the request and never stored. */
 @Controller('api/app/admin/firebase-import')
@@ -18,13 +15,13 @@ export class FirebaseImportController {
 
   @Post('spaces')
   @HttpCode(200)
-  spaces(@Body(new ZodValidationPipe(connection)) body: z.infer<typeof connection>) {
+  spaces(@Body(new ZodValidationPipe(zFirebaseConnection)) body: FirebaseConnection) {
     return this.imports.sourceSpaces(body.origin, body.token);
   }
 
   @Post()
   @HttpCode(202)
-  start(@Body(new ZodValidationPipe(startSchema)) body: z.infer<typeof startSchema>, @CurrentUser() user: UserRow) {
+  start(@Body(new ZodValidationPipe(zFirebaseImportStart)) body: FirebaseImportStart, @CurrentUser() user: UserRow) {
     return this.imports.start(body.origin, body.token, body.spaceId, user);
   }
 

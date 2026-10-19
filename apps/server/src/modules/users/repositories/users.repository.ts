@@ -1,5 +1,4 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import type { Pageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -9,11 +8,7 @@ import { EventsService } from '../../../infra/events/events.service.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { findUserLogins } from '../../../shared/queries/user.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
-
-/** The fields Admin → Users may sort by (`name`: the display name). */
-export const USER_SORT_FIELDS = ['email', 'name', 'role', 'createdAt', 'updatedAt'] as const;
-export type UserSortField = (typeof USER_SORT_FIELDS)[number];
-export type UserQuery = Pageable<UserSortField> & { search?: string; active?: 'active' | 'inactive' };
+import type { UserPageable } from '../models/user.models.js';
 
 const SORT_COLUMNS = { email: users.email, name: users.displayName, role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt };
 
@@ -33,7 +28,7 @@ export class UsersRepository {
   ) {}
 
   /** One page by the query's sort (then the id, so ties page stably), and how many match its filters. */
-  async findPage(query: UserQuery): Promise<{ rows: UserRow[]; total: number }> {
+  async findPage(query: UserPageable): Promise<{ rows: UserRow[]; total: number }> {
     const conditions: SQL[] = [];
     if (query.search) {
       const pattern = containsPattern(query.search);

@@ -1,42 +1,19 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
-import { zContentData } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import {
+  type ContentCreate,
+  type ContentDataUpdate,
+  type ContentListQuery,
+  type ContentPatch,
+  zContentCreate,
+  zContentDataUpdate,
+  zContentListQuery,
+  zContentPatch,
+} from '../models/content.models.js';
 import { ContentsService } from '../services/contents.service.js';
-
-/** No `/` (it separates path segments) and nothing that needs URL encoding. */
-const slug = z
-  .string()
-  .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/, 'Slugs are letters, digits, - and _')
-  .max(200);
-/** The folder; null or absent: the root. */
-const parentId = z.uuid().nullable().optional();
-const name = z.string().trim().min(1).max(500);
-const ids = z.array(z.string().max(128)).max(10_000);
-
-const createSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('DOCUMENT'), parentId, name, slug, schema: z.string().min(1).max(128) }),
-  z.object({ kind: z.literal('FOLDER'), parentId, name, slug }),
-]);
-const updateSchema = z.object({ name: name.optional(), slug: slug.optional(), parentId });
-// Blocks of known values (`zContentData`): `_id`, `_schema`, and each value one of the shapes the editor stores.
-// `assets`, `links`, `references`: still accepted from clients that send them (an editor tab open across a deploy),
-// and ignored: the server works them out from the data.
-const dataSchema = z.object({ data: zContentData, assets: ids.optional(), links: ids.optional(), references: ids.optional() });
-const listSchema = z.object({
-  // '': the root's children; absent: any parent.
-  parentId: z.union([z.uuid(), z.literal('')]).optional(),
-  kind: z.enum(['FOLDER', 'DOCUMENT']).optional(),
-  name: z.string().max(500).optional(),
-  ids: z
-    .string()
-    .transform(it => (it ? it.split(',') : []))
-    .optional(),
-  limit: z.coerce.number().int().min(1).max(1000).optional(),
-});
 
 /** Contents (was direct `spaces/{s}/contents` access plus the `content-publish`/`-unpublish` callables). */
 @Controller('api/app/spaces/:spaceId/contents')
@@ -46,7 +23,7 @@ export class ContentsController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
+  async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(zContentListQuery)) query: ContentListQuery) {
     const { parentId, ...rest } = query;
     return this.contents.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
@@ -74,7 +51,7 @@ export class ContentsController {
   @RequirePermission(UserPermission.CONTENT_CREATE)
   async create(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>,
+    @Body(new ZodValidationPipe(zContentCreate)) body: ContentCreate,
   ) {
     return this.contents.create(spaceId, body);
   }
@@ -91,7 +68,7 @@ export class ContentsController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
+    @Body(new ZodValidationPipe(zContentPatch)) body: ContentPatch,
   ) {
     return this.contents.update(spaceId, id, body);
   }
@@ -101,7 +78,7 @@ export class ContentsController {
   async updateData(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(dataSchema)) body: z.infer<typeof dataSchema>,
+    @Body(new ZodValidationPipe(zContentDataUpdate)) body: ContentDataUpdate,
   ) {
     return this.contents.updateData(spaceId, id, body.data);
   }

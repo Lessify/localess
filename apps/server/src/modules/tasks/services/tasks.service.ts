@@ -6,7 +6,8 @@ import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { toTask, toTaskLog } from '../../../shared/transformers/task.transformer.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import { type TaskEntity, type TaskQuery, TasksRepository } from '../repositories/tasks.repository.js';
+import type { TaskPageable } from '../models/task.models.js';
+import { type TaskEntity, TasksRepository } from '../repositories/tasks.repository.js';
 import { assertCanManage } from '../utils/task-permissions.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { taskFileKey, taskFilesPrefix } from '../utils/task.utils.js';
@@ -45,7 +46,7 @@ export class TasksService {
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 
-  async page(spaceId: string, query: TaskQuery): Promise<Page<Task>> {
+  async page(spaceId: string, query: TaskPageable): Promise<Page<Task>> {
     const { rows, total } = await this.tasks.findPage(spaceId, query);
     return toPage(rows, total, query, toTask);
   }

@@ -13,7 +13,8 @@ import { toPage } from '../../../shared/utils/paging.js';
 import { LocalesRepository } from '../repositories/locales.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplatesRepository, type StoredTemplateFile } from '../repositories/space-templates.repository.js';
-import { type SpaceQuery, SpacesRepository } from '../repositories/spaces.repository.js';
+import type { SpacePageable } from '../models/space.models.js';
+import { SpacesRepository } from '../repositories/spaces.repository.js';
 import { SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
 /** Template files stored in parallel, this many at a time. */
@@ -40,7 +41,7 @@ export class SpacesService {
   ) {}
 
   /** One page of spaces (Admin → Spaces, and every page of it for the space switcher). */
-  async page(query: SpaceQuery): Promise<Page<Space>> {
+  async page(query: SpacePageable): Promise<Page<Space>> {
     const { rows, total } = await this.spaces.findPage(query);
     return toPage(rows, total, query, toSpace);
   }

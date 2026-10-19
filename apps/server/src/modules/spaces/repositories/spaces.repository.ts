@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { Pageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, max, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -12,12 +11,7 @@ import { dropContentDrafts, dropContentLocale } from '../../../shared/data-rules
 import { findSpace, requireSpace, selectSpaces, type SpaceRow } from '../../../shared/queries/space.query.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
-
-/** The fields Admin → Spaces may sort by (`name`: case-insensitive). */
-export const SPACE_SORT_FIELDS = ['name', 'id', 'updatedAt'] as const;
-export type SpaceSortField = (typeof SPACE_SORT_FIELDS)[number];
-/** `importing: false`: leave out spaces whose import from Firebase runs or failed (they can not be opened). */
-export type SpaceQuery = Pageable<SpaceSortField> & { search?: string; importing?: boolean };
+import type { SpacePageable } from '../models/space.models.js';
 
 type SpaceValues = Partial<Pick<typeof spaces.$inferInsert, 'name' | 'defaultLocaleId'>>;
 
@@ -37,7 +31,7 @@ export class SpacesRepository {
    * One page by the query's sort (`name` case-insensitive whatever the database collation), then the id so equal
    * values page stably; and how many match its filters.
    */
-  async findPage(query: SpaceQuery): Promise<{ rows: SpaceRow[]; total: number }> {
+  async findPage(query: SpacePageable): Promise<{ rows: SpaceRow[]; total: number }> {
     const conditions: SQL[] = [];
     if (query.search) {
       // The name, or any part of the id (as the table shows it), case-insensitive.

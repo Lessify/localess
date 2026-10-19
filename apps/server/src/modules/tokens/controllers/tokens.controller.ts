@@ -1,20 +1,11 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
-import { z } from 'zod';
 import { TokenType, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import { type TokenCreate, type TokenUpdate, zTokenCreate, zTokenUpdate } from '../models/token.models.js';
 import { TokensService } from '../services/tokens.service.js';
 
-const createSchema = z
-  .object({
-    name: z.string().trim().min(1).max(200),
-    type: z.enum(TokenType),
-    cacheTtl: z.number().int().min(0).max(31_536_000).nullish(),
-  })
-  .strict();
-// The type can't change: a `type` key is a 400.
-const updateSchema = createSchema.omit({ type: true }).strict();
 const TOKEN_TYPES: readonly string[] = Object.values(TokenType);
 
 /**
@@ -39,7 +30,7 @@ export class TokensController {
   }
 
   @Post()
-  create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(createSchema)) body: z.infer<typeof createSchema>) {
+  create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zTokenCreate)) body: TokenCreate) {
     return this.tokens.create(spaceId, body);
   }
 
@@ -47,7 +38,7 @@ export class TokensController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(updateSchema)) body: z.infer<typeof updateSchema>,
+    @Body(new ZodValidationPipe(zTokenUpdate)) body: TokenUpdate,
   ) {
     return this.tokens.update(spaceId, id, body);
   }

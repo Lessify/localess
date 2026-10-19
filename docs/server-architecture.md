@@ -32,6 +32,7 @@ like a module, and it imports no feature module:
 auth/
   auth.module.ts  api-tokens.module.ts  auth.guard.ts  decorators.ts  request-context.ts
   controllers/   auth.controller.ts  oauth.controller.ts  app-config.controller.ts
+  models/        the request shapes (zod schema `zX` + type `X`), as in a module
   services/      auth.service.ts  session.service.ts  password-reset.service.ts  oauth.service.ts  token-auth.service.ts
   repositories/  sessions.repository.ts  password-reset-tokens.repository.ts  auth-users.repository.ts  api-tokens.repository.ts
   utils/         password.ts  session-cookie.ts  token-hash.ts  public-url.ts  oauth-providers.ts  api-token.ts
@@ -51,10 +52,11 @@ users module's, with their own `UsersRepository`.
 | **Transformer** | `shared/transformers/` | Pure mapping from one model to another, mostly a database entity to the API DTO / shared model | I/O, decisions |
 | **Repository** | `repositories/` | Every database action: queries, writes, transactions, locks, change events (`pg_notify`); turns constraint violations into errors | Business rules, HTTP, calling services |
 
-Two folders for what is none of the four:
+Three folders for what is none of the four:
 
 | Folder | What goes there |
 |---|---|
+| `models/` | The module's request shapes, one file per resource (`space.models.ts`, `environment.models.ts`): each zod schema `zX` (body, query, multipart fields) next to its type `X`. Where `@localess/shared` already has `X` (the web uses it too), the file only declares `zX = z.object(…) satisfies z.ZodType<X>` and everyone uses the shared type (never redeclared); otherwise `export type X = z.infer<typeof zX>`. A paged list: `zXPageable` / `XPageable` and its sort-field list (`SPACE_SORT_FIELDS`). Controllers validate with `new ZodValidationPipe(zX)` and type the argument `X`; repositories and services take `XPageable` from here, so a controller never imports a repository. Generic validators stay shared: `infra/http/zod.ts` (`zLabels`, `zPreviewUrl`), `@localess/shared/zod` (`zPageable`, `zMultiValue`, `zContentData`) |
 | `utils/` | Pure functions without I/O: parsing, hashing, formatting, algorithms (`buildTranslationMap`, `image-transform`, `asset-etag`) |
 | `workers/` | Background work outside a request (the task worker, the Firebase import runner) |
 
@@ -65,6 +67,7 @@ to the file they test (`utils/chunk-by-size.test.ts`); integration tests stay in
 modules/translations/
   translations.module.ts
   controllers/   translations.controller.ts  translate.controller.ts  translations.cdn.controller.ts  translations.management.controller.ts
+  models/        translation.models.ts  …  (zod request schemas zX + types X)
   services/      translations.service.ts  translation-delivery.service.ts  translate.service.ts
   repositories/  translations.repository.ts  translation-snapshots.repository.ts  space-locales.repository.ts
   utils/         translation.utils.ts  translate-batch.ts  chunk-by-size.ts  translate-format.utils.ts
@@ -76,6 +79,8 @@ modules/translations/
   the migrations from it); a repository exports the entity types it returns (`TranslationEntity = typeof translations.$inferSelect`).
 - **Domain models and API DTOs** are the types in `@localess/shared` (one definition for server and web). Transformers
   map an entity to them; they all live in `shared/transformers/`, one place for every module. Controllers send what the service returns.
+- **Request models** (what a client sends: bodies, queries) are the module's `models/`: the zod schema `zX` and its
+  type `X` side by side, `X` being the shared type when `@localess/shared` has it (see the folder table above).
 
 ## Transactions
 
@@ -120,7 +125,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | | | `user.query.ts`: `findUserLogins` (how each user signs in: password, OAuth providers), for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction; `lockSchemaReferences`, which locks the schemas written fields refer to (schemas, the schema import task) |
 | `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `events.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |
-| `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client); `paging.ts` (`offsetOf`, `toPage`, `containsPattern`, `escapeLike`: a paginated endpoint validates `zPageable(fields, default)` from `@localess/shared/zod`, its repository orders by the field then `id`, counts with the same filters, and answers `Page<T>`) |
+| `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client); `paging.ts` (`offsetOf`, `toPage`, `containsPattern`, `escapeLike`: a paginated endpoint validates its `zXPageable` (the module's `models/`, built on `zPageable(fields, defaultSort, defaultDirection)` from `@localess/shared/zod`), its repository orders by the field then `id`, counts with the same filters, and answers `Page<T>`) |
 | | | `schema.utils.ts` (`planSchemaPush`, `checkSchemaFields`, `fieldRefersTo`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
 | | | `asset-path.utils.ts` (`folderPath`): assets and the asset import task; `embedded-alt.ts`, `media-duration.ts`, `media-orientation.ts`, `media-pages.ts` (`isAnimatedPages`, also asset delivery): `AssetMetadataService` |
 

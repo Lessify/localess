@@ -1,27 +1,24 @@
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { RouteConfig } from '@nestjs/platform-fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
 import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import type { UserRow } from '../../shared/models/user.js';
 import type { UserDto } from '../../shared/transformers/user.transformer.js';
 import { AuthService } from '../services/auth.service.js';
 import { Public } from '../decorators.js';
-import { PASSWORD_MIN_LENGTH } from '../utils/password.js';
 import { PasswordResetService } from '../services/password-reset.service.js';
 import { publicOrigin } from '../utils/public-url.js';
 import { CurrentUser } from '../request-context.js';
 import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from '../utils/session-cookie.js';
 import { SessionService } from '../services/session.service.js';
-
-const loginSchema = z.object({
-  email: z.string().trim().email(),
-  password: z.string().min(1),
-});
-
-const resetRequestSchema = z.object({ email: z.string().trim().email() });
-const resetConfirmSchema = z.object({ token: z.string().min(1), password: z.string().min(PASSWORD_MIN_LENGTH) });
+import { type Login, zLogin } from '../models/login.models.js';
+import {
+  type PasswordResetConfirm,
+  type PasswordResetRequest,
+  zPasswordResetConfirm,
+  zPasswordResetRequest,
+} from '../models/password-reset.models.js';
 
 /** Login attempts per client IP per minute; LOCALESS_LOGIN_RATE_LIMIT overrides (read per request). */
 const loginRateLimit = (): number => Number(process.env['LOCALESS_LOGIN_RATE_LIMIT'] ?? 10);
@@ -40,7 +37,7 @@ export class AuthController {
   @HttpCode(200)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async login(
-    @Body(new ZodValidationPipe(loginSchema)) body: z.infer<typeof loginSchema>,
+    @Body(new ZodValidationPipe(zLogin)) body: Login,
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<{ user: UserDto }> {
@@ -64,7 +61,7 @@ export class AuthController {
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async requestPasswordReset(
-    @Body(new ZodValidationPipe(resetRequestSchema)) body: z.infer<typeof resetRequestSchema>,
+    @Body(new ZodValidationPipe(zPasswordResetRequest)) body: PasswordResetRequest,
     @Req() request: FastifyRequest,
   ): Promise<void> {
     await this.passwordReset.request(body.email, publicOrigin(this.config, request));
@@ -74,7 +71,7 @@ export class AuthController {
   @Post('password-reset/confirm')
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
-  async confirmPasswordReset(@Body(new ZodValidationPipe(resetConfirmSchema)) body: z.infer<typeof resetConfirmSchema>): Promise<void> {
+  async confirmPasswordReset(@Body(new ZodValidationPipe(zPasswordResetConfirm)) body: PasswordResetConfirm): Promise<void> {
     await this.passwordReset.confirm(body.token, body.password);
   }
 

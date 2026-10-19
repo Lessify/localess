@@ -1,43 +1,25 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import { z } from 'zod';
-import { type Page, USER_PERMISSIONS, USER_ROLES, UserPermission } from '@localess/shared';
-import { zPageable } from '@localess/shared/zod';
+import { type Page, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
-import { PASSWORD_MIN_LENGTH } from '../../../auth/utils/password.js';
 import { publicOrigin } from '../../../auth/utils/public-url.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
-import { USER_SORT_FIELDS } from '../repositories/users.repository.js';
+import {
+  type UserAccessUpdate,
+  type UserInviteInput,
+  type UserPageable,
+  type UserStatus,
+  zUserAccessUpdate,
+  zUserInviteInput,
+  zUserPageable,
+  zUserStatus,
+} from '../models/user.models.js';
 import { UsersService } from '../services/users.service.js';
-
-const roleSchema = z.enum(USER_ROLES).nullish();
-const permissionsSchema = z.array(z.enum(USER_PERMISSIONS as [UserPermission, ...UserPermission[]])).optional();
-
-const inviteSchema = z.object({
-  email: z.string().trim().email(),
-  password: z.string().min(PASSWORD_MIN_LENGTH),
-  displayName: z.string().trim().max(200).optional(),
-  role: roleSchema,
-  permissions: permissionsSchema,
-  lock: z.boolean().optional(),
-});
-
-const statusSchema = z.object({ disabled: z.boolean() });
-const listSchema = zPageable(USER_SORT_FIELDS, 'email').extend({
-  search: z.string().trim().max(200).optional(),
-  active: z.enum(['active', 'inactive']).optional(),
-});
-
-const accessSchema = z.object({
-  role: roleSchema,
-  permissions: permissionsSchema,
-  lock: z.boolean().optional(),
-});
 
 /**
  * Admin → Users. Enforces what firestore.rules enforced on `users/{uid}` plus the `user.invite`
@@ -54,7 +36,7 @@ export class UsersController {
 
   /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (email or display name), `?active=active|inactive`. */
   @Get()
-  list(@Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>): Promise<Page<UserDto>> {
+  list(@Query(new ZodValidationPipe(zUserPageable)) query: UserPageable): Promise<Page<UserDto>> {
     return this.users.page(query);
   }
 
@@ -66,7 +48,7 @@ export class UsersController {
   @Post()
   async invite(
     @CurrentUser() caller: UserRow,
-    @Body(new ZodValidationPipe(inviteSchema)) body: z.infer<typeof inviteSchema>,
+    @Body(new ZodValidationPipe(zUserInviteInput)) body: UserInviteInput,
   ): Promise<UserDto> {
     return this.users.invite(caller, body);
   }
@@ -75,7 +57,7 @@ export class UsersController {
   async updateAccess(
     @CurrentUser() caller: UserRow,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(accessSchema)) body: z.infer<typeof accessSchema>,
+    @Body(new ZodValidationPipe(zUserAccessUpdate)) body: UserAccessUpdate,
   ): Promise<UserDto> {
     return this.users.changeAccess(caller, id, body);
   }
@@ -85,7 +67,7 @@ export class UsersController {
   async updateStatus(
     @CurrentUser() caller: UserRow,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(statusSchema)) body: z.infer<typeof statusSchema>,
+    @Body(new ZodValidationPipe(zUserStatus)) body: UserStatus,
   ): Promise<UserDto> {
     return this.users.changeStatus(caller, id, body.disabled);
   }

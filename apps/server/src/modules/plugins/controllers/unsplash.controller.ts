@@ -1,16 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { z } from 'zod';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import { type UnsplashSearch, zUnsplashSearch } from '../models/unsplash.models.js';
 import { UnsplashService } from '../services/unsplash.service.js';
-
-const searchSchema = z.object({
-  query: z.string().min(1).max(200),
-  page: z.coerce.number().optional(),
-  perPage: z.coerce.number().optional(),
-  orientation: z.enum(['landscape', 'portrait', 'squarish']).optional(),
-});
 
 /**
  * Unsplash proxy for the asset picker (was the `unsplash-search` / `unsplash-random` callables).
@@ -22,7 +15,7 @@ export class UnsplashController {
   constructor(private readonly unsplash: UnsplashService) {}
 
   @Get('search')
-  search(@Query(new ZodValidationPipe(searchSchema)) query: z.infer<typeof searchSchema>) {
+  search(@Query(new ZodValidationPipe(zUnsplashSearch)) query: UnsplashSearch) {
     return this.unsplash.search(query);
   }
 

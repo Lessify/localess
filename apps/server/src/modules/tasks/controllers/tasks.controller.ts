@@ -1,16 +1,14 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { z } from 'zod';
-import { TaskKind, TaskStatus, UserPermission } from '@localess/shared';
-import { zMultiValue, zPageable } from '@localess/shared/zod';
+import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
-import { TASK_SORT_FIELDS } from '../repositories/tasks.repository.js';
+import { type TaskExportCreate, type TaskPageable, zTaskExportCreate, zTaskImportFields, zTaskPageable } from '../models/task.models.js';
 import { TasksService } from '../services/tasks.service.js';
 import { assertCanManage } from '../utils/task-permissions.js';
 
@@ -24,26 +22,6 @@ const READ_PERMISSIONS = [
   UserPermission.TRANSLATION_EXPORT,
   UserPermission.TRANSLATION_IMPORT,
 ];
-
-/** Newest first unless asked otherwise; `kind` and `status` repeat for several values. */
-const listSchema = zPageable(TASK_SORT_FIELDS, 'createdAt', 'desc').extend({
-  search: z.string().trim().max(200).optional(),
-  kind: zMultiValue(Object.values(TaskKind) as [TaskKind, ...TaskKind[]]).optional(),
-  status: zMultiValue(Object.values(TaskStatus) as [TaskStatus, ...TaskStatus[]]).optional(),
-});
-
-const exportSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('ASSET_EXPORT'), path: z.string().max(4000).optional() }),
-  z.object({ kind: z.literal('CONTENT_EXPORT'), path: z.string().max(4000).optional() }),
-  z.object({ kind: z.literal('SCHEMA_EXPORT') }),
-  z.object({ kind: z.literal('TRANSLATION_EXPORT'), locale: z.string().max(64).optional() }),
-  z.object({ kind: z.literal('ASSET_REGEN_METADATA') }),
-]);
-const importFields = z.object({
-  kind: z.enum(['ASSET_IMPORT', 'CONTENT_IMPORT', 'SCHEMA_IMPORT', 'TRANSLATION_IMPORT']),
-  /** Translation import of one locale from a flat JSON file. */
-  locale: z.string().max(64).optional(),
-});
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
@@ -62,7 +40,7 @@ export class TasksController {
 
   @Get()
   @RequirePermission(...READ_PERMISSIONS)
-  list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
+  list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(zTaskPageable)) query: TaskPageable) {
     return this.tasks.page(spaceId, query);
   }
 
@@ -96,7 +74,7 @@ export class TasksController {
   @RequirePermission(...READ_PERMISSIONS)
   create(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(exportSchema)) body: z.infer<typeof exportSchema>,
+    @Body(new ZodValidationPipe(zTaskExportCreate)) body: TaskExportCreate,
     @CurrentUser() user: UserRow,
   ) {
     return this.tasks.create(spaceId, body, user);
@@ -112,7 +90,7 @@ export class TasksController {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
-    const fields = importFields.safeParse(fieldValues(file));
+    const fields = zTaskImportFields.safeParse(fieldValues(file));
     if (!fields.success) {
       file.file.resume();
       throw new BadRequestException(fields.error.issues.map(it => `${it.path.join('.')}: ${it.message}`).join('; '));

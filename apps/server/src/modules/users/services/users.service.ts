@@ -5,7 +5,8 @@ import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { toPrincipal, toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
-import { type UserQuery, UsersRepository } from '../repositories/users.repository.js';
+import type { UserPageable } from '../models/user.models.js';
+import { UsersRepository } from '../repositories/users.repository.js';
 
 export interface CreateUser {
   email: string;
@@ -52,7 +53,7 @@ export class UsersService {
   ) {}
 
   /** One page of Admin → Users. */
-  async page(query: UserQuery): Promise<Page<UserDto>> {
+  async page(query: UserPageable): Promise<Page<UserDto>> {
     const { rows, total } = await this.users.findPage(query);
     return toPage(await this.toDtos(rows), total, query, it => it);
   }
