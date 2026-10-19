@@ -41,7 +41,7 @@ export class SpaceService {
 
   /** Every space that can be opened, by name: the sidebar's list. */
   async findAllNames(): Promise<IdName[]> {
-    return (await this.spaceRepository.findAllNames()).map(({ id, name }) => ({ id, name }));
+    return this.spaceRepository.findAllNames();
   }
 
   /** The selected space: with its default locale and its locales. */

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { SpacePageable } from '@localess/shared';
+import type { IdName, SpacePageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -8,7 +8,7 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventService } from '../../../infra/events/event.service.js';
 import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
-import type { SpaceEntity, SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import type { SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
 
@@ -47,7 +47,7 @@ export class SpaceRepository {
   }
 
   /** Every space that can be opened (not importing, no failed import), by name: the sidebar list. */
-  findAllNames(): Promise<Pick<SpaceEntity, 'id' | 'name'>[]> {
+  findAllNames(): Promise<IdName[]> {
     return this.db.query.spaces.findMany({
       columns: { id: true, name: true },
       where: this.openable(),
