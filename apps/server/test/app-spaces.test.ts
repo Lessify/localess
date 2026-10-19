@@ -185,9 +185,12 @@ describe('app API: spaces, locales, instance label', () => {
       const staging = (await manager.post(base, { name: 'Staging', url: 'https://staging.example.com' })).json();
       expect(twin).toMatchObject({ name: 'Preview', position: 1 });
 
-      const updated = await manager.patch(`${base}/${twin.id}`, { name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
+      const updated = await manager.put(`${base}/${twin.id}`, { name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
       expect(updated.statusCode).toBe(200);
       expect(updated.json()).toMatchObject({ id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}', position: 1 });
+      // A replacement: name and URL together; PATCH is not a route.
+      expect((await manager.put(`${base}/${twin.id}`, { name: 'Twin' })).statusCode).toBe(400);
+      expect((await manager.patch(`${base}/${twin.id}`, { name: 'Twin' })).statusCode).toBe(404);
 
       const reordered = await manager.put(`${base}/order`, { ids: [staging.id, preview.id, twin.id] });
       expect(reordered.statusCode).toBe(204);
@@ -210,7 +213,7 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json()).toMatchObject({ name: 'Last', position: 3 });
       expect(await names()).toEqual(['Preview', 'Twin', 'Last']);
 
-      expect((await manager.patch(`${base}/${staging.id}`, { name: 'Gone', url: 'https://gone.example.com' })).statusCode).toBe(404);
+      expect((await manager.put(`${base}/${staging.id}`, { name: 'Gone', url: 'https://gone.example.com' })).statusCode).toBe(404);
       expect((await manager.delete(`${base}/${staging.id}`)).statusCode).toBe(404);
       expect((await manager.delete(`${base}/not-a-uuid`)).statusCode).toBe(404);
       expect((await reader.post(base, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(403);
@@ -228,14 +231,14 @@ describe('app API: spaces, locales, instance label', () => {
         expect((await manager.post(base, { name: 'Bad', url })).statusCode, url).toBe(400);
       }
       const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
-      expect((await manager.patch(`${base}/${first.id}`, { name: 'Bad', url: 'javascript:alert(1)' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/${first.id}`, { name: 'Bad', url: 'javascript:alert(1)' })).statusCode).toBe(400);
       expect((await manager.post(base, { name: '', url: 'https://x.example.com' })).statusCode).toBe(400);
     });
 
     it('keeps environments of other spaces out of reach', async () => {
       const other = (await manager.post('/api/app/spaces', { name: 'Other' })).json().id;
       const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
-      expect((await manager.patch(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
+      expect((await manager.put(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
       expect((await manager.delete(`/api/app/spaces/${other}/environments/${first.id}`)).statusCode).toBe(404);
       expect((await manager.put(`/api/app/spaces/${other}/environments/order`, { ids: [first.id] })).statusCode).toBe(400);
       await manager.delete(`/api/app/spaces/${other}`);

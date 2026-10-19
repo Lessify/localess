@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import { zSpaceEnvironmentCreate, zSpaceEnvironmentOrder, zSpaceEnvironmentPageable, zSpaceEnvironmentUpdate } from '@localess/shared/zod';
 import {
   type IdNameUrl,
@@ -46,7 +46,7 @@ export class SpaceEnvironmentController {
     await this.spaceEnvironmentService.reorder(spaceId, body);
   }
 
-  @Patch(':environmentId')
+  @Put(':environmentId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   update(
     @Param('spaceId', UuidParamPipe) spaceId: string,

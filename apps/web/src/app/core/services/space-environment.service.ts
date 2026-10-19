@@ -41,7 +41,7 @@ export class SpaceEnvironmentService {
   }
 
   update(spaceId: string, environmentId: string, environment: SpaceEnvironmentUpdate): Observable<SpaceEnvironment> {
-    return this.http.patch<SpaceEnvironment>(`${this.base(spaceId)}/${environmentId}`, {
+    return this.http.put<SpaceEnvironment>(`${this.base(spaceId)}/${environmentId}`, {
       name: environment.name,
       url: environment.url,
     } satisfies SpaceEnvironmentUpdate);

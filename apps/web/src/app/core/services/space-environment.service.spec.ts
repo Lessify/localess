@@ -74,10 +74,10 @@ describe('SpaceEnvironmentService', () => {
     expect((await result).id).toBe('e1');
   });
 
-  it('update() patches one environment by id', async () => {
+  it('update() replaces one environment by id', async () => {
     const service = setup();
     const done = firstValueFrom(service.update('s1', 'e1', { name: 'Prod', url: 'https://example.com' }));
-    const request = http.expectOne({ method: 'PATCH', url: '/api/app/spaces/s1/environments/e1' });
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/s1/environments/e1' });
     expect(request.request.body).toEqual({ name: 'Prod', url: 'https://example.com' });
     request.flush({});
     await done;

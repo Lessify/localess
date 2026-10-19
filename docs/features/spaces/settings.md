@@ -221,7 +221,7 @@ event. `GET …/environments/names` answers every environment as `IdNameUrl[]` (
 
 - `openAddDialog()` / `openEditDialog(environment)` — `EnvironmentDialogComponent` (name + URL, with the example URL under the field), then
   `SpaceEnvironmentService.create()` (`POST /api/app/spaces/:s/environments`, appended last) or `update()`
-  (`PATCH …/environments/:id`); both answer the `SpaceEnvironment`
+  (`PUT …/environments/:id`, name and URL together); both answer the `SpaceEnvironment`
 - `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `SpaceEnvironmentService.remove()` (`DELETE …/environments/:id`, 204)
 - `move(environment, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: swaps the environment with its neighbour in the
   space's order and sends the whole order (`PUT …/environments/order {ids}`, every environment once, 204)

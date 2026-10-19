@@ -37,7 +37,7 @@ export type SpaceEnvironmentPageable = z.infer<typeof zSpaceEnvironmentPageable>
 export const zSpaceEnvironmentCreate = zEnvironment;
 export type SpaceEnvironmentCreate = z.infer<typeof zSpaceEnvironmentCreate>;
 
-/** `PATCH …/environments/:environmentId`. */
+/** `PUT …/environments/:environmentId`: the whole environment, name and URL. */
 export const zSpaceEnvironmentUpdate = zEnvironment;
 export type SpaceEnvironmentUpdate = z.infer<typeof zSpaceEnvironmentUpdate>;
 
