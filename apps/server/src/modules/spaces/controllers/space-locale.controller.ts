@@ -34,14 +34,14 @@ export class SpaceLocaleController {
   @Post('locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate): Promise<SpaceLocale> {
-    return this.spaceLocaleService.create(spaceId, body.id);
+    return this.spaceLocaleService.create(spaceId, body);
   }
 
   @Put('locales/order')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   async reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleOrder }) body: SpaceLocaleOrder): Promise<void> {
-    await this.spaceLocaleService.reorder(spaceId, body.ids);
+    await this.spaceLocaleService.reorder(spaceId, body);
   }
 
   @Delete('locales/:localeId')

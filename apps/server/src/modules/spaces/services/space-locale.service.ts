@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdName, Page, SpaceLocale, SpaceLocalePageable } from '@localess/shared';
+import type { IdName, Page, SpaceLocale, SpaceLocaleCreate, SpaceLocaleOrder, SpaceLocalePageable } from '@localess/shared';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { toSpaceLocale } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
@@ -37,15 +37,16 @@ export class SpaceLocaleService {
   }
 
   /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */
-  async create(spaceId: string, localeId: string): Promise<SpaceLocale> {
+  async create(spaceId: string, spaceLocale: SpaceLocaleCreate): Promise<SpaceLocale> {
+    const localeId = spaceLocale.id;
     const space = await this.require(spaceId);
     if (!space.spaceLocales.some(it => it.localeId === localeId)) {
       if (!(await this.localeRepository.exists(localeId))) throw new BadRequestException(`Unknown locale ${localeId}`);
       await this.spaceLocaleRepository.create(spaceId, localeId);
     }
-    const spaceLocale = await this.spaceLocaleRepository.findOne(spaceId, localeId);
-    if (!spaceLocale) throw new NotFoundException('Space locale not found');
-    return toSpaceLocale(spaceLocale);
+    const created = await this.spaceLocaleRepository.findOne(spaceId, localeId);
+    if (!created) throw new NotFoundException('Space locale not found');
+    return toSpaceLocale(created);
   }
 
   async remove(spaceId: string, localeId: string): Promise<void> {
@@ -56,8 +57,9 @@ export class SpaceLocaleService {
     await this.spaceLocaleRepository.delete(spaceId, localeId);
   }
 
-  /** `localeIds` is the space's locales in their new order: every one of them, each once. */
-  async reorder(spaceId: string, localeIds: string[]): Promise<void> {
+  /** `order.ids` is the space's locales in their new order: every one of them, each once. */
+  async reorder(spaceId: string, order: SpaceLocaleOrder): Promise<void> {
+    const localeIds = order.ids;
     const space = await this.require(spaceId);
     if (
       !isPermutation(

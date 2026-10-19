@@ -43,7 +43,7 @@ export class SpaceEnvironmentController {
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   async reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentOrder }) body: SpaceEnvironmentOrder): Promise<void> {
-    await this.spaceEnvironmentService.reorder(spaceId, body.ids);
+    await this.spaceEnvironmentService.reorder(spaceId, body);
   }
 
   @Patch(':environmentId')

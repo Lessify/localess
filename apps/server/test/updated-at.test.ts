@@ -41,7 +41,7 @@ describe('updated_at', () => {
     const a = await service.create(S1, { name: 'A', url: 'https://a.example.com' });
     const b = await service.create(S1, { name: 'B', url: 'https://b.example.com' });
     await t.db.update(spaceEnvironments).set({ updatedAt: PAST }).where(eq(spaceEnvironments.spaceId, S1));
-    await service.reorder(S1, [b.id, a.id]);
+    await service.reorder(S1, { ids: [b.id, a.id] });
     const rows = await t.db.select().from(spaceEnvironments).where(eq(spaceEnvironments.spaceId, S1));
     expect(rows.map(it => it.updatedAt)).toEqual(rows.map(() => PAST));
   });

@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdName, Page, Space, SpacePageable, SpaceUpdate } from '@localess/shared';
+import type { IdName, Page, Space, SpaceCreate, SpaceDefaultLocaleUpdate, SpacePageable, SpaceUpdate } from '@localess/shared';
 import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -68,11 +68,11 @@ export class SpaceService {
    * token). A test template while they are off is a 400 (an unknown id is refused by the controller's schema). No
    * permission beyond creating a space (SPACE_MANAGEMENT): a template is part of creating one.
    */
-  async create(name: string, templateId: SpaceTemplateId | undefined): Promise<Space> {
-    if (!templateId) return this.findOne(await this.spaceRepository.create(name, DEFAULT_LOCALE.id));
-    const template = this.available().find(it => it.id === templateId);
+  async create(space: SpaceCreate): Promise<Space> {
+    if (!space.template) return this.findOne(await this.spaceRepository.create(space.name, DEFAULT_LOCALE.id));
+    const template = this.available().find(it => it.id === space.template);
     if (!template) throw new BadRequestException('Unknown template');
-    return this.createFromTemplate(name, template);
+    return this.createFromTemplate(space.name, template);
   }
 
   /**
@@ -132,7 +132,8 @@ export class SpaceService {
    * Its own process, not an update: the locale must be one of the space's, and the drafts that read the default go
    * (content stored for the default is read as the new locale from then on).
    */
-  async setDefaultLocale(spaceId: string, localeId: string): Promise<Space> {
+  async setDefaultLocale(spaceId: string, defaultLocale: SpaceDefaultLocaleUpdate): Promise<Space> {
+    const localeId = defaultLocale.id;
     const space = await this.require(spaceId);
     if (!space.spaceLocales.some(it => it.localeId === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
     await this.spaceRepository.setDefaultLocale(spaceId, localeId);

@@ -53,7 +53,7 @@ export class SpaceController {
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   create(@Body({ schema: zSpaceCreate }) body: SpaceCreate): Promise<Space> {
-    return this.spaceService.create(body.name, body.template);
+    return this.spaceService.create(body);
   }
 
   @Patch(':spaceId')
@@ -66,7 +66,7 @@ export class SpaceController {
   @Put(':spaceId/default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   setDefaultLocale(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate): Promise<Space> {
-    return this.spaceService.setDefaultLocale(spaceId, body.id);
+    return this.spaceService.setDefaultLocale(spaceId, body);
   }
 
   @Delete(':spaceId')

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
+import type { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentOrder, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
 import { toSpaceEnvironment } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { SpaceEnvironmentRepository } from '../repositories/space-environment.repository.js';
@@ -51,8 +51,9 @@ export class SpaceEnvironmentService {
     await this.spaceEnvironmentRepository.delete(spaceId, environmentId);
   }
 
-  /** `environmentIds` is the space's environments in their new order: every one of them, each once. */
-  async reorder(spaceId: string, environmentIds: string[]): Promise<void> {
+  /** `order.ids` is the space's environments in their new order: every one of them, each once. */
+  async reorder(spaceId: string, order: SpaceEnvironmentOrder): Promise<void> {
+    const environmentIds = order.ids;
     await this.requireSpace(spaceId);
     const current = await this.spaceEnvironmentRepository.findAllNames(spaceId);
     if (
