@@ -11,6 +11,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { serverReason } from '@core/utils/api-error';
 import { formValueKey } from '@core/utils/form-value';
 import {
   assetFieldFileType,
@@ -466,9 +467,10 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
           });
       },
       error: (err: unknown) => {
-        // A refusal (400 broken field rules, 409) carries the server's reason.
-        if (err instanceof HttpErrorResponse && (err.status === 400 || err.status === 409) && typeof err.error?.message === 'string') {
-          this.notificationService.error('Schema can not be updated.', { description: err.error.message });
+        // A refusal (400 broken field rules or a validation list, 409) carries the server's reason.
+        const reason = err instanceof HttpErrorResponse && (err.status === 400 || err.status === 409) ? serverReason(err) : undefined;
+        if (reason) {
+          this.notificationService.error('Schema can not be updated.', { description: reason });
         } else {
           this.notificationService.error('Schema can not be updated.');
         }

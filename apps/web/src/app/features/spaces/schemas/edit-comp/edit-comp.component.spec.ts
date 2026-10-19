@@ -243,6 +243,16 @@ describe('EditCompComponent', () => {
     expect(error).toHaveBeenCalledWith('Schema can not be updated.', { description: message });
   });
 
+  it('save() shows the first issue when the server refuses the body (a validation list)', () => {
+    const { component, updateComponent, error } = setup(rootSchema());
+    const message = ['fields.0.name: Invalid string: must match pattern', 'fields.1.kind: Invalid option'];
+    updateComponent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));
+
+    component.save();
+
+    expect(error).toHaveBeenCalledWith('Schema can not be updated.', { description: message[0] });
+  });
+
   it('selectComponent() sets the selected field index', () => {
     const { component } = setup(rootSchema());
 

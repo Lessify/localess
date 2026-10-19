@@ -267,7 +267,7 @@ describe('app API: contents', () => {
       ] as const) {
         const response = await save(data);
         expect(response.statusCode).toBe(400);
-        expect(response.json().issues.map((it: { path: string }) => it.path)).toContain(path);
+        expect((response.json().message as string[]).map(it => it.slice(0, it.indexOf(': ')))).toContain(path);
       }
       expect((await row(post.id)).data).toEqual(before);
     });

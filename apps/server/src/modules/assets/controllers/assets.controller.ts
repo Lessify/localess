@@ -17,7 +17,6 @@ import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyRequest } from 'fastify';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import {
   type AssetFolderCreate,
@@ -50,7 +49,7 @@ export class AssetsController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(zAssetListQuery)) query: AssetListQuery) {
+  async list(@Param('spaceId') spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery) {
     const { parentId, ...rest } = query;
     return this.assets.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
@@ -83,7 +82,7 @@ export class AssetsController {
 
   @Post('folders')
   @RequirePermission(UserPermission.ASSET_CREATE)
-  async createFolder(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zAssetFolderCreate)) body: AssetFolderCreate) {
+  async createFolder(@Param('spaceId') spaceId: string, @Body({ schema: zAssetFolderCreate }) body: AssetFolderCreate) {
     return this.assets.createFolder(spaceId, body.parentId ?? null, body.name);
   }
 
@@ -122,7 +121,7 @@ export class AssetsController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zAssetUpdate)) body: AssetUpdate,
+    @Body({ schema: zAssetUpdate }) body: AssetUpdate,
   ) {
     return this.assets.update(spaceId, id, body);
   }
@@ -132,7 +131,7 @@ export class AssetsController {
   async move(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zAssetMove)) body: AssetMove,
+    @Body({ schema: zAssetMove }) body: AssetMove,
   ) {
     return this.assets.move(spaceId, id, body.parentId);
   }

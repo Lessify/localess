@@ -80,4 +80,19 @@ describe('app API: spaces, one page at a time', () => {
       expect((await admin.get(`/api/app/spaces${query}`)).statusCode, query).toBe(400);
     }
   });
+
+  it('answers a refused query or body with the NestJS validation body: each issue as "path: message"', async () => {
+    const query = await admin.get('/api/app/spaces?size=101&direction=up');
+    expect(query.statusCode).toBe(400);
+    expect(query.json()).toEqual({ statusCode: 400, error: 'Bad Request', message: [expect.stringMatching(/^size: /), expect.stringMatching(/^direction: /)] });
+    const body = await admin.post('/api/app/spaces', { name: '   ' });
+    expect(body.statusCode).toBe(400);
+    expect(body.json().message).toEqual([expect.stringMatching(/^name: /)]);
+  });
+
+  it('hands the handler the parsed value (trimmed, defaults applied)', async () => {
+    const space = (await admin.post('/api/app/spaces', { name: '  Trimmed  ' })).json();
+    expect(space.name).toBe('Trimmed');
+    expect((await list('?search=Trimmed')).items.map(it => it.name)).toEqual(['Trimmed']);
+  });
 });

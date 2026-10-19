@@ -7,7 +7,6 @@ import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { type TaskExportCreate, type TaskPageable, zTaskExportCreate, zTaskImportFields, zTaskPageable } from '../models/task.models.js';
 import { TasksService } from '../services/tasks.service.js';
 import { assertCanManage } from '../utils/task-permissions.js';
@@ -40,7 +39,7 @@ export class TasksController {
 
   @Get()
   @RequirePermission(...READ_PERMISSIONS)
-  list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(zTaskPageable)) query: TaskPageable) {
+  list(@Param('spaceId') spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable) {
     return this.tasks.page(spaceId, query);
   }
 
@@ -74,7 +73,7 @@ export class TasksController {
   @RequirePermission(...READ_PERMISSIONS)
   create(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(zTaskExportCreate)) body: TaskExportCreate,
+    @Body({ schema: zTaskExportCreate }) body: TaskExportCreate,
     @CurrentUser() user: UserRow,
   ) {
     return this.tasks.create(spaceId, body, user);

@@ -2,7 +2,6 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from
 import { type TranslationCreate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import {
   type TranslateLocale,
   type TranslationLocaleValue,
@@ -46,7 +45,7 @@ export class TranslationsController {
   @RequirePermission(UserPermission.TRANSLATION_CREATE)
   create(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(zTranslationCreate)) body: TranslationCreate,
+    @Body({ schema: zTranslationCreate }) body: TranslationCreate,
   ) {
     return this.translations.create(spaceId, body);
   }
@@ -56,7 +55,7 @@ export class TranslationsController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zTranslationPatch)) body: TranslationPatch,
+    @Body({ schema: zTranslationPatch }) body: TranslationPatch,
   ) {
     return this.translations.update(spaceId, id, body);
   }
@@ -67,7 +66,7 @@ export class TranslationsController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Param('locale') locale: string,
-    @Body(new ZodValidationPipe(zTranslationLocaleValue)) body: TranslationLocaleValue,
+    @Body({ schema: zTranslationLocaleValue }) body: TranslationLocaleValue,
   ) {
     return this.translations.updateLocale(spaceId, id, locale, body.value);
   }
@@ -77,7 +76,7 @@ export class TranslationsController {
   rename(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zTranslationRename)) body: TranslationRename,
+    @Body({ schema: zTranslationRename }) body: TranslationRename,
   ) {
     return this.translations.rename(spaceId, id, body.key);
   }
@@ -108,7 +107,7 @@ export class TranslationsController {
   @RequirePermission(UserPermission.TRANSLATION_UPDATE)
   translateLocale(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(zTranslateLocale)) body: TranslateLocale,
+    @Body({ schema: zTranslateLocale }) body: TranslateLocale,
   ) {
     return this.translations.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }

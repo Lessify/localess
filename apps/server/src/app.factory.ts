@@ -3,7 +3,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyCors from '@fastify/cors';
 import fastifyRateLimit from '@fastify/rate-limit';
-import { HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Logger, StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from './app.module.js';
@@ -52,6 +52,10 @@ export async function createApp(config: AppConfig): Promise<NestFastifyApplicati
   });
   // Asset and import uploads: one file per request, streamed to storage.
   await app.register(fastifyMultipart, { limits: { files: 1, fileSize: config.uploadMaxBytes, fields: 20, fieldSize: 64 * 1024 } });
+  // Validates every `@Body` / `@Query` / `@Param` that declares `{ schema: zX }` (the module's models/) and hands the
+  // handler the parsed value; a refused one is a 400 whose `message` lists `"path: issue"`. Parameters without a
+  // schema pass through.
+  app.useGlobalPipes(new StandardSchemaValidationPipe());
   // gzip for compressible content types over 1 KB (JSON, SVG); images and videos are left alone.
   await app.register(fastifyCompress, { encodings: ['gzip', 'deflate'], threshold: 1024 });
   // Opt-in per route via `@RouteConfig({ rateLimit })` (login).

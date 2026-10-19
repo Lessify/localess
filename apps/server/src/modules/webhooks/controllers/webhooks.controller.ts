@@ -2,7 +2,6 @@ import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query
 import { UserPermission, type WebHookCreate, type WebHookUpdate } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { type WebHookEnabled, zWebHookCreate, zWebHookEnabled, zWebHookUpdate } from '../models/webhook.models.js';
 import { WebhooksService } from '../services/webhooks.service.js';
 
@@ -28,7 +27,7 @@ export class WebhooksController {
   }
 
   @Post()
-  create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zWebHookCreate)) body: WebHookCreate) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate) {
     return this.webhooks.create(spaceId, body);
   }
 
@@ -36,7 +35,7 @@ export class WebhooksController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zWebHookUpdate)) body: WebHookUpdate,
+    @Body({ schema: zWebHookUpdate }) body: WebHookUpdate,
   ) {
     return this.webhooks.update(spaceId, id, body);
   }
@@ -45,7 +44,7 @@ export class WebhooksController {
   setStatus(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zWebHookEnabled)) body: WebHookEnabled,
+    @Body({ schema: zWebHookEnabled }) body: WebHookEnabled,
   ) {
     return this.webhooks.setEnabled(spaceId, id, body.enabled);
   }

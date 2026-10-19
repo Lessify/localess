@@ -1,7 +1,6 @@
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { RouteConfig } from '@nestjs/platform-fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { ZodValidationPipe } from '../../infra/http/zod-validation.pipe.js';
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import type { UserRow } from '../../shared/models/user.js';
 import type { UserDto } from '../../shared/transformers/user.transformer.js';
@@ -37,7 +36,7 @@ export class AuthController {
   @HttpCode(200)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async login(
-    @Body(new ZodValidationPipe(zLogin)) body: Login,
+    @Body({ schema: zLogin }) body: Login,
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<{ user: UserDto }> {
@@ -61,7 +60,7 @@ export class AuthController {
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async requestPasswordReset(
-    @Body(new ZodValidationPipe(zPasswordResetRequest)) body: PasswordResetRequest,
+    @Body({ schema: zPasswordResetRequest }) body: PasswordResetRequest,
     @Req() request: FastifyRequest,
   ): Promise<void> {
     await this.passwordReset.request(body.email, publicOrigin(this.config, request));
@@ -71,7 +70,7 @@ export class AuthController {
   @Post('password-reset/confirm')
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
-  async confirmPasswordReset(@Body(new ZodValidationPipe(zPasswordResetConfirm)) body: PasswordResetConfirm): Promise<void> {
+  async confirmPasswordReset(@Body({ schema: zPasswordResetConfirm }) body: PasswordResetConfirm): Promise<void> {
     await this.passwordReset.confirm(body.token, body.password);
   }
 

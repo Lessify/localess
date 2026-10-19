@@ -1,7 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { type TranslateData, UserPermission } from '@localess/shared';
 import { RequireAllPermissions, RequirePermission } from '../../../auth/decorators.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { zTranslateData } from '../models/translate.models.js';
 import { TranslateService } from '../services/translate.service.js';
 
@@ -19,7 +18,7 @@ export class TranslateController {
   @Post()
   @HttpCode(200)
   @RequireAllPermissions(UserPermission.TRANSLATION_UPDATE, UserPermission.CONTENT_UPDATE)
-  async translateText(@Body(new ZodValidationPipe(zTranslateData)) body: TranslateData) {
+  async translateText(@Body({ schema: zTranslateData }) body: TranslateData) {
     if (body.items) return this.translate.translateItems(body.items, body.sourceLocale, body.targetLocale);
     return { content: await this.translate.translate(body.content, body.sourceLocale, body.targetLocale, body.format) };
   }

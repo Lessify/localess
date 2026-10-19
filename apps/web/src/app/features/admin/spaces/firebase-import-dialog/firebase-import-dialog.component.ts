@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FirebaseImportService } from '@core/services/firebase-import.service';
+import { serverReason } from '@core/utils/api-error';
 import { FirebaseImport, FirebaseSourceSpace } from '@localess/shared';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -44,7 +45,7 @@ export class FirebaseImportDialogComponent {
         this.busy.set(false);
       },
       error: err => {
-        this.error.set(err?.error?.message ?? 'Cannot connect to the Firebase environment');
+        this.error.set(serverReason(err) ?? 'Cannot connect to the Firebase environment');
         this.busy.set(false);
       },
     });
@@ -60,7 +61,7 @@ export class FirebaseImportDialogComponent {
         this.run.set(run);
         this.imports.poll(run.id).subscribe(it => this.run.set(it));
       },
-      error: err => this.error.set(err?.error?.message ?? 'The import could not be started'),
+      error: err => this.error.set(serverReason(err) ?? 'The import could not be started'),
     });
   }
 
@@ -71,7 +72,7 @@ export class FirebaseImportDialogComponent {
     this.error.set(undefined);
     this.imports.cancel(run.id).subscribe({
       next: cancelled => this.run.set(cancelled),
-      error: err => this.error.set(err?.error?.message ?? 'The import could not be cancelled'),
+      error: err => this.error.set(serverReason(err) ?? 'The import could not be cancelled'),
     });
   }
 }

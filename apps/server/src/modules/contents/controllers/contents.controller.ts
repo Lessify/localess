@@ -1,7 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import {
   type ContentCreate,
@@ -23,7 +22,7 @@ export class ContentsController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(zContentListQuery)) query: ContentListQuery) {
+  async list(@Param('spaceId') spaceId: string, @Query({ schema: zContentListQuery }) query: ContentListQuery) {
     const { parentId, ...rest } = query;
     return this.contents.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
@@ -51,7 +50,7 @@ export class ContentsController {
   @RequirePermission(UserPermission.CONTENT_CREATE)
   async create(
     @Param('spaceId') spaceId: string,
-    @Body(new ZodValidationPipe(zContentCreate)) body: ContentCreate,
+    @Body({ schema: zContentCreate }) body: ContentCreate,
   ) {
     return this.contents.create(spaceId, body);
   }
@@ -68,7 +67,7 @@ export class ContentsController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zContentPatch)) body: ContentPatch,
+    @Body({ schema: zContentPatch }) body: ContentPatch,
   ) {
     return this.contents.update(spaceId, id, body);
   }
@@ -78,7 +77,7 @@ export class ContentsController {
   async updateData(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zContentDataUpdate)) body: ContentDataUpdate,
+    @Body({ schema: zContentDataUpdate }) body: ContentDataUpdate,
   ) {
     return this.contents.updateData(spaceId, id, body.data);
   }

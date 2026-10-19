@@ -1,7 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import { type SchemaCreate, SchemaType, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import {
   type SchemaRename,
@@ -20,7 +19,7 @@ export class SchemasController {
 
   @Get()
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
-  list(@Param('spaceId') spaceId: string, @Query('type', new ZodValidationPipe(zSchemaTypeFilter)) type?: SchemaType) {
+  list(@Param('spaceId') spaceId: string, @Query('type', { schema: zSchemaTypeFilter }) type?: SchemaType) {
     return this.schemas.list(spaceId, type);
   }
 
@@ -38,7 +37,7 @@ export class SchemasController {
 
   @Post()
   @RequirePermission(UserPermission.SCHEMA_CREATE)
-  create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zSchemaCreate)) body: SchemaCreate) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zSchemaCreate }) body: SchemaCreate) {
     return this.schemas.create(spaceId, body);
   }
 
@@ -47,7 +46,7 @@ export class SchemasController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zSchemaUpdate)) body: SchemaUpdate,
+    @Body({ schema: zSchemaUpdate }) body: SchemaUpdate,
   ) {
     return this.schemas.update(spaceId, id, body);
   }
@@ -57,7 +56,7 @@ export class SchemasController {
   rename(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zSchemaRename)) body: SchemaRename,
+    @Body({ schema: zSchemaRename }) body: SchemaRename,
   ) {
     return this.schemas.rename(spaceId, id, body.name);
   }

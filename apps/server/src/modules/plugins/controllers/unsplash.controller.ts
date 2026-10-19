@@ -1,7 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { type UnsplashSearch, zUnsplashSearch } from '../models/unsplash.models.js';
 import { UnsplashService } from '../services/unsplash.service.js';
 
@@ -15,7 +14,7 @@ export class UnsplashController {
   constructor(private readonly unsplash: UnsplashService) {}
 
   @Get('search')
-  search(@Query(new ZodValidationPipe(zUnsplashSearch)) query: UnsplashSearch) {
+  search(@Query({ schema: zUnsplashSearch }) query: UnsplashSearch) {
     return this.unsplash.search(query);
   }
 

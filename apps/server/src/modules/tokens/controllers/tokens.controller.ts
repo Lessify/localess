@@ -2,7 +2,6 @@ import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Po
 import { TokenType, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { type TokenCreate, type TokenUpdate, zTokenCreate, zTokenUpdate } from '../models/token.models.js';
 import { TokensService } from '../services/tokens.service.js';
 
@@ -30,7 +29,7 @@ export class TokensController {
   }
 
   @Post()
-  create(@Param('spaceId') spaceId: string, @Body(new ZodValidationPipe(zTokenCreate)) body: TokenCreate) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zTokenCreate }) body: TokenCreate) {
     return this.tokens.create(spaceId, body);
   }
 
@@ -38,7 +37,7 @@ export class TokensController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zTokenUpdate)) body: TokenUpdate,
+    @Body({ schema: zTokenUpdate }) body: TokenUpdate,
   ) {
     return this.tokens.update(spaceId, id, body);
   }

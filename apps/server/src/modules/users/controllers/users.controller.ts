@@ -4,7 +4,6 @@ import { type Page, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { publicOrigin } from '../../../auth/utils/public-url.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import type { UserRow } from '../../../shared/models/user.js';
@@ -36,7 +35,7 @@ export class UsersController {
 
   /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (email or display name), `?active=active|inactive`. */
   @Get()
-  list(@Query(new ZodValidationPipe(zUserPageable)) query: UserPageable): Promise<Page<UserDto>> {
+  list(@Query({ schema: zUserPageable }) query: UserPageable): Promise<Page<UserDto>> {
     return this.users.page(query);
   }
 
@@ -48,7 +47,7 @@ export class UsersController {
   @Post()
   async invite(
     @CurrentUser() caller: UserRow,
-    @Body(new ZodValidationPipe(zUserInviteInput)) body: UserInviteInput,
+    @Body({ schema: zUserInviteInput }) body: UserInviteInput,
   ): Promise<UserDto> {
     return this.users.invite(caller, body);
   }
@@ -57,7 +56,7 @@ export class UsersController {
   async updateAccess(
     @CurrentUser() caller: UserRow,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zUserAccessUpdate)) body: UserAccessUpdate,
+    @Body({ schema: zUserAccessUpdate }) body: UserAccessUpdate,
   ): Promise<UserDto> {
     return this.users.changeAccess(caller, id, body);
   }
@@ -67,7 +66,7 @@ export class UsersController {
   async updateStatus(
     @CurrentUser() caller: UserRow,
     @Param('id', UuidParamPipe) id: string,
-    @Body(new ZodValidationPipe(zUserStatus)) body: UserStatus,
+    @Body({ schema: zUserStatus }) body: UserStatus,
   ): Promise<UserDto> {
     return this.users.changeStatus(caller, id, body.disabled);
   }
