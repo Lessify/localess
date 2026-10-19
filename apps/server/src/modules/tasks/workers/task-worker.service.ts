@@ -3,8 +3,8 @@ import { hostname } from 'node:os';
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { filter, Subscription } from 'rxjs';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
-import { EventsService } from '../../../infra/events/events.service.js';
-import { type TaskEntity, TasksRepository } from '../repositories/tasks.repository.js';
+import { EventService } from '../../../infra/events/event.service.js';
+import { type TaskEntity, TaskRepository } from '../repositories/task.repository.js';
 import { TaskLogService } from '../services/task-log.service.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 import { TaskRunner } from './task-runner.service.js';
@@ -30,10 +30,10 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly tasks: TasksRepository,
+    private readonly tasks: TaskRepository,
     private readonly runner: TaskRunner,
     private readonly log: TaskLogService,
-    private readonly events: EventsService,
+    private readonly events: EventService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {

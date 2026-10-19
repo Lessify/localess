@@ -49,7 +49,7 @@ export interface TemplateContent {
 }
 
 /**
- * A starting point offered when creating a space, written in the creating transaction (`SpaceTemplatesRepository`).
+ * A starting point offered when creating a space, written in the creating transaction (`SpaceTemplateRepository`).
  * Typed data rather than loose JSON: a field missing its `source`, or given the wrong limit, does not compile; what
  * typing can not check (references resolve) is covered by templates.test.ts.
  */

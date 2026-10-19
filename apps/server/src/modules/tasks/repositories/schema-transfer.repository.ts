@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { schemas } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { EventsService } from '../../../infra/events/events.service.js';
+import { EventService } from '../../../infra/events/event.service.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import type { SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 
@@ -14,7 +14,7 @@ export type SchemaEntity = typeof schemas.$inferSelect;
 export class SchemaTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventsService,
+    private readonly events: EventService,
   ) {}
 
   findAll(spaceId: string): Promise<SchemaEntity[]> {

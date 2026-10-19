@@ -172,7 +172,7 @@ Two managers holding the same permissions can manage each other. A manager can n
 
 These limits are enforced in two places:
 
-- **Server** (`@RequirePermission(USER_MANAGEMENT)` on `apps/server/src/modules/users/controllers/users.controller.ts`, the checks in `services/users.service.ts`): `POST /api/app/users` (invite) requires `canGrant()`; `PATCH /api/app/users/:id` requires `canManageUser()` and `canGrant()`; `DELETE /api/app/users/:id` and `POST /api/app/users/:id/password-reset-link` require `canManageUser()`. Both helpers are in `packages/shared/src/permissions.ts`; the UI calls the same functions through `user-management.ts`.
+- **Server** (`@RequirePermission(USER_MANAGEMENT)` on `apps/server/src/modules/users/controllers/user.controller.ts`, the checks in `services/user.service.ts`): `POST /api/app/users` (invite) requires `canGrant()`; `PATCH /api/app/users/:id` requires `canManageUser()` and `canGrant()`; `DELETE /api/app/users/:id` and `POST /api/app/users/:id/password-reset-link` require `canManageUser()`. Both helpers are in `packages/shared/src/permissions.ts`; the UI calls the same functions through `user-management.ts`.
 - **UI**: `features/admin/users/user-management.ts` mirrors the server rule. The users list disables actions on users the caller can't manage. The edit and invite dialogs hide the Admin role and disable permissions the caller can't grant.
 
 ## Implementation Files
@@ -183,7 +183,7 @@ These limits are enforced in two places:
 - `apps/web/src/app/core/guards/permission.guard.ts` — `permissionGuard(...permissions)`
 - `packages/shared/src/permissions.ts` — `canPerform`, `canGrant`, `canManageUser` (server and UI)
 - `apps/server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireAnyRole`, `@RequirePermission`, `@RequireAllPermissions`, global guard + CSRF check
-- `apps/server/src/modules/users/` — user management API (`controllers/users.controller.ts`, rules in `services/users.service.ts`)
+- `apps/server/src/modules/users/` — user management API (`controllers/user.controller.ts`, rules in `services/user.service.ts`)
 - `apps/web/src/app/shared/pipes/can-user-perform.pipe.ts` — `canUserPerform` template pipe
 - `apps/web/src/app/features/features-routing.module.ts` — all route guards (`permissionGuard`)
 - `apps/web/src/app/app-routing.ts` — root `authGuard` (authentication only, not authorization)

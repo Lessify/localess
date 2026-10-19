@@ -18,30 +18,30 @@ src/
 - A module has its **own** controllers, services and repositories, registered in its own `<feature>.module.ts`.
 - **No module imports another feature module.** What it needs from elsewhere, it reads with its own query.
 - **Tables are shared, queries are not.** Several modules may read and write the same table, each with the queries its
-  own job needs (translations reads a space's locales with its `SpaceLocalesRepository`; spaces has its own).
+  own job needs (translations reads a space's locales with its `SpaceLocaleRepository`; spaces has its own).
 - A module may use `infra/`, `shared/` and `auth/`.
 
 ## Auth
 
 `auth/` is not a feature but what every feature relies on: the global `AuthGuard`, the `@Public` / `@Require*`
-decorators (`decorators.ts`), `CurrentUser` / `CurrentSessionId` (`request-context.ts`), and `ApiTokensModule`
+decorators (`decorators.ts`), `CurrentUser` / `CurrentSessionId` (`request-context.ts`), and `ApiTokenModule`
 (`TokenAuthService` and the token guards, which every module with a CDN or Management controller imports). Inside it is layered
 like a module, and it imports no feature module:
 
 ```
 auth/
-  auth.module.ts  api-tokens.module.ts  auth.guard.ts  decorators.ts  request-context.ts
+  auth.module.ts  api-token.module.ts  auth.guard.ts  decorators.ts  request-context.ts
   controllers/   auth.controller.ts  oauth.controller.ts  app-config.controller.ts
   models/        the request shapes (zod schema `zX` + type `X`), as in a module
   services/      auth.service.ts  session.service.ts  password-reset.service.ts  oauth.service.ts  token-auth.service.ts
-  repositories/  sessions.repository.ts  password-reset-tokens.repository.ts  auth-users.repository.ts  api-tokens.repository.ts
+  repositories/  session.repository.ts  password-reset-token.repository.ts  auth-user.repository.ts  api-token.repository.ts
   utils/         password.ts  session-cookie.ts  token-hash.ts  public-url.ts  oauth-providers.ts  api-token.ts
 ```
 
 `AuthModule` exports `AuthService` (re-checking a password), `SessionService` (signing a user out) and
 `PasswordResetService` (reset links) for the users module. Auth reads and writes `users`, `user_credentials` and
-`user_identities` with its own `AuthUsersRepository` (sign-in, OAuth, reset); Admin → Users and the own profile are the
-users module's, with their own `UsersRepository`.
+`user_identities` with its own `AuthUserRepository` (sign-in, OAuth, reset); Admin → Users and the own profile are the
+users module's, with their own `UserRepository`.
 
 ## Layers
 
@@ -58,7 +58,7 @@ NestJS's convention (the `nest g resource` scaffold), the same in a controller a
 
 | Action | Controller and service | Example |
 |---|---|---|
-| A list (paged or not) | `findAll` | `GET /spaces` → `SpacesController.findAll` → `SpacesService.findAll` (answers `Page<Space>`) |
+| A list (paged or not) | `findAll` | `GET /spaces` → `SpaceController.findAll` → `SpaceService.findAll` (answers `Page<Space>`) |
 | One item | `findOne` | `GET /spaces/:spaceId` → `findOne` |
 | Another read | `find<What>` | `findLogs`, `findFolders`, `findUsage`, `findTemplates`, `findOverview`, `findSourceSpaces` |
 | Create, change | `create`, `update`, `update<What>` | `updateEnvironment`, `updateData` |
@@ -82,11 +82,11 @@ to the file they test (`utils/chunk-by-size.test.ts`); integration tests stay in
 
 ```
 modules/translations/
-  translations.module.ts
-  controllers/   translations.controller.ts  translate.controller.ts  translations.cdn.controller.ts  translations.management.controller.ts
+  translation.module.ts
+  controllers/   translation.controller.ts  translate.controller.ts  translation.cdn.controller.ts  translation.management.controller.ts
   models/        translation.models.ts  …  (zod request schemas zX + types X)
-  services/      translations.service.ts  translation-delivery.service.ts  translate.service.ts
-  repositories/  translations.repository.ts  translation-snapshots.repository.ts  space-locales.repository.ts
+  services/      translation.service.ts  translation-delivery.service.ts  translate.service.ts
+  repositories/  translation.repository.ts  translation-snapshot.repository.ts  space-locale.repository.ts
   utils/         translation.utils.ts  translate-batch.ts  chunk-by-size.ts  translate-format.utils.ts
 ```
 
@@ -132,7 +132,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | Folder | What goes there | Today |
 |---|---|---|
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher`, `AssetMetadataService` (size, duration, orientation, embedded alt of a stored file: assets, the asset import and metadata tasks, the Firebase import), `StorageSweeperService` (deletes queued stored files, hourly and when kicked) |
-| `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository`, `StorageDeletionsRepository` |
+| `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository`, `StorageDeletionRepository` |
 | `shared/models/` | Entity types that auth and every module name, without importing a module | `user.ts`: `UserRow` (the signed-in user, `CurrentUser`) |
 | `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `toContent`, `toContentMetadata`, `toAssetMetadata` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks), `toFirebaseImport` (firebase-import.transformer.ts) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import); `space-tokens.ts`: `createPreviewToken`: whoever inserts a space writes its auto-generated preview token (spaces, the first admin's starter space, the Firebase import); `content-refs.ts`: `contentRefs`: whoever writes a document's data stores the ids it points to (`assets`, `links`, `references`, for the CDN to resolve) worked out from that data, never taken from a client (the editor's save, space templates) |
@@ -141,7 +141,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
 | | | `user.query.ts`: `findUserLogins` (how each user signs in: password, OAuth providers), for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction; `lockSchemaReferences`, which locks the schemas written fields refer to (schemas, the schema import task) |
-| `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `events.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |
+| `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `event.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |
 | `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client); `paging.ts` (`offsetOf`, `toPage`, `containsPattern`, `escapeLike`: a paginated endpoint validates its `zXPageable` (the module's `models/`, built on `zPageable(fields, defaultSort, defaultDirection)` from `@localess/shared/zod`), its repository orders by the field then `id`, counts with the same filters, and answers `Page<T>`) |
 | | | `schema.utils.ts` (`planSchemaPush`, `checkSchemaFields`, `fieldRefersTo`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
 | | | `asset-path.utils.ts` (`folderPath`): assets and the asset import task; `embedded-alt.ts`, `media-duration.ts`, `media-orientation.ts`, `media-pages.ts` (`isAnimatedPages`, also asset delivery): `AssetMetadataService` |
@@ -152,8 +152,8 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 ## Naming
 
 `<name>.controller.ts`, `<name>.service.ts`, `<name>.repository.ts`, `<name>.transformer.ts`; utils by what they do
-(`translation.utils.ts`, `chunk-by-size.ts`). Classes `TranslationsController`, `TranslationsService`,
-`TranslationsRepository`; transformer functions `toTranslation(entity)`.
+(`translation.utils.ts`, `chunk-by-size.ts`). Classes `TranslationController`, `TranslationService`,
+`TranslationRepository`; transformer functions `toTranslation(entity)`.
 
 ## Status
 
@@ -177,7 +177,7 @@ modules/firebase-import/
                  translation-import.service.ts  schema-import.service.ts  asset-import.service.ts
                  content-import.service.ts  reference-rewrite.service.ts
   workers/       firebase-import.runner.ts
-  repositories/  firebase-imports.repository.ts  space-import.repository.ts  token-import.repository.ts
+  repositories/  firebase-import.repository.ts  space-import.repository.ts  token-import.repository.ts
                  webhook-import.repository.ts  translation-import.repository.ts  schema-import.repository.ts
                  asset-import.repository.ts  content-import.repository.ts
   utils/         firebase-client.ts  firebase-docs.ts  rewrite-references.ts  firebase-import.utils.ts

@@ -177,7 +177,7 @@ Unlike the import Task, push rejects (400 `invalid-argument`) a `SCHEMA`/`SCHEMA
 }
 ```
 
-Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemasRepository.applyPushPlan`; it moves no content `cv` (a content draft keeps the schemas it was built with until its document changes). With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
+Each push is one Postgres transaction (Firestore used to commit in 500-write batches). Translation operations drop the space's draft translation snapshots, so the next draft request builds them under a new `cv`; schema push writes through `applySchemaPushPlan()` (`apps/server/src/shared/queries/schema.query.ts`, shared with the schema import task) in `SchemaRepository.applyPushPlan`; it moves no content `cv` (a content draft keeps the schemas it was built with until its document changes). With `dryRun: true` on either endpoint the write is skipped and only the affected IDs are returned. Both endpoints answer `200` (not Nest's POST default of `201`), as the Express app did.
 
 ---
 
@@ -249,12 +249,12 @@ Tokens are not imported from Firebase; every space starts with an Auto Generated
 
 | File                                                     | Purpose                                                                                   |
 |----------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `apps/server/src/modules/contents/controllers/contents.cdn.controller.ts` | CDN — links, documents by slug and id, `resolve*` options                                  |
-| `apps/server/src/modules/translations/controllers/translations.cdn.controller.ts` | CDN translations                                                                 |
-| `apps/server/src/modules/translations/controllers/translations.management.controller.ts` | Management — stored values, translation push                              |
-| `apps/server/src/modules/assets/controllers/assets.cdn.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
-| `apps/server/src/modules/schemas/controllers/schemas.management.controller.ts` | Management — OpenAPI, schema export, schema push                                 |
-| `apps/server/src/modules/spaces/controllers/spaces.management.controller.ts` | Management — space metadata                                                        |
+| `apps/server/src/modules/contents/controllers/content.cdn.controller.ts` | CDN — links, documents by slug and id, `resolve*` options                                  |
+| `apps/server/src/modules/translations/controllers/translation.cdn.controller.ts` | CDN translations                                                                 |
+| `apps/server/src/modules/translations/controllers/translation.management.controller.ts` | Management — stored values, translation push                              |
+| `apps/server/src/modules/assets/controllers/asset.cdn.controller.ts` | CDN — asset delivery (transformed, original, download): ETag/304, Range, headers          |
+| `apps/server/src/modules/schemas/controllers/schema.management.controller.ts` | Management — OpenAPI, schema export, schema push                                 |
+| `apps/server/src/modules/spaces/controllers/space.management.controller.ts` | Management — space metadata                                                        |
 | `apps/server/src/auth/token-auth.decorators.ts`, `apps/server/src/auth/guards/` | `@CdnToken`, `@ManagementToken` and their guards                                 |
 | `apps/server/src/infra/http/v1/`                                         | Shared plumbing: `v1-request.ts` (`assertValidIdParams`, `validIdParams`, `cv` redirects, `isDraft`), `v1-error.ts`, responses, Cache-Control, ID checks |
 | `apps/server/src/modules/contents/services/content-delivery.service.ts`           | Published and draft documents, `resolveLinks`/`resolveReferences`/`resolveAssets`, links   |

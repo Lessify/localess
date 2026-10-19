@@ -3,7 +3,7 @@ import { and, arrayContains, eq } from 'drizzle-orm';
 import type { WebHookEvent } from '@localess/shared';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { webhookLogs, webhooks } from '../../infra/database/schema.js';
-import { EventsService } from '../../infra/events/events.service.js';
+import { EventService } from '../../infra/events/event.service.js';
 
 export type WebhookEntity = typeof webhooks.$inferSelect;
 export type NewWebhookLog = typeof webhookLogs.$inferInsert;
@@ -13,7 +13,7 @@ export type NewWebhookLog = typeof webhookLogs.$inferInsert;
 export class WebhookDeliveryRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventsService,
+    private readonly events: EventService,
   ) {}
 
   /** The space's enabled webhooks subscribed to `event`. */

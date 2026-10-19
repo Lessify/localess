@@ -6,10 +6,10 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { newUuid } from '../src/infra/database/id.js';
 import { storageDeletions } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { AssetsRepository } from '../src/modules/assets/repositories/assets.repository.js';
-import { AssetsService } from '../src/modules/assets/services/assets.service.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
-import { StorageDeletionsRepository } from '../src/shared/repositories/storage-deletions.repository.js';
+import { AssetRepository } from '../src/modules/assets/repositories/asset.repository.js';
+import { AssetService } from '../src/modules/assets/services/asset.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { StorageDeletionRepository } from '../src/shared/repositories/storage-deletion.repository.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { createTestApp, insertSpace, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
@@ -20,14 +20,14 @@ import { S1 } from './ids.js';
  */
 describe('storage deletions', () => {
   let t: TestApp;
-  let assets: AssetsService;
+  let assets: AssetService;
   let sweeper: StorageSweeperService;
   let storage: StorageDriver;
 
   beforeAll(async () => {
     t = await createTestApp();
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }] });
-    assets = t.app.get(AssetsService);
+    assets = t.app.get(AssetService);
     sweeper = t.app.get(StorageSweeperService);
     storage = t.app.get<StorageDriver>(STORAGE_DRIVER);
   });
@@ -100,7 +100,7 @@ describe('storage deletions', () => {
     await insertSpace(t.db, { id: spaceId, name: 'Gone', locales: [{ id: 'en', name: 'English' }] });
     const file = await upload('c', null, spaceId);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
-    await t.app.get(SpacesService).remove(spaceId);
+    await t.app.get(SpaceService).remove(spaceId);
     expect(await queue()).toEqual([expect.objectContaining({ prefix: `spaces/${spaceId}/`, spaceId, assetId: null })]);
 
     await sweeper.sweep();
@@ -118,7 +118,7 @@ describe('storage deletions', () => {
 
   it('cleans up after an upload that died after storing its file, once its hour has passed', async () => {
     // The row is never written and the immediate cleanup fails too: the upload's guard entry is all that is left.
-    vi.spyOn(t.app.get(AssetsRepository), 'createFile').mockRejectedValueOnce(new Error('connection lost'));
+    vi.spyOn(t.app.get(AssetRepository), 'createFile').mockRejectedValueOnce(new Error('connection lost'));
     vi.spyOn(storage, 'deletePrefix').mockRejectedValueOnce(new Error('connection lost'));
     await expect(upload('e')).rejects.toThrow('connection lost');
     const [entry] = await queue();
@@ -157,7 +157,7 @@ describe('storage deletions', () => {
       return real(prefix);
     });
     // A second instance: its own sweeper over the same database.
-    const other = new StorageSweeperService(t.app.get(StorageDeletionsRepository), storage);
+    const other = new StorageSweeperService(t.app.get(StorageDeletionRepository), storage);
     await Promise.all([sweeper.sweep(), other.sweep()]);
     expect(deleted.sort()).toEqual(ids.map(id => `spaces/${S1}/assets/${id}/`).sort());
     expect(await queue()).toEqual([]);

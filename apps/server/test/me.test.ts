@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { users as usersTable } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
+import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 describe('own profile', () => {
@@ -9,7 +9,7 @@ describe('own profile', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    const users = t.app.get(UsersService);
+    const users = t.app.get(UserService);
     await users.create({ email: 'me@example.com', password: 'old-pass', role: 'CUSTOM' });
     await users.create({ email: 'taken@example.com', password: 'whatever', role: 'CUSTOM' });
     await users.create({ email: 'locked@example.com', password: 'locked-pass', role: 'CUSTOM', lock: true });

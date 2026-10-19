@@ -11,7 +11,7 @@ import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid } from '../../../infra/database/id.js';
 import { type ByteRange, STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { isAnimatedPages } from '../../../shared/utils/media-pages.js';
-import { AssetsRepository } from '../repositories/assets.repository.js';
+import { AssetRepository } from '../repositories/asset.repository.js';
 import {
   applySharpTransforms,
   type AssetTransformQuery,
@@ -105,7 +105,7 @@ export class AssetDeliveryService {
   private readonly cacheRenditions: boolean;
 
   constructor(
-    private readonly assets: AssetsRepository,
+    private readonly assets: AssetRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     @Inject(APP_CONFIG) config: AppConfig,
   ) {

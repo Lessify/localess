@@ -3,7 +3,7 @@ import { TokenType, WebHookEvent } from '@localess/shared';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 import { schemas, tokens, translations } from '../src/infra/database/schema.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
-import { EventsService } from '../src/infra/events/events.service.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_PUBLIC, TOKEN_READ, tokenRow } from './seed.js';
 import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp } from './test-app.js';
@@ -97,11 +97,11 @@ describe('management API', () => {
   describe('translation push', () => {
     const push = (payload: unknown, value: string | null = TOKEN_MANAGEMENT) => post(`${base}/translations/de`, payload, value);
     let dispatch: MockInstance<WebhookDispatcher['dispatch']>;
-    let publish: MockInstance<EventsService['publish']>;
+    let publish: MockInstance<EventService['publish']>;
 
     beforeAll(() => {
       dispatch = vi.spyOn(t.app.get(WebhookDispatcher), 'dispatch');
-      publish = vi.spyOn(t.app.get(EventsService), 'publish');
+      publish = vi.spyOn(t.app.get(EventService), 'publish');
     });
     beforeEach(() => {
       dispatch.mockClear();

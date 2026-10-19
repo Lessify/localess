@@ -135,7 +135,7 @@ The old dev-tools URLs are removed (404). CORS stays on `/api/v1/**` only; `/api
 - `POST` `{ name, type, cacheTtl? }` returns the token with its full value.
 - `PUT` `{ name, cacheTtl? }`: the type can't be changed.
 - `POST /:id/regenerate` returns the new full value (shown once for `management`).
-- Business rules (type immutable, `cacheTtl` only for `public`/`preview`) in `TokensService`; the repository writes
+- Business rules (type immutable, `cacheTtl` only for `public`/`preview`) in `TokenService`; the repository writes
   `token`, `token_hash` and `hint` together.
 
 ### Auto-generated preview token
@@ -145,7 +145,7 @@ preview sites and the app's "open in API" links (draft and published) work witho
 it can be renamed, regenerated or deleted.
 
 It is written by a data rule, `createPreviewToken(tx, spaceId)` in `apps/server/src/shared/data-rules/space-tokens.ts`, inside
-the transaction that inserts the space. Both paths that create a space call it: `SpacesRepository.create` (App API, with or
+the transaction that inserts the space. Both paths that create a space call it: `SpaceRepository.create` (App API, with or
 without a template) and the Firebase import's space stage, so an imported space has one too. The token generator
 (`newApiToken(type)`) moves next to it in `shared/` so the tokens module and the rule use the same one.
 

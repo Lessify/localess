@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SchemaField, SchemaFieldKind } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
-import { SchemasRepository } from '../src/modules/schemas/repositories/schemas.repository.js';
+import { SchemaRepository } from '../src/modules/schemas/repositories/schema.repository.js';
 import { contents } from '../src/infra/database/schema.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
@@ -222,7 +222,7 @@ describe('app API: schemas', () => {
   });
 
   it('writes no field that refers to a schema gone since the service checked it', async () => {
-    const repository = t.app.get(SchemasRepository);
+    const repository = t.app.get(SchemaRepository);
     const gone = await repository.create(S1, { name: 'gone', type: 'NODE' });
     const stale = { fields: [{ name: 'hero', kind: SchemaFieldKind.SCHEMA, schemas: ['gone'] }] as SchemaField[] };
     await repository.delete(S1, gone.id);

@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@ne
 import * as client from 'openid-client';
 import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../../infra/config/config.js';
 import type { UserRow } from '../../shared/models/user.js';
-import { AuthUsersRepository } from '../repositories/auth-users.repository.js';
+import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {
@@ -44,7 +44,7 @@ export class OAuthService implements OnModuleInit {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly users: AuthUsersRepository,
+    private readonly users: AuthUserRepository,
   ) {}
 
   onModuleInit(): void {

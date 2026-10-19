@@ -1,7 +1,7 @@
 import { and, count, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contents, spaces } from '../src/infra/database/schema.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { CONTENTS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { orphansOf } from './orphans.js';
 import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWithAccess } from './test-app.js';
@@ -70,7 +70,7 @@ describe('app API: the large contents template (CONTENTS_LARGE)', () => {
       ...CONTENTS_LARGE_TEMPLATE,
       contents: [...CONTENTS_LARGE_TEMPLATE.contents!, { key: 'bad', kind: 'FOLDER' as const, name: 'Bad', slug: 'bad', parent: 'nope' }],
     };
-    await expect(t.app.get(SpacesService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
+    await expect(t.app.get(SpaceService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
     expect((await t.db.select({ n: count() }).from(contents))[0].n).toBe(before);
     expect((await t.db.select({ n: count() }).from(spaces))[0].n).toBe(spacesBefore);
   });

@@ -1,12 +1,12 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { UserRow } from '../../shared/models/user.js';
 import { toUser, type UserDto } from '../../shared/transformers/user.transformer.js';
-import { AuthUsersRepository } from '../repositories/auth-users.repository.js';
+import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import { verifyPassword } from '../utils/password.js';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly users: AuthUsersRepository) {}
+  constructor(private readonly users: AuthUserRepository) {}
 
   /** Email + password sign-in. Every failure is the same 401, so it can't be used to probe for accounts. */
   async verifyCredentials(email: string, password: string): Promise<UserRow> {

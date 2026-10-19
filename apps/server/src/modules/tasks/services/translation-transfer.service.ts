@@ -6,7 +6,7 @@ import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.s
 import { translationToExport } from '../../../shared/transformers/transfer.transformer.js';
 import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import type { TaskEntity } from '../repositories/tasks.repository.js';
+import type { TaskEntity } from '../repositories/task.repository.js';
 import {
   type TranslationImportWrite,
   type TranslationLocaleWrite,

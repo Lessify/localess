@@ -8,8 +8,8 @@ import { and, eq, isNull, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { contents, contentSnapshots, schemas, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
-import { ContentsRepository } from '../src/modules/contents/repositories/contents.repository.js';
-import { ContentsService } from '../src/modules/contents/services/contents.service.js';
+import { ContentRepository } from '../src/modules/contents/repositories/content.repository.js';
+import { ContentService } from '../src/modules/contents/services/content.service.js';
 import { transaction } from '../src/infra/database/transaction.js';
 import { subtree } from '../src/shared/queries/content-tree.query.js';
 import { lockContents } from '../src/shared/data-rules/content-snapshots.js';
@@ -127,7 +127,7 @@ describe('app API: contents', () => {
     });
 
     it('refuses a path a concurrent write took after the check (unique index)', async () => {
-      const repository = t.app.get(ContentsRepository);
+      const repository = t.app.get(ContentRepository);
       let release!: () => void;
       const held = new Promise<void>(resolve => (release = resolve));
       let inserted!: () => void;
@@ -140,7 +140,7 @@ describe('app API: contents', () => {
       });
       await insertedYet;
       // The second one's check does not see the uncommitted row; its insert waits on the index, then fails.
-      const second = t.app.get(ContentsService).create(S1, { kind: 'FOLDER', name: 'Race 2', slug: 'race' });
+      const second = t.app.get(ContentService).create(S1, { kind: 'FOLDER', name: 'Race 2', slug: 'race' });
       const settled = second.then(
         () => 'created',
         (error: unknown) => error,
@@ -350,7 +350,7 @@ describe('app API: contents', () => {
 
     it('does not leave a child behind when its folder is deleted at the same moment (foreign key)', async () => {
       const folder = await create({ kind: 'FOLDER', name: 'Gone', slug: 'gone' });
-      const repository = t.app.get(ContentsRepository);
+      const repository = t.app.get(ContentRepository);
       let release!: () => void;
       const held = new Promise<void>(resolve => (release = resolve));
       let inserted!: () => void;

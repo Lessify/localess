@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import type { UserRow } from '../../shared/models/user.js';
-import { SessionsRepository } from '../repositories/sessions.repository.js';
+import { SessionRepository } from '../repositories/session.repository.js';
 import { hashToken } from '../utils/token-hash.js';
 
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -15,7 +15,7 @@ export interface ActiveSession {
 
 @Injectable()
 export class SessionService {
-  constructor(private readonly sessions: SessionsRepository) {}
+  constructor(private readonly sessions: SessionRepository) {}
 
   /** Creates a session and returns the raw cookie value; only its hash is stored. */
   async create(userId: string, meta: { userAgent?: string; ip?: string } = {}): Promise<{ token: string; expiresAt: Date }> {

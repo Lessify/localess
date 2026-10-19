@@ -113,7 +113,7 @@ const TOKEN_CACHE_TTL_MS = 5 * 60 * 1000;  // 5 minutes
 - `apps/server/src/shared/utils/api-token-format.ts` — `newApiToken`, `parseApiToken`, `tokenHint`, `tokenColumns`
 - `apps/server/src/shared/data-rules/space-tokens.ts` — `createPreviewToken` (the auto-generated preview token)
 - `apps/server/src/auth/token-auth.decorators.ts`, `auth/guards/` — `@CdnToken`, `@ManagementToken` and their guards
-- `apps/server/src/auth/services/token-auth.service.ts` — lookups, the CDN cache and its invalidation; `auth/repositories/api-tokens.repository.ts`
+- `apps/server/src/auth/services/token-auth.service.ts` — lookups, the CDN cache and its invalidation; `auth/repositories/api-token.repository.ts`
 - `apps/server/src/infra/http/v1/v1-error.ts` — `V1Error`, `V1ExceptionFilter`
 - `apps/server/src/modules/tokens/` — token management for the app
 - `apps/web/src/app/features/spaces/settings/tokens/` — the tokens page, the type choice cards, the show-once dialog

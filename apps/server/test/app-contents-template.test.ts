@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { count, like } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, schemas, spaceLocales, spaces, storageDeletions, tokens, translations } from '../src/infra/database/schema.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { CONTENTS_FIELDS_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { orphansOf, storedAssetDirs } from './orphans.js';
@@ -117,7 +117,7 @@ describe('app API: the contents template (CONTENTS_FIELDS)', () => {
         { key: 'bad', kind: 'DOCUMENT' as const, name: 'Bad', slug: 'bad', parent: 'nope', schema: 'target' },
       ],
     };
-    await expect(t.app.get(SpacesService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
+    await expect(t.app.get(SpaceService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
     expect(await counts(t)).toEqual(before);
     await t.app.get(StorageSweeperService).whenIdle();
     const spaceIds = new Set((await t.db.select({ id: spaces.id }).from(spaces)).map(it => it.id));

@@ -1,7 +1,7 @@
 import { UserPermission } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 import { canReceive } from './event-access.js';
-import type { ChangeEvent } from '../../infra/events/events.service.js';
+import type { ChangeEvent } from '../../infra/events/event.service.js';
 
 const S = '00000000-0000-7000-8000-000000000001';
 const event = (entity: string, spaceId: string | null = S, id?: string): ChangeEvent => ({ spaceId, entity, id, op: 'updated' });

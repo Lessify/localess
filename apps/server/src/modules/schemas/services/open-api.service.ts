@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { OpenAPIObject } from 'openapi3-ts/oas30';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
-import { SchemasRepository } from '../repositories/schemas.repository.js';
+import { SchemaRepository } from '../repositories/schema.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 import { generateOpenApi } from '../utils/open-api.js';
 
@@ -9,7 +9,7 @@ import { generateOpenApi } from '../utils/open-api.js';
 @Injectable()
 export class OpenApiService {
   constructor(
-    private readonly schemas: SchemasRepository,
+    private readonly schemas: SchemaRepository,
     private readonly spaces: SpaceRepository,
   ) {}
 

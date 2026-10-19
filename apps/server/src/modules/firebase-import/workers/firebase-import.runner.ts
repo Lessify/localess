@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import type { FirebaseImportStage, FirebaseImportStageName } from '@localess/shared';
-import { type FirebaseImportUpdate, FirebaseImportsRepository } from '../repositories/firebase-imports.repository.js';
+import { type FirebaseImportUpdate, FirebaseImportRepository } from '../repositories/firebase-import.repository.js';
 import { AssetImportService } from '../services/asset-import.service.js';
 import { ContentImportService } from '../services/content-import.service.js';
 import { ReferenceRewriteService } from '../services/reference-rewrite.service.js';
@@ -24,7 +24,7 @@ export class FirebaseImportRunner {
   private readonly logger = new Logger(FirebaseImportRunner.name);
 
   constructor(
-    private readonly runs: FirebaseImportsRepository,
+    private readonly runs: FirebaseImportRepository,
     private readonly space: SpaceImportService,
     private readonly webhooks: WebhookImportService,
     private readonly translations: TranslationImportService,

@@ -2,16 +2,16 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { UserPermission } from '@localess/shared';
 import { sessions, users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
+import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, sessionCookie, TestApp, XHR } from './test-app.js';
 
 describe('authentication', () => {
   let t: TestApp;
-  let usersService: UsersService;
+  let usersService: UserService;
 
   beforeAll(async () => {
     t = await createTestApp();
-    usersService = t.app.get(UsersService);
+    usersService = t.app.get(UserService);
     await usersService.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
     await usersService.create({
       email: 'Editor@Example.com',

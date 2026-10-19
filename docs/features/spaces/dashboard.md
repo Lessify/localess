@@ -20,7 +20,7 @@ No permission guard: any signed-in user with a role sees it, like the space itse
 ```
 apps/web/src/app/features/spaces/dashboard/
   dashboard.component.ts/html/scss
-apps/server/src/modules/spaces/spaces.service.ts   ← overview()
+apps/server/src/modules/spaces/services/space.service.ts   ← findOverview()
 ```
 
 ## DashboardComponent

@@ -71,8 +71,8 @@ creates a space, in the same transaction.
 - **Create**: `POST /api/app/spaces` accepts an optional `template` (a template id). Absent means Empty. An unknown id,
   or a test template while they are off, is refused (400) and nothing is created.
 - **One transaction**: the space, its default locale, the preview token (as today), then the template's locales,
-  schemas and translations, then the events. Built on `SpacesRepository.create(name, defaultLocaleId, tx)` and the
-  existing bulk writers (`SchemasRepository.createMany(…, tx)`, a bulk translation insert like
+  schemas and translations, then the events. Built on `SpaceRepository.create(name, defaultLocaleId, tx)` and the
+  existing bulk writers (`SchemaRepository.createMany(…, tx)`, a bulk translation insert like
   `translation-import.repository.ts` `insertMany`), all with the same `tx`.
 
 ### Test templates are on in development and e2e, off in production

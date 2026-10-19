@@ -3,9 +3,9 @@ import type { FirebaseImportStage } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { locales, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { EventsService } from '../../../infra/events/events.service.js';
+import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
-import { FirebaseImportsRepository } from './firebase-imports.repository.js';
+import { FirebaseImportRepository } from './firebase-import.repository.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 
 export type NewImportedSpace = typeof spaces.$inferInsert & { id: string };
@@ -16,8 +16,8 @@ export type NewImportedEnvironment = typeof spaceEnvironments.$inferInsert;
 export class SpaceImportRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly runs: FirebaseImportsRepository,
-    private readonly events: EventsService,
+    private readonly runs: FirebaseImportRepository,
+    private readonly events: EventService,
   ) {}
 
   /** The ids of the `locales` table, the locales a space may have. */

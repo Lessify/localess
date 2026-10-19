@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { type TaskEntity, TasksRepository } from '../repositories/tasks.repository.js';
+import { type TaskEntity, TaskRepository } from '../repositories/task.repository.js';
 
 /** The steps of a running task, for the Tasks UI and the server log. */
 @Injectable()
@@ -7,7 +7,7 @@ export class TaskLogService {
   // Log lines keep the context they had before the runner was split up.
   private readonly logger = new Logger('TaskRunner');
 
-  constructor(private readonly tasks: TasksRepository) {}
+  constructor(private readonly tasks: TaskRepository) {}
 
   /** A step visible in the Tasks UI (`task_logs`) and in the server log. */
   async log(

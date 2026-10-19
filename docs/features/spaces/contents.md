@@ -330,7 +330,7 @@ Three things worth knowing:
   measured **365 ms** to load, and would require the extension list to be
   duplicated across both npm projects, where a mismatch silently drops nodes rather than erroring.
 
-`TranslationsService.translateLocale` (`apps/server/src/modules/translations/services/translations.service.ts`) is the server-side translate-locale for
+`TranslationService.translateLocale` (`apps/server/src/modules/translations/services/translation.service.ts`) is the server-side translate-locale for
 translation keys. It is a different feature that shares the name; it uses the configured provider and the same `translateItems` batching,
 and writes the results in one transaction.
 

@@ -3,7 +3,7 @@ import type { LightMyRequestResponse } from 'fastify';
 import { OAuth2Server } from 'oauth2-mock-server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { userIdentities, users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
+import { UserService } from '../src/modules/users/services/user.service.js';
 import { freePort } from './free-port.js';
 import { createTestApp, sessionCookie, TestApp } from './test-app.js';
 
@@ -66,7 +66,7 @@ describe('OAuth sign-in', () => {
 
     beforeAll(async () => {
       t = await appFor();
-      const service = t.app.get(UsersService);
+      const service = t.app.get(UserService);
       await service.create({ email: 'Alice@Example.com', role: 'CUSTOM', permissions: ['CONTENT_READ'] });
       await service.create({ email: 'blocked@example.com', role: 'CUSTOM' });
       await t.db.update(users).set({ disabled: true }).where(eq(users.email, 'blocked@example.com'));
@@ -124,7 +124,7 @@ describe('OAuth sign-in', () => {
     });
 
     it('never links by a Microsoft email the directory did not verify', async () => {
-      await t.app.get(UsersService).create({ email: 'bob@contoso.com', role: 'CUSTOM' });
+      await t.app.get(UserService).create({ email: 'bob@contoso.com', role: 'CUSTOM' });
       claims = { sub: 'ms-impostor', preferred_username: 'bob@contoso.com' };
       expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
       claims = { sub: 'ms-impostor', email: 'bob@contoso.com' };

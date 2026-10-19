@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { and, count, eq, like } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, spaces, storageDeletions } from '../src/infra/database/schema.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { ASSETS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../src/shared/services/asset-metadata.service.js';
@@ -85,7 +85,7 @@ describe('app API: the large assets template (ASSETS_LARGE)', () => {
       return put(key, data);
     };
     try {
-      await expect(t.app.get(SpacesService).createFromTemplate('Failing', ASSETS_LARGE_TEMPLATE)).rejects.toThrow('disk full');
+      await expect(t.app.get(SpaceService).createFromTemplate('Failing', ASSETS_LARGE_TEMPLATE)).rejects.toThrow('disk full');
     } finally {
       storage.put = put;
     }
@@ -108,7 +108,7 @@ describe('app API: the large assets template (ASSETS_LARGE)', () => {
         { key: 'bad', kind: 'DOCUMENT' as const, name: 'Bad', slug: 'bad', parent: 'nope', schema: 'gallery' },
       ],
     };
-    await expect(t.app.get(SpacesService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
+    await expect(t.app.get(SpaceService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
     expect(await rows()).toEqual(before);
     await t.app.get(StorageSweeperService).whenIdle();
     const spaceIds = new Set((await t.db.select({ id: spaces.id }).from(spaces)).map(it => it.id));

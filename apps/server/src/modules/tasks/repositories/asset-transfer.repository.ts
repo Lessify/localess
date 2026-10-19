@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { assets } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { EventsService } from '../../../infra/events/events.service.js';
+import { EventService } from '../../../infra/events/event.service.js';
 
 export type AssetEntity = typeof assets.$inferSelect;
 
@@ -12,7 +12,7 @@ export type AssetEntity = typeof assets.$inferSelect;
 export class AssetTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventsService,
+    private readonly events: EventService,
   ) {}
 
   findFiles(spaceId: string): Promise<AssetEntity[]> {

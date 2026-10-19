@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
-import { EventsController } from './http/events.controller.js';
-import { StorageDeletionsRepository } from './repositories/storage-deletions.repository.js';
+import { EventController } from './http/event.controller.js';
+import { StorageDeletionRepository } from './repositories/storage-deletion.repository.js';
 import { WebhookDeliveryRepository } from './repositories/webhook-delivery.repository.js';
 import { AssetMetadataService } from './services/asset-metadata.service.js';
 import { MailService } from './services/mail.service.js';
@@ -13,13 +13,13 @@ import { WebhookDispatcher } from './services/webhook-dispatcher.service.js';
  */
 @Global()
 @Module({
-  controllers: [EventsController],
+  controllers: [EventController],
   providers: [
     MailService,
     WebhookDispatcher,
     WebhookDeliveryRepository,
     AssetMetadataService,
-    StorageDeletionsRepository,
+    StorageDeletionRepository,
     StorageSweeperService,
   ],
   exports: [MailService, WebhookDispatcher, AssetMetadataService, StorageSweeperService],

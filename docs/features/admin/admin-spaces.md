@@ -154,7 +154,7 @@ its title, description and icon live in the dialog (`space-create-dialog/space-t
 `Record<SpaceTemplateId, …>`, so a new id does not compile without them). The server lists the ids the user may
 choose (`GET /api/app/spaces/templates` → `SpaceTemplateId[]`), and the dialog sends the chosen one with the create
 request (`POST /api/app/spaces` `{ name, template? }`; an id outside the union is a 400 from validation). The server writes the space and everything the template holds **in one transaction**
-(`SpaceTemplatesRepository`): the space is complete or not created at all. Design:
+(`SpaceTemplateRepository`): the space is complete or not created at all. Design:
 [docs/roadmap/space-templates.md](../../roadmap/space-templates.md).
 
 | Template | Writes |

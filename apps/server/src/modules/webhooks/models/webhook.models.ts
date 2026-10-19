@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { type WebHookCreate, WebHookEvent, type WebHookUpdate } from '@localess/shared';
 
-/** Shape only; which URLs may be delivered to is checked in `WebhooksService` (the delivery rule). */
+/** Shape only; which URLs may be delivered to is checked in `WebhookService` (the delivery rule). */
 const zWebHookUrl = z.string().max(2048);
 
 /** `POST /api/app/spaces/:spaceId/webhooks`. */

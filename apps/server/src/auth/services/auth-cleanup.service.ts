@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { PasswordResetTokensRepository } from '../repositories/password-reset-tokens.repository.js';
-import { SessionsRepository } from '../repositories/sessions.repository.js';
+import { PasswordResetTokenRepository } from '../repositories/password-reset-token.repository.js';
+import { SessionRepository } from '../repositories/session.repository.js';
 
 const HOUR = 60 * 60 * 1000;
 /** A reset link that expired less than this long ago still answers "expired" rather than "unknown". */
@@ -17,8 +17,8 @@ export class AuthCleanupService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AuthCleanupService.name);
 
   constructor(
-    private readonly sessions: SessionsRepository,
-    private readonly resetTokens: PasswordResetTokensRepository,
+    private readonly sessions: SessionRepository,
+    private readonly resetTokens: PasswordResetTokenRepository,
   ) {}
 
   onApplicationBootstrap(): void {

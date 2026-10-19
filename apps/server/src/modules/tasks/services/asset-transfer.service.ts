@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { AssetTransferRepository } from '../repositories/asset-transfer.repository.js';
-import type { TaskEntity } from '../repositories/tasks.repository.js';
+import type { TaskEntity } from '../repositories/task.repository.js';
 import { assetFileKey, PROGRESS_INTERVAL, type TaskOutcome } from '../utils/task.utils.js';
 import { TaskLogService } from './task-log.service.js';
 

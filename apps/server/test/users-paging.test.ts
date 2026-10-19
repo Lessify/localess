@@ -1,7 +1,7 @@
 import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
+import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 type Listed = { items: { email: string; role: string | null; disabled: boolean }[]; page: number; size: number; total: number };
@@ -13,7 +13,7 @@ describe('app API: users, one page at a time', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    const service = t.app.get(UsersService);
+    const service = t.app.get(UserService);
     await service.create({ email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
     // 25 more: every third one an admin (roles tie), two disabled, two with display names to search.
     for (let i = 0; i < 25; i++) {

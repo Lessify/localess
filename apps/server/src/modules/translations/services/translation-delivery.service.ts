@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { isTranslationKey, type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
-import { SpaceLocalesRepository } from '../repositories/space-locales.repository.js';
-import { type TranslationSnapshotEntity, TranslationSnapshotsRepository } from '../repositories/translation-snapshots.repository.js';
-import { TranslationsRepository } from '../repositories/translations.repository.js';
+import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
+import { type TranslationSnapshotEntity, TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
+import { TranslationRepository } from '../repositories/translation.repository.js';
 import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
 import { planTranslationUpdate, storedLocaleValues } from '../utils/translation.utils.js';
 
@@ -27,10 +27,10 @@ const PUSH_VERBS: Record<TranslationPushType, { verb: string; past: string; noun
 @Injectable()
 export class TranslationDeliveryService {
   constructor(
-    private readonly translations: TranslationsRepository,
-    private readonly snapshots: TranslationSnapshotsRepository,
+    private readonly translations: TranslationRepository,
+    private readonly snapshots: TranslationSnapshotRepository,
     private readonly webhooks: WebhookDispatcher,
-    private readonly spaces: SpaceLocalesRepository,
+    private readonly spaces: SpaceLocaleRepository,
   ) {}
 
   findSpace(spaceId: string): Promise<SpaceRow | undefined> {

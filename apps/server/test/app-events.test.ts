@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { EventsService } from '../src/infra/events/events.service.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, S2 } from './ids.js';
 
@@ -69,7 +69,7 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     const client = api(t, cookie);
     let page = '';
     const events = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, cookie, 2, async () => {
-      await t.app.get(EventsService).publish({ spaceId: S2, entity: 'contents', id: 'x', op: 'updated' });
+      await t.app.get(EventService).publish({ spaceId: S2, entity: 'contents', id: 'x', op: 'updated' });
       page = (await client.post(`/api/app/spaces/${S1}/schemas`, { name: 'page', type: 'ROOT' })).json().id;
       await client.patch(`/api/app/spaces/${S1}`, { name: 'Renamed' });
     });
@@ -81,7 +81,7 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
 
   it('sends a custom user only the events it may read', async () => {
     const reader = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
-    const events = t.app.get(EventsService);
+    const events = t.app.get(EventService);
     const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 2, async () => {
       await events.publish({ spaceId: S1, entity: 'tokens', id: 'tok', op: 'updated' });
       await events.publish({ spaceId: S1, entity: 'contents', id: 'c', op: 'updated' });

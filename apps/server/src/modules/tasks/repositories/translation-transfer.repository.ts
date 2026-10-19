@@ -4,7 +4,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { newUuid } from '../../../infra/database/id.js';
 import { translations } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { EventsService } from '../../../infra/events/events.service.js';
+import { EventService } from '../../../infra/events/event.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 
 export type TranslationEntity = typeof translations.$inferSelect;
@@ -34,7 +34,7 @@ export interface TranslationLocaleWrite {
 export class TranslationTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventsService,
+    private readonly events: EventService,
   ) {}
 
   /** By key, byte order (`collate "C"`), so exports are stable. */

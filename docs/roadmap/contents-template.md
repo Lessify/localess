@@ -93,7 +93,7 @@ Stored as the app stores them ([Concepts](../concepts.md)): the default locale u
 
 ### How it is created
 
-- **Database rows in the create transaction**, as today (`SpaceTemplatesRepository`): locales, schemas, asset rows,
+- **Database rows in the create transaction**, as today (`SpaceTemplateRepository`): locales, schemas, asset rows,
   contents with their data.
 - **Files before the transaction**, the way uploads already work (`shared/data-rules/storage-deletions.ts`): guard
   each asset's storage prefix (`guardUpload`), store the generated file, read its metadata (`AssetMetadataService`),

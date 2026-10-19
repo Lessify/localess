@@ -1,13 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { UserPermission } from '@localess/shared';
-import { UsersService } from '../src/modules/users/services/users.service.js';
+import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 const { USER_MANAGEMENT, CONTENT_READ, CONTENT_UPDATE, SPACE_MANAGEMENT } = UserPermission;
 
 describe('user management', () => {
   let t: TestApp;
-  let usersService: UsersService;
+  let usersService: UserService;
   let adminCookie: string;
   let managerCookie: string;
   let readerCookie: string;
@@ -15,7 +15,7 @@ describe('user management', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    usersService = t.app.get(UsersService);
+    usersService = t.app.get(UserService);
     const admin = await usersService.create({ email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
     const manager = await usersService.create({
       email: 'manager@example.com',

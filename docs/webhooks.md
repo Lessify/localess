@@ -16,9 +16,9 @@ webhook_logs   (id uuid, webhook_id → webhooks on delete cascade, delivery fie
 
 Postgres tables defined in `apps/server/src/infra/database/schema.ts`. Enabled webhooks for an event are found with a GIN index on `events` (`events @> array[event]`).
 
-**Access control:** `SPACE_MANAGEMENT` (or `ADMIN`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhooksController`). Logs are read-only through the API; only the server's dispatcher writes them.
+**Access control:** `SPACE_MANAGEMENT` (or `ADMIN`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhookController`). Logs are read-only through the API; only the server's dispatcher writes them.
 
-App API (`apps/server/src/modules/webhooks/webhooks.controller.ts`):
+App API (`apps/server/src/modules/webhooks/webhook.controller.ts`):
 
 | Method | Path | |
 |---|---|---|
@@ -48,11 +48,11 @@ interface WebHook {
 
 | Event                   | Value                   | Triggered by                                      |
 |-------------------------|-------------------------|---------------------------------------------------|
-| `CONTENT_PUBLISHED`     | `content.published`     | `ContentsService.publish()` (`POST …/contents/:id/publish`) |
-| `CONTENT_UNPUBLISHED`   | `content.unpublished`   | `ContentsService.unpublish()` (`POST …/contents/:id/unpublish`) |
+| `CONTENT_PUBLISHED`     | `content.published`     | `ContentService.publish()` (`POST …/contents/:id/publish`) |
+| `CONTENT_UNPUBLISHED`   | `content.unpublished`   | `ContentService.unpublish()` (`POST …/contents/:id/unpublish`) |
 | `CONTENT_CHANGED`       | `content.changed`       | Document data save, document metadata edit that keeps its slug (a slug change or move fires nothing), delete (one per deleted item, folders and their subtrees included), content import |
-| `TRANSLATION_PUBLISHED` | `translation.published` | `TranslationsService.publish()` (`POST …/translations/publish`) |
-| `TRANSLATION_CHANGED`   | `translation.changed`   | Every translation write through the app API (`TranslationsService.write()`), translation import with changes, a v1 translation push (`POST /api/v1/spaces/:s/translations/:locale`) that wrote something (not a dry run or a no-op) |
+| `TRANSLATION_PUBLISHED` | `translation.published` | `TranslationService.publish()` (`POST …/translations/publish`) |
+| `TRANSLATION_CHANGED`   | `translation.changed`   | Every translation write through the app API (`TranslationService.write()`), translation import with changes, a v1 translation push (`POST /api/v1/spaces/:s/translations/:locale`) that wrote something (not a dry run or a no-op) |
 
 Events are dispatched only **after** the transaction that caused them commits, and the request does not wait for delivery (`WebhookDispatcher.dispatch()` is fire-and-forget; shutdown waits for deliveries in flight).
 ---
@@ -177,11 +177,11 @@ Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `L
 
 | File                                                                         | Event                   |
 |------------------------------------------------------------------------------|-------------------------|
-| `apps/server/src/modules/contents/services/contents.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
-| `apps/server/src/modules/contents/services/contents.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
-| `apps/server/src/modules/contents/services/contents.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
-| `apps/server/src/modules/translations/services/translations.service.ts` — `publish()` | `TRANSLATION_PUBLISHED` |
-| `apps/server/src/modules/translations/services/translations.service.ts` — writes   | `TRANSLATION_CHANGED`   |
+| `apps/server/src/modules/contents/services/content.service.ts` — `publish()`              | `CONTENT_PUBLISHED`     |
+| `apps/server/src/modules/contents/services/content.service.ts` — `unpublish()`            | `CONTENT_UNPUBLISHED`   |
+| `apps/server/src/modules/contents/services/content.service.ts` — `update()`, `updateData()`, `delete()` | `CONTENT_CHANGED` |
+| `apps/server/src/modules/translations/services/translation.service.ts` — `publish()` | `TRANSLATION_PUBLISHED` |
+| `apps/server/src/modules/translations/services/translation.service.ts` — writes   | `TRANSLATION_CHANGED`   |
 | `apps/server/src/modules/tasks/services/content-transfer.service.ts`, `translation-transfer.service.ts` — imports | `CONTENT_CHANGED` / `TRANSLATION_CHANGED` |
 
 All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/src/shared/services/webhook-dispatcher.service.ts`.
@@ -207,11 +207,11 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 
 **Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
-- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhooksService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
+- `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhookService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 
-Webhooks created in the app start enabled (`WebhooksRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
+Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
 
 `WebhookDetailComponent` shows the full log history for a single webhook: search by log id, filter by event/status, paginated (`HlmPaginationImports`), plus enable/disable, edit, and delete actions.
 
@@ -223,7 +223,7 @@ Webhooks created in the app start enabled (`WebhooksRepository.create` sets `ena
 |--------------------------------------------------|---------------------------------------------------------------------------|
 | `apps/server/src/infra/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
 | `packages/shared/src/models/webhook.model.ts`         | Types — `WebHookEvent` and friends (server and web)                       |
-| `apps/server/src/modules/webhooks/webhooks.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
+| `apps/server/src/modules/webhooks/webhook.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
 | `apps/server/src/shared/services/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
 | `apps/server/src/shared/utils/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
 | `apps/web/src/app/features/spaces/developers/webhooks/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |

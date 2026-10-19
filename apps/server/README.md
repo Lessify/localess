@@ -43,7 +43,7 @@ src/
   infra/        config, database (Drizzle schema, migrations, embedded Postgres), storage,
                 events (pg_notify → SSE), static (SPA), health, http (App API helpers; v1/ public API plumbing)
   auth/         sign-in, layered like a module (controllers/, services/, repositories/, utils/): sessions, OAuth,
-                password reset, the guard and decorators, ApiTokensModule (v1 token check)
+                password reset, the guard and decorators, ApiTokenModule (v1 token check)
   shared/       SharedModule (global): mail, webhook delivery; transformers, data rules, shared utils
   modules/      independent features, a folder per layer inside (controllers/, services/, repositories/,
                 utils/, workers/: docs/server-architecture.md) — spaces, settings, schemas (+ OpenAPI),
@@ -53,7 +53,7 @@ src/
 ```
 
 Domain types, permission rules and validators come from `@localess/shared` (`packages/shared`). A feature
-module imports `ApiTokensModule` when it has a CDN or Management controller and no other feature module (a space it needs
+module imports `ApiTokenModule` when it has a CDN or Management controller and no other feature module (a space it needs
 is read with its own query); infrastructure modules (database, storage, events) and `SharedModule` are global.
 
 ## Environment

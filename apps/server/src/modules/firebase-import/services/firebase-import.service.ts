@@ -14,7 +14,7 @@ import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { toFirebaseImport } from '../../../shared/transformers/firebase-import.transformer.js';
-import { type FirebaseImportEntity, FirebaseImportsRepository } from '../repositories/firebase-imports.repository.js';
+import { type FirebaseImportEntity, FirebaseImportRepository } from '../repositories/firebase-import.repository.js';
 import { FirebaseClient, FirebaseConnectionError } from '../utils/firebase-client.js';
 import { HEARTBEAT_MS } from '../utils/firebase-import.utils.js';
 import { FirebaseImportRunner } from '../workers/firebase-import.runner.js';
@@ -26,7 +26,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   private recovery?: NodeJS.Timeout;
 
   constructor(
-    private readonly runs: FirebaseImportsRepository,
+    private readonly runs: FirebaseImportRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     private readonly runner: FirebaseImportRunner,
   ) {}

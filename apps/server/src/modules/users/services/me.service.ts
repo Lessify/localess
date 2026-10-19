@@ -4,8 +4,8 @@ import { SessionService } from '../../../auth/services/session.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
-import { type UserUpdate, UsersRepository } from '../repositories/users.repository.js';
-import { UsersService } from './users.service.js';
+import { type UserUpdate, UserRepository } from '../repositories/user.repository.js';
+import { UserService } from './user.service.js';
 
 function requireUnlocked(user: UserRow): void {
   if (user.lock) throw new ForbiddenException('Your profile is locked');
@@ -18,8 +18,8 @@ function requireUnlocked(user: UserRow): void {
 @Injectable()
 export class MeService {
   constructor(
-    private readonly users: UsersRepository,
-    private readonly usersService: UsersService,
+    private readonly users: UserRepository,
+    private readonly usersService: UserService,
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
   ) {}

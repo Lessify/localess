@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { TaskEntity } from '../repositories/tasks.repository.js';
+import type { TaskEntity } from '../repositories/task.repository.js';
 import { AssetTransferService } from '../services/asset-transfer.service.js';
 import { SchemaTransferService } from '../services/schema-transfer.service.js';
 import { TranslationTransferService } from '../services/translation-transfer.service.js';

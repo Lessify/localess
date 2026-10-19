@@ -10,7 +10,7 @@ import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
 import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
-import { TranslationSnapshotsRepository } from '../src/modules/translations/repositories/translation-snapshots.repository.js';
+import { TranslationSnapshotRepository } from '../src/modules/translations/repositories/translation-snapshot.repository.js';
 
 import { createTestDatabase, TestDatabase } from './database.js';
 
@@ -108,8 +108,8 @@ export async function userWithAccess(
   email: string,
   access: { role: 'ADMIN' | 'CUSTOM' | null; permissions?: string[] },
 ): Promise<string> {
-  const { UsersService } = await import('../src/modules/users/services/users.service.js');
-  await t.app.get(UsersService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });
+  const { UserService } = await import('../src/modules/users/services/user.service.js');
+  await t.app.get(UserService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });
   return login(t, email, 'secret1');
 }
 
@@ -170,5 +170,5 @@ export function draftSnapshots(db: TestApp['db'], spaceId: string) {
 
 /** Builds the space's draft maps, as the first draft request after a write does. */
 export async function buildDrafts(t: TestApp, spaceId: string): Promise<void> {
-  await t.app.get(TranslationSnapshotsRepository).buildDrafts(spaceId);
+  await t.app.get(TranslationSnapshotRepository).buildDrafts(spaceId);
 }

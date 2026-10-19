@@ -2,8 +2,8 @@ import { randomBytes } from 'node:crypto';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import type { UserRow } from '../../shared/models/user.js';
 import { MailService } from '../../shared/services/mail.service.js';
-import { AuthUsersRepository } from '../repositories/auth-users.repository.js';
-import { PasswordResetTokensRepository } from '../repositories/password-reset-tokens.repository.js';
+import { AuthUserRepository } from '../repositories/auth-user.repository.js';
+import { PasswordResetTokenRepository } from '../repositories/password-reset-token.repository.js';
 import { hashPassword } from '../utils/password.js';
 import { hashToken } from '../utils/token-hash.js';
 import { SessionService } from './session.service.js';
@@ -16,8 +16,8 @@ export class PasswordResetService {
   private readonly logger = new Logger(PasswordResetService.name);
 
   constructor(
-    private readonly resetTokens: PasswordResetTokensRepository,
-    private readonly users: AuthUsersRepository,
+    private readonly resetTokens: PasswordResetTokenRepository,
+    private readonly users: AuthUserRepository,
     private readonly sessions: SessionService,
     private readonly mail: MailService,
   ) {}

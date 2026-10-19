@@ -3,7 +3,7 @@ import { UserPermission } from '@localess/shared';
 import { passwordResetTokens } from '../src/infra/database/schema.js';
 import { MailMessage, MailService } from '../src/shared/services/mail.service.js';
 import type { UserRow } from '../src/shared/models/user.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
+import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
 const tokenFrom = (url: string) => new URL(url).searchParams.get('token') as string;
@@ -16,7 +16,7 @@ describe('password reset', () => {
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_SMTP_URL: 'smtp://127.0.0.1:2525', LOCALESS_PUBLIC_URL: 'https://cms.example.com' });
-    const users = t.app.get(UsersService);
+    const users = t.app.get(UserService);
     admin = await users.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
     target = await users.create({ email: 'forgetful@example.com', password: 'old-pass', role: 'CUSTOM' });
     await users.create({
@@ -103,7 +103,7 @@ describe('password reset without SMTP', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.app.get(UsersService).create({ email: 'someone@example.com', password: 'secret1', role: 'CUSTOM' });
+    await t.app.get(UserService).create({ email: 'someone@example.com', password: 'secret1', role: 'CUSTOM' });
   });
 
   afterAll(() => t?.close());

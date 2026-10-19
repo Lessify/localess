@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
-import { WebhooksRepository } from '../repositories/webhooks.repository.js';
+import { WebhookRepository } from '../repositories/webhook.repository.js';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -15,7 +15,7 @@ export class WebhookLogCleanupService implements OnApplicationBootstrap {
   private readonly logger = new Logger(WebhookLogCleanupService.name);
 
   constructor(
-    private readonly webhooks: WebhooksRepository,
+    private readonly webhooks: WebhookRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 

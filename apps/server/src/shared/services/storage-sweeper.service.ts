@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { StorageDeletionsRepository } from '../repositories/storage-deletions.repository.js';
+import { StorageDeletionRepository } from '../repositories/storage-deletion.repository.js';
 
 const HOUR = 60 * 60 * 1000;
 /** Entries per sweep, one at a time. */
@@ -21,7 +21,7 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
   private again = false;
 
   constructor(
-    private readonly deletions: StorageDeletionsRepository,
+    private readonly deletions: StorageDeletionRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 

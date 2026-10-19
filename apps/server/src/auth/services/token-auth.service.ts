@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { filter, Subscription } from 'rxjs';
-import { EventsService } from '../../infra/events/events.service.js';
-import { ApiTokensRepository } from '../repositories/api-tokens.repository.js';
+import { EventService } from '../../infra/events/event.service.js';
+import { ApiTokenRepository } from '../repositories/api-token.repository.js';
 import type { SpaceImportStatus } from '../../shared/queries/space.query.js';
 import type { ApiToken } from '../utils/api-token.js';
 import { hashToken } from '../utils/token-hash.js';
@@ -18,8 +18,8 @@ export class TokenAuthService implements OnModuleInit, OnModuleDestroy {
   private subscription?: Subscription;
 
   constructor(
-    private readonly tokens: ApiTokensRepository,
-    private readonly events: EventsService,
+    private readonly tokens: ApiTokenRepository,
+    private readonly events: EventService,
   ) {}
 
   /** Token edits reach every instance as change events (with the row UUID), so a revoked token stops working at once. */

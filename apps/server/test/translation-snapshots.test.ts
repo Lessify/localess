@@ -1,9 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { translations, translationSnapshots } from '../src/infra/database/schema.js';
-import { SpacesService } from '../src/modules/spaces/services/spaces.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
-import { TranslationsService } from '../src/modules/translations/services/translations.service.js';
+import { TranslationService } from '../src/modules/translations/services/translation.service.js';
 import { seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
@@ -82,7 +82,7 @@ describe('translation snapshots', () => {
   it('moves the published cv on a publish, and leaves the draft cv alone', async () => {
     const draft = await cvOf(draftUrl('de'));
     const published = await cvOf(publishedUrl('de'));
-    await t.app.get(TranslationsService).publish(S1);
+    await t.app.get(TranslationService).publish(S1);
     const rows = await snapshots('published');
     expect(rows.map(it => it.locale).sort()).toEqual(['de', 'en']);
     expect(new Set(rows.map(it => it.builtAt.getTime())).size).toBe(1);
@@ -97,7 +97,7 @@ describe('translation snapshots', () => {
   it('rebuilds the draft when a locale is added, and serves the published default locale until the next publish', async () => {
     const draft = await cvOf(draftUrl('fr'));
     const publishedEn = await cvOf(publishedUrl('en'));
-    await t.app.get(SpacesService).addLocale(S1, 'fr');
+    await t.app.get(SpaceService).addLocale(S1, 'fr');
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await snapshots('draft')).map(it => it.locale).sort()).toEqual(['de', 'en', 'fr']);
     expect(await follow(draftUrl('fr'))).toEqual({ farewell: 'Bye', greeting: 'Hello', 'new.key': 'New (draft only)' });
@@ -106,23 +106,23 @@ describe('translation snapshots', () => {
 
   it('rebuilds the draft when the default locale changes', async () => {
     const draft = await cvOf(draftUrl('fr'));
-    await t.app.get(SpacesService).setDefaultLocale(S1, 'de');
+    await t.app.get(SpaceService).setDefaultLocale(S1, 'de');
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await follow(draftUrl('fr'))).greeting).toBe('Servus');
-    await t.app.get(SpacesService).setDefaultLocale(S1, 'en');
+    await t.app.get(SpaceService).setDefaultLocale(S1, 'en');
   });
 
   it('drops both snapshots of a removed locale', async () => {
-    await t.app.get(TranslationsService).publish(S1);
+    await t.app.get(TranslationService).publish(S1);
     await cvOf(draftUrl('fr'));
-    await t.app.get(SpacesService).removeLocale(S1, 'fr');
+    await t.app.get(SpaceService).removeLocale(S1, 'fr');
     expect((await snapshots('published')).map(it => it.locale).sort()).toEqual(['de', 'en']);
     expect((await snapshots('draft')).map(it => it.locale)).not.toContain('fr');
   });
 
   it('keeps only the space locales on publish', async () => {
     await t.db.insert(translationSnapshots).values({ spaceId: S1, version: 'published', locale: 'it', data: {}, builtAt: new Date(5) });
-    await t.app.get(TranslationsService).publish(S1);
+    await t.app.get(TranslationService).publish(S1);
     expect((await snapshots('published')).map(it => it.locale).sort()).toEqual(['de', 'en']);
   });
 

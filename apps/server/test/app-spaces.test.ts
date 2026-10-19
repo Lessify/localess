@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, firebaseImports, schemas, spaces, tokens, translations } from '../src/infra/database/schema.js';
 import { transaction } from '../src/infra/database/transaction.js';
-import { SpacesRepository } from '../src/modules/spaces/repositories/spaces.repository.js';
+import { SpaceRepository } from '../src/modules/spaces/repositories/space.repository.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newUuid } from '../src/infra/database/id.js';
 import { S2, UUID_V7 } from './ids.js';
@@ -51,7 +51,7 @@ describe('app API: spaces, locales, instance label', () => {
       const before = (await t.db.select({ id: tokens.id }).from(tokens)).length;
       await expect(
         transaction(t.db, undefined, async tx => {
-          await t.app.get(SpacesRepository).create('Rolled back', 'en', tx);
+          await t.app.get(SpaceRepository).create('Rolled back', 'en', tx);
           throw new Error('boom');
         }),
       ).rejects.toThrow('boom');

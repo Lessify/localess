@@ -241,8 +241,8 @@ When content is published all consumers have a stale `cv`. Without a cached redi
 - `apps/server/src/infra/http/v1/v1-request.ts` — `cv` redirects (`needsRedirect`, `redirectToVersion`), `validIdParams`, `isDraft`
 - `apps/server/src/infra/http/v1/cache-control.ts` — cache TTL constants
 - `apps/server/src/auth/guards/cdn-token.guard.ts`, `apps/server/src/auth/services/token-auth.service.ts` — token check per request, the 5-minute token cache
-- `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/assets.cdn.controller.ts` — ETag/304, Range, Cache-Control
+- `apps/server/src/modules/assets/services/asset-delivery.service.ts` — transforms, rendition cache; `controllers/asset.cdn.controller.ts` — ETag/304, Range, Cache-Control
 - `apps/server/src/shared/data-rules/content-snapshots.ts` — the contents lock, dropping drafts, `/links` lists and a removed locale's snapshots (every module that writes contents or a space's locales)
 - `apps/server/src/modules/contents/repositories/content-delivery.repository.ts` — content snapshots: draft and `/links` builds
-- `apps/server/src/modules/translations/repositories/translation-snapshots.repository.ts` — translation snapshots: publish, draft build
+- `apps/server/src/modules/translations/repositories/translation-snapshot.repository.ts` — translation snapshots: publish, draft build
 - `apps/server/src/shared/data-rules/translation-drafts.ts` — the translations lock, dropping the drafts (every module that writes translations or a space's locales)

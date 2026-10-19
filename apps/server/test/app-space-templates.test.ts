@@ -1,7 +1,7 @@
 import { count, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { assets, contents, schemas, spaceLocales, spaces, tokens, translations } from '../src/infra/database/schema.js';
-import { SpaceTemplatesRepository } from '../src/modules/spaces/repositories/space-templates.repository.js';
+import { SpaceTemplateRepository } from '../src/modules/spaces/repositories/space-template.repository.js';
 import { BLOG_TEMPLATE } from '../src/modules/spaces/templates/index.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
@@ -144,7 +144,7 @@ describe('app API: space templates', () => {
     it('rolls back everything when the template fails', async () => {
       const before = await counts(t);
       await expect(
-        t.app.get(SpaceTemplatesRepository).createSpace('Broken', { ...BLOG_TEMPLATE, locales: ['xx-not-a-locale'] }),
+        t.app.get(SpaceTemplateRepository).createSpace('Broken', { ...BLOG_TEMPLATE, locales: ['xx-not-a-locale'] }),
       ).rejects.toThrow();
       expect(await counts(t)).toEqual(before);
     });
@@ -156,7 +156,7 @@ describe('app API: space templates', () => {
         assets: [{ key: 'shared', kind: 'FOLDER' as const, name: 'Shared' }],
         contents: [{ key: 'shared', kind: 'FOLDER' as const, name: 'Shared', slug: 'shared' }],
       };
-      await expect(t.app.get(SpaceTemplatesRepository).createSpace('Broken', broken)).rejects.toThrow('Duplicate template key: shared');
+      await expect(t.app.get(SpaceTemplateRepository).createSpace('Broken', broken)).rejects.toThrow('Duplicate template key: shared');
       expect(await counts(t)).toEqual(before);
     });
   });

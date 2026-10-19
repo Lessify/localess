@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { ZodError } from 'zod';
 import type { TaskExportMetadata } from '@localess/shared';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
-import type { TaskEntity } from '../repositories/tasks.repository.js';
+import type { TaskEntity } from '../repositories/task.repository.js';
 import { formatZodError, KIND_LABEL, taskFileKey, type TaskOutcome } from '../utils/task.utils.js';
 import { openZip, type ZipReader } from '../utils/zip.js';
 import { TaskLogService } from './task-log.service.js';

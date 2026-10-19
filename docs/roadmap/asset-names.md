@@ -6,7 +6,7 @@
 The rules for an asset's name differ between upload, the dialogs and the server. Kept as they are for now; each item
 below says what happens today, where, and which e2e test pins it, so a fix updates that test too.
 
-| | Upload (file picker, drop, paste, link), Move | Create Folder / Edit File / Edit Folder | Server (`assets.controller.ts`) |
+| | Upload (file picker, drop, paste, link), Move | Create Folder / Edit File / Edit Folder | Server (`asset.controller.ts`) |
 |---|---|---|---|
 | Length | any (from the file name) | 3–250 (`AssetValidator.NAME`); the Edit Folder input stops at 100 | 1–500 (`name`, trimmed) |
 | Spaces around | kept as uploaded | refused (`noSpaceAround`) | trimmed |
