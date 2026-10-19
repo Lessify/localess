@@ -21,6 +21,8 @@ src/
 - **No module imports another feature module.** What it needs from elsewhere, it reads with its own query.
 - **Tables are shared, queries are not.** Several modules may read and write the same table, each with the queries its
   own job needs (translations reads a space's locales with its `SpaceLocaleRepository`; spaces has its own).
+- **Except a read every module makes the same way:** it is one repository in `shared/repositories/`
+  (`SpaceLookupRepository`: a space and its locales), not a copy per module.
 - A module may use `infra/`, `shared/` and `auth/`.
 
 ## Auth
@@ -84,8 +86,8 @@ modules/translations/
   `TranslationEntity` the row, `TranslationInsertEntity` the row to insert, `TranslationSelect` the row with its
   relations from `infra/database/relations.ts`), and nowhere else: an entity is what the
   database holds, a model of `@localess/shared` is what the API exposes, and a transformer maps one to the other.
-  A repository's narrower or wider shape is built from them (`Pick<ContentSnapshotEntity, …>`, `SpaceRow`: a
-  `SpaceEntity` with its locales and environments).
+  A repository's narrower or wider shape is built from them (`Pick<ContentSnapshotEntity, …>`, `SpaceWithLocales`: a
+  `SpaceEntity` with its default locale and locales).
 - **Domain models and API DTOs** are the types in `@localess/shared` (one definition for server and web). Transformers
   map an entity to them; they all live in `shared/transformers/`, one place for every module. Controllers send what the service returns.
 - **Request models** (what a client sends: bodies, queries) are in `@localess/shared` too: the zod schema `zX` and its
@@ -125,13 +127,13 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | Folder | What goes there | Today |
 |---|---|---|
 | `shared/services/` | Services every module may inject, provided by `SharedModule` | `MailService`, `WebhookDispatcher`, `AssetMetadataService` (size, duration, orientation, embedded alt of a stored file: assets, the asset import and metadata tasks, the Firebase import), `StorageSweeperService` (deletes queued stored files, hourly and when kicked) |
-| `shared/repositories/` | What those services read and write | `WebhookDeliveryRepository`, `StorageDeletionRepository` |
+| `shared/repositories/` | What those services read and write, and the reads every module shares | `WebhookDeliveryRepository`, `StorageDeletionRepository`; `SpaceLookupRepository` (`space-lookup.repository.ts`): whether a space exists, and the space with its default locale and locales (`SpaceWithLocales`), for every module that checks a locale or falls back to the default |
 | `shared/entities/` | The database entity types, one file per table: `<entity>.entity.ts` with `<Entity>Entity` (`$inferSelect`), `<Entity>InsertEntity` (`$inferInsert`) and `<Entity>Select` (with its relations, for `db.query … { with }`); never sent as they are (a transformer maps them to the shared models) | `user.entity.ts`: `UserEntity` (the signed-in user, `CurrentUser`), `asset.entity.ts`, `content-snapshot.entity.ts`, … |
 | `shared/transformers/` | Every transformer | `toUser`, `toPrincipal`, `UserDto` (user.transformer.ts: auth and users), `toTranslation`, `translationsByKey`, `toSchema`, `schemasByName`, `toContent`, `toContentMetadata`, `toAssetMetadata` (content.transformer.ts), `toAsset` (asset.transformer.ts), `toTask`, `toTaskLog` (task.transformer.ts), `assetToExport`, `translationToExport` (transfer.transformer.ts: export file entries, the export tasks), `toFirebaseImport` (firebase-import.transformer.ts) |
 | `shared/data-rules/` | Rules every module that writes a table follows, inside its own transaction | `translation-drafts.ts`: `lockTranslations`, `dropTranslationDrafts`, `dropTranslationLocale`: whoever changes translations, a space's locales or its default locale drops the draft maps under the translations lock (translations, spaces, the task import); `space-tokens.ts`: `createPreviewToken`: whoever inserts a space writes its auto-generated preview token (spaces, the first admin's starter space, the Firebase import); `content-refs.ts`: `contentRefs`: whoever writes a document's data stores the ids it points to (`assets`, `links`, `references`, for the CDN to resolve) worked out from that data, never taken from a client (the editor's save, space templates) |
 | | | `content-snapshots.ts`: `lockContents`, `dropContentDrafts`, `dropContentLinks`, `dropContentLocale`: whoever writes contents, a space's locales or its default locale drops the snapshots it makes stale under the contents lock (contents, spaces, the content import task, the Firebase import) |
 | | | `storage-deletions.ts`: `scheduleAssetFilesDeletion`, `scheduleSpaceFilesDeletion`, `guardUpload`, `releaseUploadGuards` (every module that deletes rows with stored files, or stores a file before its row) |
-| `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `space.query.ts`: `selectSpaces`, `findSpace`, `requireSpace`, `SpaceRow` (a space with its locales, environments and import status) |
+| `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `content-tree.query.ts`, `asset-tree.query.ts` (the trees' paths and subtrees) |
 | | | `user.query.ts`: `findUserLogins` (how each user signs in: password, OAuth providers), for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction; `lockSchemaReferences`, which locks the schemas written fields refer to (schemas, the schema import task) |
 | `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `event.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |

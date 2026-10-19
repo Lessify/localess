@@ -59,9 +59,20 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 - **Don't:** a plural or a role for the name (`spaces`, `locales`, `events`, `runs`, `log`): two of them in one class
   read alike, and the same name means a repository in one file and a service in the next.
 
+## Return types
+
+- **Rule:** every public method and every exported function declares what it returns:
+  `findOne(spaceId: string): Promise<SpaceWithLocales | undefined>`, `findAll(query: SpacePageable): Promise<Page<Space>>`.
+  Private helpers and inline callbacks may leave it to inference.
+- **Why:** what a method answers is read from its signature, not worked out from its body.
+- **Example:** `modules/spaces/` (every file).
+- **Scope:** checked in the modules reworked so far (`modules/spaces/`); each module joins the check when it is reworked
+  (`DECLARED` in `apps/server/test/architecture.test.ts`).
+
 ## Repository methods
 
-- **Rule:** data-access names: reads `findPage`, `findAll`, `findById`, `find<What>`, `count`, `exists`; writes
+- **Rule:** data-access names: reads `findAll` (array), `findAllCount` (number), `findOne` (entity or `undefined`),
+  `findAll<What>` / `find<What>` for a narrower read, `exists`; writes
   `create` / `insert<What>`, `update<What>`, `delete<What>`; a database action with its own meaning keeps its verb
   (`claim`, `lock`, `reorder`, `setDefault`, `publish`).
 - **Why:** a repository speaks database (rows, `delete`), a service speaks the API (`remove`); `find*` answers
@@ -87,7 +98,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   The relations are those of `infra/database/relations.ts` (one per foreign key, camelCase; a table related to itself
   names its pair: `parent` / `children`), each optional: present when the relational query asked for it
   (`db.query.spaces.findFirst({ with: { environments: true } })`). A shape built from an entity otherwise is named
-  for what it is (`StoredContentSnapshot = Pick<ContentSnapshotEntity, …>`; the query results `SpaceRow`,
+  for what it is (`StoredContentSnapshot = Pick<ContentSnapshotEntity, …>`, `SpaceWithLocales`; the query result
   `ContentWithPath`, until relational reads replace them).
 - **Why:** an entity (what the database holds, `…Entity`) is never mistaken for a model the web sees (`@localess/shared`,
   no suffix); one definition per table instead of one per repository.
@@ -119,3 +130,25 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   (`{ name } satisfies SpaceUpdate`).
 - **Don't:** `createSchema`, `listSchema`, `XQuery`, `XDto` for a request; a schema in the server; an interface in
   `@localess/shared` or the web that repeats a request (a form shape derives from it: `Pick<AssetFolderCreate, 'name'>`).
+
+## Response models
+
+- **Rule:** a model of `@localess/shared` the App API answers mirrors its entity: the table's columns, plus one
+  optional field per relation of `infra/database/relations.ts`, under the same name, present when the endpoint loaded
+  it. No computed fields: the web reads what it shows from the relations.
+
+  ```ts
+  export interface Space {
+    id: string; name: string; defaultLocaleId: string; createdAt: Timestamp; updatedAt: Timestamp;
+    defaultLocale?: Locale; spaceLocales?: SpaceLocale[]; environments?: SpaceEnvironment[]; firebaseImport?: FirebaseImport;
+  }
+  ```
+
+  The service maps the entity to it in a transformer (`shared/transformers/space.transformer.ts`: `toSpace`,
+  `toSpaceLocale`, `toSpaceEnvironment`), leaving out columns the web must never see. A list that only names things
+  answers `IdName` (`{ id, name }`).
+- **Why:** what an endpoint answers is visible from what its query loaded; one shape per table on both sides.
+- **Example:** Admin → Spaces answers `Space` with `firebaseImport`; the selected space (`GET /spaces/:spaceId`) with
+  `defaultLocale` and `spaceLocales`; the sidebar `IdName[]`.
+- **Don't:** a computed field for the web's convenience (`importStatus`, `legacyId`, a flattened `locales`).
+- **Reworked so far:** spaces. The other models keep their shapes until their module is reworked.

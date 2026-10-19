@@ -26,6 +26,8 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 `apps/server/src` and fails when a rule is broken:
 
 - **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service.
+- **Return types:** every public method and exported function declares one, in the modules reworked so far
+  (`modules/spaces/`).
 - **Names:** singular file names whose class matches the file; injected services and repositories named after their
   class (`spaceRepository`); controller, service and repository method names
   (with the listed exceptions).

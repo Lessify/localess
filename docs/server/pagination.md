@@ -49,11 +49,13 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
    export type TaskPageable = z.infer<typeof zTaskPageable>;
    ```
 
-2. **Repository** `findPage(…, query): Promise<{ rows; total }>`: one `where` for both queries; order by the sort
-   column then the id; `limit(query.size).offset(offsetOf(query))`; `count()` with the same `where`. Search with
-   `containsPattern(search)` and `ilike` (`shared/utils/paging.ts`). A sort or filter needs an index when the table is
-   large (`tasks_space_idx (space_id, created_at desc)`).
-3. **Service** `findAll(…, query): Promise<Page<T>>`: `toPage(rows, total, query, toX)`.
+2. **Repository** `findAll(…, query): Promise<XSelect[]>` (a relational query: `where`, `orderBy` the sort column then
+   the id, `limit: query.size`, `offset: offsetOf(query)`, `with` the relations the list shows) and
+   `findAllCount(…, query): Promise<number>` (`count()` with the same `where`, one private method building it for
+   both). Search with `containsPattern(search)` and `ilike` (`shared/utils/paging.ts`). A sort or filter needs an index
+   when the table is large (`tasks_space_idx (space_id, created_at desc)`). Spaces follow this; Users and Tasks still
+   answer both from one `findPage` until their module is reworked.
+3. **Service** `findAll(…, query): Promise<Page<T>>`: both reads, then `toPage(rows, total, query, toX)`.
 4. **Controller** `findAll(@Query({ schema: zXPageable }) query: XPageable)`.
 5. **Server test** (`apps/server/test/<entity>-paging.test.ts`): the first page and the total; the next page and past
    the end; ties paged both ways without repeats; each sort; search (case, anywhere, wildcards literal); each filter,
@@ -71,9 +73,9 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
   `(sortChange)="onSortChange($event)"` on `llTableSort` (a fixed default order: `llTableSortActive`,
   `llTableSortDirection`, `[llTableSortDisableClear]="true"`); the filter toolbar's `(filterChange)` calls
   `list.setFilters({ search, … })` (arrays for multi-select filters).
-- **Every page** (a store or picker that truly needs the whole list): read 100 at a time with `expand` until
-  `total` (`SpaceService.findAllPages`); the e2e helpers do the same (`AppApi.everyPage`). Prefer a narrower endpoint
-  or a search when the list can be large.
+- **A whole list** (a store or picker that truly needs every item): prefer a narrow, unpaged endpoint answering only
+  what the list shows (`GET /spaces/names` → `IdName[]` for the sidebar). The e2e helpers read every page
+  (`AppApi.everyPage`).
 - **Unit tests:** the service (URL and params), the component (first load, a filter and a sort reaching the query from
   page 0, a failed load told and the next change loading again).
 

@@ -56,12 +56,14 @@ Auth providers supported: **Email/Password**, **Google**, **Microsoft**.
 
 **File:** `apps/web/src/app/core/stores/space.store.ts`
 
-Loads all spaces the user has access to (a `liveQuery` over `GET /api/app/spaces`, refetched on `spaces` change events). Tracks the currently selected space and environment.
+Holds the sidebar's list of spaces, and the selected space with what its screens need. The list is `IdName[]` (`{ id, name }`) from `GET /api/app/spaces/names`, a `liveQuery` refetched on `spaces` change events; the server leaves out spaces being imported or whose import failed. Once a space is selected (and listed), the store reads it (`GET /api/app/spaces/:spaceId`: the space with `defaultLocale` and `spaceLocales`) and its environments (`GET /api/app/spaces/:spaceId/environments`), both live.
 
 ```typescript
 // Key state
 {
-  spaces: Space[],
+  spaces: IdName[],          // the sidebar list: every space the user can open, by name
+  currentSpace: Space | undefined,      // the selected space with its default locale and locales, once it arrived
+  environments: SpaceEnvironment[],     // the selected space's environments, in their order
   loaded: boolean,           // true once load() has resolved (success, empty, or error)
   selectedSpaceId: string | undefined,
   selectedEnvironmentBySpaceId: Record<string, string>,
@@ -73,19 +75,20 @@ Loads all spaces the user has access to (a `liveQuery` over `GET /api/app/spaces
 }
 
 // Key computed
-selectedSpace: computed(() => spaces().find(s => s.id === selectedSpaceId()))
-// `spaces`: every space the user can open, from SpaceService.findAllPages(): GET /api/app/spaces 100 at a time
-// (sort=name, importing=false) until `total`, again on each `spaces` event; the space guard reads the same list
+selectedSpace: computed(() => currentSpace()?.id === selectedSpaceId() ? currentSpace() : undefined)
+locales:       computed(() => selectedSpace()?.spaceLocales.map(it => it.locale))  // the one place the web reads spaceLocales
+defaultLocale: computed(() => selectedSpace()?.defaultLocale)
+// `spaces`: SpaceService.findAllNames(), again on each `spaces` event; the space guard reads the same list
 hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on loaded so it is not true before the first response
 ```
 
 Key methods:
-- `load()` — `rxMethod` that streams `SpaceService.findAll()`; called from `onInit`. Sets `loaded`, and clears the selection when the list is empty
+- `load()` — `rxMethod` that streams `SpaceService.findAllNames()`; called from `onInit`. Sets `loaded`; keeps the selected space (and its open folders) while it is listed, else selects the first (none when the list is empty)
 - `spaceById(id)` — returns a `computed` signal of the space with that id (or `undefined`)
-- `changeSpace(space)` — switch active workspace, reset paths, resolve environment
+- `changeSpace(space: IdName)` — switch active workspace (a listed one, else the first), reset paths; the environment resolves once the space's environments arrive (the remembered one by id, else the first)
 - `changeContentPath(path)` / `changeAssetPath(path)` — update breadcrumb navigation
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
-- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the `schemas`/`documents` live queries (HTTP fetch + refetch on the space's SSE change events): on every id change it clears both, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
+- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the live queries of the selected space (`findById`, `findEnvironments`) and its `schemas`/`documents` (HTTP fetch + refetch on the space's SSE change events): on every id change it clears the space, its environments, `schemas` and `documents`, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
 
 **The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`apps/web/src/app/core/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
 - `:spaceId` is in `spaces` → `changeSpace()` if it differs from the stored selection, allow.

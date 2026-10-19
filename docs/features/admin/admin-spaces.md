@@ -23,7 +23,7 @@ apps/web/src/app/features/admin/spaces/
 
 ## SpacesComponent
 
-Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/spaces` answers a `Page<Space>` (`?page=&size=&sort=&direction=`, `?search=` on the name or any part of the id, `?importing=false` to leave out spaces being imported; sorts: `name` (default, case-insensitive), `id`, `updatedAt`; ties by id). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
+Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/spaces` answers a `Page<Space>` (`?page=&size=&sort=&direction=`, `?search=` on the name or any part of the id, `?importing=false` to leave out spaces being imported; sorts: `name` (default, case-insensitive), `id`, `updatedAt`; ties by id), each item with its `firebaseImport` when it has one. `SPACE_MANAGEMENT` only, as the page: the import carries who ran it and from where; every other user reads the sidebar list (`GET /api/app/spaces/names`, any role). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
 
 **Injected services:** `SpaceService`, `HlmDialogService`, `NotificationService`, `Injector`
 
@@ -45,7 +45,9 @@ disabled, "Imported as …"), and imports the one picked into a new space. The d
 disabled), translations, schemas, assets, contents, content migration — with its count, warnings and, on failure,
 the error (`firebase-import-progress/`). **Imports** (`firebase-imports-dialog/`) lists past runs. A space being
 imported or whose import failed shows a badge, is left out of `SpaceStore` (so it cannot be opened), and a failed one
-can be deleted to import again. Server side: `apps/server/src/modules/firebase-import/`; design:
+can be deleted to import again. The table reads both from each space's `firebaseImport` (the list loads that
+relation): the badge from its `status` (`RUNNING` "Importing", `FAILED` "Import failed"), and, after the name,
+"Imported from Firebase: `<sourceSpaceId>`" (the Firestore id; Space Settings no longer shows it). Server side: `apps/server/src/modules/firebase-import/`; design:
 [firebase-space-import.md](../../roadmap/firebase-space-import.md).
 
 ## Creating a space
@@ -116,9 +118,9 @@ normally, because the input passes through `undefined` on the way.
 
 ### After creation
 
-No manual refresh. `SpaceService.findPage()` (the admin table) and `findAllPages()` (`SpaceStore`) are
-`liveQuery`s over `GET /api/app/spaces`, so the `spaces` change event the create emits over SSE makes them
-refetch, and the new space reaches the admin table and `SpaceStore` — and since the store selects `response[0]` when
+No manual refresh. `SpaceService.findPage()` (the admin table, `GET /api/app/spaces`) and `findAllNames()`
+(`SpaceStore`, `GET /api/app/spaces/names`) are `liveQuery`s, so the `spaces` change event the create emits over SSE
+makes them refetch, and the new space reaches the admin table and `SpaceStore` — and since the store selects the first when
 nothing is selected, a user's first space also becomes their current one, filling the sidebar behind
 the dialog. The user stays on the spaces list.
 

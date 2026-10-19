@@ -215,7 +215,7 @@ them apart, and the first is the default:
 - `drop(event)` — drag-and-drop (CDK) reorders the list at once and sends the whole order (`PUT …/environments/order {ids}`); a refused
   order is put back
 
-The list (`environments`, a `linkedSignal`) follows `SpaceStore.selectedSpace`: every write returns the space and announces a `spaces` change.
+The list (`environments`, a `linkedSignal`) follows `SpaceStore.environments()` (`GET /api/app/spaces/:spaceId/environments`, live): every write answers the environments after it and announces a `spaces` change.
 
 The dialog's URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an absolute `http:`/`https:` URL on a different origin from the app
 (error key `previewUrl`). This only gives feedback in the form; the security check that matters runs again when the preview renders. See

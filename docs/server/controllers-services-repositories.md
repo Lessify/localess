@@ -54,20 +54,37 @@ transaction; the three repositories call it.
 
 ## Repositories
 
-- **Rule:** a repository is every database action of its entity: queries, writes, locks, change events (`pg_notify`),
-  in its own transaction or the caller's (`tx?: Transaction`, see [Transactions](architecture.md#transactions)).
-  Reads answer `undefined` or `[]` when there is nothing; constraint violations become errors (`ConflictException`).
-  A paged read is `findPage(query)`: see [Pagination](pagination.md#server).
-- **Why:** the data stays consistent whoever writes it; services stay free of SQL.
-- **Example:** `modules/spaces/repositories/space-environment.repository.ts`.
-- **Don't:** call a service, throw a 404, hold a business rule.
+- **Rule:** a repository is every database action of its entity, and only that: queries, writes, locks, change events
+  (`pg_notify`), in its own transaction or the caller's (`tx?: Transaction`, see
+  [Transactions](architecture.md#transactions)). It answers entities, never a model the web sees.
+  - **Three read shapes:** `findAll(…)` always an array of entities (`XEntity[]` / `XSelect[]`), `findAllCount(…)` the
+    count only (the same filters as `findAll`), `findOne(…)` the entity or `undefined`. A narrower read keeps the
+    shape and says what it reads (`findAllNames(): Pick<SpaceEntity, 'id' | 'name'>[]`).
+  - **Relational queries by default:** `this.db.query.spaces.findFirst({ where, with: { defaultLocale: true } })`,
+    the relations of `infra/database/relations.ts`; a `select` only for a calculation (a count, the overview's sums).
+  - **Writes answer nothing** (`Promise<void>`), or the new id when the caller needs it to read the row back
+    (`SpaceRepository.create`); the service re-reads with `findOne` and maps.
+  - Constraint violations become errors (`ConflictException`).
+- **Why:** each layer has one job: the repository knows the database, the service the rules and the models.
+- **Example:** `modules/spaces/repositories/space.repository.ts` (`findAll`, `findAllCount`, `findAllNames`,
+  `findOne`); `space-environment.repository.ts`.
+- **Don't:** call a service, throw a 404, hold a business rule, answer a transformed model, re-read inside a write to
+  answer it.
+
+Reworked so far: the Spaces module. The others still read with `findPage` (rows and total together) and some writes
+answer rows; each module moves to these shapes when it is reworked.
+
+**Reading a space from another module:** `SpaceLookupRepository` (`shared/repositories/space-lookup.repository.ts`,
+injected as `spaceLookupRepository`): `exists(spaceId, tx?)` and `findOne(spaceId, tx?)` answering a
+`SpaceWithLocales` (the space, its default locale, its locales in position order). The module's service turns
+`undefined` into its 404.
 
 ## Models (request shapes)
 
 - **Rule:** what a client sends (bodies, queries, multipart fields) is defined once in `@localess/shared`
   (`packages/shared/src/models/<entity>.zod.ts`): the zod schema `zX` and its type `X` ([names](naming.md#models)).
   - The server validates with it: `@Body({ schema: zX }) body: X` (`zX` from `@localess/shared/zod`, `X` from
-    `@localess/shared`); services and repositories take `X` too (`SpacePageable` in `findPage`).
+    `@localess/shared`); services and repositories take `X` too (`SpacePageable` in `findAll` / `findAllCount`).
   - The web sends it: the body literal is checked against the type, `this.http.patch(url, { name } satisfies
     SpaceUpdate)`; multipart fields with `multipartForm(fields: AssetUpload, file)` (`core/utils/multipart.ts`).
   - Shared helpers: `common.zod.ts` (`zLabels`, `zPreviewUrl`), `page.zod.ts` (`zPageable`, `zMultiValue`),
