@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdName, Page, Space, SpacePageable } from '@localess/shared';
+import type { IdName, Page, Space, SpacePageable, SpaceUpdate } from '@localess/shared';
 import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -122,9 +122,9 @@ export class SpaceService {
     return this.config.testTemplates ? SPACE_TEMPLATES : SPACE_TEMPLATES.filter(it => !it.test);
   }
 
-  async rename(spaceId: string, name: string): Promise<Space> {
+  async update(spaceId: string, space: SpaceUpdate): Promise<Space> {
     await this.require(spaceId);
-    await this.spaceRepository.rename(spaceId, name);
+    await this.spaceRepository.rename(spaceId, space.name);
     return this.findOne(spaceId);
   }
 

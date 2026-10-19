@@ -59,7 +59,7 @@ export class SpaceController {
   @Patch(':spaceId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   update(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate): Promise<Space> {
-    return this.spaceService.rename(spaceId, body.name);
+    return this.spaceService.update(spaceId, body);
   }
 
   /** Apart from `PATCH`: a different process (the locale must be the space's; the drafts that read the default go). */
