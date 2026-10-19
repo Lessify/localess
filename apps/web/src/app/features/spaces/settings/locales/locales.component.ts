@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injec
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { PagedList } from '@core/utils/paged-list';
 import { Locale } from '@localess/shared';
@@ -27,6 +28,7 @@ import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-dialog.model';
+import { SpaceLocaleService } from './space-locale.service';
 
 @Component({
   selector: 'll-space-settings-locales',
@@ -57,6 +59,8 @@ import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-
 })
 export class LocalesComponent {
   readonly localeService = inject(LocaleService);
+  private readonly spaceLocaleService = inject(SpaceLocaleService);
+  private readonly spaceService = inject(SpaceService);
   private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -83,7 +87,7 @@ export class LocalesComponent {
     combineLatest([toObservable(this.spaceStore.selectedSpaceId).pipe(filter(it => it !== undefined)), toObservable(this.list.params)])
       .pipe(
         switchMap(([spaceId, params]) =>
-          this.localeService.findPage(spaceId!, params).pipe(
+          this.spaceLocaleService.findAll(spaceId!, params).pipe(
             catchError(() => {
               this.notificationService.error('Locales can not be loaded.');
               this.isLoading.set(false);
@@ -127,7 +131,7 @@ export class LocalesComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.localeService.create(id, it!.locale)),
+        switchMap(it => this.spaceLocaleService.create(id, it!.locale)),
       )
       .subscribe({
         next: () => {
@@ -154,7 +158,7 @@ export class LocalesComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.localeService.delete(spaceId!, element)),
+        switchMap(() => this.spaceLocaleService.remove(spaceId!, element)),
       )
       .subscribe({
         next: () => {
@@ -187,7 +191,7 @@ export class LocalesComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.localeService.setDefault(space.id, element)),
+        switchMap(() => this.spaceService.setDefaultLocale(space.id, element)),
       )
       .subscribe({
         next: () => {
@@ -213,7 +217,7 @@ export class LocalesComponent {
     const ids = this.spaceStore.locales().map(it => it.id);
     const index = ids.indexOf(element.id);
     [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
-    this.localeService.reorder(space.id, ids).subscribe({
+    this.spaceLocaleService.reorder(space.id, ids).subscribe({
       error: () => {
         this.notificationService.error(`Locale '${element.name}' can not be moved.`);
       },

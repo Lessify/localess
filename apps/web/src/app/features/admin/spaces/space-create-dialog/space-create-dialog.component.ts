@@ -70,7 +70,7 @@ export class SpaceCreateDialogComponent {
    */
   private readonly offered = toSignal(
     inject(SpaceService)
-      .templates()
+      .findTemplates()
       .pipe(catchError(() => of([]))),
     { initialValue: [] },
   );

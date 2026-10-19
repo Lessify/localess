@@ -171,41 +171,51 @@ describe('app API: spaces, locales, instance label', () => {
 
     it('manages environments one by one: create, update, reorder, delete; names may repeat', async () => {
       const base = `/api/app/spaces/${spaceId}/environments`;
-      expect((await reader.get(base)).json()).toEqual([]);
+      /** The space's environments in its order (every one: they are few). */
+      const names = async () => (await reader.get(base)).json().items.map((it: { name: string }) => it.name);
+      expect((await reader.get(base)).json()).toEqual({ items: [], page: 0, size: 20, total: 0 });
       expect((await noRole.get(base)).statusCode).toBe(403);
 
-      // Every write answers the space's environments after it, in position order.
+      // Adding and updating answer the environment; removing and reordering answer nothing.
       const created = await manager.post(base, { name: 'Preview', url: 'https://preview.example.com' });
       expect(created.statusCode).toBe(201);
-      const preview = created.json()[0];
+      const preview = created.json();
       expect(preview).toMatchObject({ id: expect.stringMatching(UUID_V7), spaceId, name: 'Preview', url: 'https://preview.example.com', position: 0 });
-      const twin = (await manager.post(base, { name: 'Preview', url: 'https://twin.example.com' })).json()[1];
-      const staging = (await manager.post(base, { name: 'Staging', url: 'https://staging.example.com' })).json()[2];
-      expect(twin.name).toBe('Preview');
+      const twin = (await manager.post(base, { name: 'Preview', url: 'https://twin.example.com' })).json();
+      const staging = (await manager.post(base, { name: 'Staging', url: 'https://staging.example.com' })).json();
+      expect(twin).toMatchObject({ name: 'Preview', position: 1 });
 
       const updated = await manager.patch(`${base}/${twin.id}`, { name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
       expect(updated.statusCode).toBe(200);
-      expect(updated.json()[1]).toMatchObject({ id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' });
+      expect(updated.json()).toMatchObject({ id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}', position: 1 });
 
       const reordered = await manager.put(`${base}/order`, { ids: [staging.id, preview.id, twin.id] });
-      expect(reordered.json().map((it: { name: string }) => it.name)).toEqual(['Staging', 'Preview', 'Twin']);
-      expect((await reader.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Staging', 'Preview', 'Twin']);
+      expect(reordered.statusCode).toBe(204);
+      expect(await names()).toEqual(['Staging', 'Preview', 'Twin']);
+      expect((await reader.get(`${base}/names`)).json()).toEqual([
+        { id: staging.id, name: 'Staging', url: 'https://staging.example.com' },
+        { id: preview.id, name: 'Preview', url: 'https://preview.example.com' },
+        { id: twin.id, name: 'Twin', url: 'https://{locale}.example.com/{fullSlug}' },
+      ]);
       for (const ids of [[staging.id, preview.id], [staging.id, preview.id, twin.id, twin.id], [staging.id, preview.id, newUuid()]]) {
         expect((await manager.put(`${base}/order`, { ids })).statusCode).toBe(400);
       }
 
       const deleted = await manager.delete(`${base}/${staging.id}`);
-      expect(deleted.statusCode).toBe(200);
-      expect(deleted.json().map((it: { id: string }) => it.id)).toEqual([preview.id, twin.id]);
+      expect(deleted.statusCode).toBe(204);
+      expect(deleted.body).toBe('');
+      expect(await names()).toEqual(['Preview', 'Twin']);
       // A new environment goes last.
-      const last = (await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json();
-      expect(last.map((it: { name: string }) => it.name)).toEqual(['Preview', 'Twin', 'Last']);
+      // Positions are not renumbered on delete: after the highest.
+      expect((await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json()).toMatchObject({ name: 'Last', position: 3 });
+      expect(await names()).toEqual(['Preview', 'Twin', 'Last']);
 
       expect((await manager.patch(`${base}/${staging.id}`, { name: 'Gone', url: 'https://gone.example.com' })).statusCode).toBe(404);
       expect((await manager.delete(`${base}/${staging.id}`)).statusCode).toBe(404);
       expect((await manager.delete(`${base}/not-a-uuid`)).statusCode).toBe(404);
       expect((await reader.post(base, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(403);
       expect((await reader.get(`/api/app/spaces/${S2}/environments`)).statusCode).toBe(404);
+      expect((await reader.get(`/api/app/spaces/${S2}/environments/names`)).statusCode).toBe(404);
       expect((await manager.post(`/api/app/spaces/${S2}/environments`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
       // The old way to set them is gone.
       expect((await manager.patch(`/api/app/spaces/${spaceId}`, { environments: [] })).statusCode).toBe(400);
@@ -217,14 +227,14 @@ describe('app API: spaces, locales, instance label', () => {
       for (const url of ['javascript:alert(1)', 'data:text/html,<script>x</script>', '/relative/{slug}', 'ftp://example.com']) {
         expect((await manager.post(base, { name: 'Bad', url })).statusCode, url).toBe(400);
       }
-      const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json();
+      const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
       expect((await manager.patch(`${base}/${first.id}`, { name: 'Bad', url: 'javascript:alert(1)' })).statusCode).toBe(400);
       expect((await manager.post(base, { name: '', url: 'https://x.example.com' })).statusCode).toBe(400);
     });
 
     it('keeps environments of other spaces out of reach', async () => {
       const other = (await manager.post('/api/app/spaces', { name: 'Other' })).json().id;
-      const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json();
+      const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
       expect((await manager.patch(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
       expect((await manager.delete(`/api/app/spaces/${other}/environments/${first.id}`)).statusCode).toBe(404);
       expect((await manager.put(`/api/app/spaces/${other}/environments/order`, { ids: [first.id] })).statusCode).toBe(400);

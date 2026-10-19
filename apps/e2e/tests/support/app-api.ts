@@ -36,7 +36,7 @@ export class AppApi {
 
   /** The space's Visual Editor environments, in their order (`GET /api/app/spaces/:id/environments`). */
   findSpaceEnvironments(id: string): Promise<EnvironmentDto[]> {
-    return this.get<EnvironmentDto[]>(`/api/app/spaces/${id}/environments`);
+    return this.everyPage<EnvironmentDto>(`/api/app/spaces/${id}/environments`);
   }
 
   /** Deletes the space; one already gone (deleted by the test) is fine. */

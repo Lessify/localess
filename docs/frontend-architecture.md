@@ -118,7 +118,14 @@ Add what a component lacks from the app instead: attributes on the Helm element 
 App-wide singletons and state (`@core/*`). Rule: if more than one feature (or a store) uses it, it lives here;
 if one feature uses it, it lives in that feature.
 
-- **`services/`** — App API services (`HttpClient`, reads are `liveQuery`s) used by several features or by a store
+- **`services/`** — App API services (`HttpClient`, reads are `liveQuery`s) used by several features or by a store. One
+  service per server controller, named after it: `SpaceController` → `SpaceService`, `SpaceEnvironmentController` →
+  `SpaceEnvironmentService`, `SpaceLocaleController` → `SpaceLocaleService` (used by one feature, so it lives in
+  `features/spaces/settings/locales/`), `LocaleController` → `LocaleService`. A route moves with its controller
+  (`PUT …/default-locale` is the space's: `SpaceService.setDefaultLocale`). Its methods carry the controller's method
+  names (`findAll` for a page or a list, `findAllNames`, `findOne`, `findTemplates`, `findOverview`, `create`, `update`,
+  `remove`, `reorder`, `setDefaultLocale`), so a call reads the same on both sides. Done for these four services so far;
+  the others (assets, contents, schemas, tasks, tokens, translations) still use `findPage` / `findById` / `delete`.
 - **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))
 - **`guards/`** — `permissionGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard
 - **`utils/content-data.ts`** — `normalizeContent`, `copyBlock`: the shape documents are loaded, compared and saved in

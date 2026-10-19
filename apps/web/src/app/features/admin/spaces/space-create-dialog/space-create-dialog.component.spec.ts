@@ -20,7 +20,7 @@ async function setup(offered: SpaceTemplateId[] | Observable<SpaceTemplateId[]>)
   await TestBed.configureTestingModule({
     imports: [SpaceCreateDialogComponent],
     providers: [
-      { provide: SpaceService, useValue: { templates } },
+      { provide: SpaceService, useValue: { findTemplates: templates } },
       { provide: BrnDialogRef, useValue: { close } },
     ],
   }).compileComponents();

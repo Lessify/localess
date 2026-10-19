@@ -40,6 +40,7 @@ export type {
   SpaceDefaultLocaleUpdate,
   SpaceEnvironmentCreate,
   SpaceEnvironmentOrder,
+  SpaceEnvironmentPageable,
   SpaceEnvironmentUpdate,
   SpaceLocaleCreate,
   SpaceLocaleOrder,

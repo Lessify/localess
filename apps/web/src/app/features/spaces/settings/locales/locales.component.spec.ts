@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Locale, Page, Space, SpaceLocale } from '@localess/shared';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
+import { SpaceService } from '@core/services/space.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { computed, signal } from '@angular/core';
@@ -9,6 +10,7 @@ import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { LocalesComponent } from './locales.component';
+import { SpaceLocaleService } from './space-locale.service';
 
 /** The space's locales as `GET …/locales` answers them, each with its locale. */
 const spaceLocales = (locales: Locale[]): SpaceLocale[] =>
@@ -25,7 +27,7 @@ function space(locales: Locale[]): Space {
 describe('LocalesComponent', () => {
   function setup(space: Space | undefined) {
     const selectedSpace = signal(space);
-    const findPage = vi.fn().mockReturnValue(of(pageOf((space?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : [])))));
+    const findAll = vi.fn().mockReturnValue(of(pageOf((space?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : [])))));
     const create = vi.fn().mockReturnValue(of(undefined));
     const deleteLocale = vi.fn().mockReturnValue(of(undefined));
     const setDefault = vi.fn().mockReturnValue(of(undefined));
@@ -43,10 +45,9 @@ describe('LocalesComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        {
-          provide: LocaleService,
-          useValue: { findPage, create, delete: deleteLocale, setDefault, reorder, isLocaleTranslatableFrom, isLocaleTranslatableTo },
-        },
+        { provide: SpaceLocaleService, useValue: { findAll, create, remove: deleteLocale, reorder } },
+        { provide: SpaceService, useValue: { setDefaultLocale: setDefault } },
+        { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open: openDialog } },
         {
@@ -65,7 +66,7 @@ describe('LocalesComponent', () => {
     return {
       component: fixture.componentInstance,
       fixture,
-      findPage,
+      findAll,
       create,
       deleteLocale,
       setDefault,
@@ -88,47 +89,47 @@ describe('LocalesComponent', () => {
   });
 
   it("loads the first page of the space's locales once the space arrives", () => {
-    const { component, findPage } = setup(space([en, de]));
+    const { component, findAll } = setup(space([en, de]));
 
-    expect(findPage.mock.lastCall![0]).toBe('space-1');
-    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20');
+    expect(findAll.mock.lastCall![0]).toBe('space-1');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual([en, de]);
     expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
   it('loads nothing until a space is selected', () => {
-    const { findPage } = setup(undefined);
+    const { findAll } = setup(undefined);
 
-    expect(findPage).not.toHaveBeenCalled();
+    expect(findAll).not.toHaveBeenCalled();
   });
 
   it('onFilterChange() searches on the server from the first page', () => {
-    const { component, fixture, findPage } = setup(space([en, de]));
+    const { component, fixture, findAll } = setup(space([en, de]));
     component.list.page.set(1);
     fixture.detectChanges();
 
     component.onFilterChange({ search: ' ger ' });
     fixture.detectChanges();
 
-    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20&search=ger');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&search=ger');
   });
 
   it('onSortChange() sorts on the server; cleared, back to the space order', () => {
-    const { component, fixture, findPage } = setup(space([en, de]));
+    const { component, fixture, findAll } = setup(space([en, de]));
 
     component.onSortChange({ active: 'name', direction: 'desc' });
     fixture.detectChanges();
-    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=name&direction=desc');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=name&direction=desc');
 
     component.onSortChange({ active: 'name', direction: '' });
     fixture.detectChanges();
-    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20');
   });
 
   it('notifies a failed load, and loads again on the next query change', () => {
-    const { component, fixture, findPage, error } = setup(undefined);
-    findPage.mockReturnValue(of(pageOf([en]))).mockReturnValueOnce(throwError(() => new Error('boom')));
+    const { component, fixture, findAll, error } = setup(undefined);
+    findAll.mockReturnValue(of(pageOf([en]))).mockReturnValueOnce(throwError(() => new Error('boom')));
     // The space arrives: its first load fails.
     (TestBed.inject(SpaceStore).selectedSpace as ReturnType<typeof signal<Space | undefined>>).set(space([en]));
     fixture.detectChanges();

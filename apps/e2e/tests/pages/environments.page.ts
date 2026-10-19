@@ -1,8 +1,8 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { dialog } from './dialogs';
-import { dragAbove } from './drag';
+import { dialog, rowMenu } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
+import { dataRows } from './table';
 
 export interface EnvironmentInput {
   name: string;
@@ -18,13 +18,15 @@ export class EnvironmentsPage {
     await expect(this.page.getByRole('button', { name: 'Add Environment' })).toBeVisible();
   }
 
-  /** The environment cards. */
+  /** The environment rows of the table (not "No environments yet."). */
   items(): Locator {
-    return this.page.getByRole('list', { name: 'Environments' }).getByRole('listitem');
+    return dataRows(this.page.getByRole('table')).filter({ has: this.page.getByRole('button', { name: 'Actions', exact: true }) });
   }
 
+  /** The row of an environment, by its name (the Name cell, "(default)" aside). */
   item(name: string): Locator {
-    return this.items().filter({ hasText: name });
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return this.items().filter({ has: this.page.getByRole('cell', { name: new RegExp(`^${escaped}( \\(default\\))?$`) }) });
   }
 
   async add(environment: EnvironmentInput): Promise<void> {
@@ -38,28 +40,39 @@ export class EnvironmentsPage {
     await expectToast(this.page, `Environment '${environment.name}' has been updated.`);
   }
 
-  /** Opens "Edit Environment" and fills it, without saving. */
+  /** Opens "Edit Environment" from the row menu and fills it, without saving. */
   async openEdit(currentName: string, environment: EnvironmentInput): Promise<Locator> {
-    await this.item(currentName).getByRole('button', { name: 'Edit' }).click();
+    await rowMenu(this.page, this.item(currentName), 'Edit');
     return this.fillDialog('Edit Environment', environment);
   }
 
-  /** The environment names in order (the first is the default). */
+  /** The environment names in the table's order (the space's order unless sorted; the first is the default). */
   async names(): Promise<string[]> {
-    const titles = await this.items().locator('[hlmItemTitle]').allInnerTexts();
-    return titles.map(it => it.replace('(default)', '').trim());
+    const rows = await this.items().all();
+    return Promise.all(rows.map(async row => (await row.getByRole('cell').first().innerText()).replace('(default)', '').trim()));
   }
 
-  /** Drags an environment above another one. */
-  async moveAbove(name: string, above: string): Promise<void> {
-    await dragAbove(this.page, this.item(name).getByRole('button', { name: 'Move' }), this.item(above), async () => {
-      const names = await this.names();
-      return names.indexOf(name) < names.indexOf(above);
-    });
+  /** The search box (name or URL, on the server). */
+  async search(text: string): Promise<void> {
+    await this.page.getByPlaceholder('Search...').fill(text);
+  }
+
+  /** Clicks a sortable column header (Name, URL): ascending, then descending, then the space's order again. */
+  async sortBy(header: 'Name' | 'URL'): Promise<void> {
+    await this.page.getByRole('columnheader', { name: header }).click();
+  }
+
+  async move(name: string, direction: 'Move Up' | 'Move Down'): Promise<void> {
+    await rowMenu(this.page, this.item(name), direction);
+  }
+
+  /** Opens the row menu's Delete, without answering the confirmation. */
+  async openDelete(name: string): Promise<void> {
+    await rowMenu(this.page, this.item(name), 'Delete');
   }
 
   async delete(name: string): Promise<void> {
-    await this.item(name).getByRole('button', { name: 'Delete' }).click();
+    await this.openDelete(name);
     await confirmDialog(this.page, 'Delete Environment');
     await expectToast(this.page, `Environment '${name}' has been deleted.`);
   }

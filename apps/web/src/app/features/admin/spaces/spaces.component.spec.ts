@@ -23,7 +23,7 @@ function imported(status: FirebaseImport['status']): Space {
 
 describe('SpacesComponent', () => {
   function setup(spaces: Space[] = []) {
-    const findPage = vi.fn((params: HttpParams): Observable<Page<Space>> =>
+    const findAll = vi.fn((params: HttpParams): Observable<Page<Space>> =>
       of({ items: spaces, page: Number(params.get('page')), size: Number(params.get('size')), total: spaces.length }),
     );
     const create = vi.fn().mockReturnValue(of({ id: 'new-space' }));
@@ -39,7 +39,7 @@ describe('SpacesComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SpaceService, useValue: { findPage, create, update, delete: deleteSpace } },
+        { provide: SpaceService, useValue: { findAll, create, update, remove: deleteSpace } },
         { provide: NotificationService, useValue: { success, error, warning } },
         { provide: HlmDialogService, useValue: { open } },
       ],
@@ -59,8 +59,8 @@ describe('SpacesComponent', () => {
     return {
       component: fixture.componentInstance,
       fixture,
-      findPage,
-      lastQuery: () => findPage.mock.calls.at(-1)![0].toString(),
+      findAll,
+      lastQuery: () => findAll.mock.calls.at(-1)![0].toString(),
       create,
       update,
       deleteSpace,
@@ -88,8 +88,8 @@ describe('SpacesComponent', () => {
   });
 
   it('tells about a failed load and keeps answering the table: the next query change fetches again', () => {
-    const { fixture, component, findPage, error } = setup();
-    findPage.mockImplementationOnce(() => throwError(() => new Error('boom')));
+    const { fixture, component, findAll, error } = setup();
+    findAll.mockImplementationOnce(() => throwError(() => new Error('boom')));
     component.onFilterChange({ search: 'fails' });
     fixture.detectChanges();
     expect(error).toHaveBeenCalledWith('Spaces can not be loaded.');
@@ -98,8 +98,8 @@ describe('SpacesComponent', () => {
     component.onFilterChange({ search: 'works' });
     fixture.detectChanges();
 
-    expect(findPage.mock.calls.at(-1)![0].toString()).toBe('page=0&size=20&search=works');
-    expect(findPage).toHaveBeenCalledTimes(3);
+    expect(findAll.mock.calls.at(-1)![0].toString()).toBe('page=0&size=20&search=works');
+    expect(findAll).toHaveBeenCalledTimes(3);
   });
 
   it('asks the server for the search, from the first page', () => {

@@ -77,7 +77,7 @@ test.describe('Cancelling a confirmation changes nothing', () => {
     await environments.goto(space.id);
     await expect(environments.item('Staging')).toBeVisible();
 
-    await environments.item('Staging').getByRole('button', { name: 'Delete' }).click();
+    await environments.openDelete('Staging');
     await dismissConfirmation(page, 'Delete Environment');
 
     await page.reload();

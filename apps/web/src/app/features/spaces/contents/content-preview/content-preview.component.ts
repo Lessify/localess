@@ -15,7 +15,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { resolvePreviewUrl } from '@core/utils/preview-url';
-import { CONTENT_DEFAULT_LOCALE, ContentDocument, Locale, SpaceEnvironment } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, ContentDocument, IdNameUrl, Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideCircleCheck, lucideFullscreen, lucideInfo, lucideRefreshCcw, lucideX } from '@ng-icons/lucide';
 import { tablerDeviceDesktop, tablerDeviceLaptop, tablerDeviceMobile, tablerDeviceTablet } from '@ng-icons/tabler-icons';
@@ -92,7 +92,7 @@ export class ContentPreviewComponent {
 
   readonly selectedSpace = computed(() => this.spaceStore.selectedSpace());
   readonly availableEnvironments = computed(() => this.spaceStore.environments());
-  readonly selectedEnvironment = linkedSignal<SpaceEnvironment | undefined>(() => {
+  readonly selectedEnvironment = linkedSignal<IdNameUrl | undefined>(() => {
     const envs = this.availableEnvironments();
     if (envs.length > 0) {
       return envs[0];
@@ -275,7 +275,7 @@ export class ContentPreviewComponent {
     this.selectedEnvironment.set(environment);
   }
 
-  protected onEnvironmentSelection(environment: SpaceEnvironment): void {
+  protected onEnvironmentSelection(environment: IdNameUrl): void {
     this.selectedEnvironment.set(environment);
     this.spaceStore.changeEnvironment(environment);
   }

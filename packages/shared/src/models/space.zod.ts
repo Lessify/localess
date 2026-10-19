@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { zBoolean, zPreviewUrl } from './common.zod.js';
 import { zPageable } from './page.zod.js';
-import { SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
+import { SPACE_ENVIRONMENT_SORT_FIELDS, SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
 
 // App API requests of spaces, their environments and their locales.
 
@@ -26,6 +26,12 @@ export const zSpacePageable = zPageable(SPACE_SORT_FIELDS, 'name').extend({
 export type SpacePageable = z.infer<typeof zSpacePageable>;
 
 const zEnvironment = z.object({ name: z.string().trim().min(1).max(200), url: zPreviewUrl });
+
+/** `GET …/environments`: one page, in the space's order unless sorted otherwise; `?search=` (the name or the URL). */
+export const zSpaceEnvironmentPageable = zPageable(SPACE_ENVIRONMENT_SORT_FIELDS, 'position').extend({
+  search: z.string().trim().max(200).optional(),
+});
+export type SpaceEnvironmentPageable = z.infer<typeof zSpaceEnvironmentPageable>;
 
 /** `POST …/environments`: at the end of the space's list. */
 export const zSpaceEnvironmentCreate = zEnvironment;

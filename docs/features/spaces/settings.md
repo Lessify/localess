@@ -71,7 +71,7 @@ event, so a change answers nothing the screen reads. The default is the space's 
   (read from `SpaceStore`, which holds all of them) and sends the whole order (`PUT /api/app/spaces/:s/locales/order {ids}`, every
   locale of the space once, 204)
 
-**Services:** `LocaleService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
+**Services:** `SpaceLocaleService` (this feature's, `settings/locales/space-locale.service.ts`: the page, add, reorder, delete), `SpaceService` (`setDefaultLocale`), `LocaleService` (translate support), `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ### Translation support
 
@@ -153,7 +153,7 @@ country: `gb.svg` and `uk.svg` are identical bytes, and matching by name got `en
 
 ### LocaleDialogComponent
 
-Form: a single `locale` combobox. Options come from `LocaleService.findAllLocales()` minus the locales the space already has (passed in via
+Form: a single `locale` combobox. Options come from `LocaleService.findAll()` minus the locales the space already has (passed in via
 the dialog context); the search filters by name. Each option carries its locale icon, and the selected locale's icon is mirrored as an
 inline-start addon on the input.
 
@@ -213,16 +213,22 @@ Form fields (`token-dialog.component.ts:62-66`; helpers follow below it):
 
 Configure the **visual editor** integration — allows in-context editing when Localess is embedded in a preview environment. Environments
 (`space_environments`: id, name, url, position) are managed one by one and every change is saved at once; names may repeat, the id tells
-them apart, and the first is the default:
+them apart, and the first is the default ("(default)" beside its name, whatever the table's sort or search). The table is one page
+from the server, like Locales (`GET /api/app/spaces/:s/environments`, `Page<SpaceEnvironment>`, a `PagedList`, see
+[pagination](../../server/pagination.md)): in the space's order until the Name or URL header sorts it (cleared: the space's order
+again), searched by name or URL through an `<ll-filter-toolbar>` (`onFilterChange()`). It reloads on the space's `spaces` change
+event. `GET …/environments/names` answers every environment as `IdNameUrl[]` (`{ id, name, url }`), in its order.
 
 - `openAddDialog()` / `openEditDialog(environment)` — `EnvironmentDialogComponent` (name + URL, with the example URL under the field), then
-  `SpaceService.createEnvironment()` (`POST /api/app/spaces/:s/environments`, appended last) or `updateEnvironment()`
-  (`PATCH …/environments/:id`)
-- `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `deleteEnvironment()` (`DELETE …/environments/:id`)
-- `drop(event)` — drag-and-drop (CDK) reorders the list at once and sends the whole order (`PUT …/environments/order {ids}`); a refused
-  order is put back
+  `SpaceEnvironmentService.create()` (`POST /api/app/spaces/:s/environments`, appended last) or `update()`
+  (`PATCH …/environments/:id`); both answer the `SpaceEnvironment`
+- `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `SpaceEnvironmentService.remove()` (`DELETE …/environments/:id`, 204)
+- `move(environment, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: swaps the environment with its neighbour in the
+  space's order and sends the whole order (`PUT …/environments/order {ids}`, every environment once, 204)
 
-The list (`environments`, a `linkedSignal`) follows `SpaceStore.environments()` (`GET /api/app/spaces/:spaceId/environments`, live): every write answers the environments after it and announces a `spaces` change.
+The space's order and the default come from `SpaceStore.environments()`: every environment as `IdNameUrl`
+(`SpaceEnvironmentService.findAllNames()`, `GET …/environments/names`, live), which the content Visual Editor also uses for its
+preview URLs (its environment picker and the selected environment are `IdNameUrl` too).
 
 The dialog's URL control uses `SpaceValidator.ENVIRONMENT_URL`, which also requires an absolute `http:`/`https:` URL on a different origin from the app
 (error key `previewUrl`). This only gives feedback in the form; the security check that matters runs again when the preview renders. See
@@ -245,7 +251,7 @@ filled with `SAMPLE_PREVIEW_CONTEXT`, because `{locale}` may sit in the host. Ea
 (`exampleUrl()`). The preview resolves the URL for the open document and locale, checks the result with `isSafePreviewUrl`, and exchanges
 messages only with the resolved URL's origin (`ContentPreviewComponent.previewOrigin()`).
 
-**Services:** `SpaceService`, `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
+**Services:** `SpaceEnvironmentService` (the page, add, update, delete, reorder), `NotificationService`, `PlatformService`, `SpaceStore`, `LocalSettingsStore`
 
 ---
 
@@ -266,8 +272,10 @@ in this component.
 
 | Service               | Purpose                                      |
 | --------------------- | -------------------------------------------- |
-| `SpaceService`        | Update space name and visual editor settings |
-| `LocaleService`       | CRUD for space locales                       |
+| `SpaceService`        | Update the space name; set its default locale (`SpaceController`) |
+| `SpaceLocaleService`  | The space's locales: page, add, reorder, delete (`SpaceLocaleController`; in `settings/locales/`) |
+| `SpaceEnvironmentService` | The space's Visual Editor environments: page, names, add, update, delete, reorder (`SpaceEnvironmentController`) |
+| `LocaleService`       | The locale catalog (`LocaleController`) and what the translation provider supports |
 | `TokenService`        | CRUD for API tokens                          |
 | `TranslationService`  | Delete all translations (Danger Zone)        |
 | `NotificationService` | Snackbar feedback                            |

@@ -4,8 +4,9 @@ import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
+import { SpaceEnvironmentService } from '@core/services/space-environment.service';
 import { canAny } from '@core/utils/permissions';
-import { ContentDocument, IdName, Locale, Schema, Space, SpaceEnvironment, UserPermission } from '@localess/shared';
+import { ContentDocument, IdName, IdNameUrl, Locale, Schema, Space, UserPermission } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -44,11 +45,11 @@ export type SpaceState = {
   contentFolderId: string | null;
   /** The asset folder the editor shows; `null`: the root. */
   assetFolderId: string | null;
-  environment: SpaceEnvironment | undefined;
+  environment: IdNameUrl | undefined;
   /** The selected space with its default locale and its locales (`GET /spaces/:spaceId`), once it arrived. */
   currentSpace: Space | undefined;
-  /** The selected space's environments (`GET /spaces/:spaceId/environments`). */
-  environments: SpaceEnvironment[];
+  /** The selected space's environments, every one in its order, with its URL (`GET /spaces/:spaceId/environments/names`). */
+  environments: IdNameUrl[];
   schemas: Schema[];
   documents: ContentDocument[];
 };
@@ -70,9 +71,9 @@ const initialState: SpaceState = {
 /** The remembered environment of the space (by id: names may repeat), else its first; none when it has none. */
 const resolveEnvironment = (
   spaceId: string,
-  environments: SpaceEnvironment[],
+  environments: IdNameUrl[],
   selectedEnvironmentBySpaceId: Record<string, string>,
-): SpaceEnvironment | undefined => {
+): IdNameUrl | undefined => {
   const selectedEnvironmentId = selectedEnvironmentBySpaceId[spaceId];
   return environments.find(environment => environment.id === selectedEnvironmentId) ?? environments[0];
 };
@@ -132,6 +133,7 @@ export const SpaceStore = signalStore(
   })),
   withMethods(state => {
     const spaceService = inject(SpaceService);
+    const spaceEnvironmentService = inject(SpaceEnvironmentService);
     const contentService = inject(ContentService);
     const schemaService = inject(SchemaService);
     const notificationService = inject(NotificationService);
@@ -162,7 +164,7 @@ export const SpaceStore = signalStore(
             spaceId
               ? merge(
                   listen(
-                    () => spaceService.findById(spaceId),
+                    () => spaceService.findOne(spaceId),
                     'findById listener failed',
                     'Lost connection to space updates. Retrying…',
                   ).pipe(
@@ -170,8 +172,8 @@ export const SpaceStore = signalStore(
                     map(currentSpace => ({ currentSpace })),
                   ),
                   listen(
-                    () => spaceService.findEnvironments(spaceId),
-                    'findEnvironments listener failed',
+                    () => spaceEnvironmentService.findAllNames(spaceId),
+                    'spaceEnvironmentService.findAllNames listener failed',
                     'Lost connection to space updates. Retrying…',
                   ).pipe(
                     distinctUntilChanged(sameContent),
@@ -243,7 +245,7 @@ export const SpaceStore = signalStore(
       changeAssetFolder: (assetFolderId: string | null) => {
         patchState(state, { assetFolderId });
       },
-      changeEnvironment: (environment: SpaceEnvironment) => {
+      changeEnvironment: (environment: IdNameUrl) => {
         console.log('changeEnvironment', environment);
         const selectedSpaceId = state.selectedSpaceId();
         if (!selectedSpaceId) {

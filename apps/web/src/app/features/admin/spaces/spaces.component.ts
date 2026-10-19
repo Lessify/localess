@@ -129,7 +129,7 @@ export class SpacesComponent implements OnInit {
     toObservable(this.list.params, { injector: this.injector })
       .pipe(
         switchMap(params =>
-          this.spaceService.findPage(params).pipe(
+          this.spaceService.findAll(params).pipe(
             catchError(() => {
               this.notificationService.error('Spaces can not be loaded.');
               this.isLoading.set(false);
@@ -233,7 +233,7 @@ export class SpacesComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.spaceService.delete(element.id)),
+        switchMap(() => this.spaceService.remove(element.id)),
       )
       .subscribe({
         next: () => {

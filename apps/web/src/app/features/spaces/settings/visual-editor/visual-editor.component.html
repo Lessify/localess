@@ -22,46 +22,78 @@
     >, <code>{{ '{locale}' }}</code> (the space's default locale on the `default` sentinel) and
     <code>{{ '{locale/}' }}</code> (<code>de/</code>, or nothing for the default locale). For example
     <code>{{ 'https://site.com/{locale/}blog/{slug}/' }}</code
-    >. The first environment is the default one; drag them to change the order.
+    >. The first environment is the default one; use Move Up and Move Down to change the order.
   </p>
-  <div hlmItemGroup role="list" aria-label="Environments" class="gap-2 overflow-y-auto" cdkDropList (cdkDropListDropped)="drop($event)">
-    @for (environment of environments(); track environment.id; let idx = $index) {
-      <div hlmItem role="listitem" cdkDrag variant="outline" cdkDragPreviewContainer="parent">
-        <div hlmItemContent class="gap-1">
-          <div hlmItemTitle>
-            {{ environment.name }}
-            @if (idx === 0) {
-              <span class="text-muted-foreground text-xs font-normal">(default)</span>
-            }
-          </div>
-          <p hlmItemDescription class="break-all"
-            ><code>{{ environment.url }}</code></p
-          >
+  <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
+  <div llTableContainer>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
+      <ng-container llColumnDef="name">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
+        <td llCell *llCellDef="let element">
+          {{ element.name }}
+          @if (element.id === defaultEnvironmentId()) {
+            <span class="text-muted-foreground text-xs">(default)</span>
+          }
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="url">
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="url">URL</th>
+        <td llCell *llCellDef="let element">
+          <code class="break-all">{{ element.url }}</code>
           <p class="text-muted-foreground text-xs">
-            Opens <code>{{ exampleUrl(environment.url) }}</code> for <i>blog/hello</i> in German
+            Opens <code class="break-all">{{ exampleUrl(element.url) }}</code> for <i>blog/hello</i> in German
           </p>
-        </div>
-        <div hlmItemActions class="mb-auto">
-          <button hlmBtn size="icon" variant="outline" (click)="openEditDialog(environment)" hlmTooltip="Edit" aria-label="Edit">
-            <ng-icon hlm size="sm" name="lucidePencil" />
-          </button>
-          <button hlmBtn size="icon" variant="outline" (click)="openDeleteDialog(environment)" hlmTooltip="Delete" aria-label="Delete">
-            <ng-icon hlm size="sm" name="lucideTrash" />
-          </button>
+        </td>
+      </ng-container>
+      <ng-container llColumnDef="actions">
+        <th llHeaderCell *llHeaderCellDef>Actions</th>
+        <td llCell *llCellDef="let element">
           <button
             hlmBtn
             size="icon"
             variant="ghost"
-            cdkDragHandle
-            class="cursor-grab active:cursor-grabbing"
-            hlmTooltip="Move"
-            aria-label="Move">
-            <ng-icon hlm size="sm" name="lucideGripVertical" />
+            aria-label="Actions"
+            [hlmDropdownMenuTrigger]="actionsMenu"
+            (click)="$event.stopPropagation()">
+            <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
           </button>
-        </div>
-      </div>
-    } @empty {
-      <p class="text-muted-foreground text-sm">No environments yet.</p>
-    }
+          <ng-template #actionsMenu>
+            <hlm-dropdown-menu class="text-nowrap">
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem (click)="openEditDialog(element)">
+                  <ng-icon hlm size="sm" name="lucidePencil" />
+                  Edit
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem [disabled]="!canMove(element, -1)" (click)="move(element, -1)">
+                  <ng-icon hlm size="sm" name="lucideArrowUp" />
+                  Move Up
+                </button>
+                <button hlmDropdownMenuItem [disabled]="!canMove(element, 1)" (click)="move(element, 1)">
+                  <ng-icon hlm size="sm" name="lucideArrowDown" />
+                  Move Down
+                </button>
+              </hlm-dropdown-menu-group>
+              <hlm-dropdown-menu-separator />
+              <hlm-dropdown-menu-group>
+                <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
+                  <ng-icon hlm size="sm" name="lucideTrash" />
+                  Delete
+                </button>
+              </hlm-dropdown-menu-group>
+            </hlm-dropdown-menu>
+          </ng-template>
+        </td>
+      </ng-container>
+      <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr ll-row *llRowDef="let row; columns: displayedColumns"></tr>
+      <tr *llNoDataRow>
+        <td [attr.colspan]="displayedColumns.length">No environments yet.</td>
+      </tr>
+    </table>
   </div>
+
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

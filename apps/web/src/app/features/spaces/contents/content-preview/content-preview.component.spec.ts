@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { ContentDocument, ContentKind, Locale, Space, SpaceEnvironment } from '@localess/shared';
+import { ContentDocument, ContentKind, IdNameUrl, Locale, Space } from '@localess/shared';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
@@ -8,20 +8,21 @@ import { ContentPreviewComponent } from './content-preview.component';
 
 const en: Locale = { id: 'en', name: 'English' };
 
-function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', defaultLocaleId: 'en', defaultLocale: en, environments: [], ...overrides } as Space;
+/** The selected space; `environments` here stands for the store's list (`{ id, name, url }`). */
+function space(overrides: Partial<Omit<Space, 'environments'>> & { environments?: IdNameUrl[] } = {}): Space {
+  return { id: 'space-1', name: 'Space 1', defaultLocaleId: 'en', defaultLocale: en, environments: [], ...overrides } as unknown as Space;
 }
 
-/** An environment of the selected space, as `GET /spaces/:id/environments` answers it. */
-function env(id: string, name: string, url: string): SpaceEnvironment {
-  return { id, spaceId: 'space-1', name, url, position: 0, createdAt: '', updatedAt: '' };
+/** An environment of the selected space, as `GET /spaces/:id/environments/names` answers it. */
+function env(id: string, name: string, url: string): IdNameUrl {
+  return { id, name, url };
 }
 
 function documentOf(): ContentDocument {
   return { id: 'doc1', kind: ContentKind.DOCUMENT, name: 'Doc', slug: 'doc', fullSlug: 'doc' } as unknown as ContentDocument;
 }
 
-const preview: SpaceEnvironment = env('e-preview', 'preview', 'https://preview.example.com/');
+const preview: IdNameUrl = env('e-preview', 'preview', 'https://preview.example.com/');
 
 function messageEvent(data: unknown, options: { isTrusted?: boolean; origin?: string; source?: unknown } = {}): MessageEvent {
   const { isTrusted = true, origin = 'https://preview.example.com', source } = options;
@@ -29,7 +30,7 @@ function messageEvent(data: unknown, options: { isTrusted?: boolean; origin?: st
 }
 
 describe('ContentPreviewComponent', () => {
-  function setup(options: { selectedSpace?: Space; environment?: SpaceEnvironment } = {}) {
+  function setup(options: { selectedSpace?: Space; environment?: IdNameUrl } = {}) {
     const selectedSpace = options.selectedSpace ?? space();
     const changeEnvironment = vi.fn();
 
@@ -56,16 +57,16 @@ describe('ContentPreviewComponent', () => {
   }
 
   it('restores the previously stored environment when available', () => {
-    const prod: SpaceEnvironment = env('e-prod', 'prod', 'https://prod');
-    const staging: SpaceEnvironment = env('e-staging', 'staging', 'https://staging');
+    const prod: IdNameUrl = env('e-prod', 'prod', 'https://prod');
+    const staging: IdNameUrl = env('e-staging', 'staging', 'https://staging');
     const { component } = setup({ selectedSpace: space({ environments: [staging, prod] }), environment: prod });
 
     expect(component.selectedEnvironment()).toEqual(prod);
   });
 
   it('restores the stored environment by id when names repeat', () => {
-    const one: SpaceEnvironment = env('e-1', 'preview', 'https://one');
-    const two: SpaceEnvironment = env('e-2', 'preview', 'https://two');
+    const one: IdNameUrl = env('e-1', 'preview', 'https://one');
+    const two: IdNameUrl = env('e-2', 'preview', 'https://two');
     const { component } = setup({ selectedSpace: space({ environments: [one, two] }), environment: two });
 
     expect(component.selectedEnvironment()).toEqual(two);
@@ -73,7 +74,7 @@ describe('ContentPreviewComponent', () => {
 
   it('onEnvironmentSelection() updates the selected environment and persists it', () => {
     const { component, changeEnvironment } = setup();
-    const chosen: SpaceEnvironment = env('e-staging', 'staging', 'https://staging');
+    const chosen: IdNameUrl = env('e-staging', 'staging', 'https://staging');
 
     component['onEnvironmentSelection'](chosen);
 
@@ -253,7 +254,7 @@ describe('ContentPreviewComponent', () => {
     });
 
     it('fills a URL pattern, and talks only to the resolved origin', () => {
-      const pattern: SpaceEnvironment = env('e-localized', 'localized', 'https://{locale}.preview.example.com/{fullSlug}/');
+      const pattern: IdNameUrl = env('e-localized', 'localized', 'https://{locale}.preview.example.com/{fullSlug}/');
       const { component, frameWindow, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
       fixture.componentRef.setInput('selectedLocale', { id: 'de', name: 'German' });
       const postMessage = vi.spyOn(frameWindow as Window, 'postMessage').mockImplementation(() => undefined);
@@ -270,7 +271,7 @@ describe('ContentPreviewComponent', () => {
     });
 
     it('uses the space default locale for {locale} on the default locale', () => {
-      const pattern: SpaceEnvironment = env('e-query', 'query', 'https://preview.example.com/{fullSlug}?lang={locale}');
+      const pattern: IdNameUrl = env('e-query', 'query', 'https://preview.example.com/{fullSlug}?lang={locale}');
       const { component, fixture } = setup({ selectedSpace: space({ environments: [pattern] }) });
       fixture.componentRef.setInput('selectedLocale', { id: 'default', name: 'Default' });
 

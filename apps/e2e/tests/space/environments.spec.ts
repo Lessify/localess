@@ -59,7 +59,31 @@ test.describe('Space settings → Visual Editor environments', () => {
     await expect(page.getByText('No environments yet.')).toBeVisible();
   });
 
-  test('reorders environments by dragging; the first one is the default', async ({ page, api, space }) => {
+  test("searches and sorts on the server; the default stays the first in the space's order", async ({ page, api, space }) => {
+    await api.addEnvironment(space.id, { name: 'Production', url: 'https://www.example.com/' });
+    await api.addEnvironment(space.id, { name: 'Staging', url: 'https://staging.example.com/' });
+    await api.addEnvironment(space.id, { name: 'Local', url: 'http://localhost:4200/' });
+    const environments = new EnvironmentsPage(page);
+    await environments.goto(space.id);
+    await expect.poll(() => environments.names()).toEqual(['Production', 'Staging', 'Local']);
+
+    // By the URL: the two on example.com.
+    await environments.search('EXAMPLE.com');
+    await expect.poll(() => environments.names()).toEqual(['Production', 'Staging']);
+    await environments.search('');
+
+    await environments.sortBy('Name');
+    await expect.poll(() => environments.names()).toEqual(['Local', 'Production', 'Staging']);
+    // Sorted, the default is still the space's first.
+    await expect(environments.item('Production')).toContainText('(default)');
+    await environments.sortBy('Name');
+    await expect.poll(() => environments.names()).toEqual(['Staging', 'Production', 'Local']);
+    // Cleared: the space's order again.
+    await environments.sortBy('Name');
+    await expect.poll(() => environments.names()).toEqual(['Production', 'Staging', 'Local']);
+  });
+
+  test('reorders environments with Move Up; the first one is the default', async ({ page, api, space }) => {
     await api.addEnvironment(space.id, { name: 'Staging', url: 'https://staging.example.com/' });
     await api.addEnvironment(space.id, { name: 'Production', url: 'https://www.example.com/' });
     const environments = new EnvironmentsPage(page);
@@ -67,7 +91,7 @@ test.describe('Space settings → Visual Editor environments', () => {
     await expect.poll(() => environments.names()).toEqual(['Staging', 'Production']);
     await expect(environments.item('Staging')).toContainText('(default)');
 
-    await environments.moveAbove('Production', 'Staging');
+    await environments.move('Production', 'Move Up');
 
     await expect.poll(() => environments.names()).toEqual(['Production', 'Staging']);
     await expect(environments.item('Production')).toContainText('(default)');

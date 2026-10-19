@@ -53,7 +53,7 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
    the id, `limit: query.size`, `offset: offsetOf(query)`, `with` the relations the list shows) and
    `findAllCount(…, query): Promise<number>` (`count()` with the same `where`, one private method building it for
    both). Search with `containsPattern(search)` and `ilike` (`shared/utils/paging.ts`). A sort or filter needs an index
-   when the table is large (`tasks_space_idx (space_id, created_at desc)`). Spaces follow this, and space locales (a join, not relational: the sort and the search read the locale); Users and Tasks still
+   when the table is large (`tasks_space_idx (space_id, created_at desc)`). Spaces follow this, and space locales and environments; Users and Tasks still
    answer both from one `findPage` until their module is reworked.
 3. **Service** `findAll(…, query): Promise<Page<T>>`: both reads, then `toPage(rows, total, query, toX)`.
 4. **Controller** `findAll(@Query({ schema: zXPageable }) query: XPageable)`.

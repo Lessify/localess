@@ -124,7 +124,7 @@ the CDN where a setting changes what it serves).
 | Locales: set another default; the old one becomes deletable, missing values fall back to the new one | UI + API + CDN | ✅ `space/locales` |
 | Locales: Move Up / Move Down (first and last disabled); the order is not the default | UI + API | ✅ `space/locales` |
 | Visual Editor environments: add / edit / remove; the next one becomes the default | UI + API | ✅ `space/environments` |
-| Environments: reorder by drag and drop; `(default)` follows the first | UI + API | ✅ `space/environments` |
+| Environments: reorder with Move Up / Move Down; `(default)` follows the first; search (name, URL) and sort by name on the server, the default staying the space's first | UI + API | ✅ `space/environments` |
 | Access tokens: public token works on the CDN API | UI + API | ✅ `space/tokens` @smoke |
 | Management token shown once, must be acknowledged | UI | ✅ `space/tokens` |
 | Regenerate cuts off the old value; delete removes access | UI + API | ✅ `space/tokens` |

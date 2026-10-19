@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { IdName, Page, Space, SpaceEnvironment } from '@localess/shared';
+import { IdName, Page, Space } from '@localess/shared';
 import { SpaceService } from './space.service';
 
 describe('SpaceService', () => {
@@ -26,12 +26,12 @@ describe('SpaceService', () => {
     vi.useRealTimers();
   });
 
-  it('findPage() reads one page with the given query, and again when a space changes', async () => {
+  it('findAll() reads one page with the given query, and again when a space changes', async () => {
     vi.useFakeTimers();
     const service = setup();
     const params = new HttpParams().set('page', 0).set('size', 10).set('search', 'mark');
     const results: Page<Space>[] = [];
-    const subscription = service.findPage(params).subscribe(it => results.push(it));
+    const subscription = service.findAll(params).subscribe(it => results.push(it));
     http.expectOne({ method: 'GET', url: '/api/app/spaces?page=0&size=10&search=mark' }).flush({ items: [], page: 0, size: 10, total: 0 });
 
     events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'created' });
@@ -57,27 +57,9 @@ describe('SpaceService', () => {
     subscription.unsubscribe();
   });
 
-  it('findEnvironments() reads the space environments, and again when that space changes', async () => {
-    vi.useFakeTimers();
+  it('findOne() reads one space', async () => {
     const service = setup();
-    const results: SpaceEnvironment[][] = [];
-    const subscription = service.findEnvironments('s1').subscribe(it => results.push(it));
-    http.expectOne({ method: 'GET', url: '/api/app/spaces/s1/environments' }).flush([]);
-
-    events.next({ spaceId: null, entity: 'spaces', id: 's2', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone('/api/app/spaces/s1/environments');
-
-    events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne('/api/app/spaces/s1/environments').flush([{ id: 'e1', name: 'Preview' } as SpaceEnvironment]);
-    expect(results.map(it => it.length)).toEqual([0, 1]);
-    subscription.unsubscribe();
-  });
-
-  it('findById() reads one space', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findById('s1'));
+    const result = firstValueFrom(service.findOne('s1'));
     http.expectOne({ method: 'GET', url: '/api/app/spaces/s1' }).flush({ id: 's1' });
     expect(await result).toEqual({ id: 's1' });
   });
@@ -100,9 +82,9 @@ describe('SpaceService', () => {
     expect((await result).id).toBe('s1');
   });
 
-  it('templates() reads the templates the user may create a space from', async () => {
+  it('findTemplates() reads the templates the user may create a space from', async () => {
     const service = setup();
-    const result = firstValueFrom(service.templates());
+    const result = firstValueFrom(service.findTemplates());
     http
       .expectOne({ method: 'GET', url: '/api/app/spaces/templates' })
       .flush(['blog', 'marketing']);
@@ -118,52 +100,27 @@ describe('SpaceService', () => {
     await done;
   });
 
-  it('createEnvironment() posts the name and URL', async () => {
+  it('setDefaultLocale() puts the locale id as the space default locale, and answers the space', async () => {
     const service = setup();
-    const done = firstValueFrom(service.createEnvironment('s1', { name: 'Prod', url: 'https://example.com' }));
-    const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/s1/environments' });
-    expect(request.request.body).toEqual({ name: 'Prod', url: 'https://example.com' });
-    request.flush({});
-    await done;
+    const result = firstValueFrom(service.setDefaultLocale('s1', { id: 'de', name: 'German' }));
+    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/s1/default-locale' });
+    expect(request.request.body).toEqual({ id: 'de' });
+    request.flush({ id: 's1', defaultLocaleId: 'de' });
+    expect((await result).defaultLocaleId).toBe('de');
   });
 
-  it('updateEnvironment() patches one environment by id', async () => {
+  it('remove() deletes the space', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateEnvironment('s1', 'e1', { name: 'Prod', url: 'https://example.com' }));
-    const request = http.expectOne({ method: 'PATCH', url: '/api/app/spaces/s1/environments/e1' });
-    expect(request.request.body).toEqual({ name: 'Prod', url: 'https://example.com' });
-    request.flush({});
-    await done;
-  });
-
-  it('deleteEnvironment() deletes one environment by id', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.deleteEnvironment('s1', 'e1'));
-    http.expectOne({ method: 'DELETE', url: '/api/app/spaces/s1/environments/e1' }).flush({});
-    await done;
-  });
-
-  it('reorderEnvironments() puts the ids in their new order', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.reorderEnvironments('s1', ['e2', 'e1']));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/s1/environments/order' });
-    expect(request.request.body).toEqual({ ids: ['e2', 'e1'] });
-    request.flush({});
-    await done;
-  });
-
-  it('delete() deletes the space', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.delete('s1'));
+    const done = firstValueFrom(service.remove('s1'));
     http.expectOne({ method: 'DELETE', url: '/api/app/spaces/s1' }).flush(null);
     await done;
   });
 
-  it('overview() reads the computed overview and refetches when what it counts changes', async () => {
+  it('findOverview() reads the computed overview and refetches when what it counts changes', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: unknown[] = [];
-    const subscription = service.overview('s1').subscribe(it => results.push(it));
+    const subscription = service.findOverview('s1').subscribe(it => results.push(it));
     http.expectOne({ method: 'GET', url: '/api/app/spaces/s1/overview' }).flush({ counts: { assets: 1 } });
 
     events.next({ spaceId: 's1', entity: 'webhooks', id: 'w', op: 'updated' });

@@ -19,14 +19,14 @@ describe('LocaleDialogComponent', () => {
    * `DIALOG_DATA` and the result goes back through `BrnDialogRef.close()`.
    */
   function setup(context: LocaleDialogContext | null, allLocales: Locale[] = [en, de, fr]) {
-    const findAllLocales = vi.fn().mockReturnValue(of(allLocales));
+    const findAll = vi.fn().mockReturnValue(of(allLocales));
     const close = vi.fn();
     TestBed.overrideComponent(LocaleDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: LocaleService, useValue: { findAllLocales } },
+        { provide: LocaleService, useValue: { findAll } },
       ],
     });
     const fixture = TestBed.createComponent(LocaleDialogComponent);
@@ -49,13 +49,13 @@ describe('LocaleDialogComponent', () => {
   // The list comes from the server now: options that arrive after the dialog opened must show up.
   it('fills the options when the list arrives later', () => {
     const list = new Subject<Locale[]>();
-    const findAllLocales = vi.fn().mockReturnValue(list);
+    const findAll = vi.fn().mockReturnValue(list);
     TestBed.overrideComponent(LocaleDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: DIALOG_DATA, useValue: { locales: [en] } },
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
-        { provide: LocaleService, useValue: { findAllLocales } },
+        { provide: LocaleService, useValue: { findAll } },
       ],
     });
     const fixture = TestBed.createComponent(LocaleDialogComponent);

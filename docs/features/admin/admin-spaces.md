@@ -118,7 +118,7 @@ normally, because the input passes through `undefined` on the way.
 
 ### After creation
 
-No manual refresh. `SpaceService.findPage()` (the admin table, `GET /api/app/spaces`) and `findAllNames()`
+No manual refresh. `SpaceService.findAll()` (the admin table, `GET /api/app/spaces`) and `findAllNames()`
 (`SpaceStore`, `GET /api/app/spaces/names`) are `liveQuery`s, so the `spaces` change event the create emits over SSE
 makes them refetch, and the new space reaches the admin table and `SpaceStore` — and since the store selects the first when
 nothing is selected, a user's first space also becomes their current one, filling the sidebar behind

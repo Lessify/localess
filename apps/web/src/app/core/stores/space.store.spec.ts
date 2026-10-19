@@ -1,9 +1,10 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { IdName, Space, SpaceEnvironment } from '@localess/shared';
+import { IdName, IdNameUrl, Space } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
+import { SpaceEnvironmentService } from '@core/services/space-environment.service';
 import { SpaceService } from '@core/services/space.service';
 import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -42,14 +43,14 @@ describe('SpaceStore', () => {
     };
   }
 
-  function env(id: string, name: string, url: string): SpaceEnvironment {
-    return { id, spaceId: 'a', name, url, position: 0, createdAt: '', updatedAt: '' };
+  function env(id: string, name: string, url: string): IdNameUrl {
+    return { id, name, url };
   }
 
   type Listeners = {
     /** The selected space's environments, by space id. */
-    environments?: Record<string, SpaceEnvironment[]>;
-    findById?: (spaceId: string) => Observable<Space>;
+    environments?: Record<string, IdNameUrl[]>;
+    findOne?: (spaceId: string) => Observable<Space>;
     findAllDocuments?: (spaceId: string) => Observable<unknown>;
     findAllSchemas?: (spaceId: string) => Observable<unknown>;
     notifyError?: ReturnType<typeof vi.fn>;
@@ -68,10 +69,10 @@ describe('SpaceStore', () => {
           provide: SpaceService,
           useValue: {
             findAllNames: findAll,
-            findById: listeners.findById ?? ((id: string) => of(detail(id))),
-            findEnvironments: (id: string) => of(listeners.environments?.[id] ?? []),
+            findOne: listeners.findOne ?? ((id: string) => of(detail(id))),
           },
         },
+        { provide: SpaceEnvironmentService, useValue: { findAllNames: (id: string) => of(listeners.environments?.[id] ?? []) } },
         { provide: ContentService, useValue: { findAllDocuments: listeners.findAllDocuments ?? (() => NEVER) } },
         { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
         { provide: NotificationService, useValue: { error: listeners.notifyError ?? vi.fn() } },
@@ -157,12 +158,12 @@ describe('SpaceStore', () => {
 
   it('falls back to the first space when the persisted spaceId no longer exists', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'missing', selectedEnvironmentBySpaceId: {} }));
-    const findById = vi.fn((id: string) => of(detail(id)));
-    const store = createStore([space('a'), space('b')], { findById });
+    const findOne = vi.fn((id: string) => of(detail(id)));
+    const store = createStore([space('a'), space('b')], { findOne });
     TestBed.tick();
     expect(store.selectedSpace()?.id).toBe('a');
     // The stale id is never requested.
-    expect(findById.mock.calls).toEqual([['a']]);
+    expect(findOne.mock.calls).toEqual([['a']]);
   });
 
   it('resolves the persisted environment by id for the selected space, even among equal names', () => {
@@ -425,7 +426,7 @@ describe('SpaceStore', () => {
   });
 
   it('reads the selected space with its locales, in their order, and its default locale', () => {
-    const store = createStore([space('a')], { findById: id => of(detail(id, ['de', 'en', 'fr'])) });
+    const store = createStore([space('a')], { findOne: id => of(detail(id, ['de', 'en', 'fr'])) });
     TestBed.tick();
     expect(store.locales().map(it => it.id)).toEqual(['de', 'en', 'fr']);
     expect(store.defaultLocale()?.id).toBe('de');
@@ -434,7 +435,7 @@ describe('SpaceStore', () => {
   it('drops the previous space, its locales and environments while the next one loads', () => {
     const next = new Subject<Space>();
     const store = createStore([space('a'), space('b')], {
-      findById: id => (id === 'b' ? next : of(detail(id))),
+      findOne: id => (id === 'b' ? next : of(detail(id))),
       environments: { a: [env('e1', 'prod', 'https://prod')] },
     });
     TestBed.tick();
@@ -452,8 +453,8 @@ describe('SpaceStore', () => {
 
   it('keeps the same selected space and environments when a live refetch answers what it had (no re-render)', () => {
     const space$ = new Subject<Space>();
-    const environments: Record<string, SpaceEnvironment[]> = { a: [env('e1', 'prod', 'https://prod')] };
-    const store = createStore([space('a')], { findById: () => space$, environments });
+    const environments: Record<string, IdNameUrl[]> = { a: [env('e1', 'prod', 'https://prod')] };
+    const store = createStore([space('a')], { findOne: () => space$, environments });
     TestBed.tick();
     space$.next(detail('a'));
     const first = store.selectedSpace();
