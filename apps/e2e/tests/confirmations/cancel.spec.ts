@@ -66,13 +66,13 @@ test.describe('Cancelling a confirmation changes nothing', () => {
     await expect(locales.row('de')).toBeVisible();
     await expect(locales.isDefault('en')).toBeVisible();
     const after = await api.findSpace(space.id);
-    expect(after?.locales).toEqual(before?.locales);
+    expect(after?.spaceLocales).toEqual(before?.spaceLocales);
     expect(after?.defaultLocale).toEqual(before?.defaultLocale);
   });
 
   test('Visual Editor → Delete Environment', async ({ page, api, space }) => {
     await api.addEnvironment(space.id, { name: 'Staging', url: 'https://staging.example.com/' });
-    const before = (await api.findSpace(space.id))?.environments;
+    const before = await api.findSpaceEnvironments(space.id);
     const environments = new EnvironmentsPage(page);
     await environments.goto(space.id);
     await expect(environments.item('Staging')).toBeVisible();
@@ -82,7 +82,7 @@ test.describe('Cancelling a confirmation changes nothing', () => {
 
     await page.reload();
     await expect(environments.item('Staging')).toBeVisible();
-    expect((await api.findSpace(space.id))?.environments).toEqual(before);
+    expect(await api.findSpaceEnvironments(space.id)).toEqual(before);
   });
 
   test('Webhooks → Delete', async ({ page, api, space }) => {
@@ -194,7 +194,7 @@ test.describe('Cancelling a form dialog saves nothing', () => {
 
   test('Visual Editor → Edit Environment', async ({ page, api, space }) => {
     await api.addEnvironment(space.id, { name: 'Staging', url: 'https://staging.example.com/' });
-    const before = (await api.findSpace(space.id))?.environments;
+    const before = await api.findSpaceEnvironments(space.id);
     const environments = new EnvironmentsPage(page);
     await environments.goto(space.id);
 
@@ -202,11 +202,11 @@ test.describe('Cancelling a form dialog saves nothing', () => {
 
     await page.reload();
     await expect(environments.item('Staging')).toBeVisible();
-    expect((await api.findSpace(space.id))?.environments).toEqual(before);
+    expect(await api.findSpaceEnvironments(space.id)).toEqual(before);
   });
 
   test('Locales → Add Locale', async ({ page, api, space }) => {
-    const before = (await api.findSpace(space.id))?.locales;
+    const before = (await api.findSpace(space.id))?.spaceLocales;
     const locales = new LocalesPage(page);
     await locales.goto(space.id);
 
@@ -215,7 +215,7 @@ test.describe('Cancelling a form dialog saves nothing', () => {
     await page.reload();
     await expect(locales.row('en')).toBeVisible();
     await expect(locales.row('de')).toHaveCount(0);
-    expect((await api.findSpace(space.id))?.locales).toEqual(before);
+    expect((await api.findSpace(space.id))?.spaceLocales).toEqual(before);
   });
 
   test("Admin → Users → Edit (a user's role)", async ({ page, api, createUser }) => {

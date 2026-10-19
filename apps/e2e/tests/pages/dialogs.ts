@@ -55,6 +55,18 @@ export async function rowMenu(page: Page, row: Locator, item: string): Promise<v
   }).toPass({ timeout: 15_000 });
 }
 
+/**
+ * Closes the open menu, if any: Escape sent to the menu itself (a menu opened with the mouse leaves the focus on its
+ * trigger, where Escape does nothing), then waits until it is gone.
+ */
+export async function closeMenu(page: Page): Promise<void> {
+  const menu = page.getByRole('menu');
+  await expect(async () => {
+    if (await menu.isVisible()) await menu.press('Escape');
+    await expect(menu).toBeHidden({ timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+}
+
 /** Opens a row's menu and returns it, retried like rowMenu. */
 export async function openRowMenu(page: Page, row: Locator): Promise<Locator> {
   const menu = page.getByRole('menu');
@@ -68,7 +80,8 @@ export async function openRowMenu(page: Page, row: Locator): Promise<Locator> {
 /** Opens a row's menu and runs checks on it; both are retried together, as a re-render can close the menu between. */
 export async function expectRowMenu(page: Page, row: Locator, check: (menu: Locator) => Promise<void>): Promise<void> {
   await expect(async () => {
-    await page.keyboard.press('Escape');
+    // Another row's menu, left open, would answer for this row's.
+    await closeMenu(page);
     const menu = await openRowMenu(page, row);
     await check(menu);
   }).toPass({ timeout: 15_000 });

@@ -1,4 +1,4 @@
-import { expectRowMenu } from '../pages/dialogs';
+import { closeMenu, expectRowMenu } from '../pages/dialogs';
 import { LocalesPage } from '../pages/locales.page';
 import type { AppApi } from '../support/app-api';
 import { expect, test } from '../support/fixtures';
@@ -7,7 +7,7 @@ import { translationsByKey } from '../support/translations';
 /** The space's locale ids in order, and its default locale, as the App API returns them. */
 async function stored(api: AppApi, spaceId: string): Promise<{ ids: string[]; defaultLocale?: string }> {
   const space = await api.findSpace(spaceId);
-  return { ids: (space?.locales ?? []).map(it => it.id), defaultLocale: space?.defaultLocale?.id };
+  return { ids: (space?.spaceLocales ?? []).map(it => it.locale.id), defaultLocale: space?.defaultLocale?.id };
 }
 
 test.describe('Space settings → Locales', () => {
@@ -90,11 +90,11 @@ test.describe('Space settings → Locales', () => {
     await expectRowMenu(page, locales.row('de'), async menu => {
       await expect(menu.getByRole('menuitem', { name: 'Delete' })).toBeDisabled({ timeout: 1_000 });
     });
-    await page.keyboard.press('Escape');
+    await closeMenu(page);
     await expectRowMenu(page, locales.row('en'), async menu => {
       await expect(menu.getByRole('menuitem', { name: 'Delete' })).toBeEnabled({ timeout: 1_000 });
     });
-    await page.keyboard.press('Escape');
+    await closeMenu(page);
     await page.reload();
     await expect(locales.isDefault('de')).toBeVisible();
   });
@@ -108,11 +108,11 @@ test.describe('Space settings → Locales', () => {
     await expectRowMenu(page, locales.row('en'), async menu => {
       await expect(menu.getByRole('menuitem', { name: 'Move Up' })).toBeDisabled({ timeout: 1_000 });
     });
-    await page.keyboard.press('Escape');
+    await closeMenu(page);
     await expectRowMenu(page, locales.row('ro'), async menu => {
       await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeDisabled({ timeout: 1_000 });
     });
-    await page.keyboard.press('Escape');
+    await closeMenu(page);
 
     await locales.move('ro', 'Move Up');
 

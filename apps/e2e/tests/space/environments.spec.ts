@@ -3,8 +3,7 @@ import type { AppApi } from '../support/app-api';
 import { expect, test } from '../support/fixtures';
 
 async function stored(api: AppApi, spaceId: string): Promise<{ name: string; url: string }[]> {
-  const space = await api.findSpace(spaceId);
-  return (space?.environments ?? []).map(({ name, url }) => ({ name, url }));
+  return (await api.findSpaceEnvironments(spaceId)).map(({ name, url }) => ({ name, url }));
 }
 
 test.describe('Space settings → Visual Editor environments', () => {

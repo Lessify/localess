@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 /** What a route needs, as the server's access decorators say (`apps/server/src/auth/decorators.ts`). */
 export type RouteAccess =
@@ -27,8 +27,16 @@ function controllerFiles(dir: string): string[] {
   });
 }
 
-/** `UserPermission.X` and `...CONST` (an array of them declared in the file) to permission names. */
-function permissionsOf(args: string, file: string): string[] {
+/** The source of `name` as `path` declares it: the file itself, or the file it imports `name` from. */
+function declaring(name: string, path: string, file: string): string {
+  if (new RegExp(`const ${name}\\s*=`).test(file)) return file;
+  const imported = file.match(new RegExp(`import \\{[^}]*\\b${name}\\b[^}]*\\} from '([^']+)'`));
+  if (!imported) return file;
+  return readFileSync(resolve(dirname(path), imported[1].replace(/\.js$/, '.ts')), 'utf8');
+}
+
+/** `UserPermission.X` and `...CONST` (an array of them, declared in the file or imported into it) to permission names. */
+function permissionsOf(args: string, file: string, path: string): string[] {
   return args
     .split(',')
     .map(it => it.trim())
@@ -36,9 +44,10 @@ function permissionsOf(args: string, file: string): string[] {
     .flatMap(arg => {
       const spread = arg.match(/^\.\.\.(\w+)$/);
       if (spread) {
-        const list = file.match(new RegExp(`const ${spread[1]}\\s*=\\s*\\[([^\\]]*)\\]`));
+        const source = declaring(spread[1], path, file);
+        const list = source.match(new RegExp(`const ${spread[1]}\\s*=\\s*\\[([^\\]]*)\\]`));
         if (!list) throw new Error(`can not resolve ...${spread[1]}`);
-        return permissionsOf(list[1], file);
+        return permissionsOf(list[1], source, path);
       }
       const name = arg.match(/^UserPermission\.(\w+)$/);
       if (!name) throw new Error(`unknown permission argument ${arg}`);
@@ -46,16 +55,16 @@ function permissionsOf(args: string, file: string): string[] {
     });
 }
 
-function accessOf(decorator: string, args: string, file: string): RouteAccess {
+function accessOf(decorator: string, args: string, file: string, path: string): RouteAccess {
   switch (decorator) {
     case 'RequireAdmin':
       return { kind: 'admin' };
     case 'RequireAnyRole':
       return { kind: 'anyRole' };
     case 'RequirePermission':
-      return { kind: 'anyOf', permissions: permissionsOf(args, file) };
+      return { kind: 'anyOf', permissions: permissionsOf(args, file, path) };
     default:
-      return { kind: 'allOf', permissions: permissionsOf(args, file) };
+      return { kind: 'allOf', permissions: permissionsOf(args, file, path) };
   }
 }
 
@@ -85,7 +94,7 @@ export function appRoutes(): AppRoute[] {
       routes.push({
         method: verb.toUpperCase() as AppRoute['method'],
         path: `/${controller[1]}${sub ? `/${sub}` : ''}`,
-        access: accessOf(found[1], found[2], file),
+        access: accessOf(found[1], found[2], file, path),
         source: `${path.slice(SERVER_SRC.length + 1)} › ${name}`,
       });
     }

@@ -34,7 +34,8 @@ export class SessionProbe {
       role: user.role ?? null,
       permissions: user.permissions ?? [],
       users: (await this.client.get('/api/app/users')).status(),
-      spaces: (await this.client.get('/api/app/spaces')).status(),
+      // Any role reads the spaces it can open (the sidebar list).
+      spaces: (await this.client.get('/api/app/spaces/names')).status(),
     };
   }
 }

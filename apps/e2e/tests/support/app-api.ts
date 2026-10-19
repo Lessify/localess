@@ -34,6 +34,11 @@ export class AppApi {
     return expectOk(response, `GET space ${id}`);
   }
 
+  /** The space's Visual Editor environments, in their order (`GET /api/app/spaces/:id/environments`). */
+  findSpaceEnvironments(id: string): Promise<EnvironmentDto[]> {
+    return this.get<EnvironmentDto[]>(`/api/app/spaces/${id}/environments`);
+  }
+
   /** Deletes the space; one already gone (deleted by the test) is fine. */
   deleteSpace(id: string): Promise<void> {
     return this.delete(`/api/app/spaces/${id}`);
@@ -198,12 +203,20 @@ export class AppApi {
   }
 }
 
+/** A space as the App API answers it: `GET /spaces/:id` adds its default locale and its locales (`spaceLocales`). */
 export interface SpaceDto {
   id: string;
   name: string;
-  locales?: { id: string; name: string }[];
+  defaultLocaleId: string;
   defaultLocale?: { id: string; name: string };
-  environments?: { id: string; name: string; url: string }[];
+  spaceLocales?: { position: number; locale: { id: string; name: string } }[];
+}
+
+export interface EnvironmentDto {
+  id: string;
+  name: string;
+  url: string;
+  position: number;
 }
 
 export interface UserDto {
