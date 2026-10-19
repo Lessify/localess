@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, ilike, max, or, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, max, or, sql, type SQL } from 'drizzle-orm';
 import type { SpaceEnvironmentCreate, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -25,9 +25,14 @@ export class SpaceEnvironmentRepository {
    */
   findAll(spaceId: string, query: SpaceEnvironmentPageable): Promise<SpaceEnvironmentEntity[]> {
     const order = query.direction === 'desc' ? desc : asc;
+    const column = {
+      position: spaceEnvironments.position,
+      name: sql`lower(${spaceEnvironments.name})`,
+      url: sql`lower(${spaceEnvironments.url})`,
+    }[query.sort];
     return this.db.query.spaceEnvironments.findMany({
       where: this.where(spaceId, query),
-      orderBy: [order(spaceEnvironments.position), asc(spaceEnvironments.id)],
+      orderBy: [order(column), asc(spaceEnvironments.id)],
       limit: query.size,
       offset: offsetOf(query),
     });
