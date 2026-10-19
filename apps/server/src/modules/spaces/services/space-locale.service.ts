@@ -1,13 +1,17 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Space } from '@localess/shared';
+import type { IdName, Page, Space, SpaceLocale, SpaceLocalePageable } from '@localess/shared';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
-import { toSpace } from '../../../shared/transformers/space.transformer.js';
+import { toSpace, toSpaceLocale } from '../../../shared/transformers/space.transformer.js';
+import { toPage } from '../../../shared/utils/paging.js';
 import { LocaleRepository } from '../repositories/locale.repository.js';
 import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 import { isPermutation } from '../utils/permutation.js';
 
-/** A space's locales and its default locale; each change answers the space as it is after (with its locales). */
+/**
+ * A space's locales and its default locale. Adding answers the space locale; removing and reordering answer nothing (a
+ * `spaces` event follows); setting the default answers the space, whose `defaultLocaleId` it changed.
+ */
 @Injectable()
 export class SpaceLocaleService {
   constructor(
@@ -16,26 +20,44 @@ export class SpaceLocaleService {
     private readonly localeRepository: LocaleRepository,
   ) {}
 
-  /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */
-  async create(spaceId: string, localeId: string): Promise<Space> {
-    const space = await this.require(spaceId);
-    if (space.spaceLocales.some(it => it.localeId === localeId)) return toSpace(space);
-    if (!(await this.localeRepository.exists(localeId))) throw new BadRequestException(`Unknown locale ${localeId}`);
-    await this.spaceLocaleRepository.create(spaceId, localeId);
-    return this.reread(spaceId);
+  /** One page, each with its locale; in the space's order unless sorted otherwise. */
+  async findAll(spaceId: string, query: SpaceLocalePageable): Promise<Page<SpaceLocale>> {
+    await this.require(spaceId);
+    const [rows, total] = await Promise.all([
+      this.spaceLocaleRepository.findAll(spaceId, query),
+      this.spaceLocaleRepository.findAllCount(spaceId, query),
+    ]);
+    return toPage(rows, total, query, toSpaceLocale);
   }
 
-  async remove(spaceId: string, localeId: string): Promise<Space> {
+  /** Every locale of the space, in its order. */
+  async findAllNames(spaceId: string): Promise<IdName[]> {
+    await this.require(spaceId);
+    return this.spaceLocaleRepository.findAllNames(spaceId);
+  }
+
+  /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */
+  async create(spaceId: string, localeId: string): Promise<SpaceLocale> {
+    const space = await this.require(spaceId);
+    if (!space.spaceLocales.some(it => it.localeId === localeId)) {
+      if (!(await this.localeRepository.exists(localeId))) throw new BadRequestException(`Unknown locale ${localeId}`);
+      await this.spaceLocaleRepository.create(spaceId, localeId);
+    }
+    const spaceLocale = await this.spaceLocaleRepository.findOne(spaceId, localeId);
+    if (!spaceLocale) throw new NotFoundException('Space locale not found');
+    return toSpaceLocale(spaceLocale);
+  }
+
+  async remove(spaceId: string, localeId: string): Promise<void> {
     const space = await this.require(spaceId);
     if (space.defaultLocaleId === localeId) {
       throw new BadRequestException('The default locale cannot be removed; make another locale the default first');
     }
     await this.spaceLocaleRepository.delete(spaceId, localeId);
-    return this.reread(spaceId);
   }
 
   /** `localeIds` is the space's locales in their new order: every one of them, each once. */
-  async reorder(spaceId: string, localeIds: string[]): Promise<Space> {
+  async reorder(spaceId: string, localeIds: string[]): Promise<void> {
     const space = await this.require(spaceId);
     if (
       !isPermutation(
@@ -46,23 +68,18 @@ export class SpaceLocaleService {
       throw new BadRequestException("The new order must list each of the space's locales once");
     }
     await this.spaceLocaleRepository.reorder(spaceId, localeIds);
-    return this.reread(spaceId);
   }
 
   async setDefault(spaceId: string, localeId: string): Promise<Space> {
     const space = await this.require(spaceId);
     if (!space.spaceLocales.some(it => it.localeId === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
     await this.spaceLocaleRepository.setDefault(spaceId, localeId);
-    return this.reread(spaceId);
+    return toSpace(await this.require(spaceId));
   }
 
   private async require(spaceId: string): Promise<SpaceWithLocales> {
     const space = await this.spaceRepository.findOne(spaceId);
     if (!space) throw new NotFoundException('Space not found');
     return space;
-  }
-
-  private async reread(spaceId: string): Promise<Space> {
-    return toSpace(await this.require(spaceId));
   }
 }

@@ -12,13 +12,13 @@
 <div class="my-3">
   <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="id">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="id">Id</th>
         <td llCell *llCellDef="let element">{{ element.id }}</td>
       </ng-container>
       <ng-container llColumnDef="icon">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="icon">Icon</th>
+        <th llHeaderCell *llHeaderCellDef>Icon</th>
         <td llCell *llCellDef="let element">
           <ll-locale-icon [locale]="element.id" />
         </td>
@@ -52,7 +52,7 @@
       <ng-container llColumnDef="isDefault">
         <th llHeaderCell *llHeaderCellDef>Default</th>
         <td llCell *llCellDef="let element">
-          @if (spaceStore.selectedSpace()?.defaultLocale?.id === element.id) {
+          @if (defaultLocaleId() === element.id) {
             <ng-icon name="lucideCheck" role="img" aria-hidden="false" aria-label="Default locale" />
           }
         </td>
@@ -71,7 +71,7 @@
           </button>
           <ng-template #actionsMenu>
             <hlm-dropdown-menu class="text-nowrap">
-              @if (spaceStore.selectedSpace()?.defaultLocale?.id !== element.id) {
+              @if (defaultLocaleId() !== element.id) {
                 <hlm-dropdown-menu-group>
                   <button hlmDropdownMenuItem (click)="openSetDefaultDialog(element)">
                     <ng-icon hlm size="sm" name="lucideCheck" />
@@ -95,7 +95,7 @@
                 <button
                   hlmDropdownMenuItem
                   variant="destructive"
-                  [disabled]="spaceStore.selectedSpace()?.defaultLocale?.id === element.id"
+                  [disabled]="defaultLocaleId() === element.id"
                   (click)="openDeleteDialog(element)">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                   Delete
@@ -113,5 +113,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

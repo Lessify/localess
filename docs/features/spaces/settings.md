@@ -53,16 +53,23 @@ Edit the space name and other top-level space metadata. Reads current data from 
 ## LocalesComponent
 
 Add, remove and reorder the space's locales, and set the **default locale**: new translations are created in it, content stores
-its values in the bare field, and a locale with no value falls back to it. The table lists the locales in the space's order (the
-order used everywhere in the app) until a column header sorts it, and is filtered through an `<ll-filter-toolbar>` (`onFilterChange()`).
+its values in the bare field, and a locale with no value falls back to it. The table is one page from the server
+(`GET /api/app/spaces/:s/locales`, `Page<SpaceLocale>`, a `PagedList`, see [pagination](../../server/pagination.md)): in the
+space's order (the order used everywhere in the app) until the Id or Name header sorts it (cleared: the space's order again), and
+searched by the locale's id or name through an `<ll-filter-toolbar>` (`onFilterChange()`). It reloads on the space's `spaces` change
+event, so a change answers nothing the screen reads. The default is the space's `defaultLocaleId`.
+`GET /api/app/spaces/:s/locales/names` answers every locale of the space as `IdName[]`, in its order.
 
 - `openAddDialog()` — opens `LocaleDialogComponent`, which loads every locale from `GET /api/app/locales` (database data, read-only)
-  minus the space's own, and adds the pick by id (`POST /api/app/spaces/:s/locales {id}`; an id not in the `locales` table is refused)
-- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`). The action is disabled for the default locale, and the server refuses to delete it too
+  minus the space's own, and adds the pick by id (`POST /api/app/spaces/:s/locales {id}`, answers the `SpaceLocale`; an id not in the
+  `locales` table is refused)
+- `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`, 204). The action is disabled for the default locale, and the server refuses to delete it too
 - `openSetDefaultDialog(element)` — `ConfirmationDialogComponent` warning that content values stored for the default locale are not
   moved (they are read as the new locale from then on; translations are unaffected), then `PUT /api/app/spaces/:s/default-locale`
+  (answers the `Space`)
 - `move(element, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: swaps the locale with its neighbour in the space's order
-  and sends the whole order (`PUT /api/app/spaces/:s/locales/order {ids}`, every locale of the space once)
+  (read from `SpaceStore`, which holds all of them) and sends the whole order (`PUT /api/app/spaces/:s/locales/order {ids}`, every
+  locale of the space once, 204)
 
 **Services:** `LocaleService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 

@@ -1,23 +1,47 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom } from 'rxjs';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { firstValueFrom, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
-import { Locale } from '@localess/shared';
+import { Locale, Page, SpaceLocale } from '@localess/shared';
 import { LocaleService } from './locale.service';
 
 describe('LocaleService', () => {
   let http: HttpTestingController;
   const entity: Locale = { id: 'de', name: 'German' };
 
+  let events: Subject<ChangeEvent>;
+
   function setup() {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    events = new Subject<ChangeEvent>();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
+    });
     http = TestBed.inject(HttpTestingController);
     return TestBed.inject(LocaleService);
   }
 
   afterEach(() => {
     http.verify();
+    vi.useRealTimers();
+  });
+
+  it("findPage() reads one page of the space's locales, and again when the space changes", async () => {
+    vi.useFakeTimers();
+    const service = setup();
+    const params = new HttpParams().set('page', 0).set('size', 20).set('search', 'ger');
+    const results: Page<SpaceLocale>[] = [];
+    const subscription = service.findPage('space-1', params).subscribe(it => results.push(it));
+    const url = '/api/app/spaces/space-1/locales?page=0&size=20&search=ger';
+    http.expectOne({ method: 'GET', url }).flush({ items: [], page: 0, size: 20, total: 0 });
+
+    events.next({ spaceId: null, entity: 'spaces', id: 'space-1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(url).flush({ items: [{ localeId: 'de' } as SpaceLocale], page: 0, size: 20, total: 1 });
+    expect(results.map(it => it.total)).toEqual([0, 1]);
+    subscription.unsubscribe();
   });
 
   it('setDefault() puts the locale id as the space default locale', async () => {

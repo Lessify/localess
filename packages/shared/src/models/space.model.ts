@@ -69,6 +69,10 @@ export type SpaceTemplateId = (typeof SPACE_TEMPLATE_IDS)[number];
 export const SPACE_SORT_FIELDS = ['name', 'id', 'updatedAt'] as const;
 export type SpaceSortField = (typeof SPACE_SORT_FIELDS)[number];
 
+/** The fields Space Settings → Locales may sort by (`position`: the space's order; `id` and `name`: its locale's). */
+export const SPACE_LOCALE_SORT_FIELDS = ['position', 'id', 'name'] as const;
+export type SpaceLocaleSortField = (typeof SPACE_LOCALE_SORT_FIELDS)[number];
+
 /** Dashboard numbers, computed on request (`GET /api/app/spaces/:id/overview`). */
 export interface SpaceOverview {
   counts: {

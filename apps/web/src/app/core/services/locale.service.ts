@@ -1,9 +1,14 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { liveQueryWith } from '@core/api/live-query';
 import {
   GCP_SOURCE_SUPPORT_LOCALES,
   GCP_TARGET_SUPPORT_LOCALES,
   Locale,
+  Page,
+  Space,
+  SpaceLocale,
   SpaceLocaleCreate,
   SpaceLocaleOrder,
   SpaceLocaleSetDefault,
@@ -14,18 +19,30 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
   private readonly http = inject(HttpClient);
+  private readonly events = inject(ChangeEventsService);
 
   private base(spaceId: string): string {
     return `/api/app/spaces/${spaceId}`;
   }
 
-  setDefault(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/default-locale`, { id: entity.id } satisfies SpaceLocaleSetDefault);
+  /**
+   * One page of the space's locales (`?page=&size=&sort=&direction=&search=`); again whenever the space changes (a
+   * locale change touches it).
+   */
+  findPage(spaceId: string, params: HttpParams): Observable<Page<SpaceLocale>> {
+    return liveQueryWith(this.events, { entities: ['spaces'], id: spaceId }, () =>
+      this.http.get<Page<SpaceLocale>>(`${this.base(spaceId)}/locales`, { params }),
+    );
+  }
+
+  /** Answers the space, with its new `defaultLocaleId`. */
+  setDefault(spaceId: string, entity: Locale): Observable<Space> {
+    return this.http.put<Space>(`${this.base(spaceId)}/default-locale`, { id: entity.id } satisfies SpaceLocaleSetDefault);
   }
 
   /** Adds a locale from the list (`findAllLocales`); the server takes only its id. */
-  create(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id } satisfies SpaceLocaleCreate);
+  create(spaceId: string, entity: Locale): Observable<SpaceLocale> {
+    return this.http.post<SpaceLocale>(`${this.base(spaceId)}/locales`, { id: entity.id } satisfies SpaceLocaleCreate);
   }
 
   /** `localeIds`: every locale of the space, in the new order. */

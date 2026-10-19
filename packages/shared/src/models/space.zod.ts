@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { zBoolean, zPreviewUrl } from './common.zod.js';
 import { zPageable } from './page.zod.js';
-import { SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
+import { SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
 
 // App API requests of spaces, their environments and their locales.
 
@@ -40,6 +40,12 @@ export const zSpaceEnvironmentOrder = z.object({ ids: z.array(z.uuid()).min(1).m
 export type SpaceEnvironmentOrder = z.infer<typeof zSpaceEnvironmentOrder>;
 
 const zLocaleId = z.string().min(1).max(64);
+
+/** `GET …/locales`: one page, in the space's order unless sorted otherwise; `?search=` (the locale's id or name). */
+export const zSpaceLocalePageable = zPageable(SPACE_LOCALE_SORT_FIELDS, 'position').extend({
+  search: z.string().trim().max(200).optional(),
+});
+export type SpaceLocalePageable = z.infer<typeof zSpaceLocalePageable>;
 
 /** `POST …/locales`: a locale of the catalog, added at the end of the space's list. */
 export const zSpaceLocaleCreate = z.object({ id: zLocaleId });

@@ -1,9 +1,9 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { Locale } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowDown, lucideArrowUp, lucideCheck, lucideEllipsisVertical, lucidePlus, lucideTrash, lucideX } from '@ng-icons/lucide';
@@ -15,14 +15,15 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { combineLatest, EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { LocaleDialogComponent } from './locale-dialog/locale-dialog.component';
 import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-dialog.model';
@@ -54,48 +55,60 @@ import { LocaleDialogContext, LocaleDialogResult } from './locale-dialog/locale-
     }),
   ],
 })
-export class LocalesComponent implements AfterViewInit {
+export class LocalesComponent {
   readonly localeService = inject(LocaleService);
   private readonly hlmDialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
+  /** The page shown: paged, sorted and searched on the server, in the space's order unless sorted otherwise. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly locales = signal<Locale[]>([]);
   readonly dataSource = new TableDataSource<Locale>(this.locales, this.injector);
   displayedColumns: string[] = ['id', 'icon', 'name', 'translateFrom', 'translateTo', 'isDefault', 'actions'];
+  /** The default is the space's `defaultLocaleId`. */
+  readonly defaultLocaleId = computed(() => this.spaceStore.selectedSpace()?.defaultLocaleId);
 
   private destroyRef = inject(DestroyRef);
 
+  /**
+   * The current query's page for the selected space, again whenever either changes or the space does (live). A failed
+   * load is told and ends only that request: the next query change fetches again.
+   */
   constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<Locale>({
-      searchFields: locale => [locale.id, locale.name],
-    });
-    toObservable(this.spaceStore.selectedSpace)
+    combineLatest([toObservable(this.spaceStore.selectedSpaceId).pipe(filter(it => it !== undefined)), toObservable(this.list.params)])
       .pipe(
-        filter(it => it !== undefined), // Skip initial data
+        switchMap(([spaceId, params]) =>
+          this.localeService.findPage(spaceId!, params).pipe(
+            catchError(() => {
+              this.notificationService.error('Locales can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: space => {
-          this.locales.set((space!.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : [])));
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.locales.set(page.items.flatMap(it => (it.locale ? [it.locale] : [])));
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
       });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
+  /** The search box (the locale's id or name), on the server; from the first page. */
+  onFilterChange(value: FilterToolbarValue): void {
+    this.list.setFilters({ search: value.search?.trim() || undefined });
   }
 
-  onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+  /** Cleared: back to the space's order. */
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
   }
 
   /**
@@ -145,7 +158,6 @@ export class LocalesComponent implements AfterViewInit {
       )
       .subscribe({
         next: () => {
-          this.locales.update(locales => locales.filter(x => x.id !== element.id));
           this.notificationService.success(`Locale '${element.name}' has been deleted.`);
         },
         error: () => {
