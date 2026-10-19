@@ -6,7 +6,6 @@ import { newUuid } from '../../../infra/database/id.js';
 import { keepUpdatedAt, spaceEnvironments } from '../../../infra/database/schema.js';
 import type { Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import type { IdNameUrlEntity } from '../../../shared/entities/id-name.entity.js';
 import type { SpaceEnvironmentEntity } from '../../../shared/entities/space-environment.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
@@ -44,7 +43,7 @@ export class SpaceEnvironmentRepository {
   }
 
   /** Every environment of the space, in its order (ties: the one added first), as `{ id, name, url }`. */
-  findAllNames(spaceId: string): Promise<IdNameUrlEntity[]> {
+  findAllNames(spaceId: string): Promise<Pick<SpaceEnvironmentEntity, 'id' | 'name' | 'url'>[]> {
     return this.db.query.spaceEnvironments.findMany({
       columns: { id: true, name: true, url: true },
       where: eq(spaceEnvironments.spaceId, spaceId),

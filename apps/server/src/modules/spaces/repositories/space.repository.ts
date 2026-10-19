@@ -10,10 +10,9 @@ import { dropContentDrafts } from '../../../shared/data-rules/content-snapshots.
 import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
-import type { SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import type { SpaceEntity, SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
-import { IdNameEntity } from '../../../shared/entities/id-name.entity.js';
 
 /**
  * Spaces (their locales and environments: `SpaceLocaleRepository`, `SpaceEnvironmentRepository`). Reads answer
@@ -50,7 +49,7 @@ export class SpaceRepository {
   }
 
   /** Every space that can be opened (not importing, no failed import), by name: the sidebar list. */
-  findAllNames(): Promise<IdNameEntity[]> {
+  findAllNames(): Promise<Pick<SpaceEntity, 'id' | 'name'>[]> {
     return this.db.query.spaces.findMany({
       columns: { id: true, name: true },
       where: this.openable(),
