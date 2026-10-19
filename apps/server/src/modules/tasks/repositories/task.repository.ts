@@ -1,8 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { newUuid } from '../../../infra/database/id.js';
-import { taskLogs, tasks } from '../../../infra/database/schema.js';
+import { tasks } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
@@ -11,7 +10,6 @@ import type { TaskPageable } from '../models/task.models.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 
 export type TaskEntity = typeof tasks.$inferSelect;
-export type TaskLogEntity = typeof taskLogs.$inferSelect;
 export type NewTask = Omit<typeof tasks.$inferInsert, 'spaceId' | 'status'>;
 
 /**
@@ -55,10 +53,6 @@ export class TaskRepository {
     return row;
   }
 
-  findLogs(taskId: string): Promise<TaskLogEntity[]> {
-    return this.db.select().from(taskLogs).where(eq(taskLogs.taskId, taskId)).orderBy(asc(taskLogs.createdAt), asc(taskLogs.id));
-  }
-
   /** A new INITIATED task, for the worker to pick up; the space checked first (404 when gone). */
   create(spaceId: string, values: NewTask, tx?: Transaction): Promise<TaskEntity> {
     return transaction(this.db, tx, async t => {
@@ -77,19 +71,6 @@ export class TaskRepository {
     return transaction(this.db, tx, async t => {
       await t.delete(tasks).where(and(eq(tasks.spaceId, spaceId), eq(tasks.id, id)));
       await this.events.publish({ spaceId, entity: 'tasks', id, op: 'deleted' }, t);
-    });
-  }
-
-  addLog(
-    task: Pick<TaskEntity, 'spaceId' | 'id'>,
-    level: 'INFO' | 'WARN' | 'ERROR',
-    message: string,
-    trace?: string,
-    tx?: Transaction,
-  ): Promise<void> {
-    return transaction(this.db, tx, async t => {
-      await t.insert(taskLogs).values({ id: newUuid(), taskId: task.id, level, message, trace });
-      await this.events.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created' }, t);
     });
   }
 

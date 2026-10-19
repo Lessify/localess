@@ -52,6 +52,20 @@ users module's, with their own `UserRepository`.
 | **Transformer** | `shared/transformers/` | Pure mapping from one model to another, mostly a database entity to the API DTO / shared model | I/O, decisions |
 | **Repository** | `repositories/` | Every database action: queries, writes, transactions, locks, change events (`pg_notify`); turns constraint violations into errors | Business rules, HTTP, calling services |
 
+### One controller, service and repository per entity
+
+A module holds one set per entity it serves, and one per sub-entity: what is addressed under another entity's id and
+has its own rows (`/spaces/:spaceId/locales`, `/webhooks/:id/logs`). File and class names are singular, the entity
+first (`space.controller.ts` / `SpaceController`, `space-locale.service.ts` / `SpaceLocaleService`,
+`webhook-log.repository.ts` / `WebhookLogRepository`), so a sub-entity's methods are the plain ones (`create`,
+`remove`, `reorder`, not `addLocale`, `removeEnvironment`). Today: spaces (`space`, `space-locale`,
+`space-environment`), webhooks (`webhook`, `webhook-log`), tasks (`task`, `task-log`). A rule several of them follow
+lives in one helper in the module (`spaces/repositories/space-change.ts`: a change of the space, its locales or its
+environments touches the space and sends one `spaces` event, in one transaction).
+
+Not a sub-entity: a different kind of the same row (an asset or content folder is the asset or content with
+`kind = FOLDER`, one tree), or an action on the entity (`publish`, `clone`, `password-reset-link`, `status`).
+
 ### Method names
 
 NestJS's convention (the `nest g resource` scaffold), the same in a controller and the service it calls:

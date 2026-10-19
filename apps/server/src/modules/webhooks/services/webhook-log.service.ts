@@ -1,0 +1,19 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { toWebhookLog } from '../../../shared/transformers/webhook.transformer.js';
+import { WebhookLogRepository } from '../repositories/webhook-log.repository.js';
+import { WebhookRepository } from '../repositories/webhook.repository.js';
+
+/** A webhook's delivery logs. */
+@Injectable()
+export class WebhookLogService {
+  constructor(
+    private readonly webhooks: WebhookRepository,
+    private readonly logs: WebhookLogRepository,
+  ) {}
+
+  /** Newest first: 100 unless another `limit` (1–1000) is asked for. */
+  async findAll(spaceId: string, webhookId: string, limit = 100) {
+    if (!(await this.webhooks.findById(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
+    return (await this.logs.findAll(webhookId, limit)).map(toWebhookLog);
+  }
+}

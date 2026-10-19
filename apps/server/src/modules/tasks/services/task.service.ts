@@ -1,10 +1,10 @@
 import type { Readable } from 'node:stream';
 import { Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
-import type { Page, Task, TaskLog } from '@localess/shared';
+import type { Page, Task } from '@localess/shared';
 import type { UserRow } from '../../../shared/models/user.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
-import { toTask, toTaskLog } from '../../../shared/transformers/task.transformer.js';
+import { toTask } from '../../../shared/transformers/task.transformer.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 import type { TaskPageable } from '../models/task.models.js';
 import { type TaskEntity, TaskRepository } from '../repositories/task.repository.js';
@@ -53,11 +53,6 @@ export class TaskService {
 
   async findOne(spaceId: string, id: string): Promise<Task> {
     return toTask(await this.find(spaceId, id));
-  }
-
-  async findLogs(spaceId: string, id: string): Promise<TaskLog[]> {
-    await this.find(spaceId, id);
-    return (await this.tasks.findLogs(id)).map(toTaskLog);
   }
 
   /** The task's file (export result or uploaded import). */

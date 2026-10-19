@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+import { TaskLogController } from './controllers/task-log.controller.js';
 import { TaskController } from './controllers/task.controller.js';
 import { AssetTransferRepository } from './repositories/asset-transfer.repository.js';
 import { SchemaTransferRepository } from './repositories/schema-transfer.repository.js';
 import { SpaceRepository } from './repositories/space.repository.js';
+import { TaskLogRepository } from './repositories/task-log.repository.js';
 import { TaskRepository } from './repositories/task.repository.js';
 import { TranslationTransferRepository } from './repositories/translation-transfer.repository.js';
 import { AssetTransferService } from './services/asset-transfer.service.js';
@@ -20,7 +22,7 @@ import { TaskWorker } from './workers/task-worker.service.js';
  * assets, contents, schemas and translations tables with their own queries, under the shared data rules.
  */
 @Module({
-  controllers: [TaskController],
+  controllers: [TaskController, TaskLogController],
   providers: [
     TaskService,
     TaskLogService,
@@ -31,6 +33,7 @@ import { TaskWorker } from './workers/task-worker.service.js';
     TaskRunner,
     TaskWorker,
     TaskRepository,
+    TaskLogRepository,
     SpaceRepository,
     AssetTransferRepository,
     SchemaTransferRepository,

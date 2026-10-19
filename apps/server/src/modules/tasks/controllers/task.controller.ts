@@ -1,7 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
@@ -9,18 +8,7 @@ import { buildContentDisposition } from '../../../infra/http/content-disposition
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { type TaskExportCreate, type TaskPageable, zTaskExportCreate, zTaskImportFields, zTaskPageable } from '../models/task.models.js';
 import { TaskService } from '../services/task.service.js';
-import { assertCanManage } from '../utils/task-permissions.js';
-
-const READ_PERMISSIONS = [
-  UserPermission.ASSET_EXPORT,
-  UserPermission.ASSET_IMPORT,
-  UserPermission.CONTENT_EXPORT,
-  UserPermission.CONTENT_IMPORT,
-  UserPermission.SCHEMA_EXPORT,
-  UserPermission.SCHEMA_IMPORT,
-  UserPermission.TRANSLATION_EXPORT,
-  UserPermission.TRANSLATION_IMPORT,
-];
+import { assertCanManage, TASK_READ_PERMISSIONS } from '../utils/task-permissions.js';
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
@@ -38,26 +26,20 @@ export class TaskController {
   constructor(private readonly tasks: TaskService) {}
 
   @Get()
-  @RequirePermission(...READ_PERMISSIONS)
+  @RequirePermission(...TASK_READ_PERMISSIONS)
   findAll(@Param('spaceId') spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable) {
     return this.tasks.findAll(spaceId, query);
   }
 
   @Get(':id')
-  @RequirePermission(...READ_PERMISSIONS)
+  @RequirePermission(...TASK_READ_PERMISSIONS)
   findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.tasks.findOne(spaceId, id);
   }
 
-  @Get(':id/logs')
-  @RequirePermission(...READ_PERMISSIONS)
-  findLogs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.tasks.findLogs(spaceId, id);
-  }
-
   /** The task's file (export result or uploaded import), as an attachment. */
   @Get(':id/download')
-  @RequirePermission(...READ_PERMISSIONS)
+  @RequirePermission(...TASK_READ_PERMISSIONS)
   async download(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Res() reply: FastifyReply): Promise<void> {
     const { filename, size, stream } = await this.tasks.download(spaceId, id);
     void reply
@@ -70,7 +52,7 @@ export class TaskController {
 
   /** Exports and metadata regeneration: `{ kind, path? | locale? }`. */
   @Post()
-  @RequirePermission(...READ_PERMISSIONS)
+  @RequirePermission(...TASK_READ_PERMISSIONS)
   create(
     @Param('spaceId') spaceId: string,
     @Body({ schema: zTaskExportCreate }) body: TaskExportCreate,
@@ -84,7 +66,7 @@ export class TaskController {
    * **before** the `file` part. The file is stored as the task's original.
    */
   @Post('import')
-  @RequirePermission(...READ_PERMISSIONS)
+  @RequirePermission(...TASK_READ_PERMISSIONS)
   async createImport(@Param('spaceId') spaceId: string, @Req() request: FastifyRequest, @CurrentUser() user: UserRow) {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
@@ -106,7 +88,7 @@ export class TaskController {
   /** Logs cascade; the task's files go too. */
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission(...READ_PERMISSIONS)
+  @RequirePermission(...TASK_READ_PERMISSIONS)
   remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow): Promise<void> {
     return this.tasks.remove(spaceId, id, user);
   }

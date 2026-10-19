@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { contentLinkSnapshots, contentSnapshots, schemas } from '../src/infra/database/schema.js';
 import { ContentService } from '../src/modules/contents/services/content.service.js';
 import { SchemaService } from '../src/modules/schemas/services/schema.service.js';
-import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
 import { seedContent, seedSpace, TOKEN_DRAFT, TOKEN_PUBLIC, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { C, contentName, S1 } from './ids.js';
@@ -125,22 +125,22 @@ describe('content snapshots', () => {
     it('changing the default locale drops every draft and keeps the published snapshots', async () => {
       await cvOf(draftUrl(C.home));
       const published = await snapshots('published');
-      await t.app.get(SpaceService).setDefaultLocale(S1, 'de');
+      await t.app.get(SpaceLocaleService).setDefault(S1, 'de');
       expect(await snapshots('draft')).toEqual([]);
       expect(await snapshots('published')).toEqual(published);
-      await t.app.get(SpaceService).setDefaultLocale(S1, 'en');
+      await t.app.get(SpaceLocaleService).setDefault(S1, 'en');
     });
 
     it('removing a locale drops its snapshots, draft and published', async () => {
       await cvOf(draftUrl(C.home, 'de'));
-      await t.app.get(SpaceService).removeLocale(S1, 'de');
+      await t.app.get(SpaceLocaleService).remove(S1, 'de');
       const rows = [...(await snapshots('draft')), ...(await snapshots('published'))];
       expect(rows.filter(it => it.locale === 'de')).toEqual([]);
       expect(rows.some(it => it.locale === 'en')).toBe(true);
     });
 
     it('an added locale stores nothing: published requests get the default locale', async () => {
-      await t.app.get(SpaceService).addLocale(S1, 'de');
+      await t.app.get(SpaceLocaleService).create(S1, 'de');
       expect((await snapshots('published')).filter(it => it.locale === 'de')).toEqual([]);
       expect(await follow(documentUrl(C.home, '&locale=de'))).toMatchObject({ locale: 'en', data: { title: 'Home' } });
     });

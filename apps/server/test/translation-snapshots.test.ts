@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { translations, translationSnapshots } from '../src/infra/database/schema.js';
-import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
 import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
 import { TranslationService } from '../src/modules/translations/services/translation.service.js';
 import { seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
@@ -97,7 +97,7 @@ describe('translation snapshots', () => {
   it('rebuilds the draft when a locale is added, and serves the published default locale until the next publish', async () => {
     const draft = await cvOf(draftUrl('fr'));
     const publishedEn = await cvOf(publishedUrl('en'));
-    await t.app.get(SpaceService).addLocale(S1, 'fr');
+    await t.app.get(SpaceLocaleService).create(S1, 'fr');
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await snapshots('draft')).map(it => it.locale).sort()).toEqual(['de', 'en', 'fr']);
     expect(await follow(draftUrl('fr'))).toEqual({ farewell: 'Bye', greeting: 'Hello', 'new.key': 'New (draft only)' });
@@ -106,16 +106,16 @@ describe('translation snapshots', () => {
 
   it('rebuilds the draft when the default locale changes', async () => {
     const draft = await cvOf(draftUrl('fr'));
-    await t.app.get(SpaceService).setDefaultLocale(S1, 'de');
+    await t.app.get(SpaceLocaleService).setDefault(S1, 'de');
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await follow(draftUrl('fr'))).greeting).toBe('Servus');
-    await t.app.get(SpaceService).setDefaultLocale(S1, 'en');
+    await t.app.get(SpaceLocaleService).setDefault(S1, 'en');
   });
 
   it('drops both snapshots of a removed locale', async () => {
     await t.app.get(TranslationService).publish(S1);
     await cvOf(draftUrl('fr'));
-    await t.app.get(SpaceService).removeLocale(S1, 'fr');
+    await t.app.get(SpaceLocaleService).remove(S1, 'fr');
     expect((await snapshots('published')).map(it => it.locale).sort()).toEqual(['de', 'en']);
     expect((await snapshots('draft')).map(it => it.locale)).not.toContain('fr');
   });

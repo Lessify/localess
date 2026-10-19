@@ -1,16 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, lt } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
-import { spaces, webhookLogs, webhooks } from '../../../infra/database/schema.js';
+import { spaces, webhooks } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 
 export type WebhookEntity = typeof webhooks.$inferSelect;
-export type WebhookLogEntity = typeof webhookLogs.$inferSelect;
 export type WebhookValues = Pick<WebhookEntity, 'name' | 'url' | 'events'> & Partial<Pick<WebhookEntity, 'headers' | 'secret' | 'enabled'>>;
 
-/** A space's webhooks and their delivery logs. Every change publishes a `webhooks` event. */
+/** A space's webhooks (their delivery logs: `WebhookLogRepository`). Every change publishes a `webhooks` event. */
 @Injectable()
 export class WebhookRepository {
   constructor(
@@ -25,21 +24,6 @@ export class WebhookRepository {
   async findById(spaceId: string, id: string): Promise<WebhookEntity | undefined> {
     const [row] = await this.db.select().from(webhooks).where(this.byId(spaceId, id));
     return row;
-  }
-
-  /** Newest first, at most `limit`. */
-  findLogs(webhookId: string, limit: number): Promise<WebhookLogEntity[]> {
-    return this.db
-      .select()
-      .from(webhookLogs)
-      .where(eq(webhookLogs.webhookId, webhookId))
-      .orderBy(desc(webhookLogs.createdAt), desc(webhookLogs.id))
-      .limit(limit);
-  }
-
-  /** Deletes the delivery logs written before `before`, of every webhook. */
-  async deleteLogsBefore(before: Date): Promise<void> {
-    await this.db.delete(webhookLogs).where(lt(webhookLogs.createdAt, before));
   }
 
   /** Enabled. `undefined` when there is no space `spaceId`. */

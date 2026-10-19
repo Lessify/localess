@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 import { UserPermission, type WebHookCreate, type WebHookUpdate } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { type WebHookEnabled, zWebHookCreate, zWebHookEnabled, zWebHookUpdate } from '../models/webhook.models.js';
 import { WebhookService } from '../services/webhook.service.js';
 
-/** Webhook configuration and delivery logs. */
+/** Webhook configuration (the delivery logs: `WebhookLogController`). */
 @Controller('api/app/spaces/:spaceId/webhooks')
 @RequirePermission(UserPermission.SPACE_MANAGEMENT)
 export class WebhookController {
@@ -19,11 +19,6 @@ export class WebhookController {
   @Get(':id')
   findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.webhooks.findOne(spaceId, id);
-  }
-
-  @Get(':id/logs')
-  findLogs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Query('limit') limit?: string) {
-    return this.webhooks.findLogs(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
   }
 
   @Post()

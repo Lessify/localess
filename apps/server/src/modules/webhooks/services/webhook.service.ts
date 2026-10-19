@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { WebHookEvent } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
-import { toWebhook, toWebhookLog } from '../../../shared/transformers/webhook.transformer.js';
+import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
 import { type WebhookEntity, WebhookRepository } from '../repositories/webhook.repository.js';
 
@@ -18,7 +18,7 @@ function found(entity: WebhookEntity | undefined) {
   return toWebhook(entity);
 }
 
-/** Webhook configuration and delivery logs (was `spaces/{s}/webhooks`); delivery is `WebhookDispatcher` (shared). */
+/** Webhook configuration (was `spaces/{s}/webhooks`; the delivery logs: `WebhookLogService`); delivery is `WebhookDispatcher` (shared). */
 @Injectable()
 export class WebhookService {
   constructor(
@@ -42,12 +42,6 @@ export class WebhookService {
 
   async findOne(spaceId: string, id: string) {
     return found(await this.webhooks.findById(spaceId, id));
-  }
-
-  /** Newest first: 100 unless another `limit` (1–1000) is asked for. */
-  async findLogs(spaceId: string, id: string, limit = 100) {
-    await this.findOne(spaceId, id);
-    return (await this.webhooks.findLogs(id, limit)).map(toWebhookLog);
   }
 
   async create(spaceId: string, input: WebhookInput) {
