@@ -7,13 +7,21 @@
 <div class="mx-auto px-2">
   <ll-filter-toolbar class="my-3" [filters]="filters" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table
+      ll-table
+      [dataSource]="dataSource"
+      llTableSort
+      llTableSortActive="createdAt"
+      llTableSortDirection="desc"
+      llTableSortStart="desc"
+      [llTableSortDisableClear]="true"
+      (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="id" llColumnDefClass="hidden @5xl/table:table-cell">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="id">ID</th>
+        <th llHeaderCell *llHeaderCellDef>ID</th>
         <td llCell *llCellDef="let element">{{ element.id }}</td>
       </ng-container>
       <ng-container llColumnDef="kind">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="kind">Kind</th>
+        <th llHeaderCell *llHeaderCellDef>Kind</th>
         <td llCell *llCellDef="let element">
           @switch (element.kind) {
             @case ('ASSET_EXPORT') {
@@ -47,7 +55,7 @@
         </td>
       </ng-container>
       <ng-container llColumnDef="status">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="status">Status</th>
+        <th llHeaderCell *llHeaderCellDef>Status</th>
         <td llCell *llCellDef="let element">
           @switch (element.status) {
             @case ('INITIATED') {
@@ -152,5 +160,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

@@ -23,6 +23,12 @@ describe('PagedList', () => {
     expect(query(list)).toBe('page=0&size=25&search=ali');
   });
 
+  it('repeats a filter with several values, and leaves out an empty list', () => {
+    const list = new PagedList(25);
+    list.setFilters({ status: ['ERROR', 'FINISHED'], kind: [] });
+    expect(query(list)).toBe('page=0&size=25&status=ERROR&status=FINISHED');
+  });
+
   it('goes back to the first page when the sort or a filter changes', () => {
     const list = new PagedList(25);
     list.page.set(3);

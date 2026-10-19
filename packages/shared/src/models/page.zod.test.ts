@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { zPageable } from './page.zod.js';
+import { zMultiValue, zPageable } from './page.zod.js';
 
 describe('zPageable', () => {
   const schema = zPageable(['email', 'name'], 'email');
@@ -32,5 +32,24 @@ describe('zPageable', () => {
       direction: 'asc',
       search: 'ali',
     });
+  });
+
+  it('takes the endpoint’s default direction', () => {
+    const newestFirst = zPageable(['createdAt'], 'createdAt', 'desc');
+    expect(newestFirst.parse({})).toMatchObject({ sort: 'createdAt', direction: 'desc' });
+    expect(newestFirst.parse({ direction: 'asc' })).toMatchObject({ direction: 'asc' });
+  });
+});
+
+describe('zMultiValue', () => {
+  const schema = zMultiValue(['FAILED', 'FINISHED', 'INITIATED']);
+
+  it('reads one value (a string) or a repeated parameter (an array) as an array', () => {
+    expect(schema.parse('FAILED')).toEqual(['FAILED']);
+    expect(schema.parse(['FAILED', 'FINISHED'])).toEqual(['FAILED', 'FINISHED']);
+  });
+
+  it('refuses an unknown value, alone or among others', () => {
+    for (const value of ['DONE', ['FAILED', 'DONE'], [], '']) expect(schema.safeParse(value).success, JSON.stringify(value)).toBe(false);
   });
 });

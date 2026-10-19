@@ -1,16 +1,22 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, lt, sql } from 'drizzle-orm';
+import type { Pageable, TaskKind, TaskStatus } from '@localess/shared';
+import { and, asc, count, desc, eq, ilike, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { taskLogs, tasks } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventsService } from '../../../infra/events/events.service.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
+import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 
 export type TaskEntity = typeof tasks.$inferSelect;
 export type TaskLogEntity = typeof taskLogs.$inferSelect;
 export type NewTask = Omit<typeof tasks.$inferInsert, 'spaceId' | 'status'>;
+
+/** The field the Tasks page may sort by: newest first by default. */
+export const TASK_SORT_FIELDS = ['createdAt'] as const;
+export type TaskQuery = Pageable<(typeof TASK_SORT_FIELDS)[number]> & { search?: string; kind?: TaskKind[]; status?: TaskStatus[] };
 
 /**
  * The `tasks` rows (the queue) and their `task_logs`. Every write publishes its `tasks` / `task_logs` change event in
@@ -23,8 +29,26 @@ export class TasksRepository {
     private readonly events: EventsService,
   ) {}
 
-  findAll(spaceId: string): Promise<TaskEntity[]> {
-    return this.db.select().from(tasks).where(eq(tasks.spaceId, spaceId)).orderBy(desc(tasks.createdAt));
+  /** One page of the space's tasks by creation time (then the id, so ties page stably), and how many match. */
+  async findPage(spaceId: string, query: TaskQuery): Promise<{ rows: TaskEntity[]; total: number }> {
+    const conditions: SQL[] = [eq(tasks.spaceId, spaceId)];
+    if (query.search) {
+      const pattern = containsPattern(query.search);
+      conditions.push(or(ilike(sql`${tasks.id}::text`, pattern), ilike(sql`${tasks.file}->>'name'`, pattern), ilike(tasks.message, pattern)) as SQL);
+    }
+    if (query.kind) conditions.push(inArray(tasks.kind, query.kind));
+    if (query.status) conditions.push(inArray(tasks.status, query.status));
+    const where = and(...conditions);
+    const order = query.direction === 'desc' ? desc : asc;
+    const rows = await this.db
+      .select()
+      .from(tasks)
+      .where(where)
+      .orderBy(order(tasks.createdAt), order(tasks.id))
+      .limit(query.size)
+      .offset(offsetOf(query));
+    const [{ total }] = await this.db.select({ total: count() }).from(tasks).where(where);
+    return { rows, total };
   }
 
   async findById(spaceId: string, id: string): Promise<TaskEntity | undefined> {

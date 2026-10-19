@@ -75,7 +75,9 @@ Every paginated endpoint takes, in its query string:
 - Every sort ends with `id` as a tie-breaker, so pages are stable.
 - A page past the end answers `items: []` with the real `total`; the screen then moves to its last page.
 - One zod schema for the four parameters in `@localess/shared/zod`, extended per endpoint with its filters and its
-  allowed sort fields (an enum).
+  allowed sort fields (an enum): `zPageable(fields, defaultSort, defaultDirection = 'asc')`. Round 2 added the default
+  direction per endpoint (Tasks: newest first) and `zMultiValue(values)` for a filter with several values, sent as
+  the parameter repeated (`status=ERROR&status=FINISHED`).
 
 ### Admin → Users: `GET /api/app/users`
 
@@ -104,6 +106,10 @@ Every paginated endpoint takes, in its query string:
   opens any space, as today. The user's decision ("load 100, if there are more items, then load next page"). A live
   update loads them again the same way. Showing fewer in the switcher, or loading the current space on its own, is the
   later improvement.
+- **What paging Spaces buys** (recorded 2026-10-19, with [round 2](2026-10-19-pagination-round-2-design.md)): the admin
+  table is paged, but `SpaceStore` (the switcher, the current space, the space guard) still loads every space, 100 at a
+  time. So paging Spaces buys consistency (one list contract) and a faster admin table, not scalability, until the
+  switcher searches the server and the current space is loaded on its own.
 - **A search box in the space switcher** (the sidebar dropdown, `features.component.html`), shown only when there are
   more than 20 spaces: it filters the spaces the store already holds, in the browser (no request), by name,
   case-insensitive, as you type; "No spaces found" when nothing matches; cleared when the dropdown closes. The user's

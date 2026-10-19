@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
@@ -28,11 +28,13 @@ describe('TaskService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the space tasks', async () => {
+  it('findPage() reads one page of the space tasks with the query given', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(BASE).flush([{ id: 't1' }]);
-    expect(await result).toEqual([{ id: 't1' }]);
+    const params = new HttpParams().set('page', 1).set('size', 20).append('status', 'ERROR').append('status', 'FINISHED');
+    const result = firstValueFrom(service.findPage('space-1', params));
+    const page = { items: [{ id: 't1' }], page: 1, size: 20, total: 21 };
+    http.expectOne(`${BASE}?page=1&size=20&status=ERROR&status=FINISHED`).flush(page);
+    expect(await result).toEqual(page);
   });
 
   it('findById() reads one task', async () => {

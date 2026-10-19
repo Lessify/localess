@@ -1,8 +1,8 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Task, TaskKind, TaskLog } from '@localess/shared';
+import { Page, Task, TaskKind, TaskLog } from '@localess/shared';
 import { Observable, of } from 'rxjs';
 
 /** Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`); reads are live. */
@@ -15,8 +15,9 @@ export class TaskService {
     return `/api/app/spaces/${spaceId}/tasks`;
   }
 
-  findAll(spaceId: string): Observable<Task[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['tasks'] }, () => this.http.get<Task[]>(this.base(spaceId)));
+  /** One page of the space's tasks (`PagedList.params()`: page, size, direction, search, kind, status). */
+  findPage(spaceId: string, params: HttpParams): Observable<Page<Task>> {
+    return liveQueryWith(this.events, { spaceId, entities: ['tasks'] }, () => this.http.get<Page<Task>>(this.base(spaceId), { params }));
   }
 
   findById(spaceId: string, id: string): Observable<Task> {

@@ -301,7 +301,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('lists newest first, with logs in order', async () => {
-      const list = (await exporter.get(base)).json();
+      const list = (await exporter.get(base)).json().items;
       expect(list.map((it: { kind: string }) => it.kind)).toEqual(['CONTENT_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT']);
       await t.db.insert(taskLogs).values([
         { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'first' },
@@ -318,7 +318,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('deletes with the kind permission, removing logs and files', async () => {
-      const list = (await exporter.get(base)).json();
+      const list = (await exporter.get(base)).json().items;
       const imported = list.find((it: { kind: string }) => it.kind === 'CONTENT_IMPORT');
       const regen = list.find((it: { kind: string }) => it.kind === 'ASSET_REGEN_METADATA');
       expect((await exporter.delete(`${base}/${regen.id}`)).statusCode).toBe(403);

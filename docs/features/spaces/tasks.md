@@ -30,9 +30,9 @@ A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks
 **Injected services:** `TaskService`, `HlmDialogService`, `NotificationService`, `Router`
 
 **Key behaviour:**
-- `loadData()` — fetches all tasks for the space (`TaskService.findAll()`, a live query), sorted client-side via `TableDataSource`/`TableSort` (newest first by default)
-- `dataSource` (`TableDataSource<Task>`) is wired to the `TableSort` and `Paginator` view children in `ngAfterViewInit()`
-- `<ll-filter-toolbar>` with multi-select **Kind** and **Status** filters, wired via `onFilterChange()`; `dataSource.filterPredicate` is set once in the constructor via `FilterPredicateUtils.create()` (search across id/file name/message)
+- `loadData()` — one page of the space's tasks at a time (`TaskService.findPage()`, a live query on `GET …/tasks`, which answers `Page<Task>`); `list` (`PagedList`, 20 per page) holds the query, and the paginator, the sort header and the filters change it. A failed load is told ("Tasks can not be loaded.") and ends only that request
+- Sorting: only **Created At**, newest first by default (`sort=createdAt`, `direction` `desc` on the server); the header switches between newest and oldest first, never off. ID, Kind and Status have no sort header
+- `<ll-filter-toolbar>`: the search box (id, file name or message, case-insensitive, anywhere in them) and the multi-select **Kind** and **Status** filters go to the server (`search`, `kind`, `status`; several values repeat the parameter: `kind=ASSET_EXPORT&kind=CONTENT_EXPORT`) and start again from the first page
 - `navigateToDetail(task)` — navigates to `TaskDetailComponent` for the row
 - `onDownload(task)` — downloads the output file of a completed export task from `GET /api/app/spaces/:spaceId/tasks/:id/download` (same-origin and cookie-authenticated, so the URL is handed straight to `saveAs`)
 - `openDeleteDialog(task)` — confirms then deletes the task record

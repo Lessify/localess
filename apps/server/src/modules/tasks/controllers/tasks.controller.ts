@@ -1,14 +1,16 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Req, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import { UserPermission } from '@localess/shared';
+import { TaskKind, TaskStatus, UserPermission } from '@localess/shared';
+import { zMultiValue, zPageable } from '@localess/shared/zod';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
+import { TASK_SORT_FIELDS } from '../repositories/tasks.repository.js';
 import { TasksService } from '../services/tasks.service.js';
 import { assertCanManage } from '../utils/task-permissions.js';
 
@@ -22,6 +24,13 @@ const READ_PERMISSIONS = [
   UserPermission.TRANSLATION_EXPORT,
   UserPermission.TRANSLATION_IMPORT,
 ];
+
+/** Newest first unless asked otherwise; `kind` and `status` repeat for several values. */
+const listSchema = zPageable(TASK_SORT_FIELDS, 'createdAt', 'desc').extend({
+  search: z.string().trim().max(200).optional(),
+  kind: zMultiValue(Object.values(TaskKind) as [TaskKind, ...TaskKind[]]).optional(),
+  status: zMultiValue(Object.values(TaskStatus) as [TaskStatus, ...TaskStatus[]]).optional(),
+});
 
 const exportSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('ASSET_EXPORT'), path: z.string().max(4000).optional() }),
@@ -53,8 +62,8 @@ export class TasksController {
 
   @Get()
   @RequirePermission(...READ_PERMISSIONS)
-  list(@Param('spaceId') spaceId: string) {
-    return this.tasks.list(spaceId);
+  list(@Param('spaceId') spaceId: string, @Query(new ZodValidationPipe(listSchema)) query: z.infer<typeof listSchema>) {
+    return this.tasks.page(spaceId, query);
   }
 
   @Get(':id')

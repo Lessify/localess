@@ -32,7 +32,7 @@ describe('TasksComponent', () => {
   });
 
   function setup(tasks: Task[] = []) {
-    const findAll = vi.fn().mockReturnValue(of(tasks));
+    const findPage = vi.fn().mockReturnValue(of({ items: tasks, page: 0, size: 20, total: tasks.length }));
     const downloadUrl = vi.fn().mockReturnValue(of('https://download-url'));
     const deleteTask = vi.fn().mockReturnValue(of(undefined));
     const navigate = vi.fn();
@@ -45,7 +45,7 @@ describe('TasksComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TaskService, useValue: { findAll, downloadUrl, delete: deleteTask } },
+        { provide: TaskService, useValue: { findPage, downloadUrl, delete: deleteTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },
@@ -54,24 +54,51 @@ describe('TasksComponent', () => {
     const fixture = TestBed.createComponent(TasksComponent);
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findAll, downloadUrl, deleteTask, navigate, success, error, open };
+    return { fixture, component: fixture.componentInstance, findPage, downloadUrl, deleteTask, navigate, success, error, open };
   }
 
-  it('loads tasks for the space on init', () => {
+  it('loads the first page of the space tasks on init, newest first (the server default)', () => {
     const tasks = [task({ id: 't1' }), task({ id: 't2' })];
-    const { component, findAll } = setup(tasks);
+    const { component, findPage } = setup(tasks);
 
-    expect(findAll).toHaveBeenCalledWith('space-1');
+    expect(findPage).toHaveBeenCalledTimes(1);
+    expect(findPage.mock.calls[0][0]).toBe('space-1');
+    expect(findPage.mock.calls[0][1].toString()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(tasks);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
-    const { component } = setup();
+  it('onFilterChange() asks the server for the search, kinds and statuses, from the first page', () => {
+    const { fixture, component, findPage } = setup();
+    component.list.page.set(2);
 
-    component.onFilterChange({ search: '', kind: ['ASSET_EXPORT'] });
+    component.onFilterChange({ search: ' backup ', kind: ['ASSET_EXPORT', 'CONTENT_EXPORT'], status: [] });
+    fixture.detectChanges();
 
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: '', kind: ['ASSET_EXPORT'] }));
+    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20&search=backup&kind=ASSET_EXPORT&kind=CONTENT_EXPORT');
+  });
+
+  it('onSortChange() asks for the creation time in the direction chosen', () => {
+    const { fixture, component, findPage } = setup();
+
+    component.onSortChange({ active: 'createdAt', direction: 'asc' });
+    fixture.detectChanges();
+
+    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=createdAt&direction=asc');
+  });
+
+  it('tells a failed load, and loads again on the next query change', () => {
+    const { fixture, component, findPage, error } = setup();
+    findPage.mockReturnValueOnce(throwError(() => new Error('boom')));
+
+    component.list.page.set(1);
+    fixture.detectChanges();
+    expect(error).toHaveBeenCalledWith('Tasks can not be loaded.');
+
+    component.list.page.set(0);
+    fixture.detectChanges();
+    expect(findPage).toHaveBeenCalledTimes(3);
   });
 
   it('navigateToDetail() navigates to the task detail route', () => {

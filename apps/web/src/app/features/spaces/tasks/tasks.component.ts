@@ -1,21 +1,10 @@
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  Injector,
-  input,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -33,8 +22,8 @@ import {
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeBetweenPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -45,7 +34,8 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { saveAs } from 'file-saver-es';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 const TASK_KIND_LABELS: Record<TaskKind, string> = {
   [TaskKind.ASSET_EXPORT]: 'Asset Export',
@@ -96,7 +86,7 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
     }),
   ],
 })
-export class TasksComponent implements OnInit, AfterViewInit {
+export class TasksComponent implements OnInit {
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
@@ -104,15 +94,15 @@ export class TasksComponent implements OnInit, AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
 
-  readonly sort = viewChild.required(TableSort);
-  readonly paginator = viewChild.required(Paginator);
-
   // Input
   spaceId = input.required<string>();
 
   isLoading = signal(true);
   displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'actions'];
 
+  /** The page shown: paged and filtered on the server, newest first unless sorted otherwise. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly tasks = signal<Task[]>([]);
   readonly dataSource = new TableDataSource<Task>(this.tasks, this.injector);
 
@@ -131,42 +121,46 @@ export class TasksComponent implements OnInit, AfterViewInit {
     },
   ];
 
-  constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<Task>({
-      searchFields: task => [task.id, 'file' in task ? task.file?.name : undefined, task.message],
-      filterFields: [
-        { key: 'kind', accessor: task => task.kind },
-        { key: 'status', accessor: task => task.status },
-      ],
-    });
-  }
-
   ngOnInit(): void {
     this.loadData(this.spaceId());
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
+  /** The search box (id, file name, message) and the Kind and Status filters, on the server; from the first page. */
+  onFilterChange(value: FilterToolbarValue): void {
+    this.list.setFilters({ search: value.search?.trim() || undefined, kind: value['kind'], status: value['status'] });
   }
 
-  onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
   }
 
   navigateToDetail(task: Task): void {
     this.router.navigate(['features', 'spaces', this.spaceId(), 'tasks', task.id]);
   }
 
+  /**
+   * The current query's page, again whenever the query changes or a task does (live). A failed load is told and ends
+   * only that request: the next query change (page, sort, filters) fetches again.
+   */
   loadData(spaceId: string): void {
-    this.taskService
-      .findAll(spaceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: tasks => {
-          this.tasks.set(tasks);
-          this.isLoading.set(false);
-        },
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params =>
+          this.taskService.findPage(spaceId, params).pipe(
+            catchError(() => {
+              this.notificationService.error('Tasks can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        this.tasks.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
       });
   }
 
