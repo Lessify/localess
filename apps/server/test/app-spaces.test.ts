@@ -224,6 +224,21 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await manager.patch(`/api/app/spaces/${spaceId}`, { environments: [] })).statusCode).toBe(400);
     });
 
+    it('refuses an unknown field in a body, naming it; a query may carry parameters of its own', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      const typo = await manager.post('/api/app/spaces', { name: 'Typo', tempalte: 'blog' });
+      expect(typo.statusCode).toBe(400);
+      expect(typo.json().message[0]).toContain('tempalte');
+      // An old client's field next to the new one.
+      expect((await manager.post(`${base}/locales`, { localeId: 'de', id: 'de' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/default-locale`, { defaultLocaleId: 'en', id: 'en' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/locales/order`, { ids: ['en'], extra: true })).statusCode).toBe(400);
+      expect((await manager.post(`${base}/environments`, { name: 'A', url: 'https://a.example.com', position: 0 })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/environments/order`, { ids: [newUuid()], extra: true })).statusCode).toBe(400);
+      expect((await reader.get(`${base}/locales?_=1`)).statusCode).toBe(200);
+      expect((await admin.get('/api/app/spaces?utm_source=x')).statusCode).toBe(200);
+    });
+
     it('accepts only absolute http(s) environment URLs, placeholders allowed anywhere', async () => {
       const base = `/api/app/spaces/${spaceId}/environments`;
       // Loaded into a trusted preview iframe.

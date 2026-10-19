@@ -115,6 +115,11 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   so it never loads zod). The constants both sides need (`SPACE_SORT_FIELDS`, `PASSWORD_MIN_LENGTH`) live in the
   entity's `.model.ts`, and a name that is already a domain model is never reused (`TaskImport` is the import task,
   so its request is `TaskImportCreate`).
+- **Rule, unknown fields:** a body schema is `z.strictObject` (an unknown field is a 400 that names it, not a field
+  dropped in silence); a query schema is `z.object` (a link may carry parameters of its own: a cache-buster, a
+  tracking tag). A field kept for clients of an older build is listed in the schema, as `content.zod.ts` does with
+  `assets` / `links` / `references`, never let through by loose parsing. Done in `space.zod.ts`; the other modules
+  follow when reworked.
 - **Rule, by what the route does** (the entity is the controller's, a sub-entity included):
 
   | Route | Model | Example |
