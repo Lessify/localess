@@ -3,7 +3,6 @@ import { TaskLogController } from './controllers/task-log.controller.js';
 import { TaskController } from './controllers/task.controller.js';
 import { AssetTransferRepository } from './repositories/asset-transfer.repository.js';
 import { SchemaTransferRepository } from './repositories/schema-transfer.repository.js';
-import { SpaceRepository } from './repositories/space.repository.js';
 import { TaskLogRepository } from './repositories/task-log.repository.js';
 import { TaskRepository } from './repositories/task.repository.js';
 import { TranslationTransferRepository } from './repositories/translation-transfer.repository.js';
@@ -34,7 +33,6 @@ import { TaskWorker } from './workers/task-worker.service.js';
     TaskWorker,
     TaskRepository,
     TaskLogRepository,
-    SpaceRepository,
     AssetTransferRepository,
     SchemaTransferRepository,
     TranslationTransferRepository,

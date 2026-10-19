@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { type SnapshotVersion, translations, translationSnapshots } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { requireSpace } from '../../../shared/queries/space.query.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { lockTranslations } from '../../../shared/data-rules/translation-drafts.js';
 import { buildTranslationMap } from '../utils/translation.utils.js';
 import type { TranslationSnapshotEntity } from '../../../shared/entities/translation-snapshot.entity.js';
@@ -15,7 +15,10 @@ import type { TranslationSnapshotEntity } from '../../../shared/entities/transla
  */
 @Injectable()
 export class TranslationSnapshotRepository {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
+  ) {}
 
   async find(spaceId: string, version: SnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
     const [row] = await this.db
@@ -49,14 +52,15 @@ export class TranslationSnapshotRepository {
    */
   private async store(tx: Transaction, spaceId: string, version: SnapshotVersion): Promise<TranslationSnapshotEntity[]> {
     await lockTranslations(tx, spaceId);
-    const space = await requireSpace(tx, spaceId);
+    const space = await this.spaceLookupRepository.findOne(spaceId, tx);
+    if (!space) throw new NotFoundException('Space not found');
     const rows = await tx
       .select({ key: translations.key, locales: translations.locales })
       .from(translations)
       .where(eq(translations.spaceId, spaceId))
       .orderBy(sql`${translations.key} collate "C"`);
     const builtAt = new Date();
-    const snapshots = space.locales.map(locale => ({
+    const snapshots = space.spaceLocales.map(({ locale }) => ({
       spaceId,
       version,
       locale: locale.id,

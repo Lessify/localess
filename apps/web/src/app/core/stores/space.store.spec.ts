@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { Space, SpaceEnvironment } from '@localess/shared';
+import { IdName, Space, SpaceEnvironment } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
@@ -18,19 +18,38 @@ describe('SpaceStore', () => {
     localStorage.clear();
   });
 
-  function space(id: string, environments: SpaceEnvironment[] = []): Space {
+  /** A space of the sidebar list. */
+  function space(id: string): IdName {
+    return { id, name: `Space ${id}` };
+  }
+
+  /** The selected space as `GET /spaces/:id` answers it: with its default locale and its locales. */
+  function detail(id: string, localeIds: string[] = ['en']): Space {
     return {
       id,
       name: `Space ${id}`,
-      locales: [],
-      defaultLocale: { id: 'en', name: 'English' } as Space['defaultLocale'],
-      environments,
-      createdAt: 0 as unknown as Space['createdAt'],
-      updatedAt: 0 as unknown as Space['updatedAt'],
+      defaultLocaleId: localeIds[0],
+      defaultLocale: { id: localeIds[0], name: localeIds[0].toUpperCase() },
+      spaceLocales: localeIds.map((localeId, position) => ({
+        spaceId: id,
+        localeId,
+        position,
+        createdAt: '',
+        locale: { id: localeId, name: localeId.toUpperCase() },
+      })),
+      createdAt: '',
+      updatedAt: '',
     };
   }
 
+  function env(id: string, name: string, url: string): SpaceEnvironment {
+    return { id, spaceId: 'a', name, url, position: 0, createdAt: '', updatedAt: '' };
+  }
+
   type Listeners = {
+    /** The selected space's environments, by space id. */
+    environments?: Record<string, SpaceEnvironment[]>;
+    findById?: (spaceId: string) => Observable<Space>;
     findAllDocuments?: (spaceId: string) => Observable<unknown>;
     findAllSchemas?: (spaceId: string) => Observable<unknown>;
     notifyError?: ReturnType<typeof vi.fn>;
@@ -42,10 +61,17 @@ describe('SpaceStore', () => {
   };
 
   /** The space data listeners stay silent unless a test hands them something to emit. */
-  function configure(findAll: () => Observable<Space[]>, listeners: Listeners = {}) {
+  function configure(findAll: () => Observable<IdName[]>, listeners: Listeners = {}) {
     TestBed.configureTestingModule({
       providers: [
-        { provide: SpaceService, useValue: { findAllPages: findAll } },
+        {
+          provide: SpaceService,
+          useValue: {
+            findAllNames: findAll,
+            findById: listeners.findById ?? ((id: string) => of(detail(id))),
+            findEnvironments: (id: string) => of(listeners.environments?.[id] ?? []),
+          },
+        },
         { provide: ContentService, useValue: { findAllDocuments: listeners.findAllDocuments ?? (() => NEVER) } },
         { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
         { provide: NotificationService, useValue: { error: listeners.notifyError ?? vi.fn() } },
@@ -63,7 +89,7 @@ describe('SpaceStore', () => {
     return TestBed.inject(SpaceStore);
   }
 
-  function createStore(spaces: Space[], listeners?: Listeners) {
+  function createStore(spaces: IdName[], listeners?: Listeners) {
     return configure(() => of(spaces), listeners);
   }
 
@@ -72,6 +98,7 @@ describe('SpaceStore', () => {
     const store = createStore(spaces);
     expect(store.spaces()).toHaveLength(250);
     store.changeSpace(spaces[249]);
+    TestBed.tick();
     expect(store.selectedSpace()?.id).toBe('s249');
   });
 
@@ -111,48 +138,45 @@ describe('SpaceStore', () => {
     const spaceA = space('a');
     const spaceB = space('b');
     const store = createStore([spaceA, spaceB]);
+    TestBed.tick();
     expect(store.selectedSpace()?.id).toBe('a');
   });
 
   it('resolves the first environment by default when a space has environments', () => {
-    const spaceA = space('a', [
-      { id: 'e1', name: 'prod', url: 'https://prod' },
-      { id: 'e2', name: 'staging', url: 'https://staging' },
-    ]);
-    const store = createStore([spaceA]);
+    const store = createStore([space('a')], { environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] } });
+    TestBed.tick();
     expect(store.environment()?.name).toBe('prod');
   });
 
   it('re-selects the persisted spaceId when it still exists in the response', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'b', selectedEnvironmentBySpaceId: {} }));
     const store = createStore([space('a'), space('b')]);
+    TestBed.tick();
     expect(store.selectedSpace()?.id).toBe('b');
   });
 
   it('falls back to the first space when the persisted spaceId no longer exists', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'missing', selectedEnvironmentBySpaceId: {} }));
-    const store = createStore([space('a'), space('b')]);
+    const findById = vi.fn((id: string) => of(detail(id)));
+    const store = createStore([space('a'), space('b')], { findById });
+    TestBed.tick();
     expect(store.selectedSpace()?.id).toBe('a');
+    // The stale id is never requested.
+    expect(findById.mock.calls).toEqual([['a']]);
   });
 
   it('resolves the persisted environment by id for the selected space, even among equal names', () => {
-    const spaceA = space('a', [
-      { id: 'e1', name: 'preview', url: 'https://one' },
-      { id: 'e2', name: 'preview', url: 'https://two' },
-    ]);
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: { a: 'e2' } }));
-    const store = createStore([spaceA]);
+    const store = createStore([space('a')], { environments: { a: [env('e1', 'preview', 'https://one'), env('e2', 'preview', 'https://two')] } });
+    TestBed.tick();
     expect(store.environment()?.url).toBe('https://two');
   });
 
   // Older versions stored the name; it matches no id, so the first environment is used.
   it('falls back to the first environment for a selection stored by name', () => {
-    const spaceA = space('a', [
-      { id: 'e1', name: 'prod', url: 'https://prod' },
-      { id: 'e2', name: 'staging', url: 'https://staging' },
-    ]);
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: { a: 'staging' } }));
-    const store = createStore([spaceA]);
+    const store = createStore([space('a')], { environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] } });
+    TestBed.tick();
     expect(store.environment()?.id).toBe('e1');
   });
 
@@ -163,12 +187,11 @@ describe('SpaceStore', () => {
   });
 
   it('changeSpace updates the selected space, resets paths, and resolves its environment', () => {
-    const spaceA = space('a');
-    const spaceB = space('b', [{ id: 'e1', name: 'prod', url: 'https://prod' }]);
-    const store = createStore([spaceA, spaceB]);
+    const store = createStore([space('a'), space('b')], { environments: { b: [env('e1', 'prod', 'https://prod')] } });
     store.changeContentFolder('f1');
 
-    store.changeSpace(spaceB);
+    store.changeSpace(space('b'));
+    TestBed.tick();
 
     expect(store.selectedSpace()?.id).toBe('b');
     expect(store.environment()?.name).toBe('prod');
@@ -217,7 +240,7 @@ describe('SpaceStore', () => {
 
     it('waits for the space list before listening to the persisted space', () => {
       localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: {} }));
-      const spaces = new Subject<Space[]>();
+      const spaces = new Subject<IdName[]>();
       const findAllDocuments = vi.fn().mockReturnValue(NEVER);
       configure(() => spaces, { findAllDocuments });
       TestBed.tick();
@@ -376,7 +399,7 @@ describe('SpaceStore', () => {
   });
 
   it('keeps the open folders when the live space list reloads with the same space selected', () => {
-    const spaces = new Subject<Space[]>();
+    const spaces = new Subject<IdName[]>();
     const store = configure(() => spaces);
     spaces.next([space('a'), space('b')]);
     store.changeContentFolder('f1');
@@ -385,22 +408,61 @@ describe('SpaceStore', () => {
     // Any change to any space (a colleague adds one) re-emits the list.
     spaces.next([space('a'), space('b'), space('c')]);
 
-    expect(store.selectedSpace()?.id).toBe('a');
+    expect(store.selectedSpaceId()).toBe('a');
     expect(store.contentFolderId()).toBe('f1');
     expect(store.assetFolderId()).toBe('a1');
   });
 
   it('changeEnvironment updates the environment and persists the per-space selection', () => {
-    const spaceA = space('a', [
-      { id: 'e1', name: 'prod', url: 'https://prod' },
-      { id: 'e2', name: 'staging', url: 'https://staging' },
-    ]);
-    const store = createStore([spaceA]);
+    const store = createStore([space('a')], { environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] } });
+    TestBed.tick();
 
-    store.changeEnvironment({ id: 'e2', name: 'staging', url: 'https://staging' });
+    store.changeEnvironment(env('e2', 'staging', 'https://staging'));
 
     expect(store.environment()?.name).toBe('staging');
     const persisted = JSON.parse(localStorage.getItem(LS_KEY)!);
     expect(persisted.selectedEnvironmentBySpaceId.a).toBe('e2');
+  });
+
+  it('reads the selected space with its locales, in their order, and its default locale', () => {
+    const store = createStore([space('a')], { findById: id => of(detail(id, ['de', 'en', 'fr'])) });
+    TestBed.tick();
+    expect(store.locales().map(it => it.id)).toEqual(['de', 'en', 'fr']);
+    expect(store.defaultLocale()?.id).toBe('de');
+  });
+
+  it('drops the previous space, its locales and environments while the next one loads', () => {
+    const next = new Subject<Space>();
+    const store = createStore([space('a'), space('b')], {
+      findById: id => (id === 'b' ? next : of(detail(id))),
+      environments: { a: [env('e1', 'prod', 'https://prod')] },
+    });
+    TestBed.tick();
+    expect(store.selectedSpace()?.id).toBe('a');
+
+    store.changeSpace(space('b'));
+    TestBed.tick();
+
+    expect(store.selectedSpace()).toBeUndefined();
+    expect(store.locales()).toEqual([]);
+    expect(store.environments()).toEqual([]);
+    next.next(detail('b'));
+    expect(store.selectedSpace()?.id).toBe('b');
+  });
+
+  it('keeps the same selected space and environments when a live refetch answers what it had (no re-render)', () => {
+    const space$ = new Subject<Space>();
+    const environments: Record<string, SpaceEnvironment[]> = { a: [env('e1', 'prod', 'https://prod')] };
+    const store = createStore([space('a')], { findById: () => space$, environments });
+    TestBed.tick();
+    space$.next(detail('a'));
+    const first = store.selectedSpace();
+
+    space$.next(detail('a'));
+    expect(store.selectedSpace()).toBe(first);
+
+    space$.next(detail('a', ['en', 'de']));
+    expect(store.selectedSpace()).not.toBe(first);
+    expect(store.locales().map(it => it.id)).toEqual(['en', 'de']);
   });
 });

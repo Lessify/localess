@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import type { Locale } from '@localess/shared';
+import { toLocale } from '../../../shared/transformers/space.transformer.js';
 import { LocaleRepository } from '../repositories/locale.repository.js';
 
 /** Every locale a space can add. Read-only: the list is database data, seeded and changed by migrations. */
@@ -6,7 +8,7 @@ import { LocaleRepository } from '../repositories/locale.repository.js';
 export class LocaleService {
   constructor(private readonly localeRepository: LocaleRepository) {}
 
-  findAll() {
-    return this.localeRepository.findAll();
+  async findAll(): Promise<Locale[]> {
+    return (await this.localeRepository.findAll()).map(toLocale);
   }
 }

@@ -4,18 +4,20 @@ import { LocaleService } from '@core/services/locale.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { LocalesComponent } from './locales.component';
 
+/** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); the first the default. */
 function space(locales: Locale[]): Space {
-  return { id: 'space-1', name: 'Space 1', locales, defaultLocale: locales[0] } as Space;
+  return { id: 'space-1', name: 'Space 1', defaultLocaleId: locales[0]?.id, defaultLocale: locales[0], spaceLocales: locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale })) } as Space;
 }
 
 describe('LocalesComponent', () => {
-  function setup(selectedSpace: Space | undefined) {
+  function setup(space: Space | undefined) {
+    const selectedSpace = signal(space);
     const create = vi.fn().mockReturnValue(of(undefined));
     const deleteLocale = vi.fn().mockReturnValue(of(undefined));
     const setDefault = vi.fn().mockReturnValue(of(undefined));
@@ -39,7 +41,15 @@ describe('LocalesComponent', () => {
         },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open: openDialog } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            selectedSpace,
+            selectedSpaceId: signal('space-1'),
+            locales: computed(() => (selectedSpace()?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+            defaultLocale: computed(() => selectedSpace()?.defaultLocale),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(LocalesComponent);

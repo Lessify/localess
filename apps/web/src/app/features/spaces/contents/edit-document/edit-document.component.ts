@@ -193,10 +193,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
   // Locales
   availableLocales = computed<Locale[]>(() => {
-    const space = this.selectedSpace();
-    if (space) {
-      const { locales, defaultLocale } = space;
-      return locales.map(locale => {
+    const defaultLocale = this.spaceStore.defaultLocale();
+    if (defaultLocale) {
+      return this.spaceStore.locales().map(locale => {
         if (locale.id === defaultLocale.id) {
           return {
             id: CONTENT_DEFAULT_LOCALE.id,
@@ -335,7 +334,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
     this.contentErrors = [];
     this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), CONTENT_DEFAULT_LOCALE.id));
-    for (const locale of this.selectedSpace()?.locales || []) {
+    for (const locale of this.spaceStore.locales()) {
       this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }
 
@@ -686,7 +685,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
             return EMPTY;
           }
           const byId = new Map(fields.map(field => [field.id, field]));
-          const defaultLocaleId = this.selectedSpace()?.defaultLocale.id;
+          const defaultLocaleId = this.selectedSpace()?.defaultLocale?.id;
           return this.translateService
             .translateBatch({
               items: fields.map(({ id, content, format }) => ({ id, content, format })),

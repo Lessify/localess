@@ -8,7 +8,7 @@ import { StorageSweeperService } from '../../../shared/services/storage-sweeper.
 import { toAsset } from '../../../shared/transformers/asset.transformer.js';
 import { toDto } from '../../../shared/transformers/dto.transformer.js';
 import { type AssetQuery, AssetRepository } from '../repositories/asset.repository.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { splitFilename } from '../utils/split-filename.js';
 import { assetPrefix, originalKey } from '../utils/storage-keys.js';
 
@@ -39,7 +39,7 @@ function found<T>(result: T | undefined): T {
 export class AssetService {
   constructor(
     private readonly assetRepository: AssetRepository,
-    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly assetMetadataService: AssetMetadataService,
     private readonly storageSweeperService: StorageSweeperService,
@@ -74,7 +74,7 @@ export class AssetService {
    * trigger finish it).
    */
   async upload(spaceId: string, input: UploadInput): Promise<Asset> {
-    if (!(await this.spaceRepository.find(spaceId))) throw new NotFoundException('Space not found');
+    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
     if (!(await this.assetRepository.isFolder(spaceId, input.parentId))) throw new BadRequestException('No such folder');
     // Every file has a name, a type and an extension ('' when its name has none).
     const derived = splitFilename(input.filename);

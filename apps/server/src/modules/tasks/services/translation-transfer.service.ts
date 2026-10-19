@@ -1,11 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { isTranslationKey, TaskExportMetadata, TranslationExport, WebHookEvent } from '@localess/shared';
 import { zTranslationExportArraySchema, zTranslationFlatExportSchema } from '@localess/shared/zod';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { translationToExport } from '../../../shared/transformers/transfer.transformer.js';
 import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import {
   type TranslationImportWrite,
   type TranslationLocaleWrite,
@@ -23,7 +23,7 @@ import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 export class TranslationTransferService {
   constructor(
     private readonly translationTransferRepository: TranslationTransferRepository,
-    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly webhookDispatcher: WebhookDispatcher,
     private readonly importFileService: ImportFileService,
@@ -59,7 +59,7 @@ export class TranslationTransferService {
     const parse = zTranslationExportArraySchema.safeParse(raw);
     if (!parse.success) return this.importFileService.invalid(task, 'TRANSLATION', parse.error);
     // Values are written only for the space's locales; the others are skipped and logged.
-    const spaceLocales = new Set((await this.spaceRepository.require(spaceId)).locales.map(it => it.id));
+    const spaceLocales = new Set(await this.spaceLocaleIds(spaceId));
     const skipped = new Map<string, number>();
     const imported = (raw as TranslationExport[]).map(translation => {
       const locales: Record<string, string> = {};
@@ -111,7 +111,7 @@ export class TranslationTransferService {
     const parse = zTranslationFlatExportSchema.safeParse(raw);
     if (!parse.success) return this.importFileService.invalid(task, 'TRANSLATION', parse.error);
     const values = parse.data;
-    if (!(await this.spaceRepository.require(spaceId)).locales.some(it => it.id === locale)) {
+    if (!(await this.spaceLocaleIds(spaceId)).includes(locale)) {
       return { status: 'ERROR', message: `Locale ${locale} is not in the space locales.` };
     }
     await this.taskLogService.log(task, 'INFO', `valid=${Object.keys(values).length}`);
@@ -145,5 +145,12 @@ export class TranslationTransferService {
     await this.taskLogService.log(task, 'INFO', `total changes : ${changes}`);
     if (changes) this.webhookDispatcher.dispatch(task.spaceId, WebHookEvent.TRANSLATION_CHANGED);
     return { status: 'FINISHED' };
+  }
+
+  /** The ids of the space's locales; a 404 when the space is gone. */
+  private async spaceLocaleIds(spaceId: string): Promise<string[]> {
+    const space = await this.spaceLookupRepository.findOne(spaceId);
+    if (!space) throw new NotFoundException('Space not found');
+    return space.spaceLocales.map(it => it.localeId);
   }
 }

@@ -4,7 +4,6 @@ import { TranslateController } from './controllers/translate.controller.js';
 import { TranslationController } from './controllers/translation.controller.js';
 import { TranslationCdnController } from './controllers/translation.cdn.controller.js';
 import { TranslationManagementController } from './controllers/translation.management.controller.js';
-import { SpaceLocaleRepository } from './repositories/space-locale.repository.js';
 import { TranslationSnapshotRepository } from './repositories/translation-snapshot.repository.js';
 import { TranslationRepository } from './repositories/translation.repository.js';
 import { TranslateService } from './services/translate.service.js';
@@ -21,7 +20,6 @@ import { TranslationService } from './services/translation.service.js';
     TranslationDeliveryService,
     TranslationRepository,
     TranslationSnapshotRepository,
-    SpaceLocaleRepository,
   ],
 })
 export class TranslationModule {}

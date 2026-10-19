@@ -6,6 +6,7 @@ export * from './models/app-config.model.js';
 export * from './models/asset.model.js';
 export * from './models/content.model.js';
 export * from './models/firebase-import.model.js';
+export * from './models/id-name.model.js';
 export * from './models/locale.model.js';
 export * from './models/open-api.model.js';
 export * from './models/page.model.js';

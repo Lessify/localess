@@ -18,8 +18,11 @@ import { TranslationsComponent } from './translations.component';
 const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
-function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [en, de], defaultLocale: en, ...overrides } as Space;
+/** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); `en` the default. */
+function space(overrides: Partial<Space> & { locales?: Locale[] } = {}): Space {
+  const { locales = [en, de], ...rest } = overrides;
+  const spaceLocales = locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale }));
+  return { id: 'space-1', name: 'Space 1', defaultLocaleId: 'en', defaultLocale: en, spaceLocales, ...rest } as Space;
 }
 
 function translation(overrides: Partial<Translation> = {}): Translation {
@@ -62,7 +65,14 @@ describe('TranslationsComponent', () => {
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
         { provide: TokenService, useValue: { firstValue } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(resolvedSpace) } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            selectedSpace: signal(resolvedSpace),
+            locales: signal((resolvedSpace?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+            defaultLocale: signal(resolvedSpace?.defaultLocale),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(TranslationsComponent);

@@ -106,10 +106,9 @@ export class TranslationsComponent implements OnInit {
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
   // Locales
   availableLocales = computed(() => {
-    const space = this.selectedSpace();
-    if (space) {
-      const { locales, defaultLocale } = space;
-      return locales.map(locale => {
+    const defaultLocale = this.spaceStore.defaultLocale();
+    if (defaultLocale) {
+      return this.spaceStore.locales().map(locale => {
         if (locale.id === defaultLocale.id) {
           return {
             id: locale.id,
@@ -198,8 +197,9 @@ export class TranslationsComponent implements OnInit {
   }
 
   openAddDialog(): void {
-    const space = this.selectedSpace();
-    if (!space) return;
+    const defaultLocale = this.spaceStore.defaultLocale();
+    if (!defaultLocale) return;
+    const spaceLocales = this.spaceStore.locales();
     // A locale that could not be auto-translated is left empty; the first reason is reported once, after the save.
     let autoTranslateError: unknown;
     this.dialog
@@ -216,8 +216,8 @@ export class TranslationsComponent implements OnInit {
         // BEFORE writing anything, so `create()` performs a single request with all
         // required locale fields already populated — no follow-up per-locale saves.
         switchMap(it => {
-          const locales: Record<string, string> = { [space.defaultLocale.id]: it!.value };
-          const otherLocales = space.locales.filter(locale => locale.id !== space.defaultLocale.id);
+          const locales: Record<string, string> = { [defaultLocale.id]: it!.value };
+          const otherLocales = spaceLocales.filter(locale => locale.id !== defaultLocale.id);
           if (!it!.autoTranslate || otherLocales.length === 0) {
             return of({ it: it!, locales });
           }
@@ -226,7 +226,7 @@ export class TranslationsComponent implements OnInit {
               this.translateService
                 .translate({
                   content: it!.value,
-                  sourceLocale: space.defaultLocale.id,
+                  sourceLocale: defaultLocale.id,
                   targetLocale: locale.id,
                 })
                 .pipe(

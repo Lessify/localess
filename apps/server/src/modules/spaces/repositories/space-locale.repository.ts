@@ -6,7 +6,6 @@ import type { Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLocale } from '../../../shared/data-rules/content-snapshots.js';
 import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/data-rules/translation-drafts.js';
-import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { changeSpace } from './space-change.js';
 
 /**
@@ -21,7 +20,7 @@ export class SpaceLocaleRepository {
   ) {}
 
   /** At the end of the space's list; the translation drafts gain the locale. */
-  create(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
+  create(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       const [{ last }] = await t
         .select({ last: max(spaceLocales.position) })
@@ -33,7 +32,7 @@ export class SpaceLocaleRepository {
   }
 
   /** Its values stay; its translation maps and content snapshots go (requests for it get the default locale's). */
-  delete(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
+  delete(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       await t.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
       await dropTranslationDrafts(t, spaceId);
@@ -43,7 +42,7 @@ export class SpaceLocaleRepository {
   }
 
   /** `localeIds`: every locale of the space, in the new order. */
-  reorder(spaceId: string, localeIds: string[], tx?: Transaction): Promise<SpaceRow> {
+  reorder(spaceId: string, localeIds: string[], tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       for (const [position, localeId] of localeIds.entries()) {
         await t
@@ -58,7 +57,7 @@ export class SpaceLocaleRepository {
    * Draft translation maps fill gaps from the default locale and content drafts read it from the bare fields, so both
    * go; published ones keep what their publish built.
    */
-  setDefault(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
+  setDefault(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       await dropTranslationDrafts(t, spaceId);
       await dropContentDrafts(t, spaceId);

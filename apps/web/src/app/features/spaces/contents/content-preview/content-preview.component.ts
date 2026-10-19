@@ -91,7 +91,7 @@ export class ContentPreviewComponent {
   readonly preview = viewChild<ElementRef<HTMLIFrameElement>>('preview');
 
   readonly selectedSpace = computed(() => this.spaceStore.selectedSpace());
-  readonly availableEnvironments = computed(() => this.selectedSpace()?.environments || []);
+  readonly availableEnvironments = computed(() => this.spaceStore.environments());
   readonly selectedEnvironment = linkedSignal<SpaceEnvironment | undefined>(() => {
     const envs = this.availableEnvironments();
     if (envs.length > 0) {

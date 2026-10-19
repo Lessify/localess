@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import { zSpaceCreate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
-import { type SpaceCreate, type SpacePageable, type SpaceUpdate, UserPermission } from '@localess/shared';
+import { type IdName, type Page, type Space, type SpaceCreate, type SpaceOverview, type SpacePageable, type SpaceTemplateId, type SpaceUpdate, UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { SpaceService } from '../services/space.service.js';
 
@@ -9,35 +9,45 @@ import { SpaceService } from '../services/space.service.js';
 export class SpaceController {
   constructor(private readonly spaceService: SpaceService) {}
 
-  /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name, or the id), `?importing=false`. */
+  /**
+   * One page for Admin → Spaces: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name, or the id),
+   * `?importing=false`. SPACE_MANAGEMENT only: each item carries its Firebase import (who ran it, from where).
+   */
   @Get()
-  @RequireAnyRole()
-  findAll(@Query({ schema: zSpacePageable }) query: SpacePageable) {
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  findAll(@Query({ schema: zSpacePageable }) query: SpacePageable): Promise<Page<Space>> {
     return this.spaceService.findAll(query);
+  }
+
+  /** Every space that can be opened, as `{ id, name }`: the sidebar's list (before `:spaceId`, as `templates`). */
+  @Get('names')
+  @RequireAnyRole()
+  findAllNames(): Promise<IdName[]> {
+    return this.spaceService.findAllNames();
   }
 
   /** The templates a space may be created from (before `:spaceId`, which would take `templates` as an id). */
   @Get('templates')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  findTemplates() {
+  findTemplates(): SpaceTemplateId[] {
     return this.spaceService.findTemplates();
   }
 
   @Get(':spaceId')
   @RequireAnyRole()
-  findOne(@Param('spaceId') spaceId: string) {
+  findOne(@Param('spaceId') spaceId: string): Promise<Space> {
     return this.spaceService.findOne(spaceId);
   }
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Body({ schema: zSpaceCreate }) body: SpaceCreate) {
+  create(@Body({ schema: zSpaceCreate }) body: SpaceCreate): Promise<Space> {
     return this.spaceService.create(body.name, body.template);
   }
 
   @Patch(':spaceId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  update(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate) {
+  update(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate): Promise<Space> {
     return this.spaceService.rename(spaceId, body.name);
   }
 
@@ -51,7 +61,7 @@ export class SpaceController {
   /** Same audience as reading the space: the dashboard shows it to anyone who opens it. */
   @Get(':spaceId/overview')
   @RequireAnyRole()
-  findOverview(@Param('spaceId') spaceId: string) {
+  findOverview(@Param('spaceId') spaceId: string): Promise<SpaceOverview> {
     return this.spaceService.findOverview(spaceId);
   }
 }

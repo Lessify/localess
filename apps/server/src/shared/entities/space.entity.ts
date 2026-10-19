@@ -3,10 +3,10 @@ import type { AssetSelect } from './asset.entity.js';
 import type { ContentSelect } from './content.entity.js';
 import type { ContentLinkSnapshotSelect } from './content-link-snapshot.entity.js';
 import type { FirebaseImportSelect } from './firebase-import.entity.js';
-import type { LocaleSelect } from './locale.entity.js';
+import type { LocaleEntity, LocaleSelect } from './locale.entity.js';
 import type { SchemaSelect } from './schema.entity.js';
 import type { SpaceEnvironmentSelect } from './space-environment.entity.js';
-import type { SpaceLocaleSelect } from './space-locale.entity.js';
+import type { SpaceLocaleEntity, SpaceLocaleSelect } from './space-locale.entity.js';
 import type { TaskSelect } from './task.entity.js';
 import type { TokenSelect } from './token.entity.js';
 import type { TranslationSelect } from './translation.entity.js';
@@ -33,4 +33,13 @@ export type SpaceSelect = SpaceEntity & {
   tokens?: TokenSelect[] | null;
   webhooks?: WebhookSelect[] | null;
   firebaseImport?: FirebaseImportSelect | null;
+};
+
+/**
+ * A space with its default locale and its locales (each with its locale), in position order: what every module reads to
+ * check a locale or fall back to the default (`SpaceLookupRepository.findOne`).
+ */
+export type SpaceWithLocales = SpaceEntity & {
+  defaultLocale: LocaleEntity;
+  spaceLocales: (SpaceLocaleEntity & { locale: LocaleEntity })[];
 };

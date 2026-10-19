@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { EventController } from './http/event.controller.js';
+import { SpaceLookupRepository } from './repositories/space-lookup.repository.js';
 import { StorageDeletionRepository } from './repositories/storage-deletion.repository.js';
 import { WebhookDeliveryRepository } from './repositories/webhook-delivery.repository.js';
 import { AssetMetadataService } from './services/asset-metadata.service.js';
@@ -20,8 +21,9 @@ import { WebhookDispatcher } from './services/webhook-dispatcher.service.js';
     WebhookDeliveryRepository,
     AssetMetadataService,
     StorageDeletionRepository,
+    SpaceLookupRepository,
     StorageSweeperService,
   ],
-  exports: [MailService, WebhookDispatcher, AssetMetadataService, StorageSweeperService],
+  exports: [MailService, WebhookDispatcher, AssetMetadataService, StorageSweeperService, SpaceLookupRepository],
 })
 export class SharedModule {}

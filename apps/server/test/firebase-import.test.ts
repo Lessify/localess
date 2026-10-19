@@ -3,14 +3,13 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
-import { assets, contents, firebaseImports, schemas, spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
+import { assets, contents, firebaseImports, schemas, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { FirebaseClient } from '../src/modules/firebase-import/utils/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/workers/firebase-import.runner.js';
-import { selectSpaces } from '../src/shared/queries/space.query.js';
 import { toFirebaseImport } from '../src/shared/transformers/firebase-import.transformer.js';
 import { fakeFirebase, FakeFirebaseSpace } from './fake-firebase.js';
 import { UUID_V7 } from './ids.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { createTestApp, readSpaces, TestApp } from './test-app.js';
 
 const photo = Buffer.from('photo-bytes');
 const site: FakeFirebaseSpace = {
@@ -104,7 +103,7 @@ describe('Firebase import run', () => {
       contentMigration: ['DONE', 1],
     });
 
-    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({
       name: 'Site',
       legacyId: 'fbSpace',
@@ -180,7 +179,7 @@ describe('Firebase import run', () => {
     expect(run.status).toBe('FINISHED');
     expect(run.stages.every(it => it.status === 'DONE')).toBe(true);
     expect(run.stages.find(it => it.stage === 'contents')!.count).toBe(0);
-    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({ locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
@@ -527,7 +526,7 @@ describe('Firebase import run', () => {
       expect(stage.count).toBe(2);
       expect(stage.warnings?.join('\n')).toMatch(/xx-old: not a known locale, skipped/);
       expect(stage.warnings?.join('\n')).toMatch(/default locale xx-old skipped; fr is the default/);
-      const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+      const [space] = await readSpaces(t.db, run.spaceId!);
       // Names come from the locales table, not from the Firebase space.
       expect(space.locales).toEqual([{ id: 'fr', name: 'French' }, { id: 'de', name: 'German' }]);
       expect(space.defaultLocale).toEqual({ id: 'fr', name: 'French' });
@@ -554,7 +553,7 @@ describe('Firebase import run', () => {
     expect(run.stages.find(it => it.stage === 'translations')!.status).toBe('DONE');
     expect(run.stages.find(it => it.stage === 'assets')!.status).toBe('FAILED');
     expect(run.stages.find(it => it.stage === 'contents')!.status).toBe('PENDING');
-    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({ legacyId: 'fbFail', importStatus: 'FAILED' });
   });
 });

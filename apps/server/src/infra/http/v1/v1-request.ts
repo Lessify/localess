@@ -24,8 +24,8 @@ export const CONTENT_CACHE = publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE);
 export const isDraft = (version: unknown): boolean => version === 'draft';
 
 /** Same rule as functions `identifySpaceLocale`: unknown or missing locales use the default locale. */
-export function identifySpaceLocale(space: { locales: { id: string }[]; defaultLocaleId: string }, locale: unknown): string {
-  if (typeof locale === 'string' && space.locales.some(it => it.id === locale)) return locale;
+export function identifySpaceLocale(space: { spaceLocales: { localeId: string }[]; defaultLocaleId: string }, locale: unknown): string {
+  if (typeof locale === 'string' && space.spaceLocales.some(it => it.localeId === locale)) return locale;
   return space.defaultLocaleId;
 }
 

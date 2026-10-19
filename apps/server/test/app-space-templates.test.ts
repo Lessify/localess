@@ -52,7 +52,7 @@ describe('app API: space templates', () => {
       const response = await admin.post('/api/app/spaces', { name: 'Large', template: 'TRANSLATIONS_LARGE' });
       expect(response.statusCode).toBe(201);
       const space = response.json();
-      expect(space.locales.map((it: { id: string }) => it.id)).toEqual(['en', 'de', 'fr']);
+      expect(space.spaceLocales.map((it: { localeId: string }) => it.localeId)).toEqual(['en', 'de', 'fr']);
       expect(space.defaultLocale.id).toBe('en');
       expect((await t.db.select({ n: count() }).from(translations).where(eq(translations.spaceId, space.id)))[0].n).toBe(10_000);
       const [row] = await t.db.select().from(translations).where(eq(translations.key, 'section07.page12.title'));
@@ -108,7 +108,7 @@ describe('app API: space templates', () => {
       const before = await counts(t);
       const response = await designer.post('/api/app/spaces', { name: 'Plain' });
       expect(response.statusCode).toBe(201);
-      expect(response.json().locales.map((it: { id: string }) => it.id)).toEqual(['en']);
+      expect(response.json().spaceLocales.map((it: { localeId: string }) => it.localeId)).toEqual(['en']);
       expect(await counts(t)).toEqual({ ...before, spaces: before.spaces + 1, spaceLocales: before.spaceLocales + 1, tokens: before.tokens + 1 });
     });
 

@@ -45,7 +45,7 @@ export class VisualEditorComponent {
 
   readonly isLoading = computed(() => this.spaceStore.selectedSpace() === undefined);
   /** The space's environments; a drop reorders this copy at once, the server's answer then replaces it. */
-  readonly environments = linkedSignal<SpaceEnvironment[]>(() => this.spaceStore.selectedSpace()?.environments ?? []);
+  readonly environments = linkedSignal<SpaceEnvironment[]>(() => this.spaceStore.environments());
 
   /** What an environment URL opens for the sample document. */
   exampleUrl(url: string): string {

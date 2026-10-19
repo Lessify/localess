@@ -95,4 +95,13 @@ describe('app API: spaces, one page at a time', () => {
     expect(space.name).toBe('Trimmed');
     expect((await list('?search=Trimmed')).items.map(it => it.name)).toEqual(['Trimmed']);
   });
+
+  it('answers every column of a space, and its firebaseImport when it has one; no computed fields', async () => {
+    const items = (await list('?size=100')).items as unknown as Record<string, unknown>[];
+    const running = items.find(it => it.id === created[3].id)!;
+    expect(running).toMatchObject({ name: created[3].name, defaultLocaleId: 'en', firebaseImport: { status: 'RUNNING', sourceSpaceId: 'fb-running' } });
+    expect(items.find(it => it.id === created[4].id)).toMatchObject({ firebaseImport: { status: 'FAILED' } });
+    const plain = items.find(it => it.id === created[0].id)!;
+    expect(Object.keys(plain).sort()).toEqual(['createdAt', 'defaultLocaleId', 'id', 'name', 'updatedAt']);
+  });
 });

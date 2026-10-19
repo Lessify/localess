@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { firebaseImports, tokens } from '../../infra/database/schema.js';
-import { importStatusOf, type SpaceImportStatus } from '../../shared/queries/space.query.js';
+import { importStatusOf, type SpaceImportStatus } from '../../shared/utils/import-status.js';
 import type { ApiToken } from '../utils/api-token.js';
 
 /** Space API tokens as the public APIs check them: read only (the tokens module manages them). */

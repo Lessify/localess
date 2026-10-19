@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Param, Post, Put } from '@nestjs/common';
 import { zSpaceLocaleCreate, zSpaceLocaleOrder, zSpaceLocaleSetDefault } from '@localess/shared/zod';
-import { type SpaceLocaleCreate, type SpaceLocaleOrder, type SpaceLocaleSetDefault, UserPermission } from '@localess/shared';
+import { type Space, type SpaceLocaleCreate, type SpaceLocaleOrder, type SpaceLocaleSetDefault, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { SpaceLocaleService } from '../services/space-locale.service.js';
 
@@ -11,25 +11,25 @@ export class SpaceLocaleController {
 
   @Post('locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate): Promise<Space> {
     return this.spaceLocaleService.create(spaceId, body.id);
   }
 
   @Put('locales/order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleOrder }) body: SpaceLocaleOrder) {
+  reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleOrder }) body: SpaceLocaleOrder): Promise<Space> {
     return this.spaceLocaleService.reorder(spaceId, body.ids);
   }
 
   @Delete('locales/:localeId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  remove(@Param('spaceId') spaceId: string, @Param('localeId') localeId: string) {
+  remove(@Param('spaceId') spaceId: string, @Param('localeId') localeId: string): Promise<Space> {
     return this.spaceLocaleService.remove(spaceId, localeId);
   }
 
   @Put('default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  setDefault(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleSetDefault }) body: SpaceLocaleSetDefault) {
+  setDefault(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleSetDefault }) body: SpaceLocaleSetDefault): Promise<Space> {
     return this.spaceLocaleService.setDefault(spaceId, body.id);
   }
 }

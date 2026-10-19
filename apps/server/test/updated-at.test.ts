@@ -39,9 +39,9 @@ describe('updated_at', () => {
   it('stays on environments when they are only reordered', async () => {
     const service = t.app.get(SpaceEnvironmentService);
     await service.create(S1, { name: 'A', url: 'https://a.example.com' });
-    const space = await service.create(S1, { name: 'B', url: 'https://b.example.com' });
+    const environments = await service.create(S1, { name: 'B', url: 'https://b.example.com' });
     await t.db.update(spaceEnvironments).set({ updatedAt: PAST }).where(eq(spaceEnvironments.spaceId, S1));
-    await service.reorder(S1, space.environments.map(it => it.id).reverse());
+    await service.reorder(S1, environments.map(it => it.id).reverse());
     const rows = await t.db.select().from(spaceEnvironments).where(eq(spaceEnvironments.spaceId, S1));
     expect(rows.map(it => it.updatedAt)).toEqual(rows.map(() => PAST));
   });

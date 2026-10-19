@@ -5,7 +5,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
 import { canAny } from '@core/utils/permissions';
-import { ContentDocument, Schema, Space, SpaceEnvironment, UserPermission } from '@localess/shared';
+import { ContentDocument, IdName, Locale, Schema, Space, SpaceEnvironment, UserPermission } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -28,7 +28,8 @@ import { UserStore } from './user.store';
 
 const LS_KEY = 'LL-SPACE-STATE';
 export type SpaceState = {
-  spaces: Space[];
+  /** Every space the user can open, by name: the sidebar's list (`GET /spaces/names`). */
+  spaces: IdName[];
   /**
    * Whether `load()` has resolved at least once, however it resolved.
    *
@@ -44,6 +45,10 @@ export type SpaceState = {
   /** The asset folder the editor shows; `null`: the root. */
   assetFolderId: string | null;
   environment: SpaceEnvironment | undefined;
+  /** The selected space with its default locale and its locales (`GET /spaces/:spaceId`), once it arrived. */
+  currentSpace: Space | undefined;
+  /** The selected space's environments (`GET /spaces/:spaceId/environments`). */
+  environments: SpaceEnvironment[];
   schemas: Schema[];
   documents: ContentDocument[];
 };
@@ -56,30 +61,20 @@ const initialState: SpaceState = {
   contentFolderId: null,
   assetFolderId: null,
   environment: undefined,
+  currentSpace: undefined,
+  environments: [],
   schemas: [],
   documents: [],
 };
 
-const resolveEnvironmentForSpace = (
-  space: Space | undefined,
+/** The remembered environment of the space (by id: names may repeat), else its first; none when it has none. */
+const resolveEnvironment = (
+  spaceId: string,
+  environments: SpaceEnvironment[],
   selectedEnvironmentBySpaceId: Record<string, string>,
 ): SpaceEnvironment | undefined => {
-  if (!space) {
-    return undefined;
-  }
-  const environments = space.environments ?? [];
-  if (environments.length === 0) {
-    return undefined;
-  }
-  // Remembered by id: names may repeat. A name stored by an older version matches no id and falls back to the first.
-  const selectedEnvironmentId = selectedEnvironmentBySpaceId[space.id];
-  if (selectedEnvironmentId) {
-    const foundEnvironment = environments.find(environment => environment.id === selectedEnvironmentId);
-    if (foundEnvironment) {
-      return foundEnvironment;
-    }
-  }
-  return environments[0];
+  const selectedEnvironmentId = selectedEnvironmentBySpaceId[spaceId];
+  return environments.find(environment => environment.id === selectedEnvironmentId) ?? environments[0];
 };
 
 const persistSpaceState = (selectedSpaceId: string | undefined, selectedEnvironmentBySpaceId: Record<string, string>): void => {
@@ -91,6 +86,12 @@ const persistSpaceState = (selectedSpaceId: string | undefined, selectedEnvironm
     }),
   );
 };
+
+/**
+ * Whether a live refetch answered what the store already holds: then it keeps the object it has, so nothing bound to
+ * it re-renders (a re-rendered row closes the menu a user has open on it).
+ */
+const sameContent = <T>(previous: T, next: T): boolean => JSON.stringify(previous) === JSON.stringify(next);
 
 /** Retries re-run the (deferred) query rather than resubscribing to one that already failed. */
 const retryWithBackoff = <T>(
@@ -148,13 +149,37 @@ export const SpaceStore = signalStore(
        * listeners, and the data is dropped first so nothing renders the new space against the old
        * one's. `undefined` (no space, or signed out) stops listening altogether.
        */
+      /**
+       * Keeps the selected space, its environments, `schemas` and `documents` on the given space. switchMap closes the
+       * previous space's listeners, and its data is dropped first so nothing renders the new space against the old
+       * one's. `undefined` (no space, or signed out) stops listening altogether.
+       */
       _syncSpaceData: rxMethod<string | undefined>(
         pipe(
           distinctUntilChanged(),
-          tap(() => patchState(state, { schemas: [], documents: [] })),
+          tap(() => patchState(state, { currentSpace: undefined, environments: [], environment: undefined, schemas: [], documents: [] })),
           switchMap(spaceId =>
             spaceId
               ? merge(
+                  listen(
+                    () => spaceService.findById(spaceId),
+                    'findById listener failed',
+                    'Lost connection to space updates. Retrying…',
+                  ).pipe(
+                    distinctUntilChanged(sameContent),
+                    map(currentSpace => ({ currentSpace })),
+                  ),
+                  listen(
+                    () => spaceService.findEnvironments(spaceId),
+                    'findEnvironments listener failed',
+                    'Lost connection to space updates. Retrying…',
+                  ).pipe(
+                    distinctUntilChanged(sameContent),
+                    map(environments => ({
+                      environments,
+                      environment: resolveEnvironment(spaceId, environments, state.selectedEnvironmentBySpaceId()),
+                    })),
+                  ),
                   can(UserPermission.CONTENT_READ)
                     ? listen(
                         () => contentService.findAllDocuments(spaceId),
@@ -177,66 +202,24 @@ export const SpaceStore = signalStore(
       ),
       load: rxMethod<void>(
         pipe(
-          // Every page; the server leaves out a space being imported from Firebase, or whose import failed: it cannot
-          // be opened (Admin → Spaces shows it).
-          switchMap(() => spaceService.findAllPages()),
+          // The server leaves out a space being imported from Firebase, or whose import failed: it cannot be opened
+          // (Admin → Spaces shows it).
+          switchMap(() => spaceService.findAllNames()),
           tapResponse({
-            next: response => {
-              console.log('Loaded spaces', response);
-              if (response.length === 0) {
-                const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
-                patchState(state, {
-                  spaces: [],
-                  loaded: true,
-                  selectedSpaceId: undefined,
-                  assetFolderId: null,
-                  contentFolderId: null,
-                  environment: undefined,
-                });
-                persistSpaceState(undefined, selectedEnvironmentBySpaceId);
-              } else {
-                const selectedSpaceId = state.selectedSpaceId();
-                const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
-                if (selectedSpaceId) {
-                  const foundSpace = response.find(space => space.id === selectedSpaceId);
-                  if (foundSpace) {
-                    const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
-                    // Same space: the open content and asset folders stay. The list is live, so it reloads whenever
-                    // any space changes, and resetting here sent everyone back to the root folder mid-work.
-                    patchState(state, {
-                      spaces: response,
-                      loaded: true,
-                      selectedSpaceId: selectedSpaceId,
-                      environment,
-                    });
-                    persistSpaceState(selectedSpaceId, selectedEnvironmentBySpaceId);
-                  } else {
-                    const space = response[0];
-                    const environment = resolveEnvironmentForSpace(space, selectedEnvironmentBySpaceId);
-                    patchState(state, {
-                      spaces: response,
-                      loaded: true,
-                      selectedSpaceId: space.id,
-                      assetFolderId: null,
-                      contentFolderId: null,
-                      environment,
-                    });
-                    persistSpaceState(space.id, selectedEnvironmentBySpaceId);
-                  }
-                } else {
-                  const defaultSpace = response[0];
-                  const environment = resolveEnvironmentForSpace(defaultSpace, selectedEnvironmentBySpaceId);
-                  patchState(state, {
-                    spaces: response,
-                    loaded: true,
-                    selectedSpaceId: defaultSpace.id,
-                    assetFolderId: null,
-                    contentFolderId: null,
-                    environment,
-                  });
-                  persistSpaceState(defaultSpace.id, selectedEnvironmentBySpaceId);
-                }
-              }
+            next: spaces => {
+              const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
+              const selectedSpaceId = state.selectedSpaceId();
+              // The list is live: it reloads whenever any space changes. The same space stays selected with its open
+              // content and asset folders; a space no longer listed (deleted, new install) falls back to the first.
+              const stillListed = spaces.some(space => space.id === selectedSpaceId);
+              const nextSpaceId = stillListed ? selectedSpaceId : spaces[0]?.id;
+              patchState(
+                state,
+                stillListed
+                  ? { spaces, loaded: true }
+                  : { spaces, loaded: true, selectedSpaceId: nextSpaceId, assetFolderId: null, contentFolderId: null },
+              );
+              persistSpaceState(nextSpaceId, selectedEnvironmentBySpaceId);
             },
             error: error => {
               console.error('Error loading spaces', error);
@@ -248,30 +231,11 @@ export const SpaceStore = signalStore(
         ),
       ),
       spaceById: (id: string) => computed(() => state.spaces().find(space => space.id === id)),
-      changeSpace: (space: Space) => {
-        console.log('changeSpace', space);
+      changeSpace: (space: IdName) => {
         const selectedEnvironmentBySpaceId = state.selectedEnvironmentBySpaceId();
-        const foundSpace = state.spaces().find(it => it.id === space.id);
-        if (foundSpace) {
-          const environment = resolveEnvironmentForSpace(foundSpace, selectedEnvironmentBySpaceId);
-          patchState(state, {
-            selectedSpaceId: space.id,
-            assetFolderId: null,
-            contentFolderId: null,
-            environment,
-          });
-          persistSpaceState(space.id, selectedEnvironmentBySpaceId);
-        } else {
-          const fallbackSpace = state.spaces()[0];
-          const environment = resolveEnvironmentForSpace(fallbackSpace, selectedEnvironmentBySpaceId);
-          patchState(state, {
-            selectedSpaceId: fallbackSpace?.id,
-            assetFolderId: null,
-            contentFolderId: null,
-            environment,
-          });
-          persistSpaceState(fallbackSpace?.id, selectedEnvironmentBySpaceId);
-        }
+        const spaceId = state.spaces().some(it => it.id === space.id) ? space.id : state.spaces()[0]?.id;
+        patchState(state, { selectedSpaceId: spaceId, assetFolderId: null, contentFolderId: null });
+        persistSpaceState(spaceId, selectedEnvironmentBySpaceId);
       },
       changeContentFolder: (contentFolderId: string | null) => {
         patchState(state, { contentFolderId });
@@ -299,12 +263,20 @@ export const SpaceStore = signalStore(
     };
   }),
   withComputed(state => {
+    /** The selected space (with its locales) once it arrived, and only while it is the selected one. */
+    const selectedSpace = computed((): Space | undefined => {
+      const space = state.currentSpace();
+      return space && space.id === state.selectedSpaceId() ? space : undefined;
+    });
     return {
       spaces: computed(() => state.spaces()),
       contentFolderId: computed(() => state.contentFolderId()),
       assetFolderId: computed(() => state.assetFolderId()),
       environment: computed(() => state.environment()),
-      selectedSpace: computed(() => state.spaces().find(space => space.id === state.selectedSpaceId())),
+      selectedSpace,
+      /** The selected space's locales, in its order: the one place the web reads them from `spaceLocales`. */
+      locales: computed((): Locale[] => (selectedSpace()?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+      defaultLocale: computed((): Locale | undefined => selectedSpace()?.defaultLocale),
       documents: computed(() => state.documents()),
       /**
        * This account has no spaces, and we know that for a fact rather than by not having asked.
@@ -325,7 +297,13 @@ export const SpaceStore = signalStore(
       // install), which would answer 404 and show "Lost connection" toasts until the list arrives.
       // `loaded` too: `isAuthenticated` comes from localStorage at first, before the role and
       // permissions that decide which lists may be read are known.
-      store._syncSpaceData(computed(() => (userStore.loaded() && userStore.isAuthenticated() ? store.selectedSpace()?.id : undefined)));
+      store._syncSpaceData(
+        computed(() => {
+          const spaceId = store.selectedSpaceId();
+          const listed = spaceId !== undefined && store.spaces().some(space => space.id === spaceId);
+          return userStore.loaded() && userStore.isAuthenticated() && listed ? spaceId : undefined;
+        }),
+      );
     },
     onDestroy: store => {
       console.log('onDestroy', store);

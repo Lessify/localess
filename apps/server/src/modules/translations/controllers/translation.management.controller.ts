@@ -29,7 +29,7 @@ export class TranslationManagementController {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: NO_STORE });
       return;
     }
-    if (!space.locales.some(it => it.id === locale)) {
+    if (!space.spaceLocales.some(it => it.localeId === locale)) {
       sendV1Error(reply, 400, 'invalid-argument', 'Locale not supported by this space', {
         details: `Locale ${locale} is not in space locales`,
         cacheControl: NO_STORE,
@@ -51,7 +51,7 @@ export class TranslationManagementController {
     }
     const { dryRun, type, values } = body.data;
     const space = await this.translationDeliveryService.findSpace(spaceId);
-    if (!space || !space.locales.some(it => it.id === locale)) {
+    if (!space || !space.spaceLocales.some(it => it.localeId === locale)) {
       sendV1Error(reply, 400, 'invalid-argument', 'Locale not supported by this space', {
         details: `Locale ${locale} is not in space locales`,
       });

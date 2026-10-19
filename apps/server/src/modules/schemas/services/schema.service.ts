@@ -3,7 +3,7 @@ import { type Schema, type SchemaExport, type SchemaField, SchemaType, type Sche
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
 import { checkSchemaFields, docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 import { type NewSchema, type SchemaColumns, SchemaRepository } from '../repositories/schema.repository.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
 /** "Schema 'card' is in use: referenced by 'page' field 'items'; used by 6 contents: Home (home), … and 1 more". */
@@ -51,7 +51,7 @@ function found(entity: SchemaEntity | undefined): Schema {
 export class SchemaService {
   constructor(
     private readonly schemaRepository: SchemaRepository,
-    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
   async findAll(spaceId: string, type?: SchemaType): Promise<Schema[]> {
@@ -119,7 +119,7 @@ export class SchemaService {
 
   /** The schema export, in byte order of the name. */
   async export(spaceId: string): Promise<SchemaExport[] | undefined> {
-    if (!(await this.spaceRepository.find(spaceId))) return undefined;
+    if (!(await this.spaceLookupRepository.exists(spaceId))) return undefined;
     return (await this.schemaRepository.findAllInByteOrder(spaceId)).map(entity => docSchemaToExport(entity.name, toSchema(entity)));
   }
 
@@ -128,7 +128,7 @@ export class SchemaService {
    * refer to nor one contents use as their document schema.
    */
   async planPush(spaceId: string, pushed: SchemaExport[], type: 'upsert' | 'sync'): Promise<SchemaPushPlan | undefined> {
-    if (!(await this.spaceRepository.find(spaceId))) return undefined;
+    if (!(await this.spaceLookupRepository.exists(spaceId))) return undefined;
     const plan = planSchemaPush(schemasByName(await this.schemaRepository.findAllInByteOrder(spaceId)), pushed, type);
     plan.errors.push(...contentErrors(await this.schemaRepository.countContentsBySchema(spaceId, plan.deletes)));
     return plan;

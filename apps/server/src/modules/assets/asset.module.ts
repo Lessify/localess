@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AssetController } from './controllers/asset.controller.js';
 import { AssetCdnController } from './controllers/asset.cdn.controller.js';
 import { AssetRepository } from './repositories/asset.repository.js';
-import { SpaceRepository } from './repositories/space.repository.js';
 import { AssetDeliveryService } from './services/asset-delivery.service.js';
 import { AssetService } from './services/asset.service.js';
 
@@ -13,6 +12,6 @@ import { AssetService } from './services/asset.service.js';
  */
 @Module({
   controllers: [AssetController, AssetCdnController],
-  providers: [AssetService, AssetDeliveryService, AssetRepository, SpaceRepository],
+  providers: [AssetService, AssetDeliveryService, AssetRepository],
 })
 export class AssetModule {}

@@ -21,7 +21,7 @@ import { PlatformService } from '@core/services/platform.service';
 import { TokenService } from '@core/services/token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -40,8 +40,10 @@ const rootSchema: Schema = {
 
 const childSchema: Schema = { id: 'child1', name: 'child1', type: SchemaType.NODE, fields: [] } as unknown as Schema;
 
-function space(overrides: Partial<Space> = {}): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [en, de], defaultLocale: en, environments: [], ...overrides } as Space;
+/** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); `en` the default. */
+function space(overrides: Partial<Space> & { locales?: Locale[] } = {}): Space {
+  const { locales = [en, de], ...rest } = overrides;
+  return { id: 'space-1', name: 'Space 1', defaultLocaleId: 'en', defaultLocale: en, spaceLocales: locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale })), ...rest } as Space;
 }
 
 function documentOf(data?: object | string): ContentDocument {
@@ -94,6 +96,8 @@ describe('EditDocumentComponent', () => {
             documents: signal([]),
             schemas: signal(schemas),
             selectedSpace,
+            locales: computed(() => (selectedSpace()?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
+            defaultLocale: computed(() => selectedSpace()?.defaultLocale),
           },
         },
       ],

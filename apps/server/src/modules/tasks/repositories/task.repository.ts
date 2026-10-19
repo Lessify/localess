@@ -1,11 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TaskPageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { tasks } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import { requireSpace } from '../../../shared/queries/space.query.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 import type { TaskInsertEntity, TaskEntity } from '../../../shared/entities/task.entity.js';
@@ -21,6 +21,7 @@ export class TaskRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
   /** One page of the space's tasks by creation time (then the id, so ties page stably), and how many match. */
@@ -56,7 +57,7 @@ export class TaskRepository {
   /** A new INITIATED task, for the worker to pick up; the space checked first (404 when gone). */
   create(spaceId: string, values: NewTask, tx?: Transaction): Promise<TaskEntity> {
     return transaction(this.db, tx, async t => {
-      await requireSpace(t, spaceId);
+      if (!(await this.spaceLookupRepository.exists(spaceId, t))) throw new NotFoundException('Space not found');
       const [row] = await t
         .insert(tasks)
         .values({ ...values, spaceId, status: 'INITIATED' })

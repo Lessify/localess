@@ -4,7 +4,6 @@ import { ContentController } from './controllers/content.controller.js';
 import { ContentCdnController } from './controllers/content.cdn.controller.js';
 import { ContentDeliveryRepository } from './repositories/content-delivery.repository.js';
 import { ContentRepository } from './repositories/content.repository.js';
-import { SpaceRepository } from './repositories/space.repository.js';
 import { ContentDeliveryService } from './services/content-delivery.service.js';
 import { ContentService } from './services/content.service.js';
 
@@ -12,6 +11,6 @@ import { ContentService } from './services/content.service.js';
 @Module({
   imports: [ApiTokenModule],
   controllers: [ContentController, ContentCdnController],
-  providers: [ContentService, ContentDeliveryService, ContentRepository, ContentDeliveryRepository, SpaceRepository],
+  providers: [ContentService, ContentDeliveryService, ContentRepository, ContentDeliveryRepository],
 })
 export class ContentModule {}

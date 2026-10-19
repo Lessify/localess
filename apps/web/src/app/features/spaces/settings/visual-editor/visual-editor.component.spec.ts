@@ -1,5 +1,5 @@
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
-import { signal, WritableSignal } from '@angular/core';
+import { computed, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Space, SpaceEnvironment } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
@@ -11,12 +11,23 @@ import { vi } from 'vitest';
 
 import { VisualEditorComponent } from './visual-editor.component';
 
-const prod: SpaceEnvironment = { id: 'e1', name: 'prod', url: 'https://prod.example.com/' };
-const staging: SpaceEnvironment = { id: 'e2', name: 'staging', url: 'https://staging.example.com/' };
-const twin: SpaceEnvironment = { id: 'e3', name: 'prod', url: 'https://twin.example.com/' };
+/** An environment of the space, as `GET /spaces/:id/environments` answers it. */
+const env = (id: string, name: string, url: string, position = 0): SpaceEnvironment => ({
+  id,
+  spaceId: 'space-1',
+  name,
+  url,
+  position,
+  createdAt: '',
+  updatedAt: '',
+});
+const prod = env('e1', 'prod', 'https://prod.example.com/');
+const staging = env('e2', 'staging', 'https://staging.example.com/');
+const twin = env('e3', 'prod', 'https://twin.example.com/');
 
+/** The selected space, carrying here the environments the store holds for it. */
 function space(environments: SpaceEnvironment[]): Space {
-  return { id: 'space-1', name: 'Space 1', locales: [], environments } as unknown as Space;
+  return { id: 'space-1', name: 'Space 1', environments } as unknown as Space;
 }
 
 const dropOf = (previousIndex: number, currentIndex: number) => ({ previousIndex, currentIndex }) as CdkDragDrop<SpaceEnvironment[]>;
@@ -40,7 +51,10 @@ describe('VisualEditorComponent', () => {
         { provide: SpaceService, useValue: spaceService },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open: openDialog } },
-        { provide: SpaceStore, useValue: { selectedSpace: selected, selectedSpaceId: signal('space-1') } },
+        {
+          provide: SpaceStore,
+          useValue: { selectedSpace: selected, selectedSpaceId: signal('space-1'), environments: computed(() => selected()?.environments ?? []) },
+        },
       ],
     });
     const fixture = TestBed.createComponent(VisualEditorComponent);

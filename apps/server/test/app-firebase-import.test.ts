@@ -2,13 +2,12 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { newUuid } from '../src/infra/database/id.js';
-import { firebaseImports, spaces } from '../src/infra/database/schema.js';
-import { selectSpaces } from '../src/shared/queries/space.query.js';
+import { firebaseImports } from '../src/infra/database/schema.js';
 import { FirebaseClient } from '../src/modules/firebase-import/utils/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/workers/firebase-import.runner.js';
 import { FirebaseImportService } from '../src/modules/firebase-import/services/firebase-import.service.js';
 import { fakeFirebase } from './fake-firebase.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+import { api, createTestApp, insertSpace, readSpaces, TestApp, userWithAccess } from './test-app.js';
 
 const base = '/api/app/admin/firebase-import';
 
@@ -143,7 +142,7 @@ describe('app API: import from Firebase', () => {
     await t.app.get(FirebaseImportService).failInterrupted();
     const run = (await admin.get(`${base}/${id}`)).json();
     expect(run).toMatchObject({ status: 'FAILED', error: { stage: 'locales', message: 'Interrupted: the server running it stopped' } });
-    expect((await selectSpaces(t.db).where(eq(spaces.id, spaceId)))[0].importStatus).toBe('FAILED');
+    expect((await readSpaces(t.db, spaceId))[0].importStatus).toBe('FAILED');
   });
 
   describe('cancel', () => {

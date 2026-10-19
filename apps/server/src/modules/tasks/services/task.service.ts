@@ -4,7 +4,7 @@ import type { Page, Task, TaskPageable } from '@localess/shared';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { toTask } from '../../../shared/transformers/task.transformer.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { TaskRepository } from '../repositories/task.repository.js';
 import { assertCanManage } from '../utils/task-permissions.js';
 import { toPage } from '../../../shared/utils/paging.js';
@@ -42,7 +42,7 @@ export interface TaskDownload {
 export class TaskService {
   constructor(
     private readonly taskRepository: TaskRepository,
-    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 
@@ -76,7 +76,7 @@ export class TaskService {
    * that fails. The caller checked `assertCanManage` (it must drain the upload when that fails).
    */
   async createImport(spaceId: string, upload: ImportUpload): Promise<Task> {
-    await this.spaceRepository.require(spaceId);
+    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
     const id = newUuid();
     try {
       const stored = await this.storage.put(taskFileKey({ spaceId, id }), upload.stream);

@@ -46,7 +46,7 @@
       <hlm-dropdown-menu class="text-nowrap">
         @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
           <hlm-dropdown-menu-group>
-            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog(space.locales)">
+            <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog(spaceStore.locales())">
               <ng-icon hlm size="sm" name="lucideLanguages" />
               Translate Locale
             </button>
@@ -56,13 +56,13 @@
         @if (importExportEnabled && (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async)) {
           <hlm-dropdown-menu-group>
             @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
-              <button hlmDropdownMenuItem (click)="openImportDialog(space.locales)">
+              <button hlmDropdownMenuItem (click)="openImportDialog(spaceStore.locales())">
                 <ng-icon hlm size="sm" name="lucideUploadCloud" />
                 Import
               </button>
             }
             @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
-              <button hlmDropdownMenuItem (click)="openExportDialog(space.locales)">
+              <button hlmDropdownMenuItem (click)="openExportDialog(spaceStore.locales())">
                 <ng-icon hlm size="sm" name="lucideCloudDownload" />
                 Export
               </button>
@@ -76,7 +76,7 @@
             <ng-icon hlm size="sm" name="lucidePencil" />
             <span>Draft</span>
           </hlm-dropdown-menu-label>
-          @for (locale of space.locales; track locale.id) {
+          @for (locale of spaceStore.locales(); track locale.id) {
             <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
               <ll-locale-icon [locale]="locale.id" />
               <span>Draft {{ locale.name }} JSON</span>

@@ -83,7 +83,7 @@ export class LocalesComponent implements AfterViewInit {
       )
       .subscribe({
         next: space => {
-          this.locales.set(space!.locales);
+          this.locales.set((space!.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : [])));
           this.isLoading.set(false);
         },
       });
@@ -104,7 +104,8 @@ export class LocalesComponent implements AfterViewInit {
    * array would arrive as index keys.
    */
   openAddDialog(): void {
-    const { id, locales } = this.spaceStore.selectedSpace()!;
+    const { id } = this.spaceStore.selectedSpace()!;
+    const locales = this.spaceStore.locales();
     this.hlmDialog
       .open<LocaleDialogResult, LocaleDialogContext>(LocaleDialogComponent, {
         context: { locales },
@@ -165,7 +166,7 @@ export class LocalesComponent implements AfterViewInit {
         context: {
           title: 'Change Default Locale',
           content:
-            `Make '${element.name}' the default locale instead of '${space.defaultLocale.name}'? ` +
+            `Make '${element.name}' the default locale instead of '${this.spaceStore.defaultLocale()?.name}'? ` +
             `Content values stored for the default locale are not moved: from now on they are read as '${element.name}'. ` +
             'Translations are not affected.',
         },
@@ -188,7 +189,7 @@ export class LocalesComponent implements AfterViewInit {
 
   /** Whether `element` can move one place in the space's order (`-1` up, `1` down). */
   canMove(element: Locale, direction: -1 | 1): boolean {
-    const locales = this.spaceStore.selectedSpace()?.locales ?? [];
+    const locales = this.spaceStore.locales();
     const index = locales.findIndex(it => it.id === element.id);
     return index >= 0 && index + direction >= 0 && index + direction < locales.length;
   }
@@ -197,7 +198,7 @@ export class LocalesComponent implements AfterViewInit {
   move(element: Locale, direction: -1 | 1): void {
     const space = this.spaceStore.selectedSpace();
     if (!space || !this.canMove(element, direction)) return;
-    const ids = space.locales.map(it => it.id);
+    const ids = this.spaceStore.locales().map(it => it.id);
     const index = ids.indexOf(element.id);
     [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
     this.localeService.reorder(space.id, ids).subscribe({

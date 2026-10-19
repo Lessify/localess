@@ -10,11 +10,10 @@ export class LocaleRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   findAll(): Promise<LocaleEntity[]> {
-    return this.db.select().from(locales).orderBy(asc(locales.name), asc(locales.id));
+    return this.db.query.locales.findMany({ orderBy: [asc(locales.name), asc(locales.id)] });
   }
 
   async exists(localeId: string): Promise<boolean> {
-    const [row] = await this.db.select({ id: locales.id }).from(locales).where(eq(locales.id, localeId));
-    return row !== undefined;
+    return (await this.db.query.locales.findFirst({ where: eq(locales.id, localeId), columns: { id: true } })) !== undefined;
   }
 }

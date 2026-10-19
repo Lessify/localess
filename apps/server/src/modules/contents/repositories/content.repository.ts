@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { ContentData } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, sql, SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -16,7 +16,8 @@ import {
   subtree,
   withPaths,
 } from '../../../shared/queries/content-tree.query.js';
-import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 import { startsWith } from '../utils/slug.utils.js';
@@ -81,6 +82,7 @@ export class ContentRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
   async findAll(spaceId: string, query: ContentQuery): Promise<ContentWithPath[]> {
@@ -248,7 +250,7 @@ export class ContentRepository {
           : (await this.documentsUnder(t, spaceId, id)).filter(doc => !(doc.publishedAt && doc.publishedAt > doc.updatedAt));
       const schemaById = schemasByName(await t.select().from(schemas).where(eq(schemas.spaceId, spaceId)));
       const publishedAt = new Date();
-      const localeIds = space.locales.map(it => it.id);
+      const localeIds = space.spaceLocales.map(it => it.localeId);
       for (const document of withPaths(documents, folders)) {
         for (const locale of localeIds) {
           const data = buildDocumentStorage(document, schemaById, locale, publishedAt.toISOString());
@@ -313,20 +315,21 @@ export class ContentRepository {
   private write<T>(
     spaceId: string,
     tx: Transaction | undefined,
-    work: (tx: Transaction, space: SpaceRow) => Promise<WriteResult<T>>,
+    work: (tx: Transaction, space: SpaceWithLocales) => Promise<WriteResult<T>>,
   ): Promise<T>;
   private write<T>(
     spaceId: string,
     tx: Transaction | undefined,
-    work: (tx: Transaction, space: SpaceRow) => Promise<WriteResult<T> | undefined>,
+    work: (tx: Transaction, space: SpaceWithLocales) => Promise<WriteResult<T> | undefined>,
   ): Promise<T | undefined>;
   private write<T>(
     spaceId: string,
     tx: Transaction | undefined,
-    work: (tx: Transaction, space: SpaceRow) => Promise<WriteResult<T> | undefined>,
+    work: (tx: Transaction, space: SpaceWithLocales) => Promise<WriteResult<T> | undefined>,
   ): Promise<T | undefined> {
     return transaction(this.db, tx, async t => {
-      const space = await requireSpace(t, spaceId);
+      const space = await this.spaceLookupRepository.findOne(spaceId, t);
+      if (!space) throw new NotFoundException('Space not found');
       // First, before any row lock: every write of the space takes the contents lock in the same order, so two writes
       // never wait on each other's row locks (a deadlock), and each one's checks see the previous one committed.
       await lockContents(t, spaceId);

@@ -55,7 +55,7 @@ describe('app API: the contents template (CONTENTS_FIELDS)', () => {
     expect(statements.length).toBeLessThan(50);
     await annotate(`created in ${Date.now() - started} ms, ${statements.length} statements`);
     const space = response.json();
-    expect(space.locales.map((it: { id: string }) => it.id)).toEqual(['en', 'de', 'fr']);
+    expect(space.spaceLocales.map((it: { localeId: string }) => it.localeId)).toEqual(['en', 'de', 'fr']);
 
     // Files: a Media folder with the three, stored, the images with their dimensions.
     const base = `/api/app/spaces/${space.id}/assets`;

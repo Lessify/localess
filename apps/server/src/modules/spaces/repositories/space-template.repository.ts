@@ -5,7 +5,6 @@ import { newUuid } from '../../../infra/database/id.js';
 import { assets, contents, schemas, spaceLocales, translations } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { guardUploads, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
-import { requireSpace, type SpaceRow } from '../../../shared/queries/space.query.js';
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import type { SpaceTemplate } from '../templates/index.js';
 import { SpaceRepository } from './space.repository.js';
@@ -53,9 +52,9 @@ export class SpaceTemplateRepository {
     template: SpaceTemplate,
     tx?: Transaction,
     prepared?: { spaceId: string; files: StoredTemplateFile[] },
-  ): Promise<SpaceRow> {
+  ): Promise<string> {
     return transaction(this.db, tx, async t => {
-      const { id: spaceId } = await this.spaceRepository.create(name, DEFAULT_LOCALE.id, t, prepared?.spaceId);
+      const spaceId = await this.spaceRepository.create(name, DEFAULT_LOCALE.id, t, prepared?.spaceId);
       const locales = template.locales ?? [];
       if (locales.length) {
         await t.insert(spaceLocales).values(locales.map((localeId, index) => ({ spaceId, localeId, position: index + 1 })));
@@ -141,7 +140,7 @@ export class SpaceTemplateRepository {
       for (let start = 0; start < rows.length; start += CHUNK) {
         await t.insert(translations).values(rows.slice(start, start + CHUNK));
       }
-      return requireSpace(t, spaceId);
+      return spaceId;
     });
   }
 }

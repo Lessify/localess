@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
 import { createApp } from '../src/app.factory.js';
@@ -173,4 +173,39 @@ export function draftSnapshots(db: TestApp['db'], spaceId: string) {
 /** Builds the space's draft maps, as the first draft request after a write does. */
 export async function buildDrafts(t: TestApp, spaceId: string): Promise<void> {
   await t.app.get(TranslationSnapshotRepository).buildDrafts(spaceId);
+}
+
+/** A space as the tests check it: its columns with its locales, default locale and environments flattened, its import. */
+export interface SpaceView {
+  id: string;
+  name: string;
+  defaultLocaleId: string;
+  locales: { id: string; name: string }[];
+  defaultLocale: { id: string; name: string };
+  environments: { id: string; name: string; url: string }[];
+  legacyId: string | null;
+  importStatus: 'IMPORTING' | 'FAILED' | null;
+}
+
+/** Every space (or the one `spaceId`), read with its relations, in the shape `SpaceView`. */
+export async function readSpaces(db: TestApp['db'], spaceId?: string): Promise<SpaceView[]> {
+  const rows = await db.query.spaces.findMany({
+    where: spaceId ? eq(schema.spaces.id, spaceId) : undefined,
+    with: {
+      defaultLocale: true,
+      spaceLocales: { orderBy: [asc(schema.spaceLocales.position), asc(schema.spaceLocales.createdAt)], with: { locale: true } },
+      environments: { orderBy: [asc(schema.spaceEnvironments.position), asc(schema.spaceEnvironments.createdAt)] },
+      firebaseImport: true,
+    },
+  });
+  return rows.map(row => ({
+    id: row.id,
+    name: row.name,
+    defaultLocaleId: row.defaultLocaleId,
+    locales: row.spaceLocales.map(it => ({ id: it.locale.id, name: it.locale.name })),
+    defaultLocale: { id: row.defaultLocale.id, name: row.defaultLocale.name },
+    environments: row.environments.map(it => ({ id: it.id, name: it.name, url: it.url })),
+    legacyId: row.firebaseImport?.sourceSpaceId ?? null,
+    importStatus: row.firebaseImport?.status === 'RUNNING' ? 'IMPORTING' : row.firebaseImport?.status === 'FAILED' ? 'FAILED' : null,
+  }));
 }

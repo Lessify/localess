@@ -1,32 +1,51 @@
+import type { FirebaseImport } from './firebase-import.model.js';
 import type { Locale } from './locale.model.js';
 import type { Timestamp } from './timestamp.js';
 
+/**
+ * A space: the columns of `spaces`, and its relations, each present when the endpoint loaded it (Admin → Spaces:
+ * `firebaseImport`; the selected space: `defaultLocale` and `spaceLocales`). Environments have their own endpoint.
+ */
 export interface Space {
   id: string;
-  /** Firestore id of a space imported from Firebase, for display. Only the public API accepts it in URLs. */
-  legacyId?: string;
-  /** Set while an import from Firebase fills the space (`IMPORTING`) or after it failed (`FAILED`). */
-  importStatus?: 'IMPORTING' | 'FAILED';
   name: string;
-  /** The space's locales, in the order users gave them. */
-  locales: Locale[];
   /**
    * New translations are created in it and content stores its values in the bare field; a locale with
    * no value falls back to it.
    */
-  defaultLocale: Locale;
-  /** Preview environments for the Visual Editor (http(s) URLs only), in the order users gave them; the first is the default. */
-  environments: SpaceEnvironment[];
-  // timestamp
+  defaultLocaleId: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  defaultLocale?: Locale;
+  /** The space's locales, in the order users gave them. */
+  spaceLocales?: SpaceLocale[];
+  /** Preview environments for the Visual Editor, in the order users gave them; the first is the default. */
+  environments?: SpaceEnvironment[];
+  /** The space's import from Firebase (one at most): its status and the Firestore id (`sourceSpaceId`). */
+  firebaseImport?: FirebaseImport;
 }
 
+/** A locale of a space, in its position. */
+export interface SpaceLocale {
+  spaceId: string;
+  localeId: string;
+  position: number;
+  createdAt: Timestamp;
+  locale?: Locale;
+  space?: Space;
+}
+
+/** A Visual Editor preview environment of a space (http(s) URLs only). */
 export interface SpaceEnvironment {
   id: string;
+  spaceId: string;
   /** Names may repeat; the id tells environments apart. */
   name: string;
   url: string;
+  position: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  space?: Space;
 }
 
 // App API requests

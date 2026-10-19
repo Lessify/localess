@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, eq, inArray, ne, sql } from 'drizzle-orm';
 import { isSchemaInUse, type SchemaField, SchemaFieldKind, type SchemaType, type SchemaUsage } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -8,7 +8,7 @@ import { isUniqueViolation, transaction, type Transaction } from '../../../infra
 import { EventService } from '../../../infra/events/event.service.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import { folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
-import { requireSpace } from '../../../shared/queries/space.query.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { fieldRefersTo, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 import type { SchemaInsertEntity, SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
@@ -39,6 +39,7 @@ export class SchemaRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
   /** For the app: by name, in the database collation. */
@@ -214,7 +215,7 @@ export class SchemaRepository {
   ): Promise<T> {
     try {
       return await transaction(this.db, tx, async t => {
-        await requireSpace(t, spaceId);
+        if (!(await this.spaceLookupRepository.exists(spaceId, t))) throw new NotFoundException('Space not found');
         const { result, changed } = await work(t);
         for (const it of changed) await this.eventService.publish({ spaceId, entity: 'schemas', ...it }, t);
         return result;

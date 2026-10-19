@@ -157,15 +157,15 @@ export class SpacesComponent implements OnInit {
 
   /** A space being imported from Firebase, or whose import failed, cannot be opened until it is done or deleted. */
   importLabel(space: Space): string | undefined {
-    if (space.importStatus === 'IMPORTING') return 'Importing';
-    if (space.importStatus === 'FAILED') return 'Import failed';
+    if (space.firebaseImport?.status === 'RUNNING') return 'Importing';
+    if (space.firebaseImport?.status === 'FAILED') return 'Import failed';
     return undefined;
   }
 
   /** What to do about it: a failed import is not retried into its space. */
   importHint(space: Space): string | undefined {
-    if (space.importStatus === 'IMPORTING') return 'It opens once the import has finished';
-    if (space.importStatus === 'FAILED') return 'Delete the space and import it again';
+    if (space.firebaseImport?.status === 'RUNNING') return 'It opens once the import has finished';
+    if (space.firebaseImport?.status === 'FAILED') return 'Delete the space and import it again';
     return undefined;
   }
 

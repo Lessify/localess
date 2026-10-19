@@ -1,14 +1,15 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Page, Space, SpacePageable } from '@localess/shared';
+import type { IdName, Page, Space, SpacePageable } from '@localess/shared';
 import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { assetFilesPrefix, spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
-import type { SpaceRow } from '../../../shared/queries/space.query.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
-import { toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
+import { type PublicSpace, toLocale, toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplateRepository, type StoredTemplateFile } from '../repositories/space-template.repository.js';
@@ -23,6 +24,7 @@ const STORE_BATCH = 50;
 export class SpaceService {
   constructor(
     private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
     private readonly spaceOverviewRepository: SpaceOverviewRepository,
     private readonly storageSweeperService: StorageSweeperService,
     private readonly spaceTemplateRepository: SpaceTemplateRepository,
@@ -31,19 +33,25 @@ export class SpaceService {
     private readonly assetMetadataService: AssetMetadataService,
   ) {}
 
-  /** One page of spaces (Admin → Spaces, and every page of it for the space switcher). */
+  /** One page of spaces for Admin → Spaces: each with its Firebase import, if any. */
   async findAll(query: SpacePageable): Promise<Page<Space>> {
-    const { rows, total } = await this.spaceRepository.findPage(query);
+    const [rows, total] = await Promise.all([this.spaceRepository.findAll(query), this.spaceRepository.findAllCount(query)]);
     return toPage(rows, total, query, toSpace);
   }
 
-  async findOne(spaceId: string) {
+  /** Every space that can be opened, by name: the sidebar's list. */
+  async findAllNames(): Promise<IdName[]> {
+    return (await this.spaceRepository.findAllNames()).map(({ id, name }) => ({ id, name }));
+  }
+
+  /** The selected space: with its default locale and its locales. */
+  async findOne(spaceId: string): Promise<Space> {
     return toSpace(await this.require(spaceId));
   }
 
   /** The space on the public API, or undefined (it answers 404 itself). */
-  async findPublic(spaceId: string) {
-    const space = await this.spaceRepository.findById(spaceId);
+  async findPublic(spaceId: string): Promise<PublicSpace | undefined> {
+    const space = await this.spaceLookupRepository.findOne(spaceId);
     return space && toPublicSpace(space);
   }
 
@@ -60,8 +68,8 @@ export class SpaceService {
    * token). A test template while they are off is a 400 (an unknown id is refused by the controller's schema). No
    * permission beyond creating a space (SPACE_MANAGEMENT): a template is part of creating one.
    */
-  async create(name: string, templateId: SpaceTemplateId | undefined) {
-    if (!templateId) return toSpace(await this.spaceRepository.create(name, DEFAULT_LOCALE.id));
+  async create(name: string, templateId: SpaceTemplateId | undefined): Promise<Space> {
+    if (!templateId) return this.findOne(await this.spaceRepository.create(name, DEFAULT_LOCALE.id));
     const template = this.available().find(it => it.id === templateId);
     if (!template) throw new BadRequestException('Unknown template');
     return this.createFromTemplate(name, template);
@@ -74,7 +82,7 @@ export class SpaceService {
    */
   async createFromTemplate(name: string, template: SpaceTemplate): Promise<Space> {
     const files = (template.assets ?? []).filter(it => it.file);
-    if (!files.length) return toSpace(await this.spaceTemplateRepository.createSpace(name, template));
+    if (!files.length) return this.findOne(await this.spaceTemplateRepository.createSpace(name, template));
     const spaceId = newUuid();
     const ids = files.map(() => newUuid());
     await this.spaceTemplateRepository.guardFiles(spaceId, ids);
@@ -98,7 +106,7 @@ export class SpaceService {
         if (failed) throw failed.reason;
         stored.push(...results.map(it => (it as PromiseFulfilledResult<StoredTemplateFile>).value));
       }
-      return toSpace(await this.spaceTemplateRepository.createSpace(name, template, undefined, { spaceId, files: stored }));
+      return this.findOne(await this.spaceTemplateRepository.createSpace(name, template, undefined, { spaceId, files: stored }));
     } catch (error) {
       const cleaned = await this.storage.deletePrefix(spaceFilesPrefix(spaceId)).then(
         () => true,
@@ -114,15 +122,16 @@ export class SpaceService {
     return this.config.testTemplates ? SPACE_TEMPLATES : SPACE_TEMPLATES.filter(it => !it.test);
   }
 
-  async rename(spaceId: string, name: string) {
+  async rename(spaceId: string, name: string): Promise<Space> {
     await this.require(spaceId);
-    return toSpace(await this.spaceRepository.rename(spaceId, name));
+    await this.spaceRepository.rename(spaceId, name);
+    return this.findOne(spaceId);
   }
 
   /** Everything in the space goes with it: rows by FK cascade; its stored files are queued and swept right after. */
   async remove(spaceId: string): Promise<void> {
-    const space = await this.require(spaceId);
-    if (space.importStatus === 'IMPORTING') throw new ConflictException('The space is being imported');
+    await this.require(spaceId);
+    if (await this.spaceRepository.isImporting(spaceId)) throw new ConflictException('The space is being imported');
     await this.spaceRepository.delete(spaceId);
     this.storageSweeperService.kick();
   }
@@ -133,7 +142,7 @@ export class SpaceService {
     const counts = await this.spaceOverviewRepository.counts(spaceId);
     return {
       counts: {
-        locales: space.locales.length,
+        locales: space.spaceLocales.length,
         translations: counts.translations,
         assets: counts.assets.files,
         contents: counts.contents,
@@ -142,13 +151,13 @@ export class SpaceService {
       storage: { assets: counts.assets.size, assetsWithoutSize: counts.assets.withoutSize },
       progress: {
         total: counts.translations,
-        locales: space.locales.map(locale => ({ ...locale, translated: counts.translatedBy.get(locale.id) ?? 0 })),
+        locales: space.spaceLocales.map(({ locale }) => ({ ...toLocale(locale), translated: counts.translatedBy.get(locale.id) ?? 0 })),
       },
     };
   }
 
-  private async require(spaceId: string): Promise<SpaceRow> {
-    const space = await this.spaceRepository.findById(spaceId);
+  private async require(spaceId: string): Promise<SpaceWithLocales> {
+    const space = await this.spaceRepository.findOne(spaceId);
     if (!space) throw new NotFoundException('Space not found');
     return space;
   }

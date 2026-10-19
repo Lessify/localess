@@ -120,6 +120,42 @@ describe('server rules: injected dependencies', () => {
   });
 });
 
+describe('server rules: return types', () => {
+  /** Modules whose functions declare what they return; one more each time a module is reworked. */
+  const DECLARED = ['modules/spaces/'];
+
+  it('every public method and exported function declares its return type (in the modules reworked so far)', () => {
+    expect(
+      breaks(
+        file => {
+          const missing: string[] = [];
+          for (const it of classes(file)) {
+            for (const member of it.members) {
+              if (!ts.isMethodDeclaration(member) || member.type) continue;
+              if (member.modifiers?.some(m => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword)) continue;
+              missing.push(`${it.name!.text}.${member.name.getText(file.source)}`);
+            }
+          }
+          for (const statement of file.source.statements) {
+            if (!ts.canHaveModifiers(statement) || !ts.getModifiers(statement)?.some(m => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+            if (ts.isFunctionDeclaration(statement) && !statement.type) missing.push(statement.name?.text ?? 'default');
+            if (ts.isVariableStatement(statement)) {
+              for (const declaration of statement.declarationList.declarations) {
+                const init = declaration.initializer;
+                if (init && (ts.isArrowFunction(init) || ts.isFunctionExpression(init)) && !init.type && !declaration.type) {
+                  missing.push(declaration.name.getText(file.source));
+                }
+              }
+            }
+          }
+          return missing.map(name => `${name} has no declared return type`);
+        },
+        file => DECLARED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/'),
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('server rules: method names', () => {
   it('controllers and services use the NestJS names: findAll, findOne, find<What>, create, update, remove', () => {
     expect(

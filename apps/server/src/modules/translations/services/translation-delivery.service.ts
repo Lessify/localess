@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { isTranslationKey, type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
-import type { SpaceRow } from '../../../shared/queries/space.query.js';
-import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
 import { TranslationRepository } from '../repositories/translation.repository.js';
 import { translationsByKey } from '../../../shared/transformers/translation.transformer.js';
@@ -31,11 +31,11 @@ export class TranslationDeliveryService {
     private readonly translationRepository: TranslationRepository,
     private readonly translationSnapshotRepository: TranslationSnapshotRepository,
     private readonly webhookDispatcher: WebhookDispatcher,
-    private readonly spaceLocaleRepository: SpaceLocaleRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
-  findSpace(spaceId: string): Promise<SpaceRow | undefined> {
-    return this.spaceLocaleRepository.find(spaceId);
+  findSpace(spaceId: string): Promise<SpaceWithLocales | undefined> {
+    return this.spaceLookupRepository.findOne(spaceId);
   }
 
   /** The published map of a space locale; a locale published never (added since) gets the default locale's map. */

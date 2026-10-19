@@ -4,7 +4,7 @@ import { ContentDocumentApi, ContentKind, TokenType } from '@localess/shared';
 import type { ApiToken } from '../../../auth/utils/api-token.js';
 import { CurrentToken } from '../../../auth/request-context.js';
 import { CdnToken } from '../../../auth/token-auth.decorators.js';
-import type { SpaceRow } from '../../../shared/queries/space.query.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { publicCache, TEN_MINUTES } from '../../../infra/http/v1/cache-control.js';
 import {
   identifySpaceLocale,
@@ -96,7 +96,7 @@ export class ContentCdnController {
     request: FastifyRequest,
     reply: FastifyReply,
     token: ApiToken,
-    space: SpaceRow,
+    space: SpaceWithLocales,
     contentId: string,
     path: string,
   ): Promise<void> {

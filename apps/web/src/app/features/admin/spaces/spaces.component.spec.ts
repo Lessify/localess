@@ -2,7 +2,7 @@ import { HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
-import { Page, Space } from '@localess/shared';
+import { FirebaseImport, Page, Space } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceService } from '@core/services/space.service';
 import { Observable, of, throwError } from 'rxjs';
@@ -14,6 +14,11 @@ import { SpacesComponent } from './spaces.component';
 
 function space(overrides: Partial<Space> = {}): Space {
   return { id: 's1', name: 'Space 1', ...overrides } as Space;
+}
+
+/** A space imported from Firebase, its run in `status` (the relation the admin list loads). */
+function imported(status: FirebaseImport['status']): Space {
+  return space({ firebaseImport: { status, sourceSpaceId: 'fb1' } as FirebaseImport });
 }
 
 describe('SpacesComponent', () => {
@@ -239,15 +244,17 @@ describe('SpacesComponent', () => {
 
   it('labels spaces being imported or whose import failed', () => {
     const { component } = setup();
-    expect(component.importLabel({ importStatus: 'IMPORTING' } as Space)).toBe('Importing');
-    expect(component.importLabel({ importStatus: 'FAILED' } as Space)).toBe('Import failed');
+    expect(component.importLabel(imported('RUNNING'))).toBe('Importing');
+    expect(component.importLabel(imported('FAILED'))).toBe('Import failed');
+    expect(component.importLabel(imported('FINISHED'))).toBeUndefined();
     expect(component.importLabel({} as Space)).toBeUndefined();
   });
 
   it('tells what to do with a space whose import failed', () => {
     const { component } = setup();
-    expect(component.importHint({ importStatus: 'FAILED' } as Space)).toBe('Delete the space and import it again');
-    expect(component.importHint({ importStatus: 'IMPORTING' } as Space)).toBe('It opens once the import has finished');
+    expect(component.importHint(imported('FAILED'))).toBe('Delete the space and import it again');
+    expect(component.importHint(imported('RUNNING'))).toBe('It opens once the import has finished');
+    expect(component.importHint(imported('FINISHED'))).toBeUndefined();
     expect(component.importHint({} as Space)).toBeUndefined();
   });
 

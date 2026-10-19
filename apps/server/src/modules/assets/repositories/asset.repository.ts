@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, desc, eq, ilike, inArray, isNull, like, or, sql, SQL } from 'drizzle-orm';
 import { escapeLike } from '../../../shared/utils/paging.js';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -7,7 +7,7 @@ import { assets, contents } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
-import { requireSpace } from '../../../shared/queries/space.query.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
 import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 
@@ -57,6 +57,7 @@ export class AssetRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
   findAll(spaceId: string, query: AssetQuery): Promise<AssetEntity[]> {
@@ -217,7 +218,7 @@ export class AssetRepository {
     work: (tx: Transaction) => Promise<WriteResult<T> | undefined>,
   ): Promise<T | undefined> {
     return transaction(this.db, tx, async t => {
-      await requireSpace(t, spaceId);
+      if (!(await this.spaceLookupRepository.exists(spaceId, t))) throw new NotFoundException('Space not found');
       // First, before any row lock: the writes of a space take it in the same order, so they never deadlock.
       await t.execute(sql`select pg_advisory_xact_lock(hashtext('assets'), hashtext(${spaceId}))`);
       const outcome = await work(t);

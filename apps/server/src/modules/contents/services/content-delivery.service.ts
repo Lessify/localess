@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata } from '@localess/shared';
 
 import { isUuid } from '../../../infra/database/id.js';
-import type { SpaceRow } from '../../../shared/queries/space.query.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { toAssetMetadata, toContentMetadata } from '../../../shared/transformers/content.transformer.js';
 import { isDraft } from '../../../infra/http/v1/v1-request.js';
 import { ContentDeliveryRepository } from '../repositories/content-delivery.repository.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { stripStorageIds } from '../utils/strip-storage-ids.js';
 
 export interface LinkFilter {
@@ -32,11 +32,11 @@ export interface LocaleDocument {
 export class ContentDeliveryService {
   constructor(
     private readonly contentDeliveryRepository: ContentDeliveryRepository,
-    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
-  findSpace(spaceId: string): Promise<SpaceRow | undefined> {
-    return this.spaceRepository.find(spaceId);
+  findSpace(spaceId: string): Promise<SpaceWithLocales | undefined> {
+    return this.spaceLookupRepository.findOne(spaceId);
   }
 
   findContentIdByFullSlug(spaceId: string, fullSlug: string): Promise<string | undefined> {
@@ -60,7 +60,7 @@ export class ContentDeliveryService {
    * The document in `locale`, else in the space's default locale (what `resolveLocaleFilePath` did with the two
    * Storage files): a locale added since the publish, or one never published. A draft is built for any locale.
    */
-  async findLocaleDocument(space: SpaceRow, contentId: string, locale: string, version: unknown): Promise<LocaleDocument | undefined> {
+  async findLocaleDocument(space: SpaceWithLocales, contentId: string, locale: string, version: unknown): Promise<LocaleDocument | undefined> {
     const draft = isDraft(version);
     const primary = (await this.localeDocuments(space.id, [contentId], locale, draft)).get(contentId);
     if (primary) return { ...primary, resolvedLocale: locale };

@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Page, Space } from '@localess/shared';
+import { IdName, Page, Space, SpaceEnvironment } from '@localess/shared';
 import { SpaceService } from './space.service';
 
 describe('SpaceService', () => {
@@ -43,27 +43,36 @@ describe('SpaceService', () => {
     subscription.unsubscribe();
   });
 
-  it('findAllPages() loads every space the user can open, 100 at a time, by name, without imports', async () => {
+  it('findAllNames() reads the sidebar list, and again when a space changes', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const spaces = (from: number, n: number) => Array.from({ length: n }, (_, i) => ({ id: `s${from + i}` }) as Space);
-    const result = firstValueFrom(service.findAllPages());
-    const url = (page: number) => `/api/app/spaces?page=${page}&size=100&sort=name&direction=asc&importing=false`;
-    http.expectOne(url(0)).flush({ items: spaces(0, 100), page: 0, size: 100, total: 250 });
-    http.expectOne(url(1)).flush({ items: spaces(100, 100), page: 1, size: 100, total: 250 });
-    http.expectOne(url(2)).flush({ items: spaces(200, 50), page: 2, size: 100, total: 250 });
-    http.expectNone(url(3));
-    const all = await result;
-    expect(all).toHaveLength(250);
-    expect(all.at(-1)?.id).toBe('s249');
+    const results: IdName[][] = [];
+    const subscription = service.findAllNames().subscribe(it => results.push(it));
+    http.expectOne({ method: 'GET', url: '/api/app/spaces/names' }).flush([{ id: 's1', name: 'Alpha' }]);
+
+    events.next({ spaceId: null, entity: 'spaces', id: 's2', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne('/api/app/spaces/names').flush([{ id: 's1', name: 'Alpha' }, { id: 's2', name: 'Beta' }]);
+    expect(results.map(it => it.length)).toEqual([1, 2]);
+    subscription.unsubscribe();
   });
 
-  it('findAllPages() stops after one request when everything fits on the first page', async () => {
+  it('findEnvironments() reads the space environments, and again when that space changes', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const result = firstValueFrom(service.findAllPages());
-    http
-      .expectOne('/api/app/spaces?page=0&size=100&sort=name&direction=asc&importing=false')
-      .flush({ items: [{ id: 's1' } as Space], page: 0, size: 100, total: 1 });
-    expect(await result).toEqual([{ id: 's1' }]);
+    const results: SpaceEnvironment[][] = [];
+    const subscription = service.findEnvironments('s1').subscribe(it => results.push(it));
+    http.expectOne({ method: 'GET', url: '/api/app/spaces/s1/environments' }).flush([]);
+
+    events.next({ spaceId: null, entity: 'spaces', id: 's2', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone('/api/app/spaces/s1/environments');
+
+    events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne('/api/app/spaces/s1/environments').flush([{ id: 'e1', name: 'Preview' } as SpaceEnvironment]);
+    expect(results.map(it => it.length)).toEqual([0, 1]);
+    subscription.unsubscribe();
   });
 
   it('findById() reads one space', async () => {

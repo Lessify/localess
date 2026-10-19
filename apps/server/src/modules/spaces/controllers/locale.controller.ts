@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import type { Locale } from '@localess/shared';
 import { RequireAnyRole } from '../../../auth/decorators.js';
 import { LocaleService } from '../services/locale.service.js';
 
@@ -9,7 +10,7 @@ export class LocaleController {
 
   @Get()
   @RequireAnyRole()
-  findAll() {
+  findAll(): Promise<Locale[]> {
     return this.localeService.findAll();
   }
 }
