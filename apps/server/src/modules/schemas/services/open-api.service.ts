@@ -9,14 +9,14 @@ import { generateOpenApi } from '../utils/open-api.js';
 @Injectable()
 export class OpenApiService {
   constructor(
-    private readonly schemas: SchemaRepository,
-    private readonly spaces: SpaceRepository,
+    private readonly schemaRepository: SchemaRepository,
+    private readonly spaceRepository: SpaceRepository,
   ) {}
 
   /** `undefined` when the space is not there. */
   async find(spaceId: string): Promise<OpenAPIObject | undefined> {
-    if (!(await this.spaces.find(spaceId))) return undefined;
-    return generateOpenApi(schemasByName(await this.schemas.findAllInByteOrder(spaceId)));
+    if (!(await this.spaceRepository.find(spaceId))) return undefined;
+    return generateOpenApi(schemasByName(await this.schemaRepository.findAllInByteOrder(spaceId)));
   }
 
   async findOne(spaceId: string): Promise<OpenAPIObject> {

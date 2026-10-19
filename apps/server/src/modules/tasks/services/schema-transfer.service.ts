@@ -15,15 +15,15 @@ import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 @Injectable()
 export class SchemaTransferService {
   constructor(
-    private readonly schemas: SchemaTransferRepository,
+    private readonly schemaTransferRepository: SchemaTransferRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
-    private readonly importFile: ImportFileService,
-    private readonly log: TaskLogService,
+    private readonly importFileService: ImportFileService,
+    private readonly taskLogService: TaskLogService,
   ) {}
 
   async export(task: TaskEntity): Promise<TaskOutcome> {
-    const rows = await this.schemas.findAllByName(task.spaceId);
-    await this.log.log(task, 'INFO', `exporting all ${rows.length} schemas`);
+    const rows = await this.schemaTransferRepository.findAllByName(task.spaceId);
+    await this.taskLogService.log(task, 'INFO', `exporting all ${rows.length} schemas`);
     const size = await writeZip(this.storage, taskFileKey(task), [
       { name: 'schemas.json', content: JSON.stringify(rows.map(row => docSchemaToExport(row.name, toSchema(row)))) },
       { name: 'metadata.json', content: JSON.stringify({ kind: 'SCHEMA' } satisfies TaskExportMetadata) },
@@ -36,19 +36,19 @@ export class SchemaTransferService {
    * schemas with the imported ones) fail the task, writing nothing.
    */
   async import(task: TaskEntity): Promise<TaskOutcome> {
-    const opened = await this.importFile.open(task, 'SCHEMA');
+    const opened = await this.importFileService.open(task, 'SCHEMA');
     if (!('zip' in opened)) return opened;
     const parse = zSchemaExportArraySchema.safeParse(await opened.zip.readJson('schemas.json', MAX_JSON_BYTES));
-    if (!parse.success) return this.importFile.invalid(task, 'SCHEMA', parse.error);
-    await this.log.log(task, 'INFO', `valid=${parse.data.length}`);
-    const rows = await this.schemas.findAll(task.spaceId);
+    if (!parse.success) return this.importFileService.invalid(task, 'SCHEMA', parse.error);
+    await this.taskLogService.log(task, 'INFO', `valid=${parse.data.length}`);
+    const rows = await this.schemaTransferRepository.findAll(task.spaceId);
     const plan = planSchemaPush(schemasByName(rows), parse.data as SchemaExport[], 'upsert');
-    const errors = plan.errors.length ? plan.errors : await this.schemas.applyImport(task.spaceId, plan);
+    const errors = plan.errors.length ? plan.errors : await this.schemaTransferRepository.applyImport(task.spaceId, plan);
     if (errors.length) {
-      for (const error of errors) await this.log.log(task, 'WARN', error);
+      for (const error of errors) await this.taskLogService.log(task, 'WARN', error);
       return { status: 'ERROR', message: 'Schema data is invalid.', trace: JSON.stringify(errors.slice(0, 100)) };
     }
-    await this.log.log(task, 'INFO', `total changes : ${plan.creates.length + plan.updates.length}`);
+    await this.taskLogService.log(task, 'INFO', `total changes : ${plan.creates.length + plan.updates.length}`);
     return { status: 'FINISHED' };
   }
 }

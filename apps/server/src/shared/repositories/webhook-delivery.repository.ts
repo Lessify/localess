@@ -12,7 +12,7 @@ import type { WebhookEntity } from '../entities/webhook.entity.js';
 export class WebhookDeliveryRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** The space's enabled webhooks subscribed to `event`. */
@@ -26,6 +26,6 @@ export class WebhookDeliveryRepository {
   /** The delivery's log row, announced to the webhook's log view. */
   async saveLog(spaceId: string, log: WebhookLogInsertEntity): Promise<void> {
     await this.db.insert(webhookLogs).values(log);
-    await this.events.publish({ spaceId, entity: 'webhook_logs', id: log.webhookId, op: 'created' });
+    await this.eventService.publish({ spaceId, entity: 'webhook_logs', id: log.webhookId, op: 'created' });
   }
 }

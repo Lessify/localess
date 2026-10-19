@@ -8,11 +8,11 @@ import { SpaceService } from '../services/space.service.js';
 @ManagementToken()
 @Controller('api/manage/v1/spaces/:spaceId')
 export class SpaceManagementController {
-  constructor(private readonly spaces: SpaceService) {}
+  constructor(private readonly spaceService: SpaceService) {}
 
   @Get()
   async space(@Param('spaceId') spaceId: string, @Res() reply: FastifyReply): Promise<void> {
-    const space = await this.spaces.findPublic(spaceId);
+    const space = await this.spaceService.findPublic(spaceId);
     if (!space) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: 'no-store' });
       return;

@@ -33,7 +33,7 @@ const CHUNK = 1000;
 export class SpaceTemplateRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly spaces: SpaceRepository,
+    private readonly spaceRepository: SpaceRepository,
   ) {}
 
   /** Before storing a template's files: the sweeper removes them unless the space is created (as for an upload). */
@@ -55,7 +55,7 @@ export class SpaceTemplateRepository {
     prepared?: { spaceId: string; files: StoredTemplateFile[] },
   ): Promise<SpaceRow> {
     return transaction(this.db, tx, async t => {
-      const { id: spaceId } = await this.spaces.create(name, DEFAULT_LOCALE.id, t, prepared?.spaceId);
+      const { id: spaceId } = await this.spaceRepository.create(name, DEFAULT_LOCALE.id, t, prepared?.spaceId);
       const locales = template.locales ?? [];
       if (locales.length) {
         await t.insert(spaceLocales).values(locales.map((localeId, index) => ({ spaceId, localeId, position: index + 1 })));

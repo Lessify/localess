@@ -22,18 +22,18 @@ const STORE_BATCH = 50;
 @Injectable()
 export class SpaceService {
   constructor(
-    private readonly spaces: SpaceRepository,
-    private readonly overviews: SpaceOverviewRepository,
-    private readonly sweeper: StorageSweeperService,
-    private readonly spaceTemplates: SpaceTemplateRepository,
+    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceOverviewRepository: SpaceOverviewRepository,
+    private readonly storageSweeperService: StorageSweeperService,
+    private readonly spaceTemplateRepository: SpaceTemplateRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
-    private readonly metadata: AssetMetadataService,
+    private readonly assetMetadataService: AssetMetadataService,
   ) {}
 
   /** One page of spaces (Admin → Spaces, and every page of it for the space switcher). */
   async findAll(query: SpacePageable): Promise<Page<Space>> {
-    const { rows, total } = await this.spaces.findPage(query);
+    const { rows, total } = await this.spaceRepository.findPage(query);
     return toPage(rows, total, query, toSpace);
   }
 
@@ -43,7 +43,7 @@ export class SpaceService {
 
   /** The space on the public API, or undefined (it answers 404 itself). */
   async findPublic(spaceId: string) {
-    const space = await this.spaces.findById(spaceId);
+    const space = await this.spaceRepository.findById(spaceId);
     return space && toPublicSpace(space);
   }
 
@@ -61,7 +61,7 @@ export class SpaceService {
    * permission beyond creating a space (SPACE_MANAGEMENT): a template is part of creating one.
    */
   async create(name: string, templateId: SpaceTemplateId | undefined) {
-    if (!templateId) return toSpace(await this.spaces.create(name, DEFAULT_LOCALE.id));
+    if (!templateId) return toSpace(await this.spaceRepository.create(name, DEFAULT_LOCALE.id));
     const template = this.available().find(it => it.id === templateId);
     if (!template) throw new BadRequestException('Unknown template');
     return this.createFromTemplate(name, template);
@@ -74,10 +74,10 @@ export class SpaceService {
    */
   async createFromTemplate(name: string, template: SpaceTemplate): Promise<Space> {
     const files = (template.assets ?? []).filter(it => it.file);
-    if (!files.length) return toSpace(await this.spaceTemplates.createSpace(name, template));
+    if (!files.length) return toSpace(await this.spaceTemplateRepository.createSpace(name, template));
     const spaceId = newUuid();
     const ids = files.map(() => newUuid());
-    await this.spaceTemplates.guardFiles(spaceId, ids);
+    await this.spaceTemplateRepository.guardFiles(spaceId, ids);
     try {
       // In batches: a template can hold a thousand small files.
       const stored: StoredTemplateFile[] = [];
@@ -88,7 +88,7 @@ export class SpaceService {
           const key = `${assetFilesPrefix(spaceId, id)}original`;
           const info = await this.storage.put(key, await asset.file!.bytes());
           // Known from the generator, or read as for an upload.
-          const metadata = asset.file!.metadata ?? (await this.metadata.extract(key, asset.file!.type, null)).metadata ?? null;
+          const metadata = asset.file!.metadata ?? (await this.assetMetadataService.extract(key, asset.file!.type, null)).metadata ?? null;
           return { key: asset.key, id, size: info.size, md5: info.md5, metadata };
         });
         // Every store of the batch settles before a failure is acted on: one still writing after the cleanup would
@@ -98,13 +98,13 @@ export class SpaceService {
         if (failed) throw failed.reason;
         stored.push(...results.map(it => (it as PromiseFulfilledResult<StoredTemplateFile>).value));
       }
-      return toSpace(await this.spaceTemplates.createSpace(name, template, undefined, { spaceId, files: stored }));
+      return toSpace(await this.spaceTemplateRepository.createSpace(name, template, undefined, { spaceId, files: stored }));
     } catch (error) {
       const cleaned = await this.storage.deletePrefix(spaceFilesPrefix(spaceId)).then(
         () => true,
         () => false,
       );
-      if (cleaned) await this.spaceTemplates.releaseFiles(spaceId, ids);
+      if (cleaned) await this.spaceTemplateRepository.releaseFiles(spaceId, ids);
       throw error;
     }
   }
@@ -116,21 +116,21 @@ export class SpaceService {
 
   async rename(spaceId: string, name: string) {
     await this.require(spaceId);
-    return toSpace(await this.spaces.rename(spaceId, name));
+    return toSpace(await this.spaceRepository.rename(spaceId, name));
   }
 
   /** Everything in the space goes with it: rows by FK cascade; its stored files are queued and swept right after. */
   async remove(spaceId: string): Promise<void> {
     const space = await this.require(spaceId);
     if (space.importStatus === 'IMPORTING') throw new ConflictException('The space is being imported');
-    await this.spaces.delete(spaceId);
-    this.sweeper.kick();
+    await this.spaceRepository.delete(spaceId);
+    this.storageSweeperService.kick();
   }
 
   /** Dashboard numbers, computed on request (were stored on the space by the `space-calculateoverview` callable). */
   async findOverview(spaceId: string): Promise<SpaceOverview> {
     const space = await this.require(spaceId);
-    const counts = await this.overviews.counts(spaceId);
+    const counts = await this.spaceOverviewRepository.counts(spaceId);
     return {
       counts: {
         locales: space.locales.length,
@@ -148,7 +148,7 @@ export class SpaceService {
   }
 
   private async require(spaceId: string): Promise<SpaceRow> {
-    const space = await this.spaces.findById(spaceId);
+    const space = await this.spaceRepository.findById(spaceId);
     if (!space) throw new NotFoundException('Space not found');
     return space;
   }

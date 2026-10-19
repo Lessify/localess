@@ -8,33 +8,33 @@ import { ContentService } from '../services/content.service.js';
 /** Contents (was direct `spaces/{s}/contents` access plus the `content-publish`/`-unpublish` callables). */
 @Controller('api/app/spaces/:spaceId/contents')
 export class ContentController {
-  constructor(private readonly contents: ContentService) {}
+  constructor(private readonly contentService: ContentService) {}
 
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.CONTENT_READ)
   async findAll(@Param('spaceId') spaceId: string, @Query({ schema: zContentListQuery }) query: ContentListQuery) {
     const { parentId, ...rest } = query;
-    return this.contents.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+    return this.contentService.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
 
   /** Every folder of the space (`{ id, parentId, name, slug }`), for the editor's breadcrumbs and move targets. */
   @Get('folders')
   @RequirePermission(UserPermission.CONTENT_READ)
   async findFolders(@Param('spaceId') spaceId: string) {
-    return this.contents.findFolders(spaceId);
+    return this.contentService.findFolders(spaceId);
   }
 
   @Get('count')
   @RequirePermission(UserPermission.CONTENT_READ)
   async count(@Param('spaceId') spaceId: string, @Query('kind') kind?: 'FOLDER' | 'DOCUMENT') {
-    return { count: await this.contents.count(spaceId, kind === 'FOLDER' || kind === 'DOCUMENT' ? kind : undefined) };
+    return { count: await this.contentService.count(spaceId, kind === 'FOLDER' || kind === 'DOCUMENT' ? kind : undefined) };
   }
 
   @Get(':id')
   @RequirePermission(UserPermission.CONTENT_READ)
   async findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.contents.findOne(spaceId, id);
+    return this.contentService.findOne(spaceId, id);
   }
 
   @Post()
@@ -43,13 +43,13 @@ export class ContentController {
     @Param('spaceId') spaceId: string,
     @Body({ schema: zContentCreate }) body: ContentCreate,
   ) {
-    return this.contents.create(spaceId, body);
+    return this.contentService.create(spaceId, body);
   }
 
   @Post(':id/clone')
   @RequirePermission(UserPermission.CONTENT_CREATE)
   async clone(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.contents.clone(spaceId, id);
+    return this.contentService.clone(spaceId, id);
   }
 
   /** Rename and/or move (`parentSlug`; '' is the root). */
@@ -60,7 +60,7 @@ export class ContentController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zContentUpdate }) body: ContentUpdate,
   ) {
-    return this.contents.update(spaceId, id, body);
+    return this.contentService.update(spaceId, id, body);
   }
 
   @Put(':id/data')
@@ -70,27 +70,27 @@ export class ContentController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zContentDataUpdate }) body: ContentDataUpdate,
   ) {
-    return this.contents.updateData(spaceId, id, body.data);
+    return this.contentService.updateData(spaceId, id, body.data);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_DELETE)
   async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.contents.remove(spaceId, id);
+    await this.contentService.remove(spaceId, id);
   }
 
   @Post(':id/publish')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_PUBLISH)
   async publish(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.contents.publish(spaceId, id);
+    await this.contentService.publish(spaceId, id);
   }
 
   @Post(':id/unpublish')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_PUBLISH)
   async unpublish(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.contents.unpublish(spaceId, id);
+    await this.contentService.unpublish(spaceId, id);
   }
 }

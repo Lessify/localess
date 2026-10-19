@@ -56,7 +56,7 @@ export type MoveResult = { asset: AssetEntity } | { noParent: true } | { intoIts
 export class AssetRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   findAll(spaceId: string, query: AssetQuery): Promise<AssetEntity[]> {
@@ -222,7 +222,7 @@ export class AssetRepository {
       await t.execute(sql`select pg_advisory_xact_lock(hashtext('assets'), hashtext(${spaceId}))`);
       const outcome = await work(t);
       if (!outcome) return undefined;
-      for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'assets', ...it }, t);
+      for (const it of outcome.changed) await this.eventService.publish({ spaceId, entity: 'assets', ...it }, t);
       return outcome.result;
     });
   }

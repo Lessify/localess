@@ -80,7 +80,7 @@ const TAKEN = Symbol('taken');
 export class ContentRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   async findAll(spaceId: string, query: ContentQuery): Promise<ContentWithPath[]> {
@@ -339,7 +339,7 @@ export class ContentRepository {
         }
         await dropContentLinks(t, spaceId);
       }
-      for (const it of outcome.changed) await this.events.publish({ spaceId, entity: 'contents', ...it }, t);
+      for (const it of outcome.changed) await this.eventService.publish({ spaceId, entity: 'contents', ...it }, t);
       return outcome.result;
     });
   }

@@ -33,7 +33,7 @@ export interface TranslationLocaleWrite {
 export class TranslationTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** By key, byte order (`collate "C"`), so exports are stable. */
@@ -87,7 +87,7 @@ export class TranslationTransferRepository {
       await work(t);
       if (total) {
         await dropTranslationDrafts(t, spaceId);
-        await this.events.publish({ spaceId, entity: 'translations', op: 'updated' }, t);
+        await this.eventService.publish({ spaceId, entity: 'translations', op: 'updated' }, t);
       }
       return total;
     });

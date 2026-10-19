@@ -24,25 +24,25 @@ function fieldValues(file: MultipartFile): Record<string, string> {
 /** Export/import tasks of a space; the task worker runs them (TaskService, workers/). */
 @Controller('api/app/spaces/:spaceId/tasks')
 export class TaskController {
-  constructor(private readonly tasks: TaskService) {}
+  constructor(private readonly taskService: TaskService) {}
 
   @Get()
   @RequirePermission(...TASK_READ_PERMISSIONS)
   findAll(@Param('spaceId') spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable) {
-    return this.tasks.findAll(spaceId, query);
+    return this.taskService.findAll(spaceId, query);
   }
 
   @Get(':id')
   @RequirePermission(...TASK_READ_PERMISSIONS)
   findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.tasks.findOne(spaceId, id);
+    return this.taskService.findOne(spaceId, id);
   }
 
   /** The task's file (export result or uploaded import), as an attachment. */
   @Get(':id/download')
   @RequirePermission(...TASK_READ_PERMISSIONS)
   async download(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Res() reply: FastifyReply): Promise<void> {
-    const { filename, size, stream } = await this.tasks.download(spaceId, id);
+    const { filename, size, stream } = await this.taskService.download(spaceId, id);
     void reply
       .header('content-disposition', buildContentDisposition(filename, true))
       .header('content-length', size)
@@ -59,7 +59,7 @@ export class TaskController {
     @Body({ schema: zTaskCreate }) body: TaskCreate,
     @CurrentUser() user: UserEntity,
   ) {
-    return this.tasks.create(spaceId, body, user);
+    return this.taskService.create(spaceId, body, user);
   }
 
   /**
@@ -83,7 +83,7 @@ export class TaskController {
       file.file.resume();
       throw error;
     }
-    return this.tasks.createImport(spaceId, { ...fields.data, filename: file.filename, stream: file.file });
+    return this.taskService.createImport(spaceId, { ...fields.data, filename: file.filename, stream: file.file });
   }
 
   /** Logs cascade; the task's files go too. */
@@ -91,6 +91,6 @@ export class TaskController {
   @HttpCode(204)
   @RequirePermission(...TASK_READ_PERMISSIONS)
   remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity): Promise<void> {
-    return this.tasks.remove(spaceId, id, user);
+    return this.taskService.remove(spaceId, id, user);
   }
 }

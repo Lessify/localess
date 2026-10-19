@@ -37,17 +37,17 @@ const FILE_NOT_FOUND = 'File not found, on path. Please Publish again. The conte
 })
 @Controller('api/v1/spaces/:spaceId')
 export class ContentCdnController {
-  constructor(private readonly delivery: ContentDeliveryService) {}
+  constructor(private readonly contentDeliveryService: ContentDeliveryService) {}
 
   @Get('links')
   async links(@Req() request: FastifyRequest, @Res() reply: FastifyReply, @CurrentToken() token: ApiToken): Promise<void> {
     const { spaceId } = request.params as Params;
     const { kind, parentSlug, excludeChildren, cv, version, token: tokenId } = request.query as Query;
 
-    const space = await this.delivery.findSpace(spaceId);
+    const space = await this.contentDeliveryService.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const validKind = kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER ? kind : undefined;
-    const { links, builtAt } = await this.delivery.findLinks(spaceId, version, {
+    const { links, builtAt } = await this.contentDeliveryService.findLinks(spaceId, version, {
       parentSlug,
       excludeChildren: excludeChildren === 'true',
       kind: validKind,
@@ -72,9 +72,9 @@ export class ContentCdnController {
     const { spaceId } = params;
     const fullSlug = params['*'] ?? '';
 
-    const space = await this.delivery.findSpace(spaceId);
+    const space = await this.contentDeliveryService.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
-    const contentId = await this.delivery.findContentIdByFullSlug(spaceId, fullSlug);
+    const contentId = await this.contentDeliveryService.findContentIdByFullSlug(spaceId, fullSlug);
     if (!contentId) {
       sendV1Error(reply, 404, 'not-found', 'Slug not found');
       return;
@@ -87,7 +87,7 @@ export class ContentCdnController {
   async contentById(@Req() request: FastifyRequest, @Res() reply: FastifyReply, @CurrentToken() token: ApiToken): Promise<void> {
     const { spaceId, contentId } = request.params as Params;
 
-    const space = await this.delivery.findSpace(spaceId);
+    const space = await this.contentDeliveryService.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     await this.sendContent(request, reply, token, space, contentId, `/api/v1/spaces/${spaceId}/contents/${q(contentId)}`);
   }
@@ -102,7 +102,7 @@ export class ContentCdnController {
   ): Promise<void> {
     const { cv, locale, version, token: tokenId, resolveReference, resolveLink, resolveAsset } = request.query as Query;
     const actualLocale = identifySpaceLocale(space, locale);
-    const found = await this.delivery.findLocaleDocument(space, contentId, actualLocale, version);
+    const found = await this.contentDeliveryService.findLocaleDocument(space, contentId, actualLocale, version);
     if (!found) {
       sendV1Error(reply, 404, 'not-found', FILE_NOT_FOUND, { cacheControl: TEN_MINUTE_CACHE });
       return;
@@ -122,13 +122,13 @@ export class ContentCdnController {
     const { assets, links, references, ...rest } = found.document;
     const response: ContentDocumentApi = { ...rest };
     if (resolveAsset === 'true' && assets?.length) {
-      response.assets = await this.delivery.resolveAssets(space.id, assets);
+      response.assets = await this.contentDeliveryService.resolveAssets(space.id, assets);
     }
     if (resolveLink === 'true' && links?.length) {
-      response.links = await this.delivery.resolveLinks(space.id, links);
+      response.links = await this.contentDeliveryService.resolveLinks(space.id, links);
     }
     if (resolveReference === 'true' && references?.length) {
-      response.references = await this.delivery.resolveReferences(space.id, references, found.resolvedLocale, version);
+      response.references = await this.contentDeliveryService.resolveReferences(space.id, references, found.resolvedLocale, version);
     }
     sendJson(reply, response);
   }

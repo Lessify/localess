@@ -24,20 +24,20 @@ function found(entity: TokenEntity | undefined) {
 /** Space API tokens. The value is returned on create and regenerate; afterwards only for public and preview tokens. */
 @Injectable()
 export class TokenService {
-  constructor(private readonly tokens: TokenRepository) {}
+  constructor(private readonly tokenRepository: TokenRepository) {}
 
   async findAll(spaceId: string, type?: TokenType, limit?: number) {
-    return (await this.tokens.findAll(spaceId, { type, limit })).map(toToken);
+    return (await this.tokenRepository.findAll(spaceId, { type, limit })).map(toToken);
   }
 
   async findOne(spaceId: string, id: string) {
-    return found(await this.tokens.findById(spaceId, id));
+    return found(await this.tokenRepository.findById(spaceId, id));
   }
 
   async create(spaceId: string, input: TokenInput) {
     if (input.type === TokenType.MANAGEMENT && input.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
     const value = newApiToken(input.type);
-    const entity = await this.tokens.create(spaceId, {
+    const entity = await this.tokenRepository.create(spaceId, {
       type: input.type,
       name: input.name,
       cacheTtl: input.cacheTtl ?? null,
@@ -49,7 +49,7 @@ export class TokenService {
 
   async update(spaceId: string, id: string, input: TokenChange) {
     return found(
-      await this.tokens.update(spaceId, id, current => {
+      await this.tokenRepository.update(spaceId, id, current => {
         if (current.type === TokenType.MANAGEMENT && input.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
         return { name: input.name, cacheTtl: input.cacheTtl ?? null };
       }),
@@ -59,7 +59,7 @@ export class TokenService {
   /** The same token (id, type, name) under a new value, returned once. */
   async regenerate(spaceId: string, id: string) {
     let value = '';
-    const entity = await this.tokens.update(spaceId, id, current => {
+    const entity = await this.tokenRepository.update(spaceId, id, current => {
       const type = current.type as TokenType;
       value = newApiToken(type);
       return tokenColumns(type, value);
@@ -68,6 +68,6 @@ export class TokenService {
   }
 
   async remove(spaceId: string, id: string): Promise<void> {
-    if (!(await this.tokens.delete(spaceId, id))) throw new NotFoundException('Token not found');
+    if (!(await this.tokenRepository.delete(spaceId, id))) throw new NotFoundException('Token not found');
   }
 }

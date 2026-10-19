@@ -18,7 +18,7 @@ const NO_STORE = 'no-store';
 @Controller('api/manage/v1/spaces/:spaceId')
 export class SchemaManagementController {
   constructor(
-    private readonly schemas: SchemaService,
+    private readonly schemaService: SchemaService,
     private readonly openApiService: OpenApiService,
   ) {}
 
@@ -36,7 +36,7 @@ export class SchemaManagementController {
   @Get('schemas')
   async schemaExport(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     const spaceId = (request.params as Params)['spaceId'];
-    const exported = await this.schemas.export(spaceId);
+    const exported = await this.schemaService.export(spaceId);
     if (!exported) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: NO_STORE });
       return;
@@ -54,7 +54,7 @@ export class SchemaManagementController {
       return;
     }
     const { dryRun, type, schemas: pushed } = body.data;
-    const plan = await this.schemas.planPush(spaceId, pushed as SchemaExport[], type);
+    const plan = await this.schemaService.planPush(spaceId, pushed as SchemaExport[], type);
     if (!plan) {
       sendV1Error(reply, 404, 'not-found', 'Not found');
       return;
@@ -80,7 +80,7 @@ export class SchemaManagementController {
       return;
     }
     // Schemas shape the draft output (locale extraction), so content drafts change too: the content version moves.
-    const errors = await this.schemas.applyPush(spaceId, plan);
+    const errors = await this.schemaService.applyPush(spaceId, plan);
     if (errors.length > 0) {
       sendV1Error(reply, 400, 'failed-precondition', 'Referential integrity check failed', { details: { errors } });
       return;

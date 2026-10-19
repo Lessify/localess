@@ -7,29 +7,29 @@ import { SpaceLocaleService } from '../services/space-locale.service.js';
 /** A space's locales and its default locale; every route answers the space as it is after the change. */
 @Controller('api/app/spaces/:spaceId')
 export class SpaceLocaleController {
-  constructor(private readonly locales: SpaceLocaleService) {}
+  constructor(private readonly spaceLocaleService: SpaceLocaleService) {}
 
   @Post('locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate) {
-    return this.locales.create(spaceId, body.id);
+    return this.spaceLocaleService.create(spaceId, body.id);
   }
 
   @Put('locales/order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleOrder }) body: SpaceLocaleOrder) {
-    return this.locales.reorder(spaceId, body.ids);
+    return this.spaceLocaleService.reorder(spaceId, body.ids);
   }
 
   @Delete('locales/:localeId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   remove(@Param('spaceId') spaceId: string, @Param('localeId') localeId: string) {
-    return this.locales.remove(spaceId, localeId);
+    return this.spaceLocaleService.remove(spaceId, localeId);
   }
 
   @Put('default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   setDefault(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleSetDefault }) body: SpaceLocaleSetDefault) {
-    return this.locales.setDefault(spaceId, body.id);
+    return this.spaceLocaleService.setDefault(spaceId, body.id);
   }
 }

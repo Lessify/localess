@@ -20,25 +20,25 @@ function found<T>(result: T | undefined): T {
 @Injectable()
 export class ContentService {
   constructor(
-    private readonly contents: ContentRepository,
-    private readonly webhooks: WebhookDispatcher,
+    private readonly contentRepository: ContentRepository,
+    private readonly webhookDispatcher: WebhookDispatcher,
   ) {}
 
   async findAll(spaceId: string, query: ContentQuery): Promise<Content[]> {
-    return (await this.contents.findAll(spaceId, query)).map(toContent);
+    return (await this.contentRepository.findAll(spaceId, query)).map(toContent);
   }
 
   count(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
-    return this.contents.count(spaceId, kind);
+    return this.contentRepository.count(spaceId, kind);
   }
 
   async findOne(spaceId: string, id: string): Promise<Content> {
-    return toContent(found(await this.contents.findById(spaceId, id)));
+    return toContent(found(await this.contentRepository.findById(spaceId, id)));
   }
 
   /** Every folder of the space: the editor builds its breadcrumbs, paths and move targets from them. */
   async findFolders(spaceId: string): Promise<ContentFolderSummary[]> {
-    return (await this.contents.findFolders(spaceId)).map(it => toDto(it) as unknown as ContentFolderSummary);
+    return (await this.contentRepository.findFolders(spaceId)).map(it => toDto(it) as unknown as ContentFolderSummary);
   }
 
   /**
@@ -56,7 +56,7 @@ export class ContentService {
       data?: ContentData;
     },
   ): Promise<Content> {
-    const result = await this.contents.create(spaceId, input);
+    const result = await this.contentRepository.create(spaceId, input);
     if ('noSchema' in result) throw new BadRequestException(`No ROOT schema '${input.schema}' in the space`);
     if ('noParent' in result) throw new BadRequestException('No such folder');
     if ('taken' in result) throw new ConflictException(`'${result.taken}' is already used`);
@@ -65,7 +65,7 @@ export class ContentService {
 
   /** A copy next to the original with a random suffix, never published. */
   async clone(spaceId: string, id: string): Promise<Content> {
-    const source = found(await this.contents.findById(spaceId, id));
+    const source = found(await this.contentRepository.findById(spaceId, id));
     if (source.kind !== 'DOCUMENT') throw new BadRequestException('Only documents can be cloned');
     const suffix = randomSuffix();
     return this.create(
@@ -83,7 +83,7 @@ export class ContentService {
 
   /** Rename and/or move (`parentId` null: the root). A folder is not moved under itself. */
   async update(spaceId: string, id: string, input: { name?: string; slug?: string; parentId?: string | null }): Promise<Content> {
-    const result = found(await this.contents.update(spaceId, id, input));
+    const result = found(await this.contentRepository.update(spaceId, id, input));
     if ('noParent' in result) throw new BadRequestException('No such folder');
     if ('taken' in result) throw new ConflictException(`'${result.taken}' is already used`);
     if ('intoItself' in result) throw new BadRequestException('A folder cannot be moved into itself');
@@ -94,7 +94,7 @@ export class ContentService {
 
   /** Saves the editor's data, with the ids it points to worked out here (`contentRefs`), not taken from the client. */
   async updateData(spaceId: string, id: string, data: ContentData): Promise<Content> {
-    const content = found(await this.contents.updateData(spaceId, id, { data, ...contentRefs(data) }));
+    const content = found(await this.contentRepository.updateData(spaceId, id, { data, ...contentRefs(data) }));
     if ('notDocument' in content) throw new BadRequestException('Only documents have data');
     this.changed(spaceId, content);
     return toContent(content);
@@ -102,7 +102,7 @@ export class ContentService {
 
   /** Deletes the item and, for a folder, everything under it. Published snapshots cascade. */
   async remove(spaceId: string, id: string): Promise<void> {
-    const deleted = found(await this.contents.delete(spaceId, id));
+    const deleted = found(await this.contentRepository.delete(spaceId, id));
     // The delete trigger fired `content.changed` once per deleted item.
     for (const it of deleted) this.changed(spaceId, it);
   }
@@ -112,17 +112,17 @@ export class ContentService {
    * since it was last published. `updatedAt` is left alone so "changed since publish" keeps working.
    */
   async publish(spaceId: string, id: string): Promise<void> {
-    const target = found(await this.contents.publish(spaceId, id));
-    this.webhooks.dispatch(spaceId, WebHookEvent.CONTENT_PUBLISHED, { id, fullSlug: target.fullSlug });
+    const target = found(await this.contentRepository.publish(spaceId, id));
+    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.CONTENT_PUBLISHED, { id, fullSlug: target.fullSlug });
   }
 
   /** Stops serving a document (or every published document under a folder). */
   async unpublish(spaceId: string, id: string): Promise<void> {
-    const target = found(await this.contents.unpublish(spaceId, id));
-    this.webhooks.dispatch(spaceId, WebHookEvent.CONTENT_UNPUBLISHED, { id, fullSlug: target.fullSlug });
+    const target = found(await this.contentRepository.unpublish(spaceId, id));
+    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.CONTENT_UNPUBLISHED, { id, fullSlug: target.fullSlug });
   }
 
   private changed(spaceId: string, content: Pick<ContentWithPath, 'id' | 'fullSlug'>): void {
-    this.webhooks.dispatch(spaceId, WebHookEvent.CONTENT_CHANGED, { id: content.id, fullSlug: content.fullSlug });
+    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.CONTENT_CHANGED, { id: content.id, fullSlug: content.fullSlug });
   }
 }

@@ -20,19 +20,19 @@ import type { UserEntity } from '../../../shared/entities/user.entity.js';
 @RequirePermission(UserPermission.USER_MANAGEMENT)
 export class UserController {
   constructor(
-    private readonly users: UserService,
+    private readonly userService: UserService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (email or display name), `?active=active|inactive`. */
   @Get()
   findAll(@Query({ schema: zUserPageable }) query: UserPageable): Promise<Page<UserDto>> {
-    return this.users.findAll(query);
+    return this.userService.findAll(query);
   }
 
   @Get(':id')
   async findOne(@Param('id', UuidParamPipe) id: string): Promise<UserDto> {
-    return this.users.findOne(id);
+    return this.userService.findOne(id);
   }
 
   @Post()
@@ -40,7 +40,7 @@ export class UserController {
     @CurrentUser() caller: UserEntity,
     @Body({ schema: zUserInvite }) body: UserInvite,
   ): Promise<UserDto> {
-    return this.users.invite(caller, body);
+    return this.userService.invite(caller, body);
   }
 
   @Patch(':id')
@@ -49,7 +49,7 @@ export class UserController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zUserUpdate }) body: UserUpdate,
   ): Promise<UserDto> {
-    return this.users.changeAccess(caller, id, body);
+    return this.userService.changeAccess(caller, id, body);
   }
 
   /** Blocks (or restores) sign-in without deleting the user; was the Firebase Auth console's "Disable account". */
@@ -59,7 +59,7 @@ export class UserController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zUserStatusUpdate }) body: UserStatusUpdate,
   ): Promise<UserDto> {
-    return this.users.changeStatus(caller, id, body.disabled);
+    return this.userService.changeStatus(caller, id, body.disabled);
   }
 
   /** A one-hour reset link to hand to the user — the way to reset passwords when SMTP isn't configured. */
@@ -69,13 +69,13 @@ export class UserController {
     @Param('id', UuidParamPipe) id: string,
     @Req() request: FastifyRequest,
   ): Promise<{ url: string; expiresAt: string }> {
-    const link = await this.users.createPasswordResetLink(caller, id, publicOrigin(this.config, request));
+    const link = await this.userService.createPasswordResetLink(caller, id, publicOrigin(this.config, request));
     return { url: link.url, expiresAt: link.expiresAt.toISOString() };
   }
 
   @Delete(':id')
   @HttpCode(204)
   async remove(@CurrentUser() caller: UserEntity, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.users.remove(caller, id);
+    await this.userService.remove(caller, id);
   }
 }

@@ -14,7 +14,7 @@ export type WebhookValues = Pick<WebhookEntity, 'name' | 'url' | 'events'> & Par
 export class WebhookRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   findAll(spaceId: string): Promise<WebhookEntity[]> {
@@ -35,7 +35,7 @@ export class WebhookRepository {
         .insert(webhooks)
         .values({ id: newUuid(), spaceId, enabled: true, ...values })
         .returning();
-      await this.events.publish({ spaceId, entity: 'webhooks', id: row.id, op: 'created' }, t);
+      await this.eventService.publish({ spaceId, entity: 'webhooks', id: row.id, op: 'created' }, t);
       return row;
     });
   }
@@ -44,7 +44,7 @@ export class WebhookRepository {
   update(spaceId: string, id: string, values: Partial<WebhookValues>, tx?: Transaction): Promise<WebhookEntity | undefined> {
     return transaction(this.db, tx, async t => {
       const [row] = await t.update(webhooks).set(values).where(this.byId(spaceId, id)).returning();
-      if (row) await this.events.publish({ spaceId, entity: 'webhooks', id, op: 'updated' }, t);
+      if (row) await this.eventService.publish({ spaceId, entity: 'webhooks', id, op: 'updated' }, t);
       return row;
     });
   }
@@ -53,7 +53,7 @@ export class WebhookRepository {
   delete(spaceId: string, id: string, tx?: Transaction): Promise<boolean> {
     return transaction(this.db, tx, async t => {
       const deleted = await t.delete(webhooks).where(this.byId(spaceId, id)).returning({ id: webhooks.id });
-      if (deleted.length) await this.events.publish({ spaceId, entity: 'webhooks', id, op: 'deleted' }, t);
+      if (deleted.length) await this.eventService.publish({ spaceId, entity: 'webhooks', id, op: 'deleted' }, t);
       return deleted.length > 0;
     });
   }

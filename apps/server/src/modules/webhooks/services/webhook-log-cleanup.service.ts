@@ -15,7 +15,7 @@ export class WebhookLogCleanupService implements OnApplicationBootstrap {
   private readonly logger = new Logger(WebhookLogCleanupService.name);
 
   constructor(
-    private readonly logs: WebhookLogRepository,
+    private readonly webhookLogRepository: WebhookLogRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -29,7 +29,7 @@ export class WebhookLogCleanupService implements OnApplicationBootstrap {
   }
 
   async cleanup(): Promise<void> {
-    await this.logs.deleteBefore(new Date(Date.now() - this.config.webhookLogDays * DAY));
+    await this.webhookLogRepository.deleteBefore(new Date(Date.now() - this.config.webhookLogDays * DAY));
   }
 
   private async run(): Promise<void> {

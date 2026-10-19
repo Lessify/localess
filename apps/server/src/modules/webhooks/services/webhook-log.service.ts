@@ -7,13 +7,13 @@ import { WebhookRepository } from '../repositories/webhook.repository.js';
 @Injectable()
 export class WebhookLogService {
   constructor(
-    private readonly webhooks: WebhookRepository,
-    private readonly logs: WebhookLogRepository,
+    private readonly webhookRepository: WebhookRepository,
+    private readonly webhookLogRepository: WebhookLogRepository,
   ) {}
 
   /** Newest first: 100 unless another `limit` (1–1000) is asked for. */
   async findAll(spaceId: string, webhookId: string, limit = 100) {
-    if (!(await this.webhooks.findById(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
-    return (await this.logs.findAll(webhookId, limit)).map(toWebhookLog);
+    if (!(await this.webhookRepository.findById(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
+    return (await this.webhookLogRepository.findAll(webhookId, limit)).map(toWebhookLog);
   }
 }

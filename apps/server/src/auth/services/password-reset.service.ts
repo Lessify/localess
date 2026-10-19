@@ -16,17 +16,17 @@ export class PasswordResetService {
   private readonly logger = new Logger(PasswordResetService.name);
 
   constructor(
-    private readonly resetTokens: PasswordResetTokenRepository,
-    private readonly users: AuthUserRepository,
-    private readonly sessions: SessionService,
-    private readonly mail: MailService,
+    private readonly passwordResetTokenRepository: PasswordResetTokenRepository,
+    private readonly authUserRepository: AuthUserRepository,
+    private readonly sessionService: SessionService,
+    private readonly mailService: MailService,
   ) {}
 
   /** A single-use link valid for one hour. Only the token's hash is stored. */
   async createLink(user: UserEntity, origin: string): Promise<{ url: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
-    await this.resetTokens.create({ tokenHash: hashToken(token), userId: user.id, expiresAt });
+    await this.passwordResetTokenRepository.create({ tokenHash: hashToken(token), userId: user.id, expiresAt });
     return { url: `${origin}${RESET_PATH}?token=${token}`, expiresAt };
   }
 
@@ -35,14 +35,14 @@ export class PasswordResetService {
    * to find out which emails have accounts.
    */
   async request(email: string, origin: string): Promise<void> {
-    const user = await this.users.findByEmail(email);
+    const user = await this.authUserRepository.findByEmail(email);
     if (!user || user.disabled) return;
-    if (!this.mail.enabled) {
+    if (!this.mailService.enabled) {
       this.logger.warn('Password reset requested but SMTP is not configured; an admin can create a reset link instead');
       return;
     }
     const { url } = await this.createLink(user, origin);
-    await this.mail.send({
+    await this.mailService.send({
       to: user.email,
       subject: 'Reset your Localess password',
       text: `Someone asked to reset the password for ${user.email}.\n\nOpen this link within an hour to choose a new one:\n${url}\n\nIf it wasn't you, ignore this email.`,
@@ -51,9 +51,9 @@ export class PasswordResetService {
 
   /** Sets the new password, burns the token, and signs the user out everywhere. */
   async confirm(token: string, password: string): Promise<void> {
-    const userId = await this.resetTokens.consume(hashToken(token), new Date());
+    const userId = await this.passwordResetTokenRepository.consume(hashToken(token), new Date());
     if (!userId) throw new BadRequestException('This reset link is invalid or has expired');
-    await this.users.setPasswordHash(userId, await hashPassword(password));
-    await this.sessions.revokeAllForUser(userId);
+    await this.authUserRepository.setPasswordHash(userId, await hashPassword(password));
+    await this.sessionService.revokeAllForUser(userId);
   }
 }

@@ -19,7 +19,7 @@ const BEARER = /^Bearer (\S+)$/i;
  */
 @Injectable()
 export class ManagementTokenGuard implements CanActivate {
-  constructor(private readonly tokens: TokenAuthService) {}
+  constructor(private readonly tokenAuthService: TokenAuthService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const http = context.switchToHttp();
@@ -34,10 +34,10 @@ export class ManagementTokenGuard implements CanActivate {
     });
     // A well-formed id that is not a UUID names no space (spaces are UUIDs; old Firestore ids only reach the CDN's assets).
     if (parseApiToken(value) !== TokenType.MANAGEMENT || !isUuid(params['spaceId'])) throw unauthenticated;
-    const token = await this.tokens.find(params['spaceId'], value as string);
+    const token = await this.tokenAuthService.find(params['spaceId'], value as string);
     if (!token || token.type !== TokenType.MANAGEMENT) throw unauthenticated;
     // Only now, for a caller holding the space's token: a space whose import runs or failed is half there.
-    const importStatus = await this.tokens.findImportStatus(params['spaceId']);
+    const importStatus = await this.tokenAuthService.findImportStatus(params['spaceId']);
     if (importStatus) {
       throw new V1Error(503, 'unavailable', importUnavailableMessage(importStatus), {
         cacheControl: NO_STORE,

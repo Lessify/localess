@@ -17,8 +17,8 @@ export class AuthCleanupService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AuthCleanupService.name);
 
   constructor(
-    private readonly sessions: SessionRepository,
-    private readonly resetTokens: PasswordResetTokenRepository,
+    private readonly sessionRepository: SessionRepository,
+    private readonly passwordResetTokenRepository: PasswordResetTokenRepository,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -32,8 +32,8 @@ export class AuthCleanupService implements OnApplicationBootstrap {
 
   async cleanup(): Promise<void> {
     const now = new Date();
-    await this.sessions.deleteExpiredBefore(now);
-    await this.resetTokens.deleteSpent(new Date(now.getTime() - RESET_TOKEN_GRACE_MS));
+    await this.sessionRepository.deleteExpiredBefore(now);
+    await this.passwordResetTokenRepository.deleteSpent(new Date(now.getTime() - RESET_TOKEN_GRACE_MS));
   }
 
   private async run(): Promise<void> {

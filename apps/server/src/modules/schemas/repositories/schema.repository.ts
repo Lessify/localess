@@ -38,7 +38,7 @@ function renameSelfReferences(fields: SchemaField[], from: string, to: string): 
 export class SchemaRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** For the app: by name, in the database collation. */
@@ -216,7 +216,7 @@ export class SchemaRepository {
       return await transaction(this.db, tx, async t => {
         await requireSpace(t, spaceId);
         const { result, changed } = await work(t);
-        for (const it of changed) await this.events.publish({ spaceId, entity: 'schemas', ...it }, t);
+        for (const it of changed) await this.eventService.publish({ spaceId, entity: 'schemas', ...it }, t);
         return result;
       });
     } catch (error) {

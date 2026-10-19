@@ -35,7 +35,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly deliveries: WebhookDeliveryRepository,
+    private readonly webhookDeliveryRepository: WebhookDeliveryRepository,
   ) {}
 
   /** Fire-and-forget: never throws, never delays the caller. */
@@ -57,7 +57,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
   }
 
   private async deliverAll(payload: WebhookPayload): Promise<void> {
-    const targets = await this.deliveries.findTargets(payload.spaceId, payload.event);
+    const targets = await this.webhookDeliveryRepository.findTargets(payload.spaceId, payload.event);
     await Promise.allSettled(targets.map(webhook => this.deliver(webhook, payload)));
   }
 
@@ -118,7 +118,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       };
     }
     try {
-      await this.deliveries.saveLog(payload.spaceId, log);
+      await this.webhookDeliveryRepository.saveLog(payload.spaceId, log);
     } catch (error) {
       this.logger.error(`Could not log webhook delivery ${deliveryId}: ${error}`);
     }

@@ -13,7 +13,7 @@ import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 export class TaskLogRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** In the order they were written. */
@@ -30,7 +30,7 @@ export class TaskLogRepository {
   ): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(taskLogs).values({ id: newUuid(), taskId: task.id, level, message, trace });
-      await this.events.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created' }, t);
+      await this.eventService.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created' }, t);
     });
   }
 }

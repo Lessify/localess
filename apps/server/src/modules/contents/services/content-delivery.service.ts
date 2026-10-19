@@ -31,16 +31,16 @@ export interface LocaleDocument {
 @Injectable()
 export class ContentDeliveryService {
   constructor(
-    private readonly delivery: ContentDeliveryRepository,
-    private readonly spaces: SpaceRepository,
+    private readonly contentDeliveryRepository: ContentDeliveryRepository,
+    private readonly spaceRepository: SpaceRepository,
   ) {}
 
   findSpace(spaceId: string): Promise<SpaceRow | undefined> {
-    return this.spaces.find(spaceId);
+    return this.spaceRepository.find(spaceId);
   }
 
   findContentIdByFullSlug(spaceId: string, fullSlug: string): Promise<string | undefined> {
-    return this.delivery.findIdByFullSlug(spaceId, fullSlug);
+    return this.contentDeliveryRepository.findIdByFullSlug(spaceId, fullSlug);
   }
 
   /** Snapshots of `ids` in `locale` (published, or drafts built when missing). Missing ones are absent. */
@@ -52,7 +52,7 @@ export class ContentDeliveryService {
   ): Promise<Map<string, { document: ContentDocumentStorage; builtAt: Date }>> {
     ids = [...new Set(ids.filter(isUuid))];
     if (!ids.length) return new Map();
-    const rows = draft ? await this.delivery.findDrafts(spaceId, ids, locale) : await this.delivery.findPublished(spaceId, ids, locale);
+    const rows = draft ? await this.contentDeliveryRepository.findDrafts(spaceId, ids, locale) : await this.contentDeliveryRepository.findPublished(spaceId, ids, locale);
     return new Map(rows.map(row => [row.contentId, { document: row.data, builtAt: row.builtAt }]));
   }
 
@@ -87,7 +87,7 @@ export class ContentDeliveryService {
   async resolveLinks(spaceId: string, ids: string[]): Promise<Record<string, ContentMetadata>> {
     const unique = [...new Set(ids.filter(isUuid))];
     if (!unique.length) return {};
-    const rows = await this.delivery.findContents(spaceId, unique);
+    const rows = await this.contentDeliveryRepository.findContents(spaceId, unique);
     return Object.fromEntries(rows.map(row => [row.id, toContentMetadata(row)]));
   }
 
@@ -95,7 +95,7 @@ export class ContentDeliveryService {
   async resolveAssets(spaceId: string, ids: string[]): Promise<Record<string, AssetMetadata>> {
     const unique = [...new Set(ids.filter(isUuid))];
     if (!unique.length) return {};
-    const rows = await this.delivery.findAssets(spaceId, unique);
+    const rows = await this.contentDeliveryRepository.findAssets(spaceId, unique);
     const byId = new Map(rows.map(row => [row.id, row]));
     const resolved: Record<string, AssetMetadata> = {};
     for (const id of unique) {
@@ -114,7 +114,7 @@ export class ContentDeliveryService {
    * sharing the prefix (`blog-archive` under `blog`). It is an exact prefix match.
    */
   async findLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
-    const snapshot = await this.delivery.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
+    const snapshot = await this.contentDeliveryRepository.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
     const all = Object.values(snapshot.data);
     const { parentSlug, excludeChildren, kind } = filter;
     const links = all.filter(

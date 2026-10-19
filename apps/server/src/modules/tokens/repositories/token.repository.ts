@@ -18,7 +18,7 @@ export type TokenValues = Pick<TokenEntity, 'type' | 'token' | 'tokenHash' | 'hi
 export class TokenRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** Newest first; `type` keeps tokens of that type, `limit` caps the list. */
@@ -47,7 +47,7 @@ export class TokenRepository {
         .insert(tokens)
         .values({ id: newUuid(), spaceId, ...values })
         .returning();
-      await this.events.publish({ spaceId, entity: 'tokens', id: row.id, op: 'created' }, t);
+      await this.eventService.publish({ spaceId, entity: 'tokens', id: row.id, op: 'created' }, t);
       return row;
     });
   }
@@ -66,7 +66,7 @@ export class TokenRepository {
       const [current] = await t.select().from(tokens).where(this.byId(spaceId, id)).for('update');
       if (!current) return undefined;
       const [row] = await t.update(tokens).set(change(current)).where(this.byId(spaceId, id)).returning();
-      await this.events.publish({ spaceId, entity: 'tokens', id, op: 'updated' }, t);
+      await this.eventService.publish({ spaceId, entity: 'tokens', id, op: 'updated' }, t);
       return row;
     });
   }
@@ -75,7 +75,7 @@ export class TokenRepository {
   delete(spaceId: string, id: string, tx?: Transaction): Promise<boolean> {
     return transaction(this.db, tx, async t => {
       const deleted = await t.delete(tokens).where(this.byId(spaceId, id)).returning({ id: tokens.id });
-      if (deleted.length) await this.events.publish({ spaceId, entity: 'tokens', id, op: 'deleted' }, t);
+      if (deleted.length) await this.eventService.publish({ spaceId, entity: 'tokens', id, op: 'deleted' }, t);
       return deleted.length > 0;
     });
   }

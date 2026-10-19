@@ -11,7 +11,7 @@ import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 export class AssetTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   findFiles(spaceId: string): Promise<AssetEntity[]> {
@@ -42,7 +42,7 @@ export class AssetTransferRepository {
   /** After a metadata refresh: the UI refetches. */
   metadataRefreshed(spaceId: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      await this.events.publish({ spaceId, entity: 'assets', op: 'updated' }, t);
+      await this.eventService.publish({ spaceId, entity: 'assets', op: 'updated' }, t);
     });
   }
 }

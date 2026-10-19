@@ -26,7 +26,8 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 `apps/server/src` and fails when a rule is broken:
 
 - **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service.
-- **Names:** singular file names whose class matches the file; controller, service and repository method names
+- **Names:** singular file names whose class matches the file; injected services and repositories named after their
+  class (`spaceRepository`); controller, service and repository method names
   (with the listed exceptions).
 - **Entities:** a table's type (`$inferSelect`, `$inferInsert`) only in `shared/entities/<entity>.entity.ts`, as
   `<Entity>Entity`, `<Entity>InsertEntity` and `<Entity>Select`.

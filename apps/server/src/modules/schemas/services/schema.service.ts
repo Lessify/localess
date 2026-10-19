@@ -50,25 +50,25 @@ function found(entity: SchemaEntity | undefined): Schema {
 @Injectable()
 export class SchemaService {
   constructor(
-    private readonly schemas: SchemaRepository,
-    private readonly spaces: SpaceRepository,
+    private readonly schemaRepository: SchemaRepository,
+    private readonly spaceRepository: SpaceRepository,
   ) {}
 
   async findAll(spaceId: string, type?: SchemaType): Promise<Schema[]> {
-    return (await this.schemas.findAll(spaceId, type)).map(toSchema);
+    return (await this.schemaRepository.findAll(spaceId, type)).map(toSchema);
   }
 
   async findOne(spaceId: string, id: string): Promise<Schema> {
-    return found(await this.schemas.findById(spaceId, id));
+    return found(await this.schemaRepository.findById(spaceId, id));
   }
 
   /** What uses the schema by name: while anything does, it can be neither renamed nor deleted. */
   async findUsage(spaceId: string, id: string): Promise<SchemaUsage> {
-    return this.schemas.usage(spaceId, found(await this.schemas.findById(spaceId, id)).name);
+    return this.schemaRepository.usage(spaceId, found(await this.schemaRepository.findById(spaceId, id)).name);
   }
 
   async create(spaceId: string, input: NewSchema): Promise<Schema> {
-    return toSchema(await this.schemas.create(spaceId, input));
+    return toSchema(await this.schemaRepository.create(spaceId, input));
   }
 
   /**
@@ -78,7 +78,7 @@ export class SchemaService {
    * commits.
    */
   async update(spaceId: string, id: string, input: Omit<SchemaColumns, 'type'>): Promise<Schema> {
-    const { name, type } = found(await this.schemas.findById(spaceId, id));
+    const { name, type } = found(await this.schemaRepository.findById(spaceId, id));
     const component = type !== SchemaType.ENUM;
     const values = {
       displayName: input.displayName || null,
@@ -89,7 +89,7 @@ export class SchemaService {
       values: (!component && input.values) || null,
     };
     requireValidFields([{ name, type, ...values }], await this.types(spaceId));
-    const outcome = await this.schemas.update(spaceId, id, values);
+    const outcome = await this.schemaRepository.update(spaceId, id, values);
     if (!outcome) throw new NotFoundException('Schema not found');
     if (outcome.lost) throw new ConflictException(lostMessage(outcome.lost));
     return toSchema(outcome.schema!);
@@ -100,8 +100,8 @@ export class SchemaService {
    * and the contents refer to it by name, and are not rewritten. The repository checks and writes under the row's lock.
    */
   async rename(spaceId: string, id: string, name: string): Promise<Schema> {
-    const current = found(await this.schemas.findById(spaceId, id));
-    const outcome = await this.schemas.rename(spaceId, id, name);
+    const current = found(await this.schemaRepository.findById(spaceId, id));
+    const outcome = await this.schemaRepository.rename(spaceId, id, name);
     if (!outcome) throw new NotFoundException('Schema not found');
     if (outcome.inUse) throw new ConflictException(inUseMessage(current.name, outcome.inUse));
     return toSchema(outcome.schema!);
@@ -109,8 +109,8 @@ export class SchemaService {
 
   /** Refused (409, saying where) while the schema is in use, as a rename. */
   async remove(spaceId: string, id: string): Promise<void> {
-    const current = found(await this.schemas.findById(spaceId, id));
-    const outcome = await this.schemas.delete(spaceId, id);
+    const current = found(await this.schemaRepository.findById(spaceId, id));
+    const outcome = await this.schemaRepository.delete(spaceId, id);
     if (!outcome) throw new NotFoundException('Schema not found');
     if (outcome.inUse) throw new ConflictException(inUseMessage(current.name, outcome.inUse));
   }
@@ -119,8 +119,8 @@ export class SchemaService {
 
   /** The schema export, in byte order of the name. */
   async export(spaceId: string): Promise<SchemaExport[] | undefined> {
-    if (!(await this.spaces.find(spaceId))) return undefined;
-    return (await this.schemas.findAllInByteOrder(spaceId)).map(entity => docSchemaToExport(entity.name, toSchema(entity)));
+    if (!(await this.spaceRepository.find(spaceId))) return undefined;
+    return (await this.schemaRepository.findAllInByteOrder(spaceId)).map(entity => docSchemaToExport(entity.name, toSchema(entity)));
   }
 
   /**
@@ -128,9 +128,9 @@ export class SchemaService {
    * refer to nor one contents use as their document schema.
    */
   async planPush(spaceId: string, pushed: SchemaExport[], type: 'upsert' | 'sync'): Promise<SchemaPushPlan | undefined> {
-    if (!(await this.spaces.find(spaceId))) return undefined;
-    const plan = planSchemaPush(schemasByName(await this.schemas.findAllInByteOrder(spaceId)), pushed, type);
-    plan.errors.push(...contentErrors(await this.schemas.countContentsBySchema(spaceId, plan.deletes)));
+    if (!(await this.spaceRepository.find(spaceId))) return undefined;
+    const plan = planSchemaPush(schemasByName(await this.schemaRepository.findAllInByteOrder(spaceId)), pushed, type);
+    plan.errors.push(...contentErrors(await this.schemaRepository.countContentsBySchema(spaceId, plan.deletes)));
     return plan;
   }
 
@@ -139,12 +139,12 @@ export class SchemaService {
    * its fields refer to went, since it was planned.
    */
   async applyPush(spaceId: string, plan: SchemaPushPlan): Promise<string[]> {
-    const { usedByContents, lost } = await this.schemas.applyPushPlan(spaceId, plan);
+    const { usedByContents, lost } = await this.schemaRepository.applyPushPlan(spaceId, plan);
     return [...contentErrors(usedByContents), ...(lost.length ? [lostMessage(lost)] : [])];
   }
 
   /** Every schema of the space by name, with its type. */
   private async types(spaceId: string): Promise<Map<string, SchemaType>> {
-    return new Map((await this.schemas.findAll(spaceId)).map(it => [it.name, it.type as SchemaType]));
+    return new Map((await this.schemaRepository.findAll(spaceId)).map(it => [it.name, it.type as SchemaType]));
   }
 }

@@ -22,7 +22,7 @@ type Change = { id?: string; op: 'created' | 'updated' | 'deleted' };
 export class TranslationRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** For the app: by key, in the database collation. */
@@ -180,7 +180,7 @@ export class TranslationRepository {
         const { result, changed } = await work(t);
         if (changed.length) {
           await dropTranslationDrafts(t, spaceId);
-          for (const it of changed) await this.events.publish({ spaceId, entity: 'translations', ...it }, t);
+          for (const it of changed) await this.eventService.publish({ spaceId, entity: 'translations', ...it }, t);
         }
         return result;
       });

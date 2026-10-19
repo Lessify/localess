@@ -18,14 +18,14 @@ function requireUnlocked(user: UserEntity): void {
 @Injectable()
 export class MeService {
   constructor(
-    private readonly users: UserRepository,
-    private readonly usersService: UserService,
-    private readonly auth: AuthService,
-    private readonly sessions: SessionService,
+    private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+    private readonly sessionService: SessionService,
   ) {}
 
   findOne(user: UserEntity): Promise<UserDto> {
-    return this.usersService.toDto(user);
+    return this.userService.toDto(user);
   }
 
   async updateProfile(user: UserEntity, profile: { displayName?: string | null; photoURL?: string | null }): Promise<UserDto> {
@@ -39,8 +39,8 @@ export class MeService {
   /** A new email needs the current password (when the account has one), and is unverified. */
   async updateEmail(user: UserEntity, email: string, currentPassword: string | undefined): Promise<UserDto> {
     requireUnlocked(user);
-    await this.auth.confirmCurrentPassword(user, currentPassword);
-    const existing = await this.users.findByEmail(email);
+    await this.authService.confirmCurrentPassword(user, currentPassword);
+    const existing = await this.userRepository.findByEmail(email);
     if (existing && existing.id !== user.id) {
       throw new ConflictException('A user with this email already exists');
     }
@@ -50,14 +50,14 @@ export class MeService {
   /** Changing the password signs out every other session. */
   async updatePassword(user: UserEntity, sessionId: string, currentPassword: string | undefined, newPassword: string): Promise<void> {
     requireUnlocked(user);
-    await this.auth.confirmCurrentPassword(user, currentPassword);
-    await this.users.setPasswordHash(user.id, await hashPassword(newPassword));
-    await this.sessions.revokeAllForUser(user.id, sessionId);
+    await this.authService.confirmCurrentPassword(user, currentPassword);
+    await this.userRepository.setPasswordHash(user.id, await hashPassword(newPassword));
+    await this.sessionService.revokeAllForUser(user.id, sessionId);
   }
 
   private async updated(id: string, values: UserUpdate): Promise<UserDto> {
-    const user = await this.users.update(id, values);
+    const user = await this.userRepository.update(id, values);
     if (!user) throw new NotFoundException('User not found');
-    return this.usersService.toDto(user);
+    return this.userService.toDto(user);
   }
 }

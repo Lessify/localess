@@ -13,7 +13,7 @@ import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 export class SchemaTransferRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   findAll(spaceId: string): Promise<SchemaEntity[]> {
@@ -41,7 +41,7 @@ export class SchemaTransferRepository {
       if (lost.length) return [`Schemas renamed or deleted meanwhile: ${lost.join(', ')}`];
       await applySchemaPushPlan(t, spaceId, plan);
       if (plan.creates.length || plan.updates.length) {
-        await this.events.publish({ spaceId, entity: 'schemas', op: 'updated' }, t);
+        await this.eventService.publish({ spaceId, entity: 'schemas', op: 'updated' }, t);
       }
       return [];
     });

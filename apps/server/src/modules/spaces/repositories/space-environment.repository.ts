@@ -14,12 +14,12 @@ import { changeSpace, changeSpaceIfFound } from './space-change.js';
 export class SpaceEnvironmentRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** At the end of the space's list. */
   create(spaceId: string, environment: SpaceEnvironmentCreate, tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       const [{ last }] = await t
         .select({ last: max(spaceEnvironments.position) })
         .from(spaceEnvironments)
@@ -30,7 +30,7 @@ export class SpaceEnvironmentRepository {
 
   /** `undefined` when the space has no environment `environmentId`. */
   update(spaceId: string, environmentId: string, environment: SpaceEnvironmentUpdate, tx?: Transaction): Promise<SpaceRow | undefined> {
-    return changeSpaceIfFound(this.db, this.events, spaceId, tx, async t => {
+    return changeSpaceIfFound(this.db, this.eventService, spaceId, tx, async t => {
       const updated = await t
         .update(spaceEnvironments)
         .set(environment)
@@ -42,7 +42,7 @@ export class SpaceEnvironmentRepository {
 
   /** `undefined` when the space has no environment `environmentId`. */
   delete(spaceId: string, environmentId: string, tx?: Transaction): Promise<SpaceRow | undefined> {
-    return changeSpaceIfFound(this.db, this.events, spaceId, tx, async t => {
+    return changeSpaceIfFound(this.db, this.eventService, spaceId, tx, async t => {
       const deleted = await t
         .delete(spaceEnvironments)
         .where(this.environment(spaceId, environmentId))
@@ -53,7 +53,7 @@ export class SpaceEnvironmentRepository {
 
   /** `environmentIds`: every environment of the space, in the new order. */
   reorder(spaceId: string, environmentIds: string[], tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       for (const [position, id] of environmentIds.entries()) {
         await t
           .update(spaceEnvironments)

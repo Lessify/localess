@@ -16,9 +16,9 @@ import { type ImportStage, StageFailure } from '../utils/firebase-import.utils.j
 @Injectable()
 export class AssetImportService {
   constructor(
-    private readonly assets: AssetImportRepository,
+    private readonly assetImportRepository: AssetImportRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
-    private readonly metadata: AssetMetadataService,
+    private readonly assetMetadataService: AssetMetadataService,
   ) {}
 
   /** Answers the count and the Firebase id → new id map, for the reference rewrite. */
@@ -44,12 +44,12 @@ export class AssetImportService {
           const key = `spaces/${sid}/assets/${id}/original`;
           stored = await this.storage.put(key, stream);
           if (!obj(doc['metadata']))
-            extracted = await this.metadata.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
+            extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
         } else {
           stage.warn(`${str(doc['name']) ?? doc.id}: no file in Firebase, the asset is kept without it`);
         }
       }
-      await this.assets.insert({
+      await this.assetImportRepository.insert({
         id,
         spaceId: sid,
         legacyId: doc.id,

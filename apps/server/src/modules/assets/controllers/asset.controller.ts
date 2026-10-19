@@ -34,46 +34,46 @@ function fieldValues(file: MultipartFile): Record<string, string> {
 /** Asset library (was direct Firestore access plus browser uploads to Cloud Storage). */
 @Controller('api/app/spaces/:spaceId/assets')
 export class AssetController {
-  constructor(private readonly assets: AssetService) {}
+  constructor(private readonly assetService: AssetService) {}
 
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async findAll(@Param('spaceId') spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery) {
     const { parentId, ...rest } = query;
-    return this.assets.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+    return this.assetService.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
 
   /** Every folder of the space (`{ id, parentId, name }`), for the editor's breadcrumbs and move targets. */
   @Get('folders')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async findFolders(@Param('spaceId') spaceId: string) {
-    return this.assets.findFolders(spaceId);
+    return this.assetService.findFolders(spaceId);
   }
 
   @Get('count')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async count(@Param('spaceId') spaceId: string, @Query('kind') kind?: 'FOLDER' | 'FILE') {
-    return { count: await this.assets.count(spaceId, kind === 'FOLDER' || kind === 'FILE' ? kind : undefined) };
+    return { count: await this.assetService.count(spaceId, kind === 'FOLDER' || kind === 'FILE' ? kind : undefined) };
   }
 
   @Get(':id')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   async findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.assets.findOne(spaceId, id);
+    return this.assetService.findOne(spaceId, id);
   }
 
   /** How many contents use it (a folder: any file under it), for the warning before a delete. */
   @Get(':id/usage')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
   findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.assets.findUsage(spaceId, id);
+    return this.assetService.findUsage(spaceId, id);
   }
 
   @Post('folders')
   @RequirePermission(UserPermission.ASSET_CREATE)
   async createFolder(@Param('spaceId') spaceId: string, @Body({ schema: zAssetFolderCreate }) body: AssetFolderCreate) {
-    return this.assets.createFolder(spaceId, body.parentId ?? null, body.name);
+    return this.assetService.createFolder(spaceId, body.parentId ?? null, body.name);
   }
 
   /**
@@ -92,7 +92,7 @@ export class AssetController {
       throw new BadRequestException(fields.error.issues.map(it => `${it.path.join('.')}: ${it.message}`).join('; '));
     }
     try {
-      return await this.assets.upload(spaceId, {
+      return await this.assetService.upload(spaceId, {
         ...fields.data,
         parentId: fields.data.parentId || null,
         file: file.file,
@@ -113,7 +113,7 @@ export class AssetController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zAssetUpdate }) body: AssetUpdate,
   ) {
-    return this.assets.update(spaceId, id, body);
+    return this.assetService.update(spaceId, id, body);
   }
 
   @Put(':id/parent')
@@ -123,13 +123,13 @@ export class AssetController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zAssetMove }) body: AssetMove,
   ) {
-    return this.assets.move(spaceId, id, body.parentId);
+    return this.assetService.move(spaceId, id, body.parentId);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.ASSET_DELETE)
   async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.assets.remove(spaceId, id);
+    await this.assetService.remove(spaceId, id);
   }
 }

@@ -17,8 +17,8 @@ export type NewImportedSpace = SpaceInsertEntity & { id: string };
 export class SpaceImportRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly runs: FirebaseImportRepository,
-    private readonly events: EventService,
+    private readonly firebaseImportRepository: FirebaseImportRepository,
+    private readonly eventService: EventService,
   ) {}
 
   /** The ids of the `locales` table, the locales a space may have. */
@@ -36,7 +36,7 @@ export class SpaceImportRepository {
       await t.insert(spaceLocales).values(localeIds.map((localeId, position) => ({ spaceId: space.id, localeId, position })));
       // Tokens are not imported: the space starts with its own preview token, as a new space does.
       await createPreviewToken(t, space.id);
-      await this.runs.linkSpace(runId, space.id, stages, t);
+      await this.firebaseImportRepository.linkSpace(runId, space.id, stages, t);
     });
   }
 
@@ -56,6 +56,6 @@ export class SpaceImportRepository {
 
   /** Announces the finished space (a `spaces` change event): clients list it from now on. */
   publishCreated(spaceId: string): Promise<void> {
-    return this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'created' });
+    return this.eventService.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'created' });
   }
 }

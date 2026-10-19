@@ -69,7 +69,7 @@ function keepFieldRules(
  */
 @Injectable()
 export class SchemaImportService {
-  constructor(private readonly schemas: SchemaImportRepository) {}
+  constructor(private readonly schemaImportRepository: SchemaImportRepository) {}
 
   /** Answers the count. */
   async import(stage: ImportStage): Promise<number> {
@@ -99,7 +99,7 @@ export class SchemaImportService {
         if (row.type === SchemaType.ENUM) continue;
         Object.assign(row, keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)));
       }
-      await this.schemas.insertMany(rows);
+      await this.schemaImportRepository.insertMany(rows);
     }
     return schemaDocs.length;
   }

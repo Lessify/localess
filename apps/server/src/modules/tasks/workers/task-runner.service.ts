@@ -14,9 +14,9 @@ import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 @Injectable()
 export class TaskRunner {
   constructor(
-    private readonly assets: AssetTransferService,
-    private readonly schemas: SchemaTransferService,
-    private readonly translations: TranslationTransferService,
+    private readonly assetTransferService: AssetTransferService,
+    private readonly schemaTransferService: SchemaTransferService,
+    private readonly translationTransferService: TranslationTransferService,
   ) {}
 
   async run(task: TaskEntity): Promise<TaskOutcome> {
@@ -26,19 +26,19 @@ export class TaskRunner {
         // Redesigned with the asset tree (docs/roadmap/content-asset-tree.md); switched off until then.
         return { status: 'ERROR', message: 'Asset import and export are being redesigned' };
       case 'ASSET_REGEN_METADATA':
-        return this.assets.regenerateMetadata(task);
+        return this.assetTransferService.regenerateMetadata(task);
       case 'CONTENT_EXPORT':
       case 'CONTENT_IMPORT':
         // Redesigned with the content tree (docs/roadmap/content-asset-tree.md); switched off until then.
         return { status: 'ERROR', message: 'Content import and export are being redesigned' };
       case 'SCHEMA_EXPORT':
-        return this.schemas.export(task);
+        return this.schemaTransferService.export(task);
       case 'SCHEMA_IMPORT':
-        return this.schemas.import(task);
+        return this.schemaTransferService.import(task);
       case 'TRANSLATION_EXPORT':
-        return task.locale ? this.translations.exportFlat(task) : this.translations.export(task);
+        return task.locale ? this.translationTransferService.exportFlat(task) : this.translationTransferService.export(task);
       case 'TRANSLATION_IMPORT':
-        return task.locale ? this.translations.importFlat(task) : this.translations.import(task);
+        return task.locale ? this.translationTransferService.importFlat(task) : this.translationTransferService.import(task);
       default:
         return { status: 'ERROR', message: `Unknown task kind '${task.kind}'` };
     }

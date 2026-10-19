@@ -8,10 +8,10 @@ import { WebhookLogService } from '../services/webhook-log.service.js';
 @Controller('api/app/spaces/:spaceId/webhooks/:id/logs')
 @RequirePermission(UserPermission.SPACE_MANAGEMENT)
 export class WebhookLogController {
-  constructor(private readonly logs: WebhookLogService) {}
+  constructor(private readonly webhookLogService: WebhookLogService) {}
 
   @Get()
   findAll(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Query('limit') limit?: string) {
-    return this.logs.findAll(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
+    return this.webhookLogService.findAll(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
   }
 }

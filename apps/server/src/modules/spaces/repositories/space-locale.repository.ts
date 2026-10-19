@@ -17,12 +17,12 @@ import { changeSpace } from './space-change.js';
 export class SpaceLocaleRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** At the end of the space's list; the translation drafts gain the locale. */
   create(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       const [{ last }] = await t
         .select({ last: max(spaceLocales.position) })
         .from(spaceLocales)
@@ -34,7 +34,7 @@ export class SpaceLocaleRepository {
 
   /** Its values stay; its translation maps and content snapshots go (requests for it get the default locale's). */
   delete(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       await t.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
       await dropTranslationDrafts(t, spaceId);
       await dropTranslationLocale(t, spaceId, localeId);
@@ -44,7 +44,7 @@ export class SpaceLocaleRepository {
 
   /** `localeIds`: every locale of the space, in the new order. */
   reorder(spaceId: string, localeIds: string[], tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       for (const [position, localeId] of localeIds.entries()) {
         await t
           .update(spaceLocales)
@@ -59,7 +59,7 @@ export class SpaceLocaleRepository {
    * go; published ones keep what their publish built.
    */
   setDefault(spaceId: string, localeId: string, tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       await dropTranslationDrafts(t, spaceId);
       await dropContentDrafts(t, spaceId);
       return { defaultLocaleId: localeId };

@@ -31,19 +31,19 @@ import { TranslationDeliveryService } from '../services/translation-delivery.ser
 })
 @Controller('api/v1/spaces/:spaceId')
 export class TranslationCdnController {
-  constructor(private readonly delivery: TranslationDeliveryService) {}
+  constructor(private readonly translationDeliveryService: TranslationDeliveryService) {}
 
   @Get('translations/:locale')
   async translations(@Req() request: FastifyRequest, @Res() reply: FastifyReply, @CurrentToken() token: ApiToken): Promise<void> {
     const { spaceId, locale } = request.params as Params;
     const { cv, version, token: tokenId } = request.query as Query;
 
-    const space = await this.delivery.findSpace(spaceId);
+    const space = await this.translationDeliveryService.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const actualLocale = identifySpaceLocale(space, locale);
     const snapshot = isDraft(version)
-      ? await this.delivery.findDraft(spaceId, actualLocale)
-      : await this.delivery.findPublished(spaceId, actualLocale, space.defaultLocaleId);
+      ? await this.translationDeliveryService.findDraft(spaceId, actualLocale)
+      : await this.translationDeliveryService.findPublished(spaceId, actualLocale, space.defaultLocaleId);
     if (!snapshot) {
       sendV1Error(reply, 404, 'not-found', 'File not found, Publish first.');
       return;

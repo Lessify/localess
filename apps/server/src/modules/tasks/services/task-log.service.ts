@@ -12,14 +12,14 @@ export class TaskLogService {
   private readonly logger = new Logger('TaskRunner');
 
   constructor(
-    private readonly tasks: TaskRepository,
-    private readonly logs: TaskLogRepository,
+    private readonly taskRepository: TaskRepository,
+    private readonly taskLogRepository: TaskLogRepository,
   ) {}
 
   /** In the order they were written; 404 when the space has no task `taskId`. */
   async findAll(spaceId: string, taskId: string): Promise<TaskLog[]> {
-    if (!(await this.tasks.findById(spaceId, taskId))) throw new NotFoundException('Task not found');
-    return (await this.logs.findAll(taskId)).map(toTaskLog);
+    if (!(await this.taskRepository.findById(spaceId, taskId))) throw new NotFoundException('Task not found');
+    return (await this.taskLogRepository.findAll(taskId)).map(toTaskLog);
   }
 
   /** A step visible in the Tasks UI (`task_logs`) and in the server log. */
@@ -34,7 +34,7 @@ export class TaskLogService {
     else if (level === 'WARN') this.logger.warn(line);
     else this.logger.log(line);
     try {
-      await this.logs.create(task, level, message, trace);
+      await this.taskLogRepository.create(task, level, message, trace);
     } catch (error) {
       this.logger.warn(`Could not persist task log: ${error}`);
     }

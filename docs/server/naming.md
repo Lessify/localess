@@ -47,6 +47,18 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 (`search`, `random`). A service method used only by other services (not a route) is named by what it does
 (`createFromTemplate`, `findPublic`, `findOneRow`).
 
+## Injected dependencies
+
+- **Rule:** a service, repository, runner or dispatcher injected in a constructor is named after its class, in
+  camelCase: `private readonly spaceRepository: SpaceRepository`, `private readonly spaceLocaleService:
+  SpaceLocaleService` (an acronym stays lowercase: `oauthService: OAuthService`). An injection token keeps its short
+  name: `@Inject(DATABASE) db`, `@Inject(APP_CONFIG) config`, `@Inject(STORAGE_DRIVER) storage`.
+- **Why:** where a class uses several repositories or services (`SpaceLocaleService` reads the space through
+  `spaceRepository` and writes through `spaceLocaleRepository`), each call says which one it goes through.
+- **Example:** `modules/spaces/services/space-locale.service.ts`.
+- **Don't:** a plural or a role for the name (`spaces`, `locales`, `events`, `runs`, `log`): two of them in one class
+  read alike, and the same name means a repository in one file and a service in the next.
+
 ## Repository methods
 
 - **Rule:** data-access names: reads `findPage`, `findAll`, `findById`, `find<What>`, `count`, `exists`; writes

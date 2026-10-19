@@ -15,7 +15,7 @@ const NO_STORE = 'no-store';
 @ManagementToken()
 @Controller('api/manage/v1/spaces/:spaceId')
 export class TranslationManagementController {
-  constructor(private readonly delivery: TranslationDeliveryService) {}
+  constructor(private readonly translationDeliveryService: TranslationDeliveryService) {}
 
   /**
    * The values stored for one locale, with no fallback filling: a key the locale has no value for is
@@ -24,7 +24,7 @@ export class TranslationManagementController {
   @Get('translations/:locale')
   async translationValues(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     const { spaceId, locale } = request.params as Params;
-    const space = await this.delivery.findSpace(spaceId);
+    const space = await this.translationDeliveryService.findSpace(spaceId);
     if (!space) {
       sendV1Error(reply, 404, 'not-found', 'Not found', { cacheControl: NO_STORE });
       return;
@@ -36,7 +36,7 @@ export class TranslationManagementController {
       });
       return;
     }
-    void reply.header('cache-control', NO_STORE).send(await this.delivery.storedValues(spaceId, locale));
+    void reply.header('cache-control', NO_STORE).send(await this.translationDeliveryService.storedValues(spaceId, locale));
   }
 
   // 200, not Nest's POST default of 201: what the CLI expects.
@@ -50,7 +50,7 @@ export class TranslationManagementController {
       return;
     }
     const { dryRun, type, values } = body.data;
-    const space = await this.delivery.findSpace(spaceId);
+    const space = await this.translationDeliveryService.findSpace(spaceId);
     if (!space || !space.locales.some(it => it.id === locale)) {
       sendV1Error(reply, 400, 'invalid-argument', 'Locale not supported by this space', {
         details: `Locale ${locale} is not in space locales`,
@@ -58,7 +58,7 @@ export class TranslationManagementController {
       return;
     }
 
-    const result = await this.delivery.push(spaceId, locale, type, values, dryRun);
+    const result = await this.translationDeliveryService.push(spaceId, locale, type, values, dryRun);
     if ('invalidKeys' in result) {
       sendV1Error(reply, 400, 'invalid-argument', 'Invalid translation keys', { details: { keys: result.invalidKeys } });
       return;

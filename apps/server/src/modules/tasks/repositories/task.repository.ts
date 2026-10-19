@@ -20,7 +20,7 @@ export type NewTask = Omit<TaskInsertEntity, 'spaceId' | 'status'>;
 export class TaskRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** One page of the space's tasks by creation time (then the id, so ties page stably), and how many match. */
@@ -61,7 +61,7 @@ export class TaskRepository {
         .insert(tasks)
         .values({ ...values, spaceId, status: 'INITIATED' })
         .returning();
-      await this.events.publish({ spaceId, entity: 'tasks', id: row.id, op: 'created' }, t);
+      await this.eventService.publish({ spaceId, entity: 'tasks', id: row.id, op: 'created' }, t);
       return row;
     });
   }
@@ -70,7 +70,7 @@ export class TaskRepository {
   delete(spaceId: string, id: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.delete(tasks).where(and(eq(tasks.spaceId, spaceId), eq(tasks.id, id)));
-      await this.events.publish({ spaceId, entity: 'tasks', id, op: 'deleted' }, t);
+      await this.eventService.publish({ spaceId, entity: 'tasks', id, op: 'deleted' }, t);
     });
   }
 
@@ -85,7 +85,7 @@ export class TaskRepository {
         returning id`)) as unknown as { rows: { id: string }[] };
       if (!rows.length) return undefined;
       const [task] = await t.select().from(tasks).where(eq(tasks.id, rows[0].id));
-      if (task) await this.events.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' }, t);
+      if (task) await this.eventService.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' }, t);
       return task;
     });
   }
@@ -108,7 +108,7 @@ export class TaskRepository {
         })
         .where(and(eq(tasks.id, task.id), eq(tasks.lockedBy, workerId)))
         .returning({ id: tasks.id });
-      if (updated.length) await this.events.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' }, t);
+      if (updated.length) await this.eventService.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' }, t);
       return updated.length > 0;
     });
   }
@@ -121,7 +121,7 @@ export class TaskRepository {
         .set({ status: 'ERROR', message, lockedBy: null, lockedAt: null })
         .where(and(eq(tasks.status, 'IN_PROGRESS'), lt(tasks.lockedAt, lockedBefore)))
         .returning({ id: tasks.id, spaceId: tasks.spaceId });
-      for (const task of stale) await this.events.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' }, t);
+      for (const task of stale) await this.eventService.publish({ spaceId: task.spaceId, entity: 'tasks', id: task.id, op: 'updated' }, t);
       return stale;
     });
   }

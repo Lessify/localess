@@ -21,7 +21,7 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
   private again = false;
 
   constructor(
-    private readonly deletions: StorageDeletionRepository,
+    private readonly storageDeletionRepository: StorageDeletionRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 
@@ -62,7 +62,7 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
     let taken = 0;
     while (taken < BATCH) {
       let failure: { prefix: string; attempts: number; error: unknown } | undefined;
-      const found = await this.deletions
+      const found = await this.storageDeletionRepository
         .next(async (entry, owned) => {
           // Its asset (or space) exists again: the files are live, only the entry goes.
           if (owned) return;
@@ -82,7 +82,7 @@ export class StorageSweeperService implements OnApplicationBootstrap, OnApplicat
       if (failure) {
         const message = failure.error instanceof Error ? failure.error.message : String(failure.error);
         this.logger.warn(`Could not delete stored files under ${failure.prefix} (attempt ${failure.attempts + 1}): ${message}`);
-        await this.deletions.failed(failure.prefix, message, RETRY_MS[Math.min(failure.attempts, RETRY_MS.length - 1)]);
+        await this.storageDeletionRepository.failed(failure.prefix, message, RETRY_MS[Math.min(failure.attempts, RETRY_MS.length - 1)]);
       }
     }
     return taken;

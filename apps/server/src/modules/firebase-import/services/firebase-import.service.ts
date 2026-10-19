@@ -27,9 +27,9 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   private recovery?: NodeJS.Timeout;
 
   constructor(
-    private readonly runs: FirebaseImportRepository,
+    private readonly firebaseImportRepository: FirebaseImportRepository,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly runner: FirebaseImportRunner,
+    private readonly firebaseImportRunner: FirebaseImportRunner,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -49,13 +49,13 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
    */
   async failInterrupted(): Promise<void> {
     const stale = new Date(Date.now() - 4 * HEARTBEAT_MS);
-    const running = await this.runs.findStale(stale);
+    const running = await this.firebaseImportRepository.findStale(stale);
     for (const run of running) await this.failAtCurrentStage(run, 'Interrupted: the server running it stopped');
   }
 
   /** Stops a running import: failed at the stage it reached; the half-imported space is deleted like any failed one. */
   async cancel(id: string, user: UserEntity): Promise<FirebaseImport> {
-    const run = isUuid(id) ? await this.runs.findById(id) : undefined;
+    const run = isUuid(id) ? await this.firebaseImportRepository.findById(id) : undefined;
     if (!run) throw new NotFoundException('Import not found');
     const cancelled = run.status === 'RUNNING' ? await this.failAtCurrentStage(run, `Cancelled by ${user.email}`) : undefined;
     if (!cancelled) throw new ConflictException('The import is not running');
@@ -66,7 +66,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   private failAtCurrentStage(run: FirebaseImportEntity, message: string): Promise<FirebaseImportEntity | undefined> {
     const current = run.stages.find(it => it.status === 'RUNNING') ?? run.stages.find(it => it.status === 'PENDING') ?? run.stages[0];
     const stages = run.stages.map(it => (it.stage === current.stage ? { ...it, status: 'FAILED' as const, error: message } : it));
-    return this.runs.fail(run.id, stages);
+    return this.firebaseImportRepository.fail(run.id, stages);
   }
 
   private client(origin: string, token: string): FirebaseClient {
@@ -112,7 +112,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     if (!source) throw new NotFoundException('No such space in the Firebase environment');
     const id = newUuid();
     // A conflict while another import runs (one RUNNING run per install).
-    await this.runs.create({
+    await this.firebaseImportRepository.create({
       id,
       origin: client.origin,
       sourceSpaceId,
@@ -122,21 +122,21 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
       startedBy: { name: user.displayName ?? user.email, email: user.email },
     });
     // In the background: the caller polls GET /:id. The runner records every outcome itself.
-    void this.runner.execute(id, client, sourceSpaceId).catch(error => this.logger.error(error));
+    void this.firebaseImportRunner.execute(id, client, sourceSpaceId).catch(error => this.logger.error(error));
     return this.findOne(id);
   }
 
   /** The local spaces imported from these Firebase spaces (finished or failed; a deleted space takes its run along). */
   private importedAs(sourceSpaceIds: string[]): Promise<{ id: string; name: string; legacyId: string }[]> {
-    return this.runs.findImportedAs(sourceSpaceIds);
+    return this.firebaseImportRepository.findImportedAs(sourceSpaceIds);
   }
 
   async findAll(): Promise<FirebaseImport[]> {
-    return (await this.runs.findAll()).map(toFirebaseImport);
+    return (await this.firebaseImportRepository.findAll()).map(toFirebaseImport);
   }
 
   async findOne(id: string): Promise<FirebaseImport> {
-    const row = isUuid(id) ? await this.runs.findById(id) : undefined;
+    const row = isUuid(id) ? await this.firebaseImportRepository.findById(id) : undefined;
     if (!row) throw new NotFoundException('Import not found');
     return toFirebaseImport(row);
   }

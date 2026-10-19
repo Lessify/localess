@@ -11,17 +11,17 @@ import { isPermutation } from '../utils/permutation.js';
 @Injectable()
 export class SpaceLocaleService {
   constructor(
-    private readonly spaces: SpaceRepository,
-    private readonly spaceLocales: SpaceLocaleRepository,
-    private readonly locales: LocaleRepository,
+    private readonly spaceRepository: SpaceRepository,
+    private readonly spaceLocaleRepository: SpaceLocaleRepository,
+    private readonly localeRepository: LocaleRepository,
   ) {}
 
   /** Adds a locale from `locales` at the end of the space's list (no-op when it is already there, like `arrayUnion`). */
   async create(spaceId: string, localeId: string): Promise<Space> {
     const space = await this.require(spaceId);
     if (space.locales.some(it => it.id === localeId)) return toSpace(space);
-    if (!(await this.locales.exists(localeId))) throw new BadRequestException(`Unknown locale ${localeId}`);
-    return toSpace(await this.spaceLocales.create(spaceId, localeId));
+    if (!(await this.localeRepository.exists(localeId))) throw new BadRequestException(`Unknown locale ${localeId}`);
+    return toSpace(await this.spaceLocaleRepository.create(spaceId, localeId));
   }
 
   async remove(spaceId: string, localeId: string): Promise<Space> {
@@ -29,7 +29,7 @@ export class SpaceLocaleService {
     if (space.defaultLocaleId === localeId) {
       throw new BadRequestException('The default locale cannot be removed; make another locale the default first');
     }
-    return toSpace(await this.spaceLocales.delete(spaceId, localeId));
+    return toSpace(await this.spaceLocaleRepository.delete(spaceId, localeId));
   }
 
   /** `localeIds` is the space's locales in their new order: every one of them, each once. */
@@ -43,17 +43,17 @@ export class SpaceLocaleService {
     ) {
       throw new BadRequestException("The new order must list each of the space's locales once");
     }
-    return toSpace(await this.spaceLocales.reorder(spaceId, localeIds));
+    return toSpace(await this.spaceLocaleRepository.reorder(spaceId, localeIds));
   }
 
   async setDefault(spaceId: string, localeId: string): Promise<Space> {
     const space = await this.require(spaceId);
     if (!space.locales.some(it => it.id === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
-    return toSpace(await this.spaceLocales.setDefault(spaceId, localeId));
+    return toSpace(await this.spaceLocaleRepository.setDefault(spaceId, localeId));
   }
 
   private async require(spaceId: string): Promise<SpaceRow> {
-    const space = await this.spaces.findById(spaceId);
+    const space = await this.spaceRepository.findById(spaceId);
     if (!space) throw new NotFoundException('Space not found');
     return space;
   }

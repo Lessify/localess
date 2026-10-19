@@ -13,14 +13,14 @@ import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 export class AppConfigController {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly oauth: OAuthService,
+    private readonly oauthService: OAuthService,
   ) {}
 
   @Get()
   get(): PublicAppConfig {
     return {
       auth: {
-        providers: this.oauth.enabledProviders().map(it => it.toUpperCase() as 'GOOGLE' | 'MICROSOFT'),
+        providers: this.oauthService.enabledProviders().map(it => it.toUpperCase() as 'GOOGLE' | 'MICROSOFT'),
         loginMessage: this.config.loginMessage,
         passwordResetByEmail: this.config.smtp !== undefined,
       },

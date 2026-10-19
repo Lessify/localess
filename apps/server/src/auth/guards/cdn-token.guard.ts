@@ -23,7 +23,7 @@ const CDN_TYPES = [TokenType.PUBLIC, TokenType.PREVIEW];
 export class CdnTokenGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly tokens: TokenAuthService,
+    private readonly tokenAuthService: TokenAuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -35,7 +35,7 @@ export class CdnTokenGuard implements CanActivate {
     const claimed = parseApiToken(value);
     if (claimed === TokenType.MANAGEMENT) throw new V1Error(401, 'unauthenticated', INVALID, { details: { hint: MANAGEMENT_HINT } });
     if (!claimed) throw new V1Error(401, 'unauthenticated', INVALID);
-    const token = await this.tokens.findCached(params['spaceId'], value as string);
+    const token = await this.tokenAuthService.findCached(params['spaceId'], value as string);
     const rank = token && RANK[token.type];
     if (!token || rank === undefined) throw new V1Error(401, 'unauthenticated', INVALID);
     const draft = version !== undefined;

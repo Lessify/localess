@@ -10,13 +10,13 @@ import type { ImportStage } from '../utils/firebase-import.utils.js';
  */
 @Injectable()
 export class TranslationImportService {
-  constructor(private readonly translations: TranslationImportRepository) {}
+  constructor(private readonly translationImportRepository: TranslationImportRepository) {}
 
   /** Answers the count. */
   async import(stage: ImportStage): Promise<number> {
     let translationCount = 0;
     for await (const page of stage.client.pages(stage.sourceSpaceId, 'translations')) {
-      await this.translations.insertMany(
+      await this.translationImportRepository.insertMany(
         page.map(doc => ({
           id: newUuid(timestamps(doc).createdAt),
           spaceId: stage.spaceId,

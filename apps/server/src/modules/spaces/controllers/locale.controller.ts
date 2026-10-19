@@ -5,11 +5,11 @@ import { LocaleService } from '../services/locale.service.js';
 /** Every locale a space can add. Read-only: the list is database data, seeded and changed by migrations. */
 @Controller('api/app/locales')
 export class LocaleController {
-  constructor(private readonly locales: LocaleService) {}
+  constructor(private readonly localeService: LocaleService) {}
 
   @Get()
   @RequireAnyRole()
   findAll() {
-    return this.locales.findAll();
+    return this.localeService.findAll();
   }
 }

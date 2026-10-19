@@ -8,7 +8,7 @@ import type { ImportStage } from '../utils/firebase-import.utils.js';
 /** Stage 5: the webhooks, disabled: both environments may run in parallel. */
 @Injectable()
 export class WebhookImportService {
-  constructor(private readonly webhooks: WebhookImportRepository) {}
+  constructor(private readonly webhookImportRepository: WebhookImportRepository) {}
 
   /** Answers the count. */
   async import(stage: ImportStage): Promise<number> {
@@ -16,7 +16,7 @@ export class WebhookImportService {
     for (const doc of hookDocs) {
       const events = knownValues(WebHookEvent, doc['events']);
       for (const it of events.dropped) stage.warn(`${str(doc['name']) ?? doc.id}: unknown event ${it}, dropped`);
-      await this.webhooks.insert({
+      await this.webhookImportRepository.insert({
         id: newUuid(timestamps(doc).createdAt),
         spaceId: stage.spaceId,
         name: str(doc['name']) ?? 'Webhook',

@@ -31,16 +31,16 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly tasks: TaskRepository,
-    private readonly runner: TaskRunner,
-    private readonly log: TaskLogService,
-    private readonly events: EventService,
+    private readonly taskRepository: TaskRepository,
+    private readonly taskRunner: TaskRunner,
+    private readonly taskLogService: TaskLogService,
+    private readonly eventService: EventService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     if (!this.config.taskWorker) return;
     await this.failStale();
-    this.subscription = this.events
+    this.subscription = this.eventService
       .stream()
       .pipe(filter(event => event.entity === 'tasks' && event.op === 'created'))
       .subscribe(() => this.wake());
@@ -90,22 +90,22 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
 
   /** Takes the oldest INITIATED task no one else holds, marking it IN_PROGRESS for this worker. */
   claim(): Promise<TaskEntity | undefined> {
-    return this.tasks.claim(this.workerId);
+    return this.taskRepository.claim(this.workerId);
   }
 
   private async process(task: TaskEntity): Promise<void> {
     let outcome: TaskOutcome;
-    await this.log.log(task, 'INFO', `Starting ${task.kind} processing`);
+    await this.taskLogService.log(task, 'INFO', `Starting ${task.kind} processing`);
     try {
-      outcome = await this.runner.run(task);
-      if (outcome.status === 'FINISHED') await this.log.log(task, 'INFO', 'Task finished successfully');
+      outcome = await this.taskRunner.run(task);
+      if (outcome.status === 'FINISHED') await this.taskLogService.log(task, 'INFO', 'Task finished successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       outcome = { status: 'ERROR', message: err.message, trace: err.stack };
-      await this.log.log(task, 'ERROR', err.message, err.stack);
+      await this.taskLogService.log(task, 'ERROR', err.message, err.stack);
     }
     // The row may have been deleted meanwhile; then there is nothing to report.
-    await this.tasks.finish(task, this.workerId, outcome);
+    await this.taskRepository.finish(task, this.workerId, outcome);
   }
 
   /**
@@ -113,7 +113,7 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
    * applied, and running it again is the user's call.
    */
   async failStale(): Promise<void> {
-    const stale = await this.tasks.failStale(
+    const stale = await this.taskRepository.failStale(
       new Date(Date.now() - STALE_AFTER_MS),
       'The task was interrupted (the server stopped while it ran). Run it again.',
     );

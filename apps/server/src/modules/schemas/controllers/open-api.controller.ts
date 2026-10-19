@@ -6,12 +6,12 @@ import { OpenApiService } from '../services/open-api.service.js';
 /** OpenAPI document of a space's schemas (was the `openapi-generate` callable). */
 @Controller('api/app/spaces/:spaceId/open-api')
 export class OpenApiController {
-  constructor(private readonly openApi: OpenApiService) {}
+  constructor(private readonly openApiService: OpenApiService) {}
 
   @Post()
   @HttpCode(200)
   @RequirePermission(UserPermission.DEV_OPEN_API)
   generate(@Param('spaceId') spaceId: string) {
-    return this.openApi.findOne(spaceId);
+    return this.openApiService.findOne(spaceId);
   }
 }

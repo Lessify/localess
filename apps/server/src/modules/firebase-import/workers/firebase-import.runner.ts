@@ -24,25 +24,25 @@ export class FirebaseImportRunner {
   private readonly logger = new Logger(FirebaseImportRunner.name);
 
   constructor(
-    private readonly runs: FirebaseImportRepository,
-    private readonly space: SpaceImportService,
-    private readonly webhooks: WebhookImportService,
-    private readonly translations: TranslationImportService,
-    private readonly schemas: SchemaImportService,
-    private readonly assets: AssetImportService,
-    private readonly contents: ContentImportService,
-    private readonly references: ReferenceRewriteService,
+    private readonly firebaseImportRepository: FirebaseImportRepository,
+    private readonly spaceImportService: SpaceImportService,
+    private readonly webhookImportService: WebhookImportService,
+    private readonly translationImportService: TranslationImportService,
+    private readonly schemaImportService: SchemaImportService,
+    private readonly assetImportService: AssetImportService,
+    private readonly contentImportService: ContentImportService,
+    private readonly referenceRewriteService: ReferenceRewriteService,
   ) {}
 
   async execute(runId: string, client: FirebaseClient, sourceSpaceId: string): Promise<void> {
-    const run = await this.runs.findById(runId);
+    const run = await this.firebaseImportRepository.findById(runId);
     if (!run || run.status !== 'RUNNING') return;
     const stages: FirebaseImportStage[] = run.stages.map(it => ({ ...it }));
     let current: FirebaseImportStageName = 'space';
     // Every write is conditional on the run still being RUNNING, so a run failed elsewhere cannot come back.
-    const save = (extra: FirebaseImportUpdate = {}) => this.runs.save(runId, stages, extra);
+    const save = (extra: FirebaseImportUpdate = {}) => this.firebaseImportRepository.save(runId, stages, extra);
     const heartbeat = setInterval(() => {
-      void this.runs.heartbeat(runId).catch(error => this.logger.warn(`Import ${runId} heartbeat failed: ${(error as Error).message}`));
+      void this.firebaseImportRepository.heartbeat(runId).catch(error => this.logger.warn(`Import ${runId} heartbeat failed: ${(error as Error).message}`));
     }, HEARTBEAT_MS);
     const stage = (name: FirebaseImportStageName) => stages.find(it => it.stage === name)!;
     const begin = async (name: FirebaseImportStageName) => {
@@ -77,48 +77,48 @@ export class FirebaseImportRunner {
     try {
       // 1 space
       await begin('space');
-      const space = await this.space.importSpace(runId, client, sourceSpaceId, stages);
+      const space = await this.spaceImportService.importSpace(runId, client, sourceSpaceId, stages);
       const sid = space.id;
       await done('space', 1);
 
       // 2 locales, 3 environments (set with the space; counted separately for the progress view)
       await begin('locales');
-      await done('locales', this.space.reportLocales(space, context('locales', sid)));
+      await done('locales', this.spaceImportService.reportLocales(space, context('locales', sid)));
       await begin('environments');
-      await done('environments', await this.space.importEnvironments(space, context('environments', sid)));
+      await done('environments', await this.spaceImportService.importEnvironments(space, context('environments', sid)));
 
       // 4 webhooks, disabled: both environments may run in parallel
       await begin('webhooks');
-      await done('webhooks', await this.webhooks.import(context('webhooks', sid)));
+      await done('webhooks', await this.webhookImportService.import(context('webhooks', sid)));
 
       // 5 translations
       await begin('translations');
-      await done('translations', await this.translations.import(context('translations', sid)));
+      await done('translations', await this.translationImportService.import(context('translations', sid)));
 
       // 6 schemas
       await begin('schemas');
-      await done('schemas', await this.schemas.import(context('schemas', sid)));
+      await done('schemas', await this.schemaImportService.import(context('schemas', sid)));
 
       // 7 assets: ids first, so folder paths can be mapped; then rows and files
       await begin('assets');
-      const assets = await this.assets.import(context('assets', sid));
+      const assets = await this.assetImportService.import(context('assets', sid));
       await done('assets', assets.count);
 
       // 8 contents, as stored, page by page; references are rewritten in the next stage. Only the id map is kept.
       await begin('contents');
-      const contents = await this.contents.import(context('contents', sid));
+      const contents = await this.contentImportService.import(context('contents', sid));
       await done('contents', contents.count);
 
       // 9 content migration, in pages of the space's rows
       await begin('contentMigration');
       await done(
         'contentMigration',
-        await this.references.rewrite(context('contentMigration', sid), { assets: assets.ids, contents: contents.ids }),
+        await this.referenceRewriteService.rewrite(context('contentMigration', sid), { assets: assets.ids, contents: contents.ids }),
       );
 
-      await this.space.dropContentSnapshots(sid);
+      await this.spaceImportService.dropContentSnapshots(sid);
       await save({ status: 'FINISHED', finishedAt: new Date() });
-      await this.space.announce(sid);
+      await this.spaceImportService.announce(sid);
     } catch (error) {
       if (error instanceof RunAbandoned) {
         this.logger.warn(`Import ${runId} ended elsewhere while running (cancelled, or failed as interrupted); stopped`);

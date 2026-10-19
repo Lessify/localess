@@ -16,14 +16,14 @@ const HEARTBEAT_MS = 25_000;
  */
 @Controller('api/app/events')
 export class EventController {
-  constructor(private readonly events: EventService) {}
+  constructor(private readonly eventService: EventService) {}
 
   @Sse()
   @RequireAnyRole()
   stream(@CurrentUser() user: UserEntity, @Query('spaceId') spaceId?: string): Observable<MessageEvent> {
     const principal = toPrincipal(user);
     return merge(
-      this.events.stream(spaceId).pipe(
+      this.eventService.stream(spaceId).pipe(
         filter(event => canReceive(principal, event)),
         map(event => ({ type: 'change', data: event }) satisfies MessageEvent),
       ),

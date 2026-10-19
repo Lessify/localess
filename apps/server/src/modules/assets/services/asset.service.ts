@@ -38,32 +38,32 @@ function found<T>(result: T | undefined): T {
 @Injectable()
 export class AssetService {
   constructor(
-    private readonly assets: AssetRepository,
-    private readonly spaces: SpaceRepository,
+    private readonly assetRepository: AssetRepository,
+    private readonly spaceRepository: SpaceRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
-    private readonly metadata: AssetMetadataService,
-    private readonly sweeper: StorageSweeperService,
+    private readonly assetMetadataService: AssetMetadataService,
+    private readonly storageSweeperService: StorageSweeperService,
   ) {}
 
   async findAll(spaceId: string, query: AssetQuery): Promise<Asset[]> {
-    return (await this.assets.findAll(spaceId, query)).map(toAsset);
+    return (await this.assetRepository.findAll(spaceId, query)).map(toAsset);
   }
 
   count(spaceId: string, kind?: 'FOLDER' | 'FILE'): Promise<number> {
-    return this.assets.count(spaceId, kind);
+    return this.assetRepository.count(spaceId, kind);
   }
 
   async findOne(spaceId: string, id: string): Promise<Asset> {
-    return toAsset(found(await this.assets.findById(spaceId, id)));
+    return toAsset(found(await this.assetRepository.findById(spaceId, id)));
   }
 
   /** Every folder of the space: the editor builds its breadcrumbs and move targets from them. */
   async findFolders(spaceId: string): Promise<AssetFolderSummary[]> {
-    return (await this.assets.findFolders(spaceId)).map(it => toDto(it) as unknown as AssetFolderSummary);
+    return (await this.assetRepository.findFolders(spaceId)).map(it => toDto(it) as unknown as AssetFolderSummary);
   }
 
   async createFolder(spaceId: string, parentId: string | null, name: string): Promise<Asset> {
-    const row = await this.assets.createFolder(spaceId, parentId, name);
+    const row = await this.assetRepository.createFolder(spaceId, parentId, name);
     if (!row) throw new BadRequestException('No such folder');
     return toAsset(row);
   }
@@ -74,8 +74,8 @@ export class AssetService {
    * trigger finish it).
    */
   async upload(spaceId: string, input: UploadInput): Promise<Asset> {
-    if (!(await this.spaces.find(spaceId))) throw new NotFoundException('Space not found');
-    if (!(await this.assets.isFolder(spaceId, input.parentId))) throw new BadRequestException('No such folder');
+    if (!(await this.spaceRepository.find(spaceId))) throw new NotFoundException('Space not found');
+    if (!(await this.assetRepository.isFolder(spaceId, input.parentId))) throw new BadRequestException('No such folder');
     // Every file has a name, a type and an extension ('' when its name has none).
     const derived = splitFilename(input.filename);
     const name = input.name || derived.name;
@@ -86,15 +86,15 @@ export class AssetService {
     const id = newUuid();
     const key = originalKey(spaceId, id);
     // If this request dies before the row exists, the guard lets the sweeper remove the file in an hour.
-    await this.assets.guardUpload(spaceId, id);
+    await this.assetRepository.guardUpload(spaceId, id);
     try {
       const stored = await this.storage.put(key, input.file);
       // @fastify/multipart ends a piped stream at the size limit rather than erroring, so a cut-off
       // file would otherwise be stored as if it were complete.
       if (input.truncated?.()) throw new PayloadTooLargeException('File is too large');
       const type = input.mimetype || 'application/octet-stream';
-      const extracted = await this.metadata.extract(key, type, input.alt);
-      const row = await this.assets.createFile(spaceId, {
+      const extracted = await this.assetMetadataService.extract(key, type, input.alt);
+      const row = await this.assetRepository.createFile(spaceId, {
         id,
         name,
         extension: input.extension ?? derived.extension,
@@ -115,14 +115,14 @@ export class AssetService {
         () => true,
         () => false,
       );
-      if (cleaned) await this.assets.releaseUploadGuard(spaceId, id);
+      if (cleaned) await this.assetRepository.releaseUploadGuard(spaceId, id);
       throw error;
     }
   }
 
   /** Name for folders; name and alt for files (empty alt removes it). */
   async update(spaceId: string, id: string, input: { name?: string; alt?: string }): Promise<Asset> {
-    return toAsset(found(await this.assets.update(spaceId, id, input)));
+    return toAsset(found(await this.assetRepository.update(spaceId, id, input)));
   }
 
   /**
@@ -130,13 +130,13 @@ export class AssetService {
    * pointing at a missing asset.
    */
   async findUsage(spaceId: string, id: string): Promise<{ contents: number }> {
-    const files = found(await this.assets.findFileIdsWithin(spaceId, id));
-    return { contents: await this.assets.countContentsUsing(spaceId, files) };
+    const files = found(await this.assetRepository.findFileIdsWithin(spaceId, id));
+    return { contents: await this.assetRepository.countContentsUsing(spaceId, files) };
   }
 
   /** A file or a folder (with everything under it) into folder `parentId`; null: the root. */
   async move(spaceId: string, id: string, parentId: string | null): Promise<Asset> {
-    const result = found(await this.assets.move(spaceId, id, parentId));
+    const result = found(await this.assetRepository.move(spaceId, id, parentId));
     if ('noParent' in result) throw new BadRequestException('No such folder');
     if ('intoItself' in result) throw new BadRequestException('A folder cannot be moved into itself');
     return toAsset(result.asset);
@@ -148,7 +148,7 @@ export class AssetService {
    * missing file and no file is left without a row.
    */
   async remove(spaceId: string, id: string): Promise<void> {
-    found(await this.assets.delete(spaceId, id));
-    this.sweeper.kick();
+    found(await this.assetRepository.delete(spaceId, id));
+    this.storageSweeperService.kick();
   }
 }

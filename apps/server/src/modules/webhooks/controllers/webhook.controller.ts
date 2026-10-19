@@ -9,21 +9,21 @@ import { WebhookService } from '../services/webhook.service.js';
 @Controller('api/app/spaces/:spaceId/webhooks')
 @RequirePermission(UserPermission.SPACE_MANAGEMENT)
 export class WebhookController {
-  constructor(private readonly webhooks: WebhookService) {}
+  constructor(private readonly webhookService: WebhookService) {}
 
   @Get()
   findAll(@Param('spaceId') spaceId: string) {
-    return this.webhooks.findAll(spaceId);
+    return this.webhookService.findAll(spaceId);
   }
 
   @Get(':id')
   findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.webhooks.findOne(spaceId, id);
+    return this.webhookService.findOne(spaceId, id);
   }
 
   @Post()
   create(@Param('spaceId') spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate) {
-    return this.webhooks.create(spaceId, body);
+    return this.webhookService.create(spaceId, body);
   }
 
   @Put(':id')
@@ -32,7 +32,7 @@ export class WebhookController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zWebHookUpdate }) body: WebHookUpdate,
   ) {
-    return this.webhooks.update(spaceId, id, body);
+    return this.webhookService.update(spaceId, id, body);
   }
 
   @Patch(':id/status')
@@ -41,13 +41,13 @@ export class WebhookController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zWebHookStatusUpdate }) body: WebHookStatusUpdate,
   ) {
-    return this.webhooks.updateStatus(spaceId, id, body.enabled);
+    return this.webhookService.updateStatus(spaceId, id, body.enabled);
   }
 
   /** Logs cascade. */
   @Delete(':id')
   @HttpCode(204)
   async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.webhooks.remove(spaceId, id);
+    await this.webhookService.remove(spaceId, id);
   }
 }

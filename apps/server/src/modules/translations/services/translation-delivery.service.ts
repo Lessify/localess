@@ -28,34 +28,34 @@ const PUSH_VERBS: Record<TranslationPushType, { verb: string; past: string; noun
 @Injectable()
 export class TranslationDeliveryService {
   constructor(
-    private readonly translations: TranslationRepository,
-    private readonly snapshots: TranslationSnapshotRepository,
-    private readonly webhooks: WebhookDispatcher,
-    private readonly spaces: SpaceLocaleRepository,
+    private readonly translationRepository: TranslationRepository,
+    private readonly translationSnapshotRepository: TranslationSnapshotRepository,
+    private readonly webhookDispatcher: WebhookDispatcher,
+    private readonly spaceLocaleRepository: SpaceLocaleRepository,
   ) {}
 
   findSpace(spaceId: string): Promise<SpaceRow | undefined> {
-    return this.spaces.find(spaceId);
+    return this.spaceLocaleRepository.find(spaceId);
   }
 
   /** The published map of a space locale; a locale published never (added since) gets the default locale's map. */
   async findPublished(spaceId: string, locale: string, defaultLocale: string): Promise<TranslationSnapshotEntity | undefined> {
     return (
-      (await this.snapshots.find(spaceId, 'published', locale)) ??
-      (locale !== defaultLocale ? await this.snapshots.find(spaceId, 'published', defaultLocale) : undefined)
+      (await this.translationSnapshotRepository.find(spaceId, 'published', locale)) ??
+      (locale !== defaultLocale ? await this.translationSnapshotRepository.find(spaceId, 'published', defaultLocale) : undefined)
     );
   }
 
   /** The draft map of a space locale, building every locale's when a write dropped them. */
   async findDraft(spaceId: string, locale: string): Promise<TranslationSnapshotEntity | undefined> {
     return (
-      (await this.snapshots.find(spaceId, 'draft', locale)) ?? (await this.snapshots.buildDrafts(spaceId)).find(it => it.locale === locale)
+      (await this.translationSnapshotRepository.find(spaceId, 'draft', locale)) ?? (await this.translationSnapshotRepository.buildDrafts(spaceId)).find(it => it.locale === locale)
     );
   }
 
   /** The values stored for one locale, with no fallback filling: a key the locale has no value for is absent. */
   async storedValues(spaceId: string, locale: string): Promise<Record<string, string>> {
-    return storedLocaleValues(translationsByKey(await this.translations.findAllInByteOrder(spaceId)), locale);
+    return storedLocaleValues(translationsByKey(await this.translationRepository.findAllInByteOrder(spaceId)), locale);
   }
 
   /**
@@ -73,8 +73,8 @@ export class TranslationDeliveryService {
     // add-missing / update-existing only need the pushed keys; the delete types need every key.
     const rows =
       type === 'delete-missing-key' || type === 'delete-missing-value'
-        ? await this.translations.findAllInByteOrder(spaceId)
-        : await this.translations.findByKeys(spaceId, Object.getOwnPropertyNames(values));
+        ? await this.translationRepository.findAllInByteOrder(spaceId)
+        : await this.translationRepository.findByKeys(spaceId, Object.getOwnPropertyNames(values));
     const plan = planTranslationUpdate(translationsByKey(rows), locale, values);
     const actionable = {
       'add-missing': plan.creates,
@@ -93,11 +93,11 @@ export class TranslationDeliveryService {
     if (dryRun) return { message: `[DryRun] Would ${verb} ${actionable.length} ${noun}`, ids: actionable, dryRun: true };
 
     const pick = () => Object.fromEntries(actionable.map(key => [key, values[key]]));
-    if (type === 'add-missing') await this.translations.addKeys(spaceId, locale, pick());
-    else if (type === 'update-existing') await this.translations.setLocaleByKeys(spaceId, locale, pick());
-    else if (type === 'delete-missing-value') await this.translations.deleteLocaleByKeys(spaceId, locale, actionable);
-    else await this.translations.deleteByKeys(spaceId, actionable);
-    this.webhooks.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
+    if (type === 'add-missing') await this.translationRepository.addKeys(spaceId, locale, pick());
+    else if (type === 'update-existing') await this.translationRepository.setLocaleByKeys(spaceId, locale, pick());
+    else if (type === 'delete-missing-value') await this.translationRepository.deleteLocaleByKeys(spaceId, locale, actionable);
+    else await this.translationRepository.deleteByKeys(spaceId, actionable);
+    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
     return { message: `${past} ${actionable.length} ${noun}`, ids: actionable };
   }
 }

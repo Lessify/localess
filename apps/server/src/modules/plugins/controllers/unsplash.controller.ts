@@ -11,15 +11,15 @@ import { UnsplashService } from '../services/unsplash.service.js';
 @Controller('api/app/plugins/unsplash')
 @RequirePermission(UserPermission.ASSET_CREATE)
 export class UnsplashController {
-  constructor(private readonly unsplash: UnsplashService) {}
+  constructor(private readonly unsplashService: UnsplashService) {}
 
   @Get('search')
   search(@Query({ schema: zUnsplashSearch }) query: UnsplashSearch) {
-    return this.unsplash.search(query);
+    return this.unsplashService.search(query);
   }
 
   @Get('random')
   random() {
-    return this.unsplash.random();
+    return this.unsplashService.random();
   }
 }

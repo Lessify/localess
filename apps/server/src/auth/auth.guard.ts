@@ -22,7 +22,7 @@ export const CSRF_HEADER = 'x-requested-with';
 export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly sessions: SessionService,
+    private readonly sessionService: SessionService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -38,7 +38,7 @@ export class AuthGuard implements CanActivate {
 
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets)) return true;
 
-    const session = await this.sessions.resolve(request.cookies?.[SESSION_COOKIE]);
+    const session = await this.sessionService.resolve(request.cookies?.[SESSION_COOKIE]);
     if (!session) throw new UnauthorizedException();
     request.user = session.user;
     request.sessionId = session.id;

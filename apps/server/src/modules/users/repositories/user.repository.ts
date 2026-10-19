@@ -24,7 +24,7 @@ export type UserUpdate = Partial<Pick<UserEntity, 'email' | 'emailVerified' | 'd
 export class UserRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /** One page by the query's sort (then the id, so ties page stably), and how many match its filters. */
@@ -144,6 +144,6 @@ export class UserRepository {
   }
 
   private changed(id: string, op: 'created' | 'updated' | 'deleted', tx: Transaction): Promise<void> {
-    return this.events.publish({ spaceId: null, entity: 'users', id, op }, tx);
+    return this.eventService.publish({ spaceId: null, entity: 'users', id, op }, tx);
   }
 }

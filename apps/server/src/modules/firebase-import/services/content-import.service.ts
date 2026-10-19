@@ -24,7 +24,7 @@ interface FirebasePlace {
  */
 @Injectable()
 export class ContentImportService {
-  constructor(private readonly contents: ContentImportRepository) {}
+  constructor(private readonly contentImportRepository: ContentImportRepository) {}
 
   /** Answers the count and the Firebase id → new id map, for the reference rewrite. */
   async import(stage: ImportStage): Promise<{ count: number; ids: Map<string, string> }> {
@@ -59,11 +59,11 @@ export class ContentImportService {
           ...timestamps(doc),
         };
       });
-      await this.contents.insertMany(rows);
+      await this.contentImportRepository.insertMany(rows);
       contentCount += rows.length;
       await stage.progress(contentCount);
     }
-    await this.contents.linkTree(stage.spaceId, this.planTree(stage, places));
+    await this.contentImportRepository.linkTree(stage.spaceId, this.planTree(stage, places));
     return { count: contentCount, ids: contentIds };
   }
 

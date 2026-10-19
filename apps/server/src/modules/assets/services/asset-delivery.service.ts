@@ -105,7 +105,7 @@ export class AssetDeliveryService {
   private readonly cacheRenditions: boolean;
 
   constructor(
-    private readonly assets: AssetRepository,
+    private readonly assetRepository: AssetRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     @Inject(APP_CONFIG) config: AppConfig,
   ) {
@@ -120,13 +120,13 @@ export class AssetDeliveryService {
    */
   async findLegacyAssetId(spaceId: string, assetId: string): Promise<string | undefined> {
     if (isUuid(assetId)) return undefined;
-    return this.assets.findIdByLegacyId(spaceId, assetId);
+    return this.assetRepository.findIdByLegacyId(spaceId, assetId);
   }
 
   /** `GET /assets/:id/original` and `/download`: the stored bytes, untouched. */
   async findStored(spaceId: string, assetId: string): Promise<StoredAsset | MissingAsset> {
     const key = originalKey(spaceId, assetId);
-    const [object, asset] = await Promise.all([this.storage.stat(key), this.assets.findById(spaceId, assetId)]);
+    const [object, asset] = await Promise.all([this.storage.stat(key), this.assetRepository.findById(spaceId, assetId)]);
     if (!object || !asset) return { kind: 'missing', rowExists: asset !== undefined };
     return {
       kind: 'found',
@@ -154,7 +154,7 @@ export class AssetDeliveryService {
   ): Promise<MissingAsset | { kind: 'canonical'; query: AssetTransformQuery } | { kind: 'plan'; plan: TransformPlan }> {
     const { quality, fit, thumbnail } = query;
     const key = originalKey(spaceId, assetId);
-    const [object, asset] = await Promise.all([this.storage.stat(key), this.assets.findById(spaceId, assetId)]);
+    const [object, asset] = await Promise.all([this.storage.stat(key), this.assetRepository.findById(spaceId, assetId)]);
     if (!object || !asset) return { kind: 'missing', rowExists: asset !== undefined };
     const assetType = asset.type ?? '';
     const extension = asset.extension ?? '';

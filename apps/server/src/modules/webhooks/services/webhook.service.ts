@@ -24,7 +24,7 @@ function found(entity: WebhookEntity | undefined) {
 export class WebhookService {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly webhooks: WebhookRepository,
+    private readonly webhookRepository: WebhookRepository,
   ) {}
 
   /**
@@ -38,16 +38,16 @@ export class WebhookService {
   }
 
   async findAll(spaceId: string) {
-    return (await this.webhooks.findAll(spaceId)).map(toWebhook);
+    return (await this.webhookRepository.findAll(spaceId)).map(toWebhook);
   }
 
   async findOne(spaceId: string, id: string) {
-    return found(await this.webhooks.findById(spaceId, id));
+    return found(await this.webhookRepository.findById(spaceId, id));
   }
 
   async create(spaceId: string, input: WebhookInput) {
     this.assertDeliverable(input.url);
-    const entity = await this.webhooks.create(spaceId, input);
+    const entity = await this.webhookRepository.create(spaceId, input);
     if (!entity) throw new NotFoundException('Space not found');
     return toWebhook(entity);
   }
@@ -56,7 +56,7 @@ export class WebhookService {
   async update(spaceId: string, id: string, input: WebhookInput) {
     this.assertDeliverable(input.url);
     return found(
-      await this.webhooks.update(spaceId, id, {
+      await this.webhookRepository.update(spaceId, id, {
         name: input.name,
         url: input.url,
         events: input.events,
@@ -67,10 +67,10 @@ export class WebhookService {
   }
 
   async updateStatus(spaceId: string, id: string, enabled: boolean) {
-    return found(await this.webhooks.update(spaceId, id, { enabled }));
+    return found(await this.webhookRepository.update(spaceId, id, { enabled }));
   }
 
   async remove(spaceId: string, id: string): Promise<void> {
-    if (!(await this.webhooks.delete(spaceId, id))) throw new NotFoundException('Webhook not found');
+    if (!(await this.webhookRepository.delete(spaceId, id))) throw new NotFoundException('Webhook not found');
   }
 }

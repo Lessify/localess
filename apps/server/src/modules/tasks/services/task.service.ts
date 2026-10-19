@@ -41,13 +41,13 @@ export interface TaskDownload {
 @Injectable()
 export class TaskService {
   constructor(
-    private readonly tasks: TaskRepository,
-    private readonly spaces: SpaceRepository,
+    private readonly taskRepository: TaskRepository,
+    private readonly spaceRepository: SpaceRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 
   async findAll(spaceId: string, query: TaskPageable): Promise<Page<Task>> {
-    const { rows, total } = await this.tasks.findPage(spaceId, query);
+    const { rows, total } = await this.taskRepository.findPage(spaceId, query);
     return toPage(rows, total, query, toTask);
   }
 
@@ -68,7 +68,7 @@ export class TaskService {
   /** Exports and metadata regeneration. */
   async create(spaceId: string, input: ExportTaskInput, user: UserEntity): Promise<Task> {
     assertCanManage(user, input.kind);
-    return toTask(await this.tasks.create(spaceId, { id: newUuid(), ...input }));
+    return toTask(await this.taskRepository.create(spaceId, { id: newUuid(), ...input }));
   }
 
   /**
@@ -76,14 +76,14 @@ export class TaskService {
    * that fails. The caller checked `assertCanManage` (it must drain the upload when that fails).
    */
   async createImport(spaceId: string, upload: ImportUpload): Promise<Task> {
-    await this.spaces.require(spaceId);
+    await this.spaceRepository.require(spaceId);
     const id = newUuid();
     try {
       const stored = await this.storage.put(taskFileKey({ spaceId, id }), upload.stream);
       if (upload.stream.truncated) throw new PayloadTooLargeException('File is too large');
       const translation = upload.kind === 'TRANSLATION_IMPORT';
       return toTask(
-        await this.tasks.create(spaceId, {
+        await this.taskRepository.create(spaceId, {
           id,
           kind: upload.kind,
           file: { name: upload.filename, size: stored.size },
@@ -100,12 +100,12 @@ export class TaskService {
   async remove(spaceId: string, id: string, user: UserEntity): Promise<void> {
     const task = await this.find(spaceId, id);
     assertCanManage(user, task.kind);
-    await this.tasks.delete(spaceId, id);
+    await this.taskRepository.delete(spaceId, id);
     await this.storage.deletePrefix(taskFilesPrefix(spaceId, id));
   }
 
   private async find(spaceId: string, id: string): Promise<TaskEntity> {
-    const task = await this.tasks.findById(spaceId, id);
+    const task = await this.taskRepository.findById(spaceId, id);
     if (!task) throw new NotFoundException('Task not found');
     return task;
   }

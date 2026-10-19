@@ -15,13 +15,13 @@ export interface ActiveSession {
 
 @Injectable()
 export class SessionService {
-  constructor(private readonly sessions: SessionRepository) {}
+  constructor(private readonly sessionRepository: SessionRepository) {}
 
   /** Creates a session and returns the raw cookie value; only its hash is stored. */
   async create(userId: string, meta: { userAgent?: string; ip?: string } = {}): Promise<{ token: string; expiresAt: Date }> {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-    await this.sessions.create({
+    await this.sessionRepository.create({
       id: hashToken(token),
       userId,
       expiresAt,
@@ -36,21 +36,21 @@ export class SessionService {
     if (!token) return undefined;
     const id = hashToken(token);
     const now = new Date();
-    const row = await this.sessions.findActive(id, now);
+    const row = await this.sessionRepository.findActive(id, now);
     if (!row || row.user.disabled) return undefined;
 
     if (now.getTime() - row.session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
-      await this.sessions.touch(id, now, new Date(now.getTime() + SESSION_TTL_MS));
+      await this.sessionRepository.touch(id, now, new Date(now.getTime() + SESSION_TTL_MS));
     }
     return { id, user: row.user };
   }
 
   async revoke(sessionId: string): Promise<void> {
-    await this.sessions.delete(sessionId);
+    await this.sessionRepository.delete(sessionId);
   }
 
   /** Signs the user out everywhere, optionally keeping the current session. */
   async revokeAllForUser(userId: string, exceptSessionId?: string): Promise<void> {
-    await this.sessions.deleteAllForUser(userId, exceptSessionId);
+    await this.sessionRepository.deleteAllForUser(userId, exceptSessionId);
   }
 }

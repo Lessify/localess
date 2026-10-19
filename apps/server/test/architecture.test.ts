@@ -98,6 +98,28 @@ describe('server rules: file and class names', () => {
   });
 });
 
+describe('server rules: injected dependencies', () => {
+  it('an injected service or repository is named after its class (SpaceRepository → spaceRepository)', () => {
+    expect(
+      breaks(
+        file =>
+          nestClasses(file).flatMap(it =>
+            it.members.filter(ts.isConstructorDeclaration).flatMap(constructor =>
+              constructor.parameters.flatMap(parameter => {
+                const type = parameter.type?.getText(file.source) ?? '';
+                if (!/(Service|Repository|Runner|Dispatcher|Worker)$/.test(type) || ts.getDecorators(parameter)?.length) return [];
+                const expected = type.startsWith('OAuth') ? `oauth${type.slice(5)}` : type[0].toLowerCase() + type.slice(1);
+                const name = parameter.name.getText(file.source);
+                return name === expected ? [] : [`${it.name!.text}: ${name}: ${type} should be ${expected}`];
+              }),
+            ),
+          ),
+        () => true,
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('server rules: method names', () => {
   it('controllers and services use the NestJS names: findAll, findOne, find<What>, create, update, remove', () => {
     expect(

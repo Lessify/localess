@@ -8,30 +8,30 @@ import { SchemaService } from '../services/schema.service.js';
 /** Schemas (was direct `spaces/{s}/schemas` access from the SPA). `:id` is the UUID; references use `name`. */
 @Controller('api/app/spaces/:spaceId/schemas')
 export class SchemaController {
-  constructor(private readonly schemas: SchemaService) {}
+  constructor(private readonly schemaService: SchemaService) {}
 
   @Get()
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
   findAll(@Param('spaceId') spaceId: string, @Query('type', { schema: zSchemaTypeFilter }) type?: SchemaType) {
-    return this.schemas.findAll(spaceId, type);
+    return this.schemaService.findAll(spaceId, type);
   }
 
   @Get(':id')
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
   findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.schemas.findOne(spaceId, id);
+    return this.schemaService.findOne(spaceId, id);
   }
 
   @Get(':id/usage')
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
   findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.schemas.findUsage(spaceId, id);
+    return this.schemaService.findUsage(spaceId, id);
   }
 
   @Post()
   @RequirePermission(UserPermission.SCHEMA_CREATE)
   create(@Param('spaceId') spaceId: string, @Body({ schema: zSchemaCreate }) body: SchemaCreate) {
-    return this.schemas.create(spaceId, body);
+    return this.schemaService.create(spaceId, body);
   }
 
   @Put(':id')
@@ -41,7 +41,7 @@ export class SchemaController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zSchemaUpdate }) body: SchemaUpdate,
   ) {
-    return this.schemas.update(spaceId, id, body);
+    return this.schemaService.update(spaceId, id, body);
   }
 
   @Put(':id/name')
@@ -51,13 +51,13 @@ export class SchemaController {
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zSchemaRename }) body: SchemaRename,
   ) {
-    return this.schemas.rename(spaceId, id, body.name);
+    return this.schemaService.rename(spaceId, id, body.name);
   }
 
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.SCHEMA_DELETE)
   remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    return this.schemas.remove(spaceId, id);
+    return this.schemaService.remove(spaceId, id);
   }
 }

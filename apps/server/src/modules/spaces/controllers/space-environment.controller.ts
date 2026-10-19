@@ -8,18 +8,18 @@ import { SpaceEnvironmentService } from '../services/space-environment.service.j
 /** A space's environments; every route answers the space as it is after the change. */
 @Controller('api/app/spaces/:spaceId/environments')
 export class SpaceEnvironmentController {
-  constructor(private readonly environments: SpaceEnvironmentService) {}
+  constructor(private readonly spaceEnvironmentService: SpaceEnvironmentService) {}
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate) {
-    return this.environments.create(spaceId, body);
+    return this.spaceEnvironmentService.create(spaceId, body);
   }
 
   @Put('order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentOrder }) body: SpaceEnvironmentOrder) {
-    return this.environments.reorder(spaceId, body.ids);
+    return this.spaceEnvironmentService.reorder(spaceId, body.ids);
   }
 
   @Patch(':environmentId')
@@ -29,12 +29,12 @@ export class SpaceEnvironmentController {
     @Param('environmentId', UuidParamPipe) environmentId: string,
     @Body({ schema: zSpaceEnvironmentUpdate }) body: SpaceEnvironmentUpdate,
   ) {
-    return this.environments.update(spaceId, environmentId, body);
+    return this.spaceEnvironmentService.update(spaceId, environmentId, body);
   }
 
   @Delete(':environmentId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   remove(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string) {
-    return this.environments.remove(spaceId, environmentId);
+    return this.spaceEnvironmentService.remove(spaceId, environmentId);
   }
 }

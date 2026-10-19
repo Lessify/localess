@@ -24,7 +24,7 @@ import { parseAssetTransformQuery } from '../utils/image-transform.js';
 @Public()
 @Controller('api/v1/spaces/:spaceId')
 export class AssetCdnController {
-  constructor(private readonly assetDelivery: AssetDeliveryService) {}
+  constructor(private readonly assetDeliveryService: AssetDeliveryService) {}
 
   @Get('assets/:assetId')
   async asset(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
@@ -56,7 +56,7 @@ export class AssetCdnController {
    * UUID or no asset has it as `legacy_id`, and the route carries on as usual.
    */
   private async redirectLegacyId(request: FastifyRequest, reply: FastifyReply, spaceId: string, assetId: string): Promise<boolean> {
-    const id = await this.assetDelivery.findLegacyAssetId(spaceId, assetId);
+    const id = await this.assetDeliveryService.findLegacyAssetId(spaceId, assetId);
     if (!id) return false;
     const location = request.url.replace(`/assets/${encodeURIComponent(assetId)}`, `/assets/${id}`);
     void reply.header('cache-control', publicCache(CACHE_ASSET_MAX_AGE)).redirect(location, 301);
@@ -81,7 +81,7 @@ export class AssetCdnController {
       );
       return;
     }
-    const stored = await this.assetDelivery.findStored(spaceId, assetId);
+    const stored = await this.assetDeliveryService.findStored(spaceId, assetId);
     if (stored.kind === 'missing') {
       this.sendMissing(reply, stored.rowExists);
       return;
@@ -105,7 +105,7 @@ export class AssetCdnController {
       this.sendBadRequest(reply, parsed.error.message);
       return;
     }
-    const planned = await this.assetDelivery.planTransform(spaceId, assetId, parsed.query);
+    const planned = await this.assetDeliveryService.planTransform(spaceId, assetId, parsed.query);
     if (planned.kind === 'missing') {
       this.sendMissing(reply, planned.rowExists);
       return;
@@ -120,7 +120,7 @@ export class AssetCdnController {
     // Answered before any read or transform: revalidation costs a row lookup, not a re-encode.
     if (plan.md5 && this.notModified(request, reply, buildAssetETag(plan.md5, plan.etagSuffix, plan.thumbnail))) return;
 
-    const rendition = await this.assetDelivery.render(plan);
+    const rendition = await this.assetDeliveryService.render(plan);
     if (rendition.kind === 'bad-request') {
       this.sendBadRequest(reply, rendition.message);
       return;
@@ -175,9 +175,9 @@ export class AssetCdnController {
         .code(206)
         .header('content-range', `bytes ${range.start}-${range.end}/${size}`)
         .header('content-length', range.end - range.start + 1)
-        .send(this.assetDelivery.createReadStream(key, range));
+        .send(this.assetDeliveryService.createReadStream(key, range));
       return;
     }
-    void reply.header('content-length', size).send(this.assetDelivery.createReadStream(key));
+    void reply.header('content-length', size).send(this.assetDeliveryService.createReadStream(key));
   }
 }

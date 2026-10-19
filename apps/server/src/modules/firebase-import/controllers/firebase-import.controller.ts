@@ -11,33 +11,33 @@ import type { UserEntity } from '../../../shared/entities/user.entity.js';
 @Controller('api/app/admin/firebase-import')
 @RequireAdmin()
 export class FirebaseImportController {
-  constructor(private readonly imports: FirebaseImportService) {}
+  constructor(private readonly firebaseImportService: FirebaseImportService) {}
 
   @Post('spaces')
   @HttpCode(200)
   findSourceSpaces(@Body({ schema: zFirebaseImportConnection }) body: FirebaseImportConnection) {
-    return this.imports.findSourceSpaces(body.origin, body.token);
+    return this.firebaseImportService.findSourceSpaces(body.origin, body.token);
   }
 
   @Post()
   @HttpCode(202)
   start(@Body({ schema: zFirebaseImportStart }) body: FirebaseImportStart, @CurrentUser() user: UserEntity) {
-    return this.imports.start(body.origin, body.token, body.spaceId, user);
+    return this.firebaseImportService.start(body.origin, body.token, body.spaceId, user);
   }
 
   @Get()
   findAll() {
-    return this.imports.findAll();
+    return this.firebaseImportService.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id', UuidParamPipe) id: string) {
-    return this.imports.findOne(id);
+    return this.firebaseImportService.findOne(id);
   }
 
   @Post(':id/cancel')
   @HttpCode(200)
   cancel(@Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity) {
-    return this.imports.cancel(id, user);
+    return this.firebaseImportService.cancel(id, user);
   }
 }

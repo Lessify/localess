@@ -20,9 +20,9 @@ const loginRateLimit = (): number => Number(process.env['LOCALESS_LOGIN_RATE_LIM
 @Controller('api/auth')
 export class AuthController {
   constructor(
-    private readonly auth: AuthService,
-    private readonly sessions: SessionService,
-    private readonly passwordReset: PasswordResetService,
+    private readonly authService: AuthService,
+    private readonly sessionService: SessionService,
+    private readonly passwordResetService: PasswordResetService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
@@ -35,18 +35,18 @@ export class AuthController {
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<{ user: UserDto }> {
-    const user = await this.auth.verifyCredentials(body.email, body.password);
-    const { token, expiresAt } = await this.sessions.create(user.id, { userAgent: request.headers['user-agent'], ip: request.ip });
+    const user = await this.authService.verifyCredentials(body.email, body.password);
+    const { token, expiresAt } = await this.sessionService.create(user.id, { userAgent: request.headers['user-agent'], ip: request.ip });
     setSessionCookie(request, reply, token, expiresAt);
-    return { user: await this.auth.toUser(user) };
+    return { user: await this.authService.toUser(user) };
   }
 
   @Public()
   @Post('logout')
   @HttpCode(204)
   async logout(@Req() request: FastifyRequest, @Res({ passthrough: true }) reply: FastifyReply): Promise<void> {
-    const session = await this.sessions.resolve(request.cookies?.[SESSION_COOKIE]);
-    if (session) await this.sessions.revoke(session.id);
+    const session = await this.sessionService.resolve(request.cookies?.[SESSION_COOKIE]);
+    if (session) await this.sessionService.revoke(session.id);
     clearSessionCookie(reply);
   }
 
@@ -58,7 +58,7 @@ export class AuthController {
     @Body({ schema: zPasswordResetRequest }) body: PasswordResetRequest,
     @Req() request: FastifyRequest,
   ): Promise<void> {
-    await this.passwordReset.request(body.email, publicOrigin(this.config, request));
+    await this.passwordResetService.request(body.email, publicOrigin(this.config, request));
   }
 
   @Public()
@@ -66,12 +66,12 @@ export class AuthController {
   @HttpCode(204)
   @RouteConfig({ rateLimit: { max: loginRateLimit, timeWindow: '1 minute' } })
   async confirmPasswordReset(@Body({ schema: zPasswordResetConfirm }) body: PasswordResetConfirm): Promise<void> {
-    await this.passwordReset.confirm(body.token, body.password);
+    await this.passwordResetService.confirm(body.token, body.password);
   }
 
   /** The signed-in user, including role and permissions (replaces `getIdTokenResult().claims`). */
   @Get('me')
   async me(@CurrentUser() user: UserEntity): Promise<{ user: UserDto }> {
-    return { user: await this.auth.toUser(user) };
+    return { user: await this.authService.toUser(user) };
   }
 }

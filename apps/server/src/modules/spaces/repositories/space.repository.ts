@@ -20,7 +20,7 @@ import { changeSpace } from './space-change.js';
 export class SpaceRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly events: EventService,
+    private readonly eventService: EventService,
   ) {}
 
   /**
@@ -61,13 +61,13 @@ export class SpaceRepository {
       await t.insert(spaces).values({ id, name, defaultLocaleId });
       await t.insert(spaceLocales).values({ spaceId: id, localeId: defaultLocaleId, position: 0 });
       await createPreviewToken(t, id);
-      await this.events.publish({ spaceId: null, entity: 'spaces', id, op: 'created' }, t);
+      await this.eventService.publish({ spaceId: null, entity: 'spaces', id, op: 'created' }, t);
       return requireSpace(t, id);
     });
   }
 
   rename(spaceId: string, name: string, tx?: Transaction): Promise<SpaceRow> {
-    return changeSpace(this.db, this.events, spaceId, tx, async () => ({ name }));
+    return changeSpace(this.db, this.eventService, spaceId, tx, async () => ({ name }));
   }
 
   /** Everything in the space goes with it: rows by FK cascade, stored files queued for the sweeper. */
@@ -75,7 +75,7 @@ export class SpaceRepository {
     return transaction(this.db, tx, async t => {
       await t.delete(spaces).where(eq(spaces.id, spaceId));
       await scheduleSpaceFilesDeletion(t, spaceId);
-      await this.events.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'deleted' }, t);
+      await this.eventService.publish({ spaceId: null, entity: 'spaces', id: spaceId, op: 'deleted' }, t);
     });
   }
 }

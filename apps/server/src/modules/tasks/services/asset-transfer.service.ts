@@ -13,28 +13,28 @@ import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 @Injectable()
 export class AssetTransferService {
   constructor(
-    private readonly assets: AssetTransferRepository,
+    private readonly assetTransferRepository: AssetTransferRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
-    private readonly metadata: AssetMetadataService,
-    private readonly log: TaskLogService,
+    private readonly assetMetadataService: AssetMetadataService,
+    private readonly taskLogService: TaskLogService,
   ) {}
 
   async regenerateMetadata(task: TaskEntity): Promise<TaskOutcome> {
-    const files = await this.assets.findFiles(task.spaceId);
-    await this.log.log(task, 'INFO', `found ${files.length} assets to regenerate`);
+    const files = await this.assetTransferRepository.findFiles(task.spaceId);
+    await this.taskLogService.log(task, 'INFO', `found ${files.length} assets to regenerate`);
     let count = 0;
     for (const file of files) {
       const key = assetFileKey(task.spaceId, file.id);
       if (!(await this.storage.stat(key))) {
-        await this.log.log(task, 'WARN', `asset ${file.id} has no file`);
+        await this.taskLogService.log(task, 'WARN', `asset ${file.id} has no file`);
         continue;
       }
-      const extracted = await this.metadata.extract(key, file.type ?? '', file.alt);
-      await this.assets.updateMetadata(task.spaceId, file.id, extracted);
-      if (++count % PROGRESS_INTERVAL === 0) await this.log.log(task, 'INFO', `regenerated ${count}/${files.length}`);
+      const extracted = await this.assetMetadataService.extract(key, file.type ?? '', file.alt);
+      await this.assetTransferRepository.updateMetadata(task.spaceId, file.id, extracted);
+      if (++count % PROGRESS_INTERVAL === 0) await this.taskLogService.log(task, 'INFO', `regenerated ${count}/${files.length}`);
     }
-    await this.assets.metadataRefreshed(task.spaceId);
-    await this.log.log(task, 'INFO', `total regenerated : ${count}`);
+    await this.assetTransferRepository.metadataRefreshed(task.spaceId);
+    await this.taskLogService.log(task, 'INFO', `total regenerated : ${count}`);
     return { status: 'FINISHED' };
   }
 }

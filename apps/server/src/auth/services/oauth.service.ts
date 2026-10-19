@@ -44,7 +44,7 @@ export class OAuthService implements OnModuleInit {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly users: AuthUserRepository,
+    private readonly authUserRepository: AuthUserRepository,
   ) {}
 
   onModuleInit(): void {
@@ -150,15 +150,15 @@ export class OAuthService implements OnModuleInit {
 
   private async resolveUser(provider: OAuthProviderId, claims: client.IDToken): Promise<UserEntity> {
     const subject = claims.sub;
-    const identityUserId = await this.users.findIdentityUserId(provider, subject);
+    const identityUserId = await this.authUserRepository.findIdentityUserId(provider, subject);
 
-    let user = identityUserId ? await this.users.findById(identityUserId) : undefined;
+    let user = identityUserId ? await this.authUserRepository.findById(identityUserId) : undefined;
     if (!user) {
       const email = this.verifiedEmail(provider, claims);
-      user = await this.users.findByEmail(email);
+      user = await this.authUserRepository.findByEmail(email);
       if (!user) {
         if (!this.config.auth.autoRegister) throw new OAuthError('no-account', `No Localess account for ${email}`);
-        user = await this.users.create({
+        user = await this.authUserRepository.create({
           email,
           emailVerified: true,
           displayName: typeof claims['name'] === 'string' ? claims['name'] || null : null,
@@ -166,7 +166,7 @@ export class OAuthService implements OnModuleInit {
       }
       // A refused sign-in changes nothing: no identity for a disabled account.
       if (user.disabled) throw new OAuthError('disabled', 'This account is disabled');
-      await this.users.linkIdentity(user.id, provider, subject);
+      await this.authUserRepository.linkIdentity(user.id, provider, subject);
     } else if (provider === 'google') {
       // Re-check the domain on every sign-in, not just the first.
       this.verifiedEmail(provider, claims);
