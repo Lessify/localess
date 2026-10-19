@@ -226,11 +226,11 @@ describe('user management', () => {
   // Last: these change who is an admin.
   describe('the last active admin', () => {
     const LAST_ADMIN = { message: 'At least one active admin must remain', statusCode: 409 };
-    const role = async (id: string) => (await usersService.getById(id)).role;
+    const role = async (id: string) => (await usersService.findOneRow(id)).role;
 
     // Earlier cases invited other admins: `admin` becomes the only one.
     beforeAll(async () => {
-      const all = await usersService.page({ page: 0, size: 100, sort: 'email', direction: 'asc' });
+      const all = await usersService.findAll({ page: 0, size: 100, sort: 'email', direction: 'asc' });
       for (const user of all.items) {
         if (user.role === 'ADMIN' && user.id !== ids.admin) await usersService.updateAccess(user.id, { role: null });
       }

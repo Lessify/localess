@@ -46,16 +46,16 @@ export class TasksService {
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
   ) {}
 
-  async page(spaceId: string, query: TaskPageable): Promise<Page<Task>> {
+  async findAll(spaceId: string, query: TaskPageable): Promise<Page<Task>> {
     const { rows, total } = await this.tasks.findPage(spaceId, query);
     return toPage(rows, total, query, toTask);
   }
 
-  async get(spaceId: string, id: string): Promise<Task> {
+  async findOne(spaceId: string, id: string): Promise<Task> {
     return toTask(await this.find(spaceId, id));
   }
 
-  async logs(spaceId: string, id: string): Promise<TaskLog[]> {
+  async findLogs(spaceId: string, id: string): Promise<TaskLog[]> {
     await this.find(spaceId, id);
     return (await this.tasks.findLogs(id)).map(toTaskLog);
   }
@@ -102,7 +102,7 @@ export class TasksService {
   }
 
   /** Logs cascade; the task's files go too. */
-  async delete(spaceId: string, id: string, user: UserRow): Promise<void> {
+  async remove(spaceId: string, id: string, user: UserRow): Promise<void> {
     const task = await this.find(spaceId, id);
     assertCanManage(user, task.kind);
     await this.tasks.delete(spaceId, id);

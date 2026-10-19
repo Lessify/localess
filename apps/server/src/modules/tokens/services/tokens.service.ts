@@ -25,11 +25,11 @@ function found(entity: TokenEntity | undefined) {
 export class TokensService {
   constructor(private readonly tokens: TokensRepository) {}
 
-  async list(spaceId: string, type?: TokenType, limit?: number) {
+  async findAll(spaceId: string, type?: TokenType, limit?: number) {
     return (await this.tokens.findAll(spaceId, { type, limit })).map(toToken);
   }
 
-  async get(spaceId: string, id: string) {
+  async findOne(spaceId: string, id: string) {
     return found(await this.tokens.findById(spaceId, id));
   }
 
@@ -66,7 +66,7 @@ export class TokensService {
     return { ...found(entity), token: value };
   }
 
-  async delete(spaceId: string, id: string): Promise<void> {
+  async remove(spaceId: string, id: string): Promise<void> {
     if (!(await this.tokens.delete(spaceId, id))) throw new NotFoundException('Token not found');
   }
 }

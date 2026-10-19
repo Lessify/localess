@@ -9,7 +9,7 @@ export class LocalesController {
 
   @Get()
   @RequireAnyRole()
-  list() {
-    return this.locales.list();
+  findAll() {
+    return this.locales.findAll();
   }
 }

@@ -24,7 +24,7 @@ export class MeService {
     private readonly sessions: SessionService,
   ) {}
 
-  get(user: UserRow): Promise<UserDto> {
+  findOne(user: UserRow): Promise<UserDto> {
     return this.usersService.toDto(user);
   }
 

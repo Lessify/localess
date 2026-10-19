@@ -49,16 +49,16 @@ export class AssetsController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery) {
+  async findAll(@Param('spaceId') spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery) {
     const { parentId, ...rest } = query;
-    return this.assets.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+    return this.assets.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
 
   /** Every folder of the space (`{ id, parentId, name }`), for the editor's breadcrumbs and move targets. */
   @Get('folders')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  async folders(@Param('spaceId') spaceId: string) {
-    return this.assets.folders(spaceId);
+  async findFolders(@Param('spaceId') spaceId: string) {
+    return this.assets.findFolders(spaceId);
   }
 
   @Get('count')
@@ -69,15 +69,15 @@ export class AssetsController {
 
   @Get(':id')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.assets.get(spaceId, id);
+  async findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.assets.findOne(spaceId, id);
   }
 
   /** How many contents use it (a folder: any file under it), for the warning before a delete. */
   @Get(':id/usage')
   @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
-  usage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.assets.usage(spaceId, id);
+  findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.assets.findUsage(spaceId, id);
   }
 
   @Post('folders')
@@ -139,7 +139,7 @@ export class AssetsController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.ASSET_DELETE)
-  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.assets.delete(spaceId, id);
+  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.assets.remove(spaceId, id);
   }
 }

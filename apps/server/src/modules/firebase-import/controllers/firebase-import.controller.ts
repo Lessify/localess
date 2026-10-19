@@ -14,8 +14,8 @@ export class FirebaseImportController {
 
   @Post('spaces')
   @HttpCode(200)
-  spaces(@Body({ schema: zFirebaseConnection }) body: FirebaseConnection) {
-    return this.imports.sourceSpaces(body.origin, body.token);
+  findSourceSpaces(@Body({ schema: zFirebaseConnection }) body: FirebaseConnection) {
+    return this.imports.findSourceSpaces(body.origin, body.token);
   }
 
   @Post()
@@ -25,13 +25,13 @@ export class FirebaseImportController {
   }
 
   @Get()
-  list() {
-    return this.imports.list();
+  findAll() {
+    return this.imports.findAll();
   }
 
   @Get(':id')
-  get(@Param('id', UuidParamPipe) id: string) {
-    return this.imports.get(id);
+  findOne(@Param('id', UuidParamPipe) id: string) {
+    return this.imports.findOne(id);
   }
 
   @Post(':id/cancel')

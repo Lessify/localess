@@ -18,8 +18,8 @@ export class MeController {
   constructor(private readonly me: MeService) {}
 
   @Get()
-  async get(@CurrentUser() user: UserRow): Promise<UserDto> {
-    return this.me.get(user);
+  async findOne(@CurrentUser() user: UserRow): Promise<UserDto> {
+    return this.me.findOne(user);
   }
 
   @Patch()

@@ -24,7 +24,7 @@ export class ContentsService {
     private readonly webhooks: WebhookDispatcher,
   ) {}
 
-  async list(spaceId: string, query: ContentQuery): Promise<Content[]> {
+  async findAll(spaceId: string, query: ContentQuery): Promise<Content[]> {
     return (await this.contents.findAll(spaceId, query)).map(toContent);
   }
 
@@ -32,12 +32,12 @@ export class ContentsService {
     return this.contents.count(spaceId, kind);
   }
 
-  async get(spaceId: string, id: string): Promise<Content> {
+  async findOne(spaceId: string, id: string): Promise<Content> {
     return toContent(found(await this.contents.findById(spaceId, id)));
   }
 
   /** Every folder of the space: the editor builds its breadcrumbs, paths and move targets from them. */
-  async folders(spaceId: string): Promise<ContentFolderSummary[]> {
+  async findFolders(spaceId: string): Promise<ContentFolderSummary[]> {
     return (await this.contents.findFolders(spaceId)).map(it => toDto(it) as unknown as ContentFolderSummary);
   }
 
@@ -101,7 +101,7 @@ export class ContentsService {
   }
 
   /** Deletes the item and, for a folder, everything under it. Published snapshots cascade. */
-  async delete(spaceId: string, id: string): Promise<void> {
+  async remove(spaceId: string, id: string): Promise<void> {
     const deleted = found(await this.contents.delete(spaceId, id));
     // The delete trigger fired `content.changed` once per deleted item.
     for (const it of deleted) this.changed(spaceId, it);

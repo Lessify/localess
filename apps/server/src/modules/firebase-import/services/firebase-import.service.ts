@@ -77,7 +77,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     }
   }
 
-  async sourceSpaces(origin: string, token: string): Promise<FirebaseSourceSpace[]> {
+  async findSourceSpaces(origin: string, token: string): Promise<FirebaseSourceSpace[]> {
     let remote: Awaited<ReturnType<FirebaseClient['spaces']>>;
     try {
       remote = await this.client(origin, token).spaces();
@@ -122,7 +122,7 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     });
     // In the background: the caller polls GET /:id. The runner records every outcome itself.
     void this.runner.execute(id, client, sourceSpaceId).catch(error => this.logger.error(error));
-    return this.get(id);
+    return this.findOne(id);
   }
 
   /** The local spaces imported from these Firebase spaces (finished or failed; a deleted space takes its run along). */
@@ -130,11 +130,11 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     return this.runs.findImportedAs(sourceSpaceIds);
   }
 
-  async list(): Promise<FirebaseImport[]> {
+  async findAll(): Promise<FirebaseImport[]> {
     return (await this.runs.findAll()).map(toFirebaseImport);
   }
 
-  async get(id: string): Promise<FirebaseImport> {
+  async findOne(id: string): Promise<FirebaseImport> {
     const row = isUuid(id) ? await this.runs.findById(id) : undefined;
     if (!row) throw new NotFoundException('Import not found');
     return toFirebaseImport(row);

@@ -12,18 +12,18 @@ export class WebhooksController {
   constructor(private readonly webhooks: WebhooksService) {}
 
   @Get()
-  list(@Param('spaceId') spaceId: string) {
-    return this.webhooks.list(spaceId);
+  findAll(@Param('spaceId') spaceId: string) {
+    return this.webhooks.findAll(spaceId);
   }
 
   @Get(':id')
-  get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.webhooks.get(spaceId, id);
+  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.webhooks.findOne(spaceId, id);
   }
 
   @Get(':id/logs')
-  logs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Query('limit') limit?: string) {
-    return this.webhooks.logs(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
+  findLogs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Query('limit') limit?: string) {
+    return this.webhooks.findLogs(spaceId, id, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
   }
 
   @Post()
@@ -52,7 +52,7 @@ export class WebhooksController {
   /** Logs cascade. */
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.webhooks.delete(spaceId, id);
+  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.webhooks.remove(spaceId, id);
   }
 }

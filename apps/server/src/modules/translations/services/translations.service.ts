@@ -34,7 +34,7 @@ export class TranslationsService {
     private readonly translate: TranslateService,
   ) {}
 
-  async list(spaceId: string): Promise<Translation[]> {
+  async findAll(spaceId: string): Promise<Translation[]> {
     return (await this.translations.findAll(spaceId)).map(toTranslation);
   }
 
@@ -42,7 +42,7 @@ export class TranslationsService {
     return this.translations.count(spaceId);
   }
 
-  async get(spaceId: string, id: string): Promise<Translation> {
+  async findOne(spaceId: string, id: string): Promise<Translation> {
     return found(await this.translations.findById(spaceId, id));
   }
 
@@ -81,14 +81,14 @@ export class TranslationsService {
     return this.changed(spaceId, found(await this.translations.update(spaceId, id, { key })));
   }
 
-  async delete(spaceId: string, id: string): Promise<void> {
+  async remove(spaceId: string, id: string): Promise<void> {
     await this.spaces.require(spaceId);
     if (!(await this.translations.delete(spaceId, id))) throw new NotFoundException('Translation not found');
     this.changed(spaceId, undefined);
   }
 
   /** Removes every key (the published maps stay until the next publish, as before). */
-  async deleteAll(spaceId: string): Promise<void> {
+  async removeAll(spaceId: string): Promise<void> {
     await this.spaces.require(spaceId);
     await this.translations.deleteAll(spaceId);
     this.changed(spaceId, undefined);

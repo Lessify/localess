@@ -22,16 +22,16 @@ export class ContentsController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
   @Get()
   @RequirePermission(UserPermission.CONTENT_READ)
-  async list(@Param('spaceId') spaceId: string, @Query({ schema: zContentListQuery }) query: ContentListQuery) {
+  async findAll(@Param('spaceId') spaceId: string, @Query({ schema: zContentListQuery }) query: ContentListQuery) {
     const { parentId, ...rest } = query;
-    return this.contents.list(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+    return this.contents.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
 
   /** Every folder of the space (`{ id, parentId, name, slug }`), for the editor's breadcrumbs and move targets. */
   @Get('folders')
   @RequirePermission(UserPermission.CONTENT_READ)
-  async folders(@Param('spaceId') spaceId: string) {
-    return this.contents.folders(spaceId);
+  async findFolders(@Param('spaceId') spaceId: string) {
+    return this.contents.findFolders(spaceId);
   }
 
   @Get('count')
@@ -42,8 +42,8 @@ export class ContentsController {
 
   @Get(':id')
   @RequirePermission(UserPermission.CONTENT_READ)
-  async get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.contents.get(spaceId, id);
+  async findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.contents.findOne(spaceId, id);
   }
 
   @Post()
@@ -85,8 +85,8 @@ export class ContentsController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.CONTENT_DELETE)
-  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.contents.delete(spaceId, id);
+  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.contents.remove(spaceId, id);
   }
 
   @Post(':id/publish')

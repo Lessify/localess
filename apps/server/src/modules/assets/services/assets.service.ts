@@ -45,7 +45,7 @@ export class AssetsService {
     private readonly sweeper: StorageSweeperService,
   ) {}
 
-  async list(spaceId: string, query: AssetQuery): Promise<Asset[]> {
+  async findAll(spaceId: string, query: AssetQuery): Promise<Asset[]> {
     return (await this.assets.findAll(spaceId, query)).map(toAsset);
   }
 
@@ -53,12 +53,12 @@ export class AssetsService {
     return this.assets.count(spaceId, kind);
   }
 
-  async get(spaceId: string, id: string): Promise<Asset> {
+  async findOne(spaceId: string, id: string): Promise<Asset> {
     return toAsset(found(await this.assets.findById(spaceId, id)));
   }
 
   /** Every folder of the space: the editor builds its breadcrumbs and move targets from them. */
-  async folders(spaceId: string): Promise<AssetFolderSummary[]> {
+  async findFolders(spaceId: string): Promise<AssetFolderSummary[]> {
     return (await this.assets.findFolders(spaceId)).map(it => toDto(it) as unknown as AssetFolderSummary);
   }
 
@@ -129,7 +129,7 @@ export class AssetsService {
    * How many contents use the file, or any file under the folder: shown before a delete, which leaves those contents
    * pointing at a missing asset.
    */
-  async usage(spaceId: string, id: string): Promise<{ contents: number }> {
+  async findUsage(spaceId: string, id: string): Promise<{ contents: number }> {
     const files = found(await this.assets.findFileIdsWithin(spaceId, id));
     return { contents: await this.assets.countContentsUsing(spaceId, files) };
   }
@@ -147,7 +147,7 @@ export class AssetsService {
    * files; the sweeper deletes those right after the commit (and retries if storage fails), so a row never points at a
    * missing file and no file is left without a row.
    */
-  async delete(spaceId: string, id: string): Promise<void> {
+  async remove(spaceId: string, id: string): Promise<void> {
     found(await this.assets.delete(spaceId, id));
     this.sweeper.kick();
   }

@@ -25,8 +25,8 @@ export class TranslationsController {
 
   @Get()
   @RequirePermission(UserPermission.TRANSLATION_READ)
-  list(@Param('spaceId') spaceId: string) {
-    return this.translations.list(spaceId);
+  findAll(@Param('spaceId') spaceId: string) {
+    return this.translations.findAll(spaceId);
   }
 
   @Get('count')
@@ -37,8 +37,8 @@ export class TranslationsController {
 
   @Get(':id')
   @RequirePermission(UserPermission.TRANSLATION_READ)
-  get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.translations.get(spaceId, id);
+  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.translations.findOne(spaceId, id);
   }
 
   @Post()
@@ -84,15 +84,15 @@ export class TranslationsController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.TRANSLATION_DELETE)
-  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.translations.delete(spaceId, id);
+  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.translations.remove(spaceId, id);
   }
 
   @Delete()
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async deleteAll(@Param('spaceId') spaceId: string): Promise<void> {
-    await this.translations.deleteAll(spaceId);
+  async removeAll(@Param('spaceId') spaceId: string): Promise<void> {
+    await this.translations.removeAll(spaceId);
   }
 
   @Post('publish')

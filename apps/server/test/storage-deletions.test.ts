@@ -54,7 +54,7 @@ describe('storage deletions', () => {
   it('queues the files of a deleted file and deletes them right after the commit', async () => {
     const file = await upload('a');
     expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
-    await assets.delete(S1, file.id);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
     expect(await exists(`spaces/${S1}/assets/${file.id}`)).toBe(false);
     expect(await queue()).toEqual([]);
@@ -63,7 +63,7 @@ describe('storage deletions', () => {
   it('keeps a failed deletion queued with its error, and a later sweep deletes the files', async () => {
     const file = await upload('b');
     vi.spyOn(storage, 'deletePrefix').mockRejectedValueOnce(new Error('disk unavailable'));
-    await assets.delete(S1, file.id);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
     const [entry] = await queue();
     expect(entry).toMatchObject({
@@ -86,7 +86,7 @@ describe('storage deletions', () => {
     const one = await upload('one', folder.id);
     const two = await upload('two', folder.id);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
-    await assets.delete(S1, folder.id);
+    await assets.remove(S1, folder.id);
     expect((await queue()).map(it => it.assetId).sort()).toEqual([one.id, two.id].sort());
 
     await sweeper.sweep();
@@ -100,7 +100,7 @@ describe('storage deletions', () => {
     await insertSpace(t.db, { id: spaceId, name: 'Gone', locales: [{ id: 'en', name: 'English' }] });
     const file = await upload('c', null, spaceId);
     vi.spyOn(sweeper, 'kick').mockImplementation(() => undefined);
-    await t.app.get(SpacesService).delete(spaceId);
+    await t.app.get(SpacesService).remove(spaceId);
     expect(await queue()).toEqual([expect.objectContaining({ prefix: `spaces/${spaceId}/`, spaceId, assetId: null })]);
 
     await sweeper.sweep();
@@ -112,7 +112,7 @@ describe('storage deletions', () => {
   it('leaves no entry after an upload', async () => {
     const file = await upload('d');
     expect(await queue()).toEqual([]);
-    await assets.delete(S1, file.id);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
   });
 
@@ -139,7 +139,7 @@ describe('storage deletions', () => {
     await sweeper.sweep();
     expect(await queue()).toEqual([]);
     expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
-    await assets.delete(S1, file.id);
+    await assets.remove(S1, file.id);
     await sweeper.whenIdle();
   });
 

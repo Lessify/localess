@@ -53,17 +53,17 @@ export class UsersService {
   ) {}
 
   /** One page of Admin → Users. */
-  async page(query: UserPageable): Promise<Page<UserDto>> {
+  async findAll(query: UserPageable): Promise<Page<UserDto>> {
     const { rows, total } = await this.users.findPage(query);
     return toPage(await this.toDtos(rows), total, query, it => it);
   }
 
-  async getById(id: string): Promise<UserRow> {
+  async findOneRow(id: string): Promise<UserRow> {
     return found(await this.users.findById(id));
   }
 
-  async get(id: string): Promise<UserDto> {
-    return this.toDto(await this.getById(id));
+  async findOne(id: string): Promise<UserDto> {
+    return this.toDto(await this.findOneRow(id));
   }
 
   /** A new user, invited by `caller`: they may only give what they hold themselves. */
@@ -91,7 +91,7 @@ export class UsersService {
   /** Role and permissions of another user, changed by `caller`. */
   async changeAccess(caller: UserRow, id: string, update: AccessUpdate): Promise<UserDto> {
     const principal = toPrincipal(caller);
-    const target = await this.getById(id);
+    const target = await this.findOneRow(id);
     if (!canManageUser(principal, toPrincipal(target)) || !canGrant(principal, update.role, update.permissions)) {
       throw new ForbiddenException();
     }
@@ -104,7 +104,7 @@ export class UsersService {
 
   /** Blocks (or restores) sign-in; disabling signs the user out at once. */
   async changeStatus(caller: UserRow, id: string, disabled: boolean): Promise<UserDto> {
-    const target = await this.getById(id);
+    const target = await this.findOneRow(id);
     // Nobody disables themselves: an admin could lock the install out of user management.
     if (caller.id === target.id || !canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     return this.toDto(found(await this.users.setDisabled(id, disabled)));
@@ -112,13 +112,13 @@ export class UsersService {
 
   /** A one-hour reset link for another user, at the app's public `origin`. */
   async createPasswordResetLink(caller: UserRow, id: string, origin: string): Promise<{ url: string; expiresAt: Date }> {
-    const target = await this.getById(id);
+    const target = await this.findOneRow(id);
     if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     return this.passwordReset.createLink(target, origin);
   }
 
-  async delete(caller: UserRow, id: string): Promise<void> {
-    const target = await this.getById(id);
+  async remove(caller: UserRow, id: string): Promise<void> {
+    const target = await this.findOneRow(id);
     if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     // Sessions, credentials and identities cascade.
     if (!(await this.users.delete(id))) throw new NotFoundException('User not found');

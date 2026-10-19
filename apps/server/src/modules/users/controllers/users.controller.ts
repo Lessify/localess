@@ -35,13 +35,13 @@ export class UsersController {
 
   /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (email or display name), `?active=active|inactive`. */
   @Get()
-  list(@Query({ schema: zUserPageable }) query: UserPageable): Promise<Page<UserDto>> {
-    return this.users.page(query);
+  findAll(@Query({ schema: zUserPageable }) query: UserPageable): Promise<Page<UserDto>> {
+    return this.users.findAll(query);
   }
 
   @Get(':id')
-  async get(@Param('id', UuidParamPipe) id: string): Promise<UserDto> {
-    return this.users.get(id);
+  async findOne(@Param('id', UuidParamPipe) id: string): Promise<UserDto> {
+    return this.users.findOne(id);
   }
 
   @Post()
@@ -84,7 +84,7 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@CurrentUser() caller: UserRow, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.users.delete(caller, id);
+  async remove(@CurrentUser() caller: UserRow, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.users.remove(caller, id);
   }
 }

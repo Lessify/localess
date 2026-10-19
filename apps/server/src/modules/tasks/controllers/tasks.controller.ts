@@ -39,20 +39,20 @@ export class TasksController {
 
   @Get()
   @RequirePermission(...READ_PERMISSIONS)
-  list(@Param('spaceId') spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable) {
-    return this.tasks.page(spaceId, query);
+  findAll(@Param('spaceId') spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable) {
+    return this.tasks.findAll(spaceId, query);
   }
 
   @Get(':id')
   @RequirePermission(...READ_PERMISSIONS)
-  get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.tasks.get(spaceId, id);
+  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.tasks.findOne(spaceId, id);
   }
 
   @Get(':id/logs')
   @RequirePermission(...READ_PERMISSIONS)
-  logs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.tasks.logs(spaceId, id);
+  findLogs(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.tasks.findLogs(spaceId, id);
   }
 
   /** The task's file (export result or uploaded import), as an attachment. */
@@ -107,7 +107,7 @@ export class TasksController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(...READ_PERMISSIONS)
-  delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow): Promise<void> {
-    return this.tasks.delete(spaceId, id, user);
+  remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow): Promise<void> {
+    return this.tasks.remove(spaceId, id, user);
   }
 }

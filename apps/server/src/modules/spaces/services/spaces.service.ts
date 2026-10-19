@@ -41,12 +41,12 @@ export class SpacesService {
   ) {}
 
   /** One page of spaces (Admin → Spaces, and every page of it for the space switcher). */
-  async page(query: SpacePageable): Promise<Page<Space>> {
+  async findAll(query: SpacePageable): Promise<Page<Space>> {
     const { rows, total } = await this.spaces.findPage(query);
     return toPage(rows, total, query, toSpace);
   }
 
-  async get(spaceId: string) {
+  async findOne(spaceId: string) {
     return toSpace(await this.require(spaceId));
   }
 
@@ -60,7 +60,7 @@ export class SpacesService {
    * What the Create Space dialog offers, in order (docs/roadmap/space-templates.md). Whoever may create a space may
    * create it from any template (the route needs SPACE_MANAGEMENT, as creating does).
    */
-  templates(): SpaceTemplateId[] {
+  findTemplates(): SpaceTemplateId[] {
     return this.available().map(it => it.id);
   }
 
@@ -140,7 +140,7 @@ export class SpacesService {
     return toSpace(this.environmentFound(await this.spaces.updateEnvironment(spaceId, environmentId, environment)));
   }
 
-  async deleteEnvironment(spaceId: string, environmentId: string) {
+  async removeEnvironment(spaceId: string, environmentId: string) {
     await this.require(spaceId);
     return toSpace(this.environmentFound(await this.spaces.deleteEnvironment(spaceId, environmentId)));
   }
@@ -196,7 +196,7 @@ export class SpacesService {
   }
 
   /** Everything in the space goes with it: rows by FK cascade; its stored files are queued and swept right after. */
-  async delete(spaceId: string): Promise<void> {
+  async remove(spaceId: string): Promise<void> {
     const space = await this.require(spaceId);
     if (space.importStatus === 'IMPORTING') throw new ConflictException('The space is being imported');
     await this.spaces.delete(spaceId);
@@ -204,7 +204,7 @@ export class SpacesService {
   }
 
   /** Dashboard numbers, computed on request (were stored on the space by the `space-calculateoverview` callable). */
-  async overview(spaceId: string): Promise<SpaceOverview> {
+  async findOverview(spaceId: string): Promise<SpaceOverview> {
     const space = await this.require(spaceId);
     const counts = await this.overviews.counts(spaceId);
     return {

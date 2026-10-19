@@ -52,6 +52,23 @@ users module's, with their own `UsersRepository`.
 | **Transformer** | `shared/transformers/` | Pure mapping from one model to another, mostly a database entity to the API DTO / shared model | I/O, decisions |
 | **Repository** | `repositories/` | Every database action: queries, writes, transactions, locks, change events (`pg_notify`); turns constraint violations into errors | Business rules, HTTP, calling services |
 
+### Method names
+
+NestJS's convention (the `nest g resource` scaffold), the same in a controller and the service it calls:
+
+| Action | Controller and service | Example |
+|---|---|---|
+| A list (paged or not) | `findAll` | `GET /spaces` → `SpacesController.findAll` → `SpacesService.findAll` (answers `Page<Space>`) |
+| One item | `findOne` | `GET /spaces/:spaceId` → `findOne` |
+| Another read | `find<What>` | `findLogs`, `findFolders`, `findUsage`, `findTemplates`, `findOverview`, `findSourceSpaces` |
+| Create, change | `create`, `update`, `update<What>` | `updateEnvironment`, `updateData` |
+| Delete | `remove`, `remove<What>` | `removeEnvironment`, `removeAll` |
+| A domain action | its verb | `publish`, `rename`, `reorderLocales`, `setDefaultLocale`, `cancel`, `regenerate` |
+
+Repositories keep data-access names (`findPage`, `findById`, `findAll`, `insert`, …). The CDN and Management (v1)
+controllers, auth and infra endpoints are named after what they serve (`contentBySlug`, `translationValues`,
+`login`, `check`).
+
 Three folders for what is none of the four:
 
 | Folder | What goes there |

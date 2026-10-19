@@ -36,17 +36,17 @@ export class WebhooksService {
     if (!checked.ok) throw new BadRequestException(`Webhook URL is not allowed: ${checked.reason}`);
   }
 
-  async list(spaceId: string) {
+  async findAll(spaceId: string) {
     return (await this.webhooks.findAll(spaceId)).map(toWebhook);
   }
 
-  async get(spaceId: string, id: string) {
+  async findOne(spaceId: string, id: string) {
     return found(await this.webhooks.findById(spaceId, id));
   }
 
   /** Newest first: 100 unless another `limit` (1–1000) is asked for. */
-  async logs(spaceId: string, id: string, limit = 100) {
-    await this.get(spaceId, id);
+  async findLogs(spaceId: string, id: string, limit = 100) {
+    await this.findOne(spaceId, id);
     return (await this.webhooks.findLogs(id, limit)).map(toWebhookLog);
   }
 
@@ -75,7 +75,7 @@ export class WebhooksService {
     return found(await this.webhooks.update(spaceId, id, { enabled }));
   }
 
-  async delete(spaceId: string, id: string): Promise<void> {
+  async remove(spaceId: string, id: string): Promise<void> {
     if (!(await this.webhooks.delete(spaceId, id))) throw new NotFoundException('Webhook not found');
   }
 }

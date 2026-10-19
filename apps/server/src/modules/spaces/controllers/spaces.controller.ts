@@ -15,21 +15,21 @@ export class SpacesController {
   /** One page: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name, or the id), `?importing=false`. */
   @Get()
   @RequireAnyRole()
-  list(@Query({ schema: zSpacePageable }) query: SpacePageable) {
-    return this.spaces.page(query);
+  findAll(@Query({ schema: zSpacePageable }) query: SpacePageable) {
+    return this.spaces.findAll(query);
   }
 
   /** The templates a space may be created from (before `:spaceId`, which would take `templates` as an id). */
   @Get('templates')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  templates() {
-    return this.spaces.templates();
+  findTemplates() {
+    return this.spaces.findTemplates();
   }
 
   @Get(':spaceId')
   @RequireAnyRole()
-  get(@Param('spaceId') spaceId: string) {
-    return this.spaces.get(spaceId);
+  findOne(@Param('spaceId') spaceId: string) {
+    return this.spaces.findOne(spaceId);
   }
 
   @Post()
@@ -47,15 +47,15 @@ export class SpacesController {
   @Delete(':spaceId')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async delete(@Param('spaceId') spaceId: string): Promise<void> {
-    await this.spaces.delete(spaceId);
+  async remove(@Param('spaceId') spaceId: string): Promise<void> {
+    await this.spaces.remove(spaceId);
   }
 
   /** Same audience as reading the space: the dashboard shows it to anyone who opens it. */
   @Get(':spaceId/overview')
   @RequireAnyRole()
-  overview(@Param('spaceId') spaceId: string) {
-    return this.spaces.overview(spaceId);
+  findOverview(@Param('spaceId') spaceId: string) {
+    return this.spaces.findOverview(spaceId);
   }
 
   @Post(':spaceId/environments')
@@ -88,8 +88,8 @@ export class SpacesController {
 
   @Delete(':spaceId/environments/:environmentId')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  deleteEnvironment(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string) {
-    return this.spaces.deleteEnvironment(spaceId, environmentId);
+  removeEnvironment(@Param('spaceId') spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string) {
+    return this.spaces.removeEnvironment(spaceId, environmentId);
   }
 
   @Post(':spaceId/locales')

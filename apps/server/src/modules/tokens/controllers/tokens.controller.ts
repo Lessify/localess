@@ -18,14 +18,14 @@ export class TokensController {
 
   /** `?type=` keeps tokens of that type; `?limit=` caps the list (newest first). */
   @Get()
-  list(@Param('spaceId') spaceId: string, @Query('type') type?: string, @Query('limit') limit?: string) {
+  findAll(@Param('spaceId') spaceId: string, @Query('type') type?: string, @Query('limit') limit?: string) {
     if (type !== undefined && !TOKEN_TYPES.includes(type)) throw new BadRequestException('Unknown token type');
-    return this.tokens.list(spaceId, type as TokenType | undefined, limit ? Math.max(1, Math.min(1000, Number(limit) || 1)) : undefined);
+    return this.tokens.findAll(spaceId, type as TokenType | undefined, limit ? Math.max(1, Math.min(1000, Number(limit) || 1)) : undefined);
   }
 
   @Get(':id')
-  get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.tokens.get(spaceId, id);
+  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.tokens.findOne(spaceId, id);
   }
 
   @Post()
@@ -49,7 +49,7 @@ export class TokensController {
 
   @Delete(':id')
   @HttpCode(204)
-  async delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.tokens.delete(spaceId, id);
+  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.tokens.remove(spaceId, id);
   }
 }

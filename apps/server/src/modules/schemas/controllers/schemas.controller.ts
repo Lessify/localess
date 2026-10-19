@@ -19,20 +19,20 @@ export class SchemasController {
 
   @Get()
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
-  list(@Param('spaceId') spaceId: string, @Query('type', { schema: zSchemaTypeFilter }) type?: SchemaType) {
-    return this.schemas.list(spaceId, type);
+  findAll(@Param('spaceId') spaceId: string, @Query('type', { schema: zSchemaTypeFilter }) type?: SchemaType) {
+    return this.schemas.findAll(spaceId, type);
   }
 
   @Get(':id')
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
-  get(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.schemas.get(spaceId, id);
+  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.schemas.findOne(spaceId, id);
   }
 
   @Get(':id/usage')
   @RequirePermission(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
-  usage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.schemas.usage(spaceId, id);
+  findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+    return this.schemas.findUsage(spaceId, id);
   }
 
   @Post()
@@ -64,7 +64,7 @@ export class SchemasController {
   @Delete(':id')
   @HttpCode(204)
   @RequirePermission(UserPermission.SCHEMA_DELETE)
-  delete(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    return this.schemas.delete(spaceId, id);
+  remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
+    return this.schemas.remove(spaceId, id);
   }
 }

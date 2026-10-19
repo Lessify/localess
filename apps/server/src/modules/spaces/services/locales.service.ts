@@ -6,7 +6,7 @@ import { LocalesRepository } from '../repositories/locales.repository.js';
 export class LocalesService {
   constructor(private readonly locales: LocalesRepository) {}
 
-  list() {
+  findAll() {
     return this.locales.findAll();
   }
 }

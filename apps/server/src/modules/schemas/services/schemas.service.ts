@@ -53,16 +53,16 @@ export class SchemasService {
     private readonly spaces: SpaceRepository,
   ) {}
 
-  async list(spaceId: string, type?: SchemaType): Promise<Schema[]> {
+  async findAll(spaceId: string, type?: SchemaType): Promise<Schema[]> {
     return (await this.schemas.findAll(spaceId, type)).map(toSchema);
   }
 
-  async get(spaceId: string, id: string): Promise<Schema> {
+  async findOne(spaceId: string, id: string): Promise<Schema> {
     return found(await this.schemas.findById(spaceId, id));
   }
 
   /** What uses the schema by name: while anything does, it can be neither renamed nor deleted. */
-  async usage(spaceId: string, id: string): Promise<SchemaUsage> {
+  async findUsage(spaceId: string, id: string): Promise<SchemaUsage> {
     return this.schemas.usage(spaceId, found(await this.schemas.findById(spaceId, id)).name);
   }
 
@@ -107,7 +107,7 @@ export class SchemasService {
   }
 
   /** Refused (409, saying where) while the schema is in use, as a rename. */
-  async delete(spaceId: string, id: string): Promise<void> {
+  async remove(spaceId: string, id: string): Promise<void> {
     const current = found(await this.schemas.findById(spaceId, id));
     const outcome = await this.schemas.delete(spaceId, id);
     if (!outcome) throw new NotFoundException('Schema not found');
