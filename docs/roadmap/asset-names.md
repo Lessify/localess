@@ -33,7 +33,12 @@ Save stays disabled until the file is renamed, even to change only its alt text.
   like a file (`assets/rename.spec.ts` › "refuses a name another asset in the folder has", `assets/folders.spec.ts` ›
   "refuses a name the folder already has"). The check is client-side only (`reservedNames` from the folder's list in
   `assets.component.ts`); the server accepts all of these.
-- Decide one rule for all three places, e.g. unique per folder by name **and** extension for files and by name for
+- **Decided for now (2026-10-19, the user, with [pagination round 2](../superpowers/specs/2026-10-19-pagination-round-2-design.md)):
+  duplicates are allowed everywhere.** Once the folder list is paged, the dialogs only hold one page, so their
+  `reservedNames` check is dropped: Create Folder, Edit File and Edit Folder accept a name the folder has, as upload and
+  Move do. The two e2e tests above that pin the refusal change to pin the duplicate being accepted.
+- **Later: a duplicate check**, on the server so it holds whatever the folder size, in every place at once (upload,
+  Move, the dialogs). Decide one rule for all three places, e.g. unique per folder by name **and** extension for files and by name for
   folders, enforced by the server (a unique index, 409) and mirrored in the dialogs and on upload (rename or refuse).
   Existing duplicates would need a migration or must stay allowed.
 
