@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { zMultiValue, zPageable } from './page.zod.js';
+import { zMultiValue, zPageable, zSearch } from './page.zod.js';
 
 describe('zPageable', () => {
   const schema = zPageable(['email', 'name'], 'email');
@@ -51,5 +51,22 @@ describe('zMultiValue', () => {
 
   it('refuses an unknown value, alone or among others', () => {
     for (const value of ['DONE', ['FAILED', 'DONE'], [], '']) expect(schema.safeParse(value).success, JSON.stringify(value)).toBe(false);
+  });
+});
+
+describe('zSearch', () => {
+  const schema = z.object({ search: zSearch });
+
+  it('trims the search', () => {
+    expect(schema.parse({ search: '  Acme ' })).toEqual({ search: 'Acme' });
+  });
+
+  it('reads empty or only spaces as no search', () => {
+    for (const search of [undefined, '', '   ']) expect(schema.parse({ search }).search).toBeUndefined();
+  });
+
+  it('refuses more than 200 characters', () => {
+    expect(schema.safeParse({ search: 'x'.repeat(200) }).success).toBe(true);
+    expect(schema.safeParse({ search: 'x'.repeat(201) }).success).toBe(false);
   });
 });

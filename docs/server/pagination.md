@@ -38,12 +38,13 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
 ## Server
 
 1. **Model** (`@localess/shared`): the sort fields in `<entity>.model.ts` (the web uses them too), the query schema in
-   `<entity>.zod.ts`, built on `zPageable(fields, defaultSort, defaultDirection?)` and extended with the filters.
+   `<entity>.zod.ts`, built on `zPageable(fields, defaultSort, defaultDirection?)` and extended with the filters:
+   `search: zSearch` (trimmed, at most 200, empty means no search), `zMultiValue(values)` for a repeated filter.
 
    ```ts
    export const TASK_SORT_FIELDS = ['createdAt'] as const;
    export const zTaskPageable = zPageable(TASK_SORT_FIELDS, 'createdAt', 'desc').extend({
-     search: z.string().trim().max(200).optional(),
+     search: zSearch,
      kind: zMultiValue(Object.values(TaskKind) as [TaskKind, ...TaskKind[]]).optional(),
    });
    export type TaskPageable = z.infer<typeof zTaskPageable>;

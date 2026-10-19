@@ -22,3 +22,14 @@ export function zPageable<const S extends readonly [string, ...string[]]>(fields
 export function zMultiValue<const V extends readonly [string, ...string[]]>(values: V) {
   return z.union([z.enum(values), z.array(z.enum(values)).min(1).max(values.length)]).transform(it => (Array.isArray(it) ? it : [it]));
 }
+
+/**
+ * `?search=`, the search of a paged list: trimmed, at most 200 characters; empty or only spaces is no search
+ * (`undefined`). What it matches is the endpoint's (a case-insensitive "contains" over the fields it names).
+ */
+export const zSearch = z
+  .string()
+  .trim()
+  .max(200)
+  .transform(it => it || undefined)
+  .optional();

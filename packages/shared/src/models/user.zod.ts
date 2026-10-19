@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { zPageable } from './page.zod.js';
+import { zPageable, zSearch } from './page.zod.js';
 import { USER_PERMISSIONS } from '../permissions.js';
 import { PASSWORD_MIN_LENGTH, USER_ROLES, USER_SORT_FIELDS, type UserPermission } from './user.model.js';
 
@@ -34,7 +34,7 @@ export type UserStatusUpdate = z.infer<typeof zUserStatusUpdate>;
 
 /** `GET /api/app/users`: one page, `?search=` (email or display name), `?active=active|inactive`. */
 export const zUserPageable = zPageable(USER_SORT_FIELDS, 'email').extend({
-  search: z.string().trim().max(200).optional(),
+  search: zSearch,
   active: z.enum(['active', 'inactive']).optional(),
 });
 export type UserPageable = z.infer<typeof zUserPageable>;

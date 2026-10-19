@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { zBoolean, zPreviewUrl } from './common.zod.js';
-import { zPageable } from './page.zod.js';
+import { zPageable, zSearch } from './page.zod.js';
 import { SPACE_ENVIRONMENT_SORT_FIELDS, SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
 
 // App API requests of spaces, their environments and their locales. Bodies are strict (an unknown field is a 400 that
@@ -21,7 +21,7 @@ export type SpaceUpdate = z.infer<typeof zSpaceUpdate>;
  * Firebase runs or failed: they can not be opened).
  */
 export const zSpacePageable = zPageable(SPACE_SORT_FIELDS, 'name').extend({
-  search: z.string().trim().max(200).optional(),
+  search: zSearch,
   importing: zBoolean.optional(),
 });
 export type SpacePageable = z.infer<typeof zSpacePageable>;
@@ -30,7 +30,7 @@ const zEnvironment = z.strictObject({ name: z.string().trim().min(1).max(200), u
 
 /** `GET …/environments`: one page, in the space's order unless sorted otherwise; `?search=` (the name or the URL). */
 export const zSpaceEnvironmentPageable = zPageable(SPACE_ENVIRONMENT_SORT_FIELDS, 'position').extend({
-  search: z.string().trim().max(200).optional(),
+  search: zSearch,
 });
 export type SpaceEnvironmentPageable = z.infer<typeof zSpaceEnvironmentPageable>;
 
@@ -50,7 +50,7 @@ const zLocaleId = z.string().min(1).max(64);
 
 /** `GET …/locales`: one page, in the space's order unless sorted otherwise; `?search=` (the locale's id or name). */
 export const zSpaceLocalePageable = zPageable(SPACE_LOCALE_SORT_FIELDS, 'position').extend({
-  search: z.string().trim().max(200).optional(),
+  search: zSearch,
 });
 export type SpaceLocalePageable = z.infer<typeof zSpaceLocalePageable>;
 

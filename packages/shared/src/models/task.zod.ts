@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { zMultiValue, zPageable } from './page.zod.js';
+import { zMultiValue, zPageable, zSearch } from './page.zod.js';
 import { TASK_SORT_FIELDS, TaskKind, TaskStatus } from './task.model.js';
 
 // App API requests of tasks.
 
 /** `GET /api/app/spaces/:spaceId/tasks`: newest first unless asked otherwise; `kind` and `status` repeat for several values. */
 export const zTaskPageable = zPageable(TASK_SORT_FIELDS, 'createdAt', 'desc').extend({
-  search: z.string().trim().max(200).optional(),
+  search: zSearch,
   kind: zMultiValue(Object.values(TaskKind) as [TaskKind, ...TaskKind[]]).optional(),
   status: zMultiValue(Object.values(TaskStatus) as [TaskStatus, ...TaskStatus[]]).optional(),
 });
