@@ -7,7 +7,7 @@ import { AssetDeliveryService } from './services/asset-delivery.service.js';
 import { AssetService } from './services/asset.service.js';
 
 /**
- * Layered (docs/server-architecture.md): its own controllers, services and repositories; no other feature module.
+ * Layered (docs/server/architecture.md): its own controllers, services and repositories; no other feature module.
  * Reading a stored file's metadata is shared (SharedModule's AssetMetadataService), as tasks and the Firebase import
  * use it too.
  */

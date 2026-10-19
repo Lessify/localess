@@ -17,7 +17,7 @@ import { TaskRunner } from './workers/task-runner.service.js';
 import { TaskWorker } from './workers/task-worker.service.js';
 
 /**
- * Background export/import jobs (was the `task-oncreate` Cloud Function). Layered (docs/server-architecture.md): its
+ * Background export/import jobs (was the `task-oncreate` Cloud Function). Layered (docs/server/architecture.md): its
  * own controllers, services, repositories and workers; no other feature module. The transfers read and write the
  * assets, contents, schemas and translations tables with their own queries, under the shared data rules.
  */

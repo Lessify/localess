@@ -153,7 +153,7 @@ export class TranslationRepository {
     });
   }
 
-  removeLocaleByKeys(spaceId: string, locale: string, keys: string[], tx?: Transaction): Promise<void> {
+  deleteLocaleByKeys(spaceId: string, locale: string, keys: string[], tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       await t
         .update(translations)

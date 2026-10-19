@@ -94,7 +94,7 @@ export class TranslationDeliveryService {
     const pick = () => Object.fromEntries(actionable.map(key => [key, values[key]]));
     if (type === 'add-missing') await this.translations.addKeys(spaceId, locale, pick());
     else if (type === 'update-existing') await this.translations.setLocaleByKeys(spaceId, locale, pick());
-    else if (type === 'delete-missing-value') await this.translations.removeLocaleByKeys(spaceId, locale, actionable);
+    else if (type === 'delete-missing-value') await this.translations.deleteLocaleByKeys(spaceId, locale, actionable);
     else await this.translations.deleteByKeys(spaceId, actionable);
     this.webhooks.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
     return { message: `${past} ${actionable.length} ${noun}`, ids: actionable };

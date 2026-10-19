@@ -113,7 +113,7 @@ export class ContentDeliveryService {
    * The subtree used to be the Firestore range `parentSlug >= p AND < p + "/~"`, which also matched sibling folders
    * sharing the prefix (`blog-archive` under `blog`). It is an exact prefix match.
    */
-  async listLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
+  async findLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
     const snapshot = await this.delivery.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
     const all = Object.values(snapshot.data);
     const { parentSlug, excludeChildren, kind } = filter;

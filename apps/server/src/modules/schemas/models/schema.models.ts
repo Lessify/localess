@@ -7,6 +7,7 @@ const zSchemaName = z.string().regex(/^[A-Za-z0-9_-]{1,120}$/, 'Schema names are
 
 /** `GET /api/app/spaces/:spaceId/schemas?type=`. */
 export const zSchemaTypeFilter = z.enum(SchemaType).optional();
+export type SchemaTypeFilter = z.infer<typeof zSchemaTypeFilter>;
 
 /** `POST /api/app/spaces/:spaceId/schemas`. */
 export const zSchemaCreate = z.object({

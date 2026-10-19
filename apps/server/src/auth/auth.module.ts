@@ -14,7 +14,7 @@ import { SessionService } from './services/session.service.js';
 import { AuthGuard } from './auth.guard.js';
 
 /**
- * Sign-in for the App API (docs/server-architecture.md): sessions, email + password, OAuth, password reset, and the
+ * Sign-in for the App API (docs/server/architecture.md): sessions, email + password, OAuth, password reset, and the
  * global `AuthGuard`. Exports what feature modules build on (the users module: re-checking a password, signing a
  * user out, reset links).
  */

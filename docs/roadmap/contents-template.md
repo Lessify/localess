@@ -102,7 +102,7 @@ Stored as the app stores them ([Concepts](../concepts.md)): the default locale u
 - A template refers to its items by key (`alpha`, `red.png`); the create maps keys to the new ids when it writes
   values and id lists.
 - The spaces module writes these tables with its own queries ("tables are shared, queries are not",
-  [server architecture](../server-architecture.md)); storage and asset metadata come from `infra` and `shared`.
+  [server architecture](../server/architecture.md)); storage and asset metadata come from `infra` and `shared`.
 
 ### E2E tests on it (first set)
 

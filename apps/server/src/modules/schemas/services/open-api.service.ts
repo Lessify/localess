@@ -19,7 +19,7 @@ export class OpenApiService {
     return generateOpenApi(schemasByName(await this.schemas.findAllInByteOrder(spaceId)));
   }
 
-  async get(spaceId: string): Promise<OpenAPIObject> {
+  async findOne(spaceId: string): Promise<OpenAPIObject> {
     const document = await this.find(spaceId);
     if (!document) throw new NotFoundException('Space not found');
     return document;

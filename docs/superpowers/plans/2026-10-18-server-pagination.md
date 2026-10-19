@@ -126,7 +126,7 @@
 ### Task 7: E2E and docs
 
 **Files:**
-- Modify: `apps/e2e/tests/support/app-api.ts` (`listSpaces`, `listUsers` read `items`; `findUserByEmail` uses `?search=`), `apps/e2e/tests/support/sessions.ts` (status only, unchanged), `apps/e2e/tests/admin/users.spec.ts`, `apps/e2e/tests/admin/spaces.spec.ts`, `apps/e2e/tests/space/navigation.spec.ts`, `apps/e2e/TEST-PLAN.md`, `docs/features/admin/admin-users.md`, `docs/features/admin/admin-spaces.md`, `docs/frontend-state.md` (SpaceStore loading), `docs/server-architecture.md` (paging helper in `shared/utils`), `CLAUDE.md` (a row for the paging contract)
+- Modify: `apps/e2e/tests/support/app-api.ts` (`listSpaces`, `listUsers` read `items`; `findUserByEmail` uses `?search=`), `apps/e2e/tests/support/sessions.ts` (status only, unchanged), `apps/e2e/tests/admin/users.spec.ts`, `apps/e2e/tests/admin/spaces.spec.ts`, `apps/e2e/tests/space/navigation.spec.ts`, `apps/e2e/TEST-PLAN.md`, `docs/features/admin/admin-users.md`, `docs/features/admin/admin-spaces.md`, `docs/frontend-state.md` (SpaceStore loading), `docs/server/architecture.md` (paging helper in `shared/utils`), `CLAUDE.md` (a row for the paging contract)
 
 **Interfaces:**
 - Consumes: everything above.

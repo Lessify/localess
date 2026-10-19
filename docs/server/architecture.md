@@ -1,6 +1,8 @@
 # Server architecture: modules and layers
 
-> Related: [apps/server/README.md](../apps/server/README.md) · [Database structure](roadmap/database-structure.md)
+> Part of the [server rules](README.md): this page is the big picture; [organisation](controllers-services-repositories.md),
+> [naming](naming.md) and [pagination](pagination.md) hold the detailed rules. Related:
+> [apps/server/README.md](../../apps/server/README.md) · [Database structure](../roadmap/database-structure.md)
 
 How server code is organised: independent feature modules (`apps/server/src/modules/<feature>/`), one folder per layer
 inside each, and a `shared/` module for what every module uses. Every module follows it, and every new one must.
@@ -52,42 +54,15 @@ users module's, with their own `UserRepository`.
 | **Transformer** | `shared/transformers/` | Pure mapping from one model to another, mostly a database entity to the API DTO / shared model | I/O, decisions |
 | **Repository** | `repositories/` | Every database action: queries, writes, transactions, locks, change events (`pg_notify`); turns constraint violations into errors | Business rules, HTTP, calling services |
 
-### One controller, service and repository per entity
-
-A module holds one set per entity it serves, and one per sub-entity: what is addressed under another entity's id and
-has its own rows (`/spaces/:spaceId/locales`, `/webhooks/:id/logs`). File and class names are singular, the entity
-first (`space.controller.ts` / `SpaceController`, `space-locale.service.ts` / `SpaceLocaleService`,
-`webhook-log.repository.ts` / `WebhookLogRepository`), so a sub-entity's methods are the plain ones (`create`,
-`remove`, `reorder`, not `addLocale`, `removeEnvironment`). Today: spaces (`space`, `space-locale`,
-`space-environment`), webhooks (`webhook`, `webhook-log`), tasks (`task`, `task-log`). A rule several of them follow
-lives in one helper in the module (`spaces/repositories/space-change.ts`: a change of the space, its locales or its
-environments touches the space and sends one `spaces` event, in one transaction).
-
-Not a sub-entity: a different kind of the same row (an asset or content folder is the asset or content with
-`kind = FOLDER`, one tree), or an action on the entity (`publish`, `clone`, `password-reset-link`, `status`).
-
-### Method names
-
-NestJS's convention (the `nest g resource` scaffold), the same in a controller and the service it calls:
-
-| Action | Controller and service | Example |
-|---|---|---|
-| A list (paged or not) | `findAll` | `GET /spaces` → `SpaceController.findAll` → `SpaceService.findAll` (answers `Page<Space>`) |
-| One item | `findOne` | `GET /spaces/:spaceId` → `findOne` |
-| Another read | `find<What>` | `findLogs`, `findFolders`, `findUsage`, `findTemplates`, `findOverview`, `findSourceSpaces` |
-| Create, change | `create`, `update`, `update<What>` | `updateEnvironment`, `updateData` |
-| Delete | `remove`, `remove<What>` | `removeEnvironment`, `removeAll` |
-| A domain action | its verb | `publish`, `rename`, `reorderLocales`, `setDefaultLocale`, `cancel`, `regenerate` |
-
-Repositories keep data-access names (`findPage`, `findById`, `findAll`, `insert`, …). The CDN and Management (v1)
-controllers, auth and infra endpoints are named after what they serve (`contentBySlug`, `translationValues`,
-`login`, `check`).
+How a module splits into controllers, services and repositories (one set per entity and sub-entity), and what each
+layer may do in detail: [Controllers, services and repositories](controllers-services-repositories.md). Every name:
+[Naming](naming.md).
 
 Three folders for what is none of the four:
 
 | Folder | What goes there |
 |---|---|
-| `models/` | The module's request shapes, one file per resource (`space.models.ts`, `environment.models.ts`): each zod schema `zX` (body, query, multipart fields) next to its type `X`. Where `@localess/shared` already has `X` (the web uses it too), the file only declares `zX = z.object(…) satisfies z.ZodType<X>` and everyone uses the shared type (never redeclared); otherwise `export type X = z.infer<typeof zX>`. A paged list: `zXPageable` / `XPageable` and its sort-field list (`SPACE_SORT_FIELDS`). Controllers declare it on the parameter, `@Body({ schema: zX }) body: X` (`@Query`, `@Param` alike), validated by the global `StandardSchemaValidationPipe` (`app.factory.ts`: the parsed value reaches the handler; a refused one is a 400 whose `message` lists `"path: issue"`); repositories and services take `XPageable` from here, so a controller never imports a repository. Generic validators stay shared: `infra/http/zod.ts` (`zLabels`, `zPreviewUrl`), `@localess/shared/zod` (`zPageable`, `zMultiValue`, `zContentData`) |
+| `models/` | The module's request shapes: each zod schema `zX` next to its type `X`, one file per resource (`space.models.ts`); a paged list's `zXPageable` / `XPageable` and sort fields. Rules: [Controllers, services and repositories](controllers-services-repositories.md#models-request-shapes), [Naming](naming.md#models), [Pagination](pagination.md) |
 | `utils/` | Pure functions without I/O: parsing, hashing, formatting, algorithms (`buildTranslationMap`, `image-transform`, `asset-etag`) |
 | `workers/` | Background work outside a request (the task worker, the Firebase import runner) |
 
@@ -111,7 +86,8 @@ modules/translations/
 - **Domain models and API DTOs** are the types in `@localess/shared` (one definition for server and web). Transformers
   map an entity to them; they all live in `shared/transformers/`, one place for every module. Controllers send what the service returns.
 - **Request models** (what a client sends: bodies, queries) are the module's `models/`: the zod schema `zX` and its
-  type `X` side by side, `X` being the shared type when `@localess/shared` has it (see the folder table above).
+  type `X` side by side, `X` being the shared type when `@localess/shared` has it
+  ([rules](controllers-services-repositories.md#models-request-shapes)).
 
 ## Transactions
 
@@ -156,7 +132,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | | | `user.query.ts`: `findUserLogins` (how each user signs in: password, OAuth providers), for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction; `lockSchemaReferences`, which locks the schemas written fields refer to (schemas, the schema import task) |
 | `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `event.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |
-| `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client); `paging.ts` (`offsetOf`, `toPage`, `containsPattern`, `escapeLike`: a paginated endpoint validates its `zXPageable` (the module's `models/`, built on `zPageable(fields, defaultSort, defaultDirection)` from `@localess/shared/zod`), its repository orders by the field then `id`, counts with the same filters, and answers `Page<T>`) |
+| `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client); `paging.ts` (`offsetOf`, `toPage`, `containsPattern`, `escapeLike`: see [Pagination](pagination.md)) |
 | | | `schema.utils.ts` (`planSchemaPush`, `checkSchemaFields`, `fieldRefersTo`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
 | | | `asset-path.utils.ts` (`folderPath`): assets and the asset import task; `embedded-alt.ts`, `media-duration.ts`, `media-orientation.ts`, `media-pages.ts` (`isAnimatedPages`, also asset delivery): `AssetMetadataService` |
 
@@ -165,9 +141,7 @@ stays technical (database connection, storage drivers, events, HTTP plumbing) an
 
 ## Naming
 
-`<name>.controller.ts`, `<name>.service.ts`, `<name>.repository.ts`, `<name>.transformer.ts`; utils by what they do
-(`translation.utils.ts`, `chunk-by-size.ts`). Classes `TranslationController`, `TranslationService`,
-`TranslationRepository`; transformer functions `toTranslation(entity)`.
+Files, classes, methods, models, utils: [Naming](naming.md).
 
 ## Status
 

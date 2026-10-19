@@ -1,5 +1,8 @@
 # Pagination, round 2: Tasks, webhook logs, Contents and Assets (design)
 
+> **Current rules: [docs/server/pagination.md](../../server/pagination.md).** This is the decision record (why and when);
+> details below may be superseded there.
+
 > Status: design, 2026-10-19; Tasks implemented. Order (least impact first): Tasks, webhook logs, Assets, Contents. Builds on [round 1](2026-10-18-server-pagination-design.md) (`Page<T>`, `Pageable`,
 > `zPageable`, `shared/utils/paging.ts`, `PagedList`; Users and Spaces). Related: [search roadmap](../../roadmap/search.md),
 > [Contents (large)](../../roadmap/contents-large-template.md), [Assets (large)](../../roadmap/assets-template.md).

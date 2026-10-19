@@ -8,7 +8,7 @@ import { StorageSweeperService } from './services/storage-sweeper.service.js';
 import { WebhookDispatcher } from './services/webhook-dispatcher.service.js';
 
 /**
- * What every module may use (docs/server-architecture.md#shared): services injected anywhere (mail, webhook
+ * What every module may use (docs/server/architecture.md#shared): services injected anywhere (mail, webhook
  * delivery, metadata of a stored asset file). Transformers, data rules and utils in `shared/` are plain functions, imported directly.
  */
 @Global()

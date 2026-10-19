@@ -8,7 +8,7 @@ import { SpaceRepository } from './repositories/space.repository.js';
 import { ContentDeliveryService } from './services/content-delivery.service.js';
 import { ContentService } from './services/content.service.js';
 
-/** Layered (docs/server-architecture.md): its own controllers, services and repositories; no other feature module. */
+/** Layered (docs/server/architecture.md): its own controllers, services and repositories; no other feature module. */
 @Module({
   imports: [ApiTokenModule],
   controllers: [ContentController, ContentCdnController],

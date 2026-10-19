@@ -12,6 +12,6 @@ export class OpenApiController {
   @HttpCode(200)
   @RequirePermission(UserPermission.DEV_OPEN_API)
   generate(@Param('spaceId') spaceId: string) {
-    return this.openApi.get(spaceId);
+    return this.openApi.findOne(spaceId);
   }
 }

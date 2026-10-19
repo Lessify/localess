@@ -4,7 +4,7 @@ import type { Transaction } from '../../infra/database/transaction.js';
 
 /*
  * Rules every module that writes translations, or a space's locales or default locale, follows inside its own
- * transaction (docs/server-architecture.md#shared). The draft maps (`translation_snapshots`, version 'draft') are built
+ * transaction (docs/server/architecture.md#shared). The draft maps (`translation_snapshots`, version 'draft') are built
  * from the rows on the first draft request after a change; a change drops them.
  *
  * Writes, publishes and draft builds of one space's translations take the translations lock, so they run one at a

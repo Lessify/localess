@@ -8,7 +8,7 @@ import { SpaceRepository } from './repositories/space.repository.js';
 import { OpenApiService } from './services/open-api.service.js';
 import { SchemaService } from './services/schema.service.js';
 
-/** Layered (docs/server-architecture.md): its own controllers, services and repositories; no other feature module. */
+/** Layered (docs/server/architecture.md): its own controllers, services and repositories; no other feature module. */
 @Module({
   imports: [ApiTokenModule],
   controllers: [SchemaController, OpenApiController, SchemaManagementController],

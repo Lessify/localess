@@ -18,7 +18,7 @@ import { WebhookImportService } from './services/webhook-import.service.js';
 import { FirebaseImportRunner } from './workers/firebase-import.runner.js';
 
 /**
- * Admin → Spaces → Import from Firebase. Layered (docs/server-architecture.md) and deliberately self-contained: it
+ * Admin → Spaces → Import from Firebase. Layered (docs/server/architecture.md) and deliberately self-contained: it
  * writes every table of a space (spaces, locales, environments, webhooks, translations, schemas, assets and
  * their files, contents) with its own repositories, written for the import, and uses no other feature module. It
  * still follows the shared data rules (the content `cv` bump at the end).

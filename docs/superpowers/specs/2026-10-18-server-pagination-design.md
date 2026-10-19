@@ -1,8 +1,11 @@
 # Server-side pagination: `Page<T>` and `Pageable` (design)
 
+> **Current rules: [docs/server/pagination.md](../../server/pagination.md).** This is the decision record (why and when);
+> details below may be superseded there.
+
 > Status: design, 2026-10-18. First users: Admin → Users and Admin → Spaces (and the sidebar's space switcher).
 > Related: [Admin → Users](../../features/admin/admin-users.md) · [Admin → Spaces](../../features/admin/admin-spaces.md) ·
-> [Server architecture](../../server-architecture.md) · [Shared components: table, paginator, filter toolbar](../../components/README.md)
+> [Server architecture](../../server/architecture.md) · [Shared components: table, paginator, filter toolbar](../../components/README.md)
 
 ## Why
 

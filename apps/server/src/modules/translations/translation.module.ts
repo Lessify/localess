@@ -11,7 +11,7 @@ import { TranslateService } from './services/translate.service.js';
 import { TranslationDeliveryService } from './services/translation-delivery.service.js';
 import { TranslationService } from './services/translation.service.js';
 
-/** Layered (docs/server-architecture.md): its own controllers, services and repositories; no other feature module. */
+/** Layered (docs/server/architecture.md): its own controllers, services and repositories; no other feature module. */
 @Module({
   imports: [ApiTokenModule],
   controllers: [TranslationController, TranslateController, TranslationCdnController, TranslationManagementController],

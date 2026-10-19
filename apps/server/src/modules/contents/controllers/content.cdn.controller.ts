@@ -47,7 +47,7 @@ export class ContentCdnController {
     const space = await this.delivery.findSpace(spaceId);
     if (!requireV1Space(reply, space)) return;
     const validKind = kind === ContentKind.DOCUMENT || kind === ContentKind.FOLDER ? kind : undefined;
-    const { links, builtAt } = await this.delivery.listLinks(spaceId, version, {
+    const { links, builtAt } = await this.delivery.findLinks(spaceId, version, {
       parentSlug,
       excludeChildren: excludeChildren === 'true',
       kind: validKind,
