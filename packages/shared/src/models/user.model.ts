@@ -38,21 +38,12 @@ export interface User {
   updatedAt: Timestamp;
 }
 
-export interface UserInvite {
-  displayName?: string;
-  email: string;
-  password: string;
-  role?: UserRole;
-  permissions?: UserPermission[];
-  lock?: boolean;
-}
+/** The shortest password a user may set. Request schemas: `user.zod.ts`, `auth.zod.ts`. */
+export const PASSWORD_MIN_LENGTH = 6;
 
-/** App API `PUT /api/app/users/{id}` body. */
-export interface UserUpdate {
-  role?: UserRole;
-  permissions?: UserPermission[];
-  lock?: boolean;
-}
+/** The fields Admin → Users may sort by (`name`: the display name). */
+export const USER_SORT_FIELDS = ['email', 'name', 'role', 'createdAt', 'updatedAt'] as const;
+export type UserSortField = (typeof USER_SORT_FIELDS)[number];
 
 /** `ADMIN` may do everything; `CUSTOM` holds the permissions listed on the user. No role: signed up, no access yet. */
 export const USER_ROLES = ['ADMIN', 'CUSTOM'] as const;

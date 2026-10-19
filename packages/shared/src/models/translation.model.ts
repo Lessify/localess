@@ -37,18 +37,7 @@ export interface PublishTranslationsData {
 // Import and Export: a translation is identified by its key, carried as `id`; the row UUID never leaves the App API.
 export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt'> & { /** The key. */ id: string };
 
-// App API requests
-export interface TranslationCreate {
-  key: string;
-  labels?: string[];
-  description?: string;
-  locales: Record<string, string>;
-}
-
-export interface TranslationUpdate {
-  labels: string[];
-  description: string;
-}
+// App API requests: translation.zod.ts
 
 /** Body of the public MANAGE API `POST /api/v1/spaces/{spaceId}/translations/{locale}`. */
 export type TranslationManageUpdate = z.infer<typeof zTranslationManageUpdateSchema>;
@@ -60,10 +49,3 @@ export interface TranslationUpdateResponse {
   dryRun?: boolean;
 }
 
-export interface TranslateLocaleData {
-  spaceId: string;
-  sourceLocaleId: string;
-  targetLocaleId: string;
-  /** Replace target values that already exist instead of filling only the empty ones. */
-  overwrite?: boolean;
-}

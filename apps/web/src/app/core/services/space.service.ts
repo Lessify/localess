@@ -2,7 +2,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Page, Space, SpaceCreate, SpaceEnvironmentInput, SpaceOverview, SpaceTemplateId, SpaceUpdate } from '@localess/shared';
+import {
+  Page,
+  Space,
+  SpaceCreate,
+  SpaceEnvironmentCreate,
+  SpaceEnvironmentOrder,
+  SpaceEnvironmentUpdate,
+  SpaceOverview,
+  SpaceTemplateId,
+  SpaceUpdate,
+} from '@localess/shared';
 import { EMPTY, expand, Observable, reduce } from 'rxjs';
 
 const BASE = '/api/app/spaces';
@@ -42,7 +52,8 @@ export class SpaceService {
 
   /** The server seeds `en` as the default locale, and writes the template's content in the same transaction. */
   create(entity: SpaceCreate): Observable<Space> {
-    return this.http.post<Space>(BASE, entity.template ? { name: entity.name, template: entity.template } : { name: entity.name });
+    const body: SpaceCreate = entity.template ? { name: entity.name, template: entity.template } : { name: entity.name };
+    return this.http.post<Space>(BASE, body);
   }
 
   /** The ids of the templates this user may create a space from, in the order to offer them (the dialog has their titles and icons). */
@@ -51,16 +62,22 @@ export class SpaceService {
   }
 
   update(id: string, entity: SpaceUpdate): Observable<void> {
-    return this.http.patch<void>(`${BASE}/${id}`, { name: entity.name });
+    return this.http.patch<void>(`${BASE}/${id}`, { name: entity.name } satisfies SpaceUpdate);
   }
 
   /** Adds a Visual Editor environment at the end of the list. */
-  createEnvironment(spaceId: string, environment: SpaceEnvironmentInput): Observable<void> {
-    return this.http.post<void>(`${BASE}/${spaceId}/environments`, { name: environment.name, url: environment.url });
+  createEnvironment(spaceId: string, environment: SpaceEnvironmentCreate): Observable<void> {
+    return this.http.post<void>(`${BASE}/${spaceId}/environments`, {
+      name: environment.name,
+      url: environment.url,
+    } satisfies SpaceEnvironmentCreate);
   }
 
-  updateEnvironment(spaceId: string, environmentId: string, environment: SpaceEnvironmentInput): Observable<void> {
-    return this.http.patch<void>(`${BASE}/${spaceId}/environments/${environmentId}`, { name: environment.name, url: environment.url });
+  updateEnvironment(spaceId: string, environmentId: string, environment: SpaceEnvironmentUpdate): Observable<void> {
+    return this.http.patch<void>(`${BASE}/${spaceId}/environments/${environmentId}`, {
+      name: environment.name,
+      url: environment.url,
+    } satisfies SpaceEnvironmentUpdate);
   }
 
   deleteEnvironment(spaceId: string, environmentId: string): Observable<void> {
@@ -69,7 +86,7 @@ export class SpaceService {
 
   /** `environmentIds`: every environment of the space, in the new order. */
   reorderEnvironments(spaceId: string, environmentIds: string[]): Observable<void> {
-    return this.http.put<void>(`${BASE}/${spaceId}/environments/order`, { ids: environmentIds });
+    return this.http.put<void>(`${BASE}/${spaceId}/environments/order`, { ids: environmentIds } satisfies SpaceEnvironmentOrder);
   }
 
   delete(id: string): Observable<void> {

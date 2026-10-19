@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Page, Space } from '@localess/shared';
+import type { Page, Space, SpacePageable } from '@localess/shared';
 import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -12,7 +12,6 @@ import { toPublicSpace, toSpace } from '../../../shared/transformers/space.trans
 import { toPage } from '../../../shared/utils/paging.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplateRepository, type StoredTemplateFile } from '../repositories/space-template.repository.js';
-import type { SpacePageable } from '../models/space.models.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 import { SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 

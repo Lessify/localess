@@ -19,6 +19,10 @@ export enum TaskStatus {
   FINISHED = 'FINISHED',
 }
 
+/** The field the Tasks page may sort by: newest first by default. Request schemas: `task.zod.ts`. */
+export const TASK_SORT_FIELDS = ['createdAt'] as const;
+export type TaskSortField = (typeof TASK_SORT_FIELDS)[number];
+
 export enum TaskLogLevel {
   INFO = 'INFO',
   WARN = 'WARN',

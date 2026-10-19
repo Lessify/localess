@@ -1,15 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
-import { type SchemaCreate, SchemaType, UserPermission } from '@localess/shared';
+import { zSchemaCreate, zSchemaRename, zSchemaTypeFilter, zSchemaUpdate } from '@localess/shared/zod';
+import { type SchemaCreate, type SchemaRename, SchemaType, type SchemaUpdate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import {
-  type SchemaRename,
-  type SchemaUpdate,
-  zSchemaCreate,
-  zSchemaRename,
-  zSchemaTypeFilter,
-  zSchemaUpdate,
-} from '../models/schema.models.js';
 import { SchemaService } from '../services/schema.service.js';
 
 /** Schemas (was direct `spaces/{s}/schemas` access from the SPA). `:id` is the UUID; references use `name`. */

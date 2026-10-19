@@ -34,7 +34,6 @@ like a module, and it imports no feature module:
 auth/
   auth.module.ts  api-token.module.ts  auth.guard.ts  decorators.ts  request-context.ts
   controllers/   auth.controller.ts  oauth.controller.ts  app-config.controller.ts
-  models/        the request shapes (zod schema `zX` + type `X`), as in a module
   services/      auth.service.ts  session.service.ts  password-reset.service.ts  oauth.service.ts  token-auth.service.ts
   repositories/  session.repository.ts  password-reset-token.repository.ts  auth-user.repository.ts  api-token.repository.ts
   utils/         password.ts  session-cookie.ts  token-hash.ts  public-url.ts  oauth-providers.ts  api-token.ts
@@ -58,11 +57,11 @@ How a module splits into controllers, services and repositories (one set per ent
 layer may do in detail: [Controllers, services and repositories](controllers-services-repositories.md). Every name:
 [Naming](naming.md).
 
-Three folders for what is none of the four:
+Two folders for what is none of the four (request shapes are not here: they live in `@localess/shared`,
+[rules](controllers-services-repositories.md#models-request-shapes)):
 
 | Folder | What goes there |
 |---|---|
-| `models/` | The module's request shapes: each zod schema `zX` next to its type `X`, one file per resource (`space.models.ts`); a paged list's `zXPageable` / `XPageable` and sort fields. Rules: [Controllers, services and repositories](controllers-services-repositories.md#models-request-shapes), [Naming](naming.md#models), [Pagination](pagination.md) |
 | `utils/` | Pure functions without I/O: parsing, hashing, formatting, algorithms (`buildTranslationMap`, `image-transform`, `asset-etag`) |
 | `workers/` | Background work outside a request (the task worker, the Firebase import runner) |
 
@@ -73,7 +72,6 @@ to the file they test (`utils/chunk-by-size.test.ts`); integration tests stay in
 modules/translations/
   translation.module.ts
   controllers/   translation.controller.ts  translate.controller.ts  translation.cdn.controller.ts  translation.management.controller.ts
-  models/        translation.models.ts  …  (zod request schemas zX + types X)
   services/      translation.service.ts  translation-delivery.service.ts  translate.service.ts
   repositories/  translation.repository.ts  translation-snapshot.repository.ts  space-locale.repository.ts
   utils/         translation.utils.ts  translate-batch.ts  chunk-by-size.ts  translate-format.utils.ts
@@ -85,8 +83,8 @@ modules/translations/
   the migrations from it); a repository exports the entity types it returns (`TranslationEntity = typeof translations.$inferSelect`).
 - **Domain models and API DTOs** are the types in `@localess/shared` (one definition for server and web). Transformers
   map an entity to them; they all live in `shared/transformers/`, one place for every module. Controllers send what the service returns.
-- **Request models** (what a client sends: bodies, queries) are the module's `models/`: the zod schema `zX` and its
-  type `X` side by side, `X` being the shared type when `@localess/shared` has it
+- **Request models** (what a client sends: bodies, queries) are in `@localess/shared` too: the zod schema `zX` and its
+  type `X` side by side, one definition for the server's validation and the web's body
   ([rules](controllers-services-repositories.md#models-request-shapes)).
 
 ## Transactions

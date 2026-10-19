@@ -59,11 +59,25 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 
 ## Models
 
-- **Rule:** in `models/<entity>.models.ts`, each zod schema `zX` with its type `X`: `zSpaceCreate` / `SpaceCreate`,
-  `zSpaceUpdate` / `SpaceUpdate`, a paged list's query `zSpacePageable` / `SpacePageable` and its
-  `SPACE_SORT_FIELDS`. `X` is the `@localess/shared` type when it exists (`zX … satisfies z.ZodType<X>`), otherwise
-  `export type X = z.infer<typeof zX>`; a server shape that differs from the shared one gets its own name
-  (`ContentPatch`, `UserAccessUpdate`), never the shared name redeclared.
-- **Why:** the schema and its type side by side cannot drift; one definition of a shared model.
-- **Example:** `modules/spaces/models/space.models.ts`.
-- **Don't:** `createSchema`, `listSchema`, `XQuery`, `XDto` for a request; a schema in a controller.
+- **Rule:** an App API request (body, query, multipart fields) is defined once, in `@localess/shared`:
+  `packages/shared/src/models/<entity>.zod.ts` holds the zod schema `zX` and, next to it,
+  `export type X = z.infer<typeof zX>`: `zSpaceCreate` / `SpaceCreate`, `zSpacePageable` / `SpacePageable`. The
+  server validates with `zX` (`@localess/shared/zod`); the web types its body with `X` (`@localess/shared`, type only,
+  so it never loads zod). The constants both sides need (`SPACE_SORT_FIELDS`, `PASSWORD_MIN_LENGTH`) live in the
+  entity's `.model.ts`, and a name that is already a domain model is never reused (`TaskImport` is the import task,
+  so its request is `TaskImportCreate`).
+- **Rule, by what the route does** (the entity is the controller's, a sub-entity included):
+
+  | Route | Model | Example |
+  |---|---|---|
+  | Create (`POST`, method `create`) | `<Entity>Create` | `SpaceCreate`, `SpaceLocaleCreate`, `TaskCreate` |
+  | Update (`PATCH`, or `PUT` replacing it, method `update`) | `<Entity>Update` | `SpaceUpdate`, `SpaceEnvironmentUpdate`, `MeUpdate` |
+  | An action (any other write) | `<Entity><Action>` | `SpaceLocaleOrder`, `SpaceLocaleSetDefault`, `SchemaRename`, `AssetMove`, `UserStatusUpdate`, `TaskImportCreate`, `AuthLogin` |
+  | A list | `<Entity>Pageable` | `SpacePageable` |
+
+- **Why:** one definition for the server's validation and the web's body: a field added on one side is a compile
+  error on the other, not a second interface to keep in step.
+- **Example:** `packages/shared/src/models/space.zod.ts`; the web's `core/services/space.service.ts`
+  (`{ name } satisfies SpaceUpdate`).
+- **Don't:** `createSchema`, `listSchema`, `XQuery`, `XDto` for a request; a schema in the server; an interface in
+  `@localess/shared` or the web that repeats a request (a form shape derives from it: `Pick<AssetFolderCreate, 'name'>`).

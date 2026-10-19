@@ -1,11 +1,10 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { canGrant, canManageUser, type Page, UserPermission, UserRole } from '@localess/shared';
+import { canGrant, canManageUser, type Page, type UserPageable, UserPermission, UserRole } from '@localess/shared';
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { toPrincipal, toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
-import type { UserPageable } from '../models/user.models.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
 export interface CreateUser {

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, max } from 'drizzle-orm';
-import type { SpaceEnvironmentInput } from '@localess/shared';
+import type { SpaceEnvironmentCreate, SpaceEnvironmentUpdate } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { keepUpdatedAt, spaceEnvironments } from '../../../infra/database/schema.js';
@@ -18,7 +18,7 @@ export class SpaceEnvironmentRepository {
   ) {}
 
   /** At the end of the space's list. */
-  create(spaceId: string, environment: SpaceEnvironmentInput, tx?: Transaction): Promise<SpaceRow> {
+  create(spaceId: string, environment: SpaceEnvironmentCreate, tx?: Transaction): Promise<SpaceRow> {
     return changeSpace(this.db, this.events, spaceId, tx, async t => {
       const [{ last }] = await t
         .select({ last: max(spaceEnvironments.position) })
@@ -29,7 +29,7 @@ export class SpaceEnvironmentRepository {
   }
 
   /** `undefined` when the space has no environment `environmentId`. */
-  update(spaceId: string, environmentId: string, environment: SpaceEnvironmentInput, tx?: Transaction): Promise<SpaceRow | undefined> {
+  update(spaceId: string, environmentId: string, environment: SpaceEnvironmentUpdate, tx?: Transaction): Promise<SpaceRow | undefined> {
     return changeSpaceIfFound(this.db, this.events, spaceId, tx, async t => {
       const updated = await t
         .update(spaceEnvironments)

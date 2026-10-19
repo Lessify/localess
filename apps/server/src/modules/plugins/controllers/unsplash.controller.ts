@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { UserPermission } from '@localess/shared';
+import { zUnsplashSearch } from '@localess/shared/zod';
+import { type UnsplashSearch, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { type UnsplashSearch, zUnsplashSearch } from '../models/unsplash.models.js';
 import { UnsplashService } from '../services/unsplash.service.js';
 
 /**

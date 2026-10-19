@@ -1,9 +1,10 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import { zFirebaseImportConnection, zFirebaseImportStart } from '@localess/shared/zod';
+import type { FirebaseImportConnection, FirebaseImportStart } from '@localess/shared';
 import { RequireAdmin } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { type FirebaseConnection, type FirebaseImportStart, zFirebaseConnection, zFirebaseImportStart } from '../models/firebase-import.models.js';
 import { FirebaseImportService } from '../services/firebase-import.service.js';
 
 /** Admin → Spaces → Import from Firebase. The migration token is used for the request and never stored. */
@@ -14,7 +15,7 @@ export class FirebaseImportController {
 
   @Post('spaces')
   @HttpCode(200)
-  findSourceSpaces(@Body({ schema: zFirebaseConnection }) body: FirebaseConnection) {
+  findSourceSpaces(@Body({ schema: zFirebaseImportConnection }) body: FirebaseImportConnection) {
     return this.imports.findSourceSpaces(body.origin, body.token);
   }
 

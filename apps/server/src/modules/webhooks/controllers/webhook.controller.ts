@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
-import { UserPermission, type WebHookCreate, type WebHookUpdate } from '@localess/shared';
+import { zWebHookCreate, zWebHookStatusUpdate, zWebHookUpdate } from '@localess/shared/zod';
+import { UserPermission, type WebHookCreate, type WebHookStatusUpdate, type WebHookUpdate } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { type WebHookEnabled, zWebHookCreate, zWebHookEnabled, zWebHookUpdate } from '../models/webhook.models.js';
 import { WebhookService } from '../services/webhook.service.js';
 
 /** Webhook configuration (the delivery logs: `WebhookLogController`). */
@@ -36,12 +36,12 @@ export class WebhookController {
   }
 
   @Patch(':id/status')
-  setStatus(
+  updateStatus(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zWebHookEnabled }) body: WebHookEnabled,
+    @Body({ schema: zWebHookStatusUpdate }) body: WebHookStatusUpdate,
   ) {
-    return this.webhooks.setEnabled(spaceId, id, body.enabled);
+    return this.webhooks.updateStatus(spaceId, id, body.enabled);
   }
 
   /** Logs cascade. */

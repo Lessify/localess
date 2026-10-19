@@ -1,6 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
+import {
+  GCP_SOURCE_SUPPORT_LOCALES,
+  GCP_TARGET_SUPPORT_LOCALES,
+  Locale,
+  SpaceLocaleCreate,
+  SpaceLocaleOrder,
+  SpaceLocaleSetDefault,
+} from '@localess/shared';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { Observable } from 'rxjs';
 
@@ -13,17 +20,17 @@ export class LocaleService {
   }
 
   setDefault(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/default-locale`, { id: entity.id });
+    return this.http.put<void>(`${this.base(spaceId)}/default-locale`, { id: entity.id } satisfies SpaceLocaleSetDefault);
   }
 
   /** Adds a locale from the list (`findAllLocales`); the server takes only its id. */
   create(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id });
+    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id } satisfies SpaceLocaleCreate);
   }
 
   /** `localeIds`: every locale of the space, in the new order. */
   reorder(spaceId: string, localeIds: string[]): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/locales/order`, { ids: localeIds });
+    return this.http.put<void>(`${this.base(spaceId)}/locales/order`, { ids: localeIds } satisfies SpaceLocaleOrder);
   }
 
   delete(spaceId: string, entity: Locale): Observable<void> {

@@ -1,18 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
-import { type TranslationCreate, UserPermission } from '@localess/shared';
+import { zTranslationCreate, zTranslationLocaleUpdate, zTranslationRename, zTranslationTranslateLocale, zTranslationUpdate } from '@localess/shared/zod';
+import { type TranslationCreate, type TranslationLocaleUpdate, type TranslationRename, type TranslationTranslateLocale, type TranslationUpdate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import {
-  type TranslateLocale,
-  type TranslationLocaleValue,
-  type TranslationPatch,
-  type TranslationRename,
-  zTranslateLocale,
-  zTranslationCreate,
-  zTranslationLocaleValue,
-  zTranslationPatch,
-  zTranslationRename,
-} from '../models/translation.models.js';
 import { TranslationService } from '../services/translation.service.js';
 
 /**
@@ -55,7 +45,7 @@ export class TranslationController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zTranslationPatch }) body: TranslationPatch,
+    @Body({ schema: zTranslationUpdate }) body: TranslationUpdate,
   ) {
     return this.translations.update(spaceId, id, body);
   }
@@ -66,7 +56,7 @@ export class TranslationController {
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
     @Param('locale') locale: string,
-    @Body({ schema: zTranslationLocaleValue }) body: TranslationLocaleValue,
+    @Body({ schema: zTranslationLocaleUpdate }) body: TranslationLocaleUpdate,
   ) {
     return this.translations.updateLocale(spaceId, id, locale, body.value);
   }
@@ -107,7 +97,7 @@ export class TranslationController {
   @RequirePermission(UserPermission.TRANSLATION_UPDATE)
   translateLocale(
     @Param('spaceId') spaceId: string,
-    @Body({ schema: zTranslateLocale }) body: TranslateLocale,
+    @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale,
   ) {
     return this.translations.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }

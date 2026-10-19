@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { TokenType } from '@localess/shared';
+import { TokenType } from './token.model.js';
+
+// App API requests of API tokens.
 
 /** `POST /api/app/spaces/:spaceId/tokens`. */
 export const zTokenCreate = z

@@ -46,23 +46,7 @@ export enum ContentKind {
   DOCUMENT = 'DOCUMENT',
 }
 
-// App API requests
-
-export interface ContentDocumentCreate {
-  name: string;
-  slug: string;
-  schema: string;
-}
-
-export interface ContentFolderCreate {
-  name: string;
-  slug: string;
-}
-
-export interface ContentUpdate {
-  name: string;
-  slug: string;
-}
+// App API requests: content.zod.ts
 
 function hasKind(arg: unknown, kind: string): boolean {
   return typeof arg === 'object' && arg !== null && (arg as { kind?: unknown }).kind === kind;

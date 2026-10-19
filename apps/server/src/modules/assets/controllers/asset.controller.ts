@@ -13,22 +13,12 @@ import {
   Req,
   BadRequestException,
 } from '@nestjs/common';
+import { zAssetFolderCreate, zAssetListQuery, zAssetMove, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyRequest } from 'fastify';
-import { UserPermission } from '@localess/shared';
+import { type AssetFolderCreate, type AssetListQuery, type AssetMove, type AssetUpdate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import {
-  type AssetFolderCreate,
-  type AssetListQuery,
-  type AssetMove,
-  type AssetUpdate,
-  zAssetFolderCreate,
-  zAssetListQuery,
-  zAssetMove,
-  zAssetUpdate,
-  zAssetUploadFields,
-} from '../models/asset.models.js';
 import { AssetService } from '../services/asset.service.js';
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
@@ -96,7 +86,7 @@ export class AssetController {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
-    const fields = zAssetUploadFields.safeParse(fieldValues(file));
+    const fields = zAssetUpload.safeParse(fieldValues(file));
     if (!fields.success) {
       file.file.resume();
       throw new BadRequestException(fields.error.issues.map(it => `${it.path.join('.')}: ${it.message}`).join('; '));

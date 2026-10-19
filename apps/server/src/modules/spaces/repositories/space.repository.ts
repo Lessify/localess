@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { SpacePageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -10,7 +11,6 @@ import { findSpace, requireSpace, selectSpaces, type SpaceRow } from '../../../s
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
-import type { SpacePageable } from '../models/space.models.js';
 
 /**
  * Spaces (their locales and environments: `SpaceLocaleRepository`, `SpaceEnvironmentRepository`). Every change, in

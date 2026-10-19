@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Param, Post, Put } from '@nestjs/common';
-import { UserPermission } from '@localess/shared';
+import { zSpaceLocaleCreate, zSpaceLocaleOrder, zSpaceLocaleSetDefault } from '@localess/shared/zod';
+import { type SpaceLocaleCreate, type SpaceLocaleOrder, type SpaceLocaleSetDefault, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
-import { type LocaleId, type LocaleOrder, zLocaleId, zLocaleOrder } from '../models/space-locale.models.js';
 import { SpaceLocaleService } from '../services/space-locale.service.js';
 
 /** A space's locales and its default locale; every route answers the space as it is after the change. */
@@ -11,13 +11,13 @@ export class SpaceLocaleController {
 
   @Post('locales')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zLocaleId }) body: LocaleId) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate) {
     return this.locales.create(spaceId, body.id);
   }
 
   @Put('locales/order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  reorder(@Param('spaceId') spaceId: string, @Body({ schema: zLocaleOrder }) body: LocaleOrder) {
+  reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleOrder }) body: SpaceLocaleOrder) {
     return this.locales.reorder(spaceId, body.ids);
   }
 
@@ -29,7 +29,7 @@ export class SpaceLocaleController {
 
   @Put('default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  setDefault(@Param('spaceId') spaceId: string, @Body({ schema: zLocaleId }) body: LocaleId) {
+  setDefault(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleSetDefault }) body: SpaceLocaleSetDefault) {
     return this.locales.setDefault(spaceId, body.id);
   }
 }

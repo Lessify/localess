@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { zTranslateData } from '@localess/shared/zod';
 import { type TranslateData, UserPermission } from '@localess/shared';
 import { RequireAllPermissions, RequirePermission } from '../../../auth/decorators.js';
-import { zTranslateData } from '../models/translate.models.js';
 import { TranslateService } from '../services/translate.service.js';
 
 /** Machine translation for the editors (was the `translate` callable): one string, or a batch of items. */

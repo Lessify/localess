@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { FirebaseImport, FirebaseSourceSpace } from '@localess/shared';
+import { FirebaseImport, FirebaseImportConnection, FirebaseImportStart, FirebaseSourceSpace } from '@localess/shared';
 import { Observable, switchMap, takeWhile, timer } from 'rxjs';
 
 const POLL_MS = 2000;
@@ -12,11 +12,11 @@ export class FirebaseImportService {
   private readonly base = '/api/app/admin/firebase-import';
 
   sourceSpaces(origin: string, token: string): Observable<FirebaseSourceSpace[]> {
-    return this.http.post<FirebaseSourceSpace[]>(`${this.base}/spaces`, { origin, token });
+    return this.http.post<FirebaseSourceSpace[]>(`${this.base}/spaces`, { origin, token } satisfies FirebaseImportConnection);
   }
 
   start(origin: string, token: string, spaceId: string): Observable<FirebaseImport> {
-    return this.http.post<FirebaseImport>(this.base, { origin, token, spaceId });
+    return this.http.post<FirebaseImport>(this.base, { origin, token, spaceId } satisfies FirebaseImportStart);
   }
 
   findAll(): Observable<FirebaseImport[]> {

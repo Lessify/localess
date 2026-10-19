@@ -37,8 +37,8 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
 
 ## Server
 
-1. **Model** (`models/<entity>.models.ts`): the sort fields and the query schema, built on `zPageable(fields,
-   defaultSort, defaultDirection?)` and extended with the filters.
+1. **Model** (`@localess/shared`): the sort fields in `<entity>.model.ts` (the web uses them too), the query schema in
+   `<entity>.zod.ts`, built on `zPageable(fields, defaultSort, defaultDirection?)` and extended with the filters.
 
    ```ts
    export const TASK_SORT_FIELDS = ['createdAt'] as const;
@@ -81,7 +81,7 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
 
 The Tasks list is the reference; each step names the file.
 
-1. `modules/tasks/models/task.models.ts`: `TASK_SORT_FIELDS`, `zTaskPageable`, `TaskPageable`.
+1. `packages/shared/src/models/task.model.ts` (`TASK_SORT_FIELDS`) and `task.zod.ts` (`zTaskPageable`, `TaskPageable`).
 2. `modules/tasks/repositories/task.repository.ts`: `findPage(spaceId, query)`.
 3. `modules/tasks/services/task.service.ts`: `findAll(spaceId, query)` → `Page<Task>`.
 4. `modules/tasks/controllers/task.controller.ts`: `findAll(@Query({ schema: zTaskPageable }) query)`.

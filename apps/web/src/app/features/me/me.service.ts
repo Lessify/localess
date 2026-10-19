@@ -1,10 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { UserStore } from '@core/stores/user.store';
+import type { MeEmailUpdate, MePasswordUpdate, MeUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-
-import { MeUpdate } from './me.model';
 
 const BASE = '/api/app/me';
 
@@ -15,14 +14,14 @@ export class MeService {
   private readonly userStore = inject(UserStore);
 
   updateProfile(model: MeUpdate): Observable<void> {
-    return this.http.patch(BASE, { displayName: model.displayName, photoURL: model.photoURL }).pipe(
+    return this.http.patch(BASE, { displayName: model.displayName, photoURL: model.photoURL } satisfies MeUpdate).pipe(
       tap(() => this.userStore.load()),
       map(() => undefined),
     );
   }
 
   updateEmail(email: string, currentPassword?: string): Observable<void> {
-    return this.http.put(`${BASE}/email`, { email, currentPassword }).pipe(
+    return this.http.put(`${BASE}/email`, { email, currentPassword } satisfies MeEmailUpdate).pipe(
       tap(() => this.userStore.load()),
       map(() => undefined),
     );
@@ -30,6 +29,8 @@ export class MeService {
 
   /** Signs out every other session. */
   updatePassword(newPassword: string, currentPassword?: string): Observable<void> {
-    return this.http.put<void>(`${BASE}/password`, { currentPassword, newPassword }).pipe(tap(() => this.userStore.load()));
+    return this.http
+      .put<void>(`${BASE}/password`, { currentPassword, newPassword } satisfies MePasswordUpdate)
+      .pipe(tap(() => this.userStore.load()));
   }
 }

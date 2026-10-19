@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
-import { type SpaceCreate, type SpaceUpdate, UserPermission } from '@localess/shared';
+import { zSpaceCreate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
+import { type SpaceCreate, type SpacePageable, type SpaceUpdate, UserPermission } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
-import { type SpacePageable, zSpaceCreate, zSpacePageable, zSpaceUpdate } from '../models/space.models.js';
 import { SpaceService } from '../services/space.service.js';
 
 /** Spaces and the dashboard overview (their locales and environments: `SpaceLocaleController`, `SpaceEnvironmentController`) (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */

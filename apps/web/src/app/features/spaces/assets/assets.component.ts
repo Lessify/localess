@@ -70,7 +70,7 @@ import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.
 import {
   AssetFileImport,
   AssetFileUpdateForm,
-  AssetFolderCreate,
+  AssetFolderCreateForm,
   AssetFolderUpdateForm,
   fileIcon as resolveFileIcon,
   filePreview as isPreviewableFileType,
@@ -335,7 +335,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openAddFolderDialog(): void {
     this.dialog
-      .open<AssetFolderCreate, AddFolderDialogContext>(AddFolderDialogComponent, {
+      .open<AssetFolderCreateForm, AddFolderDialogContext>(AddFolderDialogComponent, {
         context: {
           reservedNames: this.assets().map(it => it.name),
         },

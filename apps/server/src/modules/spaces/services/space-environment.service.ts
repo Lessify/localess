@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Space, SpaceEnvironmentInput } from '@localess/shared';
+import type { Space, SpaceEnvironmentCreate, SpaceEnvironmentUpdate } from '@localess/shared';
 import type { SpaceRow } from '../../../shared/queries/space.query.js';
 import { toSpace } from '../../../shared/transformers/space.transformer.js';
 import { SpaceEnvironmentRepository } from '../repositories/space-environment.repository.js';
@@ -15,12 +15,12 @@ export class SpaceEnvironmentService {
   ) {}
 
   /** At the end of the space's list. */
-  async create(spaceId: string, environment: SpaceEnvironmentInput): Promise<Space> {
+  async create(spaceId: string, environment: SpaceEnvironmentCreate): Promise<Space> {
     await this.require(spaceId);
     return toSpace(await this.environments.create(spaceId, environment));
   }
 
-  async update(spaceId: string, environmentId: string, environment: SpaceEnvironmentInput): Promise<Space> {
+  async update(spaceId: string, environmentId: string, environment: SpaceEnvironmentUpdate): Promise<Space> {
     await this.require(spaceId);
     return toSpace(found(await this.environments.update(spaceId, environmentId, environment)));
   }

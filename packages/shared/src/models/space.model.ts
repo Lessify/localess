@@ -29,12 +29,6 @@ export interface SpaceEnvironment {
   url: string;
 }
 
-/** Creating or editing an environment. */
-export interface SpaceEnvironmentInput {
-  name: string;
-  url: string;
-}
-
 // App API requests
 /**
  * The templates a space can be created from, in the order the Create Space dialog lists them; the test-only ones
@@ -52,15 +46,9 @@ export const SPACE_TEMPLATE_IDS = [
 
 export type SpaceTemplateId = (typeof SPACE_TEMPLATE_IDS)[number];
 
-export interface SpaceCreate {
-  name: string;
-  /** One of `GET /api/app/spaces/templates`; none: the space alone (default locale and preview token), nothing else. */
-  template?: SpaceTemplateId;
-}
-
-export interface SpaceUpdate {
-  name: string;
-}
+/** The fields Admin → Spaces may sort by (`name`: case-insensitive). Request schemas: `space.zod.ts`. */
+export const SPACE_SORT_FIELDS = ['name', 'id', 'updatedAt'] as const;
+export type SpaceSortField = (typeof SPACE_SORT_FIELDS)[number];
 
 /** Dashboard numbers, computed on request (`GET /api/app/spaces/:id/overview`). */
 export interface SpaceOverview {

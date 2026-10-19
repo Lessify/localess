@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Page, User, UserInvite, UserUpdate } from '@localess/shared';
+import { Page, User, UserInvite, UserStatusUpdate, UserUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 const BASE = '/api/app/users';
@@ -29,7 +29,11 @@ export class UserService {
 
   /** `role` null clears the access; the server drops permissions/lock for non-custom roles. */
   update(id: string, model: UserUpdate): Observable<void> {
-    return this.http.patch<void>(`${BASE}/${id}`, { role: model.role ?? null, permissions: model.permissions, lock: model.lock });
+    return this.http.patch<void>(`${BASE}/${id}`, {
+      role: model.role ?? null,
+      permissions: model.permissions,
+      lock: model.lock,
+    } satisfies UserUpdate);
   }
 
   delete(id: string): Observable<void> {
@@ -38,11 +42,11 @@ export class UserService {
 
   /** Disabling ends the user's sessions and blocks sign-in; nobody can change their own status. */
   setDisabled(id: string, disabled: boolean): Observable<void> {
-    return this.http.patch<void>(`${BASE}/${id}/status`, { disabled });
+    return this.http.patch<void>(`${BASE}/${id}/status`, { disabled } satisfies UserStatusUpdate);
   }
 
   invite(model: UserInvite): Observable<void> {
-    return this.http.post<void>(BASE, model);
+    return this.http.post<void>(BASE, model satisfies UserInvite);
   }
 
   /** A one-hour reset link an admin can hand over (works without SMTP). */

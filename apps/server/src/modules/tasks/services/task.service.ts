@@ -1,12 +1,11 @@
 import type { Readable } from 'node:stream';
 import { Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
-import type { Page, Task } from '@localess/shared';
+import type { Page, Task, TaskPageable } from '@localess/shared';
 import type { UserRow } from '../../../shared/models/user.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { toTask } from '../../../shared/transformers/task.transformer.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import type { TaskPageable } from '../models/task.models.js';
 import { type TaskEntity, TaskRepository } from '../repositories/task.repository.js';
 import { assertCanManage } from '../utils/task-permissions.js';
 import { toPage } from '../../../shared/utils/paging.js';

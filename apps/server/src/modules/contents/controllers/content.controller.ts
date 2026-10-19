@@ -1,17 +1,8 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { UserPermission } from '@localess/shared';
+import { zContentCreate, zContentDataUpdate, zContentListQuery, zContentUpdate } from '@localess/shared/zod';
+import { type ContentCreate, type ContentDataUpdate, type ContentListQuery, type ContentUpdate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import {
-  type ContentCreate,
-  type ContentDataUpdate,
-  type ContentListQuery,
-  type ContentPatch,
-  zContentCreate,
-  zContentDataUpdate,
-  zContentListQuery,
-  zContentPatch,
-} from '../models/content.models.js';
 import { ContentService } from '../services/content.service.js';
 
 /** Contents (was direct `spaces/{s}/contents` access plus the `content-publish`/`-unpublish` callables). */
@@ -67,7 +58,7 @@ export class ContentController {
   async update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zContentPatch }) body: ContentPatch,
+    @Body({ schema: zContentUpdate }) body: ContentUpdate,
   ) {
     return this.contents.update(spaceId, id, body);
   }

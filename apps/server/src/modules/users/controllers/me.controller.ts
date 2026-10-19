@@ -1,15 +1,9 @@
 import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
+import { zMeEmailUpdate, zMePasswordUpdate, zMeUpdate } from '@localess/shared/zod';
+import type { MeEmailUpdate, MePasswordUpdate, MeUpdate } from '@localess/shared';
 import { CurrentSessionId, CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
-import {
-  type MeEmailUpdate,
-  type MePasswordUpdate,
-  type MeProfileUpdate,
-  zMeEmailUpdate,
-  zMePasswordUpdate,
-  zMeProfileUpdate,
-} from '../models/me.models.js';
 import { MeService } from '../services/me.service.js';
 
 /** The signed-in user's own profile (was `updateProfile` / `updateEmail` / `updatePassword` on Firebase Auth). */
@@ -25,7 +19,7 @@ export class MeController {
   @Patch()
   async updateProfile(
     @CurrentUser() user: UserRow,
-    @Body({ schema: zMeProfileUpdate }) body: MeProfileUpdate,
+    @Body({ schema: zMeUpdate }) body: MeUpdate,
   ): Promise<UserDto> {
     return this.me.updateProfile(user, body);
   }

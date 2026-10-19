@@ -2,8 +2,20 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Asset, AssetFile, AssetFileType, AssetFolder, AssetFolderSummary, AssetKind } from '@localess/shared';
-import { AssetFileImport, AssetFileUpdateForm, AssetFolderCreate, AssetFolderUpdateForm } from '@shared/models/asset.model';
+import { multipartForm } from '@core/utils/multipart';
+import {
+  Asset,
+  AssetFile,
+  AssetFileType,
+  AssetFolder,
+  AssetFolderCreate,
+  AssetFolderSummary,
+  AssetKind,
+  AssetMove,
+  AssetUpdate,
+  AssetUpload,
+} from '@localess/shared';
+import { AssetFileImport, AssetFileUpdateForm, AssetFolderCreateForm, AssetFolderUpdateForm } from '@shared/models/asset.model';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
@@ -80,26 +92,23 @@ export class AssetService {
   importFile(spaceId: string, parentId: string | undefined, entity: AssetFileImport): Observable<AssetFile> {
     return this.http.get(entity.url, { responseType: 'blob' }).pipe(
       switchMap(blob => {
-        const form = new FormData();
-        form.append('parentId', parentId ?? '');
-        form.append('name', entity.name);
-        form.append('extension', entity.extension);
-        if (entity.alt) form.append('alt', entity.alt);
-        if (entity.source) form.append('source', entity.source);
+        const fields: AssetUpload = {
+          parentId: parentId ?? '',
+          name: entity.name,
+          extension: entity.extension,
+          alt: entity.alt || undefined,
+          source: entity.source || undefined,
+        };
         // A File (not a Blob plus filename): some FormData implementations drop the filename argument.
-        form.append('file', new File([blob], `${entity.name}${entity.extension}`, { type: blob.type }));
-        return this.upload(spaceId, form);
+        return this.upload(spaceId, multipartForm(fields, new File([blob], `${entity.name}${entity.extension}`, { type: blob.type })));
       }),
     );
   }
 
   /** Name and extension are taken from the file name server-side. */
   createFile(spaceId: string, parentId: string | undefined, entity: File): Observable<AssetFile> {
-    const form = new FormData();
-    // Fields must precede the file part.
-    form.append('parentId', parentId ?? '');
-    form.append('file', entity, entity.name);
-    return this.upload(spaceId, form);
+    const fields: AssetUpload = { parentId: parentId ?? '' };
+    return this.upload(spaceId, multipartForm(fields, entity));
   }
 
   private upload(spaceId: string, form: FormData): Observable<AssetFile> {
@@ -107,21 +116,21 @@ export class AssetService {
   }
 
   /** `parentId` absent: the root. */
-  createFolder(spaceId: string, parentId: string | undefined, entity: AssetFolderCreate): Observable<AssetFolder> {
-    return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentId, name: entity.name });
+  createFolder(spaceId: string, parentId: string | undefined, entity: AssetFolderCreateForm): Observable<AssetFolder> {
+    return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentId, name: entity.name } satisfies AssetFolderCreate);
   }
 
   updateFolder(spaceId: string, id: string, entity: AssetFolderUpdateForm): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name });
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name } satisfies AssetUpdate);
   }
 
   updateFile(spaceId: string, id: string, entity: AssetFileUpdateForm): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, alt: entity.alt || '' });
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, alt: entity.alt || '' } satisfies AssetUpdate);
   }
 
   /** Into folder `parentId`; `null`: the root. */
   move(spaceId: string, id: string, parentId: string | null): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}/parent`, { parentId });
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/parent`, { parentId } satisfies AssetMove);
   }
 
   /** How many contents use the asset (a folder: any file under it). */

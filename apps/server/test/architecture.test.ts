@@ -71,14 +71,6 @@ describe('server rules: imports between layers', () => {
     ).toEqual([]);
   });
 
-  it('a models file imports nothing from NestJS', () => {
-    expect(
-      breaks(
-        file => imports(file).filter(it => it.startsWith('@nestjs/')),
-        file => file.name.endsWith('.models.ts'),
-      ),
-    ).toEqual([]);
-  });
 });
 
 describe('server rules: file and class names', () => {
@@ -126,32 +118,45 @@ describe('server rules: method names', () => {
   });
 });
 
-describe('server rules: models', () => {
-  it('each zod schema zX comes with its type X: exported here, or the shared one it satisfies', () => {
+describe('server rules: request models (one definition in @localess/shared)', () => {
+  const SHARED = join(import.meta.dirname, '../../../packages/shared/src');
+  /**
+   * The App API's request schemas: every `zX` a controller validates with (`{ schema: zX }`, `zX.safeParse`). The v1
+   * Management API's (`zSchemaPushSchema`, …) are not in this rule yet.
+   */
+  const used = new Map<string, string>();
+  for (const file of files.filter(it => layerOf(it) === 'controller' && !isV1(it))) {
+    for (const match of file.source.text.matchAll(/(?:schema:\s*|\b)(z[A-Z]\w*)(?=\s*\}|\.safeParse)/g)) used.set(match[1], file.name);
+  }
+  /** Every exported `zX` of the shared zod files, with the text of its file. */
+  const shared = new Map<string, string>();
+  for (const name of readdirSync(join(SHARED, 'models')).filter(it => it.endsWith('.zod.ts'))) {
+    const text = readFileSync(join(SHARED, 'models', name), 'utf8');
+    for (const match of text.matchAll(/export const (z[A-Z]\w*)/g)) shared.set(match[1], text);
+  }
+
+  it('a controller validates with a schema from @localess/shared/zod, never one of its own', () => {
     expect(
       breaks(
         file => {
-          const types = new Set(
-            file.source.statements
-              .filter((it): it is ts.TypeAliasDeclaration | ts.InterfaceDeclaration => ts.isTypeAliasDeclaration(it) || ts.isInterfaceDeclaration(it))
-              .filter(it => it.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword))
-              .map(it => it.name.text),
-          );
-          return file.source.statements
+          const local = file.source.statements
             .filter(ts.isVariableStatement)
-            .filter(it => it.modifiers?.some(m => m.kind === ts.SyntaxKind.ExportKeyword))
-            .flatMap(it => it.declarationList.declarations)
-            .flatMap(declaration => {
-              const name = declaration.name.getText(file.source);
-              if (/^[A-Z][A-Z0-9_]*$/.test(name)) return []; // a constant, e.g. the sort fields
-              if (!/^z[A-Z]/.test(name)) return [`export ${name} is neither a zod schema zX nor a CONSTANT`];
-              const type = name.slice(1);
-              const satisfied = new RegExp(`satisfies z\\.ZodType<${type}>`).test(declaration.getText(file.source));
-              return types.has(type) || satisfied ? [] : [`${name} has no type ${type}`];
-            });
+            .flatMap(it => it.declarationList.declarations.map(d => d.name.getText(file.source)))
+            .filter(name => /^z[A-Z]/.test(name));
+          return local.map(name => `declares ${name}: move it to packages/shared/src/models/<entity>.zod.ts`);
         },
-        file => file.name.endsWith('.models.ts'),
+        file => file.name.startsWith('modules/') || file.name.startsWith('auth/'),
       ),
     ).toEqual([]);
+    expect([...used].filter(([name]) => !shared.has(name)).map(([name, file]) => `${file}: ${name} is not in @localess/shared/zod`)).toEqual([]);
+  });
+
+  it('each request schema zX has its type X next to it (z.infer, or the hand-written type it satisfies)', () => {
+    const missing = [...used.keys()].filter(name => {
+      const type = name.slice(1);
+      const text = shared.get(name) ?? '';
+      return !new RegExp(`export type ${type}\\b`).test(text) && !new RegExp(`satisfies z\\.ZodType<${type}>`).test(text);
+    });
+    expect(missing).toEqual([]);
   });
 });

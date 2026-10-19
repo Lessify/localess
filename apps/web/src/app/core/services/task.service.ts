@@ -2,7 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Page, Task, TaskKind, TaskLog } from '@localess/shared';
+import { multipartForm } from '@core/utils/multipart';
+import { Page, Task, TaskCreate, TaskImportCreate, TaskKind, TaskLog } from '@localess/shared';
 import { Observable, of } from 'rxjs';
 
 /** Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`); reads are live. */
@@ -76,18 +77,12 @@ export class TaskService {
     return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }
 
-  private createExport(spaceId: string, body: { kind: TaskKind; path?: string; locale?: string }): Observable<Task> {
+  private createExport(spaceId: string, body: TaskCreate): Observable<Task> {
     return this.http.post<Task>(this.base(spaceId), body);
   }
 
-  private createImport(spaceId: string, kind: TaskKind, file: File, locale?: string): Observable<Task> {
-    // The server reads the fields from the parts preceding the file, so they must come first.
-    const form = new FormData();
-    form.append('kind', kind);
-    if (locale) {
-      form.append('locale', locale);
-    }
-    form.append('file', file, file.name);
-    return this.http.post<Task>(`${this.base(spaceId)}/import`, form);
+  private createImport(spaceId: string, kind: TaskImportCreate['kind'], file: File, locale?: string): Observable<Task> {
+    const fields: TaskImportCreate = { kind, locale: locale || undefined };
+    return this.http.post<Task>(`${this.base(spaceId)}/import`, multipartForm(fields, file));
   }
 }

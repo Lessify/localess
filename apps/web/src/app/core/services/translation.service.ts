@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Translation, TranslationCreate, TranslationUpdate } from '@localess/shared';
+import {
+  Translation,
+  TranslationCreate,
+  TranslationLocaleUpdate,
+  TranslationRename,
+  TranslationTranslateLocale,
+  TranslationUpdate,
+} from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -46,17 +53,20 @@ export class TranslationService {
 
   /** Empty labels/description clear them. */
   update(spaceId: string, id: string, entity: TranslationUpdate): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { labels: entity.labels, description: entity.description });
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, {
+      labels: entity.labels,
+      description: entity.description,
+    } satisfies TranslationUpdate);
   }
 
   /** Changes the key; the id, values and timestamps are kept. */
   updateKey(spaceId: string, entity: Translation, key: string): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/key`, { key });
+    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/key`, { key } satisfies TranslationRename);
   }
 
   /** An empty value removes the locale. */
   updateLocale(spaceId: string, id: string, locale: string, value: string): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}/locales/${locale}`, { value });
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/locales/${locale}`, { value } satisfies TranslationLocaleUpdate);
   }
 
   delete(spaceId: string, id: string): Observable<void> {
@@ -82,6 +92,6 @@ export class TranslationService {
       sourceLocaleId,
       targetLocaleId,
       overwrite,
-    });
+    } satisfies TranslationTranslateLocale);
   }
 }

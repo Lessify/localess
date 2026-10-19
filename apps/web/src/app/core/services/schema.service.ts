@@ -3,7 +3,16 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { ObjectUtils } from '@core/utils/object-utils.service';
-import { Schema, SchemaComponentUpdate, SchemaCreate, SchemaEnumUpdate, SchemaType, SchemaUsage } from '@localess/shared';
+import {
+  Schema,
+  SchemaComponentUpdate,
+  SchemaCreate,
+  SchemaEnumUpdate,
+  SchemaRename,
+  SchemaType,
+  SchemaUpdate,
+  SchemaUsage,
+} from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -31,7 +40,11 @@ export class SchemaService {
   }
 
   create(spaceId: string, entity: SchemaCreate): Observable<void> {
-    return this.http.post<void>(this.base(spaceId), { name: entity.name, type: entity.type, displayName: entity.displayName });
+    return this.http.post<void>(this.base(spaceId), {
+      name: entity.name,
+      type: entity.type,
+      displayName: entity.displayName,
+    } satisfies SchemaCreate);
   }
 
   /** What uses the schema by name (other schemas' fields, contents): while anything does, no rename or delete. */
@@ -41,17 +54,17 @@ export class SchemaService {
 
   /** Changes the name; the id, fields and timestamps are kept. Refused (409) while the schema is in use. */
   updateName(spaceId: string, entity: Schema, name: string): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/name`, { name });
+    return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/name`, { name } satisfies SchemaRename);
   }
 
   updateComponent(spaceId: string, id: string, entity: SchemaComponentUpdate): Observable<void> {
     ObjectUtils.clean(entity);
-    return this.http.put<void>(`${this.base(spaceId)}/${id}`, entity);
+    return this.http.put<void>(`${this.base(spaceId)}/${id}`, entity satisfies SchemaUpdate);
   }
 
   updateEnum(spaceId: string, id: string, entity: SchemaEnumUpdate): Observable<void> {
     ObjectUtils.clean(entity);
-    return this.http.put<void>(`${this.base(spaceId)}/${id}`, entity);
+    return this.http.put<void>(`${this.base(spaceId)}/${id}`, entity satisfies SchemaUpdate);
   }
 
   delete(spaceId: string, id: string): Observable<void> {

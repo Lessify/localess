@@ -64,11 +64,18 @@ transaction; the three repositories call it.
 
 ## Models (request shapes)
 
-- **Rule:** what a client sends (bodies, queries, multipart fields) is a zod schema in `models/<entity>.models.ts`,
-  next to its type ([names](naming.md#models)). The shared type is reused with `satisfies z.ZodType<X>` when
-  `@localess/shared` has it. Generic validators stay shared: `infra/http/zod.ts` (`zLabels`, `zPreviewUrl`),
-  `@localess/shared/zod` (`zPageable`, `zMultiValue`, `zContentData`). A paged list's sort fields live here, so a
-  repository imports its query type from `models/` and a controller never imports a repository.
-- **Why:** the schema and its type cannot drift; one definition of a model shared with the web.
-- **Example:** `modules/tasks/models/task.models.ts`.
-- **Don't:** import NestJS in a model file; redeclare a shared type.
+- **Rule:** what a client sends (bodies, queries, multipart fields) is defined once in `@localess/shared`
+  (`packages/shared/src/models/<entity>.zod.ts`): the zod schema `zX` and its type `X` ([names](naming.md#models)).
+  - The server validates with it: `@Body({ schema: zX }) body: X` (`zX` from `@localess/shared/zod`, `X` from
+    `@localess/shared`); services and repositories take `X` too (`SpacePageable` in `findPage`).
+  - The web sends it: the body literal is checked against the type, `this.http.patch(url, { name } satisfies
+    SpaceUpdate)`; multipart fields with `multipartForm(fields: AssetUpload, file)` (`core/utils/multipart.ts`).
+  - Shared helpers: `common.zod.ts` (`zLabels`, `zPreviewUrl`), `page.zod.ts` (`zPageable`, `zMultiValue`),
+    `content.zod.ts` (`zContentData`).
+  - A hand-written type stays only where the inferred one is weaker, and the schema is then checked against it:
+    `zTranslateData satisfies z.ZodType<TranslateData>` (its `?: never` members refuse `content` with `items`).
+- **Why:** the server and the web cannot drift: a field added to the schema is a compile error in the web until it
+  sends it.
+- **Example:** `packages/shared/src/models/task.zod.ts`, used by `modules/tasks/controllers/task.controller.ts` and
+  the web's `core/services/task.service.ts`.
+- **Don't:** a schema in the server (the architecture test refuses one), an interface that repeats a request.

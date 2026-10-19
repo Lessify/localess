@@ -1,4 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
+import { zTaskCreate, zTaskImportCreate, zTaskPageable } from '@localess/shared/zod';
+import type { TaskCreate, TaskPageable } from '@localess/shared';
 import type { MultipartFile } from '@fastify/multipart';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { RequirePermission } from '../../../auth/decorators.js';
@@ -6,7 +8,6 @@ import { CurrentUser } from '../../../auth/request-context.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { type TaskExportCreate, type TaskPageable, zTaskExportCreate, zTaskImportFields, zTaskPageable } from '../models/task.models.js';
 import { TaskService } from '../services/task.service.js';
 import { assertCanManage, TASK_READ_PERMISSIONS } from '../utils/task-permissions.js';
 
@@ -55,7 +56,7 @@ export class TaskController {
   @RequirePermission(...TASK_READ_PERMISSIONS)
   create(
     @Param('spaceId') spaceId: string,
-    @Body({ schema: zTaskExportCreate }) body: TaskExportCreate,
+    @Body({ schema: zTaskCreate }) body: TaskCreate,
     @CurrentUser() user: UserRow,
   ) {
     return this.tasks.create(spaceId, body, user);
@@ -71,7 +72,7 @@ export class TaskController {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
-    const fields = zTaskImportFields.safeParse(fieldValues(file));
+    const fields = zTaskImportCreate.safeParse(fieldValues(file));
     if (!fields.success) {
       file.file.resume();
       throw new BadRequestException(fields.error.issues.map(it => `${it.path.join('.')}: ${it.message}`).join('; '));

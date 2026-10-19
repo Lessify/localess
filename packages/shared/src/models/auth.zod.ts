@@ -1,5 +1,14 @@
 import { z } from 'zod';
-import { PASSWORD_MIN_LENGTH } from '../utils/password.js';
+import { PASSWORD_MIN_LENGTH } from './user.model.js';
+
+// Auth requests (`/api/auth`).
+
+/** `POST /api/auth/login`. */
+export const zAuthLogin = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(1),
+});
+export type AuthLogin = z.infer<typeof zAuthLogin>;
 
 /** `POST /api/auth/password-reset/request`. */
 export const zPasswordResetRequest = z.object({ email: z.string().trim().email() });

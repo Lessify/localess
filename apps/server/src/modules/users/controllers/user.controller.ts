@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { zUserInvite, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
 import type { FastifyRequest } from 'fastify';
-import { type Page, UserPermission } from '@localess/shared';
+import { type Page, type UserInvite, type UserPageable, UserPermission, type UserStatusUpdate, type UserUpdate } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { publicOrigin } from '../../../auth/utils/public-url.js';
@@ -8,16 +9,6 @@ import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
-import {
-  type UserAccessUpdate,
-  type UserInviteInput,
-  type UserPageable,
-  type UserStatus,
-  zUserAccessUpdate,
-  zUserInviteInput,
-  zUserPageable,
-  zUserStatus,
-} from '../models/user.models.js';
 import { UserService } from '../services/user.service.js';
 
 /**
@@ -47,7 +38,7 @@ export class UserController {
   @Post()
   async invite(
     @CurrentUser() caller: UserRow,
-    @Body({ schema: zUserInviteInput }) body: UserInviteInput,
+    @Body({ schema: zUserInvite }) body: UserInvite,
   ): Promise<UserDto> {
     return this.users.invite(caller, body);
   }
@@ -56,7 +47,7 @@ export class UserController {
   async updateAccess(
     @CurrentUser() caller: UserRow,
     @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zUserAccessUpdate }) body: UserAccessUpdate,
+    @Body({ schema: zUserUpdate }) body: UserUpdate,
   ): Promise<UserDto> {
     return this.users.changeAccess(caller, id, body);
   }
@@ -66,7 +57,7 @@ export class UserController {
   async updateStatus(
     @CurrentUser() caller: UserRow,
     @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zUserStatus }) body: UserStatus,
+    @Body({ schema: zUserStatusUpdate }) body: UserStatusUpdate,
   ): Promise<UserDto> {
     return this.users.changeStatus(caller, id, body.disabled);
   }

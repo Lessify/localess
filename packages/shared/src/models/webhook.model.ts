@@ -81,13 +81,4 @@ export interface WebHookLogFailure extends WebHookLogBase {
 
 export type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 
-// App API requests
-export interface WebHookCreate {
-  name: string;
-  url: string;
-  events: WebHookEvent[];
-  headers?: Record<string, string>;
-  secret?: string;
-}
-
-export type WebHookUpdate = WebHookCreate;
+// App API requests: webhook.zod.ts

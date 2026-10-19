@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import type { TaskPageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { tasks } from '../../../infra/database/schema.js';
@@ -6,7 +7,6 @@ import { transaction, type Transaction } from '../../../infra/database/transacti
 import { EventService } from '../../../infra/events/event.service.js';
 import { requireSpace } from '../../../shared/queries/space.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
-import type { TaskPageable } from '../models/task.models.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
 
 export type TaskEntity = typeof tasks.$inferSelect;

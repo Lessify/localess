@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+// The WHATWG URL parser, a global in browsers and Node; this package compiles without DOM or Node types.
+declare const URL: new (url: string) => { protocol: string };
+
+/** A schema's or translation's labels. */
 export const zLabels = z.array(z.string().max(200)).max(100);
 
 /**

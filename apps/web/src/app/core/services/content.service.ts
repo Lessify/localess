@@ -5,7 +5,9 @@ import { liveQueryWith } from '@core/api/live-query';
 import { normalizeContent } from '@core/utils/content-data';
 import {
   Content,
+  ContentCreate,
   ContentData,
+  ContentDataUpdate,
   ContentDocument,
   ContentDocumentCreate,
   ContentFolder,
@@ -86,31 +88,31 @@ export class ContentService {
   /** `parentId` absent: the root. */
   createDocument(spaceId: string, parentId: string | undefined, entity: ContentDocumentCreate): Observable<ContentDocument> {
     return this.http.post<ContentDocument>(this.base(spaceId), {
-      kind: ContentKind.DOCUMENT,
+      kind: 'DOCUMENT',
       parentId,
       name: entity.name,
       slug: entity.slug,
       schema: entity.schema,
-    });
+    } satisfies ContentCreate);
   }
 
   /** `parentId` absent: the root. */
   createFolder(spaceId: string, parentId: string | undefined, entity: ContentFolderCreate): Observable<ContentFolder> {
     return this.http.post<ContentFolder>(this.base(spaceId), {
-      kind: ContentKind.FOLDER,
+      kind: 'FOLDER',
       parentId,
       name: entity.name,
       slug: entity.slug,
-    });
+    } satisfies ContentCreate);
   }
 
   update(spaceId: string, id: string, entity: ContentUpdate): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, slug: entity.slug });
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, slug: entity.slug } satisfies ContentUpdate);
   }
 
   /** Into folder `parentId`; `null`: the root. */
   move(spaceId: string, id: string, parentId: string | null): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { parentId });
+    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { parentId } satisfies ContentUpdate);
   }
 
   /**
@@ -119,7 +121,7 @@ export class ContentService {
    */
   /** Saves the document's data; the server works out what it points to (assets, links, references). */
   updateDocumentData(spaceId: string, id: string, data: ContentData): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}/data`, { data: normalizeContent(data) });
+    return this.http.put<void>(`${this.base(spaceId)}/${id}/data`, { data: normalizeContent(data) } satisfies ContentDataUpdate);
   }
 
   cloneDocument(spaceId: string, entity: ContentDocument): Observable<ContentDocument> {

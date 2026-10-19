@@ -7,7 +7,7 @@ weighed), not the rules.
 | Page | Read when |
 |---|---|
 | [Architecture](architecture.md) | Modules and layers, auth, transactions, the `shared/` module: the big picture |
-| [Controllers, services and repositories](controllers-services-repositories.md) | Adding or splitting a controller, service or repository; validation; what goes in `models/` |
+| [Controllers, services and repositories](controllers-services-repositories.md) | Adding or splitting a controller, service or repository; validation; request models (in `@localess/shared`) |
 | [Naming](naming.md) | Naming any file, class, method, model or util |
 | [Pagination](pagination.md) | Any list endpoint or table that may grow; the step-by-step for a new paged list |
 
@@ -25,9 +25,10 @@ Each rule says, in this order:
 Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnpm server:test`) scans
 `apps/server/src` and fails when a rule is broken:
 
-- **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service; a `models/` file
-  imports nothing from NestJS.
+- **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service.
 - **Names:** singular file names whose class matches the file; controller, service and repository method names
-  (with the listed exceptions); the `zX` / `X` pairs of `models/`.
+  (with the listed exceptions).
+- **Request models:** no `zX` declared in the server; every schema an App API controller validates with comes from
+  `@localess/shared/zod`, with its type `X` next to it.
 
 A rule that changes changes here, in the check, and in the code, together.

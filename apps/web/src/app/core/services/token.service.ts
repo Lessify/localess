@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Token, TokenType } from '@localess/shared';
+import { Token, TokenCreate, TokenType, TokenUpdate } from '@localess/shared';
 import { TokenForm } from '@shared/models/token.model';
 import { Observable, of, switchMap } from 'rxjs';
 
@@ -45,12 +45,16 @@ export class TokenService {
 
   /** Resolves to the new token, value included (the only time a management token's value is returned). */
   create(spaceId: string, model: TokenForm): Observable<Token> {
-    return this.http.post<Token>(this.base(spaceId), { name: model.name, type: model.type, cacheTtl: model.cacheTtl ?? null });
+    return this.http.post<Token>(this.base(spaceId), {
+      name: model.name,
+      type: model.type,
+      cacheTtl: model.cacheTtl ?? null,
+    } satisfies TokenCreate);
   }
 
   /** The name and cache TTL; the type never changes. */
   update(spaceId: string, id: string, model: Omit<TokenForm, 'type'>): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}`, { name: model.name, cacheTtl: model.cacheTtl ?? null });
+    return this.http.put<void>(`${this.base(spaceId)}/${id}`, { name: model.name, cacheTtl: model.cacheTtl ?? null } satisfies TokenUpdate);
   }
 
   /** Same token under a new value; resolves to the new token, value included. */

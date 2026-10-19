@@ -65,7 +65,7 @@ export class WebhookService {
     );
   }
 
-  async setEnabled(spaceId: string, id: string, enabled: boolean) {
+  async updateStatus(spaceId: string, id: string, enabled: boolean) {
     return found(await this.webhooks.update(spaceId, id, { enabled }));
   }
 

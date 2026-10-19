@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Param, Patch, Post, Put } from '@nestjs/common';
-import { type SpaceEnvironmentInput, UserPermission } from '@localess/shared';
+import { zSpaceEnvironmentCreate, zSpaceEnvironmentOrder, zSpaceEnvironmentUpdate } from '@localess/shared/zod';
+import { type SpaceEnvironmentCreate, type SpaceEnvironmentOrder, type SpaceEnvironmentUpdate, UserPermission } from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { type EnvironmentOrder, zEnvironmentOrder, zSpaceEnvironmentInput } from '../models/space-environment.models.js';
 import { SpaceEnvironmentService } from '../services/space-environment.service.js';
 
 /** A space's environments; every route answers the space as it is after the change. */
@@ -12,13 +12,13 @@ export class SpaceEnvironmentController {
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentInput }) body: SpaceEnvironmentInput) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate) {
     return this.environments.create(spaceId, body);
   }
 
   @Put('order')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  reorder(@Param('spaceId') spaceId: string, @Body({ schema: zEnvironmentOrder }) body: EnvironmentOrder) {
+  reorder(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceEnvironmentOrder }) body: SpaceEnvironmentOrder) {
     return this.environments.reorder(spaceId, body.ids);
   }
 
@@ -27,7 +27,7 @@ export class SpaceEnvironmentController {
   update(
     @Param('spaceId') spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,
-    @Body({ schema: zSpaceEnvironmentInput }) body: SpaceEnvironmentInput,
+    @Body({ schema: zSpaceEnvironmentUpdate }) body: SpaceEnvironmentUpdate,
   ) {
     return this.environments.update(spaceId, environmentId, body);
   }

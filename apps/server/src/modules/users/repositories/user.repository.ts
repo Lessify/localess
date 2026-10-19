@@ -1,4 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import type { UserPageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -8,7 +9,6 @@ import { EventService } from '../../../infra/events/event.service.js';
 import type { UserRow } from '../../../shared/models/user.js';
 import { findUserLogins } from '../../../shared/queries/user.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
-import type { UserPageable } from '../models/user.models.js';
 
 const SORT_COLUMNS = { email: users.email, name: users.displayName, role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt };
 
