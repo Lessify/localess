@@ -1,6 +1,17 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
-import { zSpaceCreate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
-import { type IdName, type Page, type Space, type SpaceCreate, type SpaceOverview, type SpacePageable, type SpaceTemplateId, type SpaceUpdate, UserPermission } from '@localess/shared';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { zSpaceCreate, zSpaceDefaultLocaleUpdate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
+import {
+  type IdName,
+  type Page,
+  type Space,
+  type SpaceCreate,
+  type SpaceDefaultLocaleUpdate,
+  type SpaceOverview,
+  type SpacePageable,
+  type SpaceTemplateId,
+  type SpaceUpdate,
+  UserPermission,
+} from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { SpaceService } from '../services/space.service.js';
 
@@ -49,6 +60,13 @@ export class SpaceController {
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   update(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate): Promise<Space> {
     return this.spaceService.rename(spaceId, body.name);
+  }
+
+  /** Apart from `PATCH`: a different process (the locale must be the space's; the drafts that read the default go). */
+  @Put(':spaceId/default-locale')
+  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  setDefaultLocale(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate): Promise<Space> {
+    return this.spaceService.setDefaultLocale(spaceId, body.id);
   }
 
   @Delete(':spaceId')

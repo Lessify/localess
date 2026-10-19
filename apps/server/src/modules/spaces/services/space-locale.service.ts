@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdName, Page, Space, SpaceLocale, SpaceLocalePageable } from '@localess/shared';
+import type { IdName, Page, SpaceLocale, SpaceLocalePageable } from '@localess/shared';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
-import { toSpace, toSpaceLocale } from '../../../shared/transformers/space.transformer.js';
+import { toSpaceLocale } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { LocaleRepository } from '../repositories/locale.repository.js';
 import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
@@ -68,13 +68,6 @@ export class SpaceLocaleService {
       throw new BadRequestException("The new order must list each of the space's locales once");
     }
     await this.spaceLocaleRepository.reorder(spaceId, localeIds);
-  }
-
-  async setDefault(spaceId: string, localeId: string): Promise<Space> {
-    const space = await this.require(spaceId);
-    if (!space.spaceLocales.some(it => it.localeId === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
-    await this.spaceLocaleRepository.setDefault(spaceId, localeId);
-    return toSpace(await this.require(spaceId));
   }
 
   private async require(spaceId: string): Promise<SpaceWithLocales> {

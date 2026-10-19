@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { translations, translationSnapshots } from '../src/infra/database/schema.js';
 import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
 import { TranslationService } from '../src/modules/translations/services/translation.service.js';
 import { seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
@@ -106,10 +107,10 @@ describe('translation snapshots', () => {
 
   it('rebuilds the draft when the default locale changes', async () => {
     const draft = await cvOf(draftUrl('fr'));
-    await t.app.get(SpaceLocaleService).setDefault(S1, 'de');
+    await t.app.get(SpaceService).setDefaultLocale(S1, 'de');
     expect(await cvOf(draftUrl('fr'))).not.toBe(draft);
     expect((await follow(draftUrl('fr'))).greeting).toBe('Servus');
-    await t.app.get(SpaceLocaleService).setDefault(S1, 'en');
+    await t.app.get(SpaceService).setDefaultLocale(S1, 'en');
   });
 
   it('drops both snapshots of a removed locale', async () => {

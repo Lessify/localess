@@ -19,7 +19,7 @@
 
 - Another kind of the same row: an asset or content folder is the asset or content with `kind = FOLDER`, one tree,
   served by the asset and content sets.
-- An action on the entity: `publish`, `clone`, `rename`, `status`, `password-reset-link` stay on its controller.
+- An action on the entity: `publish`, `clone`, `rename`, `status`, `password-reset-link`, `default-locale` (a column of the space, set apart from `PATCH` as its own process) stay on its controller.
 
 **A rule several sets follow** lives once, as a helper in the module (or in `shared/data-rules/` when other modules
 write the same table): `modules/spaces/repositories/space-change.ts` (`changeSpace`) is the rule that a change of a

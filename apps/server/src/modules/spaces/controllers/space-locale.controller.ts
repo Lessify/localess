@@ -1,20 +1,18 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
-import { zSpaceLocaleCreate, zSpaceLocaleOrder, zSpaceLocalePageable, zSpaceLocaleSetDefault } from '@localess/shared/zod';
+import { zSpaceLocaleCreate, zSpaceLocaleOrder, zSpaceLocalePageable } from '@localess/shared/zod';
 import {
   type IdName,
   type Page,
-  type Space,
   type SpaceLocale,
   type SpaceLocaleCreate,
   type SpaceLocaleOrder,
   type SpaceLocalePageable,
-  type SpaceLocaleSetDefault,
   UserPermission,
 } from '@localess/shared';
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { SpaceLocaleService } from '../services/space-locale.service.js';
 
-/** A space's locales and its default locale (the default is the space's `defaultLocaleId`). */
+/** A space's locales (the default locale is the space's `defaultLocaleId`: `SpaceController.setDefaultLocale`). */
 @Controller('api/app/spaces/:spaceId')
 export class SpaceLocaleController {
   constructor(private readonly spaceLocaleService: SpaceLocaleService) {}
@@ -51,11 +49,5 @@ export class SpaceLocaleController {
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
   async remove(@Param('spaceId') spaceId: string, @Param('localeId') localeId: string): Promise<void> {
     await this.spaceLocaleService.remove(spaceId, localeId);
-  }
-
-  @Put('default-locale')
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  setDefault(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceLocaleSetDefault }) body: SpaceLocaleSetDefault): Promise<Space> {
-    return this.spaceLocaleService.setDefault(spaceId, body.id);
   }
 }

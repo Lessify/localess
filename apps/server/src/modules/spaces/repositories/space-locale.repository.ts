@@ -5,7 +5,7 @@ import { DATABASE, type Database } from '../../../infra/database/database.module
 import { locales, spaceLocales } from '../../../infra/database/schema.js';
 import type { Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import { dropContentDrafts, dropContentLocale } from '../../../shared/data-rules/content-snapshots.js';
+import { dropContentLocale } from '../../../shared/data-rules/content-snapshots.js';
 import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/data-rules/translation-drafts.js';
 import type { LocaleEntity } from '../../../shared/entities/locale.entity.js';
 import type { SpaceLocaleSelect } from '../../../shared/entities/space-locale.entity.js';
@@ -13,7 +13,7 @@ import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';
 
 /**
- * A space's locales (`space_locales`) and its default locale. Every change touches the space and announces it
+ * A space's locales (`space_locales`; the default locale is the space's: `SpaceRepository.setDefaultLocale`). Every change touches the space and announces it
  * (`changeSpace`), and drops the translation drafts and content snapshots it makes stale.
  */
 @Injectable()
@@ -99,18 +99,6 @@ export class SpaceLocaleRepository {
           .set({ position })
           .where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
       }
-    });
-  }
-
-  /**
-   * Draft translation maps fill gaps from the default locale and content drafts read it from the bare fields, so both
-   * go; published ones keep what their publish built.
-   */
-  setDefault(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
-    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      await dropTranslationDrafts(t, spaceId);
-      await dropContentDrafts(t, spaceId);
-      return { defaultLocaleId: localeId };
     });
   }
 

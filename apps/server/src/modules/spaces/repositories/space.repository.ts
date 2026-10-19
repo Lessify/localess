@@ -6,7 +6,9 @@ import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { firebaseImports, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
+import { dropContentDrafts } from '../../../shared/data-rules/content-snapshots.js';
 import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
+import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import type { SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
@@ -90,6 +92,18 @@ export class SpaceRepository {
 
   rename(spaceId: string, name: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async () => ({ name }));
+  }
+
+  /**
+   * Draft translation maps fill gaps from the default locale and content drafts read it from the bare fields, so both
+   * go; published ones keep what their publish built.
+   */
+  setDefaultLocale(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
+      await dropTranslationDrafts(t, spaceId);
+      await dropContentDrafts(t, spaceId);
+      return { defaultLocaleId: localeId };
+    });
   }
 
   /** Everything in the space goes with it: rows by FK cascade, stored files queued for the sweeper. */

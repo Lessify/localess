@@ -33,7 +33,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   | Create | `create` | `SpaceLocaleController.create` (`POST /spaces/:spaceId/locales`) |
   | Change | `update`, `update<What>` | `updateData`, `updateAccess` |
   | Delete | `remove`, `remove<What>` | `removeAll` |
-  | A domain action | its verb | `publish`, `rename`, `reorder`, `setDefault`, `cancel`, `regenerate`, `invite` |
+  | A domain action | its verb | `publish`, `rename`, `reorder`, `setDefaultLocale`, `cancel`, `regenerate`, `invite` |
   | A count | `count` | `GET /contents/count` |
 
 - **Why:** the scaffold every NestJS developer knows; one name across the two layers, so a route is followed by name.
@@ -74,7 +74,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 - **Rule:** data-access names: reads `findAll` (array), `findAllCount` (number), `findOne` (entity or `undefined`),
   `findAll<What>` / `find<What>` for a narrower read, `exists`; writes
   `create` / `insert<What>`, `update<What>`, `delete<What>`; a database action with its own meaning keeps its verb
-  (`claim`, `lock`, `reorder`, `setDefault`, `publish`).
+  (`claim`, `lock`, `reorder`, `setDefaultLocale`, `publish`).
 - **Why:** a repository speaks database (rows, `delete`), a service speaks the API (`remove`); `find*` answers
   `undefined` or `[]`, never throws a 404 (the service does).
 - **Example:** `modules/spaces/repositories/space-locale.repository.ts`.
@@ -121,7 +121,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   |---|---|---|
   | Create (`POST`, method `create`) | `<Entity>Create` | `SpaceCreate`, `SpaceLocaleCreate`, `TaskCreate` |
   | Update (`PATCH`, or `PUT` replacing it, method `update`) | `<Entity>Update` | `SpaceUpdate`, `SpaceEnvironmentUpdate`, `MeUpdate` |
-  | An action (any other write) | `<Entity><Action>` | `SpaceLocaleOrder`, `SpaceLocaleSetDefault`, `SchemaRename`, `AssetMove`, `UserStatusUpdate`, `TaskImportCreate`, `AuthLogin` |
+  | An action (any other write) | `<Entity><Action>` | `SpaceLocaleOrder`, `SpaceDefaultLocaleUpdate`, `SchemaRename`, `AssetMove`, `UserStatusUpdate`, `TaskImportCreate`, `AuthLogin` |
   | A list | `<Entity>Pageable` | `SpacePageable` |
 
 - **Why:** one definition for the server's validation and the web's body: a field added on one side is a compile

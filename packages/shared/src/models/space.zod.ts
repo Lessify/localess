@@ -11,7 +11,7 @@ const zName = z.string().trim().min(1).max(200);
 export const zSpaceCreate = z.object({ name: zName, template: z.enum(SPACE_TEMPLATE_IDS).optional() });
 export type SpaceCreate = z.infer<typeof zSpaceCreate>;
 
-/** `PATCH /api/app/spaces/:spaceId`. */
+/** `PATCH /api/app/spaces/:spaceId`: the name only; the default locale has its own route (`zSpaceDefaultLocaleUpdate`). */
 export const zSpaceUpdate = z.object({ name: zName }).strict();
 export type SpaceUpdate = z.infer<typeof zSpaceUpdate>;
 
@@ -55,6 +55,6 @@ export type SpaceLocaleCreate = z.infer<typeof zSpaceLocaleCreate>;
 export const zSpaceLocaleOrder = z.object({ ids: z.array(zLocaleId).min(1).max(1000) });
 export type SpaceLocaleOrder = z.infer<typeof zSpaceLocaleOrder>;
 
-/** `PUT …/default-locale`: one of the space's locales. */
-export const zSpaceLocaleSetDefault = z.object({ id: zLocaleId });
-export type SpaceLocaleSetDefault = z.infer<typeof zSpaceLocaleSetDefault>;
+/** `PUT /api/app/spaces/:spaceId/default-locale`: one of the space's locales. */
+export const zSpaceDefaultLocaleUpdate = z.object({ id: zLocaleId });
+export type SpaceDefaultLocaleUpdate = z.infer<typeof zSpaceDefaultLocaleUpdate>;

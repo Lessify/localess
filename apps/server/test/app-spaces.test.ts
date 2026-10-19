@@ -246,6 +246,9 @@ describe('app API: spaces, locales, instance label', () => {
       const setDefault = await manager.put(`${base}/default-locale`, { id: 'de' });
       expect(setDefault.json()).toMatchObject({ defaultLocaleId: 'de', defaultLocale: { id: 'de', name: 'German' } });
       expect((await manager.put(`${base}/default-locale`, { id: 'fr' })).statusCode).toBe(400);
+      // Its own route only: the space's update takes the name alone.
+      expect((await manager.patch(base, { name: 'Space', defaultLocaleId: 'en' })).statusCode).toBe(400);
+      expect((await reader.put(`${base}/default-locale`, { id: 'en' })).statusCode).toBe(403);
       expect((await manager.delete(`${base}/locales/de`)).statusCode).toBe(400);
       await manager.put(`${base}/default-locale`, { id: 'en' });
       const removed = await manager.delete(`${base}/locales/de`);

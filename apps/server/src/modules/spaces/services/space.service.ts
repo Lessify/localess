@@ -128,6 +128,17 @@ export class SpaceService {
     return this.findOne(spaceId);
   }
 
+  /**
+   * Its own process, not an update: the locale must be one of the space's, and the drafts that read the default go
+   * (content stored for the default is read as the new locale from then on).
+   */
+  async setDefaultLocale(spaceId: string, localeId: string): Promise<Space> {
+    const space = await this.require(spaceId);
+    if (!space.spaceLocales.some(it => it.localeId === localeId)) throw new BadRequestException(`Locale ${localeId} is not in space locales`);
+    await this.spaceRepository.setDefaultLocale(spaceId, localeId);
+    return this.findOne(spaceId);
+  }
+
   /** Everything in the space goes with it: rows by FK cascade; its stored files are queued and swept right after. */
   async remove(spaceId: string): Promise<void> {
     await this.require(spaceId);

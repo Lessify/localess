@@ -37,13 +37,13 @@ export type { FirebaseImportConnection, FirebaseImportStart } from './models/fir
 export type { SchemaCreate, SchemaRename, SchemaTypeFilter, SchemaUpdate } from './models/schema.zod.js';
 export type {
   SpaceCreate,
+  SpaceDefaultLocaleUpdate,
   SpaceEnvironmentCreate,
   SpaceEnvironmentOrder,
   SpaceEnvironmentUpdate,
   SpaceLocaleCreate,
   SpaceLocaleOrder,
   SpaceLocalePageable,
-  SpaceLocaleSetDefault,
   SpacePageable,
   SpaceUpdate,
 } from './models/space.zod.js';

@@ -8,10 +8,10 @@ import {
   Locale,
   Page,
   Space,
+  SpaceDefaultLocaleUpdate,
   SpaceLocale,
   SpaceLocaleCreate,
   SpaceLocaleOrder,
-  SpaceLocaleSetDefault,
 } from '@localess/shared';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { Observable } from 'rxjs';
@@ -37,7 +37,7 @@ export class LocaleService {
 
   /** Answers the space, with its new `defaultLocaleId`. */
   setDefault(spaceId: string, entity: Locale): Observable<Space> {
-    return this.http.put<Space>(`${this.base(spaceId)}/default-locale`, { id: entity.id } satisfies SpaceLocaleSetDefault);
+    return this.http.put<Space>(`${this.base(spaceId)}/default-locale`, { id: entity.id } satisfies SpaceDefaultLocaleUpdate);
   }
 
   /** Adds a locale from the list (`findAllLocales`); the server takes only its id. */

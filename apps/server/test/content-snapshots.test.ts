@@ -4,6 +4,7 @@ import { contentLinkSnapshots, contentSnapshots, schemas } from '../src/infra/da
 import { ContentService } from '../src/modules/contents/services/content.service.js';
 import { SchemaService } from '../src/modules/schemas/services/schema.service.js';
 import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { seedContent, seedSpace, TOKEN_DRAFT, TOKEN_PUBLIC, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
 import { C, contentName, S1 } from './ids.js';
@@ -125,10 +126,10 @@ describe('content snapshots', () => {
     it('changing the default locale drops every draft and keeps the published snapshots', async () => {
       await cvOf(draftUrl(C.home));
       const published = await snapshots('published');
-      await t.app.get(SpaceLocaleService).setDefault(S1, 'de');
+      await t.app.get(SpaceService).setDefaultLocale(S1, 'de');
       expect(await snapshots('draft')).toEqual([]);
       expect(await snapshots('published')).toEqual(published);
-      await t.app.get(SpaceLocaleService).setDefault(S1, 'en');
+      await t.app.get(SpaceService).setDefaultLocale(S1, 'en');
     });
 
     it('removing a locale drops its snapshots, draft and published', async () => {

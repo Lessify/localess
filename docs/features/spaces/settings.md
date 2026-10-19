@@ -66,7 +66,7 @@ event, so a change answers nothing the screen reads. The default is the space's 
 - `openDeleteDialog(element)` — `ConfirmationDialogComponent`, then deletes the locale (`DELETE /api/app/spaces/:s/locales/:locale`, 204). The action is disabled for the default locale, and the server refuses to delete it too
 - `openSetDefaultDialog(element)` — `ConfirmationDialogComponent` warning that content values stored for the default locale are not
   moved (they are read as the new locale from then on; translations are unaffected), then `PUT /api/app/spaces/:s/default-locale`
-  (answers the `Space`)
+  (answers the `Space`; served by `SpaceController.setDefaultLocale`, apart from `PATCH /spaces/:s`: its own process)
 - `move(element, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: swaps the locale with its neighbour in the space's order
   (read from `SpaceStore`, which holds all of them) and sends the whole order (`PUT /api/app/spaces/:s/locales/order {ids}`, every
   locale of the space once, 204)
