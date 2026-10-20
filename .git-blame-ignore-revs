@@ -2,3 +2,6 @@
 
 # style: format the repository with Prettier (no code change)
 8266c0acfdb00e7689d68cc6450c9121f384e4ec
+
+# style: sort imports and exports (simple-import-sort) in server, shared and e2e (no code change)
+b48e3ad6fc6cb75fb9ebd34c7b871f527f4e25b6

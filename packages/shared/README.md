@@ -15,6 +15,7 @@ The web app imports only the first entry point, so zod stays out of the browser 
 ```bash
 pnpm shared:build   # tsc -b → dist/ (the server build runs it first through project references)
 pnpm shared:test    # type-check + vitest
+pnpm --filter @localess/shared lint   # ESLint, type-aware, imports sorted (part of the root `pnpm lint`)
 ```
 
 The server compiles against `dist/`; the web app and the server tests resolve the source directly (tsconfig

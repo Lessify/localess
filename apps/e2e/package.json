@@ -6,6 +6,8 @@
   "scripts": {
     "test": "playwright test",
     "typecheck": "tsc -p tsconfig.json",
+    "lint": "tsc -b ../../packages/shared && eslint .",
+    "lint:fix": "tsc -b ../../packages/shared && eslint . --fix",
     "test:smoke": "playwright test --grep @smoke",
     "test:ui": "playwright test --ui",
     "report": "playwright show-report",
@@ -14,11 +16,15 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "catalog:",
     "@playwright/test": "^1.64.1",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-simple-import-sort": "catalog:",
     "oauth2-mock-server": "catalog:",
     "pg": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   }
 }

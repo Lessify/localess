@@ -19,7 +19,7 @@ pnpm e2e:ui        # Playwright UI mode: pick tests, watch them, time-travel thr
 ```
 
 Inside `apps/e2e` (or `pnpm --filter @localess/e2e <script>`): `test`, `test:smoke`, `test:ui`, `report` (open the
-last HTML report), `typecheck`. Playwright options pass through, without a `--` (pnpm would hand it to Playwright, which then takes every option after it
+last HTML report), `typecheck`, `lint` / `lint:fix` (ESLint, type-aware: a missing `await` is an error). Playwright options pass through, without a `--` (pnpm would hand it to Playwright, which then takes every option after it
 for a test filter): `pnpm e2e:run tests/contents --headed`,
 `--debug`, `--project=api`, `--repeat-each=3`, `--grep "Translations"`.
 

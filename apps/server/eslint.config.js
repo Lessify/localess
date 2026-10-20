@@ -1,5 +1,6 @@
 // @ts-check
 import eslint from '@eslint/js';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 // Type-aware rules for the bugs a compile does not catch: a promise not awaited, `any` spreading from untyped
@@ -13,7 +14,12 @@ export default tseslint.config(
     extends: [eslint.configs.recommended, tseslint.configs.recommendedTypeChecked],
     languageOptions: { parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname } },
     linterOptions: { reportUnusedDisableDirectives: 'error' },
+    plugins: { 'simple-import-sort': simpleImportSort },
     rules: {
+      // As the web: imports and exports in one order, fixed by `pnpm lint:fix` (side-effect imports such as
+      // reflect-metadata stay first).
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
       // `async () => value` where a promise is expected (a template's `bytes`, a mock, a `changeSpace` work) is the
       // plain way to write it; `() => Promise.resolve(value)` says the same with more noise.
       '@typescript-eslint/require-await': 'off',

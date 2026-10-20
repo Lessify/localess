@@ -38,13 +38,17 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 - **Request models:** no `zX` declared in the server; every schema an App API controller validates with comes from
   `@localess/shared/zod`, with its type `X` next to it.
 
-`apps/server/eslint.config.js` (part of `pnpm lint`, run in CI) checks what a compile does not: `eslint:recommended`
+`eslint.config.js` in `apps/server`, `packages/shared` and `apps/e2e` (part of `pnpm lint`, run in CI; the web has its
+own, with angular-eslint) checks what a compile does not: `eslint:recommended`
 and typescript-eslint's type-aware `recommendedTypeChecked` (a promise not awaited or passed where a callback is
 expected, `any` spreading from untyped values, an `unknown` printed in a template: use `errorMessage(error)` from
-`shared/utils/error-message.ts`, an assertion the compiler does not need, an enum compared with an unrelated value).
-In tests the `no-unsafe-*` rules are off (a response's `json()` is `any`). Off everywhere: `require-await`
+`shared/utils/error-message.ts`, an assertion the compiler does not need, an enum compared with an unrelated value), and
+the order of imports and exports (`simple-import-sort`, as the web; `pnpm lint:fix` sorts them). In e2e a floating
+promise is an `expect` or an action without `await`: a step that never ran.
+In tests (and in all of apps/e2e) the `no-unsafe-*` rules are off (a response's `json()` is `any`). Off everywhere: `require-await`
 (`async () => value` is how a promise-returning callback is written). Not used: `consistent-type-imports`, whose fix
 would turn the classes Nest injects by their runtime type into type imports. A disable says why
-(`// eslint-disable-next-line <rule> -- <reason>`); an unused one is an error.
+(`// eslint-disable-next-line <rule> -- <reason>`); an unused one is an error. `lint` in the server and e2e builds
+`packages/shared` first: they read its types from `dist`.
 
 A rule that changes changes here, in the check, and in the code, together.
