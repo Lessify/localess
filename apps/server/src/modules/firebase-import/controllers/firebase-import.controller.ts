@@ -1,8 +1,9 @@
 import type { FirebaseImportConnection, FirebaseImportStart } from '@localess/shared';
+import { ADMINS } from '@localess/shared';
 import { zFirebaseImportConnection, zFirebaseImportStart } from '@localess/shared/zod';
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 
-import { RequireAdmin } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
@@ -10,7 +11,7 @@ import { FirebaseImportService } from '../services/firebase-import.service.js';
 
 /** Admin → Spaces → Import from Firebase. The migration token is used for the request and never stored. */
 @Controller('api/app/admin/firebase-import')
-@RequireAdmin()
+@RequireRole(ADMINS)
 export class FirebaseImportController {
   constructor(private readonly firebaseImportService: FirebaseImportService) {}
 

@@ -1,7 +1,5 @@
-import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { users as usersTable } from '../src/infra/database/schema.js';
 import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, TestApp, XHR } from './test-app.js';
 
@@ -11,9 +9,8 @@ describe('own profile', () => {
   beforeAll(async () => {
     t = await createTestApp();
     const users = t.app.get(UserService);
-    await users.create({ email: 'me@example.com', password: 'old-pass', role: 'CUSTOM' });
-    await users.create({ email: 'taken@example.com', password: 'whatever', role: 'CUSTOM' });
-    await users.create({ email: 'locked@example.com', password: 'locked-pass', role: 'CUSTOM', lock: true });
+    await users.create({ email: 'me@example.com', password: 'old-pass', role: 'VIEWER' });
+    await users.create({ email: 'taken@example.com', password: 'whatever', role: 'VIEWER' });
   });
 
   afterAll(() => t?.close());
@@ -59,21 +56,5 @@ describe('own profile', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({ email: 'moved@example.com', emailVerified: false });
     await expect(login(t, 'moved@example.com', 'new-pass')).resolves.toContain('localess_session=');
-  });
-
-  it('refuses every change to a locked profile, which can still be read', async () => {
-    const cookie = await login(t, 'locked@example.com', 'locked-pass');
-    expect((await call(cookie, 'GET', '/api/app/me')).json()).toMatchObject({ lock: true });
-    for (const [method, url, payload] of [
-      ['PATCH', '/api/app/me', { displayName: 'New name' }],
-      ['PUT', '/api/app/me/email', { email: 'new@example.com', currentPassword: 'locked-pass' }],
-      ['PUT', '/api/app/me/password', { currentPassword: 'locked-pass', newPassword: 'new-pass-1' }],
-    ] as const) {
-      const response = await call(cookie, method, url, payload);
-      expect(response.statusCode).toBe(403);
-      expect(response.json().message).toBe('Your profile is locked');
-    }
-    const [row] = await t.db.select().from(usersTable).where(eq(usersTable.email, 'locked@example.com'));
-    expect(row.displayName).toBeNull();
   });
 });

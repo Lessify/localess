@@ -70,7 +70,7 @@ export class AuthController {
     await this.passwordResetService.confirm(body.token, body.password);
   }
 
-  /** The signed-in user, including role and permissions (replaces `getIdTokenResult().claims`). */
+  /** The signed-in user, with their role. */
   @Get('me')
   async me(@CurrentUser() user: UserEntity): Promise<{ user: UserDto }> {
     return { user: await this.authService.toUser(user) };

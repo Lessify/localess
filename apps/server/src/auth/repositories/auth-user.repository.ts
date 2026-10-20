@@ -54,7 +54,7 @@ export class AuthUserRepository {
     return transaction(this.db, tx, async t => {
       const [user] = await t
         .insert(users)
-        .values({ id: newUuid(), ...values, role: null, permissions: [], lock: false })
+        .values({ id: newUuid(), ...values, role: null })
         .returning();
       return user;
     });

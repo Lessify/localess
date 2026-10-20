@@ -15,7 +15,6 @@ import {
   TokenType,
   TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
-  UserPermission,
   WebHookErrorType,
   WebHookEvent,
   type WebHookPayloadData,
@@ -117,18 +116,9 @@ export const users = pgTable(
     disabled: boolean('disabled').notNull().default(false),
     // null = signed up, no access yet
     role: text('role', { enum: values(USER_ROLES) }),
-    permissions: text('permissions', { enum: values(UserPermission) })
-      .array()
-      .notNull()
-      .default([]),
-    lock: boolean('lock').notNull().default(false),
     ...timestamps,
   },
-  t => [
-    uniqueIndex('users_email_idx').on(sql`lower(${t.email})`),
-    oneOf('users_role_check', t.role, USER_ROLES),
-    allOf('users_permissions_check', t.permissions, values(UserPermission)),
-  ],
+  t => [uniqueIndex('users_email_idx').on(sql`lower(${t.email})`), oneOf('users_role_check', t.role, USER_ROLES)],
 );
 
 export const userCredentials = pgTable(

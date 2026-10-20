@@ -12,7 +12,7 @@ import { toTask } from '../../../shared/transformers/task.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { TaskRepository } from '../repositories/task.repository.js';
 import { taskFileKey, taskFilesPrefix } from '../utils/task.utils.js';
-import { assertCanManage } from '../utils/task-permissions.js';
+import { assertCanManage } from '../utils/task-roles.js';
 
 /** An export or metadata regeneration, as the client asks for it. */
 export type ExportTaskInput =

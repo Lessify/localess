@@ -1,10 +1,10 @@
-import { canGrant, canManageUser, type Page, type UserPageable, UserPermission, UserRole } from '@localess/shared';
+import type { Page, UserPageable, UserRole } from '@localess/shared';
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import { toPrincipal, toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
+import { toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
@@ -13,27 +13,8 @@ export interface CreateUser {
   password?: string;
   displayName?: string;
   emailVerified?: boolean;
+  /** Absent or `null`: no access yet. */
   role?: UserRole | null;
-  permissions?: `${UserPermission}`[];
-  lock?: boolean;
-}
-
-export interface AccessUpdate {
-  role?: UserRole | null;
-  permissions?: `${UserPermission}`[];
-  lock?: boolean;
-}
-
-/** Same normalisation the UI applied before writing `users/{uid}`: admins carry no permissions or lock. */
-export function normalizeAccess(update: AccessUpdate): { role: UserRole | null; permissions: `${UserPermission}`[]; lock: boolean } {
-  switch (update.role) {
-    case 'ADMIN':
-      return { role: 'ADMIN', permissions: [], lock: false };
-    case 'CUSTOM':
-      return { role: 'CUSTOM', permissions: [...new Set(update.permissions ?? [])], lock: update.lock ?? false };
-    default:
-      return { role: null, permissions: [], lock: false };
-  }
 }
 
 function found(user: UserEntity | undefined): UserEntity {
@@ -42,8 +23,8 @@ function found(user: UserEntity | undefined): UserEntity {
 }
 
 /**
- * Admin → Users. Enforces what firestore.rules enforced on `users/{uid}` plus the `user.invite`
- * callable: `canGrant` for what may be given, `canManageUser` for who may be changed or removed.
+ * Admin → Users (`ADMINS` only, on the controller): one role per user. At least one active admin always remains
+ * (`UserRepository`), and nobody disables themselves.
  */
 @Injectable()
 export class UserService {
@@ -66,9 +47,8 @@ export class UserService {
     return this.toDto(await this.findOneRow(id));
   }
 
-  /** A new user, invited by `caller`: they may only give what they hold themselves. */
-  async invite(caller: UserEntity, input: CreateUser): Promise<UserDto> {
-    if (!canGrant(toPrincipal(caller), input.role, input.permissions)) throw new ForbiddenException();
+  /** A new user, with the role given (none: no access yet). */
+  async invite(input: CreateUser): Promise<UserDto> {
     return this.toDto(await this.create(input));
   }
 
@@ -82,44 +62,38 @@ export class UserService {
         email: input.email,
         emailVerified: input.emailVerified ?? false,
         displayName: input.displayName || null,
-        ...normalizeAccess(input),
+        role: input.role ?? null,
       },
       passwordHash,
     );
   }
 
-  /** Role and permissions of another user, changed by `caller`. */
-  async changeAccess(caller: UserEntity, id: string, update: AccessUpdate): Promise<UserDto> {
-    const principal = toPrincipal(caller);
-    const target = await this.findOneRow(id);
-    if (!canManageUser(principal, toPrincipal(target)) || !canGrant(principal, update.role, update.permissions)) {
-      throw new ForbiddenException();
-    }
-    return this.toDto(await this.updateAccess(id, update));
+  /** A user's role (`null`: no access). The last active admin keeps theirs (`UserRepository`). */
+  async changeAccess(id: string, role: UserRole | null): Promise<UserDto> {
+    await this.findOneRow(id);
+    return this.toDto(await this.updateAccess(id, role));
   }
 
-  async updateAccess(id: string, update: AccessUpdate): Promise<UserEntity> {
-    return found(await this.userRepository.update(id, { ...normalizeAccess(update) }));
+  async updateAccess(id: string, role: UserRole | null): Promise<UserEntity> {
+    return found(await this.userRepository.update(id, { role }));
   }
 
   /** Blocks (or restores) sign-in; disabling signs the user out at once. */
   async changeStatus(caller: UserEntity, id: string, disabled: boolean): Promise<UserDto> {
     const target = await this.findOneRow(id);
     // Nobody disables themselves: an admin could lock the install out of user management.
-    if (caller.id === target.id || !canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
+    if (caller.id === target.id) throw new ForbiddenException();
     return this.toDto(found(await this.userRepository.setDisabled(id, disabled)));
   }
 
   /** A one-hour reset link for another user, at the app's public `origin`. */
-  async createPasswordResetLink(caller: UserEntity, id: string, origin: string): Promise<{ url: string; expiresAt: Date }> {
+  async createPasswordResetLink(id: string, origin: string): Promise<{ url: string; expiresAt: Date }> {
     const target = await this.findOneRow(id);
-    if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
     return this.passwordResetService.createLink(target, origin);
   }
 
-  async remove(caller: UserEntity, id: string): Promise<void> {
-    const target = await this.findOneRow(id);
-    if (!canManageUser(toPrincipal(caller), toPrincipal(target))) throw new ForbiddenException();
+  async remove(id: string): Promise<void> {
+    await this.findOneRow(id);
     // Sessions, credentials and identities cascade.
     if (!(await this.userRepository.delete(id))) throw new NotFoundException('User not found');
   }

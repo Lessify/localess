@@ -1,4 +1,4 @@
-import type { Principal, UserPermission, UserRole } from '@localess/shared';
+import type { UserRole } from '@localess/shared';
 
 import type { UserEntity } from '../entities/user.entity.js';
 
@@ -11,8 +11,6 @@ export interface UserDto {
   photoURL?: string;
   disabled: boolean;
   role?: UserRole;
-  permissions?: `${UserPermission}`[];
-  lock?: boolean;
   /** Firebase provider ids, kept for UI compatibility: 'password', 'google.com', 'microsoft.com'. */
   providers: string[];
   createdAt: string;
@@ -20,11 +18,6 @@ export interface UserDto {
 }
 
 const PROVIDER_IDS: Record<string, string> = { google: 'google.com', microsoft: 'microsoft.com' };
-
-/** Who the user is for the permission checks of `@localess/shared` (`canPerform`, `canGrant`, `canManageUser`). */
-export function toPrincipal(user: Pick<UserEntity, 'id' | 'role' | 'permissions'>): Principal {
-  return { id: user.id, role: user.role ?? null, permissions: user.permissions };
-}
 
 /** A user with how they sign in (`logins`: `password`, `google`, `microsoft`, from `findUserLogins`). */
 export function toUser(user: UserEntity, logins: string[] = []): UserDto {
@@ -36,7 +29,6 @@ export function toUser(user: UserEntity, logins: string[] = []): UserDto {
     ...(user.photoUrl ? { photoURL: user.photoUrl } : {}),
     disabled: user.disabled,
     ...(user.role ? { role: user.role } : {}),
-    ...(user.role === 'CUSTOM' ? { permissions: user.permissions, lock: user.lock } : {}),
     providers: logins.map(it => PROVIDER_IDS[it] ?? it),
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),

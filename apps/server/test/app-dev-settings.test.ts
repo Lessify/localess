@@ -58,13 +58,13 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       .insert(schemas)
       .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
+    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' }));
+    // An editor: content tasks, not schema tasks (a developer's).
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {
-      role: 'CUSTOM',
-      permissions: ['CONTENT_EXPORT', 'CONTENT_IMPORT', 'DEV_OPEN_API'],
+      role: 'EDITOR',
     });
     exporter = api(t, exporterCookie);
-    nobody = api(t, await userWithAccess(t, 'nobody@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    nobody = api(t, await userWithAccess(t, 'nobody@example.com', { role: 'VIEWER' }));
   });
 
   afterAll(() => t?.close());
@@ -276,12 +276,12 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   describe('tasks', () => {
     const base = `/api/app/spaces/${S1}/tasks`;
 
-    it('creates exports for the permission the kind names', async () => {
+    it('creates exports for the role the kind names', async () => {
       const response = await exporter.post(base, { kind: 'CONTENT_EXPORT', path: 'blog' });
       expect(response.statusCode).toBe(201);
       expect(response.json()).toMatchObject({ kind: 'CONTENT_EXPORT', status: 'INITIATED', path: 'blog' });
       expect(response.json()).not.toHaveProperty('lockedBy');
-      expect((await exporter.post(base, { kind: 'ASSET_EXPORT' })).statusCode).toBe(403);
+      expect((await exporter.post(base, { kind: 'SCHEMA_EXPORT' })).statusCode).toBe(403);
       expect((await nobody.post(base, { kind: 'CONTENT_EXPORT' })).statusCode).toBe(403);
     });
 
@@ -338,7 +338,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await exporter.get(`${base}/${list[2].id}/download`)).statusCode).toBe(404);
     });
 
-    it('deletes with the kind permission, removing logs and files', async () => {
+    it('deletes with the role the kind names, removing logs and files', async () => {
       const list = (await exporter.get(base)).json().items;
       const imported = list.find((it: { kind: string }) => it.kind === 'CONTENT_IMPORT');
       const regen = list.find((it: { kind: string }) => it.kind === 'ASSET_REGEN_METADATA');
@@ -350,10 +350,11 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   });
 
   describe('OpenAPI', () => {
-    it('generates the document for DEV_OPEN_API', async () => {
-      const response = await exporter.post(`/api/app/spaces/${S1}/open-api`);
+    it('generates the document for a developer, not an editor', async () => {
+      const response = await manager.post(`/api/app/spaces/${S1}/open-api`);
       expect(response.statusCode).toBe(200);
       expect(response.json().openapi).toMatch(/^3\./);
+      expect((await exporter.post(`/api/app/spaces/${S1}/open-api`)).statusCode).toBe(403);
       expect((await nobody.post(`/api/app/spaces/${S1}/open-api`)).statusCode).toBe(403);
     });
   });

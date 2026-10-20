@@ -1,5 +1,5 @@
 import type { MultipartFile } from '@fastify/multipart';
-import { type AssetFolderCreate, type AssetListQuery, type AssetMove, type AssetUpdate, UserPermission } from '@localess/shared';
+import { ANY_ROLE, type AssetFolderCreate, type AssetListQuery, type AssetMove, type AssetUpdate, CONTENT_WRITERS } from '@localess/shared';
 import { zAssetFolderCreate, zAssetListQuery, zAssetMove, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
 import {
   BadRequestException,
@@ -18,7 +18,7 @@ import {
 } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { AssetService } from '../services/asset.service.js';
 
@@ -39,7 +39,7 @@ export class AssetController {
 
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
-  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  @RequireRole(ANY_ROLE)
   async findAll(@Param('spaceId') spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery) {
     const { parentId, ...rest } = query;
     return this.assetService.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
@@ -47,32 +47,32 @@ export class AssetController {
 
   /** Every folder of the space (`{ id, parentId, name }`), for the editor's breadcrumbs and move targets. */
   @Get('folders')
-  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  @RequireRole(ANY_ROLE)
   async findFolders(@Param('spaceId') spaceId: string) {
     return this.assetService.findFolders(spaceId);
   }
 
   @Get('count')
-  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  @RequireRole(ANY_ROLE)
   async count(@Param('spaceId') spaceId: string, @Query('kind') kind?: 'FOLDER' | 'FILE') {
     return { count: await this.assetService.count(spaceId, kind === 'FOLDER' || kind === 'FILE' ? kind : undefined) };
   }
 
   @Get(':id')
-  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  @RequireRole(ANY_ROLE)
   async findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.assetService.findOne(spaceId, id);
   }
 
   /** How many contents use it (a folder: any file under it), for the warning before a delete. */
   @Get(':id/usage')
-  @RequirePermission(UserPermission.ASSET_READ, UserPermission.CONTENT_READ)
+  @RequireRole(ANY_ROLE)
   findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.assetService.findUsage(spaceId, id);
   }
 
   @Post('folders')
-  @RequirePermission(UserPermission.ASSET_CREATE)
+  @RequireRole(CONTENT_WRITERS)
   async createFolder(@Param('spaceId') spaceId: string, @Body({ schema: zAssetFolderCreate }) body: AssetFolderCreate) {
     return this.assetService.createFolder(spaceId, body.parentId ?? null, body.name);
   }
@@ -82,7 +82,7 @@ export class AssetController {
    * **before** the `file` part. Name and extension default to the uploaded filename's.
    */
   @Post('files')
-  @RequirePermission(UserPermission.ASSET_CREATE)
+  @RequireRole(CONTENT_WRITERS)
   async upload(@Param('spaceId') spaceId: string, @Req() request: FastifyRequest) {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
@@ -108,7 +108,7 @@ export class AssetController {
   }
 
   @Patch(':id')
-  @RequirePermission(UserPermission.ASSET_UPDATE)
+  @RequireRole(CONTENT_WRITERS)
   async update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
@@ -118,14 +118,14 @@ export class AssetController {
   }
 
   @Put(':id/parent')
-  @RequirePermission(UserPermission.ASSET_UPDATE)
+  @RequireRole(CONTENT_WRITERS)
   async move(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zAssetMove }) body: AssetMove) {
     return this.assetService.move(spaceId, id, body.parentId);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission(UserPermission.ASSET_DELETE)
+  @RequireRole(CONTENT_WRITERS)
   async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.assetService.remove(spaceId, id);
   }

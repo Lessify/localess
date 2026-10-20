@@ -1,16 +1,17 @@
 import {
+  ANY_ROLE,
+  DEVELOPERS,
   type IdName,
   type Page,
   type SpaceLocale,
   type SpaceLocaleCreate,
   type SpaceLocaleMove,
   type SpaceLocalePageable,
-  UserPermission,
 } from '@localess/shared';
 import { zSpaceLocaleCreate, zSpaceLocaleMove, zSpaceLocalePageable } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
 
-import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceLocaleService } from '../services/space-locale.service.js';
 
@@ -21,7 +22,7 @@ export class SpaceLocaleController {
 
   /** One page for Space Settings → Locales: `?page=&size=&sort=&direction=` (Pageable), `?search=` (id or name). */
   @Get()
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findAll(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Query({ schema: zSpaceLocalePageable }) query: SpaceLocalePageable,
@@ -31,13 +32,13 @@ export class SpaceLocaleController {
 
   /** Every locale of the space, in its order, as `{ id, name }`. */
   @Get('names')
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findAllNames(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<IdName[]> {
     return this.spaceLocaleService.findAllNames(spaceId);
   }
 
   @Post()
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   create(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate,
@@ -47,7 +48,7 @@ export class SpaceLocaleController {
 
   @Post(':localeId/move')
   @HttpCode(204)
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   async move(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('localeId') localeId: string,
@@ -58,7 +59,7 @@ export class SpaceLocaleController {
 
   @Delete(':localeId')
   @HttpCode(204)
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   async remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('localeId') localeId: string): Promise<void> {
     await this.spaceLocaleService.remove(spaceId, localeId);
   }

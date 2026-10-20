@@ -5,7 +5,7 @@ Each model is defined once here; neither app redeclares it.
 
 | Entry point | Contents |
 |---|---|
-| `@localess/shared` | Models and enums (`src/models/*.model.ts`, the JSON wire format), permissions (`canPerform`, `canGrant`, `canManageUser`), locales, `extractContent` |
+| `@localess/shared` | Models and enums (`src/models/*.model.ts`, the JSON wire format), roles (`roles.ts`: the role lists and `hasRole`), locales, `extractContent` |
 | `@localess/shared/zod` | Zod validators for request bodies and imports (`src/models/*.zod.ts`) |
 
 The web app imports only the first entry point, so zod stays out of the browser bundle.

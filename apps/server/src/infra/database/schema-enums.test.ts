@@ -9,7 +9,6 @@ import {
   TokenType,
   TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
-  UserPermission,
   WebHookErrorType,
   WebHookEvent,
   WebHookStatus,
@@ -25,7 +24,6 @@ import { HASH_ALGORITHMS, SNAPSHOT_VERSIONS } from './schema.js';
 /** Every column with a fixed set of values, and the values (from @localess/shared or the server) it accepts. */
 const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][] = [
   ['users', 'role', USER_ROLES],
-  ['users', 'permissions', Object.values(UserPermission)],
   ['user_credentials', 'hash_algo', HASH_ALGORITHMS],
   ['user_identities', 'provider', OAUTH_PROVIDERS],
   ['contents', 'kind', Object.values(ContentKind)],
@@ -79,10 +77,6 @@ describe('columns with a fixed set of values', () => {
       pool.query(`insert into users (id, email, role) values (gen_random_uuid(), $1, $2)`, [`${role}@example.com`, role]);
     await expect(insert('admin')).rejects.toMatchObject({ code: '23514' });
     await expect(insert('ADMIN')).resolves.toBeDefined();
-    await expect(
-      pool.query(`insert into users (id, email, permissions) values (gen_random_uuid(), 'p@example.com', '{NOPE}')`),
-    ).rejects.toMatchObject({
-      code: '23514',
-    });
+    await expect(insert('CUSTOM')).rejects.toMatchObject({ code: '23514' });
   });
 });

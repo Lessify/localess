@@ -21,12 +21,12 @@ describe('app API: schemas', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'CUSTOM',
-        permissions: ['SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE'],
+        role: 'DEVELOPER',
       }),
     );
-    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
-    other = api(t, await userWithAccess(t, 'other@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] }));
+    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
+    // Every role reads schemas: only a user without one may not.
+    other = api(t, await userWithAccess(t, 'other@example.com', { role: null }));
   });
 
   afterAll(() => t?.close());
@@ -44,7 +44,7 @@ describe('app API: schemas', () => {
     expect((await editor.post('/api/app/spaces/missing/schemas', { name: 'x', type: 'NODE' })).statusCode).toBe(404);
   });
 
-  it('can be read with SCHEMA_READ or CONTENT_READ, ordered by name and filtered by type', async () => {
+  it('can be read by any role, ordered by name and filtered by type', async () => {
     ids['colors'] = (await editor.post(base, { name: 'colors', type: 'ENUM' })).json().id;
     expect((await contentReader.get(base)).json().map((s: { name: string }) => s.name)).toEqual(['colors', 'page']);
     expect((await contentReader.get(`${base}?type=ENUM`)).json().map((s: { id: string }) => s.id)).toEqual([ids['colors']]);

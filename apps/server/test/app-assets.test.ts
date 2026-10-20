@@ -42,11 +42,10 @@ describe('app API: assets', () => {
     t = await createTestApp({ LOCALESS_UPLOAD_MAX_MB: '1' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     cookie = await userWithAccess(t, 'editor@example.com', {
-      role: 'CUSTOM',
-      permissions: ['ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE'],
+      role: 'EDITOR',
     });
     editor = api(t, cookie);
-    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
   });
 
   afterAll(() => t?.close());
@@ -202,7 +201,7 @@ describe('app API: assets', () => {
     });
 
     it('requires ASSET_CREATE and a multipart body', async () => {
-      const readerCookie = await userWithAccess(t, 'r2@example.com', { role: 'CUSTOM', permissions: ['ASSET_READ'] });
+      const readerCookie = await userWithAccess(t, 'r2@example.com', { role: 'VIEWER' });
       expect((await upload({}, { filename: 'a.txt', type: 'text/plain', bytes: Buffer.from('x') }, readerCookie)).statusCode).toBe(403);
       expect((await editor.post(`${base}/files`, { file: 'nope' })).statusCode).toBe(400);
     });

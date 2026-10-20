@@ -19,7 +19,7 @@ export * from './models/translate.model.js';
 export * from './models/translation.model.js';
 export * from './models/user.model.js';
 export * from './models/webhook.model.js';
-export * from './permissions.js';
+export * from './roles.js';
 
 // The types of the App API requests, inferred from their schemas in '@localess/shared/zod' (one definition for the
 // server's validation and the web's bodies). Type-only, so the web app never loads zod.

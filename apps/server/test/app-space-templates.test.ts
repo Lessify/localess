@@ -85,12 +85,10 @@ describe('app API: space templates', () => {
     beforeAll(async () => {
       t = await createTestApp();
       admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
-      manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
-      designer = api(
-        t,
-        await userWithAccess(t, 'designer@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT', 'SCHEMA_CREATE'] }),
-      );
-      reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['SCHEMA_CREATE', 'CONTENT_CREATE'] }));
+      // Creating a space, from a template or not, is an admin's: two admins, and a developer who may not.
+      manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'ADMIN' }));
+      designer = api(t, await userWithAccess(t, 'designer@example.com', { role: 'ADMIN' }));
+      reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'DEVELOPER' }));
     });
 
     afterAll(() => t?.close());
@@ -99,7 +97,7 @@ describe('app API: space templates', () => {
       expect((await admin.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
     });
 
-    it('offers every template to whoever may create a space (SPACE_MANAGEMENT), and none to anyone else', async () => {
+    it('offers every template to whoever may create a space (an admin), and none to anyone else', async () => {
       expect((await manager.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
       expect((await designer.get('/api/app/spaces/templates')).json()).toEqual(USER_TEMPLATES);
       expect((await reader.get('/api/app/spaces/templates')).statusCode).toBe(403);
@@ -139,7 +137,7 @@ describe('app API: space templates', () => {
       expect(await counts(t)).toEqual(before);
     });
 
-    it('needs only the permission to create a space: a template asks for nothing more', async () => {
+    it('needs only the role that creates a space: a template asks for nothing more', async () => {
       expect((await manager.post('/api/app/spaces', { name: 'Blog too', template: 'blog' })).statusCode).toBe(201);
       const before = await counts(t);
       expect((await reader.post('/api/app/spaces', { name: 'Nope', template: 'blog' })).statusCode).toBe(403);

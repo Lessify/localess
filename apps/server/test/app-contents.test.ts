@@ -56,11 +56,10 @@ describe('app API: contents', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'CUSTOM',
-        permissions: ['CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH'],
+        role: 'EDITOR',
       }),
     );
-    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
 
     received = [];
     receiver = createServer((request, response) => {
@@ -489,7 +488,7 @@ describe('app API: contents', () => {
 
   // This file runs with LOCALESS_WEBHOOK_ALLOW_INTERNAL=true (the local receiver above).
   it('saves a local http webhook when internal targets are allowed, as delivery does', async () => {
-    const manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
+    const manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' }));
     const created = await manager.post(`/api/app/spaces/${S1}/webhooks`, {
       name: 'Local',
       url: 'http://localhost:4000/hook',

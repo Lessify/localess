@@ -1,4 +1,6 @@
 import {
+  ANY_ROLE,
+  DEVELOPERS,
   type IdNameUrl,
   type Page,
   type SpaceEnvironment,
@@ -6,12 +8,11 @@ import {
   type SpaceEnvironmentMove,
   type SpaceEnvironmentPageable,
   type SpaceEnvironmentUpdate,
-  UserPermission,
 } from '@localess/shared';
 import { zSpaceEnvironmentCreate, zSpaceEnvironmentMove, zSpaceEnvironmentPageable, zSpaceEnvironmentUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 
-import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceEnvironmentService } from '../services/space-environment.service.js';
 
@@ -22,7 +23,7 @@ export class SpaceEnvironmentController {
 
   /** One page for Space Settings → Visual Editor: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name or URL). */
   @Get()
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findAll(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Query({ schema: zSpaceEnvironmentPageable }) query: SpaceEnvironmentPageable,
@@ -32,13 +33,13 @@ export class SpaceEnvironmentController {
 
   /** Every environment of the space, in its order, as `{ id, name, url }`: the Visual Editor's list (before `:environmentId`). */
   @Get('names')
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findAllNames(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<IdNameUrl[]> {
     return this.spaceEnvironmentService.findAllNames(spaceId);
   }
 
   @Post()
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   create(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate,
@@ -48,7 +49,7 @@ export class SpaceEnvironmentController {
 
   @Post(':environmentId/move')
   @HttpCode(204)
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   async move(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,
@@ -58,7 +59,7 @@ export class SpaceEnvironmentController {
   }
 
   @Put(':environmentId')
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   update(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,
@@ -69,7 +70,7 @@ export class SpaceEnvironmentController {
 
   @Delete(':environmentId')
   @HttpCode(204)
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   async remove(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('environmentId', UuidParamPipe) environmentId: string,

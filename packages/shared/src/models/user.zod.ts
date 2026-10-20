@@ -1,32 +1,24 @@
 import { z } from 'zod';
 
-import { USER_PERMISSIONS } from '../permissions.js';
 import { zPageable, zSearch } from './page.zod.js';
-import { PASSWORD_MIN_LENGTH, USER_ROLES, USER_SORT_FIELDS, type UserPermission } from './user.model.js';
+import { PASSWORD_MIN_LENGTH, USER_ROLES, USER_SORT_FIELDS } from './user.model.js';
 
 // App API requests of Admin → Users and of the own profile (`/api/app/me`).
 
-/** `null` takes every access away (an invited user without access, or one whose role is removed). */
-const zRole = z.enum(USER_ROLES).nullish();
-const zPermissions = z.array(z.enum(USER_PERMISSIONS as [UserPermission, ...UserPermission[]])).optional();
+/** A user's one role; `null` takes every access away (an invited user without access, or one whose role is removed). */
+const zRole = z.enum(USER_ROLES).nullable();
 
-/** `POST /api/app/users`. */
-export const zUserInvite = z.object({
+/** `POST /api/app/users`: no role given, no access yet. Strict: an old client's `permissions` is a 400, not dropped. */
+export const zUserInvite = z.strictObject({
   email: z.string().trim().email(),
   password: z.string().min(PASSWORD_MIN_LENGTH),
   displayName: z.string().trim().max(200).optional(),
-  role: zRole,
-  permissions: zPermissions,
-  lock: z.boolean().optional(),
+  role: zRole.optional(),
 });
 export type UserInvite = z.infer<typeof zUserInvite>;
 
-/** `PATCH /api/app/users/:id`: the access. */
-export const zUserUpdate = z.object({
-  role: zRole,
-  permissions: zPermissions,
-  lock: z.boolean().optional(),
-});
+/** `PATCH /api/app/users/:id`: the role. */
+export const zUserUpdate = z.strictObject({ role: zRole });
 export type UserUpdate = z.infer<typeof zUserUpdate>;
 
 /** `PATCH /api/app/users/:id/status`. */

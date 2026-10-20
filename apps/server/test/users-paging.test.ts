@@ -20,7 +20,7 @@ describe('app API: users, one page at a time', () => {
     for (let i = 0; i < 25; i++) {
       const email = `user-${String(i).padStart(2, '0')}@example.com`;
       const displayName = i === 7 ? 'Alice Smith' : i === 12 ? 'Malice Jones' : undefined;
-      await service.create({ email, password: 'secret1', role: i % 3 === 0 ? 'ADMIN' : 'CUSTOM', permissions: [], displayName });
+      await service.create({ email, password: 'secret1', role: i % 3 === 0 ? 'ADMIN' : 'EDITOR', displayName });
       emails.push(email);
     }
     await t.db

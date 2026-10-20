@@ -241,12 +241,9 @@ CREATE TABLE "users" (
 	"photo_url" text,
 	"disabled" boolean DEFAULT false NOT NULL,
 	"role" text,
-	"permissions" text[] DEFAULT '{}' NOT NULL,
-	"lock" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_role_check" CHECK ("users"."role" in ('ADMIN', 'CUSTOM')),
-	CONSTRAINT "users_permissions_check" CHECK ("users"."permissions" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[])
+	CONSTRAINT "users_role_check" CHECK ("users"."role" in ('ADMIN', 'DEVELOPER', 'EDITOR', 'TRANSLATOR', 'VIEWER'))
 );
 --> statement-breakpoint
 CREATE TABLE "webhook_logs" (

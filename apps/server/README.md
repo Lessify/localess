@@ -55,7 +55,7 @@ src/
   cli/          commands, check
 ```
 
-Domain types, permission rules and validators come from `@localess/shared` (`packages/shared`). A feature
+Domain types, role lists and validators come from `@localess/shared` (`packages/shared`). A feature
 module imports `ApiTokenModule` when it has a CDN or Management controller and no other feature module (a space it needs
 is read with its own query); infrastructure modules (database, storage, events) and `SharedModule` are global.
 
@@ -93,12 +93,10 @@ is read with its own query); infrastructure modules (database, storage, events) 
 ## Authentication
 
 - Session cookie `localess_session` (HttpOnly, SameSite=Lax, Secure on https); only its SHA-256 is
-  stored. 30-day sliding expiry. Role and permissions are read from `users` on every request.
+  stored. 30-day sliding expiry. The role is read from `users` on every request.
 - Every non-GET request authenticated by the cookie must send `X-Requested-With` (CSRF).
-- Routes need a session unless `@Public()`; access rules use `@RequireAnyRole()`,
-  `@RequirePermission(...)` (any of) and `@RequireAllPermissions(...)` from `src/auth/decorators.ts`.
-- `canPerform`, `canGrant` and `canManageUser` (ported from firestore.rules and functions/src/utils) live in
-  `packages/shared/src/permissions.ts`, so the UI applies the same rules.
+- Routes need a session unless `@Public()`; `@RequireRole(role | list)` from `src/auth/decorators.ts` names who gets
+  in, with the lists of `packages/shared/src/roles.ts`, which the web's guards read too (docs/frontend-permissions.md).
 
 | Endpoint | |
 |---|---|
@@ -130,7 +128,7 @@ function, with `public`/`preview` tokens in `?token=`; the Management API (CLI, 
 ## App API (`/api/app`)
 
 What the SPA used Firestore, Storage and the callables for. Session cookie + `X-Requested-With` on
-writes; permissions as in firestore.rules (see `src/modules/*/*.controller.ts`). Responses keep the
+writes; the roles on each route (`@RequireRole`, see `src/modules/*/*.controller.ts`). Responses keep the
 Firestore document shapes plus `id`, with ISO timestamps and absent (not null) optional fields.
 
 | Area | Endpoints |

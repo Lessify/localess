@@ -76,22 +76,10 @@ describe('app API: translations, machine translation, Unsplash', () => {
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'CUSTOM',
-        permissions: [
-          'TRANSLATION_READ',
-          'TRANSLATION_CREATE',
-          'TRANSLATION_UPDATE',
-          'TRANSLATION_DELETE',
-          'TRANSLATION_PUBLISH',
-          'CONTENT_UPDATE',
-          'ASSET_CREATE',
-        ],
+        role: 'EDITOR',
       }),
     );
-    reader = api(
-      t,
-      await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'] }),
-    );
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'TRANSLATOR' }));
   });
 
   afterAll(async () => {
@@ -241,7 +229,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await stored('taken')).locales).not.toHaveProperty('fr');
     });
 
-    it('translates single strings and batches for editors with both permissions', async () => {
+    it('translates single strings and batches for translators and up, not for a viewer', async () => {
       expect(
         (await editor.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: '<p>Hi</p>', format: 'html' })).json(),
       ).toEqual({
@@ -253,8 +241,9 @@ describe('app API: translations, machine translation, Unsplash', () => {
         items: [{ id: 'a', content: 'One : en -> de' }],
         failed: [],
       });
-      // TRANSLATION_UPDATE alone is not enough: the callable required CONTENT_UPDATE too.
-      expect((await reader.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(403);
+      expect((await reader.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(200);
+      const viewer = api(t, await userWithAccess(t, 'viewer@example.com', { role: 'VIEWER' }));
+      expect((await viewer.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(403);
     });
   });
 

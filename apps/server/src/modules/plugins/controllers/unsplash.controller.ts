@@ -1,8 +1,8 @@
-import { type UnsplashSearch, UserPermission } from '@localess/shared';
+import { CONTENT_WRITERS, type UnsplashSearch } from '@localess/shared';
 import { zUnsplashSearch } from '@localess/shared/zod';
 import { Controller, Get, Query } from '@nestjs/common';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UnsplashService } from '../services/unsplash.service.js';
 
 /**
@@ -10,7 +10,7 @@ import { UnsplashService } from '../services/unsplash.service.js';
  * ASSET_CREATE only: it spends the operator's API quota. The key comes from UNSPLASH_API_KEY.
  */
 @Controller('api/app/plugins/unsplash')
-@RequirePermission(UserPermission.ASSET_CREATE)
+@RequireRole(CONTENT_WRITERS)
 export class UnsplashController {
   constructor(private readonly unsplashService: UnsplashService) {}
 

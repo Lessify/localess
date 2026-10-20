@@ -1,4 +1,7 @@
 import {
+  ADMINS,
+  ANY_ROLE,
+  DEVELOPERS,
   type IdName,
   type Page,
   type Space,
@@ -8,12 +11,11 @@ import {
   type SpacePageable,
   type SpaceTemplateId,
   type SpaceUpdate,
-  UserPermission,
 } from '@localess/shared';
 import { zSpaceCreate, zSpaceDefaultLocaleUpdate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 
-import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceService } from '../services/space.service.js';
 
@@ -27,46 +29,46 @@ export class SpaceController {
    * `?importing=false`. SPACE_MANAGEMENT only: each item carries its Firebase import (who ran it, from where).
    */
   @Get()
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(ADMINS)
   findAll(@Query({ schema: zSpacePageable }) query: SpacePageable): Promise<Page<Space>> {
     return this.spaceService.findAll(query);
   }
 
   /** Every space that can be opened, as `{ id, name }`: the sidebar's list (before `:spaceId`, as `templates`). */
   @Get('names')
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findAllNames(): Promise<IdName[]> {
     return this.spaceService.findAllNames();
   }
 
   /** The templates a space may be created from (before `:spaceId`, which would take `templates` as an id). */
   @Get('templates')
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(ADMINS)
   findTemplates(): SpaceTemplateId[] {
     return this.spaceService.findTemplates();
   }
 
   @Get(':spaceId')
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findOne(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<Space> {
     return this.spaceService.findOne(spaceId);
   }
 
   @Post()
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(ADMINS)
   create(@Body({ schema: zSpaceCreate }) body: SpaceCreate): Promise<Space> {
     return this.spaceService.create(body);
   }
 
   @Patch(':spaceId')
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   update(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceUpdate }) body: SpaceUpdate): Promise<Space> {
     return this.spaceService.update(spaceId, body);
   }
 
   /** Apart from `PATCH`: a different process (the locale must be the space's; the drafts that read the default go). */
   @Put(':spaceId/default-locale')
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   setDefaultLocale(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate,
@@ -76,14 +78,14 @@ export class SpaceController {
 
   @Delete(':spaceId')
   @HttpCode(204)
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(ADMINS)
   async remove(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<void> {
     await this.spaceService.remove(spaceId);
   }
 
   /** Same audience as reading the space: the dashboard shows it to anyone who opens it. */
   @Get(':spaceId/overview')
-  @RequireAnyRole()
+  @RequireRole(ANY_ROLE)
   findOverview(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<SpaceOverview> {
     return this.spaceService.findOverview(spaceId);
   }

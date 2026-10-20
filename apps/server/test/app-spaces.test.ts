@@ -31,9 +31,9 @@ describe('app API: spaces, locales, instance label', () => {
     t = await createTestApp();
     adminCookie = await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' });
     admin = api(t, adminCookie);
-    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] });
+    managerCookie = await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' });
     manager = api(t, managerCookie);
-    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] });
+    readerCookie = await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' });
     reader = api(t, readerCookie);
     noRole = api(t, await userWithAccess(t, 'new@example.com', { role: null }));
   });
@@ -66,9 +66,10 @@ describe('app API: spaces, locales, instance label', () => {
 
     let spaceId: string;
 
-    it('lets SPACE_MANAGEMENT create a space with the default locale', async () => {
+    it('lets an admin create a space with the default locale; no other role', async () => {
       expect((await reader.post('/api/app/spaces', { name: 'Nope' })).statusCode).toBe(403);
-      const response = await manager.post('/api/app/spaces', { name: 'Marketing' });
+      expect((await manager.post('/api/app/spaces', { name: 'Nope' })).statusCode).toBe(403);
+      const response = await admin.post('/api/app/spaces', { name: 'Marketing' });
       expect(response.statusCode).toBe(201);
       expect(response.json()).toMatchObject({
         name: 'Marketing',
@@ -85,12 +86,13 @@ describe('app API: spaces, locales, instance label', () => {
       expect(spaceId).toMatch(UUID_V7);
     });
 
-    it('lists spaces by name for SPACE_MANAGEMENT, and their names for any role, but not for users without one', async () => {
+    it('lists spaces by name for an admin, and their names for any role, but not for users without one', async () => {
       await admin.post('/api/app/spaces', { name: 'alpha' });
       await admin.post('/api/app/spaces', { name: 'Beta' });
       // Case-insensitive, whatever the database collation. Admin → Spaces only: each item carries its Firebase import
       // (who ran it, from where), admin data; everyone else reads the sidebar list.
-      expect((await manager.get('/api/app/spaces')).json().items.map((s: { name: string }) => s.name)).toEqual([
+      expect((await manager.get('/api/app/spaces')).statusCode).toBe(403);
+      expect((await admin.get('/api/app/spaces')).json().items.map((s: { name: string }) => s.name)).toEqual([
         'alpha',
         'Beta',
         'Marketing',
@@ -119,7 +121,7 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await reader.get('/api/app/spaces/Firestore20charsId01')).statusCode).toBe(404);
       expect((await admin.get('/api/app/spaces/Firestore20charsId01/tokens')).statusCode).toBe(404);
       expect((await reader.get(`/api/app/spaces/${S2}`)).json()).not.toHaveProperty('firebaseImport');
-      const [item] = (await manager.get('/api/app/spaces?search=Imported')).json().items;
+      const [item] = (await admin.get('/api/app/spaces?search=Imported')).json().items;
       expect(item).toMatchObject({
         id: S2,
         name: 'Imported',
@@ -270,7 +272,7 @@ describe('app API: spaces, locales, instance label', () => {
 
     it('refuses an unknown field in a body, naming it; a query may carry parameters of its own', async () => {
       const base = `/api/app/spaces/${spaceId}`;
-      const typo = await manager.post('/api/app/spaces', { name: 'Typo', tempalte: 'blog' });
+      const typo = await admin.post('/api/app/spaces', { name: 'Typo', tempalte: 'blog' });
       expect(typo.statusCode).toBe(400);
       expect(typo.json().message[0]).toContain('tempalte');
       // An old client's field next to the new one.
@@ -295,7 +297,7 @@ describe('app API: spaces, locales, instance label', () => {
     });
 
     it('keeps environments of other spaces out of reach', async () => {
-      const other = (await manager.post('/api/app/spaces', { name: 'Other' })).json().id;
+      const other = (await admin.post('/api/app/spaces', { name: 'Other' })).json().id;
       const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
       expect(
         (await manager.put(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode,
@@ -475,7 +477,7 @@ describe('app API: spaces, locales, instance label', () => {
     });
 
     it('counts an empty space as zeros', async () => {
-      const empty = (await manager.post('/api/app/spaces', { name: 'Empty' })).json().id;
+      const empty = (await admin.post('/api/app/spaces', { name: 'Empty' })).json().id;
       expect((await reader.get(`/api/app/spaces/${empty}/overview`)).json()).toEqual({
         counts: { locales: 1, translations: 0, assets: 0, contents: 0, schemas: 0 },
         storage: { assets: 0, assetsWithoutSize: 0 },
@@ -530,13 +532,14 @@ describe('app API: spaces, locales, instance label', () => {
 
     it('deletes a space with all its rows and files', async () => {
       expect((await reader.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(403);
-      expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(204);
+      expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(403);
+      expect((await admin.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(204);
       // Its files are queued in the delete and swept right after the commit.
       await t.app.get(StorageSweeperService).whenIdle();
       expect(await t.db.select().from(spaces).where(eq(spaces.id, spaceId))).toEqual([]);
       expect(await t.db.select().from(contents).where(eq(contents.spaceId, spaceId))).toEqual([]);
       await expect(readdir(join(t.storageDir, 'spaces', spaceId))).rejects.toThrow();
-      expect((await manager.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(404);
+      expect((await admin.delete(`/api/app/spaces/${spaceId}`)).statusCode).toBe(404);
     });
   });
 

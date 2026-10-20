@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import type { UserRole } from '@localess/shared';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { and, asc, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -107,13 +108,9 @@ export async function login(t: TestApp, email: string, password: string): Promis
 }
 
 /** Creates a user with the given access and returns a signed-in session cookie. */
-export async function userWithAccess(
-  t: TestApp,
-  email: string,
-  access: { role: 'ADMIN' | 'CUSTOM' | null; permissions?: string[] },
-): Promise<string> {
+export async function userWithAccess(t: TestApp, email: string, access: { role: UserRole | null }): Promise<string> {
   const { UserService } = await import('../src/modules/users/services/user.service.js');
-  await t.app.get(UserService).create({ email, password: 'secret1', role: access.role, permissions: access.permissions as never });
+  await t.app.get(UserService).create({ email, password: 'secret1', role: access.role });
   return login(t, email, 'secret1');
 }
 

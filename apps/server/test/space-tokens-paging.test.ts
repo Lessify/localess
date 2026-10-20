@@ -15,6 +15,7 @@ const ADDED = [
 
 describe('app API: space tokens, one page at a time', () => {
   let t: TestApp;
+  let admin: ReturnType<typeof api>;
   let manager: ReturnType<typeof api>;
   let reader: ReturnType<typeof api>;
   let spaceId: string;
@@ -24,9 +25,11 @@ describe('app API: space tokens, one page at a time', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
-    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
-    spaceId = (await manager.post('/api/app/spaces', { name: 'Tokens' })).json().id;
+    // Creating a space is an admin's; its settings are a developer's.
+    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
+    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' }));
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
+    spaceId = (await admin.post('/api/app/spaces', { name: 'Tokens' })).json().id;
     base = `/api/app/spaces/${spaceId}/tokens`;
     ids.push((await manager.get(base)).json().items[0].id);
     for (const token of ADDED) ids.push((await manager.post(base, token)).json().id);
@@ -82,7 +85,7 @@ describe('app API: space tokens, one page at a time', () => {
     }
   });
 
-  it('answers 404 for a space that is not there, or not a UUID, on every route; 403 without SPACE_MANAGEMENT', async () => {
+  it('answers 404 for a space that is not there, or not a UUID, on every route; 403 for a role short of developer', async () => {
     const tokenId = ids[1];
     for (const space of [newUuid(), 'not-a-uuid']) {
       const other = `/api/app/spaces/${space}/tokens`;
@@ -98,7 +101,7 @@ describe('app API: space tokens, one page at a time', () => {
       if (space !== 'not-a-uuid') for (const response of responses) expect(response.json().message).toBe('Space not found');
     }
     // A token of another space is not found in this one.
-    const otherSpace = (await manager.post('/api/app/spaces', { name: 'Other' })).json().id;
+    const otherSpace = (await admin.post('/api/app/spaces', { name: 'Other' })).json().id;
     expect((await manager.get(`/api/app/spaces/${otherSpace}/tokens/${tokenId}`)).json().message).toBe('Token not found');
     expect((await reader.get(base)).statusCode).toBe(403);
   });

@@ -24,10 +24,12 @@ describe('app API: space environments, one page at a time', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
-    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    // Creating a space is an admin's; its settings are a developer's.
+    const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
+    manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'DEVELOPER' }));
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
     noRole = api(t, await userWithAccess(t, 'new@example.com', { role: null }));
-    const spaceId = (await manager.post('/api/app/spaces', { name: 'Environments' })).json().id;
+    const spaceId = (await admin.post('/api/app/spaces', { name: 'Environments' })).json().id;
     base = `/api/app/spaces/${spaceId}/environments`;
     for (const environment of ADDED) ids.push((await manager.post(base, environment)).json().id);
   });

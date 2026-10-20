@@ -1,14 +1,14 @@
-import { UserPermission, type WebHookCreate, type WebHookStatusUpdate, type WebHookUpdate } from '@localess/shared';
+import { DEVELOPERS, type WebHookCreate, type WebHookStatusUpdate, type WebHookUpdate } from '@localess/shared';
 import { zWebHookCreate, zWebHookStatusUpdate, zWebHookUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { WebhookService } from '../services/webhook.service.js';
 
 /** Webhook configuration (the delivery logs: `WebhookLogController`). */
 @Controller('api/app/spaces/:spaceId/webhooks')
-@RequirePermission(UserPermission.SPACE_MANAGEMENT)
+@RequireRole(DEVELOPERS)
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 

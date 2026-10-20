@@ -1,10 +1,13 @@
 import {
+  ANY_ROLE,
+  CONTENT_WRITERS,
+  DEVELOPERS,
   type TranslationCreate,
   type TranslationLocaleUpdate,
   type TranslationRename,
   type TranslationTranslateLocale,
   type TranslationUpdate,
-  UserPermission,
+  TRANSLATORS,
 } from '@localess/shared';
 import {
   zTranslationCreate,
@@ -15,7 +18,7 @@ import {
 } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TranslationService } from '../services/translation.service.js';
 
@@ -28,31 +31,31 @@ export class TranslationController {
   constructor(private readonly translationService: TranslationService) {}
 
   @Get()
-  @RequirePermission(UserPermission.TRANSLATION_READ)
+  @RequireRole(ANY_ROLE)
   findAll(@Param('spaceId') spaceId: string) {
     return this.translationService.findAll(spaceId);
   }
 
   @Get('count')
-  @RequirePermission(UserPermission.TRANSLATION_READ)
+  @RequireRole(ANY_ROLE)
   async count(@Param('spaceId') spaceId: string) {
     return { count: await this.translationService.count(spaceId) };
   }
 
   @Get(':id')
-  @RequirePermission(UserPermission.TRANSLATION_READ)
+  @RequireRole(ANY_ROLE)
   findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
     return this.translationService.findOne(spaceId, id);
   }
 
   @Post()
-  @RequirePermission(UserPermission.TRANSLATION_CREATE)
+  @RequireRole(CONTENT_WRITERS)
   create(@Param('spaceId') spaceId: string, @Body({ schema: zTranslationCreate }) body: TranslationCreate) {
     return this.translationService.create(spaceId, body);
   }
 
   @Patch(':id')
-  @RequirePermission(UserPermission.TRANSLATION_UPDATE)
+  @RequireRole(CONTENT_WRITERS)
   update(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
@@ -62,7 +65,7 @@ export class TranslationController {
   }
 
   @Put(':id/locales/:locale')
-  @RequirePermission(UserPermission.TRANSLATION_UPDATE)
+  @RequireRole(TRANSLATORS)
   updateLocale(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
@@ -73,7 +76,7 @@ export class TranslationController {
   }
 
   @Put(':id/key')
-  @RequirePermission(UserPermission.TRANSLATION_UPDATE)
+  @RequireRole(CONTENT_WRITERS)
   rename(
     @Param('spaceId') spaceId: string,
     @Param('id', UuidParamPipe) id: string,
@@ -84,28 +87,28 @@ export class TranslationController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission(UserPermission.TRANSLATION_DELETE)
+  @RequireRole(CONTENT_WRITERS)
   async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
     await this.translationService.remove(spaceId, id);
   }
 
   @Delete()
   @HttpCode(204)
-  @RequirePermission(UserPermission.SPACE_MANAGEMENT)
+  @RequireRole(DEVELOPERS)
   async removeAll(@Param('spaceId') spaceId: string): Promise<void> {
     await this.translationService.removeAll(spaceId);
   }
 
   @Post('publish')
   @HttpCode(204)
-  @RequirePermission(UserPermission.TRANSLATION_PUBLISH)
+  @RequireRole(CONTENT_WRITERS)
   async publish(@Param('spaceId') spaceId: string): Promise<void> {
     await this.translationService.publish(spaceId);
   }
 
   @Post('translate-locale')
   @HttpCode(200)
-  @RequirePermission(UserPermission.TRANSLATION_UPDATE)
+  @RequireRole(TRANSLATORS)
   translateLocale(@Param('spaceId') spaceId: string, @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale) {
     return this.translationService.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }

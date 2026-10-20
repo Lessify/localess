@@ -80,17 +80,19 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     ]);
   });
 
-  it('sends a custom user only the events it may read', async () => {
-    const reader = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
+  it('sends a role only the events it may read', async () => {
+    const reader = await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' });
     const events = t.app.get(EventService);
-    const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 2, async () => {
+    const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 3, async () => {
       await events.publish({ spaceId: S1, entity: 'tokens', id: 'tok', op: 'updated' });
       await events.publish({ spaceId: S1, entity: 'contents', id: 'c', op: 'updated' });
       await events.publish({ spaceId: null, entity: 'users', id: 'someone', op: 'updated' });
       await events.publish({ spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' });
       await events.publish({ spaceId: null, entity: 'spaces', id: S1, op: 'updated' });
     });
+    // A viewer reads contents and translations, not tokens, nor other users.
     expect(received).toEqual([
+      { spaceId: S1, entity: 'contents', id: 'c', op: 'updated' },
       { spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' },
       { spaceId: null, entity: 'spaces', id: S1, op: 'updated' },
     ]);

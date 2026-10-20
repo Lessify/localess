@@ -1,9 +1,9 @@
-import { type Page, type UserInvite, type UserPageable, UserPermission, type UserStatusUpdate, type UserUpdate } from '@localess/shared';
+import { ADMINS, type Page, type UserInvite, type UserPageable, type UserStatusUpdate, type UserUpdate } from '@localess/shared';
 import { zUserInvite, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { publicOrigin } from '../../../auth/utils/public-url.js';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
@@ -12,13 +12,9 @@ import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
 import { UserService } from '../services/user.service.js';
 
-/**
- * Admin → Users. Enforces what firestore.rules enforced on `users/{uid}` plus the `user.invite`
- * callable: USER_MANAGEMENT to get in, `canGrant` for what may be given, `canManageUser` for who may
- * be changed or removed.
- */
+/** Admin → Users, for admins only: invite, change a user's role, disable, hand a reset link, delete. */
 @Controller('api/app/users')
-@RequirePermission(UserPermission.USER_MANAGEMENT)
+@RequireRole(ADMINS)
 export class UserController {
   constructor(
     private readonly userService: UserService,
@@ -37,17 +33,13 @@ export class UserController {
   }
 
   @Post()
-  async invite(@CurrentUser() caller: UserEntity, @Body({ schema: zUserInvite }) body: UserInvite): Promise<UserDto> {
-    return this.userService.invite(caller, body);
+  async invite(@Body({ schema: zUserInvite }) body: UserInvite): Promise<UserDto> {
+    return this.userService.invite(body);
   }
 
   @Patch(':id')
-  async updateAccess(
-    @CurrentUser() caller: UserEntity,
-    @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zUserUpdate }) body: UserUpdate,
-  ): Promise<UserDto> {
-    return this.userService.changeAccess(caller, id, body);
+  async updateAccess(@Param('id', UuidParamPipe) id: string, @Body({ schema: zUserUpdate }) body: UserUpdate): Promise<UserDto> {
+    return this.userService.changeAccess(id, body.role);
   }
 
   /** Blocks (or restores) sign-in without deleting the user; was the Firebase Auth console's "Disable account". */
@@ -63,17 +55,16 @@ export class UserController {
   /** A one-hour reset link to hand to the user — the way to reset passwords when SMTP isn't configured. */
   @Post(':id/password-reset-link')
   async passwordResetLink(
-    @CurrentUser() caller: UserEntity,
     @Param('id', UuidParamPipe) id: string,
     @Req() request: FastifyRequest,
   ): Promise<{ url: string; expiresAt: string }> {
-    const link = await this.userService.createPasswordResetLink(caller, id, publicOrigin(this.config, request));
+    const link = await this.userService.createPasswordResetLink(id, publicOrigin(this.config, request));
     return { url: link.url, expiresAt: link.expiresAt.toISOString() };
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@CurrentUser() caller: UserEntity, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.userService.remove(caller, id);
+  async remove(@Param('id', UuidParamPipe) id: string): Promise<void> {
+    await this.userService.remove(id);
   }
 }

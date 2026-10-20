@@ -1,13 +1,13 @@
-import { UserPermission } from '@localess/shared';
+import { DEVELOPERS } from '@localess/shared';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { WebhookLogService } from '../services/webhook-log.service.js';
 
 /** A webhook's delivery logs. */
 @Controller('api/app/spaces/:spaceId/webhooks/:id/logs')
-@RequirePermission(UserPermission.SPACE_MANAGEMENT)
+@RequireRole(DEVELOPERS)
 export class WebhookLogController {
   constructor(private readonly webhookLogService: WebhookLogService) {}
 

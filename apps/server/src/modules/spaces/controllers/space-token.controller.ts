@@ -1,15 +1,8 @@
-import {
-  type Page,
-  type SpaceTokenCreate,
-  type SpaceTokenPageable,
-  type SpaceTokenUpdate,
-  type Token,
-  UserPermission,
-} from '@localess/shared';
+import { DEVELOPERS, type Page, type SpaceTokenCreate, type SpaceTokenPageable, type SpaceTokenUpdate, type Token } from '@localess/shared';
 import { zSpaceTokenCreate, zSpaceTokenPageable, zSpaceTokenUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceTokenService } from '../services/space-token.service.js';
 
@@ -18,7 +11,7 @@ import { SpaceTokenService } from '../services/space-token.service.js';
  * SPACE_MANAGEMENT users), and for management tokens only once.
  */
 @Controller('api/app/spaces/:spaceId/tokens')
-@RequirePermission(UserPermission.SPACE_MANAGEMENT)
+@RequireRole(DEVELOPERS)
 export class SpaceTokenController {
   constructor(private readonly spaceTokenService: SpaceTokenService) {}
 

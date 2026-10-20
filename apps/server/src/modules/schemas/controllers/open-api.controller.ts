@@ -1,7 +1,7 @@
-import { UserPermission } from '@localess/shared';
+import { DEVELOPERS } from '@localess/shared';
 import { Controller, HttpCode, Param, Post } from '@nestjs/common';
 
-import { RequirePermission } from '../../../auth/decorators.js';
+import { RequireRole } from '../../../auth/decorators.js';
 import { OpenApiService } from '../services/open-api.service.js';
 
 /** OpenAPI document of a space's schemas (was the `openapi-generate` callable). */
@@ -11,7 +11,7 @@ export class OpenApiController {
 
   @Post()
   @HttpCode(200)
-  @RequirePermission(UserPermission.DEV_OPEN_API)
+  @RequireRole(DEVELOPERS)
   generate(@Param('spaceId') spaceId: string) {
     return this.openApiService.findOne(spaceId);
   }

@@ -68,8 +68,8 @@ describe('OAuth sign-in', () => {
     beforeAll(async () => {
       t = await appFor();
       const service = t.app.get(UserService);
-      await service.create({ email: 'Alice@Example.com', role: 'CUSTOM', permissions: ['CONTENT_READ'] });
-      await service.create({ email: 'blocked@example.com', role: 'CUSTOM' });
+      await service.create({ email: 'Alice@Example.com', role: 'VIEWER' });
+      await service.create({ email: 'blocked@example.com', role: 'VIEWER' });
       await t.db.update(users).set({ disabled: true }).where(eq(users.email, 'blocked@example.com'));
     });
 
@@ -92,7 +92,7 @@ describe('OAuth sign-in', () => {
       expect(response.headers.location).toBe('/features/spaces');
 
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'Alice@Example.com', role: 'CUSTOM', providers: ['google.com'] });
+      expect(me.json().user).toMatchObject({ email: 'Alice@Example.com', role: 'VIEWER', providers: ['google.com'] });
       expect(await t.db.select().from(userIdentities)).toEqual([
         expect.objectContaining({ provider: 'google', providerSubject: 'google-sub-1' }),
       ]);
@@ -125,7 +125,7 @@ describe('OAuth sign-in', () => {
     });
 
     it('never links by a Microsoft email the directory did not verify', async () => {
-      await t.app.get(UserService).create({ email: 'bob@contoso.com', role: 'CUSTOM' });
+      await t.app.get(UserService).create({ email: 'bob@contoso.com', role: 'VIEWER' });
       claims = { sub: 'ms-impostor', preferred_username: 'bob@contoso.com' };
       expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
       claims = { sub: 'ms-impostor', email: 'bob@contoso.com' };

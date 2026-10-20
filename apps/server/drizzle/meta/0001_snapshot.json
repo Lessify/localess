@@ -1,6 +1,6 @@
 {
-  "id": "19c63009-f5a5-4f4e-9e85-4e6bb42eba66",
-  "prevId": "e9ca2857-d699-4a20-a4fe-1a369e94853d",
+  "id": "8feeb1ab-217e-4b37-9fc1-6a8c657a7ce9",
+  "prevId": "280a2d41-45f6-4134-8c5b-3b19a2429b9e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1958,20 +1958,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "permissions": {
-          "name": "permissions",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'"
-        },
-        "lock": {
-          "name": "lock",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -2011,11 +1997,7 @@
       "checkConstraints": {
         "users_role_check": {
           "name": "users_role_check",
-          "value": "\"users\".\"role\" in ('ADMIN', 'CUSTOM')"
-        },
-        "users_permissions_check": {
-          "name": "users_permissions_check",
-          "value": "\"users\".\"permissions\" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[]"
+          "value": "\"users\".\"role\" in ('ADMIN', 'DEVELOPER', 'EDITOR', 'TRANSLATOR', 'VIEWER')"
         }
       },
       "isRLSEnabled": false

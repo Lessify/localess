@@ -19,10 +19,8 @@ const SORT_COLUMNS = {
   updatedAt: users.updatedAt,
 };
 
-export type UserValues = Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'role' | 'permissions' | 'lock'>;
-export type UserUpdate = Partial<
-  Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role' | 'permissions' | 'lock'>
->;
+export type UserValues = Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'role'>;
+export type UserUpdate = Partial<Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role'>>;
 
 /**
  * Users and their passwords (Admin → Users, the own profile). Every change of a user publishes a global `users`
