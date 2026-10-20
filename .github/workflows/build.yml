@@ -56,7 +56,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-      # - run: pnpm prettier
+      - run: pnpm prettier
       - run: pnpm build
       - run: pnpm server:build
 

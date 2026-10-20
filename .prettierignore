@@ -1,10 +1,15 @@
-# Prettier run from the repository root (apps/web has its own .prettierignore for `pnpm prettier`).
+# Prettier for the whole repository, run from the root: `pnpm prettier` (check, CI) and `pnpm prettier:fix`.
 
 # Docs: written by hand, line breaks kept as they are (`proseWrap: always` would re-wrap every paragraph).
 *.md
 
 # Spartan/Helm components: generated source with its own style (tabs).
 packages/ui/
+
+# Third-party copies, kept as shipped: Spartan's style, highlight.js themes, GitHub's OpenAPI spec.
+apps/web/src/styles/style-nova.css
+apps/web/src/styles/highlightjs/
+tools/openapi/
 
 # Build output, generated files, local data.
 dist/
@@ -14,6 +19,7 @@ apps/web/src/app/shared/generated/
 apps/e2e/test-results/
 apps/e2e/playwright-report/
 apps/e2e/demo-videos/
+apps/e2e/.auth/
 .data/
 apps/e2e/.data/
 apps/e2e/.data-demos/

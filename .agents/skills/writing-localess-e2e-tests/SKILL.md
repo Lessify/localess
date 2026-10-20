@@ -63,7 +63,7 @@ test('edits an environment', async ({ page, api, space }) => {
 
 1. App code changed? `pnpm build:prod` (and `pnpm server:build` for the server) — the suite runs the **built** app.
    Only `apps/e2e` changed? No build and no `pnpm lint:fix` needed (CLAUDE.md's "after every change" is for app code).
-2. `pnpm --filter @localess/e2e exec tsc -p tsconfig.json` and `pnpm exec prettier --check <files>` (`pnpm lint` does not cover apps/e2e).
+2. `pnpm --filter @localess/e2e exec tsc -p tsconfig.json` and `pnpm prettier` (the whole repository, apps/e2e included; `pnpm lint` does not cover apps/e2e).
 3. Stress: `pnpm --filter @localess/e2e exec playwright test <spec> --repeat-each 5` — all green.
 4. Whole suite as CI runs it: `CI=1 pnpm e2e:run` (about 7 minutes; run it in the background, once per round).
 5. TEST-PLAN.md: the scenario row (✅ + spec), and any bug in **Findings** (fixed) or **Open findings** (kept).

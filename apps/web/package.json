@@ -14,8 +14,6 @@
     "test": "ng test",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",
-    "prettier": "prettier --check ./src/app",
-    "prettier:fix": "prettier --write ./src/app",
     "generate:github": "ng-openapi-gen --includeTags repos -i ../../tools/openapi/api.github.com.2022-11-28.yaml -o src/app/shared/generated/github"
   },
   "dependencies": {

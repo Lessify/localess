@@ -28,7 +28,8 @@ docker compose up      # Server + Postgres 18 from the Dockerfile
 # Code quality
 pnpm lint              # ESLint check
 pnpm lint:fix          # Auto-fix lint issues
-pnpm prettier:fix      # Format code
+pnpm prettier          # Prettier check of the whole repository (CI); .prettierignore keeps docs, packages/ui and third-party copies out
+pnpm prettier:fix      # Format the whole repository
 
 # Testing
 pnpm test              # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
@@ -151,7 +152,8 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 After every code change, always run the following in order:
 
 1. `pnpm build` — verify the project compiles without errors
-2. `pnpm lint:fix` — auto-fix lint and prettier issues
+2. `pnpm lint:fix` — auto-fix lint issues
+3. `pnpm prettier:fix` — format (the whole repository: server, shared, e2e and tools included)
 
 ## Environment & Local Setup
 
