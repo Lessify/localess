@@ -50,7 +50,7 @@ export class TokenService {
   async update(spaceId: string, id: string, input: TokenChange) {
     return found(
       await this.tokenRepository.update(spaceId, id, current => {
-        if (current.type === TokenType.MANAGEMENT && input.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
+        if (current.type === 'management' && input.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
         return { name: input.name, cacheTtl: input.cacheTtl ?? null };
       }),
     );

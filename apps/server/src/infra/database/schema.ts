@@ -61,7 +61,8 @@ import {
 
 /** The values of a string enum (or a value list), as `text({ enum })` takes them. */
 const values = <T extends string>(list: Record<string, T> | readonly T[]): [`${T}`, ...`${T}`[]] =>
-  (Array.isArray(list) ? [...list] : Object.values(list)) as [`${T}`, ...`${T}`[]];
+  // Object.values reads a list as well as an enum (Array.isArray would type a readonly list as any[]).
+  Object.values(list) as string[] as [`${T}`, ...`${T}`[]];
 
 /** `'A', 'B'` for a CHECK: the values are constants of the code, never input. */
 const quoted = (list: readonly string[]): SQL => sql.raw(list.map(it => `'${it}'`).join(', '));

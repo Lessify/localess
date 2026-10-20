@@ -18,7 +18,7 @@ export function toContentMetadata(row: ContentWithPath): ContentMetadata {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
-  if (row.kind === ContentKind.DOCUMENT) {
+  if (row.kind === 'DOCUMENT') {
     link.publishedAt = row.publishedAt?.toISOString();
   }
   return link;

@@ -66,6 +66,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
  * work is batched (one insert per chunk, not per row) rather than how fast the machine is.
  */
 export async function statementsDuring<T>(action: () => Promise<T>): Promise<{ result: T; statements: string[] }> {
+  // eslint-disable-next-line @typescript-eslint/unbound-method -- re-applied below with its client as `this`.
   const original = pg.Client.prototype.query;
   const statements: string[] = [];
   pg.Client.prototype.query = function (this: pg.Client, ...args: unknown[]) {
