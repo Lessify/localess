@@ -7,6 +7,7 @@ import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repo
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
 import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
 import type { WebhookEntity } from '../entities/webhook.entity.js';
+import { errorMessage } from '../utils/error-message.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
@@ -120,7 +121,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
     try {
       await this.webhookDeliveryRepository.saveLog(payload.spaceId, log);
     } catch (error) {
-      this.logger.error(`Could not log webhook delivery ${deliveryId}: ${error}`);
+      this.logger.error(`Could not log webhook delivery ${deliveryId}: ${errorMessage(error)}`);
     }
   }
 }

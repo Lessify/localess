@@ -1,5 +1,6 @@
 import { TranslateBatchResult, TranslateFormat, TranslateItem } from '@localess/shared';
 import { chunkBySize } from './chunk-by-size.js';
+import { errorMessage } from '../../../shared/utils/error-message.js';
 
 /** Google Cloud Translation caps a request at 30,000 code points; the margin covers the envelope. */
 export const TRANSLATE_CHUNK_LIMIT = 27_000;
@@ -55,7 +56,7 @@ export async function translateItems(
         );
         chunk.forEach((item, index) => result.items.push({ id: item.id, content: translated[index] ?? '' }));
       } catch (e) {
-        const reason = e instanceof Error ? e.message : String(e);
+        const reason = errorMessage(e);
         chunk.forEach(item => result.failed.push({ id: item.id, reason }));
       }
     }

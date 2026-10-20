@@ -3,6 +3,7 @@ import * as client from 'openid-client';
 import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../../infra/config/config.js';
 import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
+import { errorMessage } from '../../shared/utils/error-message.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {
@@ -121,7 +122,7 @@ export class OAuthService implements OnModuleInit {
       });
       claims = tokens.claims();
     } catch (error) {
-      this.logger.warn(`${flow.provider} sign-in failed: ${error instanceof Error ? error.message : error}`);
+      this.logger.warn(`${flow.provider} sign-in failed: ${errorMessage(error)}`);
       throw new OAuthError('failed', 'Sign-in with the provider failed');
     }
     if (!claims) throw new OAuthError('failed', 'The provider returned no ID token');

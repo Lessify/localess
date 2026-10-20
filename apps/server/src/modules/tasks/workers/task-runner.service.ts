@@ -39,8 +39,11 @@ export class TaskRunner {
         return task.locale ? this.translationTransferService.exportFlat(task) : this.translationTransferService.export(task);
       case 'TRANSLATION_IMPORT':
         return task.locale ? this.translationTransferService.importFlat(task) : this.translationTransferService.import(task);
-      default:
-        return { status: 'ERROR', message: `Unknown task kind '${task.kind}'` };
+      default: {
+        // Every kind is handled above (a new one fails to compile here); a row written by a newer build still answers.
+        const kind: never = task.kind;
+        return { status: 'ERROR', message: `Unknown task kind '${String(kind)}'` };
+      }
     }
   }
 }

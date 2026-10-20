@@ -3,6 +3,7 @@ import { sql, SQL } from 'drizzle-orm';
 import pg from 'pg';
 import { filter, Observable, Subject } from 'rxjs';
 import { DATABASE, type Database, PG_POOL } from '../database/database.module.js';
+import { errorMessage } from '../../shared/utils/error-message.js';
 
 export const EVENTS_CHANNEL = 'localess_events';
 
@@ -61,7 +62,7 @@ export class EventService implements OnModuleInit, OnModuleDestroy {
       try {
         this.events.next(JSON.parse(message.payload) as ChangeEvent);
       } catch (error) {
-        this.logger.warn(`Ignoring malformed event: ${error}`);
+        this.logger.warn(`Ignoring malformed event: ${errorMessage(error)}`);
       }
     });
     client.on('error', error => {

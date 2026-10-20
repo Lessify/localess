@@ -4,6 +4,7 @@ import { toTaskLog } from '../../../shared/transformers/task.transformer.js';
 import { TaskLogRepository } from '../repositories/task-log.repository.js';
 import { TaskRepository } from '../repositories/task.repository.js';
 import type { TaskEntity } from '../../../shared/entities/task.entity.js';
+import { errorMessage } from '../../../shared/utils/error-message.js';
 
 /** The steps of a task: written while it runs (the Tasks UI and the server log), read by its detail page. */
 @Injectable()
@@ -36,7 +37,7 @@ export class TaskLogService {
     try {
       await this.taskLogRepository.create(task, level, message, trace);
     } catch (error) {
-      this.logger.warn(`Could not persist task log: ${error}`);
+      this.logger.warn(`Could not persist task log: ${errorMessage(error)}`);
     }
   }
 }

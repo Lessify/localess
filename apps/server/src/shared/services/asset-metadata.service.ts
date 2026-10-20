@@ -11,6 +11,7 @@ import { normaliseDuration } from '../utils/media-duration.js';
 import { resolveOrientedDimensions, resolveRotatedDimensions } from '../utils/media-orientation.js';
 import { isAnimatedPages } from '../utils/media-pages.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
+import { errorMessage } from '../utils/error-message.js';
 
 export interface ExtractedMetadata {
   metadata?: Record<string, unknown>;
@@ -41,7 +42,7 @@ export class AssetMetadataService implements OnApplicationShutdown {
       await pipeline(this.storage.createReadStream(key), createWriteStream(file));
       return type.startsWith('image/') ? await this.image(file, currentAlt) : await this.video(file);
     } catch (error) {
-      this.logger.warn(`Could not read metadata of ${key}: ${error}`);
+      this.logger.warn(`Could not read metadata of ${key}: ${errorMessage(error)}`);
       return {};
     } finally {
       await rm(dir, { recursive: true, force: true });

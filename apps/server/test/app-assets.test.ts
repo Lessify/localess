@@ -124,7 +124,7 @@ describe('app API: assets', () => {
   });
 
   describe('uploads', () => {
-    let photo: Record<string, unknown>;
+    let photo: Record<string, unknown> & { id: string; md5: string };
 
     it('stores the file and records size, md5, oriented dimensions and the embedded caption', async () => {
       // Stored 400x300 with EXIF orientation 6 (rotate 90°): it displays as 300x400 portrait.

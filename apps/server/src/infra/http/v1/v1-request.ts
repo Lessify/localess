@@ -54,7 +54,7 @@ export function redirectToVersion(reply: FastifyReply, url: string, token: { cac
 }
 
 /** Whether the request's `cv` is missing or stale, so it must be redirected to the current version. */
-export const needsRedirect = (cv: unknown, version: number) => cv === undefined || String(cv) !== String(version);
+export const needsRedirect = (cv: string | undefined, version: number): boolean => cv === undefined || cv !== String(version);
 
 export function sendJson(reply: FastifyReply, body: unknown): void {
   void reply.header('cache-control', CONTENT_CACHE).type('application/json; charset=utf-8').send(JSON.stringify(body));
