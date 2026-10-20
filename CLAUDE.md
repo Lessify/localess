@@ -26,7 +26,7 @@ pnpm server:build      # Compile the server (apps/server/dist; builds packages/s
 docker compose up      # Server + Postgres 18 from the Dockerfile
 
 # Code quality
-pnpm lint              # ESLint check
+pnpm lint              # ESLint check: web (angular-eslint) and server (typescript-eslint, type-aware)
 pnpm lint:fix          # Auto-fix lint issues
 pnpm prettier          # Prettier check of the whole repository (CI); .prettierignore keeps docs, packages/ui and third-party copies out
 pnpm prettier:fix      # Format the whole repository

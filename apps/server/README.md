@@ -13,6 +13,7 @@ pnpm build        # tsc → dist/
 pnpm start        # node dist/main.js
 pnpm dev          # watch: SWC → dist-dev/, node --watch restarts, tsc --noEmit --watch type-checks; loads .env
 pnpm test         # vitest (starts a throwaway embedded Postgres)
+pnpm lint         # ESLint, type-aware (eslint.config.js); pnpm lint:fix applies the fixes it can
 pnpm db:generate  # drizzle-kit: SQL migration from src/infra/database/schema.ts changes (commit the output)
 pnpm db:regenerate  # before the first release: rewrite 0000_init.sql + 0001_locales.sql in place, seed kept
 pnpm cli db:migrate
@@ -20,7 +21,8 @@ pnpm cli check
 LOCALESS_ADMIN_PASSWORD=… pnpm cli admin:create --email admin@example.com [--name "Admin"]
 ```
 
-From the repo root: `pnpm dev` (server + web), `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`.
+From the repo root: `pnpm dev` (server + web), `pnpm server:dev`, `pnpm server:test`, `pnpm server:build`, `pnpm lint`
+(web + server).
 
 `dev` compiles with SWC for fast restarts, so every type referenced in a decorated signature (constructor
 injection, `@Body()` parameters) must be imported with `type` (`import { DATABASE, type Database }`);
