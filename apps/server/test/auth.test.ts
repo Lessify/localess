@@ -1,6 +1,7 @@
+import { UserPermission } from '@localess/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { UserPermission } from '@localess/shared';
+
 import { sessions, users } from '../src/infra/database/schema.js';
 import { UserService } from '../src/modules/users/services/user.service.js';
 import { createTestApp, login, sessionCookie, TestApp, XHR } from './test-app.js';

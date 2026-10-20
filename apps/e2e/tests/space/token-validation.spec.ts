@@ -1,6 +1,6 @@
 import { dialog } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
-import { TokensPage, tokensOf } from '../pages/tokens.page';
+import { tokensOf, TokensPage } from '../pages/tokens.page';
 import type { AppApi } from '../support/app-api';
 import { expect, test, uniqueName } from '../support/fixtures';
 

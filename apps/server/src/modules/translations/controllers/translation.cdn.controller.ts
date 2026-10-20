@@ -1,6 +1,7 @@
+import { TokenType } from '@localess/shared';
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { TokenType } from '@localess/shared';
+
 import { CurrentToken } from '../../../auth/request-context.js';
 import { CdnToken } from '../../../auth/token-auth.decorators.js';
 import type { ApiToken } from '../../../auth/utils/api-token.js';

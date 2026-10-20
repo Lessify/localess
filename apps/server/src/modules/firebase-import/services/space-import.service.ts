@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { DEFAULT_LOCALE, type FirebaseImportStage, type Locale } from '@localess/shared';
+import { Injectable } from '@nestjs/common';
+
 import { newUuid } from '../../../infra/database/id.js';
 import { SpaceImportRepository } from '../repositories/space-import.repository.js';
 import type { FirebaseClient, FirebaseDoc } from '../utils/firebase-client.js';

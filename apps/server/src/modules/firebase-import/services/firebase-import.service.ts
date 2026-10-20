@@ -1,3 +1,4 @@
+import { FIREBASE_IMPORT_STAGES, type FirebaseImport, type FirebaseSourceSpace } from '@localess/shared';
 import {
   BadGatewayException,
   BadRequestException,
@@ -9,16 +10,16 @@ import {
   OnApplicationBootstrap,
   OnApplicationShutdown,
 } from '@nestjs/common';
-import { FIREBASE_IMPORT_STAGES, type FirebaseImport, type FirebaseSourceSpace } from '@localess/shared';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
+import type { FirebaseImportEntity } from '../../../shared/entities/firebase-import.entity.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import { toFirebaseImport } from '../../../shared/transformers/firebase-import.transformer.js';
 import { FirebaseImportRepository } from '../repositories/firebase-import.repository.js';
 import { FirebaseClient, FirebaseConnectionError } from '../utils/firebase-client.js';
 import { HEARTBEAT_MS } from '../utils/firebase-import.utils.js';
 import { FirebaseImportRunner } from '../workers/firebase-import.runner.js';
-import type { FirebaseImportEntity } from '../../../shared/entities/firebase-import.entity.js';
-import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /** Admin → Spaces → Import from Firebase: one run at a time per install, runs kept as history. */
 @Injectable()

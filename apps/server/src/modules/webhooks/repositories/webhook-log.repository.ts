@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { desc, eq, lt } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { webhookLogs } from '../../../infra/database/schema.js';
 import type { WebhookLogEntity } from '../../../shared/entities/webhook-log.entity.js';

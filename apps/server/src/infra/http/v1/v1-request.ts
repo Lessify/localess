@@ -1,4 +1,5 @@
 import type { FastifyReply } from 'fastify';
+
 import {
   CACHE_BAD_REQUEST_MAX_AGE,
   CACHE_MAX_AGE,

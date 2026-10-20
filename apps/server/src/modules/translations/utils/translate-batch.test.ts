@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TranslateItem } from '@localess/shared';
-import { translateItems, TRANSLATE_CHUNK_LIMIT } from './translate-batch.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { TRANSLATE_CHUNK_LIMIT, translateItems } from './translate-batch.js';
 
 const translateCloudBatch = vi.hoisted(() => vi.fn());
 

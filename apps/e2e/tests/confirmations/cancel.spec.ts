@@ -6,7 +6,7 @@ import { EnvironmentsPage } from '../pages/environments.page';
 import { LocalesPage } from '../pages/locales.page';
 import { MePage } from '../pages/me.page';
 import { dismissConfirmation } from '../pages/notifications';
-import { TokensPage, tokensOf } from '../pages/tokens.page';
+import { tokensOf, TokensPage } from '../pages/tokens.page';
 import { TranslationsPage } from '../pages/translations.page';
 import { WebhooksPage } from '../pages/webhooks.page';
 import { assetsIn } from '../support/assets';

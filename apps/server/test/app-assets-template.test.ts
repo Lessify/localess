@@ -1,11 +1,13 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import { and, count, eq, like } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { assets, contents, spaces, storageDeletions } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { ASSETS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js';
-import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../src/shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { orphansOf, storedAssetDirs } from './orphans.js';

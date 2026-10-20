@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { toWebhookLog } from '../../../shared/transformers/webhook.transformer.js';
-import { WebhookLogRepository } from '../repositories/webhook-log.repository.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
+import { WebhookLogRepository } from '../repositories/webhook-log.repository.js';
 
 /** A webhook's delivery logs. */
 @Injectable()

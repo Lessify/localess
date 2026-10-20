@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { rewriteData, rewriteIds } from './rewrite-references.js';
 
 const maps = {

@@ -1,11 +1,12 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+
 import { AuthService } from '../../../auth/services/auth.service.js';
 import { SessionService } from '../../../auth/services/session.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
-import type { UserDto } from '../../../shared/transformers/user.transformer.js';
-import { type UserUpdate, UserRepository } from '../repositories/user.repository.js';
-import { UserService } from './user.service.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
+import type { UserDto } from '../../../shared/transformers/user.transformer.js';
+import { UserRepository, type UserUpdate } from '../repositories/user.repository.js';
+import { UserService } from './user.service.js';
 
 function requireUnlocked(user: UserEntity): void {
   if (user.lock) throw new ForbiddenException('Your profile is locked');

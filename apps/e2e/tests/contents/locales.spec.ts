@@ -1,5 +1,5 @@
-import { dialog } from '../pages/dialogs';
 import { ContentsPage } from '../pages/contents.page';
+import { dialog } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { Cdn, contentById, pageSchema } from '../support/contents';
 import { expect, test, uniqueId } from '../support/fixtures';

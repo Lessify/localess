@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
 import type { FirebaseImportStage, FirebaseImportStageName } from '@localess/shared';
-import { type FirebaseImportUpdate, FirebaseImportRepository } from '../repositories/firebase-import.repository.js';
+import { Injectable, Logger } from '@nestjs/common';
+
+import { FirebaseImportRepository, type FirebaseImportUpdate } from '../repositories/firebase-import.repository.js';
 import { AssetImportService } from '../services/asset-import.service.js';
 import { ContentImportService } from '../services/content-import.service.js';
 import { ReferenceRewriteService } from '../services/reference-rewrite.service.js';

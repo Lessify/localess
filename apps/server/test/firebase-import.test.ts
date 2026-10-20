@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
+
+import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { assets, contents, firebaseImports, schemas, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { FirebaseClient } from '../src/modules/firebase-import/utils/firebase-client.js';

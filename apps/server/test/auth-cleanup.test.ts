@@ -1,8 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { passwordResetTokens, sessions, users } from '../src/infra/database/schema.js';
-import { newUuid } from '../src/infra/database/id.js';
+
 import { AuthCleanupService } from '../src/auth/services/auth-cleanup.service.js';
+import { newUuid } from '../src/infra/database/id.js';
+import { passwordResetTokens, sessions, users } from '../src/infra/database/schema.js';
 import { createTestApp, TestApp } from './test-app.js';
 
 const HOUR = 60 * 60 * 1000;

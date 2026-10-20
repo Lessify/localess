@@ -1,8 +1,8 @@
 import type { Locator, Page } from '@playwright/test';
 
 import { dragAbove } from '../tests/pages/drag';
-import type { Director } from './support/director';
 import { demo, expect } from './support/demo';
+import type { Director } from './support/director';
 
 // Schemas: a Root schema with fields of several kinds, an Enum with values, the two linked, a field reordered.
 demo.use({ videoName: 'schemas' });

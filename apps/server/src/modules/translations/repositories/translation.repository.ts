@@ -1,9 +1,10 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { translations } from '../../../infra/database/schema.js';
-import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';

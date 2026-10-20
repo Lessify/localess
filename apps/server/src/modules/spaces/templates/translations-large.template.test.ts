@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
+
 import { largeTranslations } from './translations-large.template.js';
 
 const LOCALES = ['en', 'de', 'fr'];

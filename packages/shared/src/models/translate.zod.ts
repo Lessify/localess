@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import type { TranslateData } from './translate.model.js';
 
 const zFormat = z.enum(['text', 'html']).optional();

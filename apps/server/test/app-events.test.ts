@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { EventService } from '../src/infra/events/event.service.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 import { S1, S2 } from './ids.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 /** Reads SSE `change` events from a live stream until `count` arrived (or the timeout). */
 async function readEvents(url: string, cookie: string, count: number, trigger: () => Promise<unknown>): Promise<unknown[]> {

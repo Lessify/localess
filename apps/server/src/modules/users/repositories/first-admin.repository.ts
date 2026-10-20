@@ -1,10 +1,11 @@
+import { DEFAULT_LOCALE } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { DEFAULT_LOCALE } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { spaceLocales, spaces, userCredentials, users } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 
 /**

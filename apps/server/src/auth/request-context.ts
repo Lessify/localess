@@ -1,7 +1,8 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
-import type { ApiToken } from './utils/api-token.js';
+
 import type { UserEntity } from '../shared/entities/user.entity.js';
+import type { ApiToken } from './utils/api-token.js';
 
 declare module 'fastify' {
   interface FastifyRequest {

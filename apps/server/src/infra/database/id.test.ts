@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { isUuid, newUuid } from './id.js';
 
 describe('ids', () => {

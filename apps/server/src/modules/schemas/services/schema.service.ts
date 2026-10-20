@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Schema, type SchemaExport, type SchemaField, SchemaType, type SchemaUsage } from '@localess/shared';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+
+import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
 import { checkSchemaFields, docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 import { type NewSchema, type SchemaColumns, SchemaRepository } from '../repositories/schema.repository.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
-import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
 /** "Schema 'card' is in use: referenced by 'page' field 'items'; used by 6 contents: Home (home), … and 1 more". */
 function inUseMessage(name: string, usage: SchemaUsage): string {

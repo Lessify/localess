@@ -1,4 +1,4 @@
-import { type AnyColumn, sql, type SQL } from 'drizzle-orm';
+import { type AnyColumn, type SQL, sql } from 'drizzle-orm';
 
 /** `IMPORTING` while a space's import from Firebase runs, `FAILED` once it failed; null otherwise. */
 export type SpaceImportStatus = 'IMPORTING' | 'FAILED';

@@ -1,9 +1,10 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Content, type ContentData, type ContentFolderSummary, WebHookEvent } from '@localess/shared';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+
+import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toContent } from '../../../shared/transformers/content.transformer.js';
 import { toDto } from '../../../shared/transformers/dto.transformer.js';
-import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import { type ContentQuery, ContentRepository, type ContentWithPath } from '../repositories/content.repository.js';
 import { randomSuffix } from '../utils/slug.utils.js';
 

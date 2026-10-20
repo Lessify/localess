@@ -1,5 +1,5 @@
-import { SchemasPage } from '../pages/schemas.page';
 import { choose } from '../pages/dialogs';
+import { SchemasPage } from '../pages/schemas.page';
 import { expect, test, uniqueId } from '../support/fixtures';
 import { schemaNamed } from '../support/schemas';
 

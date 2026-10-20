@@ -1,5 +1,5 @@
-import type { ZodError } from 'zod';
 import type { TaskExportMetadata } from '@localess/shared';
+import type { ZodError } from 'zod';
 
 /** What a job reports back; written onto the task row by the worker. */
 export interface TaskOutcome {

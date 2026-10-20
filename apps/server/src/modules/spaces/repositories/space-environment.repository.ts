@@ -1,6 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { SpaceEnvironmentCreate, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
+import { Inject, Injectable } from '@nestjs/common';
+import { and, asc, desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { keepUpdatedAt, spaceEnvironments } from '../../../infra/database/schema.js';

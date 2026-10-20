@@ -1,19 +1,20 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { IdName, Page, Space, SpaceCreate, SpaceDefaultLocaleUpdate, SpacePageable, SpaceUpdate } from '@localess/shared';
 import { DEFAULT_LOCALE, type SpaceOverview, type SpaceTemplateId } from '@localess/shared';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { assetFilesPrefix, spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
-import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
+import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { type PublicSpace, toLocale, toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
+import { SpaceRepository } from '../repositories/space.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
 import { SpaceTemplateRepository, type StoredTemplateFile } from '../repositories/space-template.repository.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
 import { SPACE_TEMPLATES, type SpaceTemplate } from '../templates/index.js';
 
 /** Template files stored in parallel, this many at a time. */

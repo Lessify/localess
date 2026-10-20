@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { OpenAPIObject } from 'openapi3-ts/oas30';
+
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { SchemaRepository } from '../repositories/schema.repository.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { generateOpenApi } from '../utils/open-api.js';
 
 /** The OpenAPI document of a space's schemas, for the app (was the `openapi-generate` callable) and the public API. */

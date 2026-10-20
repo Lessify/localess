@@ -1,8 +1,8 @@
 import { ContentsPage } from '../pages/contents.page';
+import type { AppApi } from '../support/app-api';
 import { Cdn, contentById } from '../support/contents';
 import { FIELDS, levelTitle, translated } from '../support/contents-fields';
 import { expect, test } from '../support/fixtures';
-import type { AppApi } from '../support/app-api';
 
 // A prepared space: the "Contents (all fields)" test template — every field kind in English, German and French, files
 // and documents to point to, nothing published (support/contents-fields.ts). Each test gets its own copy.

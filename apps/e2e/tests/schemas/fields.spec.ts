@@ -1,8 +1,8 @@
 import { ContentsPage } from '../pages/contents.page';
 import { answerConfirm } from '../pages/dialogs';
 import { SchemasPage } from '../pages/schemas.page';
-import { expect, test, type TestSpace, uniqueId } from '../support/fixtures';
 import type { AppApi } from '../support/app-api';
+import { expect, test, type TestSpace, uniqueId } from '../support/fixtures';
 import { schemaNamed } from '../support/schemas';
 
 /** A Root schema to edit, with a document that uses it (to see the fields in the content editor). */

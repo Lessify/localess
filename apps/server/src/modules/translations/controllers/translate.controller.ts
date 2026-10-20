@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
-import { zTranslateData } from '@localess/shared/zod';
 import { type TranslateData, UserPermission } from '@localess/shared';
+import { zTranslateData } from '@localess/shared/zod';
+import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+
 import { RequireAllPermissions, RequirePermission } from '../../../auth/decorators.js';
 import { TranslateService } from '../services/translate.service.js';
 

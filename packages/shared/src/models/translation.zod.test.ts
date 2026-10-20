@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TRANSLATION_VALUE_MAX_LENGTH, isTranslationKey } from './translation.model.js';
+
+import { isTranslationKey, TRANSLATION_VALUE_MAX_LENGTH } from './translation.model.js';
 import {
   zTranslationExportArraySchema,
   zTranslationFlatExportSchema,

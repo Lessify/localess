@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model.js';
+
 import { zLabels } from './common.zod.js';
+import { AssetFileType, SchemaFieldKind, SchemaType } from './schema.model.js';
 
 const FIELD_NAME_PATTERN = /^[a-z]+[a-zA-Z0-9_]*[a-zA-Z0-9]+$/;
 const ID_PATTERN = /^[a-zA-Z]+[a-zA-Z0-9-_.]*[a-zA-Z0-9]+$/;

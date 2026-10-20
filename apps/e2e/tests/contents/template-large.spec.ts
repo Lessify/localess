@@ -3,7 +3,7 @@ import type { Locator, Page } from '@playwright/test';
 import { ContentsPage } from '../pages/contents.page';
 import { choose, dialog } from '../pages/dialogs';
 import { Cdn, contentById } from '../support/contents';
-import { LARGE_CONTENTS, docName, docRange, postName } from '../support/contents-large';
+import { docName, docRange, LARGE_CONTENTS, postName } from '../support/contents-large';
 import { expect, test } from '../support/fixtures';
 
 // A prepared space: the "Contents (large)" test template — 1,000 documents in `Archive`, `Blog/<year>/<month>` with 16

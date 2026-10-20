@@ -3,15 +3,17 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
+
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { exiftool } from 'exiftool-vendored';
 import sharp from 'sharp';
+
+import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
 import { pickEmbeddedAlt } from '../utils/embedded-alt.js';
+import { errorMessage } from '../utils/error-message.js';
 import { normaliseDuration } from '../utils/media-duration.js';
 import { resolveOrientedDimensions, resolveRotatedDimensions } from '../utils/media-orientation.js';
 import { isAnimatedPages } from '../utils/media-pages.js';
-import { STORAGE_DRIVER, type StorageDriver } from '../../infra/storage/storage.driver.js';
-import { errorMessage } from '../utils/error-message.js';
 
 export interface ExtractedMetadata {
   metadata?: Record<string, unknown>;

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { TokenType } from './token.model.js';
 
 // App API requests of API tokens.

@@ -1,8 +1,10 @@
 import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
+
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { storageDeletions } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
@@ -11,8 +13,8 @@ import { AssetService } from '../src/modules/assets/services/asset.service.js';
 import { SpaceService } from '../src/modules/spaces/services/space.service.js';
 import { StorageDeletionRepository } from '../src/shared/repositories/storage-deletion.repository.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
-import { createTestApp, insertSpace, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
+import { createTestApp, insertSpace, TestApp } from './test-app.js';
 
 /**
  * Stored files are deleted through the `storage_deletions` queue: a delete queues them in its transaction and the

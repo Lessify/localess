@@ -1,11 +1,12 @@
+import { SchemaField, SchemaFieldKind } from '@localess/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SchemaField, SchemaFieldKind } from '@localess/shared';
+
 import { newUuid } from '../src/infra/database/id.js';
-import { SchemaRepository } from '../src/modules/schemas/repositories/schema.repository.js';
 import { contents } from '../src/infra/database/schema.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+import { SchemaRepository } from '../src/modules/schemas/repositories/schema.repository.js';
 import { S1, UUID_V7 } from './ids.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: schemas', () => {
   let t: TestApp;

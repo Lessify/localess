@@ -1,10 +1,11 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { WebHookEvent } from '@localess/shared';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
-import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 
 export interface WebhookInput {
   name: string;

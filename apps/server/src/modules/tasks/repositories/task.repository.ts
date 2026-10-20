@@ -1,14 +1,15 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TaskPageable } from '@localess/shared';
-import { and, asc, count, desc, eq, ilike, inArray, lt, or, sql, type SQL } from 'drizzle-orm';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { and, asc, count, desc, eq, ilike, inArray, lt, or, type SQL, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { tasks } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
+import type { TaskEntity, TaskInsertEntity } from '../../../shared/entities/task.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
-import type { TaskInsertEntity, TaskEntity } from '../../../shared/entities/task.entity.js';
 
 export type NewTask = Omit<TaskInsertEntity, 'spaceId' | 'status'>;
 

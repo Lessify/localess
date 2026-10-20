@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { zContentData } from './content.zod.js';
 
 const root = { _id: 'r1', _schema: 'page' };

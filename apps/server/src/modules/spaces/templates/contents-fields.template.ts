@@ -1,5 +1,6 @@
-import { AssetFileType, type ContentValue, SchemaFieldKind, type SchemaField, SchemaType } from '@localess/shared';
+import { AssetFileType, type ContentValue, type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import sharp from 'sharp';
+
 import { newUuid } from '../../../infra/database/id.js';
 import type { SpaceTemplate, SpaceTemplateSchema } from './space-template.model.js';
 

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { AuthModule } from '../../auth/auth.module.js';
 import { MeController } from './controllers/me.controller.js';
 import { UserController } from './controllers/user.controller.js';

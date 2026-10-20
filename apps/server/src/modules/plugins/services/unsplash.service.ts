@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Inject, Injectable, NotImplementedException } from '@nestjs/common';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { normalizePaging } from '../utils/unsplash-paging.js';
 

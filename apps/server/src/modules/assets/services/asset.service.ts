@@ -1,14 +1,16 @@
 import type { Readable } from 'node:stream';
-import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+
 import type { Asset, AssetFolderSummary } from '@localess/shared';
+import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toAsset } from '../../../shared/transformers/asset.transformer.js';
 import { toDto } from '../../../shared/transformers/dto.transformer.js';
 import { type AssetQuery, AssetRepository } from '../repositories/asset.repository.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { splitFilename } from '../utils/split-filename.js';
 import { assetPrefix, originalKey } from '../utils/storage-keys.js';
 

@@ -1,5 +1,6 @@
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+
 import { Public } from '../../../auth/decorators.js';
 import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import {

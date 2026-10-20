@@ -1,5 +1,5 @@
-import { cancel, dialog, expectRefused, rowMenu } from '../pages/dialogs';
 import { ContentsPage } from '../pages/contents.page';
+import { cancel, dialog, expectRefused, rowMenu } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { CSRF } from '../support/app-api';
 import { Cdn, contentById, contentNamed, contentsIn, pageSchema } from '../support/contents';

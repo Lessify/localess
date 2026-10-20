@@ -1,5 +1,6 @@
-import { Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { UserPermission } from '@localess/shared';
+import { Controller, HttpCode, Param, Post } from '@nestjs/common';
+
 import { RequirePermission } from '../../../auth/decorators.js';
 import { OpenApiService } from '../services/open-api.service.js';
 

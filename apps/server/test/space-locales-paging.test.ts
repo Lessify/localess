@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 

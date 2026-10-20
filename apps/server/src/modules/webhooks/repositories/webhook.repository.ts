@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { spaces, webhooks } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 

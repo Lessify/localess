@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { WebhookLogRepository } from '../repositories/webhook-log.repository.js';
 

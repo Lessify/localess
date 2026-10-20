@@ -2,7 +2,7 @@ import type { APIRequestContext } from '@playwright/test';
 
 import { CSRF } from '../support/app-api';
 import { type AppRoute, appRoutes } from '../support/app-routes';
-import { expect, type TestUser, test } from '../support/fixtures';
+import { expect, test, type TestUser } from '../support/fixtures';
 
 // Every App API route × every permission, read from the server's access decorators (`@RequirePermission` and co.), so
 // a new route is covered as soon as it exists. Requests use ids that match nothing: a let-through request answers

@@ -1,17 +1,18 @@
 import fastifyCompress from '@fastify/compress';
 import fastifyCookie from '@fastify/cookie';
-import fastifyMultipart from '@fastify/multipart';
 import fastifyCors from '@fastify/cors';
+import fastifyMultipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { HttpException, HttpStatus, Logger, StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+
 import { AppModule } from './app.module.js';
 import { AppConfig } from './infra/config/config.js';
 import { DATABASE, type Database } from './infra/database/database.module.js';
-import { registerSpaceIdResolution, SpaceIdResolver } from './shared/http/space-id.js';
 import { SpaFallbackFilter } from './infra/static/spa-fallback.filter.js';
 import { registerStaticSite } from './infra/static/static-site.js';
+import { registerSpaceIdResolution, SpaceIdResolver } from './shared/http/space-id.js';
 
 export async function createApp(config: AppConfig): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { FirstAdminService } from '../src/modules/users/services/first-admin.service.js';
+
 import { spaces, tokens, users } from '../src/infra/database/schema.js';
+import { FirstAdminService } from '../src/modules/users/services/first-admin.service.js';
 import { createTestApp, login, readSpaces, TestApp } from './test-app.js';
 
 describe('first admin', () => {

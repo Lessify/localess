@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { deeplTranslateOptions, googleMimeType } from './translate-format.utils.js';
 
 describe('googleMimeType', () => {

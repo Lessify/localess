@@ -1,11 +1,12 @@
+import type { WebHookEvent } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, arrayContains, eq } from 'drizzle-orm';
-import type { WebHookEvent } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { webhookLogs, webhooks } from '../../infra/database/schema.js';
 import { EventService } from '../../infra/events/event.service.js';
-import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
 import type { WebhookEntity } from '../entities/webhook.entity.js';
+import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
 
 /** What a webhook delivery reads and writes: the subscribed webhooks, and one `webhook_logs` row per delivery. */
 @Injectable()

@@ -1,8 +1,8 @@
+import { randomUUID } from 'node:crypto';
+
 import { ContentsPage } from '../pages/contents.page';
 import { contentById, pageSchema } from '../support/contents';
 import { expect, test, uniqueId } from '../support/fixtures';
-import { randomUUID } from 'node:crypto';
-
 import { PreviewSite, syncedBlocksPage, syncedPage } from '../support/preview-site';
 
 // The Visual Editor previews the customer's site (an environment) next to the form. The site here is served by the

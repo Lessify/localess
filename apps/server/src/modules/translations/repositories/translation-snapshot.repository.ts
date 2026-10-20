@@ -1,12 +1,13 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { type SnapshotVersion, translations, translationSnapshots } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { lockTranslations } from '../../../shared/data-rules/translation-drafts.js';
-import { buildTranslationMap } from '../utils/translation.utils.js';
 import type { TranslationSnapshotEntity } from '../../../shared/entities/translation-snapshot.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
+import { buildTranslationMap } from '../utils/translation.utils.js';
 
 /**
  * The maps the public API serves (`translation_snapshots`), each answering to `cv` = its `built_at`. A publish stores

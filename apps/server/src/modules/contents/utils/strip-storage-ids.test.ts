@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { stripStorageIds } from './strip-storage-ids.js';
 
 describe('stripStorageIds', () => {

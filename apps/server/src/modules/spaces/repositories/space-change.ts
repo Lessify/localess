@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
+
 import type { Database } from '../../../infra/database/database.module.js';
 import { spaces } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import type { EventService } from '../../../infra/events/event.service.js';
 import type { SpaceEntity, SpaceInsertEntity } from '../../../shared/entities/space.entity.js';
 

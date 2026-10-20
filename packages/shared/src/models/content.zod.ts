@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { type ContentData, ContentKind, type ContentRichText, type ContentValue } from './content.model.js';
 
 export const contentDataSchema = z.object({

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, gt, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { contents, keepUpdatedAt } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { folderPaths } from '../../../shared/queries/content-tree.query.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import type { ContentEntity, ContentInsertEntity } from '../../../shared/entities/content.entity.js';
+import { folderPaths } from '../../../shared/queries/content-tree.query.js';
 
 /** The columns the reference rewrite reads and writes (`parentId`, `slug`: for the path in its warnings). */
 export type ContentReferences = Pick<ContentEntity, 'id' | 'parentId' | 'slug' | 'data' | 'assets' | 'links' | 'references'>;

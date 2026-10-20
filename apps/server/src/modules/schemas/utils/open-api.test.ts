@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Schema, SchemaType, TokenType } from '@localess/shared';
+import { describe, expect, it } from 'vitest';
+
 import { parseApiToken } from '../../../shared/utils/api-token-format.js';
 import { generateOpenApi } from './open-api.js';
 

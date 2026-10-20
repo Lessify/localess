@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
+
 import { PasswordResetTokenRepository } from '../repositories/password-reset-token.repository.js';
 import { SessionRepository } from '../repositories/session.repository.js';
 

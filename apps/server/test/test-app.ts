@@ -1,19 +1,20 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { and, asc, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import type { InjectOptions, LightMyRequestResponse } from 'fastify';
 import pg from 'pg';
+
 import { createApp } from '../src/app.factory.js';
 import { loadConfig } from '../src/infra/config/config.js';
+import { type Database, DB_SCHEMA } from '../src/infra/database/database.module.js';
 import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
-import { DB_SCHEMA, type Database } from '../src/infra/database/database.module.js';
-import type { SpaceInsertEntity } from '../src/shared/entities/space.entity.js';
 import { TranslationSnapshotRepository } from '../src/modules/translations/repositories/translation-snapshot.repository.js';
-
+import type { SpaceInsertEntity } from '../src/shared/entities/space.entity.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {

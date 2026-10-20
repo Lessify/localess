@@ -1,5 +1,3 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
-import { zSpaceLocaleCreate, zSpaceLocaleMove, zSpaceLocalePageable } from '@localess/shared/zod';
 import {
   type IdName,
   type Page,
@@ -9,6 +7,9 @@ import {
   type SpaceLocalePageable,
   UserPermission,
 } from '@localess/shared';
+import { zSpaceLocaleCreate, zSpaceLocaleMove, zSpaceLocalePageable } from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceLocaleService } from '../services/space-locale.service.js';

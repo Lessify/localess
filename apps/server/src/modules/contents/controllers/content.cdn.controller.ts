@@ -1,10 +1,10 @@
+import { ContentDocumentApi, ContentKind, TokenType } from '@localess/shared';
 import { Controller, Get, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { ContentDocumentApi, ContentKind, TokenType } from '@localess/shared';
-import type { ApiToken } from '../../../auth/utils/api-token.js';
+
 import { CurrentToken } from '../../../auth/request-context.js';
 import { CdnToken } from '../../../auth/token-auth.decorators.js';
-import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import type { ApiToken } from '../../../auth/utils/api-token.js';
 import { publicCache, TEN_MINUTES } from '../../../infra/http/v1/cache-control.js';
 import {
   identifySpaceLocale,
@@ -16,6 +16,7 @@ import {
   sendJson,
 } from '../../../infra/http/v1/v1-request.js';
 import { q, sendV1Error } from '../../../infra/http/v1/v1-response.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { ContentDeliveryService } from '../services/content-delivery.service.js';
 
 const TEN_MINUTE_CACHE = publicCache(TEN_MINUTES);

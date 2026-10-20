@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { ApiTokenModule } from '../../auth/api-token.module.js';
 import { OpenApiController } from './controllers/open-api.controller.js';
 import { SchemaController } from './controllers/schema.controller.js';

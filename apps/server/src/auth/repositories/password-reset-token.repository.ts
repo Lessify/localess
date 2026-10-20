@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gt, isNotNull, isNull, lt, or } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { passwordResetTokens } from '../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../infra/database/transaction.js';
 
 /** Single-use password reset tokens, stored by hash. */
 @Injectable()

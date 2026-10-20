@@ -1,6 +1,6 @@
+import { ContentData, extractContent, Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
-import { ContentData, extractContent, Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { buildDocumentStorage } from './content-extract.js';
 
 function schemaOf(fields: { name: string; kind: SchemaFieldKind; translatable?: boolean }[], id = 'root-1'): Schema {

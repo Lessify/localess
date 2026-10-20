@@ -1,6 +1,6 @@
 import { AssetsPage } from '../pages/assets.page';
 import { allAssets, assetNamed, assetsIn, listedName, original } from '../support/assets';
-import { PNG_1X1, pdfFile, pngFile, textFile } from '../support/files';
+import { pdfFile, PNG_1X1, pngFile, textFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
 
 // Pre-check → action (UI) → post-check (the list, after a reload, the App API, the CDN API).

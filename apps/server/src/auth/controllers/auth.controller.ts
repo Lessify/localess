@@ -1,18 +1,19 @@
-import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
-import { zAuthLogin, zPasswordResetConfirm, zPasswordResetRequest } from '@localess/shared/zod';
 import type { AuthLogin, PasswordResetConfirm, PasswordResetRequest } from '@localess/shared';
+import { zAuthLogin, zPasswordResetConfirm, zPasswordResetRequest } from '@localess/shared/zod';
+import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { RouteConfig } from '@nestjs/platform-fastify';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
-import type { UserDto } from '../../shared/transformers/user.transformer.js';
-import { AuthService } from '../services/auth.service.js';
-import { Public } from '../decorators.js';
-import { PasswordResetService } from '../services/password-reset.service.js';
-import { publicOrigin } from '../utils/public-url.js';
-import { CurrentUser } from '../request-context.js';
-import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from '../utils/session-cookie.js';
-import { SessionService } from '../services/session.service.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
+import type { UserDto } from '../../shared/transformers/user.transformer.js';
+import { Public } from '../decorators.js';
+import { CurrentUser } from '../request-context.js';
+import { AuthService } from '../services/auth.service.js';
+import { PasswordResetService } from '../services/password-reset.service.js';
+import { SessionService } from '../services/session.service.js';
+import { publicOrigin } from '../utils/public-url.js';
+import { clearSessionCookie, SESSION_COOKIE, setSessionCookie } from '../utils/session-cookie.js';
 
 /** Login attempts per client IP per minute; LOCALESS_LOGIN_RATE_LIMIT overrides (read per request). */
 const loginRateLimit = (): number => Number(process.env['LOCALESS_LOGIN_RATE_LIMIT'] ?? 10);

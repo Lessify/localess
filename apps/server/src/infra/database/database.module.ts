@@ -1,6 +1,7 @@
 import { Global, Inject, Logger, Module, OnApplicationShutdown } from '@nestjs/common';
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
+
 import { APP_CONFIG, AppConfig } from '../config/config.js';
 import { EmbeddedPostgresHandle, startEmbeddedPostgres } from './embedded-postgres.js';
 import { migrateDatabase } from './migrate.js';

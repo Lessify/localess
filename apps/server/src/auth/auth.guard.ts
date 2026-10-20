@@ -1,7 +1,8 @@
+import { canPerform, hasAnyRole } from '@localess/shared';
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
-import { canPerform, hasAnyRole } from '@localess/shared';
+
 import { toPrincipal } from '../shared/transformers/user.transformer.js';
 import { AUTH_KIND, type AuthKind, IS_PUBLIC, REQUIRED_ACCESS, RequiredAccess } from './decorators.js';
 import { SessionService } from './services/session.service.js';

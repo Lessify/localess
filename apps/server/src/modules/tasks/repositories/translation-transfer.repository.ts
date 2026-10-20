@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { translations } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
-import type { TranslationInsertEntity, TranslationEntity } from '../../../shared/entities/translation.entity.js';
+import type { TranslationEntity, TranslationInsertEntity } from '../../../shared/entities/translation.entity.js';
 
 /** The columns a full translation import writes. */
 export type TranslationImportColumns = Pick<TranslationInsertEntity, 'locales' | 'description' | 'labels'>;

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Translation } from '@localess/shared';
+import { describe, expect, it } from 'vitest';
+
 import { isLocalesEqual, isTranslationChanged } from './import-diff.js';
 
 describe('isTranslationChanged', () => {

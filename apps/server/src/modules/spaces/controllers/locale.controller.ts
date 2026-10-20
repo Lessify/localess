@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
 import type { Locale } from '@localess/shared';
+import { Controller, Get } from '@nestjs/common';
+
 import { RequireAnyRole } from '../../../auth/decorators.js';
 import { LocaleService } from '../services/locale.service.js';
 

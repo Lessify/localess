@@ -1,6 +1,7 @@
 import { type SchemaField, SchemaFieldKind, SchemaType, SPACE_TEMPLATE_IDS } from '@localess/shared';
 import { zSchemaExportArraySchema } from '@localess/shared/zod';
 import { describe, expect, it } from 'vitest';
+
 import { SPACE_TEMPLATES } from './index.js';
 import type { SpaceTemplateComponent, SpaceTemplateEnum } from './space-template.model.js';
 

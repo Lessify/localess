@@ -1,6 +1,4 @@
-import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, PreconditionFailedException } from '@nestjs/common';
 import type { TranslationServiceClient } from '@google-cloud/translate';
-import type { Translator } from 'deepl-node';
 import {
   DEEPL_SOURCE_SUPPORT_LOCALES,
   DEEPL_TARGET_SUPPORT_LOCALES,
@@ -10,6 +8,9 @@ import {
   TranslateFormat,
   TranslateItem,
 } from '@localess/shared';
+import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, PreconditionFailedException } from '@nestjs/common';
+import type { Translator } from 'deepl-node';
+
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { translateItems } from '../utils/translate-batch.js';
 import { deeplTranslateOptions, googleMimeType } from '../utils/translate-format.utils.js';

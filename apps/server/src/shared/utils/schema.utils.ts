@@ -1,13 +1,14 @@
 import {
   Schema,
+  SCHEMA_PREVIEW_FIELD_KINDS,
   SchemaComponentExport,
   SchemaEnumExport,
   SchemaExport,
   SchemaField,
   SchemaFieldKind,
-  SCHEMA_PREVIEW_FIELD_KINDS,
   SchemaType,
 } from '@localess/shared';
+
 import { isLabelsEqual } from './labels.utils.js';
 import { stableStringify } from './stable-json.js';
 

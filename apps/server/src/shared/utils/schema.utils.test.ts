@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
 import { Schema, SchemaExport, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { describe, expect, it } from 'vitest';
+
 import { checkSchemaFields, docSchemaToExport, isSchemaChanged, planSchemaPush } from './schema.utils.js';
 
 // What a stored row adds to a model; the functions under test key rows by the map key, not by `id`.

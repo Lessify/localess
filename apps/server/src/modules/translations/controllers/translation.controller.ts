@@ -1,11 +1,3 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
-import {
-  zTranslationCreate,
-  zTranslationLocaleUpdate,
-  zTranslationRename,
-  zTranslationTranslateLocale,
-  zTranslationUpdate,
-} from '@localess/shared/zod';
 import {
   type TranslationCreate,
   type TranslationLocaleUpdate,
@@ -14,6 +6,15 @@ import {
   type TranslationUpdate,
   UserPermission,
 } from '@localess/shared';
+import {
+  zTranslationCreate,
+  zTranslationLocaleUpdate,
+  zTranslationRename,
+  zTranslationTranslateLocale,
+  zTranslationUpdate,
+} from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
+
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TranslationService } from '../services/translation.service.js';

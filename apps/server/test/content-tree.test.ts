@@ -1,10 +1,11 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { contents } from '../src/infra/database/schema.js';
+
 import { newUuid } from '../src/infra/database/id.js';
+import { contents } from '../src/infra/database/schema.js';
 import { findIdByPath, folderPaths, isUnderOrSelf, pathOf, subtree, withPaths } from '../src/shared/queries/content-tree.query.js';
-import { createTestApp, insertSpace, TestApp } from './test-app.js';
 import { S1, S2 } from './ids.js';
+import { createTestApp, insertSpace, TestApp } from './test-app.js';
 
 /** The content tree: linked by `parent_id`, every path computed (content-tree.query.ts). */
 describe('content tree', () => {

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { tasks } from '../src/infra/database/schema.js';
 import { SPACE_A, SPACE_B } from './ids.js';

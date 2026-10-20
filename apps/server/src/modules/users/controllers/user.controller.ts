@@ -1,15 +1,16 @@
-import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
-import { zUserInvite, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
-import type { FastifyRequest } from 'fastify';
 import { type Page, type UserInvite, type UserPageable, UserPermission, type UserStatusUpdate, type UserUpdate } from '@localess/shared';
+import { zUserInvite, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
+
 import { RequirePermission } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
 import { publicOrigin } from '../../../auth/utils/public-url.js';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
 import { UserService } from '../services/user.service.js';
-import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /**
  * Admin → Users. Enforces what firestore.rules enforced on `users/{uid}` plus the `user.invite`

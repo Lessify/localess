@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { contentRefs } from './content-refs.js';
 
 describe('contentRefs', () => {

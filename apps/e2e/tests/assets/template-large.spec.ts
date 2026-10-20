@@ -3,10 +3,10 @@ import type { Locator, Page } from '@playwright/test';
 import { AssetsPage } from '../pages/assets.page';
 import { ContentsPage } from '../pages/contents.page';
 import { choose } from '../pages/dialogs';
-import { LARGE_ASSETS, bulkListed, bulkRange } from '../support/assets-large';
+import { bulkListed, bulkRange, LARGE_ASSETS } from '../support/assets-large';
 import { contentById } from '../support/contents';
-import { expect, test } from '../support/fixtures';
 import { textFile } from '../support/files';
+import { expect, test } from '../support/fixtures';
 
 // A prepared space: the "Assets (large)" test template — 1,000 files in `Bulk` (every 10th a PNG, text file N is N
 // bytes), `Nested/Deep`, `Empty`, and a `Gallery` document (support/assets-large.ts). Each test gets its own copy.

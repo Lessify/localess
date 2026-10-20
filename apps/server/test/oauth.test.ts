@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { LightMyRequestResponse } from 'fastify';
 import { OAuth2Server } from 'oauth2-mock-server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
 import { userIdentities, users } from '../src/infra/database/schema.js';
 import { UserService } from '../src/modules/users/services/user.service.js';
 import { freePort } from './free-port.js';

@@ -1,7 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { assets } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import type { AssetInsertEntity } from '../../../shared/entities/asset.entity.js';
 
 /** The imported space's `assets`, one at a time, each after its file is stored. */

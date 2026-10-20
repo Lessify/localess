@@ -1,10 +1,11 @@
-import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
-import { zMeEmailUpdate, zMePasswordUpdate, zMeUpdate } from '@localess/shared/zod';
 import type { MeEmailUpdate, MePasswordUpdate, MeUpdate } from '@localess/shared';
+import { zMeEmailUpdate, zMePasswordUpdate, zMeUpdate } from '@localess/shared/zod';
+import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
+
 import { CurrentSessionId, CurrentUser } from '../../../auth/request-context.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import type { UserDto } from '../../../shared/transformers/user.transformer.js';
 import { MeService } from '../services/me.service.js';
-import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
 /** The signed-in user's own profile (was `updateProfile` / `updateEmail` / `updatePassword` on Firebase Auth). */
 @Controller('api/app/me')

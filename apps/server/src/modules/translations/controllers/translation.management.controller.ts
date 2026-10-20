@@ -1,6 +1,7 @@
+import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
 import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
+
 import { ManagementToken } from '../../../auth/token-auth.decorators.js';
 import { Params } from '../../../infra/http/v1/v1-request.js';
 import { sendV1Error } from '../../../infra/http/v1/v1-response.js';

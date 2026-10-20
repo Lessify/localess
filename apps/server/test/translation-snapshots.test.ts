@@ -1,13 +1,14 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { translations, translationSnapshots } from '../src/infra/database/schema.js';
-import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
 import { SpaceService } from '../src/modules/spaces/services/space.service.js';
-import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
+import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
 import { TranslationService } from '../src/modules/translations/services/translation.service.js';
-import { seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_DRAFT, TOKEN_READ } from './seed.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { lockTranslations } from '../src/shared/data-rules/translation-drafts.js';
 import { S1 } from './ids.js';
+import { seedSpace, seedTranslations, TOKEN_DRAFT, TOKEN_MANAGEMENT, TOKEN_READ } from './seed.js';
+import { createTestApp, TestApp } from './test-app.js';
 
 /**
  * The maps the public API serves per stage and locale (`translation_snapshots`): each answers to its own `cv`, its

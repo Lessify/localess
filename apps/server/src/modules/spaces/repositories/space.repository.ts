@@ -1,15 +1,16 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { SpacePageable } from '@localess/shared';
-import { and, asc, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { and, asc, desc, eq, ilike, inArray, notExists, or, type SQL, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { firebaseImports, spaceLocales, spaces } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts } from '../../../shared/data-rules/content-snapshots.js';
+import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import { scheduleSpaceFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
-import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
 import type { SpaceEntity, SpaceSelect, SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { changeSpace } from './space-change.js';

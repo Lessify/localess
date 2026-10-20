@@ -4,7 +4,7 @@ import { AdminUsersPage } from '../pages/admin-users.page';
 import { LoginPage } from '../pages/login.page';
 import { CSRF } from '../support/app-api';
 import { expect, test, uniqueId } from '../support/fixtures';
-import { providerAccount, type ProviderAccount } from '../support/oauth';
+import { type ProviderAccount, providerAccount } from '../support/oauth';
 
 // Google and Microsoft sign-in in the browser, against a mock OpenID provider (scripts/start-server.mjs). Only
 // existing accounts may sign in (LOCALESS_AUTH_AUTO_REGISTER is off). The protocol details (PKCE, state, nonce,

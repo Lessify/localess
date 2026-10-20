@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import { isUuid } from '../../infra/database/id.js';
+
 import type { Database } from '../../infra/database/database.module.js';
+import { isUuid } from '../../infra/database/id.js';
 import { firebaseImports, spaces } from '../../infra/database/schema.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
 import { CONTENT_CACHE } from '../../infra/http/v1/v1-request.js';

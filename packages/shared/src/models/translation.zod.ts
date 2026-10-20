@@ -1,6 +1,7 @@
-import { isTranslationKey, TRANSLATION_VALUE_MAX_LENGTH } from './translation.model.js';
 import { z } from 'zod';
+
 import { zLabels } from './common.zod.js';
+import { isTranslationKey, TRANSLATION_VALUE_MAX_LENGTH } from './translation.model.js';
 
 /** A key a translation is created with or renamed to (`isTranslationKey`). */
 export const zTranslationKey = z.string().refine(isTranslationKey, {

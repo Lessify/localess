@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { taskLogs } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import type { TaskLogEntity } from '../../../shared/entities/task-log.entity.js';
 import type { TaskEntity } from '../../../shared/entities/task.entity.js';
+import type { TaskLogEntity } from '../../../shared/entities/task-log.entity.js';
 
 /** The steps of a task (`task_logs`); they cascade with it. Every write publishes a `task_logs` event. */
 @Injectable()

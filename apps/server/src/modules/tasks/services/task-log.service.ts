@@ -1,10 +1,11 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { TaskLog } from '@localess/shared';
-import { toTaskLog } from '../../../shared/transformers/task.transformer.js';
-import { TaskLogRepository } from '../repositories/task-log.repository.js';
-import { TaskRepository } from '../repositories/task.repository.js';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+
 import type { TaskEntity } from '../../../shared/entities/task.entity.js';
+import { toTaskLog } from '../../../shared/transformers/task.transformer.js';
 import { errorMessage } from '../../../shared/utils/error-message.js';
+import { TaskRepository } from '../repositories/task.repository.js';
+import { TaskLogRepository } from '../repositories/task-log.repository.js';
 
 /** The steps of a task: written while it runs (the Tasks UI and the server log), read by its detail page. */
 @Injectable()

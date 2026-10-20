@@ -2,6 +2,7 @@ import { isFieldTranslatable, type SchemaField } from '@localess/shared';
 import { zSchemaExportArraySchema } from '@localess/shared/zod';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
+
 import { ASSETS_LARGE_TEMPLATE } from './assets-large.template.js';
 
 const template = ASSETS_LARGE_TEMPLATE;

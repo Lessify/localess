@@ -1,5 +1,5 @@
-import { expect, test } from '../support/fixtures';
 import { PNG_1X1, pngFile } from '../support/files';
+import { expect, test } from '../support/fixtures';
 
 // The CDN API is public (a token in the URL): `request` has no session cookie here, so a refusal can't be hidden by the
 // admin's session. Test data goes through `api`, which has its own.

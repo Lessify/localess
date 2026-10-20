@@ -1,12 +1,15 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { ContentData } from '@localess/shared';
-import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, sql, SQL } from 'drizzle-orm';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, SQL, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { contents, contentSnapshots, keepUpdatedAt, schemas } from '../../../infra/database/schema.js';
-import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLinks, lockContents } from '../../../shared/data-rules/content-snapshots.js';
+import type { ContentEntity } from '../../../shared/entities/content.entity.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import {
   type ContentWithPath,
   type Executor,
@@ -17,11 +20,9 @@ import {
   withPaths,
 } from '../../../shared/queries/content-tree.query.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
-import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 import { startsWith } from '../utils/slug.utils.js';
-import type { ContentEntity } from '../../../shared/entities/content.entity.js';
 
 export type { ContentWithPath };
 

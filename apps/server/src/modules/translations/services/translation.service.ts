@@ -1,13 +1,14 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { type Translation, WebHookEvent } from '@localess/shared';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
-import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
-import { TranslationRepository } from '../repositories/translation.repository.js';
 import { toTranslation } from '../../../shared/transformers/translation.transformer.js';
+import { TranslationRepository } from '../repositories/translation.repository.js';
+import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
 import { TranslateService } from './translate.service.js';
-import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';
 
 /** Values are written only for the space's locales (removing one is allowed for any locale). */
 function requireSpaceLocales(space: SpaceWithLocales, localeIds: string[]): void {

@@ -1,4 +1,5 @@
 import type { Translation } from '@localess/shared';
+
 import { withoutNulls } from '../../infra/database/without-nulls.js';
 import type { TranslationEntity } from '../entities/translation.entity.js';
 

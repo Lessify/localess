@@ -1,6 +1,11 @@
 import { gunzipSync } from 'node:zlib';
+
+import { TokenType } from '@localess/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { tokens } from '../src/infra/database/schema.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
 import {
   seedContent,
   seedSpace,
@@ -13,9 +18,6 @@ import {
   tokenRow,
 } from './seed.js';
 import { createTestApp, insertSpace, setImport, TestApp } from './test-app.js';
-import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
-import { TokenType } from '@localess/shared';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
 
 /**
  * The public delivery API against real rows. The cases ported from functions/src/v1/*.test.ts keep

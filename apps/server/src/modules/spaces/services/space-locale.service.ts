@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import type { IdName, Page, SpaceLocale, SpaceLocaleCreate, SpaceLocaleMove, SpaceLocalePageable } from '@localess/shared';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { toSpaceLocale } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { LocaleRepository } from '../repositories/locale.repository.js';
-import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
 
 /**
  * A space's locales (the default locale is the space's: `SpaceService.setDefaultLocale`). Adding answers the space

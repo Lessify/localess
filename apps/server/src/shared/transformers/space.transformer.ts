@@ -1,8 +1,9 @@
 import type { Locale, Space, SpaceEnvironment, SpaceLocale } from '@localess/shared';
+
 import type { LocaleEntity } from '../entities/locale.entity.js';
+import type { SpaceSelect, SpaceWithLocales } from '../entities/space.entity.js';
 import type { SpaceEnvironmentSelect } from '../entities/space-environment.entity.js';
 import type { SpaceLocaleSelect } from '../entities/space-locale.entity.js';
-import type { SpaceSelect, SpaceWithLocales } from '../entities/space.entity.js';
 import { toFirebaseImport } from './firebase-import.transformer.js';
 
 // A space and its relations as the App API answers them: the columns, plus each relation the query loaded (`with`).

@@ -1,4 +1,3 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   IdNameUrl,
   Page,
@@ -8,10 +7,12 @@ import type {
   SpaceEnvironmentPageable,
   SpaceEnvironmentUpdate,
 } from '@localess/shared';
+import { Injectable, NotFoundException } from '@nestjs/common';
+
 import { toSpaceEnvironment } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
-import { SpaceEnvironmentRepository } from '../repositories/space-environment.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
+import { SpaceEnvironmentRepository } from '../repositories/space-environment.repository.js';
 
 /**
  * A space's environments (the Visual Editor's preview URLs; the first is the default). Adding and updating answer the

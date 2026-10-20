@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, gt, lt, ne } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { sessions, users } from '../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../infra/database/transaction.js';
 import type { SessionEntity } from '../../shared/entities/session.entity.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
 

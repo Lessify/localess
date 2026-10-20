@@ -1,5 +1,6 @@
-import { AssetFileType, SchemaFieldKind, type SchemaField, SchemaType } from '@localess/shared';
+import { AssetFileType, type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import sharp from 'sharp';
+
 import type { SpaceTemplate, TemplateAsset } from './space-template.model.js';
 
 /*

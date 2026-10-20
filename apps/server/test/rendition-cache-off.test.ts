@@ -1,12 +1,14 @@
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { S1 } from './ids.js';
 import { seedAsset, seedSpace } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
-import { S1 } from './ids.js';
 
 /** LOCALESS_RENDITION_CACHE=off: every transform runs in the request, nothing but the original is stored. */
 describe('rendition cache off', () => {

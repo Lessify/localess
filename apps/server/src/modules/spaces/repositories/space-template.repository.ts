@@ -1,11 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { type ContentData, DEFAULT_LOCALE } from '@localess/shared';
+import { Inject, Injectable } from '@nestjs/common';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { assets, contents, schemas, spaceLocales, translations } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { guardUploads, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
+import { guardUploads, releaseUploadGuards } from '../../../shared/data-rules/storage-deletions.js';
 import type { SpaceTemplate } from '../templates/index.js';
 import { SpaceRepository } from './space.repository.js';
 

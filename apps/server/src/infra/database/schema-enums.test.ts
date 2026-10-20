@@ -1,5 +1,3 @@
-import pg from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   AssetKind,
   ContentKind,
@@ -16,6 +14,9 @@ import {
   WebHookEvent,
   WebHookStatus,
 } from '@localess/shared';
+import pg from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createTestDatabase, TestDatabase } from '../../../test/database.js';
 import { OAUTH_PROVIDERS } from '../config/oauth-providers.js';
 import { migrateDatabase } from './migrate.js';

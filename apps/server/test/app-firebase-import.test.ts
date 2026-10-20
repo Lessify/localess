@@ -1,11 +1,12 @@
+import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
+
 import { newUuid } from '../src/infra/database/id.js';
 import { firebaseImports } from '../src/infra/database/schema.js';
+import { FirebaseImportService } from '../src/modules/firebase-import/services/firebase-import.service.js';
 import { FirebaseClient } from '../src/modules/firebase-import/utils/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/workers/firebase-import.runner.js';
-import { FirebaseImportService } from '../src/modules/firebase-import/services/firebase-import.service.js';
 import { fakeFirebase } from './fake-firebase.js';
 import { api, createTestApp, insertSpace, readSpaces, TestApp, userWithAccess } from './test-app.js';
 

@@ -1,11 +1,12 @@
+import type { FirebaseImportStage } from '@localess/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, inArray, lt } from 'drizzle-orm';
-import type { FirebaseImportStage } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { firebaseImports, spaces } from '../../../infra/database/schema.js';
-import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
-import { RunAbandoned } from '../utils/firebase-import.utils.js';
+import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import type { FirebaseImportEntity, FirebaseImportInsertEntity } from '../../../shared/entities/firebase-import.entity.js';
+import { RunAbandoned } from '../utils/firebase-import.utils.js';
 
 /** What a run's progress save may set besides its stages. */
 export type FirebaseImportUpdate = Partial<Pick<FirebaseImportInsertEntity, 'status' | 'finishedAt'>>;

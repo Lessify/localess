@@ -1,6 +1,8 @@
 import { EventEmitter } from 'node:events';
+
 import type pg from 'pg';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import type { Database } from '../database/database.module.js';
 import { EventService } from './event.service.js';
 

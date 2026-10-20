@@ -1,7 +1,7 @@
 import type { APIRequestContext } from '@playwright/test';
 
 import { CSRF } from '../support/app-api';
-import { anonymousRequest, expect, type TestUser, test, uniqueId } from '../support/fixtures';
+import { anonymousRequest, expect, test, type TestUser, uniqueId } from '../support/fixtures';
 
 // A custom user with USER_MANAGEMENT ("user manager") may only give what they hold, and only manage users they fully
 // outrank (`canGrant` / `canManageUser` in @localess/shared, enforced by the server). Admins may do anything.

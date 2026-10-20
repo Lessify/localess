@@ -1,4 +1,5 @@
 import type { TranslationExport } from '@localess/shared';
+
 import type { TranslationEntity } from '../entities/translation.entity.js';
 
 /*

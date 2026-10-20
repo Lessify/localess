@@ -1,4 +1,5 @@
 import { applyDecorators, SetMetadata, UseFilters, UseGuards } from '@nestjs/common';
+
 import { V1ExceptionFilter } from '../infra/http/v1/v1-error.js';
 import { AUTH_KIND, type AuthKind, CDN_TOKEN_RULE, type CdnTokenRule } from './decorators.js';
 import { CdnTokenGuard } from './guards/cdn-token.guard.js';

@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { createTestDatabase, TestDatabase } from '../../../test/database.js';
 import { migrateDatabase } from './migrate.js';
 

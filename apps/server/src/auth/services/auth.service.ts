@@ -1,8 +1,9 @@
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 import { toUser, type UserDto } from '../../shared/transformers/user.transformer.js';
 import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import { verifyPassword } from '../utils/password.js';
-import type { UserEntity } from '../../shared/entities/user.entity.js';
 
 @Injectable()
 export class AuthService {

@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+
 import { count, eq } from 'drizzle-orm';
+
 import type { AppConfig } from '../infra/config/config.js';
 import type { Database } from '../infra/database/database.module.js';
 import { users } from '../infra/database/schema.js';

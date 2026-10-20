@@ -1,13 +1,14 @@
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { contentLinkSnapshots, contentSnapshots, schemas } from '../src/infra/database/schema.js';
 import { ContentService } from '../src/modules/contents/services/content.service.js';
 import { SchemaService } from '../src/modules/schemas/services/schema.service.js';
-import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
 import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { SpaceLocaleService } from '../src/modules/spaces/services/space-locale.service.js';
+import { C, contentName, S1 } from './ids.js';
 import { seedContent, seedSpace, TOKEN_DRAFT, TOKEN_PUBLIC, TOKEN_READ } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
-import { C, contentName, S1 } from './ids.js';
 
 /**
  * What the public API serves for content (`content_snapshots`, `content_link_snapshots`): each document and each links

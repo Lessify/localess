@@ -1,4 +1,3 @@
-import { type SQL, sql } from 'drizzle-orm';
 import {
   AssetKind,
   type ContentData,
@@ -22,7 +21,7 @@ import {
   type WebHookPayloadData,
   WebHookStatus,
 } from '@localess/shared';
-import { OAUTH_PROVIDERS } from '../config/oauth-providers.js';
+import { type SQL, sql } from 'drizzle-orm';
 import {
   type AnyPgColumn,
   bigint,
@@ -41,6 +40,8 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+
+import { OAUTH_PROVIDERS } from '../config/oauth-providers.js';
 
 /*
  * Every id is a UUIDv7 (`newUuid()`, see docs/roadmap/firebase-migration-uuidv7.md). What other rows, customer code,

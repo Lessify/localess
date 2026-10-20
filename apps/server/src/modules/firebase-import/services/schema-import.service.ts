@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common';
 import { type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { schemaEnumValueSchema, schemaFieldSchema } from '@localess/shared/zod';
+import { Injectable } from '@nestjs/common';
 import type { z } from 'zod';
+
 import { newUuid } from '../../../infra/database/id.js';
+import { fieldReferenceProblems, previewFieldProblem } from '../../../shared/utils/schema.utils.js';
 import { SchemaImportRepository } from '../repositories/schema-import.repository.js';
 import { str, strings, timestamps, typeOf } from '../utils/firebase-docs.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
-import { fieldReferenceProblems, previewFieldProblem } from '../../../shared/utils/schema.utils.js';
 
 /**
  * Each item of a list that `schema` accepts, as parsed (keys it does not have dropped); the others are left out, with

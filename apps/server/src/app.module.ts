@@ -1,11 +1,11 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
+
 import { AuthModule } from './auth/auth.module.js';
 import { AppConfig } from './infra/config/config.js';
 import { ConfigModule } from './infra/config/config.module.js';
 import { DatabaseModule } from './infra/database/database.module.js';
 import { EventModule } from './infra/events/event.module.js';
-import { SharedModule } from './shared/shared.module.js';
 import { HealthController } from './infra/health/health.controller.js';
 import { StorageModule } from './infra/storage/storage.module.js';
 import { AssetModule } from './modules/assets/asset.module.js';
@@ -19,6 +19,7 @@ import { TokenModule } from './modules/tokens/token.module.js';
 import { TranslationModule } from './modules/translations/translation.module.js';
 import { UserModule } from './modules/users/user.module.js';
 import { WebhookModule } from './modules/webhooks/webhook.module.js';
+import { SharedModule } from './shared/shared.module.js';
 
 @Module({})
 export class AppModule {

@@ -1,7 +1,8 @@
-import { ForbiddenException } from '@nestjs/common';
 import { canPerform, UserPermission } from '@localess/shared';
-import { toPrincipal } from '../../../shared/transformers/user.transformer.js';
+import { ForbiddenException } from '@nestjs/common';
+
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
+import { toPrincipal } from '../../../shared/transformers/user.transformer.js';
 
 /** Reading tasks, their logs and their files: any one of the import/export permissions. */
 export const TASK_READ_PERMISSIONS = [

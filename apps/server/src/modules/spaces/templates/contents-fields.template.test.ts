@@ -1,7 +1,8 @@
-import { type ContentData, isFieldTranslatable, SchemaFieldKind, type SchemaField } from '@localess/shared';
+import { type ContentData, isFieldTranslatable, type SchemaField, SchemaFieldKind } from '@localess/shared';
 import { zContentData } from '@localess/shared/zod';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
+
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import { CONTENTS_FIELDS_TEMPLATE } from './contents-fields.template.js';
 

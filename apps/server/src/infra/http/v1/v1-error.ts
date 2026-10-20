@@ -1,5 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
+
 import { sendV1Error, type V1ErrorCode } from './v1-response.js';
 
 export interface V1ErrorOptions {

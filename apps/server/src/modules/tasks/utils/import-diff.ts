@@ -1,4 +1,5 @@
 import { Translation, TranslationExport } from '@localess/shared';
+
 import { isLabelsEqual } from '../../../shared/utils/labels.utils.js';
 
 /*

@@ -1,12 +1,14 @@
 import { randomBytes } from 'node:crypto';
+
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+
+import type { UserEntity } from '../../shared/entities/user.entity.js';
 import { MailService } from '../../shared/services/mail.service.js';
 import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import { PasswordResetTokenRepository } from '../repositories/password-reset-token.repository.js';
 import { hashPassword } from '../utils/password.js';
 import { hashToken } from '../utils/token-hash.js';
 import { SessionService } from './session.service.js';
-import type { UserEntity } from '../../shared/entities/user.entity.js';
 
 export const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 export const RESET_PATH = '/auth/reset/confirm';

@@ -1,5 +1,6 @@
 import { count, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { assets, contents, schemas, spaceLocales, spaces, tokens, translations } from '../src/infra/database/schema.js';
 import { SpaceTemplateRepository } from '../src/modules/spaces/repositories/space-template.repository.js';
 import { BLOG_TEMPLATE } from '../src/modules/spaces/templates/index.js';

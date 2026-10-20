@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
 import { UserPermission } from '@localess/shared';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { WebhookLogService } from '../services/webhook-log.service.js';

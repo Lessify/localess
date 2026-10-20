@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Res } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
+
 import { ManagementToken } from '../../../auth/token-auth.decorators.js';
 import { sendV1Error } from '../../../infra/http/v1/v1-response.js';
 import { SpaceService } from '../services/space.service.js';

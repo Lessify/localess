@@ -1,6 +1,9 @@
 import 'reflect-metadata';
+
 import { createInterface } from 'node:readline';
+
 import { Logger } from '@nestjs/common';
+
 import { runCli } from './cli/commands.js';
 import { errorMessage } from './shared/utils/error-message.js';
 

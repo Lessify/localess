@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { moveTo } from './move.js';
 
 const list = (...ids: string[]) => ids.map((id, position) => ({ id, position }));

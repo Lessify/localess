@@ -1,8 +1,10 @@
 import { resolve } from 'node:path';
-import type { LogLevel } from '@nestjs/common';
+
 import { INSTANCE_COLORS, type InstanceLabel } from '@localess/shared';
 import { zBoolean } from '@localess/shared/zod';
+import type { LogLevel } from '@nestjs/common';
 import { z } from 'zod';
+
 import type { OAuthProviderId } from './oauth-providers.js';
 
 export const APP_CONFIG = Symbol('APP_CONFIG');

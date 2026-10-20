@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { spaceLocales, spaces } from '../src/infra/database/schema.js';
 import { transaction } from '../src/infra/database/transaction.js';
 import { SpaceLookupRepository } from '../src/shared/repositories/space-lookup.repository.js';

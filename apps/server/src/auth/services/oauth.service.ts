@@ -1,9 +1,10 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import * as client from 'openid-client';
+
 import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../../infra/config/config.js';
-import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
 import { errorMessage } from '../../shared/utils/error-message.js';
+import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {

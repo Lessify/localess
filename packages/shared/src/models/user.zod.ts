@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { zPageable, zSearch } from './page.zod.js';
+
 import { USER_PERMISSIONS } from '../permissions.js';
+import { zPageable, zSearch } from './page.zod.js';
 import { PASSWORD_MIN_LENGTH, USER_ROLES, USER_SORT_FIELDS, type UserPermission } from './user.model.js';
 
 // App API requests of Admin → Users and of the own profile (`/api/app/me`).

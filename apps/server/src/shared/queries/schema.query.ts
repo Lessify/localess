@@ -1,9 +1,10 @@
-import { and, eq, inArray } from 'drizzle-orm';
 import { type SchemaExport, type SchemaField, SchemaType } from '@localess/shared';
+import { and, eq, inArray } from 'drizzle-orm';
+
 import { newUuid } from '../../infra/database/id.js';
 import { schemas } from '../../infra/database/schema.js';
 import type { Transaction } from '../../infra/database/transaction.js';
-import { schemaReferences, type SchemaPushPlan } from '../utils/schema.utils.js';
+import { type SchemaPushPlan, schemaReferences } from '../utils/schema.utils.js';
 
 /*
  * The write of a schema push: the CLI push (schemas) and the schema import task (tasks) apply the same plan, each in

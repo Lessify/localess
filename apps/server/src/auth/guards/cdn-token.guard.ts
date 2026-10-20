@@ -1,7 +1,8 @@
+import { TokenType } from '@localess/shared';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { FastifyRequest } from 'fastify';
-import { TokenType } from '@localess/shared';
+
 import { V1Error } from '../../infra/http/v1/v1-error.js';
 import { assertValidIdParams, type Params, type Query } from '../../infra/http/v1/v1-request.js';
 import { parseApiToken } from '../../shared/utils/api-token-format.js';

@@ -1,15 +1,17 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import type { ContentData } from '@localess/shared';
 import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { newUuid } from '../src/infra/database/id.js';
 import { assets, contents } from '../src/infra/database/schema.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 import { S1, UUID_V7 } from './ids.js';
-import { newUuid } from '../src/infra/database/id.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 
 /** A multipart body with the fields first, then the file — the order the endpoint expects. */
 function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {

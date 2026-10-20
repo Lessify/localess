@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { CdnTokenGuard } from './guards/cdn-token.guard.js';
 import { ManagementTokenGuard } from './guards/management-token.guard.js';
 import { ApiTokenRepository } from './repositories/api-token.repository.js';

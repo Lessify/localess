@@ -1,6 +1,7 @@
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
-import { zTokenCreate, zTokenUpdate } from '@localess/shared/zod';
 import { type TokenCreate, TokenType, type TokenUpdate, UserPermission } from '@localess/shared';
+import { zTokenCreate, zTokenUpdate } from '@localess/shared/zod';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
+
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TokenService } from '../services/token.service.js';

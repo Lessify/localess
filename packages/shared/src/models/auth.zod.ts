@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { PASSWORD_MIN_LENGTH } from './user.model.js';
 
 // Auth requests (`/api/auth`).

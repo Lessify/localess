@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { AssetKind } from './asset.model.js';
 
 export const assetBaseSchema = z.object({

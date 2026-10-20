@@ -1,4 +1,5 @@
 import { ConflictException, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+
 import { hashPassword, PASSWORD_MIN_LENGTH } from '../../../auth/utils/password.js';
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { FirstAdminRepository } from '../repositories/first-admin.repository.js';

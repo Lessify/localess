@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { zBoolean } from './common.zod.js';
 
 describe('zBoolean', () => {

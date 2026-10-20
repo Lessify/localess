@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX, type SortDirection } from './page.model.js';
 
 /**

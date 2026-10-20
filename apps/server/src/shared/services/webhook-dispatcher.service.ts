@@ -1,13 +1,15 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+
 import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
+import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
+
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { newUuid } from '../../infra/database/id.js';
-import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
-import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
-import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
 import type { WebhookEntity } from '../entities/webhook.entity.js';
+import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
+import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
 import { errorMessage } from '../utils/error-message.js';
+import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;

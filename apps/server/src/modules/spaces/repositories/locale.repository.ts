@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { locales } from '../../../infra/database/schema.js';
 import type { LocaleEntity } from '../../../shared/entities/locale.entity.js';

@@ -1,4 +1,5 @@
 import type { Principal, UserPermission, UserRole } from '@localess/shared';
+
 import type { UserEntity } from '../entities/user.entity.js';
 
 /** The `User` shape the frontend already consumes (was the `users/{uid}` document). */

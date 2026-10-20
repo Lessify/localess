@@ -1,4 +1,5 @@
-import { SchemaFieldKind, type SchemaField, SchemaType } from '@localess/shared';
+import { type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+
 import type { SpaceTemplate, TemplateContent } from './space-template.model.js';
 
 /*

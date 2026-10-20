@@ -1,9 +1,10 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { sql, SQL } from 'drizzle-orm';
+import { SQL, sql } from 'drizzle-orm';
 import pg from 'pg';
 import { filter, Observable, Subject } from 'rxjs';
-import { DATABASE, type Database, PG_POOL } from '../database/database.module.js';
+
 import { errorMessage } from '../../shared/utils/error-message.js';
+import { DATABASE, type Database, PG_POOL } from '../database/database.module.js';
 
 export const EVENTS_CHANNEL = 'localess_events';
 

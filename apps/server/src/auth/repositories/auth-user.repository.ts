@@ -1,13 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
+
+import type { OAuthProviderId } from '../../infra/config/oauth-providers.js';
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../infra/database/id.js';
 import { userCredentials, userIdentities, users } from '../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../infra/database/transaction.js';
-import { findUserLogins } from '../../shared/queries/user.query.js';
-import type { OAuthProviderId } from '../../infra/config/oauth-providers.js';
-import type { UserCredentialEntity } from '../../shared/entities/user-credential.entity.js';
+import { type Transaction, transaction } from '../../infra/database/transaction.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
+import type { UserCredentialEntity } from '../../shared/entities/user-credential.entity.js';
+import { findUserLogins } from '../../shared/queries/user.query.js';
 
 /** Users, their passwords and OAuth identities, as sign-in, OAuth and password reset need them. */
 @Injectable()

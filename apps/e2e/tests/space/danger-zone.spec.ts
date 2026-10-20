@@ -1,8 +1,8 @@
 import { confirmDialog, expectToast } from '../pages/notifications';
 import { TranslationsPage } from '../pages/translations.page';
 import { contentsIn } from '../support/contents';
-import { translationsByKey } from '../support/translations';
 import { expect, test } from '../support/fixtures';
+import { translationsByKey } from '../support/translations';
 
 test.describe('Space settings → Danger Zone', () => {
   test('deletes every translation; the published ones stay until the next publish, contents stay', async ({

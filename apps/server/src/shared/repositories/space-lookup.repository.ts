@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { asc, eq } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../infra/database/database.module.js';
 import { isUuid } from '../../infra/database/id.js';
 import { spaceLocales, spaces } from '../../infra/database/schema.js';

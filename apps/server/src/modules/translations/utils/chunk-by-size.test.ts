@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { chunkBySize } from './chunk-by-size.js';
 
 const len = (s: string) => s.length;

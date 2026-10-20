@@ -1,8 +1,9 @@
-import { Controller, Get, Inject } from '@nestjs/common';
 import type { PublicAppConfig } from '@localess/shared';
+import { Controller, Get, Inject } from '@nestjs/common';
+
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { Public } from '../decorators.js';
 import { OAuthService } from '../services/oauth.service.js';
-import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 
 /**
  * Runtime settings for the SPA, replacing the build-time LOCALESS_* `--define`s so one build works

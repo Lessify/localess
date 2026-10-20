@@ -1,6 +1,7 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { SpaceLocalePageable } from '@localess/shared';
-import { and, asc, desc, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { and, asc, desc, eq, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { locales, spaceLocales } from '../../../infra/database/schema.js';
 import type { Transaction } from '../../../infra/database/transaction.js';

@@ -1,8 +1,9 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { filter, Subscription } from 'rxjs';
+
 import { EventService } from '../../infra/events/event.service.js';
-import { ApiTokenRepository } from '../repositories/api-token.repository.js';
 import type { SpaceImportStatus } from '../../shared/utils/import-status.js';
+import { ApiTokenRepository } from '../repositories/api-token.repository.js';
 import type { ApiToken } from '../utils/api-token.js';
 import { hashToken } from '../utils/token-hash.js';
 

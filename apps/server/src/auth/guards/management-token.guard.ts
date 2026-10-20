@@ -1,8 +1,9 @@
+import { TokenType } from '@localess/shared';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { TokenType } from '@localess/shared';
-import { V1Error } from '../../infra/http/v1/v1-error.js';
+
 import { isUuid } from '../../infra/database/id.js';
+import { V1Error } from '../../infra/http/v1/v1-error.js';
 import { assertValidIdParams, type Params } from '../../infra/http/v1/v1-request.js';
 import { importUnavailableMessage } from '../../shared/http/space-id.js';
 import { parseApiToken } from '../../shared/utils/api-token-format.js';

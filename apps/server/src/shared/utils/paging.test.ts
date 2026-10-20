@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { containsPattern, escapeLike, offsetOf, toPage } from './paging.js';
 
 const pageable = (page: number, size: number) => ({ page, size, sort: 'name', direction: 'asc' as const });

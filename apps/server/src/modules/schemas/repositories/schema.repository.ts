@@ -1,16 +1,17 @@
+import { isSchemaInUse, type SchemaField, SchemaFieldKind, type SchemaType, type SchemaUsage } from '@localess/shared';
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, count, eq, inArray, ne, sql } from 'drizzle-orm';
-import { isSchemaInUse, type SchemaField, SchemaFieldKind, type SchemaType, type SchemaUsage } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { contents, schemas } from '../../../infra/database/schema.js';
-import { isUniqueViolation, transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
-import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
+import type { SchemaEntity, SchemaInsertEntity } from '../../../shared/entities/schema.entity.js';
 import { folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
+import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { fieldRefersTo, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
-import type { SchemaInsertEntity, SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
 export type SchemaColumns = Pick<
   SchemaInsertEntity,

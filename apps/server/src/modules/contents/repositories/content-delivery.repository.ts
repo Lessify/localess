@@ -1,17 +1,18 @@
+import { ContentKind } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
-import { ContentKind } from '@localess/shared';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { assets, contentLinkSnapshots, contents, contentSnapshots, schemas, type SnapshotVersion } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { lockContents } from '../../../shared/data-rules/content-snapshots.js';
-import { type ContentWithPath, findIdByPath, folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
-import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
-import { toContentMetadata } from '../../../shared/transformers/content.transformer.js';
-import { buildDocumentStorage } from '../utils/content-extract.js';
 import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 import type { ContentLinkSnapshotEntity } from '../../../shared/entities/content-link-snapshot.entity.js';
 import type { ContentSnapshotEntity } from '../../../shared/entities/content-snapshot.entity.js';
+import { type ContentWithPath, findIdByPath, folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';
+import { toContentMetadata } from '../../../shared/transformers/content.transformer.js';
+import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
+import { buildDocumentStorage } from '../utils/content-extract.js';
 
 export type StoredContentSnapshot = Pick<ContentSnapshotEntity, 'contentId' | 'data' | 'builtAt'>;
 

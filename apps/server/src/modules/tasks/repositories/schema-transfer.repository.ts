@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { schemas } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
+import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 import { applySchemaPushPlan, lockSchemaReferences } from '../../../shared/queries/schema.query.js';
 import type { SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
-import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
 
 /** The `schemas` rows the schema export reads and the schema import writes. */
 @Injectable()

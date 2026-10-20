@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
+
 import type { ContentData } from '@localess/shared';
 import { zContentData } from '@localess/shared/zod';
 import { describe, expect, it } from 'vitest';
+
 import { CONTENTS_LARGE_TEMPLATE } from './contents-large.template.js';
 
 const contents = CONTENTS_LARGE_TEMPLATE.contents!;

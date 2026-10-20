@@ -1,6 +1,7 @@
 import http from 'http';
 import { AddressInfo } from 'net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { checkWebhookUrl, isBlockedAddress, postWebhook, sanitizeWebhookHeaders } from './webhook-request.js';
 
 describe('isBlockedAddress', () => {

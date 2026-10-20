@@ -1,4 +1,5 @@
 import { type Schema, SchemaType } from '@localess/shared';
+
 import { present } from '../../infra/database/without-nulls.js';
 import type { SchemaEntity } from '../entities/schema.entity.js';
 

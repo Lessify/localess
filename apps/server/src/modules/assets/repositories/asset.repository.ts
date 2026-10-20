@@ -1,15 +1,16 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, inArray, isNull, like, or, sql, SQL } from 'drizzle-orm';
-import { escapeLike } from '../../../shared/utils/paging.js';
+import { and, asc, count, desc, eq, ilike, inArray, isNull, like, or, SQL, sql } from 'drizzle-orm';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
 import { assets, contents } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
-import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
 import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
+import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
+import { escapeLike } from '../../../shared/utils/paging.js';
 
 export interface AssetQuery {
   /** `null`: the root's children; absent: any parent. */

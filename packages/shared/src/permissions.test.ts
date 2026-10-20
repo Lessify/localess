@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { UserPermission } from './models/user.model.js';
 import { canGrant, canManageUser, canPerform, hasAnyRole, Principal } from './permissions.js';
 

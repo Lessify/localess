@@ -1,4 +1,4 @@
-import { TokensPage, tokensOf, tokenValue } from '../pages/tokens.page';
+import { tokensOf, TokensPage, tokenValue } from '../pages/tokens.page';
 import { expect, test } from '../support/fixtures';
 
 // Pre-check → action (UI) → post-check (the list, again after a reload, the App API, and the CDN API with the value).

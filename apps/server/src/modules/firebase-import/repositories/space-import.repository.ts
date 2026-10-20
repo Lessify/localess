@@ -1,14 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
 import type { FirebaseImportStage } from '@localess/shared';
+import { Inject, Injectable } from '@nestjs/common';
+
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { locales, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
-import { transaction, type Transaction } from '../../../infra/database/transaction.js';
+import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
-import { FirebaseImportRepository } from './firebase-import.repository.js';
 import { createPreviewToken } from '../../../shared/data-rules/space-tokens.js';
-import type { SpaceEnvironmentInsertEntity } from '../../../shared/entities/space-environment.entity.js';
 import type { SpaceInsertEntity } from '../../../shared/entities/space.entity.js';
+import type { SpaceEnvironmentInsertEntity } from '../../../shared/entities/space-environment.entity.js';
+import { FirebaseImportRepository } from './firebase-import.repository.js';
 
 export type NewImportedSpace = SpaceInsertEntity & { id: string };
 

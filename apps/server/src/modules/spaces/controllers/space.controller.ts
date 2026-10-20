@@ -1,5 +1,3 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
-import { zSpaceCreate, zSpaceDefaultLocaleUpdate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
 import {
   type IdName,
   type Page,
@@ -12,6 +10,9 @@ import {
   type SpaceUpdate,
   UserPermission,
 } from '@localess/shared';
+import { zSpaceCreate, zSpaceDefaultLocaleUpdate, zSpacePageable, zSpaceUpdate } from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
+
 import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceService } from '../services/space.service.js';

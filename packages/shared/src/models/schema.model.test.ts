@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { assetFieldFileType, AssetFileType, SchemaFieldKind } from './schema.model.js';
 
 describe('assetFieldFileType', () => {

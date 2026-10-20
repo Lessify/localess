@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { UnsplashController } from './controllers/unsplash.controller.js';
 import { UnsplashService } from './services/unsplash.service.js';
 

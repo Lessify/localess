@@ -1,5 +1,5 @@
-import { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 import { Schema, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas30';
 /**
  * Generate Open API
  * @param {Map<string, Schema>} schemasById

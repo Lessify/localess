@@ -1,14 +1,15 @@
-import { and, eq } from 'drizzle-orm';
 import { TokenType, WebHookEvent } from '@localess/shared';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
+
+import { newUuid } from '../src/infra/database/id.js';
 import { schemas, tokens, translations } from '../src/infra/database/schema.js';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
 import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { S1, S2 } from './ids.js';
 import { seedContent, seedSpace, seedTranslations, TOKEN_MANAGEMENT, TOKEN_PUBLIC, TOKEN_READ, tokenRow } from './seed.js';
 import { buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp } from './test-app.js';
-import { S1, S2 } from './ids.js';
-import { newUuid } from '../src/infra/database/id.js';
 
 describe('management API', () => {
   let t: TestApp;

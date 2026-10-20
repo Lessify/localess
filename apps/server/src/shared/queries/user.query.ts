@@ -1,4 +1,5 @@
 import { inArray } from 'drizzle-orm';
+
 import type { Database } from '../../infra/database/database.module.js';
 import { userCredentials, userIdentities } from '../../infra/database/schema.js';
 
