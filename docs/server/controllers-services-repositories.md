@@ -8,7 +8,8 @@
 - **Rule:** a module holds one controller, one service and one repository per entity it serves, and one set per
   sub-entity: what is addressed under another entity's id and has rows of its own (`/spaces/:spaceId/locales`,
   `/webhooks/:id/logs`, `/tasks/:id/logs`). A service may use any repository of its module; a sub-entity's service
-  reads the parent through the parent's repository (404 when it is not there).
+  reads the parent through the parent's repository (404 when it is not there): `exists` when the check is all it
+  needs, `findOne` only when a rule reads the parent (`space.spaceLocales`).
 - **Why:** each file is about one thing, small enough to read; a sub-entity's methods are the plain ones (`create`,
   `remove`, `reorder`) instead of `addLocale`, `removeEnvironment` on the parent.
 - **Example:** spaces: `space`, `space-locale`, `space-environment`; webhooks: `webhook`, `webhook-log`; tasks: `task`,
@@ -70,7 +71,7 @@ transaction; the three repositories call it.
   - Constraint violations become errors (`ConflictException`).
 - **Why:** each layer has one job: the repository knows the database, the service the rules and the models.
 - **Example:** `modules/spaces/repositories/space.repository.ts` (`findAll`, `findAllCount`, `findAllNames`,
-  `findOne`); `space-environment.repository.ts`.
+  `findOne`, `exists`); `space-environment.repository.ts`.
 - **Don't:** call a service, throw a 404, hold a business rule, answer a transformed model, re-read inside a write to
   answer it.
 

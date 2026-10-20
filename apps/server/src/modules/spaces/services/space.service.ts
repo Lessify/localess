@@ -123,7 +123,7 @@ export class SpaceService {
   }
 
   async update(spaceId: string, space: SpaceUpdate): Promise<Space> {
-    await this.require(spaceId);
+    await this.requireExists(spaceId);
     await this.spaceRepository.rename(spaceId, space.name);
     return this.findOne(spaceId);
   }
@@ -141,7 +141,7 @@ export class SpaceService {
 
   /** Everything in the space goes with it: rows by FK cascade; its stored files are queued and swept right after. */
   async remove(spaceId: string): Promise<void> {
-    await this.require(spaceId);
+    await this.requireExists(spaceId);
     if (await this.spaceRepository.isImporting(spaceId)) throw new ConflictException('The space is being imported');
     await this.spaceRepository.delete(spaceId);
     this.storageSweeperService.kick();
@@ -165,6 +165,10 @@ export class SpaceService {
         locales: space.spaceLocales.map(({ locale }) => ({ ...toLocale(locale), translated: counts.translatedBy.get(locale.id) ?? 0 })),
       },
     };
+  }
+
+  private async requireExists(spaceId: string): Promise<void> {
+    if (!(await this.spaceRepository.exists(spaceId))) throw new NotFoundException('Space not found');
   }
 
   private async require(spaceId: string): Promise<SpaceWithLocales> {

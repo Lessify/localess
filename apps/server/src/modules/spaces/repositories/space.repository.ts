@@ -57,6 +57,11 @@ export class SpaceRepository {
     });
   }
 
+  /** Whether the space is there (a check that needs nothing of it). */
+  async exists(spaceId: string): Promise<boolean> {
+    return (await this.db.$count(spaces, eq(spaces.id, spaceId))) > 0;
+  }
+
   /** The space with its default locale and its locales (each with its locale), in position order. */
   findOne(spaceId: string): Promise<SpaceWithLocales | undefined> {
     return this.db.query.spaces.findFirst({

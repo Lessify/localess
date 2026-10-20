@@ -37,13 +37,13 @@ export class SpaceEnvironmentService {
   async create(spaceId: string, environment: SpaceEnvironmentCreate): Promise<SpaceEnvironment> {
     await this.requireSpace(spaceId);
     const environmentId = await this.spaceEnvironmentRepository.create(spaceId, environment);
-    return toSpaceEnvironment(await this.requireEnvironment(spaceId, environmentId));
+    return toSpaceEnvironment(await this.findEnvironment(spaceId, environmentId));
   }
 
   async update(spaceId: string, environmentId: string, environment: SpaceEnvironmentUpdate): Promise<SpaceEnvironment> {
     await this.requireEnvironment(spaceId, environmentId);
     await this.spaceEnvironmentRepository.update(spaceId, environmentId, environment);
-    return toSpaceEnvironment(await this.requireEnvironment(spaceId, environmentId));
+    return toSpaceEnvironment(await this.findEnvironment(spaceId, environmentId));
   }
 
   async remove(spaceId: string, environmentId: string): Promise<void> {
@@ -68,11 +68,17 @@ export class SpaceEnvironmentService {
   }
 
   private async requireSpace(spaceId: string): Promise<void> {
-    if (!(await this.spaceRepository.findOne(spaceId))) throw new NotFoundException('Space not found');
+    if (!(await this.spaceRepository.exists(spaceId))) throw new NotFoundException('Space not found');
   }
 
+  /** The space first: its 404 comes before the environment's. */
   private async requireEnvironment(spaceId: string, environmentId: string) {
     await this.requireSpace(spaceId);
+    return this.findEnvironment(spaceId, environmentId);
+  }
+
+  /** The environment alone, the space already checked (the re-read after a write). */
+  private async findEnvironment(spaceId: string, environmentId: string) {
     const environment = await this.spaceEnvironmentRepository.findOne(spaceId, environmentId);
     if (!environment) throw new NotFoundException('Environment not found');
     return environment;

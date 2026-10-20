@@ -22,7 +22,7 @@ export class SpaceLocaleService {
 
   /** One page, each with its locale; in the space's order unless sorted otherwise. */
   async findAll(spaceId: string, query: SpaceLocalePageable): Promise<Page<SpaceLocale>> {
-    await this.require(spaceId);
+    await this.requireExists(spaceId);
     const [rows, total] = await Promise.all([
       this.spaceLocaleRepository.findAll(spaceId, query),
       this.spaceLocaleRepository.findAllCount(spaceId, query),
@@ -32,7 +32,7 @@ export class SpaceLocaleService {
 
   /** Every locale of the space, in its order. */
   async findAllNames(spaceId: string): Promise<IdName[]> {
-    await this.require(spaceId);
+    await this.requireExists(spaceId);
     return this.spaceLocaleRepository.findAllNames(spaceId);
   }
 
@@ -70,6 +70,10 @@ export class SpaceLocaleService {
       throw new BadRequestException("The new order must list each of the space's locales once");
     }
     await this.spaceLocaleRepository.reorder(spaceId, localeIds);
+  }
+
+  private async requireExists(spaceId: string): Promise<void> {
+    if (!(await this.spaceRepository.exists(spaceId))) throw new NotFoundException('Space not found');
   }
 
   private async require(spaceId: string): Promise<SpaceWithLocales> {
