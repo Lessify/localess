@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { SpaceLocalePageable } from '@localess/shared';
-import { and, asc, desc, eq, ilike, inArray, max, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { locales, spaceLocales } from '../../../infra/database/schema.js';
 import type { Transaction } from '../../../infra/database/transaction.js';
@@ -53,12 +53,13 @@ export class SpaceLocaleRepository {
 
   /** Every locale of the space, in its order, as `{ id, name }`. */
   async findAllNames(spaceId: string): Promise<Pick<LocaleEntity, 'id' | 'name'>[]> {
-    return this.db
-      .select({ id: locales.id, name: locales.name })
-      .from(spaceLocales)
-      .innerJoin(locales, eq(locales.id, spaceLocales.localeId))
-      .where(eq(spaceLocales.spaceId, spaceId))
-      .orderBy(asc(spaceLocales.position), asc(spaceLocales.createdAt));
+    const rows = await this.db.query.spaceLocales.findMany({
+      columns: { localeId: true },
+      where: eq(spaceLocales.spaceId, spaceId),
+      orderBy: [asc(spaceLocales.position), asc(spaceLocales.createdAt)],
+      with: { locale: { columns: { id: true, name: true } } },
+    });
+    return rows.map(it => it.locale);
   }
 
   /** The space's locale with its locale. */
@@ -72,13 +73,14 @@ export class SpaceLocaleRepository {
   /** At the end of the space's list; the translation drafts gain the locale. Already there (added meanwhile): nothing changes. */
   create(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      const [{ last }] = await t
-        .select({ last: max(spaceLocales.position) })
-        .from(spaceLocales)
-        .where(eq(spaceLocales.spaceId, spaceId));
+      const last = await t.query.spaceLocales.findFirst({
+        columns: { position: true },
+        where: eq(spaceLocales.spaceId, spaceId),
+        orderBy: desc(spaceLocales.position),
+      });
       const added = await t
         .insert(spaceLocales)
-        .values({ spaceId, localeId, position: (last ?? -1) + 1 })
+        .values({ spaceId, localeId, position: (last?.position ?? -1) + 1 })
         .onConflictDoNothing()
         .returning({ localeId: spaceLocales.localeId });
       if (!added.length) return false;
@@ -103,18 +105,21 @@ export class SpaceLocaleRepository {
 
   /**
    * The locale to `position` in the space's order, the others shifting (`moveTo`); only the rows that change are
-   * written. The space's rows are locked while read, so two moves run one after the other. Nothing written, no event,
+   * written. Read under the space's lock (`changeSpace`): two moves run one after the other. Nothing written, no event,
    * when it is already there or no longer there.
    */
   move(spaceId: string, localeId: string, position: number, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      const rows = await t
-        .select({ id: spaceLocales.localeId, position: spaceLocales.position })
-        .from(spaceLocales)
-        .where(eq(spaceLocales.spaceId, spaceId))
-        .orderBy(asc(spaceLocales.position), asc(spaceLocales.createdAt))
-        .for('update');
-      const changes = moveTo(rows, localeId, position);
+      const rows = await t.query.spaceLocales.findMany({
+        columns: { localeId: true, position: true },
+        where: eq(spaceLocales.spaceId, spaceId),
+        orderBy: [asc(spaceLocales.position), asc(spaceLocales.createdAt)],
+      });
+      const changes = moveTo(
+        rows.map(it => ({ id: it.localeId, position: it.position })),
+        localeId,
+        position,
+      );
       if (!changes?.length) return false;
       for (const change of changes) {
         await t

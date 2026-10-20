@@ -8,8 +8,8 @@ import { SpaceLocaleRepository } from '../repositories/space-locale.repository.j
 import { SpaceRepository } from '../repositories/space.repository.js';
 
 /**
- * A space's locales and its default locale. Adding answers the space locale; removing and moving answer nothing (a
- * `spaces` event follows); setting the default answers the space, whose `defaultLocaleId` it changed.
+ * A space's locales (the default locale is the space's: `SpaceService.setDefaultLocale`). Adding answers the space
+ * locale; removing and moving answer nothing (a `spaces` event follows).
  */
 @Injectable()
 export class SpaceLocaleService {

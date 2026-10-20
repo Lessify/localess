@@ -16,7 +16,7 @@ import { RequireAnyRole, RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceService } from '../services/space.service.js';
 
-/** Spaces and the dashboard overview (their locales and environments: `SpaceLocaleController`, `SpaceEnvironmentController`) (was direct `spaces/{id}` writes plus the `space-calculateoverview` callable). */
+/** Spaces and the dashboard overview (their locales and environments: `SpaceLocaleController`, `SpaceEnvironmentController`). */
 @Controller('api/app/spaces')
 export class SpaceController {
   constructor(private readonly spaceService: SpaceService) {}

@@ -52,6 +52,10 @@ function breaks(check: (file: File) => string[], only: (file: File) => boolean):
 const isV1 = (file: File) => /\.(cdn|management)\.controller\.ts$/.test(file.name);
 const isFeatureCode = (file: File) => file.name.startsWith('modules/');
 
+/** Modules reworked to every rule so far (return types, counts); one more each time a module is reworked. */
+const REWORKED = ['modules/spaces/'];
+const isReworked = (file: File) => REWORKED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/');
+
 describe('server rules: imports between layers', () => {
   it('a controller imports neither zod nor a repository', () => {
     expect(
@@ -121,9 +125,6 @@ describe('server rules: injected dependencies', () => {
 });
 
 describe('server rules: return types', () => {
-  /** Modules whose functions declare what they return; one more each time a module is reworked. */
-  const DECLARED = ['modules/spaces/'];
-
   it('every public method and exported function declares its return type (in the modules reworked so far)', () => {
     expect(
       breaks(
@@ -150,7 +151,27 @@ describe('server rules: return types', () => {
           }
           return missing.map(name => `${name} has no declared return type`);
         },
-        file => DECLARED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/'),
+        file => isReworked(file),
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe('server rules: queries', () => {
+  it('a count or an existence check is `$count`, not a select of `count()` (in the modules reworked so far)', () => {
+    expect(
+      breaks(
+        file =>
+          file.source.statements
+            .filter(ts.isImportDeclaration)
+            .filter(it => (it.moduleSpecifier as ts.StringLiteral).text === 'drizzle-orm')
+            .flatMap(it => {
+              const bindings = it.importClause?.namedBindings;
+              return bindings && ts.isNamedImports(bindings) ? bindings.elements.map(element => element.name.text) : [];
+            })
+            .filter(name => name === 'count')
+            .map(() => 'imports count() from drizzle-orm: use this.db.$count(table, where)'),
+        file => isReworked(file),
       ),
     ).toEqual([]);
   });

@@ -66,19 +66,32 @@ repositories call it.
   - **Three read shapes:** `findAll(…)` always an array of entities (`XEntity[]` / `XSelect[]`), `findAllCount(…)` the
     count only (the same filters as `findAll`), `findOne(…)` the entity or `undefined`. A narrower read keeps the
     shape and says what it reads (`findAllNames(): Pick<SpaceEntity, 'id' | 'name'>[]`).
-  - **Relational queries by default:** `this.db.query.spaces.findFirst({ where, with: { defaultLocale: true } })`,
-    the relations of `infra/database/relations.ts`; a `select` only for a calculation (a count, the overview's sums).
+  - **Counts and existence are `$count`:** `this.db.$count(table, where)` for `findAllCount` (the same `where` as
+    `findAll`), `(await this.db.$count(table, where)) > 0` for `exists` / `is<What>`. One `count(*)`, no row read, no
+    destructuring. Checked by the architecture test in the modules reworked so far.
+  - **Reads are relational queries:** `this.db.query.spaces.findMany` / `findFirst` with `where`, `orderBy`, `columns`
+    for a narrow read (`findAllNames`: `columns: { id: true, name: true }`), `with` for the relations of
+    `infra/database/relations.ts` (a related row's fields through `with`, not a join), `findFirst` with
+    `orderBy: desc(…)` for the last one (`create`'s next position), inside a transaction through `t.query`.
+  - **A `select` only where a relational query can not:** a calculation beyond a count (the overview's sums, a count
+    per locale with `group by`), a subquery inside a condition or an `orderBy` (`inArray(column, select…)`,
+    `notExists(…)`), a lock (`.for('update')`: the relational API has none; `changeSpace` locks the space's row).
+    Each one says why in a comment, unless it is one of those three at a glance.
   - **Writes answer nothing** (`Promise<void>`), or the new id when the caller needs it to read the row back
     (`SpaceRepository.create`); the service re-reads with `findOne` and maps.
   - Constraint violations become errors (`ConflictException`).
 - **Why:** each layer has one job: the repository knows the database, the service the rules and the models.
 - **Example:** `modules/spaces/repositories/space.repository.ts` (`findAll`, `findAllCount`, `findAllNames`,
-  `findOne`, `exists`); `space-environment.repository.ts`.
+  `findOne`, `exists`, `isImporting`); `space-environment.repository.ts`; `space-overview.repository.ts` (`$count`
+  and the selects of its sums).
 - **Don't:** call a service, throw a 404, hold a business rule, answer a transformed model, re-read inside a write to
-  answer it.
+  answer it; count with `select({ total: count() })` or check existence with `findFirst({ columns: { id: true } })`;
+  read rows with `select().from()` (or a join) a relational query expresses.
 
-Reworked so far: the Spaces module. The others still read with `findPage` (rows and total together) and some writes
-answer rows; each module moves to these shapes when it is reworked.
+Reworked so far: the Spaces module (`REWORKED` in `apps/server/test/architecture.test.ts`). The others still read
+with `findPage` (rows and total together), count with `select({ … count() })` (assets, contents, schemas,
+translations, tasks, users) and some writes answer rows; each module moves to these shapes when it is reworked, and
+joins `REWORKED` then.
 
 **Reading a space from another module:** `SpaceLookupRepository` (`shared/repositories/space-lookup.repository.ts`,
 injected as `spaceLookupRepository`): `exists(spaceId, tx?)` and `findOne(spaceId, tx?)` answering a

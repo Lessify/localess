@@ -147,7 +147,7 @@ export class SpaceService {
     this.storageSweeperService.kick();
   }
 
-  /** Dashboard numbers, computed on request (were stored on the space by the `space-calculateoverview` callable). */
+  /** Dashboard numbers, computed on request. */
   async findOverview(spaceId: string): Promise<SpaceOverview> {
     const space = await this.require(spaceId);
     const counts = await this.spaceOverviewRepository.counts(spaceId);

@@ -27,7 +27,9 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 
 - **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service.
 - **Return types:** every public method and exported function declares one, in the modules reworked so far
-  (`modules/spaces/`).
+  (`REWORKED`: `modules/spaces/`).
+- **Queries:** a count or an existence check is `$count` (no `count()` imported from `drizzle-orm`), in the modules
+  reworked so far. Relational reads over `select` are reviewed, not checked.
 - **Names:** singular file names whose class matches the file; injected services and repositories named after their
   class (`spaceRepository`); controller, service and repository method names
   (with the listed exceptions).

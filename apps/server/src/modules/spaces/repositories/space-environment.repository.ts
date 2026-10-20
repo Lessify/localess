@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, ilike, max, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, or, sql, type SQL } from 'drizzle-orm';
 import type { SpaceEnvironmentCreate, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -60,11 +60,12 @@ export class SpaceEnvironmentRepository {
   async create(spaceId: string, environment: SpaceEnvironmentCreate, tx?: Transaction): Promise<string> {
     const id = newUuid();
     await changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      const [{ last }] = await t
-        .select({ last: max(spaceEnvironments.position) })
-        .from(spaceEnvironments)
-        .where(eq(spaceEnvironments.spaceId, spaceId));
-      await t.insert(spaceEnvironments).values({ id, spaceId, ...environment, position: (last ?? -1) + 1 });
+      const last = await t.query.spaceEnvironments.findFirst({
+        columns: { position: true },
+        where: eq(spaceEnvironments.spaceId, spaceId),
+        orderBy: desc(spaceEnvironments.position),
+      });
+      await t.insert(spaceEnvironments).values({ id, spaceId, ...environment, position: (last?.position ?? -1) + 1 });
     });
     return id;
   }
@@ -83,17 +84,16 @@ export class SpaceEnvironmentRepository {
 
   /**
    * The environment to `position` in the space's order, the others shifting (`moveTo`); only the rows that change are
-   * written, their `updated_at` kept. The space's rows are locked while read, so two moves run one after the other.
+   * written, their `updated_at` kept. Read under the space's lock (`changeSpace`): two moves run one after the other.
    * Nothing written, no event, when it is already there or no longer there.
    */
   move(spaceId: string, environmentId: string, position: number, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      const rows = await t
-        .select({ id: spaceEnvironments.id, position: spaceEnvironments.position })
-        .from(spaceEnvironments)
-        .where(eq(spaceEnvironments.spaceId, spaceId))
-        .orderBy(asc(spaceEnvironments.position), asc(spaceEnvironments.createdAt))
-        .for('update');
+      const rows = await t.query.spaceEnvironments.findMany({
+        columns: { id: true, position: true },
+        where: eq(spaceEnvironments.spaceId, spaceId),
+        orderBy: [asc(spaceEnvironments.position), asc(spaceEnvironments.createdAt)],
+      });
       const changes = moveTo(rows, environmentId, position);
       if (!changes?.length) return false;
       for (const change of changes) {

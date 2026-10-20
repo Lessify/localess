@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { SpacePageable } from '@localess/shared';
-import { and, asc, count, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { firebaseImports, spaceLocales, spaces } from '../../../infra/database/schema.js';
@@ -43,9 +43,8 @@ export class SpaceRepository {
   }
 
   /** How many spaces match the query's filters. */
-  async findAllCount(query: SpacePageable): Promise<number> {
-    const [{ total }] = await this.db.select({ total: count() }).from(spaces).where(this.where(query));
-    return total;
+  findAllCount(query: SpacePageable): Promise<number> {
+    return this.db.$count(spaces, this.where(query));
   }
 
   /** Every space that can be opened (not importing, no failed import), by name: the sidebar list. */
@@ -75,11 +74,7 @@ export class SpaceRepository {
 
   /** Whether the space's import from Firebase is running (it can not be deleted then). */
   async isImporting(spaceId: string): Promise<boolean> {
-    const run = await this.db.query.firebaseImports.findFirst({
-      where: and(eq(firebaseImports.spaceId, spaceId), eq(firebaseImports.status, 'RUNNING')),
-      columns: { id: true },
-    });
-    return run !== undefined;
+    return (await this.db.$count(firebaseImports, and(eq(firebaseImports.spaceId, spaceId), eq(firebaseImports.status, 'RUNNING')))) > 0;
   }
 
   /** The space with its first locale, the default one, and its auto-generated preview token; answers its id. */
