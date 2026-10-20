@@ -1,9 +1,9 @@
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/preflight.css" layer(base);
-@import "tailwindcss/utilities.css";
-@import "@spartan-ng/brain/hlm-tailwind-preset.css";
-@import "./styles/style-nova.css";
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
+@import 'tailwindcss/utilities.css';
+@import '@spartan-ng/brain/hlm-tailwind-preset.css';
+@import './styles/style-nova.css';
 
 @source './**/*.{html,scss,ts}';
 @source '../../../packages/ui/**/*.ts';

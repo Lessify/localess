@@ -109,7 +109,12 @@ describe('app API: space templates', () => {
       const response = await designer.post('/api/app/spaces', { name: 'Plain' });
       expect(response.statusCode).toBe(201);
       expect(response.json().spaceLocales.map((it: { localeId: string }) => it.localeId)).toEqual(['en']);
-      expect(await counts(t)).toEqual({ ...before, spaces: before.spaces + 1, spaceLocales: before.spaceLocales + 1, tokens: before.tokens + 1 });
+      expect(await counts(t)).toEqual({
+        ...before,
+        spaces: before.spaces + 1,
+        spaceLocales: before.spaceLocales + 1,
+        tokens: before.tokens + 1,
+      });
     });
 
     it('creates a space from the Blog template in one request', async () => {

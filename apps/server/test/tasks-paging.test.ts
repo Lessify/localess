@@ -30,9 +30,7 @@ describe('app API: tasks, one page at a time', () => {
     }));
     await t.db.insert(tasks).values(rows);
     await t.db.insert(tasks).values({ id: newUuid(), spaceId: SPACE_B, kind: 'CONTENT_EXPORT', status: 'FINISHED' });
-    newestFirst = [...rows]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1))
-      .map(it => it.id);
+    newestFirst = [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1)).map(it => it.id);
   });
 
   afterAll(() => t?.close());

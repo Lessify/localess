@@ -87,13 +87,17 @@ export class FirebaseClient {
     try {
       return JSON.parse(Buffer.concat(chunks).toString('utf8')) as T;
     } catch {
-      throw new FirebaseConnectionError(path === '/spaces' ? 'disabled' : 'failed', path === '/spaces' ? disabled : `GET /api/migration${path} answered invalid JSON`);
+      throw new FirebaseConnectionError(
+        path === '/spaces' ? 'disabled' : 'failed',
+        path === '/spaces' ? disabled : `GET /api/migration${path} answered invalid JSON`,
+      );
     }
   }
 
   async spaces(): Promise<{ id: string; name: string; createdAt?: string }[]> {
     const spaces = await this.get<unknown>('/spaces');
-    if (!Array.isArray(spaces)) throw new FirebaseConnectionError('disabled', 'The migration API is not enabled on this environment (Admin → Settings → Migration)');
+    if (!Array.isArray(spaces))
+      throw new FirebaseConnectionError('disabled', 'The migration API is not enabled on this environment (Admin → Settings → Migration)');
     return spaces as { id: string; name: string; createdAt?: string }[];
   }
 
@@ -109,7 +113,9 @@ export class FirebaseClient {
     let cursor: string | null = null;
     do {
       const query: string = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
-      const page: { items: FirebaseDoc[]; cursor: string | null } = await this.get(`/spaces/${encodeURIComponent(spaceId)}/${name}${query}`);
+      const page: { items: FirebaseDoc[]; cursor: string | null } = await this.get(
+        `/spaces/${encodeURIComponent(spaceId)}/${name}${query}`,
+      );
       if (page.items.length) yield page.items;
       cursor = page.cursor;
     } while (cursor);

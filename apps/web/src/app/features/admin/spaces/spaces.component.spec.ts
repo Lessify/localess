@@ -23,8 +23,9 @@ function imported(status: FirebaseImport['status']): Space {
 
 describe('SpacesComponent', () => {
   function setup(spaces: Space[] = []) {
-    const findAll = vi.fn((params: HttpParams): Observable<Page<Space>> =>
-      of({ items: spaces, page: Number(params.get('page')), size: Number(params.get('size')), total: spaces.length }),
+    const findAll = vi.fn(
+      (params: HttpParams): Observable<Page<Space>> =>
+        of({ items: spaces, page: Number(params.get('page')), size: Number(params.get('size')), total: spaces.length }),
     );
     const create = vi.fn().mockReturnValue(of({ id: 'new-space' }));
     const update = vi.fn().mockReturnValue(of(undefined));

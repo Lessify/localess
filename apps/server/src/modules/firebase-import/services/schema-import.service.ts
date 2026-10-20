@@ -97,7 +97,10 @@ export class SchemaImportService {
       const types = new Map(rows.map(it => [it.name, it.type]));
       for (const row of rows) {
         if (row.type === SchemaType.ENUM) continue;
-        Object.assign(row, keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)));
+        Object.assign(
+          row,
+          keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)),
+        );
       }
       await this.schemaImportRepository.insertMany(rows);
     }

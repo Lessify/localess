@@ -17,18 +17,12 @@ export class MeController {
   }
 
   @Patch()
-  async updateProfile(
-    @CurrentUser() user: UserEntity,
-    @Body({ schema: zMeUpdate }) body: MeUpdate,
-  ): Promise<UserDto> {
+  async updateProfile(@CurrentUser() user: UserEntity, @Body({ schema: zMeUpdate }) body: MeUpdate): Promise<UserDto> {
     return this.meService.updateProfile(user, body);
   }
 
   @Put('email')
-  async updateEmail(
-    @CurrentUser() user: UserEntity,
-    @Body({ schema: zMeEmailUpdate }) body: MeEmailUpdate,
-  ): Promise<UserDto> {
+  async updateEmail(@CurrentUser() user: UserEntity, @Body({ schema: zMeEmailUpdate }) body: MeEmailUpdate): Promise<UserDto> {
     return this.meService.updateEmail(user, body.email, body.currentPassword);
   }
 

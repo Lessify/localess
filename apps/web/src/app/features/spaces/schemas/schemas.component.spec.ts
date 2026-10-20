@@ -149,14 +149,16 @@ describe('SchemasComponent', () => {
     expect(open.mock.calls[1][1].context.usage).toBeUndefined();
   });
 
-  it('openEditIdDialog() shows the server\'s reason when it refuses the rename', () => {
+  it("openEditIdDialog() shows the server's reason when it refuses the rename", () => {
     const { component, open, updateName, error } = setup();
     open.mockReturnValue({ closed$: of('tile') });
     updateName.mockReturnValue(throwError(() => conflict("Schema 'card' is in use: referenced by 'page' field 'items'")));
 
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1', name: 'card' }));
 
-    expect(error).toHaveBeenCalledWith('Schema ID can not be updated.', { description: "Schema 'card' is in use: referenced by 'page' field 'items'" });
+    expect(error).toHaveBeenCalledWith('Schema ID can not be updated.', {
+      description: "Schema 'card' is in use: referenced by 'page' field 'items'",
+    });
   });
 
   it('openDeleteDialog() lists what uses the schema and offers no delete while it is in use', () => {
@@ -174,7 +176,7 @@ describe('SchemasComponent', () => {
     expect(deleteSchema).not.toHaveBeenCalled();
   });
 
-  it('openDeleteDialog() asks and deletes when nothing uses the schema, showing the server\'s reason if it refuses', () => {
+  it("openDeleteDialog() asks and deletes when nothing uses the schema, showing the server's reason if it refuses", () => {
     const { component, open, deleteSchema, error } = setup();
     open.mockReturnValue({ closed$: of(true) });
 
@@ -184,7 +186,9 @@ describe('SchemasComponent', () => {
 
     deleteSchema.mockReturnValue(throwError(() => conflict("Schema 'page' is in use: used by 1 content: Home (home)")));
     component.openDeleteDialog(fakeEvent(), schema({ id: 's1', name: 'page' }));
-    expect(error).toHaveBeenCalledWith("Schema 'page' can not be deleted.", { description: "Schema 'page' is in use: used by 1 content: Home (home)" });
+    expect(error).toHaveBeenCalledWith("Schema 'page' can not be deleted.", {
+      description: "Schema 'page' is in use: used by 1 content: Home (home)",
+    });
   });
 
   it('openEditIdDialog() notifies an error on failure', () => {

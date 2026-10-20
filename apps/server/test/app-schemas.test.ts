@@ -82,9 +82,15 @@ describe('app API: schemas', () => {
     expect((await editor.put(`${base}/${ids['colors']}`, { values: [{ name: 'red' }] })).statusCode).toBe(400);
 
     const response = await editor.put(url, {
-      fields: [{ name: 'title', kind: 'TEXT', translatable: true, extra: 1 }, { name: 'next', kind: 'REFERENCE', translatable: true }],
+      fields: [
+        { name: 'title', kind: 'TEXT', translatable: true, extra: 1 },
+        { name: 'next', kind: 'REFERENCE', translatable: true },
+      ],
     });
-    expect(response.json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }, { name: 'next', kind: 'REFERENCE' }]);
+    expect(response.json().fields).toEqual([
+      { name: 'title', kind: 'TEXT', translatable: true },
+      { name: 'next', kind: 'REFERENCE' },
+    ]);
   });
 
   it('refuses fields that break a rule across fields, saying which', async () => {
@@ -107,7 +113,13 @@ describe('app API: schemas', () => {
         "field 'color' takes its options from 'page', which is not an ENUM schema",
     );
     expect((await editor.get(url)).json().fields).toEqual(before);
-    const ok = await editor.put(url, { previewField: 'title', fields: [{ name: 'title', kind: 'TEXT' }, { name: 'color', kind: 'OPTION', source: 'colors' }] });
+    const ok = await editor.put(url, {
+      previewField: 'title',
+      fields: [
+        { name: 'title', kind: 'TEXT' },
+        { name: 'color', kind: 'OPTION', source: 'colors' },
+      ],
+    });
     expect(ok.statusCode).toBe(200);
     await editor.put(url, { fields: [{ name: 'title', kind: 'TEXT', translatable: true }] });
   });
@@ -146,12 +158,19 @@ describe('app API: schemas', () => {
     ids['hero'] = created.id;
   });
 
-  describe('in use: referred to by another schema\'s fields, or the schema of contents', () => {
+  describe("in use: referred to by another schema's fields, or the schema of contents", () => {
     let card: string;
     let blocks: string;
     const docsFolder = newUuid();
     const doc = (name: string) => ({
-      spaceId: S1, id: newUuid(), parentId: docsFolder, kind: 'DOCUMENT' as const, name, slug: name, schema: 'blocks', data: { _id: name, _schema: 'blocks' },
+      spaceId: S1,
+      id: newUuid(),
+      parentId: docsFolder,
+      kind: 'DOCUMENT' as const,
+      name,
+      slug: name,
+      schema: 'blocks',
+      data: { _id: name, _schema: 'blocks' },
     });
 
     beforeAll(async () => {
@@ -168,10 +187,12 @@ describe('app API: schemas', () => {
       await editor.put(`${base}/${card}`, { fields: [{ name: 'children', kind: 'SCHEMAS', schemas: ['card'] }] });
       // Blocks inside content data are not looked at: only `contents.schema`.
       await t.db.insert(contents).values({ spaceId: S1, id: docsFolder, kind: 'FOLDER', name: 'Docs', slug: 'docs' });
-      await t.db.insert(contents).values([
-        ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
-        { ...doc('nested'), schema: 'other', data: { _id: 'n', _schema: 'other', items: [{ _id: 'n1', _schema: 'card' }] } },
-      ]);
+      await t.db
+        .insert(contents)
+        .values([
+          ...['f', 'b', 'e', 'a', 'd', 'c'].map(doc),
+          { ...doc('nested'), schema: 'other', data: { _id: 'n', _schema: 'other', items: [{ _id: 'n1', _schema: 'card' }] } },
+        ]);
     });
 
     it('reports the fields that refer to a schema and the contents using it, the first five by full slug', async () => {
@@ -201,7 +222,9 @@ describe('app API: schemas', () => {
       expect(rename.json().message).toBe("Schema 'card' is in use: referenced by 'blocks' field 'items'");
       const removal = await editor.delete(`${base}/${blocks}`);
       expect(removal.statusCode).toBe(409);
-      expect(removal.json().message).toBe("Schema 'blocks' is in use: used by 6 contents: a (docs/a), b (docs/b), c (docs/c), d (docs/d), e (docs/e) and 1 more");
+      expect(removal.json().message).toBe(
+        "Schema 'blocks' is in use: used by 6 contents: a (docs/a), b (docs/b), c (docs/c), d (docs/d), e (docs/e) and 1 more",
+      );
       expect((await editor.delete(`${base}/${ids['colors']}`)).json().message).toBe(
         "Schema 'colors' is in use: referenced by 'blocks' field 'color', 'blocks' field 'tint'",
       );

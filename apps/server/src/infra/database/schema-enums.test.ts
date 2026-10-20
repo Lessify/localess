@@ -78,7 +78,9 @@ describe('columns with a fixed set of values', () => {
       pool.query(`insert into users (id, email, role) values (gen_random_uuid(), $1, $2)`, [`${role}@example.com`, role]);
     await expect(insert('admin')).rejects.toMatchObject({ code: '23514' });
     await expect(insert('ADMIN')).resolves.toBeDefined();
-    await expect(pool.query(`insert into users (id, email, permissions) values (gen_random_uuid(), 'p@example.com', '{NOPE}')`)).rejects.toMatchObject({
+    await expect(
+      pool.query(`insert into users (id, email, permissions) values (gen_random_uuid(), 'p@example.com', '{NOPE}')`),
+    ).rejects.toMatchObject({
       code: '23514',
     });
   });

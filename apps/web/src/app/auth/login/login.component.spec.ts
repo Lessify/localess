@@ -14,7 +14,11 @@ import { LoginComponent } from './login.component';
 describe('LoginComponent', () => {
   let http: HttpTestingController;
 
-  function setup(config: Partial<PublicAppConfig['auth']> = {}, query: Record<string, string> = {}, instance?: PublicAppConfig['instance']) {
+  function setup(
+    config: Partial<PublicAppConfig['auth']> = {},
+    query: Record<string, string> = {},
+    instance?: PublicAppConfig['instance'],
+  ) {
     const signedIn = vi.fn();
     TestBed.configureTestingModule({
       providers: [
@@ -22,7 +26,9 @@ describe('LoginComponent', () => {
         provideHttpClientTesting(),
         {
           provide: AppConfigService,
-          useValue: { config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config }, ...(instance ? { instance } : {}) }) },
+          useValue: {
+            config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config }, ...(instance ? { instance } : {}) }),
+          },
         },
         { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap(query)) } },
         { provide: UserStore, useValue: { signedIn, isAuthenticated: signal(false), email: signal(undefined) } },

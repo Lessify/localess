@@ -67,7 +67,20 @@ describe('UsersComponent', () => {
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
     const lastQuery = () => findPage.mock.calls.at(-1)![0].toString();
-    return { fixture, component: fixture.componentInstance, findPage, lastQuery, invite, update, deleteUser, setDisabled, passwordResetLink, success, error, open };
+    return {
+      fixture,
+      component: fixture.componentInstance,
+      findPage,
+      lastQuery,
+      invite,
+      update,
+      deleteUser,
+      setDisabled,
+      passwordResetLink,
+      success,
+      error,
+      open,
+    };
   }
 
   it('loads the first page on init, and shows the total', () => {
@@ -102,7 +115,9 @@ describe('UsersComponent', () => {
   it('keeps answering the table after a failed load: the next query change fetches again', () => {
     let calls = 0;
     const { fixture, component, findPage, error } = setup([], params =>
-      ++calls === 1 ? throwError(() => new Error('boom')) : of({ items: [user({ id: 'u1' })], page: Number(params.get('page')), size: 20, total: 1 }),
+      ++calls === 1
+        ? throwError(() => new Error('boom'))
+        : of({ items: [user({ id: 'u1' })], page: Number(params.get('page')), size: 20, total: 1 }),
     );
     expect(error).toHaveBeenCalledWith('Users can not be loaded.');
 

@@ -48,7 +48,8 @@ export class AdminUsersPage {
   /** Narrows the table to rows matching `text` (server-side search), once the server has answered it. */
   async find(text: string): Promise<void> {
     const answered = this.page.waitForResponse(
-      response => response.url().includes('/api/app/users?') && new URL(response.url()).searchParams.get('search') === (text.trim() || null),
+      response =>
+        response.url().includes('/api/app/users?') && new URL(response.url()).searchParams.get('search') === (text.trim() || null),
     );
     await this.page.getByPlaceholder(/^Search/).fill(text);
     await answered;

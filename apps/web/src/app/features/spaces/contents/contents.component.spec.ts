@@ -55,7 +55,12 @@ describe('ContentsComponent', () => {
     const open = vi.fn();
     const changeContentFolder = vi.fn();
     const contentFolderId = signal<string | null>(null);
-    const findAllFolders = vi.fn().mockReturnValue(of([{ id: 'f1', name: 'Blog', slug: 'blog' }, { id: 'f2', name: '2026', slug: '2026', parentId: 'f1' }]));
+    const findAllFolders = vi.fn().mockReturnValue(
+      of([
+        { id: 'f1', name: 'Blog', slug: 'blog' },
+        { id: 'f2', name: '2026', slug: '2026', parentId: 'f1' },
+      ]),
+    );
 
     TestBed.overrideComponent(ContentsComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -153,7 +158,9 @@ describe('ContentsComponent', () => {
 
     it("shows the server's reason when the slug is taken", () => {
       const { component, open, createDocument, error } = setup();
-      createDocument.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })));
+      createDocument.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 409, error: { message: "'page' is already used" } })),
+      );
       open.mockReturnValue({ closed$: of({ name: 'New', slug: 'page', schema: 's1' }) });
 
       component.openAddDocumentDialog();
@@ -350,7 +357,10 @@ describe('ContentsComponent', () => {
     });
 
     it('resolves the document schema by name, not by the schema row id', () => {
-      const { component, navigate, error } = setup([], [{ id: '0190a3b4-0000-7000-8000-000000000001', name: 'page', type: SchemaType.ROOT } as Schema]);
+      const { component, navigate, error } = setup(
+        [],
+        [{ id: '0190a3b4-0000-7000-8000-000000000001', name: 'page', type: SchemaType.ROOT } as Schema],
+      );
 
       component.onRowSelect(doc({ id: 'c1', schema: 'page' }));
 

@@ -1,5 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentMove, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
+import type {
+  IdNameUrl,
+  Page,
+  SpaceEnvironment,
+  SpaceEnvironmentCreate,
+  SpaceEnvironmentMove,
+  SpaceEnvironmentPageable,
+  SpaceEnvironmentUpdate,
+} from '@localess/shared';
 import { toSpaceEnvironment } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { SpaceEnvironmentRepository } from '../repositories/space-environment.repository.js';

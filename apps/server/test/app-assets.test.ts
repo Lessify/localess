@@ -132,10 +132,7 @@ describe('app API: assets', () => {
         .withMetadata({ orientation: 6 })
         .withExif({ IFD0: { ImageDescription: 'Sunset over the bay' } })
         .toBuffer();
-      const response = await upload(
-        { parentId: nested.id },
-        { filename: 'Sunset.Final.JPG', type: 'image/jpeg', bytes },
-      );
+      const response = await upload({ parentId: nested.id }, { filename: 'Sunset.Final.JPG', type: 'image/jpeg', bytes });
       expect(response.statusCode, response.body).toBe(201);
       photo = response.json();
       expect(photo).toMatchObject({

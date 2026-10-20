@@ -20,7 +20,11 @@ export class TokenController {
   @Get()
   findAll(@Param('spaceId') spaceId: string, @Query('type') type?: string, @Query('limit') limit?: string) {
     if (type !== undefined && !TOKEN_TYPES.includes(type)) throw new BadRequestException('Unknown token type');
-    return this.tokenService.findAll(spaceId, type as TokenType | undefined, limit ? Math.max(1, Math.min(1000, Number(limit) || 1)) : undefined);
+    return this.tokenService.findAll(
+      spaceId,
+      type as TokenType | undefined,
+      limit ? Math.max(1, Math.min(1000, Number(limit) || 1)) : undefined,
+    );
   }
 
   @Get(':id')
@@ -34,11 +38,7 @@ export class TokenController {
   }
 
   @Put(':id')
-  update(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zTokenUpdate }) body: TokenUpdate,
-  ) {
+  update(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zTokenUpdate }) body: TokenUpdate) {
     return this.tokenService.update(spaceId, id, body);
   }
 

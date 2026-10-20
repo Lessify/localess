@@ -42,7 +42,9 @@ export class FirebaseImportRunner {
     // Every write is conditional on the run still being RUNNING, so a run failed elsewhere cannot come back.
     const save = (extra: FirebaseImportUpdate = {}) => this.firebaseImportRepository.save(runId, stages, extra);
     const heartbeat = setInterval(() => {
-      void this.firebaseImportRepository.heartbeat(runId).catch(error => this.logger.warn(`Import ${runId} heartbeat failed: ${(error as Error).message}`));
+      void this.firebaseImportRepository
+        .heartbeat(runId)
+        .catch(error => this.logger.warn(`Import ${runId} heartbeat failed: ${(error as Error).message}`));
     }, HEARTBEAT_MS);
     const stage = (name: FirebaseImportStageName) => stages.find(it => it.stage === name)!;
     const begin = async (name: FirebaseImportStageName) => {

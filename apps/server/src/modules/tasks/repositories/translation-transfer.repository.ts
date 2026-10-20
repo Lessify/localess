@@ -73,9 +73,7 @@ export class TranslationTransferRepository {
             })
             .where(and(eq(translations.spaceId, spaceId), eq(translations.key, write.key)));
         } else {
-          await t
-            .insert(translations)
-            .values({ id: newUuid(), spaceId, key: write.key, locales: { [locale]: write.value } });
+          await t.insert(translations).values({ id: newUuid(), spaceId, key: write.key, locales: { [locale]: write.value } });
         }
       }
     });

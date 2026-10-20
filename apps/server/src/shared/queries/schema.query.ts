@@ -12,7 +12,12 @@ import { schemaReferences, type SchemaPushPlan } from '../utils/schema.utils.js'
 
 /** Columns written for a pushed schema; absent fields are cleared, like `FieldValue.delete()` did. */
 function schemaColumns(schema: SchemaExport) {
-  const base = { type: schema.type, displayName: schema.displayName || null, description: schema.description || null, labels: schema.labels || null };
+  const base = {
+    type: schema.type,
+    displayName: schema.displayName || null,
+    description: schema.description || null,
+    labels: schema.labels || null,
+  };
   return schema.type === SchemaType.ENUM
     ? { ...base, previewField: null, fields: null, values: schema.values ?? null }
     : { ...base, previewField: schema.previewField || null, fields: schema.fields ?? null, values: null };

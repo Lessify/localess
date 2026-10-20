@@ -2,7 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newUuid } from '../src/infra/database/id.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
-type Listed = { items: { localeId: string; position: number; locale: { id: string; name: string } }[]; page: number; size: number; total: number };
+type Listed = {
+  items: { localeId: string; position: number; locale: { id: string; name: string } }[];
+  page: number;
+  size: number;
+  total: number;
+};
 
 /** The space's locales in the order they are added (`en` comes with the space): its position order. */
 const ADDED = ['en', 'fr', 'de', 'de-AT', 'it', 'de-CH', 'es'];

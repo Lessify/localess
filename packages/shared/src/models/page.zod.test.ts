@@ -19,7 +19,15 @@ describe('zPageable', () => {
   });
 
   it('refuses a size outside 1…100, a negative or fractional page, an unknown field or direction', () => {
-    for (const query of [{ size: '0' }, { size: '101' }, { page: '-1' }, { page: '1.5' }, { page: 'x' }, { sort: 'password' }, { direction: 'up' }]) {
+    for (const query of [
+      { size: '0' },
+      { size: '101' },
+      { page: '-1' },
+      { page: '1.5' },
+      { page: 'x' },
+      { sort: 'password' },
+      { direction: 'up' },
+    ]) {
       expect(schema.safeParse(query).success, JSON.stringify(query)).toBe(false);
     }
   });

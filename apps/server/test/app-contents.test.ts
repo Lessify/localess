@@ -43,9 +43,13 @@ describe('app API: contents', () => {
       ],
       defaultLocale: { id: 'en', name: 'English' },
     });
-    await t.db
-      .insert(schemas)
-      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }] });
+    await t.db.insert(schemas).values({
+      id: newUuid(),
+      spaceId: S1,
+      name: 'page',
+      type: 'ROOT',
+      fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }],
+    });
     await t.db.insert(tokens).values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
     editor = api(
       t,
@@ -237,7 +241,10 @@ describe('app API: contents', () => {
           {
             _id: 'b1',
             _schema: 'card',
-            gallery: [{ kind: 'ASSET', uri: 'asset-block' }, { kind: 'ASSET', uri: 'asset-en' }],
+            gallery: [
+              { kind: 'ASSET', uri: 'asset-block' },
+              { kind: 'ASSET', uri: 'asset-en' },
+            ],
             more: { kind: 'LINK', type: 'content', target: '_self', uri: 'doc-link' },
             web: { kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com' },
           },
@@ -366,7 +373,12 @@ describe('app API: contents', () => {
       release();
       await first;
       expect((await deleting).statusCode).toBe(204);
-      expect(await t.db.select().from(contents).where(and(eq(contents.spaceId, S1), eq(contents.parentId, folder.id)))).toEqual([]);
+      expect(
+        await t.db
+          .select()
+          .from(contents)
+          .where(and(eq(contents.spaceId, S1), eq(contents.parentId, folder.id))),
+      ).toEqual([]);
     });
 
     it('clones a document under a new slug with its data', async () => {
@@ -476,7 +488,11 @@ describe('app API: contents', () => {
   // This file runs with LOCALESS_WEBHOOK_ALLOW_INTERNAL=true (the local receiver above).
   it('saves a local http webhook when internal targets are allowed, as delivery does', async () => {
     const manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
-    const created = await manager.post(`/api/app/spaces/${S1}/webhooks`, { name: 'Local', url: 'http://localhost:4000/hook', events: ['content.changed'] });
+    const created = await manager.post(`/api/app/spaces/${S1}/webhooks`, {
+      name: 'Local',
+      url: 'http://localhost:4000/hook',
+      events: ['content.changed'],
+    });
     expect(created.statusCode, created.body).toBe(201);
     expect((await manager.delete(`/api/app/spaces/${S1}/webhooks/${created.json().id}`)).statusCode).toBe(204);
   });

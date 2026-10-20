@@ -40,7 +40,10 @@ describe('WebhookDialogComponent', () => {
   it('is in add mode without a webhook and in edit mode with one', () => {
     expect(setup(CREATE_CONTEXT).component.isEdit).toBe(false);
     TestBed.resetTestingModule();
-    expect(setup({ id: 'w1', name: 'Slack', url: 'https://hooks.example.com', events: [], enabled: true } as unknown as WebHook).component.isEdit).toBe(true);
+    expect(
+      setup({ id: 'w1', name: 'Slack', url: 'https://hooks.example.com', events: [], enabled: true } as unknown as WebHook).component
+        .isEdit,
+    ).toBe(true);
   });
 
   it('prefills the form from the given webhook', () => {

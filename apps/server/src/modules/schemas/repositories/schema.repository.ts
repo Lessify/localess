@@ -203,7 +203,9 @@ export class SchemaRepository {
           .map(it => ({ name: it.name, fullSlug: it.fullSlug }))
       : [];
     return {
-      fields: referring.flatMap(row => (row.fields ?? []).filter(field => fieldRefersTo(field, name)).map(field => ({ schema: row.name, field: field.name }))),
+      fields: referring.flatMap(row =>
+        (row.fields ?? []).filter(field => fieldRefersTo(field, name)).map(field => ({ schema: row.name, field: field.name })),
+      ),
       contents: { count: Number(value), first },
     };
   }

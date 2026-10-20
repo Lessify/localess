@@ -172,7 +172,12 @@ describe('user management', () => {
     const me = (cookie: string) => t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
 
     it('disables a user: their sessions end and sign-in is refused; enabling lets them back in', async () => {
-      const user = await usersService.create({ email: 'leaver@example.com', password: 'secret1', role: 'CUSTOM', permissions: [CONTENT_READ] });
+      const user = await usersService.create({
+        email: 'leaver@example.com',
+        password: 'secret1',
+        role: 'CUSTOM',
+        permissions: [CONTENT_READ],
+      });
       const cookie = await login(t, 'leaver@example.com', 'secret1');
 
       const disabled = await call(managerCookie, 'PATCH', `/api/app/users/${user.id}/status`, { disabled: true });

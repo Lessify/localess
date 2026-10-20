@@ -27,8 +27,7 @@ type File = (typeof files)[number];
 const layerOf = (file: File) => LAYERS.find(layer => file.name.endsWith(`.${layer}.ts`));
 const imports = (file: File) =>
   file.source.statements.filter(ts.isImportDeclaration).map(it => (it.moduleSpecifier as ts.StringLiteral).text);
-const classes = (file: File) =>
-  file.source.statements.filter((it): it is ts.ClassDeclaration => ts.isClassDeclaration(it) && !!it.name);
+const classes = (file: File) => file.source.statements.filter((it): it is ts.ClassDeclaration => ts.isClassDeclaration(it) && !!it.name);
 /** Nest classes (`@Injectable`, `@Controller`, `@Module`): the ones a layer file is named after. */
 const nestClasses = (file: File) =>
   classes(file).filter(it => ts.getDecorators(it)?.some(d => /^@(Injectable|Controller|Module)\b/.test(d.getText(file.source))));
@@ -74,7 +73,6 @@ describe('server rules: imports between layers', () => {
       ),
     ).toEqual([]);
   });
-
 });
 
 describe('server rules: file and class names', () => {
@@ -133,7 +131,8 @@ describe('server rules: return types', () => {
           for (const it of classes(file)) {
             for (const member of it.members) {
               if (!ts.isMethodDeclaration(member) || member.type) continue;
-              if (member.modifiers?.some(m => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword)) continue;
+              if (member.modifiers?.some(m => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword))
+                continue;
               missing.push(`${it.name!.text}.${member.name.getText(file.source)}`);
             }
           }
@@ -201,7 +200,10 @@ describe('server rules: entities (the database rows)', () => {
   it('a table type is declared only in shared/entities: no $inferSelect / $inferInsert elsewhere', () => {
     expect(
       breaks(
-        file => (/\$infer(Select|Insert)/.test(file.source.text) ? ['uses $infer: import <Entity>Entity / <Entity>InsertEntity from shared/entities'] : []),
+        file =>
+          /\$infer(Select|Insert)/.test(file.source.text)
+            ? ['uses $infer: import <Entity>Entity / <Entity>InsertEntity from shared/entities']
+            : [],
         file => !file.name.startsWith('shared/entities/') && file.name !== 'infra/database/schema.ts',
       ),
     ).toEqual([]);
@@ -253,7 +255,9 @@ describe('server rules: request models (one definition in @localess/shared)', ()
         file => file.name.startsWith('modules/') || file.name.startsWith('auth/'),
       ),
     ).toEqual([]);
-    expect([...used].filter(([name]) => !shared.has(name)).map(([name, file]) => `${file}: ${name} is not in @localess/shared/zod`)).toEqual([]);
+    expect(
+      [...used].filter(([name]) => !shared.has(name)).map(([name, file]) => `${file}: ${name} is not in @localess/shared/zod`),
+    ).toEqual([]);
   });
 
   it('each request schema zX has its type X next to it (z.infer, or the hand-written type it satisfies)', () => {

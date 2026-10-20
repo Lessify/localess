@@ -111,7 +111,9 @@ test.describe('Space switcher with more than 100 spaces', () => {
       await expect(menu).toBeVisible({ timeout: 1_000 });
     }).toPass({ timeout: 15_000 });
     await menu.getByRole('searchbox', { name: 'Search spaces' }).fill(`${prefix} 05`.toLowerCase());
-    await expect(menu.getByRole('menuitemradio')).toHaveText([name(50), name(51), name(52), name(53), name(54), name(55), name(56), name(57), name(58), name(59)].map(it => new RegExp(it)));
+    await expect(menu.getByRole('menuitemradio')).toHaveText(
+      [name(50), name(51), name(52), name(53), name(54), name(55), name(56), name(57), name(58), name(59)].map(it => new RegExp(it)),
+    );
     await menu.getByRole('searchbox', { name: 'Search spaces' }).fill('no space has this name');
     await expect(menu.getByText('No spaces found')).toBeVisible();
     await menu.getByRole('searchbox', { name: 'Search spaces' }).fill(name(0));

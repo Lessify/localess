@@ -66,7 +66,10 @@ export class SpaceController {
   /** Apart from `PATCH`: a different process (the locale must be the space's; the drafts that read the default go). */
   @Put(':spaceId/default-locale')
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  setDefaultLocale(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate): Promise<Space> {
+  setDefaultLocale(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zSpaceDefaultLocaleUpdate }) body: SpaceDefaultLocaleUpdate,
+  ): Promise<Space> {
     return this.spaceService.setDefaultLocale(spaceId, body);
   }
 

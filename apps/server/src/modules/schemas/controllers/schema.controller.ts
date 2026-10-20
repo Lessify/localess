@@ -36,21 +36,13 @@ export class SchemaController {
 
   @Put(':id')
   @RequirePermission(UserPermission.SCHEMA_UPDATE)
-  update(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zSchemaUpdate }) body: SchemaUpdate,
-  ) {
+  update(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zSchemaUpdate }) body: SchemaUpdate) {
     return this.schemaService.update(spaceId, id, body);
   }
 
   @Put(':id/name')
   @RequirePermission(UserPermission.SCHEMA_UPDATE)
-  rename(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zSchemaRename }) body: SchemaRename,
-  ) {
+  rename(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zSchemaRename }) body: SchemaRename) {
     return this.schemaService.rename(spaceId, id, body.name);
   }
 

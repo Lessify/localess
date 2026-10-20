@@ -54,11 +54,7 @@ export class TaskController {
   /** Exports and metadata regeneration: `{ kind, path? | locale? }`. */
   @Post()
   @RequirePermission(...TASK_READ_PERMISSIONS)
-  create(
-    @Param('spaceId') spaceId: string,
-    @Body({ schema: zTaskCreate }) body: TaskCreate,
-    @CurrentUser() user: UserEntity,
-  ) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zTaskCreate }) body: TaskCreate, @CurrentUser() user: UserEntity) {
     return this.taskService.create(spaceId, body, user);
   }
 

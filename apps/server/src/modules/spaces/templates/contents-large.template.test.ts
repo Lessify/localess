@@ -52,6 +52,8 @@ describe('CONTENTS_LARGE_TEMPLATE', () => {
   it('is stable', () => {
     // The whole tree and every document's data, hashed: a change to either changes the hash.
     const all = contents.map(it => [it.key, it.kind, it.name, it.slug, it.parent, it.data?.(id)]);
-    expect(createHash('sha256').update(JSON.stringify(all)).digest('hex')).toBe('bca0ef90886bafab3b6bfb687f9c5c1f18b72b05e55f73dbdcf6081586289913');
+    expect(createHash('sha256').update(JSON.stringify(all)).digest('hex')).toBe(
+      'bca0ef90886bafab3b6bfb687f9c5c1f18b72b05e55f73dbdcf6081586289913',
+    );
   });
 });

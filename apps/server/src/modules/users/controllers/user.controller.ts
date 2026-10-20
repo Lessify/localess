@@ -36,10 +36,7 @@ export class UserController {
   }
 
   @Post()
-  async invite(
-    @CurrentUser() caller: UserEntity,
-    @Body({ schema: zUserInvite }) body: UserInvite,
-  ): Promise<UserDto> {
+  async invite(@CurrentUser() caller: UserEntity, @Body({ schema: zUserInvite }) body: UserInvite): Promise<UserDto> {
     return this.userService.invite(caller, body);
   }
 

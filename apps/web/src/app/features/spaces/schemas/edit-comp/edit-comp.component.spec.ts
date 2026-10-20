@@ -78,7 +78,7 @@ describe('EditCompComponent', () => {
     expect(component.fieldControlAt(0, 'name')?.value).toBe('title');
   });
 
-  it("keeps unsaved edits when another schema of the space changes (live), but takes the new schema list", () => {
+  it('keeps unsaved edits when another schema of the space changes (live), but takes the new schema list', () => {
     const all = new BehaviorSubject<Schema[]>([]);
     const { component } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }), [], false, all);
     component.addField();
@@ -205,7 +205,7 @@ describe('EditCompComponent', () => {
     expect(component.newFieldName.errors).toEqual({ reservedName: true });
   });
 
-  it('removeComponent() frees the removed field\'s name, not another one', () => {
+  it("removeComponent() frees the removed field's name, not another one", () => {
     const { component } = setup(rootSchema());
     component.addField({ name: 'alpha', kind: SchemaFieldKind.TEXT } as never);
     component.addField({ name: 'beta', kind: SchemaFieldKind.TEXT } as never);
@@ -223,7 +223,13 @@ describe('EditCompComponent', () => {
 
   it('removeComponent() clears the preview field when it removes that field', () => {
     const { component } = setup(
-      rootSchema({ previewField: 'title', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }, { name: 'body', kind: SchemaFieldKind.TEXT }] as never } as never),
+      rootSchema({
+        previewField: 'title',
+        fields: [
+          { name: 'title', kind: SchemaFieldKind.TEXT },
+          { name: 'body', kind: SchemaFieldKind.TEXT },
+        ] as never,
+      } as never),
     );
     const event = { preventDefault: vi.fn(), stopImmediatePropagation: vi.fn() } as unknown as MouseEvent;
 
@@ -233,7 +239,7 @@ describe('EditCompComponent', () => {
     expect(component.form.value['previewField']).toBeUndefined();
   });
 
-  it('save() shows the server\'s reason when it refuses the fields', () => {
+  it("save() shows the server's reason when it refuses the fields", () => {
     const { component, updateComponent, error } = setup(rootSchema());
     const message = "Schema 'root1' is not valid: field 'title' is defined more than once";
     updateComponent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));

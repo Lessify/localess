@@ -22,7 +22,9 @@ export function fieldRefersTo(field: SchemaField, name: string): boolean {
 
 /** One problem of a reference: the schema it names is missing, or of another type than the field needs. */
 function referenceProblem(target: string, types: ReadonlyMap<string, SchemaType>, wanted: SchemaType): string {
-  return types.has(target) ? `'${target}', which is not ${wanted === SchemaType.ENUM ? 'an' : 'a'} ${wanted} schema` : `'${target}', which does not exist`;
+  return types.has(target)
+    ? `'${target}', which is not ${wanted === SchemaType.ENUM ? 'an' : 'a'} ${wanted} schema`
+    : `'${target}', which does not exist`;
 }
 
 /** The problems of one field's references: blocks (`schemas`) must be NODE schemas, options (`source`) an ENUM. */
@@ -33,7 +35,12 @@ export function fieldReferenceProblems(field: SchemaField, types: ReadonlyMap<st
       .map(it => ({ target: it, problem: `field '${field.name}' allows ${referenceProblem(it, types, SchemaType.NODE)}` }));
   }
   if ((field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) && types.get(field.source) !== SchemaType.ENUM) {
-    return [{ target: field.source, problem: `field '${field.name}' takes its options from ${referenceProblem(field.source, types, SchemaType.ENUM)}` }];
+    return [
+      {
+        target: field.source,
+        problem: `field '${field.name}' takes its options from ${referenceProblem(field.source, types, SchemaType.ENUM)}`,
+      },
+    ];
   }
   return [];
 }
@@ -43,7 +50,8 @@ export function previewFieldProblem(previewField: string | undefined | null, fie
   if (!previewField) return undefined;
   const field = fields.find(it => it.name === previewField);
   if (!field) return `preview field '${previewField}' is not a field of the schema`;
-  if (!SCHEMA_PREVIEW_FIELD_KINDS.includes(field.kind)) return `preview field '${previewField}' is a ${field.kind} field, which can not be a preview`;
+  if (!SCHEMA_PREVIEW_FIELD_KINDS.includes(field.kind))
+    return `preview field '${previewField}' is a ${field.kind} field, which can not be a preview`;
   return undefined;
 }
 
@@ -52,10 +60,15 @@ export function previewFieldProblem(previewField: string | undefined | null, fie
  * field names unique (case-sensitive), the preview one of its fields of a previewable kind, blocks (`schemas`) NODE
  * schemas, options (`source`) an ENUM. Answers the problems, empty when there are none.
  */
-export function checkSchemaFields(schema: { previewField?: string | null; fields?: SchemaField[] | null }, types: ReadonlyMap<string, SchemaType>): string[] {
+export function checkSchemaFields(
+  schema: { previewField?: string | null; fields?: SchemaField[] | null },
+  types: ReadonlyMap<string, SchemaType>,
+): string[] {
   const fields = schema.fields ?? [];
   const names = fields.map(it => it.name);
-  const problems = [...new Set(names.filter((name, index) => names.indexOf(name) !== index))].map(name => `field '${name}' is defined more than once`);
+  const problems = [...new Set(names.filter((name, index) => names.indexOf(name) !== index))].map(
+    name => `field '${name}' is defined more than once`,
+  );
   const preview = previewFieldProblem(schema.previewField, fields);
   if (preview) problems.push(preview);
   for (const field of fields) problems.push(...fieldReferenceProblems(field, types).map(it => it.problem));
@@ -66,7 +79,8 @@ export function checkSchemaFields(schema: { previewField?: string | null; fields
 export function schemaReferences(fields: SchemaField[]): Map<string, SchemaType> {
   const references = new Map<string, SchemaType>();
   for (const field of fields) {
-    if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) for (const it of field.schemas ?? []) references.set(it, SchemaType.NODE);
+    if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS)
+      for (const it of field.schemas ?? []) references.set(it, SchemaType.NODE);
     if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) references.set(field.source, SchemaType.ENUM);
   }
   return references;

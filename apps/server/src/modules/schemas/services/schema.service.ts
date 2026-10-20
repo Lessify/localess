@@ -13,7 +13,9 @@ function inUseMessage(name: string, usage: SchemaUsage): string {
   const { count, first } = usage.contents;
   if (count) {
     const more = count > first.length ? ` and ${count - first.length} more` : '';
-    parts.push(`used by ${count} ${count === 1 ? 'content' : 'contents'}: ${first.map(it => `${it.name} (${it.fullSlug})`).join(', ')}${more}`);
+    parts.push(
+      `used by ${count} ${count === 1 ? 'content' : 'contents'}: ${first.map(it => `${it.name} (${it.fullSlug})`).join(', ')}${more}`,
+    );
   }
   return `Schema '${name}' is in use: ${parts.join('; ')}`;
 }
@@ -29,12 +31,16 @@ function lostMessage(lost: string[]): string {
 }
 
 /** Refuses (400) the schemas whose fields break a rule across fields, saying which. */
-function requireValidFields(schemas: { name: string; type: SchemaType | `${SchemaType}`; previewField?: string | null; fields?: SchemaField[] | null }[], types: ReadonlyMap<string, SchemaType>): void {
+function requireValidFields(
+  schemas: { name: string; type: SchemaType | `${SchemaType}`; previewField?: string | null; fields?: SchemaField[] | null }[],
+  types: ReadonlyMap<string, SchemaType>,
+): void {
   const invalid = schemas
     .filter(it => it.type !== SchemaType.ENUM)
     .map(it => ({ name: it.name, problems: checkSchemaFields(it, types) }))
     .filter(it => it.problems.length);
-  if (invalid.length) throw new BadRequestException(invalid.map(it => `Schema '${it.name}' is not valid: ${it.problems.join('; ')}`).join('. '));
+  if (invalid.length)
+    throw new BadRequestException(invalid.map(it => `Schema '${it.name}' is not valid: ${it.problems.join('; ')}`).join('. '));
 }
 
 function found(entity: SchemaEntity | undefined): Schema {

@@ -68,17 +68,14 @@ export class ContentService {
     const source = found(await this.contentRepository.findById(spaceId, id));
     if (source.kind !== 'DOCUMENT') throw new BadRequestException('Only documents can be cloned');
     const suffix = randomSuffix();
-    return this.create(
-      spaceId,
-      {
-        kind: 'DOCUMENT',
-        parentId: source.parentId,
-        name: `${source.name} ${suffix}`,
-        slug: `${source.slug}-${suffix}`,
-        schema: source.schema ?? undefined,
-        data: source.data ?? undefined,
-      },
-    );
+    return this.create(spaceId, {
+      kind: 'DOCUMENT',
+      parentId: source.parentId,
+      name: `${source.name} ${suffix}`,
+      slug: `${source.slug}-${suffix}`,
+      schema: source.schema ?? undefined,
+      data: source.data ?? undefined,
+    });
   }
 
   /** Rename and/or move (`parentId` null: the root). A folder is not moved under itself. */

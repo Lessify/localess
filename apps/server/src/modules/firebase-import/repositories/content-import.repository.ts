@@ -66,7 +66,12 @@ export class ContentImportRepository {
   }
 
   /** Writes rewritten references; `updated_at` stays the one Firebase had. */
-  updateReferences(spaceId: string, id: string, values: Omit<ContentReferences, 'id' | 'parentId' | 'slug'>, tx?: Transaction): Promise<void> {
+  updateReferences(
+    spaceId: string,
+    id: string,
+    values: Omit<ContentReferences, 'id' | 'parentId' | 'slug'>,
+    tx?: Transaction,
+  ): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t
         .update(contents)

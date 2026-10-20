@@ -84,7 +84,11 @@ describe('app API: spaces, one page at a time', () => {
   it('answers a refused query or body with the NestJS validation body: each issue as "path: message"', async () => {
     const query = await admin.get('/api/app/spaces?size=101&direction=up');
     expect(query.statusCode).toBe(400);
-    expect(query.json()).toEqual({ statusCode: 400, error: 'Bad Request', message: [expect.stringMatching(/^size: /), expect.stringMatching(/^direction: /)] });
+    expect(query.json()).toEqual({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: [expect.stringMatching(/^size: /), expect.stringMatching(/^direction: /)],
+    });
     const body = await admin.post('/api/app/spaces', { name: '   ' });
     expect(body.statusCode).toBe(400);
     expect(body.json().message).toEqual([expect.stringMatching(/^name: /)]);
@@ -99,7 +103,11 @@ describe('app API: spaces, one page at a time', () => {
   it('answers every column of a space, and its firebaseImport when it has one; no computed fields', async () => {
     const items = (await list('?size=100')).items as unknown as Record<string, unknown>[];
     const running = items.find(it => it.id === created[3].id)!;
-    expect(running).toMatchObject({ name: created[3].name, defaultLocaleId: 'en', firebaseImport: { status: 'RUNNING', sourceSpaceId: 'fb-running' } });
+    expect(running).toMatchObject({
+      name: created[3].name,
+      defaultLocaleId: 'en',
+      firebaseImport: { status: 'RUNNING', sourceSpaceId: 'fb-running' },
+    });
     expect(items.find(it => it.id === created[4].id)).toMatchObject({ firebaseImport: { status: 'FAILED' } });
     const plain = items.find(it => it.id === created[0].id)!;
     expect(Object.keys(plain).sort()).toEqual(['createdAt', 'defaultLocaleId', 'id', 'name', 'updatedAt']);

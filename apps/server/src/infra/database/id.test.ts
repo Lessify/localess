@@ -20,7 +20,15 @@ describe('ids', () => {
     expect(isUuid(newUuid())).toBe(true);
     expect(isUuid('00000000-0000-4000-8000-000000000000')).toBe(true);
     expect(isUuid('0190A3B4-C5D6-7E8F-9012-3456789ABCDE')).toBe(true);
-    for (const value of ['AAAAAAAAAAAAAAAAAAAA', 's1', '', '0190a3b4c5d67e8f90123456789abcde', '0190a3b4-c5d6-7e8f-9012-3456789abcdz', null, 42]) {
+    for (const value of [
+      'AAAAAAAAAAAAAAAAAAAA',
+      's1',
+      '',
+      '0190a3b4c5d67e8f90123456789abcde',
+      '0190a3b4-c5d6-7e8f-9012-3456789abcdz',
+      null,
+      42,
+    ]) {
       expect(isUuid(value)).toBe(false);
     }
   });

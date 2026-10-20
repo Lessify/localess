@@ -32,7 +32,11 @@ describe('ReferencesSelectDialogComponent', () => {
           provide: ContentService,
           useValue: {
             findAll: findAllContents,
-            findAllFolders: () => of([{ id: 'a', name: 'A', slug: 'a' }, { id: 'b', name: 'B', slug: 'b', parentId: 'a' }]),
+            findAllFolders: () =>
+              of([
+                { id: 'a', name: 'A', slug: 'a' },
+                { id: 'b', name: 'B', slug: 'b', parentId: 'a' },
+              ]),
           },
         },
       ],

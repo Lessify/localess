@@ -39,10 +39,7 @@ export class ContentController {
 
   @Post()
   @RequirePermission(UserPermission.CONTENT_CREATE)
-  async create(
-    @Param('spaceId') spaceId: string,
-    @Body({ schema: zContentCreate }) body: ContentCreate,
-  ) {
+  async create(@Param('spaceId') spaceId: string, @Body({ schema: zContentCreate }) body: ContentCreate) {
     return this.contentService.create(spaceId, body);
   }
 

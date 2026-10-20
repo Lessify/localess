@@ -43,7 +43,6 @@
   type EventToAppOf<T extends EventToAppType> = Extract<EventToApp, { type: T }>;
   type EventsMap = { [K in EventToAppType]: Array<(event: EventToAppOf<K>) => void> };
 
-
   function isInIframe() {
     return window.top !== window.self;
   }

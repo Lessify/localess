@@ -2,14 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, inArray, isNotNull, or } from 'drizzle-orm';
 import { ContentKind } from '@localess/shared';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import {
-  assets,
-  contentLinkSnapshots,
-  contents,
-  contentSnapshots,
-  schemas,
-  type SnapshotVersion,
-} from '../../../infra/database/schema.js';
+import { assets, contentLinkSnapshots, contents, contentSnapshots, schemas, type SnapshotVersion } from '../../../infra/database/schema.js';
 import { transaction, type Transaction } from '../../../infra/database/transaction.js';
 import { lockContents } from '../../../shared/data-rules/content-snapshots.js';
 import { type ContentWithPath, findIdByPath, folderPaths, withPaths } from '../../../shared/queries/content-tree.query.js';

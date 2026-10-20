@@ -78,7 +78,13 @@ describe('EditEnumComponent', () => {
   it('shows the schema name under the title, like the component editor (not the internal id)', () => {
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll: vi.fn().mockReturnValue(of([])), findById: vi.fn().mockReturnValue(of(enumSchema({ id: '01a1-uuid', name: 'Color', displayName: 'Color' }))) } },
+        {
+          provide: SchemaService,
+          useValue: {
+            findAll: vi.fn().mockReturnValue(of([])),
+            findById: vi.fn().mockReturnValue(of(enumSchema({ id: '01a1-uuid', name: 'Color', displayName: 'Color' }))),
+          },
+        },
         { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
         { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(false) } },
         { provide: Router, useValue: { navigate: vi.fn() } },

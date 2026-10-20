@@ -36,9 +36,7 @@ describe('SpaceService', () => {
 
     events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http
-      .expectOne('/api/app/spaces?page=0&size=10&search=mark')
-      .flush({ items: [{ id: 's1' } as Space], page: 0, size: 10, total: 1 });
+    http.expectOne('/api/app/spaces?page=0&size=10&search=mark').flush({ items: [{ id: 's1' } as Space], page: 0, size: 10, total: 1 });
     expect(results.map(it => it.total)).toEqual([0, 1]);
     subscription.unsubscribe();
   });
@@ -52,7 +50,10 @@ describe('SpaceService', () => {
 
     events.next({ spaceId: null, entity: 'spaces', id: 's2', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne('/api/app/spaces/names').flush([{ id: 's1', name: 'Alpha' }, { id: 's2', name: 'Beta' }]);
+    http.expectOne('/api/app/spaces/names').flush([
+      { id: 's1', name: 'Alpha' },
+      { id: 's2', name: 'Beta' },
+    ]);
     expect(results.map(it => it.length)).toEqual([1, 2]);
     subscription.unsubscribe();
   });
@@ -85,9 +86,7 @@ describe('SpaceService', () => {
   it('findTemplates() reads the templates the user may create a space from', async () => {
     const service = setup();
     const result = firstValueFrom(service.findTemplates());
-    http
-      .expectOne({ method: 'GET', url: '/api/app/spaces/templates' })
-      .flush(['blog', 'marketing']);
+    http.expectOne({ method: 'GET', url: '/api/app/spaces/templates' }).flush(['blog', 'marketing']);
     expect(await result).toEqual(['blog', 'marketing']);
   });
 

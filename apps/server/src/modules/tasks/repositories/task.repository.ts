@@ -29,7 +29,9 @@ export class TaskRepository {
     const conditions: SQL[] = [eq(tasks.spaceId, spaceId)];
     if (query.search) {
       const pattern = containsPattern(query.search);
-      conditions.push(or(ilike(sql`${tasks.id}::text`, pattern), ilike(sql`${tasks.file}->>'name'`, pattern), ilike(tasks.message, pattern)) as SQL);
+      conditions.push(
+        or(ilike(sql`${tasks.id}::text`, pattern), ilike(sql`${tasks.file}->>'name'`, pattern), ilike(tasks.message, pattern)) as SQL,
+      );
     }
     if (query.kind) conditions.push(inArray(tasks.kind, query.kind));
     if (query.status) conditions.push(inArray(tasks.status, query.status));

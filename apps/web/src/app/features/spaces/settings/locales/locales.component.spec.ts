@@ -21,7 +21,13 @@ const pageOf = (locales: Locale[]): Page<SpaceLocale> => ({ items: spaceLocales(
 
 /** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); the first the default. */
 function space(locales: Locale[]): Space {
-  return { id: 'space-1', name: 'Space 1', defaultLocaleId: locales[0]?.id, defaultLocale: locales[0], spaceLocales: spaceLocales(locales) } as Space;
+  return {
+    id: 'space-1',
+    name: 'Space 1',
+    defaultLocaleId: locales[0]?.id,
+    defaultLocale: locales[0],
+    spaceLocales: spaceLocales(locales),
+  } as Space;
 }
 
 describe('LocalesComponent', () => {

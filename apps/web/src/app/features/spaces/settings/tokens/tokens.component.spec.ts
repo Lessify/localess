@@ -228,7 +228,11 @@ describe('TokensComponent', () => {
     expect(open).toHaveBeenLastCalledWith(
       TokenSecretDialogComponent,
       expect.objectContaining({
-        context: { name: 'CI', token: 'mgt_x', cliLogin: `localess login --origin ${window.location.origin} --space space-1 --token mgt_x` },
+        context: {
+          name: 'CI',
+          token: 'mgt_x',
+          cliLogin: `localess login --origin ${window.location.origin} --space space-1 --token mgt_x`,
+        },
       }),
     );
   });
@@ -263,7 +267,10 @@ describe('TokensComponent', () => {
 
     component.openRegenerateDialog(token({ name: 'CI', type: TokenType.MANAGEMENT, token: undefined }));
 
-    expect(open).toHaveBeenLastCalledWith(TokenSecretDialogComponent, expect.objectContaining({ context: expect.objectContaining({ token: 'mgt_new' }) }));
+    expect(open).toHaveBeenLastCalledWith(
+      TokenSecretDialogComponent,
+      expect.objectContaining({ context: expect.objectContaining({ token: 'mgt_new' }) }),
+    );
   });
 
   it('copied() notifies success', () => {

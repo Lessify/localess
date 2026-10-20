@@ -73,7 +73,7 @@ describe('FormErrorHandlerService', () => {
     );
   });
 
-  it('previewUrl names both rules: absolute http(s), and not the app\'s own origin', () => {
+  it("previewUrl names both rules: absolute http(s), and not the app's own origin", () => {
     expect(setup().errors({ previewUrl: true })).toBe(
       'Should be an absolute http:// or https:// URL of your site, on another origin than Localess.',
     );

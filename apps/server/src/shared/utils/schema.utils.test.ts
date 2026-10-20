@@ -414,7 +414,14 @@ describe('planSchemaPush: fields checked against the schemas after the push', ()
   it('names the schema of every field error', () => {
     const plan = planSchemaPush(
       existing,
-      [{ id: 'page', type: SchemaType.ROOT, previewField: 'nope', fields: [{ name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['colors'] }] }],
+      [
+        {
+          id: 'page',
+          type: SchemaType.ROOT,
+          previewField: 'nope',
+          fields: [{ name: 'items', kind: SchemaFieldKind.SCHEMAS, schemas: ['colors'] }],
+        },
+      ],
       'upsert',
     );
     expect(plan.errors).toEqual([

@@ -73,7 +73,10 @@ describe('locale flag data', () => {
     assert.ok(countries.length > 240, `only ${countries.length} region flags found`);
     assert.ok(languages.includes('de') && languages.includes('it'));
     assert.ok(countries.includes('ch') && countries.includes('aq'));
-    assert.ok(countries.every(code => /^[a-z]{2}$/.test(code)), 'only ISO 3166 two-letter regions');
+    assert.ok(
+      countries.every(code => /^[a-z]{2}$/.test(code)),
+      'only ISO 3166 two-letter regions',
+    );
   });
 
   /**

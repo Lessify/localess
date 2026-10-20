@@ -74,7 +74,7 @@ describe('LinkSelectComponent', () => {
     expect(host.querySelector('#schema-field-link-target')).not.toBeNull();
   });
 
-  it('labels the URL input with the field id, prefixed like every field\'s', () => {
+  it("labels the URL input with the field id, prefixed like every field's", () => {
     setInputs({ form: makeForm() });
     fixture.detectChanges();
 

@@ -68,7 +68,14 @@ describe('task worker: exports and imports', () => {
       .toBuffer();
     for (const id of [SPACE_A, SPACE_B]) await insertSpace(t.db, { id, name: id, locales: [en, de], defaultLocale: en });
     await t.db.insert(schemas).values([
-      { id: newUuid(), spaceId: SPACE_A, name: 'page', type: 'ROOT', displayName: 'Page', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }] },
+      {
+        id: newUuid(),
+        spaceId: SPACE_A,
+        name: 'page',
+        type: 'ROOT',
+        displayName: 'Page',
+        fields: [{ name: 'title', kind: SchemaFieldKind.TEXT, translatable: true }],
+      },
       { id: newUuid(), spaceId: SPACE_A, name: 'colors', type: 'ENUM', values: [{ name: 'Red', value: 'red' }] },
     ]);
     await t.db.insert(contents).values([
@@ -277,7 +284,10 @@ describe('task worker: exports and imports', () => {
         ]),
       });
       const flat = Buffer.from(JSON.stringify({ 'fine.flat': 'Fine', 'trailing.': 'Bad' }));
-      for (const task of [await importTask(SPACE_B, 'TRANSLATION_IMPORT', zip), await importTask(SPACE_B, 'TRANSLATION_IMPORT', flat, { locale: 'de' })]) {
+      for (const task of [
+        await importTask(SPACE_B, 'TRANSLATION_IMPORT', zip),
+        await importTask(SPACE_B, 'TRANSLATION_IMPORT', flat, { locale: 'de' }),
+      ]) {
         expect(task.status).toBe('ERROR');
         expect(task.message).toMatch(/Invalid translation keys: (bad key|trailing\.)/);
       }
@@ -286,7 +296,7 @@ describe('task worker: exports and imports', () => {
       expect(keys).not.toContain('fine.flat');
     });
 
-    it("refuses a single-locale import into a locale the space does not have", async () => {
+    it('refuses a single-locale import into a locale the space does not have', async () => {
       const task = await importTask(SPACE_B, 'TRANSLATION_IMPORT', Buffer.from(JSON.stringify({ greeting: 'Salut' })), { locale: 'fr' });
       expect(task).toMatchObject({ status: 'ERROR', message: 'Locale fr is not in the space locales.' });
     });

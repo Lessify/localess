@@ -121,7 +121,9 @@ describe('management API', () => {
 
     it('authenticates with the Bearer header only', async () => {
       expect((await post(`${base}/translations/de`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
-      expect((await post(`${base}/translations/de?token=${TOKEN_MANAGEMENT}`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(401);
+      expect((await post(`${base}/translations/de?token=${TOKEN_MANAGEMENT}`, { type: 'add-missing', values: {} }, null)).statusCode).toBe(
+        401,
+      );
       expect((await push({ type: 'add-missing', values: {} }, TOKEN_PUBLIC)).statusCode).toBe(401);
     });
 
@@ -330,8 +332,19 @@ describe('management API', () => {
     });
 
     it.each([
-      ['invalid JSON (400)', { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: '{not json', headers: { 'content-type': 'application/json' } }],
-      ['an unsupported content type (415)', { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: 'x', headers: { 'content-type': 'application/x-thing' } }],
+      [
+        'invalid JSON (400)',
+        {
+          method: 'POST',
+          url: `/api/manage/v1/spaces/${S1}/schemas`,
+          payload: '{not json',
+          headers: { 'content-type': 'application/json' },
+        },
+      ],
+      [
+        'an unsupported content type (415)',
+        { method: 'POST', url: `/api/manage/v1/spaces/${S1}/schemas`, payload: 'x', headers: { 'content-type': 'application/x-thing' } },
+      ],
       ['an unknown route (404)', { method: 'GET', url: `/api/manage/v1/spaces/${S1}/nothing-here` }],
     ] as const)('marks errors answered before the guard no-store too: %s', async (_, request) => {
       const response = await t.request({ ...request, headers: { ...bearer(), ...('headers' in request ? request.headers : {}) } } as never);

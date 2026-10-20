@@ -21,7 +21,10 @@ export class SpaceLocaleController {
   /** One page for Space Settings → Locales: `?page=&size=&sort=&direction=` (Pageable), `?search=` (id or name). */
   @Get()
   @RequireAnyRole()
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zSpaceLocalePageable }) query: SpaceLocalePageable): Promise<Page<SpaceLocale>> {
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zSpaceLocalePageable }) query: SpaceLocalePageable,
+  ): Promise<Page<SpaceLocale>> {
     return this.spaceLocaleService.findAll(spaceId, query);
   }
 
@@ -34,7 +37,10 @@ export class SpaceLocaleController {
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate): Promise<SpaceLocale> {
+  create(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zSpaceLocaleCreate }) body: SpaceLocaleCreate,
+  ): Promise<SpaceLocale> {
     return this.spaceLocaleService.create(spaceId, body);
   }
 

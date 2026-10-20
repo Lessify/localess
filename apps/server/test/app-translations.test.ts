@@ -62,12 +62,15 @@ describe('app API: translations, machine translation, Unsplash', () => {
       ],
       defaultLocale: { id: 'en', name: 'English' },
     });
-    await t.db
-      .insert(tokens)
-      .values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
-    await t.db
-      .insert(webhooks)
-      .values({ id: newUuid(), spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'], enabled: true });
+    await t.db.insert(tokens).values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
+    await t.db.insert(webhooks).values({
+      id: newUuid(),
+      spaceId: S1,
+      name: 'h',
+      url: `${hooks.url}/hook`,
+      events: ['translation.changed', 'translation.published'],
+      enabled: true,
+    });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {

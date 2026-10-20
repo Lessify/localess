@@ -52,7 +52,9 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     // These pin the API; task processing has its own tests (test/tasks.test.ts).
     t = await createTestApp({ LOCALESS_TASK_WORKER: 'false' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
-    await t.db.insert(schemas).values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });
+    await t.db
+      .insert(schemas)
+      .values({ id: newUuid(), spaceId: S1, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
     manager = api(t, await userWithAccess(t, 'manager@example.com', { role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] }));
     exporterCookie = await userWithAccess(t, 'exporter@example.com', {
@@ -177,7 +179,9 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const internal = await manager.post(base, { name: 'Internal', url: 'https://10.0.0.5/hook', events: ['content.changed'] });
       expect(internal.statusCode).toBe(400);
       expect(internal.json().message).toBe('Webhook URL is not allowed: private address');
-      expect((await manager.post(base, { name: 'Alpha', url: 'https://alpha.example.com/hook', events: ['content.changed'] })).statusCode).toBe(201);
+      expect(
+        (await manager.post(base, { name: 'Alpha', url: 'https://alpha.example.com/hook', events: ['content.changed'] })).statusCode,
+      ).toBe(201);
       hook = (
         await manager.post(base, {
           name: 'Site',
@@ -229,10 +233,23 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('lists at most 100 logs unless asked for more, and deletes those older than the retention', async () => {
-      const log = { webhookId: hook.id, event: 'content.published' as const, url: 'https://example.com/v2', status: 'SUCCESS' as const, requestSize: 10, data: {}, duration: 5 };
+      const log = {
+        webhookId: hook.id,
+        event: 'content.published' as const,
+        url: 'https://example.com/v2',
+        status: 'SUCCESS' as const,
+        requestSize: 10,
+        data: {},
+        duration: 5,
+      };
       const day = 24 * 60 * 60 * 1000;
       await t.db.insert(webhookLogs).values(
-        Array.from({ length: 101 }, (_, index) => ({ ...log, id: newUuid(), deliveryId: `bulk-${index}`, createdAt: new Date(Date.now() - day) })),
+        Array.from({ length: 101 }, (_, index) => ({
+          ...log,
+          id: newUuid(),
+          deliveryId: `bulk-${index}`,
+          createdAt: new Date(Date.now() - day),
+        })),
       );
       await t.db.insert(webhookLogs).values({ ...log, id: newUuid(), deliveryId: 'stale', createdAt: new Date(Date.now() - 31 * day) });
       expect((await manager.get(`${base}/${hook.id}/logs`)).json()).toHaveLength(100);

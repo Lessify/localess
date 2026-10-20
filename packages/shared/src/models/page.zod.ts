@@ -6,7 +6,11 @@ import { PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX, type SortDirection } from './page.mod
  * absent) and `direction` (`asc` | `desc`, `defaultDirection` when absent). Numbers are read from query strings.
  * `.extend()` it with the endpoint's filters.
  */
-export function zPageable<const S extends readonly [string, ...string[]]>(fields: S, defaultSort: S[number], defaultDirection: SortDirection = 'asc') {
+export function zPageable<const S extends readonly [string, ...string[]]>(
+  fields: S,
+  defaultSort: S[number],
+  defaultDirection: SortDirection = 'asc',
+) {
   return z.object({
     page: z.coerce.number().int().min(0).default(0),
     size: z.coerce.number().int().min(1).max(PAGE_SIZE_MAX).default(PAGE_SIZE_DEFAULT),

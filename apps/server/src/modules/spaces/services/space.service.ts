@@ -134,7 +134,8 @@ export class SpaceService {
    */
   async setDefaultLocale(spaceId: string, { defaultLocaleId }: SpaceDefaultLocaleUpdate): Promise<Space> {
     const space = await this.require(spaceId);
-    if (!space.spaceLocales.some(it => it.localeId === defaultLocaleId)) throw new BadRequestException(`Locale ${defaultLocaleId} is not in space locales`);
+    if (!space.spaceLocales.some(it => it.localeId === defaultLocaleId))
+      throw new BadRequestException(`Locale ${defaultLocaleId} is not in space locales`);
     await this.spaceRepository.setDefaultLocale(spaceId, defaultLocaleId);
     return this.findOne(spaceId);
   }

@@ -69,8 +69,18 @@ describe('TranslationValidator', () => {
   describe('LABELS', () => {
     it('accepts a single label, and up to the server limit of 100', () => {
       expect(new FormControl(['solo'], TranslationValidator.LABELS).valid).toBe(true);
-      expect(new FormControl(Array.from({ length: 100 }, (_, i) => `l${i}`), TranslationValidator.LABELS).valid).toBe(true);
-      expect(new FormControl(Array.from({ length: 101 }, (_, i) => `l${i}`), TranslationValidator.LABELS).valid).toBe(false);
+      expect(
+        new FormControl(
+          Array.from({ length: 100 }, (_, i) => `l${i}`),
+          TranslationValidator.LABELS,
+        ).valid,
+      ).toBe(true);
+      expect(
+        new FormControl(
+          Array.from({ length: 101 }, (_, i) => `l${i}`),
+          TranslationValidator.LABELS,
+        ).valid,
+      ).toBe(false);
     });
   });
 });

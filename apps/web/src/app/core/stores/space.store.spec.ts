@@ -144,7 +144,9 @@ describe('SpaceStore', () => {
   });
 
   it('resolves the first environment by default when a space has environments', () => {
-    const store = createStore([space('a')], { environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] } });
+    const store = createStore([space('a')], {
+      environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] },
+    });
     TestBed.tick();
     expect(store.environment()?.name).toBe('prod');
   });
@@ -168,7 +170,9 @@ describe('SpaceStore', () => {
 
   it('resolves the persisted environment by id for the selected space, even among equal names', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: { a: 'e2' } }));
-    const store = createStore([space('a')], { environments: { a: [env('e1', 'preview', 'https://one'), env('e2', 'preview', 'https://two')] } });
+    const store = createStore([space('a')], {
+      environments: { a: [env('e1', 'preview', 'https://one'), env('e2', 'preview', 'https://two')] },
+    });
     TestBed.tick();
     expect(store.environment()?.url).toBe('https://two');
   });
@@ -176,7 +180,9 @@ describe('SpaceStore', () => {
   // Older versions stored the name; it matches no id, so the first environment is used.
   it('falls back to the first environment for a selection stored by name', () => {
     localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: { a: 'staging' } }));
-    const store = createStore([space('a')], { environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] } });
+    const store = createStore([space('a')], {
+      environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] },
+    });
     TestBed.tick();
     expect(store.environment()?.id).toBe('e1');
   });
@@ -415,7 +421,9 @@ describe('SpaceStore', () => {
   });
 
   it('changeEnvironment updates the environment and persists the per-space selection', () => {
-    const store = createStore([space('a')], { environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] } });
+    const store = createStore([space('a')], {
+      environments: { a: [env('e1', 'prod', 'https://prod'), env('e2', 'staging', 'https://staging')] },
+    });
     TestBed.tick();
 
     store.changeEnvironment(env('e2', 'staging', 'https://staging'));

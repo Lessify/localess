@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { rewriteData, rewriteIds } from './rewrite-references.js';
 
 const maps = {
-  assets: new Map([['a1', 'A-1'], ['a2', 'A-2']]),
+  assets: new Map([
+    ['a1', 'A-1'],
+    ['a2', 'A-2'],
+  ]),
   contents: new Map([['c1', 'C-1']]),
 };
 
@@ -34,10 +37,16 @@ describe('rewriteData', () => {
   });
 
   it('keeps unmatched ids and reports them', () => {
-    const { value, changed, missing } = rewriteData({ hero: { kind: 'ASSET', uri: 'gone' }, link: { kind: 'LINK', type: 'content', uri: 'lost' } }, maps);
+    const { value, changed, missing } = rewriteData(
+      { hero: { kind: 'ASSET', uri: 'gone' }, link: { kind: 'LINK', type: 'content', uri: 'lost' } },
+      maps,
+    );
     expect(changed).toBe(false);
     expect(value).toEqual({ hero: { kind: 'ASSET', uri: 'gone' }, link: { kind: 'LINK', type: 'content', uri: 'lost' } });
-    expect(missing).toEqual([{ kind: 'asset', id: 'gone' }, { kind: 'content', id: 'lost' }]);
+    expect(missing).toEqual([
+      { kind: 'asset', id: 'gone' },
+      { kind: 'content', id: 'lost' },
+    ]);
   });
 
   it('leaves null and plain values alone', () => {
@@ -48,7 +57,11 @@ describe('rewriteData', () => {
 
 describe('rewriteIds', () => {
   it('maps every id, keeps and reports unmatched ones', () => {
-    expect(rewriteIds(['a1', 'x'], maps.assets, 'asset')).toEqual({ value: ['A-1', 'x'], changed: true, missing: [{ kind: 'asset', id: 'x' }] });
+    expect(rewriteIds(['a1', 'x'], maps.assets, 'asset')).toEqual({
+      value: ['A-1', 'x'],
+      changed: true,
+      missing: [{ kind: 'asset', id: 'x' }],
+    });
     expect(rewriteIds(null, maps.assets, 'asset')).toEqual({ value: null, changed: false, missing: [] });
   });
 });

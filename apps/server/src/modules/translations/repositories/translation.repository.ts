@@ -74,13 +74,7 @@ export class TranslationRepository {
   }
 
   /** One locale's value; an empty `value` removes it. `undefined` when the space has no translation `id`. */
-  setLocale(
-    spaceId: string,
-    id: string,
-    locale: string,
-    value: string,
-    tx?: Transaction,
-  ): Promise<TranslationEntity | undefined> {
+  setLocale(spaceId: string, id: string, locale: string, value: string, tx?: Transaction): Promise<TranslationEntity | undefined> {
     return this.write(spaceId, tx, async t => {
       const [row] = await t
         .update(translations)
@@ -92,12 +86,7 @@ export class TranslationRepository {
   }
 
   /** One locale's value of several translations (by id), e.g. machine translations. */
-  setLocaleValues(
-    spaceId: string,
-    locale: string,
-    values: { id: string; value: string }[],
-    tx?: Transaction,
-  ): Promise<void> {
+  setLocaleValues(spaceId: string, locale: string, values: { id: string; value: string }[], tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       for (const { id, value } of values) {
         await t

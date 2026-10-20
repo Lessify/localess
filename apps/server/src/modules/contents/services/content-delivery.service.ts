@@ -52,7 +52,9 @@ export class ContentDeliveryService {
   ): Promise<Map<string, { document: ContentDocumentStorage; builtAt: Date }>> {
     ids = [...new Set(ids.filter(isUuid))];
     if (!ids.length) return new Map();
-    const rows = draft ? await this.contentDeliveryRepository.findDrafts(spaceId, ids, locale) : await this.contentDeliveryRepository.findPublished(spaceId, ids, locale);
+    const rows = draft
+      ? await this.contentDeliveryRepository.findDrafts(spaceId, ids, locale)
+      : await this.contentDeliveryRepository.findPublished(spaceId, ids, locale);
     return new Map(rows.map(row => [row.contentId, { document: row.data, builtAt: row.builtAt }]));
   }
 
@@ -60,7 +62,12 @@ export class ContentDeliveryService {
    * The document in `locale`, else in the space's default locale (what `resolveLocaleFilePath` did with the two
    * Storage files): a locale added since the publish, or one never published. A draft is built for any locale.
    */
-  async findLocaleDocument(space: SpaceWithLocales, contentId: string, locale: string, version: unknown): Promise<LocaleDocument | undefined> {
+  async findLocaleDocument(
+    space: SpaceWithLocales,
+    contentId: string,
+    locale: string,
+    version: unknown,
+  ): Promise<LocaleDocument | undefined> {
     const draft = isDraft(version);
     const primary = (await this.localeDocuments(space.id, [contentId], locale, draft)).get(contentId);
     if (primary) return { ...primary, resolvedLocale: locale };
@@ -113,7 +120,11 @@ export class ContentDeliveryService {
    * The subtree used to be the Firestore range `parentSlug >= p AND < p + "/~"`, which also matched sibling folders
    * sharing the prefix (`blog-archive` under `blog`). It is an exact prefix match.
    */
-  async findLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
+  async findLinks(
+    spaceId: string,
+    version: unknown,
+    filter: LinkFilter,
+  ): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
     const snapshot = await this.contentDeliveryRepository.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
     const all = Object.values(snapshot.data);
     const { parentSlug, excludeChildren, kind } = filter;
@@ -121,7 +132,8 @@ export class ContentDeliveryService {
       it =>
         (parentSlug
           ? it.parentSlug === parentSlug || (!excludeChildren && it.parentSlug.startsWith(`${parentSlug}/`))
-          : !excludeChildren || it.parentSlug === '') && (!kind || it.kind === kind),
+          : !excludeChildren || it.parentSlug === '') &&
+        (!kind || it.kind === kind),
     );
     return { links: Object.fromEntries(links.map(it => [it.id, it])), builtAt: snapshot.builtAt };
   }

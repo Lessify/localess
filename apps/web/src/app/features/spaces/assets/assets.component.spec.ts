@@ -45,14 +45,30 @@ describe('AssetsComponent', () => {
     const open = vi.fn();
     const changeAssetFolder = vi.fn();
     const assetFolderId = signal<string | null>(folderId);
-    const findAllFolders = vi.fn().mockReturnValue(of([{ id: 'f1', name: 'Images' }, { id: 'f2', name: '2026', parentId: 'f1' }]));
+    const findAllFolders = vi.fn().mockReturnValue(
+      of([
+        { id: 'f1', name: 'Images' },
+        { id: 'f2', name: '2026', parentId: 'f1' },
+      ]),
+    );
 
     TestBed.overrideComponent(AssetsComponent, { set: { template: '<ll-paginator [length]="0" />' } });
     TestBed.configureTestingModule({
       providers: [
         {
           provide: AssetService,
-          useValue: { findAll, findAllFolders, createFile, importFile, createFolder, updateFolder, updateFile, delete: deleteAsset, move, usage },
+          useValue: {
+            findAll,
+            findAllFolders,
+            createFile,
+            importFile,
+            createFolder,
+            updateFolder,
+            updateFile,
+            delete: deleteAsset,
+            move,
+            usage,
+          },
         },
         { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
         { provide: NotificationService, useValue: { success, error } },

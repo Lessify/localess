@@ -67,12 +67,10 @@ const values = <T extends string>(list: Record<string, T> | readonly T[]): [`${T
 const quoted = (list: readonly string[]): SQL => sql.raw(list.map(it => `'${it}'`).join(', '));
 
 /** CHECK that `column` is one of `list` (null passes, as in any CHECK). */
-const oneOf = (name: string, column: AnyPgColumn, list: readonly string[]) =>
-  check(name, sql`${column} in (${quoted(list)})`);
+const oneOf = (name: string, column: AnyPgColumn, list: readonly string[]) => check(name, sql`${column} in (${quoted(list)})`);
 
 /** CHECK that every element of the array `column` is one of `list`. */
-const allOf = (name: string, column: AnyPgColumn, list: readonly string[]) =>
-  check(name, sql`${column} <@ array[${quoted(list)}]::text[]`);
+const allOf = (name: string, column: AnyPgColumn, list: readonly string[]) => check(name, sql`${column} <@ array[${quoted(list)}]::text[]`);
 
 export const HASH_ALGORITHMS = ['argon2id'] as const;
 
@@ -201,20 +199,17 @@ export const locales = pgTable('locales', {
 // Spaces
 // ---------------------------------------------------------------------------------------------------
 
-export const spaces = pgTable(
-  'spaces',
-  {
-    id: uuid('id').primaryKey(),
-    // A space imported from Firebase has its `firebase_imports` row (one at most): its Firestore id and import status.
-    name: text('name').notNull(),
-    // The default locale: new translations are created in it, content stores its values in the bare field, and a
-    // locale with no value falls back to it. That it is one of the space's locales is checked by the API.
-    defaultLocaleId: text('default_locale_id')
-      .notNull()
-      .references(() => locales.id),
-    ...timestamps,
-  },
-);
+export const spaces = pgTable('spaces', {
+  id: uuid('id').primaryKey(),
+  // A space imported from Firebase has its `firebase_imports` row (one at most): its Firestore id and import status.
+  name: text('name').notNull(),
+  // The default locale: new translations are created in it, content stores its values in the bare field, and a
+  // locale with no value falls back to it. That it is one of the space's locales is checked by the API.
+  defaultLocaleId: text('default_locale_id')
+    .notNull()
+    .references(() => locales.id),
+  ...timestamps,
+});
 
 const spaceId = () =>
   uuid('space_id')
@@ -414,10 +409,7 @@ export const schemas = pgTable(
     values: jsonb('values').$type<SchemaEnumValue[]>(),
     ...timestamps,
   },
-  t => [
-    uniqueIndex('schemas_name_idx').on(t.spaceId, t.name),
-    oneOf('schemas_type_check', t.type, values(SchemaType)),
-  ],
+  t => [uniqueIndex('schemas_name_idx').on(t.spaceId, t.name), oneOf('schemas_type_check', t.type, values(SchemaType))],
 );
 
 // ---------------------------------------------------------------------------------------------------
@@ -556,15 +548,14 @@ export const webhooks = pgTable(
     url: text('url').notNull(),
     // A new webhook sends nothing until it is enabled (the App API's create enables it; the Firebase import does not).
     enabled: boolean('enabled').notNull().default(false),
-    events: text('events', { enum: values(WebHookEvent) }).array().notNull(),
+    events: text('events', { enum: values(WebHookEvent) })
+      .array()
+      .notNull(),
     headers: jsonb('headers').$type<Record<string, string>>(),
     secret: text('secret'),
     ...timestamps,
   },
-  t => [
-    index('webhooks_space_idx').on(t.spaceId, t.name),
-    allOf('webhooks_events_check', t.events, values(WebHookEvent)),
-  ],
+  t => [index('webhooks_space_idx').on(t.spaceId, t.name), allOf('webhooks_events_check', t.events, values(WebHookEvent))],
 );
 
 export const webhookLogs = pgTable(

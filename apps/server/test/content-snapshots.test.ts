@@ -55,8 +55,7 @@ describe('content snapshots', () => {
   /** Two builds in the same millisecond would share a `cv`. */
   const tick = () => new Promise(resolve => setTimeout(resolve, 5));
   const contents = () => t.app.get(ContentService);
-  const saveData = (id: string, title: string) =>
-    contents().updateData(S1, id, { _id: `${id}-root`, _schema: 'page', title });
+  const saveData = (id: string, title: string) => contents().updateData(S1, id, { _id: `${id}-root`, _schema: 'page', title });
 
   describe('documents', () => {
     it('answers a published document with the built_at of its snapshot', async () => {
@@ -104,7 +103,10 @@ describe('content snapshots', () => {
 
     it('a schema edit moves no cv', async () => {
       const draft = await cvOf(draftUrl(C.home));
-      const [page] = await t.db.select().from(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
+      const [page] = await t.db
+        .select()
+        .from(schemas)
+        .where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
       await tick();
       await t.app.get(SchemaService).update(S1, page.id, { displayName: 'Page (renamed)', fields: page.fields ?? [] });
       expect(await cvOf(draftUrl(C.home))).toBe(draft);
@@ -150,21 +152,22 @@ describe('content snapshots', () => {
   describe('links', () => {
     it('lists every folder and the published documents without `version`, for a public token', async () => {
       const url = `/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}`;
-      expect(Object.keys(await follow(url)).map(contentName).sort()).toEqual(['archive', 'blog', 'home', 'post1']);
+      expect(
+        Object.keys(await follow(url))
+          .map(contentName)
+          .sort(),
+      ).toEqual(['archive', 'blog', 'home', 'post1']);
     });
 
     it('lists the whole tree with `version`, which needs a preview token', async () => {
       const response = await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_PUBLIC}&version=draft`);
       expect(response.statusCode).toBe(403);
       expect(response.json().details.reason).toMatch(/preview token/);
-      expect(Object.keys(await follow(linksUrl('&version=draft'))).map(contentName).sort()).toEqual([
-        'archive',
-        'blog',
-        'home',
-        'old',
-        'post1',
-        'post2',
-      ]);
+      expect(
+        Object.keys(await follow(linksUrl('&version=draft')))
+          .map(contentName)
+          .sort(),
+      ).toEqual(['archive', 'blog', 'home', 'old', 'post1', 'post2']);
       expect((await get(`/api/v1/spaces/${S1}/links?token=${TOKEN_READ}&version=draft`)).statusCode).toBe(302);
     });
 
@@ -182,7 +185,10 @@ describe('content snapshots', () => {
     it('a content write drops both lists; a schema edit drops neither', async () => {
       await cvOf(linksUrl());
       await cvOf(linksUrl('&version=draft'));
-      const [page] = await t.db.select().from(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
+      const [page] = await t.db
+        .select()
+        .from(schemas)
+        .where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'page')));
       await t.app.get(SchemaService).update(S1, page.id, { displayName: 'Page', fields: page.fields ?? [] });
       expect(await linkSnapshots()).toHaveLength(2);
       await contents().update(S1, C.post2, { name: 'Post 2 renamed' });

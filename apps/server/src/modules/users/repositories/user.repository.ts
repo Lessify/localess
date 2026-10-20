@@ -10,10 +10,18 @@ import { findUserLogins } from '../../../shared/queries/user.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
 
-const SORT_COLUMNS = { email: users.email, name: users.displayName, role: users.role, createdAt: users.createdAt, updatedAt: users.updatedAt };
+const SORT_COLUMNS = {
+  email: users.email,
+  name: users.displayName,
+  role: users.role,
+  createdAt: users.createdAt,
+  updatedAt: users.updatedAt,
+};
 
 export type UserValues = Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'role' | 'permissions' | 'lock'>;
-export type UserUpdate = Partial<Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role' | 'permissions' | 'lock'>>;
+export type UserUpdate = Partial<
+  Pick<UserEntity, 'email' | 'emailVerified' | 'displayName' | 'photoUrl' | 'role' | 'permissions' | 'lock'>
+>;
 
 /**
  * Users and their passwords (Admin → Users, the own profile). Every change of a user publishes a global `users`

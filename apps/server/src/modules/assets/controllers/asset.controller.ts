@@ -118,11 +118,7 @@ export class AssetController {
 
   @Put(':id/parent')
   @RequirePermission(UserPermission.ASSET_UPDATE)
-  async move(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zAssetMove }) body: AssetMove,
-  ) {
+  async move(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zAssetMove }) body: AssetMove) {
     return this.assetService.move(spaceId, id, body.parentId);
   }
 

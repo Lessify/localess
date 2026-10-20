@@ -88,16 +88,20 @@ describe('migrateDatabase', () => {
 
   it('refuses locales that are not in the locales table', async () => {
     await migrateDatabase(pool);
-    await expect(pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'xx-unknown')`, [A])).rejects.toThrow(/foreign key/);
+    await expect(pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'xx-unknown')`, [A])).rejects.toThrow(
+      /foreign key/,
+    );
     await pool.query(`insert into spaces (id, name, default_locale_id) values ($1, 'S', 'en')`, [A]);
-    await expect(pool.query(`insert into space_locales (space_id, locale_id, position) values ($1, 'xx-unknown', 0)`, [A])).rejects.toThrow(/foreign key/);
+    await expect(pool.query(`insert into space_locales (space_id, locale_id, position) values ($1, 'xx-unknown', 0)`, [A])).rejects.toThrow(
+      /foreign key/,
+    );
   });
 
   it('rejects a space id that is not a UUID', async () => {
     await migrateDatabase(pool);
-    await expect(
-      pool.query(`insert into spaces (id, name, default_locale_id) values ('s1', 'S', 'en')`),
-    ).rejects.toThrow(/invalid input syntax for type uuid/);
+    await expect(pool.query(`insert into spaces (id, name, default_locale_id) values ('s1', 'S', 'en')`)).rejects.toThrow(
+      /invalid input syntax for type uuid/,
+    );
   });
 
   it('scopes content and asset ids to their space', async () => {
@@ -109,11 +113,20 @@ describe('migrateDatabase', () => {
         `insert into contents (id, space_id, kind, name, slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home')`,
         [id],
       );
-      await pool.query(`insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`, [id]);
-      await pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`, [id]);
+      await pool.query(
+        `insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`,
+        [id],
+      );
+      await pool.query(
+        `insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`,
+        [id],
+      );
     }
     await expect(
-      pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-00000000dead', 'published', 'en', '{}', now())`, [A]),
+      pool.query(
+        `insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-00000000dead', 'published', 'en', '{}', now())`,
+        [A],
+      ),
     ).rejects.toThrow(/foreign key/);
   });
 
@@ -135,9 +148,17 @@ describe('migrateDatabase', () => {
       `insert into contents (id, space_id, kind, name, slug) values ('00000000-0000-7000-8000-0000000000c1', $1, 'DOCUMENT', 'Home', 'home')`,
       [A],
     );
-    await pool.query(`insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`, [A]);
-    await pool.query(`insert into tasks (id, space_id, kind, status) values ('00000000-0000-7000-8000-0000000000e1', $1, 'SCHEMA_EXPORT', 'INITIATED')`, [A]);
-    await pool.query(`insert into task_logs (id, task_id, level, message) values ('00000000-0000-7000-8000-0000000000e2', '00000000-0000-7000-8000-0000000000e1', 'INFO', 'started')`);
+    await pool.query(
+      `insert into content_snapshots (space_id, content_id, version, locale, data, built_at) values ($1, '00000000-0000-7000-8000-0000000000c1', 'published', 'en', '{}', now())`,
+      [A],
+    );
+    await pool.query(
+      `insert into tasks (id, space_id, kind, status) values ('00000000-0000-7000-8000-0000000000e1', $1, 'SCHEMA_EXPORT', 'INITIATED')`,
+      [A],
+    );
+    await pool.query(
+      `insert into task_logs (id, task_id, level, message) values ('00000000-0000-7000-8000-0000000000e2', '00000000-0000-7000-8000-0000000000e1', 'INFO', 'started')`,
+    );
 
     await pool.query(`delete from spaces where id = $1`, [A]);
 

@@ -22,7 +22,10 @@ describe('app API: users, one page at a time', () => {
       await service.create({ email, password: 'secret1', role: i % 3 === 0 ? 'ADMIN' : 'CUSTOM', permissions: [], displayName });
       emails.push(email);
     }
-    await t.db.update(users).set({ disabled: true }).where(inArray(users.email, ['user-03@example.com', 'user-04@example.com']));
+    await t.db
+      .update(users)
+      .set({ disabled: true })
+      .where(inArray(users.email, ['user-03@example.com', 'user-04@example.com']));
     cookie = await login(t, 'admin@example.com', 'secret1');
   });
 
@@ -33,7 +36,8 @@ describe('app API: users, one page at a time', () => {
     expect(response.statusCode, response.body).toBe(200);
     return response.json();
   };
-  const status = async (query: string) => (await t.request({ method: 'GET', url: `/api/app/users${query}`, headers: { ...XHR, cookie } })).statusCode;
+  const status = async (query: string) =>
+    (await t.request({ method: 'GET', url: `/api/app/users${query}`, headers: { ...XHR, cookie } })).statusCode;
   const all = () => ['admin@example.com', ...emails];
 
   it('answers the first 20 by email, with the total', async () => {
@@ -49,7 +53,8 @@ describe('app API: users, one page at a time', () => {
 
   it('pages through tied sort values without repeating or skipping a user', async () => {
     const seen: string[] = [];
-    for (let page = 0; page < 6; page++) seen.push(...(await list(`?size=5&page=${page}&sort=role&direction=desc`)).items.map(it => it.email));
+    for (let page = 0; page < 6; page++)
+      seen.push(...(await list(`?size=5&page=${page}&sort=role&direction=desc`)).items.map(it => it.email));
     expect(seen).toHaveLength(26);
     expect(new Set(seen).size).toBe(26);
     const roles = (await list('?size=100&sort=role&direction=desc')).items.map(it => it.role);
@@ -58,7 +63,13 @@ describe('app API: users, one page at a time', () => {
 
   it('searches email and display name, case-insensitive, anywhere in them', async () => {
     expect((await list('?search=ALICE')).items.map(it => it.email)).toEqual(['user-07@example.com', 'user-12@example.com']);
-    expect((await list('?search=-2')).items.map(it => it.email)).toEqual(['user-20@example.com', 'user-21@example.com', 'user-22@example.com', 'user-23@example.com', 'user-24@example.com']);
+    expect((await list('?search=-2')).items.map(it => it.email)).toEqual([
+      'user-20@example.com',
+      'user-21@example.com',
+      'user-22@example.com',
+      'user-23@example.com',
+      'user-24@example.com',
+    ]);
     expect(await list('?search=ali&size=1')).toMatchObject({ total: 2 });
   });
 

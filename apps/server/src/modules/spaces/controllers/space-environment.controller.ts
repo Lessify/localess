@@ -22,7 +22,10 @@ export class SpaceEnvironmentController {
   /** One page for Space Settings → Visual Editor: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name or URL). */
   @Get()
   @RequireAnyRole()
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zSpaceEnvironmentPageable }) query: SpaceEnvironmentPageable): Promise<Page<SpaceEnvironment>> {
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zSpaceEnvironmentPageable }) query: SpaceEnvironmentPageable,
+  ): Promise<Page<SpaceEnvironment>> {
     return this.spaceEnvironmentService.findAll(spaceId, query);
   }
 
@@ -35,7 +38,10 @@ export class SpaceEnvironmentController {
 
   @Post()
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate): Promise<SpaceEnvironment> {
+  create(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zSpaceEnvironmentCreate }) body: SpaceEnvironmentCreate,
+  ): Promise<SpaceEnvironment> {
     return this.spaceEnvironmentService.create(spaceId, body);
   }
 
@@ -63,7 +69,10 @@ export class SpaceEnvironmentController {
   @Delete(':environmentId')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('environmentId', UuidParamPipe) environmentId: string): Promise<void> {
+  async remove(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('environmentId', UuidParamPipe) environmentId: string,
+  ): Promise<void> {
     await this.spaceEnvironmentService.remove(spaceId, environmentId);
   }
 }

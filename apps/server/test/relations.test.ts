@@ -19,7 +19,14 @@ describe('database relations', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }, { id: 'de', name: 'German' }] });
+    await insertSpace(t.db, {
+      id: S1,
+      name: 'S',
+      locales: [
+        { id: 'en', name: 'English' },
+        { id: 'de', name: 'German' },
+      ],
+    });
     await t.db.insert(spaceEnvironments).values({ id: newUuid(), spaceId: S1, name: 'Preview', url: 'https://example.com', position: 0 });
     await t.db.insert(contents).values([
       { id: folder, spaceId: S1, kind: 'FOLDER', name: 'Blog', slug: 'blog' },
@@ -42,9 +49,15 @@ describe('database relations', () => {
   });
 
   it('reads a content with its parent, and a folder with its children (the same table, by space and id)', async () => {
-    const post: ContentSelect | undefined = await t.db.query.contents.findFirst({ where: eq(contents.id, document), with: { parent: true } });
+    const post: ContentSelect | undefined = await t.db.query.contents.findFirst({
+      where: eq(contents.id, document),
+      with: { parent: true },
+    });
     expect(post?.parent?.name).toBe('Blog');
-    const blog: ContentSelect | undefined = await t.db.query.contents.findFirst({ where: eq(contents.id, folder), with: { children: true } });
+    const blog: ContentSelect | undefined = await t.db.query.contents.findFirst({
+      where: eq(contents.id, folder),
+      with: { children: true },
+    });
     expect(blog?.children?.map(it => it.name)).toEqual(['Post']);
   });
 

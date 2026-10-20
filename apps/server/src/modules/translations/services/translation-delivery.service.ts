@@ -49,7 +49,8 @@ export class TranslationDeliveryService {
   /** The draft map of a space locale, building every locale's when a write dropped them. */
   async findDraft(spaceId: string, locale: string): Promise<TranslationSnapshotEntity | undefined> {
     return (
-      (await this.translationSnapshotRepository.find(spaceId, 'draft', locale)) ?? (await this.translationSnapshotRepository.buildDrafts(spaceId)).find(it => it.locale === locale)
+      (await this.translationSnapshotRepository.find(spaceId, 'draft', locale)) ??
+      (await this.translationSnapshotRepository.buildDrafts(spaceId)).find(it => it.locale === locale)
     );
   }
 

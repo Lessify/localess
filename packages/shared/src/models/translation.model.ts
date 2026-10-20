@@ -48,4 +48,3 @@ export interface TranslationUpdateResponse {
   ids: string[];
   dryRun?: boolean;
 }
-

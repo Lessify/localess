@@ -40,7 +40,15 @@ describe('AssetsSelectDialogComponent', () => {
         { provide: BrnDialogRef, useValue: { close } },
         {
           provide: AssetService,
-          useValue: { findAll, createFile, findAllFolders: () => of([{ id: 'a', name: 'A' }, { id: 'b', name: 'B', parentId: 'a' }]) },
+          useValue: {
+            findAll,
+            createFile,
+            findAllFolders: () =>
+              of([
+                { id: 'a', name: 'A' },
+                { id: 'b', name: 'B', parentId: 'a' },
+              ]),
+          },
         },
         { provide: NotificationService, useValue: { error } },
       ],
@@ -158,7 +166,10 @@ describe('AssetsSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: { spaceId: 'space-1' } },
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
-        { provide: AssetService, useValue: { findAll: vi.fn().mockReturnValue(of([asset])), findAllFolders: () => of([]), createFile: vi.fn() } },
+        {
+          provide: AssetService,
+          useValue: { findAll: vi.fn().mockReturnValue(of([asset])), findAllFolders: () => of([]), createFile: vi.fn() },
+        },
         { provide: NotificationService, useValue: { error: vi.fn() } },
         provideHttpClient(),
         provideHttpClientTesting(),

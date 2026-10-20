@@ -27,11 +27,7 @@ export class WebhookController {
   }
 
   @Put(':id')
-  update(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
-    @Body({ schema: zWebHookUpdate }) body: WebHookUpdate,
-  ) {
+  update(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zWebHookUpdate }) body: WebHookUpdate) {
     return this.webhookService.update(spaceId, id, body);
   }
 

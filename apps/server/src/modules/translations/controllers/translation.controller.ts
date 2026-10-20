@@ -1,6 +1,19 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
-import { zTranslationCreate, zTranslationLocaleUpdate, zTranslationRename, zTranslationTranslateLocale, zTranslationUpdate } from '@localess/shared/zod';
-import { type TranslationCreate, type TranslationLocaleUpdate, type TranslationRename, type TranslationTranslateLocale, type TranslationUpdate, UserPermission } from '@localess/shared';
+import {
+  zTranslationCreate,
+  zTranslationLocaleUpdate,
+  zTranslationRename,
+  zTranslationTranslateLocale,
+  zTranslationUpdate,
+} from '@localess/shared/zod';
+import {
+  type TranslationCreate,
+  type TranslationLocaleUpdate,
+  type TranslationRename,
+  type TranslationTranslateLocale,
+  type TranslationUpdate,
+  UserPermission,
+} from '@localess/shared';
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TranslationService } from '../services/translation.service.js';
@@ -33,10 +46,7 @@ export class TranslationController {
 
   @Post()
   @RequirePermission(UserPermission.TRANSLATION_CREATE)
-  create(
-    @Param('spaceId') spaceId: string,
-    @Body({ schema: zTranslationCreate }) body: TranslationCreate,
-  ) {
+  create(@Param('spaceId') spaceId: string, @Body({ schema: zTranslationCreate }) body: TranslationCreate) {
     return this.translationService.create(spaceId, body);
   }
 
@@ -95,10 +105,7 @@ export class TranslationController {
   @Post('translate-locale')
   @HttpCode(200)
   @RequirePermission(UserPermission.TRANSLATION_UPDATE)
-  translateLocale(
-    @Param('spaceId') spaceId: string,
-    @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale,
-  ) {
+  translateLocale(@Param('spaceId') spaceId: string, @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale) {
     return this.translationService.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }
 }

@@ -43,7 +43,14 @@ const childSchema: Schema = { id: 'child1', name: 'child1', type: SchemaType.NOD
 /** The selected space with its locales (`spaceLocales`, as `GET /spaces/:id` answers them); `en` the default. */
 function space(overrides: Partial<Space> & { locales?: Locale[] } = {}): Space {
   const { locales = [en, de], ...rest } = overrides;
-  return { id: 'space-1', name: 'Space 1', defaultLocaleId: 'en', defaultLocale: en, spaceLocales: locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale })), ...rest } as Space;
+  return {
+    id: 'space-1',
+    name: 'Space 1',
+    defaultLocaleId: 'en',
+    defaultLocale: en,
+    spaceLocales: locales.map((locale, position) => ({ spaceId: 'space-1', localeId: locale.id, position, createdAt: '', locale })),
+    ...rest,
+  } as Space;
 }
 
 function documentOf(data?: object | string): ContentDocument {

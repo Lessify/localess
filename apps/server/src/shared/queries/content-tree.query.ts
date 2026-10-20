@@ -38,7 +38,10 @@ export async function folderPaths(db: Pick<Database, 'select'>, spaceId: string)
 }
 
 /** An item's paths, from the map of its space's folders. */
-export function pathOf(item: { parentId: string | null; slug: string }, folders: Map<string, string>): { parentSlug: string; fullSlug: string } {
+export function pathOf(
+  item: { parentId: string | null; slug: string },
+  folders: Map<string, string>,
+): { parentSlug: string; fullSlug: string } {
   const parentSlug = item.parentId ? (folders.get(item.parentId) ?? '') : '';
   return { parentSlug, fullSlug: parentSlug ? `${parentSlug}/${item.slug}` : item.slug };
 }

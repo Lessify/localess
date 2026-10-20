@@ -1,6 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { FormArray, FormGroup } from '@angular/forms';
-import { CONTENT_DEFAULT_LOCALE, ContentAsset, ContentData, ContentReference, SchemaComponent, SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
+import {
+  CONTENT_DEFAULT_LOCALE,
+  ContentAsset,
+  ContentData,
+  ContentReference,
+  SchemaComponent,
+  SchemaField,
+  SchemaFieldKind,
+  SchemaType,
+} from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 import { ContentHelperService } from './content-helper.service';
 

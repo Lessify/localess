@@ -88,7 +88,11 @@ describe('app API: spaces, locales, instance label', () => {
       await admin.post('/api/app/spaces', { name: 'Beta' });
       // Case-insensitive, whatever the database collation. Admin → Spaces only: each item carries its Firebase import
       // (who ran it, from where), admin data; everyone else reads the sidebar list.
-      expect((await manager.get('/api/app/spaces')).json().items.map((s: { name: string }) => s.name)).toEqual(['alpha', 'Beta', 'Marketing']);
+      expect((await manager.get('/api/app/spaces')).json().items.map((s: { name: string }) => s.name)).toEqual([
+        'alpha',
+        'Beta',
+        'Marketing',
+      ]);
       expect((await reader.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await noRole.get('/api/app/spaces')).statusCode).toBe(403);
       expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().name).toBe('Marketing');
@@ -114,7 +118,11 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await admin.get('/api/app/spaces/Firestore20charsId01/tokens')).statusCode).toBe(404);
       expect((await reader.get(`/api/app/spaces/${S2}`)).json()).not.toHaveProperty('firebaseImport');
       const [item] = (await manager.get('/api/app/spaces?search=Imported')).json().items;
-      expect(item).toMatchObject({ id: S2, name: 'Imported', firebaseImport: { sourceSpaceId: 'Firestore20charsId01', status: 'FINISHED' } });
+      expect(item).toMatchObject({
+        id: S2,
+        name: 'Imported',
+        firebaseImport: { sourceSpaceId: 'Firestore20charsId01', status: 'FINISHED' },
+      });
       // Finished, so it is in the sidebar list.
       expect((await reader.get('/api/app/spaces/names')).json().map((s: { id: string }) => s.id)).toContain(S2);
       await t.db.delete(spaces).where(eq(spaces.id, S2));
@@ -155,8 +163,14 @@ describe('app API: spaces, locales, instance label', () => {
       await insertSpace(t.db, { id, name: 'Once', locales: [{ id: 'en', name: 'English' }] });
       await setImport(t.db, id, { legacyId: 'FirestoreOnce0000001' });
       const again = t.db.insert(firebaseImports).values({
-        id: newUuid(), origin: 'https://firebase.example.com', sourceSpaceId: 'FirestoreOnce0000002', sourceSpaceName: 'x',
-        spaceId: id, status: 'FINISHED', stages: [], startedBy: { name: 'Admin', email: 'admin@example.com' },
+        id: newUuid(),
+        origin: 'https://firebase.example.com',
+        sourceSpaceId: 'FirestoreOnce0000002',
+        sourceSpaceName: 'x',
+        spaceId: id,
+        status: 'FINISHED',
+        stages: [],
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
       await expect(again).rejects.toThrow();
       await t.db.delete(spaces).where(eq(spaces.id, id));
@@ -180,7 +194,13 @@ describe('app API: spaces, locales, instance label', () => {
       const created = await manager.post(base, { name: 'Preview', url: 'https://preview.example.com' });
       expect(created.statusCode).toBe(201);
       const preview = created.json();
-      expect(preview).toMatchObject({ id: expect.stringMatching(UUID_V7), spaceId, name: 'Preview', url: 'https://preview.example.com', position: 0 });
+      expect(preview).toMatchObject({
+        id: expect.stringMatching(UUID_V7),
+        spaceId,
+        name: 'Preview',
+        url: 'https://preview.example.com',
+        position: 0,
+      });
       const twin = (await manager.post(base, { name: 'Preview', url: 'https://twin.example.com' })).json();
       const staging = (await manager.post(base, { name: 'Staging', url: 'https://staging.example.com' })).json();
       expect(twin).toMatchObject({ name: 'Preview', position: 1 });
@@ -229,7 +249,10 @@ describe('app API: spaces, locales, instance label', () => {
       expect(await names()).toEqual(['Preview', 'Twin']);
       // A new environment goes last.
       // Positions are not renumbered on delete: after the highest.
-      expect((await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json()).toMatchObject({ name: 'Last', position: 3 });
+      expect((await manager.post(base, { name: 'Last', url: 'https://last.example.com' })).json()).toMatchObject({
+        name: 'Last',
+        position: 3,
+      });
       expect(await names()).toEqual(['Preview', 'Twin', 'Last']);
 
       expect((await manager.put(`${base}/${staging.id}`, { name: 'Gone', url: 'https://gone.example.com' })).statusCode).toBe(404);
@@ -272,7 +295,9 @@ describe('app API: spaces, locales, instance label', () => {
     it('keeps environments of other spaces out of reach', async () => {
       const other = (await manager.post('/api/app/spaces', { name: 'Other' })).json().id;
       const [first] = (await reader.get(`/api/app/spaces/${spaceId}/environments`)).json().items;
-      expect((await manager.put(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode).toBe(404);
+      expect(
+        (await manager.put(`/api/app/spaces/${other}/environments/${first.id}`, { name: 'x', url: 'https://x.example.com' })).statusCode,
+      ).toBe(404);
       expect((await manager.delete(`/api/app/spaces/${other}/environments/${first.id}`)).statusCode).toBe(404);
       expect((await manager.post(`/api/app/spaces/${other}/environments/${first.id}/move`, { position: 0 })).statusCode).toBe(404);
       await manager.delete(`/api/app/spaces/${other}`);
@@ -388,7 +413,12 @@ describe('app API: spaces, locales, instance label', () => {
     it('lists every locale a space can add, read-only', async () => {
       const response = await reader.get('/api/app/locales');
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual(expect.arrayContaining([{ id: 'en', name: 'English' }, { id: 'de-AT', name: 'German (Austria)' }]));
+      expect(response.json()).toEqual(
+        expect.arrayContaining([
+          { id: 'en', name: 'English' },
+          { id: 'de-AT', name: 'German (Austria)' },
+        ]),
+      );
       expect(response.json().length).toBeGreaterThan(400);
       expect((await noRole.get('/api/app/locales')).statusCode).toBe(403);
       expect((await admin.post('/api/app/locales', { id: 'xx', name: 'X' })).statusCode).toBe(404);

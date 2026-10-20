@@ -14,12 +14,6 @@ import { TranslationService } from './services/translation.service.js';
 @Module({
   imports: [ApiTokenModule],
   controllers: [TranslationController, TranslateController, TranslationCdnController, TranslationManagementController],
-  providers: [
-    TranslationService,
-    TranslateService,
-    TranslationDeliveryService,
-    TranslationRepository,
-    TranslationSnapshotRepository,
-  ],
+  providers: [TranslationService, TranslateService, TranslationDeliveryService, TranslationRepository, TranslationSnapshotRepository],
 })
 export class TranslationModule {}

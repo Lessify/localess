@@ -25,7 +25,12 @@ const staging = env('e2', 'staging', 'https://staging.example.com/');
 const twin = env('e3', 'prod', 'https://twin.example.com/');
 
 /** One page holding `environments`. */
-const pageOf = (environments: SpaceEnvironment[]): Page<SpaceEnvironment> => ({ items: environments, page: 0, size: 20, total: environments.length });
+const pageOf = (environments: SpaceEnvironment[]): Page<SpaceEnvironment> => ({
+  items: environments,
+  page: 0,
+  size: 20,
+  total: environments.length,
+});
 
 /** The selected space, carrying here the environments the store holds for it (every one, in the space's order). */
 function space(environments: SpaceEnvironment[]): Space {

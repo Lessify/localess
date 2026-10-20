@@ -18,7 +18,9 @@ export class PasswordResetTokenRepository {
   /** Deletes the tokens that were used, or that expired before `expiredBefore`. */
   deleteSpent(expiredBefore: Date, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      await t.delete(passwordResetTokens).where(or(isNotNull(passwordResetTokens.usedAt), lt(passwordResetTokens.expiresAt, expiredBefore)));
+      await t
+        .delete(passwordResetTokens)
+        .where(or(isNotNull(passwordResetTokens.usedAt), lt(passwordResetTokens.expiresAt, expiredBefore)));
     });
   }
 

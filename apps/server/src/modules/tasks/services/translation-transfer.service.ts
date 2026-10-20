@@ -72,7 +72,11 @@ export class TranslationTransferService {
     await this.taskLogService.log(task, 'INFO', `valid=${imported.length}`);
     if (skipped.size) {
       const count = [...skipped.values()].reduce((sum, it) => sum + it, 0);
-      await this.taskLogService.log(task, 'WARN', `skipped ${count} values of locales not in the space: ${[...skipped.keys()].sort().join(', ')}`);
+      await this.taskLogService.log(
+        task,
+        'WARN',
+        `skipped ${count} values of locales not in the space: ${[...skipped.keys()].sort().join(', ')}`,
+      );
     }
     const existing = translationsByKey(await this.translationTransferRepository.findAll(spaceId));
     const writes: TranslationImportWrite[] = [];
