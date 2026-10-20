@@ -1,14 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentOrder, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentMove, SpaceEnvironmentPageable, SpaceEnvironmentUpdate } from '@localess/shared';
 import { toSpaceEnvironment } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { SpaceEnvironmentRepository } from '../repositories/space-environment.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import { isPermutation } from '../utils/permutation.js';
 
 /**
  * A space's environments (the Visual Editor's preview URLs; the first is the default). Adding and updating answer the
- * environment; removing and reordering answer nothing (a `spaces` event follows).
+ * environment; removing and moving answer nothing (a `spaces` event follows).
  */
 @Injectable()
 export class SpaceEnvironmentService {
@@ -51,20 +50,10 @@ export class SpaceEnvironmentService {
     await this.spaceEnvironmentRepository.delete(spaceId, environmentId);
   }
 
-  /** `order.ids` is the space's environments in their new order: every one of them, each once. */
-  async reorder(spaceId: string, order: SpaceEnvironmentOrder): Promise<void> {
-    const environmentIds = order.ids;
-    await this.requireSpace(spaceId);
-    const current = await this.spaceEnvironmentRepository.findAllNames(spaceId);
-    if (
-      !isPermutation(
-        environmentIds,
-        current.map(it => it.id),
-      )
-    ) {
-      throw new BadRequestException("The new order must list each of the space's environments once");
-    }
-    await this.spaceEnvironmentRepository.reorder(spaceId, environmentIds);
+  /** To `move.position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  async move(spaceId: string, environmentId: string, move: SpaceEnvironmentMove): Promise<void> {
+    await this.requireEnvironment(spaceId, environmentId);
+    await this.spaceEnvironmentRepository.move(spaceId, environmentId, move.position);
   }
 
   private async requireSpace(spaceId: string): Promise<void> {

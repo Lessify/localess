@@ -210,14 +210,12 @@ export class LocalesComponent {
     return index >= 0 && index + direction >= 0 && index + direction < locales.length;
   }
 
-  /** Swaps `element` with its neighbour in the space's order, which is also the order everywhere else in the app. */
+  /** Moves `element` one place in the space's order (it swaps with its neighbour), which is also the order everywhere else in the app. */
   move(element: Locale, direction: -1 | 1): void {
     const space = this.spaceStore.selectedSpace();
     if (!space || !this.canMove(element, direction)) return;
-    const ids = this.spaceStore.locales().map(it => it.id);
-    const index = ids.indexOf(element.id);
-    [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
-    this.spaceLocaleService.reorder(space.id, ids).subscribe({
+    const index = this.spaceStore.locales().findIndex(it => it.id === element.id);
+    this.spaceLocaleService.move(space.id, element, index + direction).subscribe({
       error: () => {
         this.notificationService.error(`Locale '${element.name}' can not be moved.`);
       },

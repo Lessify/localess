@@ -52,11 +52,11 @@ describe('SpaceLocaleService', () => {
     expect((await result).localeId).toBe('de');
   });
 
-  it('reorder() puts the locale ids in their new order', async () => {
+  it('move() posts the place the locale takes', async () => {
     const service = setup();
-    const done = firstValueFrom(service.reorder('space-1', ['de', 'en']));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/space-1/locales/order' });
-    expect(request.request.body).toEqual({ ids: ['de', 'en'] });
+    const done = firstValueFrom(service.move('space-1', german, 0));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/space-1/locales/de/move' });
+    expect(request.request.body).toEqual({ position: 0 });
     request.flush(null);
     await done;
   });

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Locale, Page, SpaceLocale, SpaceLocaleCreate, SpaceLocaleOrder } from '@localess/shared';
+import { Locale, Page, SpaceLocale, SpaceLocaleCreate, SpaceLocaleMove } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 /**
@@ -31,9 +31,9 @@ export class SpaceLocaleService {
     return this.http.post<SpaceLocale>(this.base(spaceId), { localeId: locale.id } satisfies SpaceLocaleCreate);
   }
 
-  /** `localeIds`: every locale of the space, in the new order. */
-  reorder(spaceId: string, localeIds: string[]): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/order`, { ids: localeIds } satisfies SpaceLocaleOrder);
+  /** To `position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  move(spaceId: string, locale: Locale, position: number): Observable<void> {
+    return this.http.post<void>(`${this.base(spaceId)}/${locale.id}/move`, { position } satisfies SpaceLocaleMove);
   }
 
   remove(spaceId: string, locale: Locale): Observable<void> {

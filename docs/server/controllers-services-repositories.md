@@ -11,7 +11,7 @@
   reads the parent through the parent's repository (404 when it is not there): `exists` when the check is all it
   needs, `findOne` only when a rule reads the parent (`space.spaceLocales`).
 - **Why:** each file is about one thing, small enough to read; a sub-entity's methods are the plain ones (`create`,
-  `remove`, `reorder`) instead of `addLocale`, `removeEnvironment` on the parent.
+  `remove`, `move`) instead of `addLocale`, `removeEnvironment` on the parent.
 - **Example:** spaces: `space`, `space-locale`, `space-environment`; webhooks: `webhook`, `webhook-log`; tasks: `task`,
   `task-log`.
 - **Don't:** one controller for the entity and everything under it.

@@ -11,18 +11,20 @@ export type SpaceValues = Partial<Pick<SpaceInsertEntity, 'name' | 'defaultLocal
 /**
  * The rule every change of a space, its locales or its environments follows, in one transaction: the change, then the
  * space's `updated_at` (a change of locales or environments alone still touches the space, with the values `work`
- * returns) and a `spaces` event.
+ * returns) and a `spaces` event. `work` answers `false` when it found nothing to change: no touch, no event.
  */
 export function changeSpace(
   db: Database,
   events: EventService,
   spaceId: string,
   tx: Transaction | undefined,
-  work: (tx: Transaction) => Promise<SpaceValues | void>,
+  work: (tx: Transaction) => Promise<SpaceValues | false | void>,
 ): Promise<void> {
-  return transaction(db, tx, async t => touchSpace(t, events, spaceId, (await work(t)) ?? {}));
+  return transaction(db, tx, async t => {
+    const values = await work(t);
+    if (values !== false) await touchSpace(t, events, spaceId, values ?? {});
+  });
 }
-
 
 async function touchSpace(tx: Transaction, events: EventService, spaceId: string, values: SpaceValues): Promise<void> {
   await tx

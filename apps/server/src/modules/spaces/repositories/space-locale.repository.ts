@@ -10,6 +10,7 @@ import { dropTranslationDrafts, dropTranslationLocale } from '../../../shared/da
 import type { LocaleEntity } from '../../../shared/entities/locale.entity.js';
 import type { SpaceLocaleSelect } from '../../../shared/entities/space-locale.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
+import { moveTo } from '../utils/move.js';
 import { changeSpace } from './space-change.js';
 
 /**
@@ -90,15 +91,28 @@ export class SpaceLocaleRepository {
     });
   }
 
-  /** `localeIds`: every locale of the space, in the new order. */
-  reorder(spaceId: string, localeIds: string[], tx?: Transaction): Promise<void> {
+  /**
+   * The locale to `position` in the space's order, the others shifting (`moveTo`); only the rows that change are
+   * written. The space's rows are locked while read, so two moves run one after the other. Nothing written, no event,
+   * when it is already there or no longer there.
+   */
+  move(spaceId: string, localeId: string, position: number, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      for (const [position, localeId] of localeIds.entries()) {
+      const rows = await t
+        .select({ id: spaceLocales.localeId, position: spaceLocales.position })
+        .from(spaceLocales)
+        .where(eq(spaceLocales.spaceId, spaceId))
+        .orderBy(asc(spaceLocales.position), asc(spaceLocales.createdAt))
+        .for('update');
+      const changes = moveTo(rows, localeId, position);
+      if (!changes?.length) return false;
+      for (const change of changes) {
         await t
           .update(spaceLocales)
-          .set({ position })
-          .where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
+          .set({ position: change.position })
+          .where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, change.id)));
       }
+      return {}; // the space touched alone
     });
   }
 

@@ -8,6 +8,7 @@ import type { Transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import type { SpaceEnvironmentEntity } from '../../../shared/entities/space-environment.entity.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
+import { moveTo } from '../utils/move.js';
 import { changeSpace } from './space-change.js';
 
 /** A space's environments (`space_environments`); every change touches the space and announces it (`changeSpace`). */
@@ -80,15 +81,28 @@ export class SpaceEnvironmentRepository {
     });
   }
 
-  /** `environmentIds`: every environment of the space, in the new order. */
-  reorder(spaceId: string, environmentIds: string[], tx?: Transaction): Promise<void> {
+  /**
+   * The environment to `position` in the space's order, the others shifting (`moveTo`); only the rows that change are
+   * written, their `updated_at` kept. The space's rows are locked while read, so two moves run one after the other.
+   * Nothing written, no event, when it is already there or no longer there.
+   */
+  move(spaceId: string, environmentId: string, position: number, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
-      for (const [position, id] of environmentIds.entries()) {
+      const rows = await t
+        .select({ id: spaceEnvironments.id, position: spaceEnvironments.position })
+        .from(spaceEnvironments)
+        .where(eq(spaceEnvironments.spaceId, spaceId))
+        .orderBy(asc(spaceEnvironments.position), asc(spaceEnvironments.createdAt))
+        .for('update');
+      const changes = moveTo(rows, environmentId, position);
+      if (!changes?.length) return false;
+      for (const change of changes) {
         await t
           .update(spaceEnvironments)
-          .set({ position, ...keepUpdatedAt(spaceEnvironments) })
-          .where(this.environment(spaceId, id));
+          .set({ position: change.position, ...keepUpdatedAt(spaceEnvironments) })
+          .where(this.environment(spaceId, change.id));
       }
+      return {}; // the space touched alone
     });
   }
 

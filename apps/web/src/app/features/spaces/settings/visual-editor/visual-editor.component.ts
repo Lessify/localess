@@ -163,14 +163,12 @@ export class VisualEditorComponent {
     return index >= 0 && index + direction >= 0 && index + direction < environments.length;
   }
 
-  /** Swaps `environment` with its neighbour in the space's order; the first is the default. */
+  /** Moves `environment` one place in the space's order (it swaps with its neighbour); the first is the default. */
   move(environment: SpaceEnvironment, direction: -1 | 1): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     if (!spaceId || !this.canMove(environment, direction)) return;
-    const ids = this.spaceStore.environments().map(it => it.id);
-    const index = ids.indexOf(environment.id);
-    [ids[index], ids[index + direction]] = [ids[index + direction], ids[index]];
-    this.spaceEnvironmentService.reorder(spaceId, ids).subscribe({
+    const index = this.spaceStore.environments().findIndex(it => it.id === environment.id);
+    this.spaceEnvironmentService.move(spaceId, environment.id, index + direction).subscribe({
       error: () => this.notificationService.error(`Environment '${environment.name}' can not be moved.`),
     });
   }

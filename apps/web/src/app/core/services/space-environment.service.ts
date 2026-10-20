@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentOrder, SpaceEnvironmentUpdate } from '@localess/shared';
+import { IdNameUrl, Page, SpaceEnvironment, SpaceEnvironmentCreate, SpaceEnvironmentMove, SpaceEnvironmentUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 /**
@@ -51,8 +51,8 @@ export class SpaceEnvironmentService {
     return this.http.delete<void>(`${this.base(spaceId)}/${environmentId}`);
   }
 
-  /** `environmentIds`: every environment of the space, in the new order. */
-  reorder(spaceId: string, environmentIds: string[]): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/order`, { ids: environmentIds } satisfies SpaceEnvironmentOrder);
+  /** To `position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  move(spaceId: string, environmentId: string, position: number): Observable<void> {
+    return this.http.post<void>(`${this.base(spaceId)}/${environmentId}/move`, { position } satisfies SpaceEnvironmentMove);
   }
 }

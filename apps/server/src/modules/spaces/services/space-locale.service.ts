@@ -1,15 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { IdName, Page, SpaceLocale, SpaceLocaleCreate, SpaceLocaleOrder, SpaceLocalePageable } from '@localess/shared';
+import type { IdName, Page, SpaceLocale, SpaceLocaleCreate, SpaceLocaleMove, SpaceLocalePageable } from '@localess/shared';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { toSpaceLocale } from '../../../shared/transformers/space.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { LocaleRepository } from '../repositories/locale.repository.js';
 import { SpaceLocaleRepository } from '../repositories/space-locale.repository.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
-import { isPermutation } from '../utils/permutation.js';
 
 /**
- * A space's locales and its default locale. Adding answers the space locale; removing and reordering answer nothing (a
+ * A space's locales and its default locale. Adding answers the space locale; removing and moving answer nothing (a
  * `spaces` event follows); setting the default answers the space, whose `defaultLocaleId` it changed.
  */
 @Injectable()
@@ -57,19 +56,11 @@ export class SpaceLocaleService {
     await this.spaceLocaleRepository.delete(spaceId, localeId);
   }
 
-  /** `order.ids` is the space's locales in their new order: every one of them, each once. */
-  async reorder(spaceId: string, order: SpaceLocaleOrder): Promise<void> {
-    const localeIds = order.ids;
-    const space = await this.require(spaceId);
-    if (
-      !isPermutation(
-        localeIds,
-        space.spaceLocales.map(it => it.localeId),
-      )
-    ) {
-      throw new BadRequestException("The new order must list each of the space's locales once");
-    }
-    await this.spaceLocaleRepository.reorder(spaceId, localeIds);
+  /** To `move.position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  async move(spaceId: string, localeId: string, move: SpaceLocaleMove): Promise<void> {
+    await this.requireExists(spaceId);
+    if (!(await this.spaceLocaleRepository.findOne(spaceId, localeId))) throw new NotFoundException('Space locale not found');
+    await this.spaceLocaleRepository.move(spaceId, localeId, move.position);
   }
 
   private async requireExists(spaceId: string): Promise<void> {

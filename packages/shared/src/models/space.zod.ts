@@ -8,6 +8,9 @@ import { SPACE_ENVIRONMENT_SORT_FIELDS, SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIE
 
 const zName = z.string().trim().min(1).max(200);
 
+/** A place in a space's order of locales or environments: 0 the first; any larger number, the last. */
+const zPosition = z.int().min(0);
+
 /** `POST /api/app/spaces`. */
 export const zSpaceCreate = z.strictObject({ name: zName, template: z.enum(SPACE_TEMPLATE_IDS).optional() });
 export type SpaceCreate = z.infer<typeof zSpaceCreate>;
@@ -42,9 +45,9 @@ export type SpaceEnvironmentCreate = z.infer<typeof zSpaceEnvironmentCreate>;
 export const zSpaceEnvironmentUpdate = zEnvironment;
 export type SpaceEnvironmentUpdate = z.infer<typeof zSpaceEnvironmentUpdate>;
 
-/** `PUT …/environments/order`: every environment's id, in the new order. */
-export const zSpaceEnvironmentOrder = z.strictObject({ ids: z.array(z.uuid()).min(1).max(1000) });
-export type SpaceEnvironmentOrder = z.infer<typeof zSpaceEnvironmentOrder>;
+/** `POST …/environments/:environmentId/move`: the place it takes in the space's order (the others shift). */
+export const zSpaceEnvironmentMove = z.strictObject({ position: zPosition });
+export type SpaceEnvironmentMove = z.infer<typeof zSpaceEnvironmentMove>;
 
 const zLocaleId = z.string().min(1).max(64);
 
@@ -58,9 +61,9 @@ export type SpaceLocalePageable = z.infer<typeof zSpaceLocalePageable>;
 export const zSpaceLocaleCreate = z.strictObject({ localeId: zLocaleId });
 export type SpaceLocaleCreate = z.infer<typeof zSpaceLocaleCreate>;
 
-/** `PUT …/locales/order`: every locale's id, in the new order. */
-export const zSpaceLocaleOrder = z.strictObject({ ids: z.array(zLocaleId).min(1).max(1000) });
-export type SpaceLocaleOrder = z.infer<typeof zSpaceLocaleOrder>;
+/** `POST …/locales/:localeId/move`: the place it takes in the space's order (the others shift). */
+export const zSpaceLocaleMove = z.strictObject({ position: zPosition });
+export type SpaceLocaleMove = z.infer<typeof zSpaceLocaleMove>;
 
 /** `PUT /api/app/spaces/:spaceId/default-locale`: one of the space's locales. */
 export const zSpaceDefaultLocaleUpdate = z.strictObject({ defaultLocaleId: zLocaleId });

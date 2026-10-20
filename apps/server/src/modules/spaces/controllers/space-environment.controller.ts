@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
-import { zSpaceEnvironmentCreate, zSpaceEnvironmentOrder, zSpaceEnvironmentPageable, zSpaceEnvironmentUpdate } from '@localess/shared/zod';
+import { zSpaceEnvironmentCreate, zSpaceEnvironmentMove, zSpaceEnvironmentPageable, zSpaceEnvironmentUpdate } from '@localess/shared/zod';
 import {
   type IdNameUrl,
   type Page,
   type SpaceEnvironment,
   type SpaceEnvironmentCreate,
-  type SpaceEnvironmentOrder,
+  type SpaceEnvironmentMove,
   type SpaceEnvironmentPageable,
   type SpaceEnvironmentUpdate,
   UserPermission,
@@ -39,11 +39,15 @@ export class SpaceEnvironmentController {
     return this.spaceEnvironmentService.create(spaceId, body);
   }
 
-  @Put('order')
+  @Post(':environmentId/move')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async reorder(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceEnvironmentOrder }) body: SpaceEnvironmentOrder): Promise<void> {
-    await this.spaceEnvironmentService.reorder(spaceId, body);
+  async move(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('environmentId', UuidParamPipe) environmentId: string,
+    @Body({ schema: zSpaceEnvironmentMove }) body: SpaceEnvironmentMove,
+  ): Promise<void> {
+    await this.spaceEnvironmentService.move(spaceId, environmentId, body);
   }
 
   @Put(':environmentId')

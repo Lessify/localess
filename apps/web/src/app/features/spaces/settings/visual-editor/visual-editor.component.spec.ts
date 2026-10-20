@@ -41,7 +41,7 @@ describe('VisualEditorComponent', () => {
       create: vi.fn().mockReturnValue(of(undefined)),
       update: vi.fn().mockReturnValue(of(undefined)),
       remove: vi.fn().mockReturnValue(of(undefined)),
-      reorder: vi.fn().mockReturnValue(of(undefined)),
+      move: vi.fn().mockReturnValue(of(undefined)),
     };
     const success = vi.fn();
     const error = vi.fn();
@@ -185,14 +185,14 @@ describe('VisualEditorComponent', () => {
     expect(spaceEnvironmentService.remove).not.toHaveBeenCalled();
   });
 
-  it("move() swaps an environment with its neighbour in the space's order", () => {
+  it("move() takes an environment one place up or down in the space's order", () => {
     const { component, spaceEnvironmentService } = setup(space([prod, staging, twin]));
 
     component.move(twin, -1);
-    expect(spaceEnvironmentService.reorder).toHaveBeenLastCalledWith('space-1', ['e1', 'e3', 'e2']);
+    expect(spaceEnvironmentService.move).toHaveBeenLastCalledWith('space-1', 'e3', 1);
 
     component.move(prod, 1);
-    expect(spaceEnvironmentService.reorder).toHaveBeenLastCalledWith('space-1', ['e2', 'e1', 'e3']);
+    expect(spaceEnvironmentService.move).toHaveBeenLastCalledWith('space-1', 'e1', 1);
   });
 
   it('canMove() is false at the ends, and move() then sends nothing', () => {
@@ -203,12 +203,12 @@ describe('VisualEditorComponent', () => {
     expect(component.canMove(staging, 1)).toBe(false);
     component.move(staging, 1);
 
-    expect(spaceEnvironmentService.reorder).not.toHaveBeenCalled();
+    expect(spaceEnvironmentService.move).not.toHaveBeenCalled();
   });
 
   it('move() notifies an error on failure', () => {
     const { component, spaceEnvironmentService, error } = setup(space([prod, staging]));
-    spaceEnvironmentService.reorder.mockReturnValue(throwError(() => new Error('boom')));
+    spaceEnvironmentService.move.mockReturnValue(throwError(() => new Error('boom')));
 
     component.move(staging, -1);
 

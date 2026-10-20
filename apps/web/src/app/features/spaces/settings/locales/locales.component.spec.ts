@@ -31,7 +31,7 @@ describe('LocalesComponent', () => {
     const create = vi.fn().mockReturnValue(of(undefined));
     const deleteLocale = vi.fn().mockReturnValue(of(undefined));
     const setDefault = vi.fn().mockReturnValue(of(undefined));
-    const reorder = vi.fn().mockReturnValue(of(undefined));
+    const move = vi.fn().mockReturnValue(of(undefined));
     const isLocaleTranslatableFrom = vi.fn().mockReturnValue(true);
     const isLocaleTranslatableTo = vi.fn().mockReturnValue(false);
     const success = vi.fn();
@@ -45,7 +45,7 @@ describe('LocalesComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SpaceLocaleService, useValue: { findAll, create, remove: deleteLocale, reorder } },
+        { provide: SpaceLocaleService, useValue: { findAll, create, remove: deleteLocale, move } },
         { provide: SpaceService, useValue: { setDefaultLocale: setDefault } },
         { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
@@ -70,7 +70,7 @@ describe('LocalesComponent', () => {
       create,
       deleteLocale,
       setDefault,
-      reorder,
+      move,
       isLocaleTranslatableFrom,
       isLocaleTranslatableTo,
       success,
@@ -230,31 +230,31 @@ describe('LocalesComponent', () => {
     expect(error).toHaveBeenCalledWith("Locale 'German' can not be made the default locale.");
   });
 
-  it('move() swaps a locale with its neighbour in the space order', () => {
+  it('move() takes a locale one place up or down in the space order', () => {
     const fr: Locale = { id: 'fr', name: 'French' };
-    const { component, reorder } = setup(space([en, de, fr]));
+    const { component, move } = setup(space([en, de, fr]));
 
     component.move(fr, -1);
-    expect(reorder).toHaveBeenLastCalledWith('space-1', ['en', 'fr', 'de']);
+    expect(move).toHaveBeenLastCalledWith('space-1', fr, 1);
 
     component.move(en, 1);
-    expect(reorder).toHaveBeenLastCalledWith('space-1', ['de', 'en', 'fr']);
+    expect(move).toHaveBeenLastCalledWith('space-1', en, 1);
   });
 
   it('canMove() is false at the ends, and move() then sends nothing', () => {
-    const { component, reorder } = setup(space([en, de]));
+    const { component, move } = setup(space([en, de]));
 
     expect(component.canMove(en, -1)).toBe(false);
     expect(component.canMove(en, 1)).toBe(true);
     expect(component.canMove(de, 1)).toBe(false);
     component.move(de, 1);
 
-    expect(reorder).not.toHaveBeenCalled();
+    expect(move).not.toHaveBeenCalled();
   });
 
   it('move() notifies an error on failure', () => {
-    const { component, reorder, error } = setup(space([en, de]));
-    reorder.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, move, error } = setup(space([en, de]));
+    move.mockReturnValue(throwError(() => new Error('boom')));
 
     component.move(de, -1);
 

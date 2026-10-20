@@ -90,11 +90,11 @@ describe('SpaceEnvironmentService', () => {
     await done;
   });
 
-  it('reorder() puts the ids in their new order', async () => {
+  it('move() posts the place the environment takes', async () => {
     const service = setup();
-    const done = firstValueFrom(service.reorder('s1', ['e2', 'e1']));
-    const request = http.expectOne({ method: 'PUT', url: '/api/app/spaces/s1/environments/order' });
-    expect(request.request.body).toEqual({ ids: ['e2', 'e1'] });
+    const done = firstValueFrom(service.move('s1', 'e2', 0));
+    const request = http.expectOne({ method: 'POST', url: '/api/app/spaces/s1/environments/e2/move' });
+    expect(request.request.body).toEqual({ position: 0 });
     request.flush(null);
     await done;
   });

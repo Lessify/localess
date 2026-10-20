@@ -1,11 +1,11 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
-import { zSpaceLocaleCreate, zSpaceLocaleOrder, zSpaceLocalePageable } from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+import { zSpaceLocaleCreate, zSpaceLocaleMove, zSpaceLocalePageable } from '@localess/shared/zod';
 import {
   type IdName,
   type Page,
   type SpaceLocale,
   type SpaceLocaleCreate,
-  type SpaceLocaleOrder,
+  type SpaceLocaleMove,
   type SpaceLocalePageable,
   UserPermission,
 } from '@localess/shared';
@@ -38,11 +38,15 @@ export class SpaceLocaleController {
     return this.spaceLocaleService.create(spaceId, body);
   }
 
-  @Put('order')
+  @Post(':localeId/move')
   @HttpCode(204)
   @RequirePermission(UserPermission.SPACE_MANAGEMENT)
-  async reorder(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceLocaleOrder }) body: SpaceLocaleOrder): Promise<void> {
-    await this.spaceLocaleService.reorder(spaceId, body);
+  async move(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('localeId') localeId: string,
+    @Body({ schema: zSpaceLocaleMove }) body: SpaceLocaleMove,
+  ): Promise<void> {
+    await this.spaceLocaleService.move(spaceId, localeId, body);
   }
 
   @Delete(':localeId')
