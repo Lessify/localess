@@ -608,7 +608,7 @@ for separators:
 } }
 ```
 
-Move the data into a separate shared file to avoid duplication across dialogs. See `apps/web/src/app/features/admin/users/user-permissions.ts` as a
+Move the data into a separate shared file to avoid duplication across dialogs. See `apps/web/src/app/features/admin/users/user-roles.ts` (it replaced `user-permissions.ts`) as a
 reference:
 
 ```typescript

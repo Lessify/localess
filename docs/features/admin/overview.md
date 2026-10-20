@@ -1,12 +1,12 @@
 # Admin Features — Overview
 
-> Related: [User Roles & Permissions](../../frontend-permissions.md) · [Frontend Architecture](../../frontend-architecture.md)
+> Related: [User Roles](../../frontend-permissions.md) · [Frontend Architecture](../../frontend-architecture.md)
 
 ## Purpose
 
 The `admin/` umbrella contains all features for administering the Localess platform itself — across all spaces and users. These are **platform-level** operations, not space-level.
 
-All admin routes are guarded by `permissionGuard(...)`, which reads the role and permissions that `UserStore` loads from `GET /api/auth/me`. Only users with `role: 'ADMIN'` or a `CUSTOM` role with the relevant permission can access them. The server enforces the same rule on every `/api/app/**` request (`@RequirePermission(...)`), reading role and permissions from the `users` table, so changes apply immediately.
+All admin routes are guarded by `roleGuard(ADMINS)`, which reads the role `UserStore` loads from `GET /api/auth/me`: only admins can access them. The server enforces the same rule on every `/api/app/**` request (`@RequireRole(ADMINS)`), reading the role from the `users` table, so a change applies immediately.
 
 ---
 
@@ -14,8 +14,8 @@ All admin routes are guarded by `permissionGuard(...)`, which reads the role and
 
 | Module | Route | Guard | Doc |
 |--------|-------|-------|-----|
-| Users | `/features/admin/users` | `USER_MANAGEMENT` | [admin-users.md](admin-users.md) |
-| Spaces | `/features/admin/spaces` | `SPACE_MANAGEMENT` | [admin-spaces.md](admin-spaces.md) |
+| Users | `/features/admin/users` | `ADMINS` | [admin-users.md](admin-users.md) |
+| Spaces | `/features/admin/spaces` | `ADMINS` | [admin-spaces.md](admin-spaces.md) |
 
 ---
 

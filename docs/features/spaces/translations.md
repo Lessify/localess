@@ -13,7 +13,7 @@ AI-powered translation, import/export, and tree or list view.
 ## Route
 
 ```
-/features/spaces/:spaceId/translations    [TRANSLATION_READ]
+/features/spaces/:spaceId/translations    [ANY_ROLE]
 ```
 
 ## Key Files

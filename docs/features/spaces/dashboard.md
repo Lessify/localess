@@ -25,7 +25,7 @@ apps/server/src/modules/spaces/services/space.service.ts   ← findOverview()
 
 ## DashboardComponent
 
-Reads `SpaceService.findOverview(spaceId)`: `GET /api/app/spaces/:spaceId/overview` (`@RequireAnyRole()`), computed by the
+Reads `SpaceService.findOverview(spaceId)`: `GET /api/app/spaces/:spaceId/overview` (`@RequireRole(ANY_ROLE)`), computed by the
 server on every request — nothing is stored. It is a live query: it refetches when translations, assets, contents or
 schemas of the space change, or the space itself (its locales). There is no refresh button. A progress bar shows while
 the first answer is pending; a failed request shows "The overview can not be loaded."

@@ -16,7 +16,7 @@ webhook_logs   (id uuid, webhook_id → webhooks on delete cascade, delivery fie
 
 Postgres tables defined in `apps/server/src/infra/database/schema.ts`. Enabled webhooks for an event are found with a GIN index on `events` (`events @> array[event]`).
 
-**Access control:** `SPACE_MANAGEMENT` (or `ADMIN`) required to read/write webhook configs and to read logs (`@RequirePermission(SPACE_MANAGEMENT)` on `WebhookController`). Logs are read-only through the API; only the server's dispatcher writes them.
+**Access control:** Developers and Admins (`@RequireRole(DEVELOPERS)` on `WebhookController` and `WebhookLogController`; the Developers route has `roleGuard(DEVELOPERS)`, the `webhooks` / `webhook_logs` events go to the same roles). Logs are read-only through the API; only the server's dispatcher writes them.
 
 App API (`apps/server/src/modules/webhooks/webhook.controller.ts`):
 
@@ -201,8 +201,8 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 **Routes:** part of the **Developers** module (see [Open API](features/spaces/open-api.md) for the sibling module and route shell)
 
 ```
-/features/spaces/:spaceId/developers/webhooks             [DEV_WEBHOOK]  ← WebhooksComponent (list)
-/features/spaces/:spaceId/developers/webhooks/:webhookId  [DEV_WEBHOOK]  ← WebhookDetailComponent
+/features/spaces/:spaceId/developers/webhooks             [DEVELOPERS]  ← WebhooksComponent (list)
+/features/spaces/:spaceId/developers/webhooks/:webhookId  [DEVELOPERS]  ← WebhookDetailComponent
 ```
 
 **Form validation** (`WebhookDialogComponent`):

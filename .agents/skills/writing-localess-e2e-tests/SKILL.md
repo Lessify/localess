@@ -83,7 +83,7 @@ let the user choose, implement one area at a time, and turn every surprise into 
 |---|---|
 | What it is for | `docs/features/**`, `docs/concepts.md`; CLAUDE.md's knowledge-base table names the doc per area |
 | UI | `apps/web/src/app/features/<area>/` — templates (labels, buttons, toasts, dialogs), the component, its service |
-| Access | route guards (`features-routing.module.ts`), the server's `@RequirePermission` on the route |
+| Access | route guards (`roleGuard` in `features-routing.module.ts`), the server's `@RequireRole` on the route |
 | Server | `apps/server/src/modules/<area>/` — controller, service; what it stores; events, webhooks, CDN output |
 | Already covered | `apps/e2e/TEST-PLAN.md`, the specs it names, `apps/e2e/tests/support/` helpers, unit and server tests |
 

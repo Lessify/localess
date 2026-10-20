@@ -12,7 +12,7 @@ operations.
 ## Routes
 
 ```
-/features/spaces/:spaceId/settings    [SPACE_MANAGEMENT]
+/features/spaces/:spaceId/settings    [DEVELOPERS]
   → redirects to /settings/general
   /general          ← GeneralComponent
   /locales          ← LocalesComponent

@@ -6,7 +6,7 @@ keep, what to move. Decisions are listed per table; open items are under [To do]
 ## Users and sign-in
 
 ```
-users (id PK): email (unique on lower(email)), email_verified, display_name, photo_url, disabled, role, permissions,
+users (id PK): email (unique on lower(email)), email_verified, display_name, photo_url, disabled, role,
        lock, created_at, updated_at
 user_credentials (user_id PK → users CASCADE): password_hash, hash_algo, updated_at
 user_identities (PK provider + provider_subject, user_id → users CASCADE): created_at
@@ -331,7 +331,7 @@ server-only lists), plus a CHECK built from the same list:
 
 | Column | Values |
 |---|---|
-| `users.role`, `users.permissions` | `USER_ROLES` (`ADMIN`, `CUSTOM`), `UserPermission` |
+| `users.role` | `USER_ROLES` (`ADMIN`, `DEVELOPER`, `EDITOR`, `TRANSLATOR`, `VIEWER`) |
 | `user_credentials.hash_algo`, `user_identities.provider` | `HASH_ALGORITHMS`, `OAUTH_PROVIDERS` |
 | `contents.kind`, `assets.kind`, `schemas.type` | `ContentKind`, `AssetKind`, `SchemaType` |
 | `tasks.kind`, `tasks.status`, `tasks.type`, `task_logs.level` | `TaskKind`, `TaskStatus`, `TRANSLATION_IMPORT_FORMATS`, `TaskLogLevel` |

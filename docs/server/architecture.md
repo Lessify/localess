@@ -27,8 +27,9 @@ src/
 
 ## Auth
 
-`auth/` is not a feature but what every feature relies on: the global `AuthGuard`, the `@Public` / `@Require*`
-decorators (`decorators.ts`), `CurrentUser` / `CurrentSessionId` (`request-context.ts`), and `ApiTokenModule`
+`auth/` is not a feature but what every feature relies on: the global `AuthGuard`, the `@Public` / `@RequireRole`
+decorators (`decorators.ts`; who may do what: one role per user, the lists of `@localess/shared` `roles.ts`,
+[User Roles](../frontend-permissions.md)), `CurrentUser` / `CurrentSessionId` (`request-context.ts`), and `ApiTokenModule`
 (`TokenAuthService` and the token guards, which every module with a CDN or Management controller imports). Inside it is layered
 like a module, and it imports no feature module:
 

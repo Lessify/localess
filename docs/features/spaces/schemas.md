@@ -11,7 +11,7 @@ Define and manage content type schemas that structure `ContentDocument` data. Sc
 ## Routes
 
 ```
-/features/spaces/:spaceId/schemas              [SCHEMA_READ] → SchemasComponent
+/features/spaces/:spaceId/schemas              [ANY_ROLE] → SchemasComponent
 /features/spaces/:spaceId/schemas/comp/:schemaId             → EditCompComponent
   (canDeactivate: isFormDirtyGuard)
 /features/spaces/:spaceId/schemas/enum/:schemaId             → EditEnumComponent

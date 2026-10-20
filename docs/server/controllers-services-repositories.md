@@ -31,7 +31,7 @@ repositories call it.
 
 ## Controllers
 
-- **Rule:** a controller handles the request and the reply only: it declares each parameter's schema, its permission,
+- **Rule:** a controller handles the request and the reply only: it declares each parameter's schema, its roles,
   calls one service method and returns its result.
   - Validation: `@Body({ schema: zX }) body: X`, `@Query({ schema: zXPageable }) query: XPageable`,
     `@Query('type', { schema: zSchemaTypeFilter })`; the global `StandardSchemaValidationPipe` (`app.factory.ts`)
@@ -41,7 +41,7 @@ repositories call it.
     malformed one. The service then checks that the row exists (404); a repository does not check an id's format.
     Done in the Spaces module; the others still lean on `isUuid` in their repositories (and in
     `SpaceLookupRepository`) until they are reworked. The v1 controllers answer their own error body, not the pipe's.
-  - Permissions: `@RequirePermission(...)` (or `@RequireAnyRole()`, `@RequireAllPermissions(...)`) on each method,
+  - Roles: `@RequireRole(CONTENT_WRITERS)` (a list of `@localess/shared` `roles.ts`, or one role) on each method or the controller,
     the same the UI checks.
   - Multipart fields and the v1 Management API's own error bodies are parsed with `zX.safeParse` in the handler.
 - **Why:** the HTTP details stay in one layer; everything else is testable without a request.

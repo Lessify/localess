@@ -15,18 +15,16 @@ All routes are scoped to a specific space via `:spaceId` in the URL. The active 
 | Module | Route | Guard | Doc |
 |--------|-------|-------|-----|
 | Dashboard | `/features/spaces/:spaceId/dashboard` | authenticated | [dashboard.md](dashboard.md) |
-| Translations | `/features/spaces/:spaceId/translations` | `TRANSLATION_READ` | [translations.md](translations.md) |
-| Contents | `/features/spaces/:spaceId/contents` | `CONTENT_READ` | [contents.md](contents.md) |
-| Assets | `/features/spaces/:spaceId/assets` | `ASSET_READ` | [assets.md](assets.md) |
-| Schemas | `/features/spaces/:spaceId/schemas` | `SCHEMA_READ` | [schemas.md](schemas.md) |
-| Tasks | `/features/spaces/:spaceId/tasks` | any import/export permission† | [tasks.md](tasks.md) |
-| Developers → Webhooks | `/features/spaces/:spaceId/developers/webhooks` | `DEV_WEBHOOK`* | [webhooks.md](../../webhooks.md) |
-| Developers → Open API | `/features/spaces/:spaceId/developers/open-api` | `DEV_OPEN_API`* | [open-api.md](open-api.md) |
-| Settings | `/features/spaces/:spaceId/settings` | `SPACE_MANAGEMENT` | [settings.md](settings.md) |
+| Translations | `/features/spaces/:spaceId/translations` | `ANY_ROLE` | [translations.md](translations.md) |
+| Contents | `/features/spaces/:spaceId/contents` | `ANY_ROLE` | [contents.md](contents.md) |
+| Assets | `/features/spaces/:spaceId/assets` | `ANY_ROLE` | [assets.md](assets.md) |
+| Schemas | `/features/spaces/:spaceId/schemas` | `ANY_ROLE` | [schemas.md](schemas.md) |
+| Tasks | `/features/spaces/:spaceId/tasks` | `CONTENT_WRITERS` | [tasks.md](tasks.md) |
+| Developers → Webhooks | `/features/spaces/:spaceId/developers/webhooks` | `DEVELOPERS` | [webhooks.md](../../webhooks.md) |
+| Developers → Open API | `/features/spaces/:spaceId/developers/open-api` | `DEVELOPERS` | [open-api.md](open-api.md) |
+| Settings | `/features/spaces/:spaceId/settings` | `DEVELOPERS` | [settings.md](settings.md) |
 
-\* Unlike the other rows, `DEV_WEBHOOK`/`DEV_OPEN_API` are **not** enforced via a route `canActivate` guard — the `developers` route has none (`features-routing.module.ts`). They only control whether the Developers menu items are shown in the sidebar (`features.component.ts`).
-
-† The Tasks route guard is `permissionGuard(...)` with all eight `*_IMPORT` / `*_EXPORT` permissions (any one passes, `features-routing.module.ts`), the same set the sidebar item checks (`USER_PERMISSIONS_IMPORT_EXPORT`, `features.component.ts`) and the server requires to read tasks.
+The guard of each row is `roleGuard(list)` (`features-routing.module.ts`), the list the sidebar item and the server's `@RequireRole` use too ([User Roles](../../frontend-permissions.md)).
 
 Webhooks (under Developers) has no page in this folder — it is documented in [webhooks.md](../../webhooks.md).
 

@@ -11,7 +11,7 @@ Browse, upload, organise, and manage binary assets (images, videos, documents, f
 ## Route
 
 ```
-/features/spaces/:spaceId/assets    [ASSET_READ]
+/features/spaces/:spaceId/assets    [ANY_ROLE]
 ```
 
 ## Key Files

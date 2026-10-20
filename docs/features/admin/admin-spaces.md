@@ -9,7 +9,7 @@ Platform-level management of Spaces — create new spaces, edit space names, del
 ## Route
 
 ```
-/features/admin/spaces            [SPACE_MANAGEMENT permission]
+/features/admin/spaces            [ADMINS]
 ```
 
 ## Key Files
@@ -58,15 +58,15 @@ list can send a user into it with a link rather than code:
 | Where | How | When |
 |-------|-----|------|
 | Admin → Spaces, the "Add Space" button | `openAddDialog()` directly | always |
-| The shell sidebar | link to `?action=create` | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
-| The welcome page | link to `?action=create` | `hasNoSpaces()` and `SPACE_MANAGEMENT` |
+| The shell sidebar | link to `?action=create` | `hasNoSpaces()` and an admin |
+| The welcome page | link to `?action=create` | `hasNoSpaces()` and an admin |
 
 The in-page button calls the method — it is already on this component, so a navigation would be
 ceremony. The param exists for the two entry points that are not.
 
 No new route was added: `admin/spaces` already exists and is already guarded by
-`permissionGuard(UserPermission.SPACE_MANAGEMENT)` (`features-routing.module.ts`). That guard is what keeps the flow
-honest — the server requires `ADMIN` or `SPACE_MANAGEMENT` to write a space (`@RequirePermission` on
+`roleGuard(ADMINS)` (`features-routing.module.ts`). That guard is what keeps the flow
+honest — the server lets only admins create or delete a space (`@RequireRole(ADMINS)` on
 `POST /api/app/spaces`), so an
 unpermitted user must not reach the dialog at all. The CTAs carry the same check so they don't link
 somewhere the guard will bounce.
@@ -194,9 +194,9 @@ e2e tests know what to expect: see `translations-large.template.ts`.
 
 ### Permissions
 
-Creating a space needs `SPACE_MANAGEMENT`, and so does choosing a template: a template is part of creating the
+Creating a space is an admin's, and so is choosing a template: a template is part of creating the
 space, so it asks for nothing more, even though it writes schemas, documents, files or translations. Both routes
-(`GET /api/app/spaces/templates`, `POST /api/app/spaces`) refuse anyone else (403). Permissions are to be reworked
+(`GET /api/app/spaces/templates`, `POST /api/app/spaces`) refuse anyone else (403). Roles: [User Roles](../../frontend-permissions.md); permissions were to be reworked
 separately.
 
 ### Failure

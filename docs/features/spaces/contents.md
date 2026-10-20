@@ -13,7 +13,7 @@ publishing, unpublishing, moving, cloning, and importing/exporting content docum
 ## Routes
 
 ```
-/features/spaces/:spaceId/contents           [CONTENT_READ] → ContentsComponent
+/features/spaces/:spaceId/contents           [ANY_ROLE] → ContentsComponent
 /features/spaces/:spaceId/contents/:contentId              → EditDocumentComponent
   (canDeactivate: isFormDirtyGuard, resolver: documentResolver)
 ```

@@ -24,7 +24,7 @@ apps/web/src/app/features/me/
 
 ## MeComponent
 
-Displays the current user's profile card — avatar, name, email, email-verified status, role, and (for `CUSTOM` role) the permission list. Reads all data from `UserStore`.
+Displays the current user's profile card — avatar, name, email, email-verified status and role. Reads all data from `UserStore`.
 
 **Injected services:** `HlmDialogService`, `NotificationService`, `MeService`, `UserStore`
 
@@ -34,7 +34,6 @@ Displays the current user's profile card — avatar, name, email, email-verified
 - `openUpdatePasswordDialog()` — opens `MePasswordDialogComponent` (only available for email/password provider)
 
 **Visibility rules (`me.component.html`):**
-- Locked account (`isLocked()`) — all action buttons are hidden and a "your account is locked" message is shown instead
 - Google / Microsoft provider — only "Update Profile" is shown; a message explains email and password are managed by the external provider
 
 ## Dialogs

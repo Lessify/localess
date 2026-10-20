@@ -1,6 +1,6 @@
 # Frontend State Management
 
-> Related: [Frontend Architecture](frontend-architecture.md) · [User Roles & Permissions](frontend-permissions.md)
+> Related: [Frontend Architecture](frontend-architecture.md) · [User Roles](frontend-permissions.md)
 
 ## Overview
 
@@ -12,7 +12,7 @@ State is managed with **NgRx Signals** (`@ngrx/signals`). Four global signal sto
 
 | Store | Key | Persisted | Purpose |
 |-------|-----|-----------|---------|
-| `UserStore` | `LL-USER-STATE` | `isAuthenticated` only | Session user (`GET /api/auth/me`), role, permissions |
+| `UserStore` | `LL-USER-STATE` | `isAuthenticated` only | Session user (`GET /api/auth/me`), role |
 | `SpaceStore` | `LL-SPACE-STATE` | `selectedSpaceId`, `selectedEnvironmentBySpaceId` | Active workspace, content path, schemas |
 | `LocalSettingsStore` | `LL-SETTINGS-STATE` | All fields | User preferences (theme, layouts, editor) |
 
@@ -22,15 +22,13 @@ State is managed with **NgRx Signals** (`@ngrx/signals`). Four global signal sto
 
 **File:** `apps/web/src/app/core/stores/user.store.ts`
 
-Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The response carries the user's identity, linked sign-in providers, `role`, `permissions` and `lock`, read from the `users` row — there are no token claims.
+Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The response carries the user's identity, linked sign-in providers and `role`, read from the `users` row — there are no token claims.
 
 ```typescript
 // Key state
 {
   id, displayName, initials, email, emailVerified, photoURL,
-  role: 'ADMIN' | 'CUSTOM' | undefined,
-  permissions: string[] | undefined,
-  lock: boolean | undefined,
+  role: UserRole | undefined,   // ADMIN, DEVELOPER, EDITOR, TRANSLATOR, VIEWER
   isAuthenticated: boolean,
   loaded: boolean,            // the /api/auth/me check has answered at least once
   isPasswordProvider, isGoogleProvider, isMicrosoftProvider, numberProviders
@@ -38,7 +36,6 @@ Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The r
 
 // Key computed
 isRoleAdmin: computed(() => role() === 'ADMIN')
-isLocked:    computed(() => lock() === true)
 
 // Key methods
 load()            // GET /api/auth/me → signedIn(user), or signedOut() on error (401 = no session)
@@ -48,7 +45,7 @@ signedOut()       // resets to the initial state with loaded: true, persists isA
 
 Auth providers supported: **Email/Password**, **Google**, **Microsoft**.
 
-`role`, `permissions` and `lock` drive all route-level permission guards (`permissionGuard` waits for `loaded`). `MeService` calls `load()` again after profile, email or password changes, and the `apiInterceptor` calls `signedOut()` on a `401` from the app API. A role/permission change made by an admin reaches the server immediately and the UI on the next `load()` (e.g. a reload).
+`role` drives every route guard (`roleGuard` waits for `loaded`) and the `hasRole` pipe. `MeService` calls `load()` again after profile, email or password changes, and the `apiInterceptor` calls `signedOut()` on a `401` from the app API. A role change made by an admin reaches the server immediately and the UI on the next `load()` (e.g. a reload).
 
 ---
 

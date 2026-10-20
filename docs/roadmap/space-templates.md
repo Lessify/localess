@@ -139,7 +139,8 @@ creates a space, in the same transaction.
   than Empty needs the Admin role, or `SCHEMA_CREATE` on top of `SPACE_MANAGEMENT`. The list endpoint offers templates
   only to those users, as the dialog does today.
   *Changed after review (2026-10-18):* a template is part of creating a space, so it needs exactly what creating one
-  needs (`SPACE_MANAGEMENT`), nothing more.
+  needs (`SPACE_MANAGEMENT`), nothing more. *Since the roles (2026-10-20):* creating a space, from a template or not,
+  is an admin's (`ADMINS`).
 - **The German and French locales** for the large template.
 - **The old `POST /api/app/spaces/:spaceId/schemas/template`** route, used only by the web template apply: removed once
   nothing calls it.

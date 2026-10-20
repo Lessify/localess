@@ -35,7 +35,7 @@ pnpm prettier:fix      # Format the whole repository
 pnpm test              # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
 pnpm test:scripts      # node:test suites for tools/scripts and packages/visual-editor-sync
 pnpm server:test       # Server vitest suite (real embedded Postgres, one database per file)
-pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
+pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, roles, locales)
 pnpm e2e               # Playwright end-to-end tests (apps/e2e): builds SPA + server, runs them on a fresh embedded Postgres
 pnpm e2e:run           # same, against the existing builds; `pnpm e2e:install` once to download Chromium
 pnpm e2e:smoke         # only the @smoke critical path (~30 s), against the existing builds
@@ -73,7 +73,7 @@ pnpm workspace monorepo (one root `package.json`, `pnpm-workspace.yaml` and `pnp
 apps/web/                  # @localess/web — Angular app (its own angular.json)
 apps/server/               # @localess/server — NestJS server, Drizzle migrations in apps/server/drizzle
 apps/e2e/                  # @localess/e2e — Playwright end-to-end tests against the built server + SPA
-packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, permissions, locales, extractContent; zod validators in @localess/shared/zod
+packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, roles, locales, extractContent; zod validators in @localess/shared/zod
 packages/ui/               # @localess/ui — Spartan/Helm components (source only), imported as @spartan-ng/helm/*
 packages/visual-editor-sync/ # sync-v1.js for customer sites in the Visual Editor, built into the web assets
 tools/scripts/             # repo tooling: version bump, version.json, locale flags generator
@@ -94,7 +94,7 @@ apps/web/src/app/
 │   ├── api/       # Runtime config, SSE change events, liveQuery, apiInterceptor
 │   ├── services/  # App API services used by several features or by a store
 │   ├── stores/    # 3 NgRx Signal stores (UserStore, SpaceStore, LocalSettingsStore)
-│   ├── guards/    # permissionGuard, spaceSelectionGuard, dirty-form guard
+│   ├── guards/    # roleGuard, spaceSelectionGuard, dirty-form guard
 │   └── error-handler/, title/, utils/
 ├── shared/        # Reusable UI only (@shared/*)
 │   ├── components/# Dialogs, table, paginator, tree, filter-toolbar, locale-icon, logo, etc. (toasts via NotificationService/Sonner)
@@ -112,14 +112,14 @@ apps/server/src/   # NestJS server: infra/ (config, database, storage, events, h
 ### State Management
 
 Three NgRx Signal stores initialized at app startup:
-- **`UserStore`**: Auth state, role, granular permissions (loaded from `/api/auth/me`)
+- **`UserStore`**: Auth state and the user's one role (loaded from `/api/auth/me`)
 - **`SpaceStore`**: Selected workspace, content hierarchy, schemas, documents
 - **`LocalSettingsStore`**: User preferences (persisted to localStorage)
 
 ### Routing & Guards
 
 - Root redirects to `/features`, authenticated via `authGuard()`
-- Feature routes use `permissionGuard(...permissions)` in `features-routing.module.ts`; the server enforces the same permissions with `@RequirePermission` on every App API route
+- Feature routes use `roleGuard(list)` in `features-routing.module.ts`; the server enforces the same role lists (`packages/shared/src/roles.ts`: `ANY_ROLE`, `TRANSLATORS`, `CONTENT_WRITERS`, `DEVELOPERS`, `ADMINS`) with `@RequireRole` on every App API route
 - All features are lazy-loaded
 
 ### Services Pattern
@@ -175,7 +175,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | API token types (public, preview, management), values, guards | [docs/auth-tokens.md](docs/auth-tokens.md) | Middleware, token management, public API |
 | Frontend architecture, routing, packages/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
-| User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
+| User roles (Admin, Developer, Editor, Translator, Viewer), the role lists, `@RequireRole`, route guards, `hasRole` | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management, any new route or button that changes data |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `apps/web/src/app/shared/components/`; read before adding or changing one |
 | **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [apps/server/README.md](apps/server/README.md) | Anything in `apps/server/`, or replacing a Firebase dependency |
