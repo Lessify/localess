@@ -1,7 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 import { choose, dialog, rowMenu } from './dialogs';
-import { ADMIN } from '../support/env';
 import { confirmDialog, expectToast } from './notifications';
 import { cellUnder } from './table';
 

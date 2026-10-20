@@ -3,7 +3,6 @@ import { choose, dialog, expectRowMenu } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { ResetPasswordPage } from '../pages/reset-password.page';
 import { Shell } from '../pages/shell.page';
-import { CSRF } from '../support/app-api';
 import { ADMIN } from '../support/env';
 import { expect, test, type TestUser, uniqueId } from '../support/fixtures';
 

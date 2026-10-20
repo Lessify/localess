@@ -53,7 +53,7 @@ test.describe('Schemas → edit ID and delete', () => {
     await api.createSchema(space.id, {
       name: uniqueId('Page'),
       type: 'ROOT',
-      fields: [{ name: 'cards', kind: 'SCHEMAS', schemas: [card] } as never],
+      fields: [{ name: 'cards', kind: 'SCHEMAS', schemas: [card] }],
     });
     const schemas = new SchemasPage(page);
     await schemas.goto(space.id);

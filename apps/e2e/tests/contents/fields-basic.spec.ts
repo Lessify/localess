@@ -117,7 +117,7 @@ test.describe('Contents → form: simple field kinds', () => {
   });
 
   test("open finding: a field's Default Value is stored on the schema but a new document does not get it", async ({ page, api, space }) => {
-    const schema = await pageSchema(api, space, [{ name: 'title', kind: 'TEXT', displayName: 'Title', defaultValue: 'Untitled' } as never]);
+    const schema = await pageSchema(api, space, [{ name: 'title', kind: 'TEXT', displayName: 'Title', defaultValue: 'Untitled' }]);
     const doc = await api.createDocument(space.id, { name: 'New', slug: 'new', schema: schema.name });
     const contents = new ContentsPage(page);
 

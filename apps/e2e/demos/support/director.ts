@@ -105,7 +105,7 @@ export class Director {
       if (value) {
         element.textContent = value;
         // Next frame, so a new caption fades in.
-        requestAnimationFrame(() => element!.classList.add('visible'));
+        requestAnimationFrame(() => element.classList.add('visible'));
       } else {
         element.classList.remove('visible');
       }
