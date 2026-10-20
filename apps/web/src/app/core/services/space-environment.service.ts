@@ -51,7 +51,7 @@ export class SpaceEnvironmentService {
     return this.http.delete<void>(`${this.base(spaceId)}/${environmentId}`);
   }
 
-  /** To `position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  /** To `position` in the space's order (0 the first; -1 or past the end, the last), the others shifting. */
   move(spaceId: string, environmentId: string, position: number): Observable<void> {
     return this.http.post<void>(`${this.base(spaceId)}/${environmentId}/move`, { position } satisfies SpaceEnvironmentMove);
   }

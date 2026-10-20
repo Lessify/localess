@@ -56,7 +56,7 @@ export class SpaceLocaleService {
     await this.spaceLocaleRepository.delete(spaceId, localeId);
   }
 
-  /** To `move.position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  /** To `move.position` in the space's order (0 the first; -1 or past the end, the last), the others shifting. */
   async move(spaceId: string, localeId: string, move: SpaceLocaleMove): Promise<void> {
     await this.requireExists(spaceId);
     if (!(await this.spaceLocaleRepository.findOne(spaceId, localeId))) throw new NotFoundException('Space locale not found');

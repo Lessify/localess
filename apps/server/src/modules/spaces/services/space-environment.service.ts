@@ -50,7 +50,7 @@ export class SpaceEnvironmentService {
     await this.spaceEnvironmentRepository.delete(spaceId, environmentId);
   }
 
-  /** To `move.position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  /** To `move.position` in the space's order (0 the first; -1 or past the end, the last), the others shifting. */
   async move(spaceId: string, environmentId: string, move: SpaceEnvironmentMove): Promise<void> {
     await this.requireEnvironment(spaceId, environmentId);
     await this.spaceEnvironmentRepository.move(spaceId, environmentId, move.position);

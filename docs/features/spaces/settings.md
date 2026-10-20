@@ -69,9 +69,9 @@ event, so a change answers nothing the screen reads. The default is the space's 
   (answers the `Space`; served by `SpaceController.setDefaultLocale`, apart from `PATCH /spaces/:s`: its own process)
 - `move(element, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: moves the locale one place in the space's order
   (its index read from `SpaceStore`, which holds all of them): `POST /api/app/spaces/:s/locales/:locale/move {position}`, 204. The
-  server takes the locale to `position` (0 the first; past the end, the last), shifts the others and writes only the rows that change
+  server takes the locale to `position` (0 the first; -1, or past the end, the last), shifts the others and writes only the rows that change
   (a swap: two); already there, nothing is written and no event is sent. The same call serves a drag and drop, or Move to First / Last
-  (`0` / any large number)
+  (`0` / `-1`)
 
 **Services:** `SpaceLocaleService` (this feature's, `settings/locales/space-locale.service.ts`: the page, add, move, delete), `SpaceService` (`setDefaultLocale`), `LocaleService` (translate support), `NotificationService`, `HlmDialogService`, `SpaceStore`
 
@@ -226,7 +226,7 @@ event. `GET …/environments/names` answers every environment as `IdNameUrl[]` (
   (`PUT …/environments/:id`, name and URL together); both answer the `SpaceEnvironment`
 - `openDeleteDialog(environment)` — `ConfirmationDialogComponent`, then `SpaceEnvironmentService.remove()` (`DELETE …/environments/:id`, 204)
 - `move(environment, ±1)` / `canMove()` — **Move Up / Move Down** in the row menu: moves the environment one place in the
-  space's order: `POST …/environments/:id/move {position}`, 204, as for locales (the others shift, past the end is the last, only the
+  space's order: `POST …/environments/:id/move {position}`, 204, as for locales (the others shift, -1 or past the end is the last, only the
   rows that change are written)
 
 The space's order and the default come from `SpaceStore.environments()`: every environment as `IdNameUrl`

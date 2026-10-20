@@ -8,8 +8,8 @@ import { SPACE_ENVIRONMENT_SORT_FIELDS, SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIE
 
 const zName = z.string().trim().min(1).max(200);
 
-/** A place in a space's order of locales or environments: 0 the first; any larger number, the last. */
-const zPosition = z.int().min(0);
+/** A place in a space's order of locales or environments: 0 the first; -1, or any number past the end, the last. */
+const zPosition = z.int().min(-1);
 
 /** `POST /api/app/spaces`. */
 export const zSpaceCreate = z.strictObject({ name: zName, template: z.enum(SPACE_TEMPLATE_IDS).optional() });

@@ -192,7 +192,7 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await manager.put(`${base}/${twin.id}`, { name: 'Twin' })).statusCode).toBe(400);
       expect((await manager.patch(`${base}/${twin.id}`, { name: 'Twin' })).statusCode).toBe(404);
 
-      // A move takes the environment to a place, the others shifting; past the end is the last.
+      // A move takes the environment to a place, the others shifting; -1, or past the end, is the last.
       const moved = await manager.post(`${base}/${staging.id}/move`, { position: 0 });
       expect(moved.statusCode).toBe(204);
       expect(moved.body).toBe('');
@@ -206,13 +206,17 @@ describe('app API: spaces, locales, instance label', () => {
       expect(await names()).toEqual(['Preview', 'Twin', 'Staging']);
       await manager.post(`${base}/${twin.id}/move`, { position: 2 });
       expect(await names()).toEqual(['Preview', 'Staging', 'Twin']);
+      await manager.post(`${base}/${preview.id}/move`, { position: -1 });
+      expect(await names()).toEqual(['Staging', 'Twin', 'Preview']);
+      await manager.post(`${base}/${preview.id}/move`, { position: 0 });
+      expect(await names()).toEqual(['Preview', 'Staging', 'Twin']);
       await manager.post(`${base}/${staging.id}/move`, { position: 0 });
       expect(await names()).toEqual(['Staging', 'Preview', 'Twin']);
       // Already there: nothing written, the space not touched.
       const touched = (await reader.get(`/api/app/spaces/${spaceId}`)).json().updatedAt;
       expect((await manager.post(`${base}/${staging.id}/move`, { position: 0 })).statusCode).toBe(204);
       expect((await reader.get(`/api/app/spaces/${spaceId}`)).json().updatedAt).toBe(touched);
-      for (const body of [{}, { position: -1 }, { position: 1.5 }, { position: '1' }]) {
+      for (const body of [{}, { position: -2 }, { position: 1.5 }, { position: '1' }]) {
         expect((await manager.post(`${base}/${staging.id}/move`, body)).statusCode, JSON.stringify(body)).toBe(400);
       }
       expect((await manager.post(`${base}/${newUuid()}/move`, { position: 0 })).statusCode).toBe(404);
@@ -307,7 +311,7 @@ describe('app API: spaces, locales, instance label', () => {
       expect((await reader.post(`${base}/locales`, { localeId: 'de' })).statusCode).toBe(403);
     });
 
-    it('moves a locale to a place, the others shifting; past the end is the last', async () => {
+    it('moves a locale to a place, the others shifting; -1, or past the end, is the last', async () => {
       const base = `/api/app/spaces/${spaceId}`;
       const order = async () => localesOf((await reader.get(base)).json()).map(it => it.id);
       await manager.post(`${base}/locales`, { localeId: 'de' });
@@ -327,6 +331,10 @@ describe('app API: spaces, locales, instance label', () => {
       expect(await order()).toEqual(['fr', 'it', 'en', 'de']);
       await manager.post(`${base}/locales/fr/move`, { position: 99999 });
       expect(await order()).toEqual(['it', 'en', 'de', 'fr']);
+      await manager.post(`${base}/locales/it/move`, { position: -1 });
+      expect(await order()).toEqual(['en', 'de', 'fr', 'it']);
+      await manager.post(`${base}/locales/it/move`, { position: 0 });
+      expect(await order()).toEqual(['it', 'en', 'de', 'fr']);
       // A removal leaves a gap in the positions; the next move closes it.
       await manager.delete(`${base}/locales/de`);
       await manager.post(`${base}/locales/fr/move`, { position: 0 });
@@ -336,7 +344,7 @@ describe('app API: spaces, locales, instance label', () => {
         ['it', 1],
         ['en', 2],
       ]);
-      expect((await manager.post(`${base}/locales/fr/move`, { position: -1 })).statusCode).toBe(400);
+      expect((await manager.post(`${base}/locales/fr/move`, { position: -2 })).statusCode).toBe(400);
       expect((await manager.post(`${base}/locales/es/move`, { position: 0 })).statusCode).toBe(404);
       expect((await reader.post(`${base}/locales/fr/move`, { position: 1 })).statusCode).toBe(403);
       for (const id of ['fr', 'it']) await manager.delete(`${base}/locales/${id}`);

@@ -31,7 +31,7 @@ export class SpaceLocaleService {
     return this.http.post<SpaceLocale>(this.base(spaceId), { localeId: locale.id } satisfies SpaceLocaleCreate);
   }
 
-  /** To `position` in the space's order (0 the first; past the end, the last), the others shifting. */
+  /** To `position` in the space's order (0 the first; -1 or past the end, the last), the others shifting. */
   move(spaceId: string, locale: Locale, position: number): Observable<void> {
     return this.http.post<void>(`${this.base(spaceId)}/${locale.id}/move`, { position } satisfies SpaceLocaleMove);
   }

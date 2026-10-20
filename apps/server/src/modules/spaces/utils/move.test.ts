@@ -30,17 +30,20 @@ describe('moveTo', () => {
     ]);
   });
 
-  it('past the end is the last', () => {
-    expect(moveTo(list('a', 'b', 'c'), 'a', 99999)).toEqual([
-      { id: 'b', position: 0 },
-      { id: 'c', position: 1 },
-      { id: 'a', position: 2 },
-    ]);
+  it('-1, or past the end, is the last', () => {
+    for (const position of [-1, 99999]) {
+      expect(moveTo(list('a', 'b', 'c'), 'a', position)).toEqual([
+        { id: 'b', position: 0 },
+        { id: 'c', position: 1 },
+        { id: 'a', position: 2 },
+      ]);
+    }
   });
 
   it('nothing changes when the row is already there', () => {
     expect(moveTo(list('a', 'b', 'c'), 'b', 1)).toEqual([]);
     expect(moveTo(list('a', 'b', 'c'), 'c', 99999)).toEqual([]);
+    expect(moveTo(list('a', 'b', 'c'), 'c', -1)).toEqual([]);
   });
 
   it('closes the gaps a removal left', () => {
