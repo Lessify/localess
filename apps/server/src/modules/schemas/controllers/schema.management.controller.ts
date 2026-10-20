@@ -1,6 +1,5 @@
 import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { SchemaExport } from '@localess/shared';
 import { zSchemaPushSchema } from '@localess/shared/zod';
 import { ManagementToken } from '../../../auth/token-auth.decorators.js';
 import { Params } from '../../../infra/http/v1/v1-request.js';
@@ -54,7 +53,7 @@ export class SchemaManagementController {
       return;
     }
     const { dryRun, type, schemas: pushed } = body.data;
-    const plan = await this.schemaService.planPush(spaceId, pushed as SchemaExport[], type);
+    const plan = await this.schemaService.planPush(spaceId, pushed, type);
     if (!plan) {
       sendV1Error(reply, 404, 'not-found', 'Not found');
       return;

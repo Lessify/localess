@@ -347,7 +347,7 @@ describe('management API', () => {
       ],
       ['an unknown route (404)', { method: 'GET', url: `/api/manage/v1/spaces/${S1}/nothing-here` }],
     ] as const)('marks errors answered before the guard no-store too: %s', async (_, request) => {
-      const response = await t.request({ ...request, headers: { ...bearer(), ...('headers' in request ? request.headers : {}) } } as never);
+      const response = await t.request({ ...request, headers: { ...bearer(), ...('headers' in request ? request.headers : {}) } });
       expect(response.statusCode).toBeGreaterThanOrEqual(400);
       expect(response.headers['cache-control']).toBe('no-store');
     });

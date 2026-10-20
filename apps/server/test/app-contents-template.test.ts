@@ -30,7 +30,7 @@ async function counts(t: TestApp) {
 async function cdn(t: TestApp, url: string) {
   const first = await t.request({ method: 'GET', url });
   if (first.statusCode !== 302) return first;
-  return t.request({ method: 'GET', url: first.headers.location as string });
+  return t.request({ method: 'GET', url: first.headers.location });
 }
 
 describe('app API: the contents template (contents_fields)', () => {
@@ -61,12 +61,14 @@ describe('app API: the contents template (contents_fields)', () => {
     const base = `/api/app/spaces/${space.id}/assets`;
     const root = (await admin.get(`${base}?parentId=`)).json();
     expect(root.map((it: { name: string }) => it.name)).toEqual(['Media']);
-    const files = (await admin.get(`${base}?parentId=${root[0].id}`)).json() as {
-      id: string;
-      name: string;
-      extension: string;
-      metadata?: Record<string, unknown>;
-    }[];
+    const files = (await admin.get(`${base}?parentId=${root[0].id}`)).json<
+      {
+        id: string;
+        name: string;
+        extension: string;
+        metadata?: Record<string, unknown>;
+      }[]
+    >();
     expect(files.map(it => `${it.name}${it.extension}`).sort()).toEqual(['blue.jpg', 'readme.txt', 'red.png']);
     // Read as an upload's would be (exiftool, then sharp): the PNG and the JPEG path both.
     expect(files.find(it => it.name === 'red')?.metadata).toEqual({
@@ -89,7 +91,7 @@ describe('app API: the contents template (contents_fields)', () => {
     expect((await storedAssetDirs(t, space.id)).sort()).toEqual(files.map(it => it.id).sort());
 
     // Contents: the tree, all drafts.
-    const all = (await admin.get(`/api/app/spaces/${space.id}/contents`)).json() as { id: string; name: string; publishedAt?: string }[];
+    const all = (await admin.get(`/api/app/spaces/${space.id}/contents`)).json<{ id: string; name: string; publishedAt?: string }[]>();
     expect(all.map(it => it.name).sort()).toEqual(
       ['All fields (plain)', 'All fields (translated)', 'Alpha', 'Beta', 'Fields', 'Gamma', 'Nested page', 'Targets'].sort(),
     );

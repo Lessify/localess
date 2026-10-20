@@ -45,8 +45,12 @@ const assets: TemplateAsset[] = [
   ...Array.from({ length: FILES }, (_, i) => bulkFile(i + 1)),
 ];
 
-const field = (name: string, displayName: string, imagesOnly: boolean): SchemaField =>
-  ({ name, kind: SchemaFieldKind.ASSETS, displayName, ...(imagesOnly ? { fileType: AssetFileType.IMAGE } : {}) }) as SchemaField;
+const field = (name: string, displayName: string, imagesOnly: boolean): SchemaField => ({
+  name,
+  kind: SchemaFieldKind.ASSETS,
+  displayName,
+  ...(imagesOnly ? { fileType: AssetFileType.IMAGE } : {}),
+});
 
 export const ASSETS_LARGE_TEMPLATE: SpaceTemplate = {
   id: 'assets_large',

@@ -85,7 +85,7 @@ export class ContentDeliveryService {
     const resolved: Record<string, ContentDocumentApi> = {};
     for (const id of valid) {
       const document = found.get(id)?.document;
-      if (document) resolved[id] = stripStorageIds(document) as ContentDocumentApi;
+      if (document) resolved[id] = stripStorageIds(document);
     }
     return resolved;
   }

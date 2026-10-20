@@ -36,7 +36,7 @@ const fieldsOf = (name: string): SchemaField[] => {
 const id = (key: string) => `id-${key}`;
 const document = (key: string): ContentData => {
   const content = template.contents!.find(it => it.key === key)!;
-  return { _id: id(key), _schema: content.schema!, ...content.data!(id) } as ContentData;
+  return { _id: id(key), _schema: content.schema!, ...content.data!(id) };
 };
 /** Every block `_id` in a value, depth first. */
 const blockIds = (value: unknown): string[] => {

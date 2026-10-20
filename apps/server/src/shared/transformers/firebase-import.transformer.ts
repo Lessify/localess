@@ -13,7 +13,7 @@ export const toFirebaseImport = (entity: FirebaseImportEntity): FirebaseImport =
     sourceSpaceId: entity.sourceSpaceId,
     sourceSpaceName: entity.sourceSpaceName,
     ...(entity.spaceId ? { spaceId: entity.spaceId } : {}),
-    status: entity.status as FirebaseImport['status'],
+    status: entity.status,
     stages: entity.stages,
     ...(failed ? { error: { stage: failed.stage, message: failed.error ?? '' } } : {}),
     startedBy: entity.startedBy,

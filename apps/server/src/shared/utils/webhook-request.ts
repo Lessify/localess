@@ -144,7 +144,7 @@ type LookupCallback = (err: NodeJS.ErrnoException | null, address: string | Look
 export function guardedLookup(hostname: string, options: { all?: boolean; family?: number }, callback: LookupCallback): void {
   dnsLookup(hostname, { all: true, family: options.family ?? 0 }, (err, addresses) => {
     if (err) return callback(err, []);
-    const list = addresses as LookupAddress[];
+    const list = addresses;
     if (list.length === 0 || list.some(entry => isBlockedAddress(entry.address))) {
       const error: NodeJS.ErrnoException = new Error(`Webhook URL is not allowed: '${hostname}' resolves to a private address`);
       error.code = 'EBLOCKEDADDRESS';

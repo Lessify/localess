@@ -208,7 +208,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect(await events()).toEqual(['translation.published']);
 
       const redirect = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/translations/de?token=${TOKEN}` });
-      const published = await t.request({ method: 'GET', url: redirect.headers.location as string });
+      const published = await t.request({ method: 'GET', url: redirect.headers.location });
       expect(published.json()).toEqual({ 'hero.title': 'Welcome', taken: 'genommen' });
     });
 

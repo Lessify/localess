@@ -1,4 +1,4 @@
-import { type ContentValue, SchemaFieldKind, type SchemaField, SchemaType } from '@localess/shared';
+import { SchemaFieldKind, type SchemaField, SchemaType } from '@localess/shared';
 import type { SpaceTemplate, TemplateContent } from './space-template.model.js';
 
 /*
@@ -42,8 +42,8 @@ function documents(parent: string | undefined, items: { slug: string; name: stri
       data: id => ({
         title: name,
         body: `Body of ${name}`,
-        ...(previous ? { related: { kind: 'REFERENCE', uri: id(previous) } as ContentValue } : {}),
-        link: { kind: 'LINK', type: 'url', target: '_blank', uri: `https://example.com/${key}` } as ContentValue,
+        ...(previous ? { related: { kind: 'REFERENCE', uri: id(previous) } } : {}),
+        link: { kind: 'LINK', type: 'url', target: '_blank', uri: `https://example.com/${key}` },
       }),
     };
   });

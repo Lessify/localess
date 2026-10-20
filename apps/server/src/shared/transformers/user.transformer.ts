@@ -34,7 +34,7 @@ export function toUser(user: UserEntity, logins: string[] = []): UserDto {
     ...(user.displayName ? { displayName: user.displayName } : {}),
     ...(user.photoUrl ? { photoURL: user.photoUrl } : {}),
     disabled: user.disabled,
-    ...(user.role ? { role: user.role as UserRole } : {}),
+    ...(user.role ? { role: user.role } : {}),
     ...(user.role === 'CUSTOM' ? { permissions: user.permissions, lock: user.lock } : {}),
     providers: logins.map(it => PROVIDER_IDS[it] ?? it),
     createdAt: user.createdAt.toISOString(),

@@ -396,7 +396,7 @@ describe('app API: contents', () => {
     const cdn = (id: string, query = '') => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/contents/${id}?token=${TOKEN}${query}` });
     const cdnFollow = async (id: string, query = '') => {
       const redirect = await cdn(id, query);
-      return t.request({ method: 'GET', url: redirect.headers.location as string });
+      return t.request({ method: 'GET', url: redirect.headers.location });
     };
 
     it('publishes a snapshot per locale that the public API serves, moving cv', async () => {

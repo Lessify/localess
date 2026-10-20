@@ -10,7 +10,7 @@ import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWith
 async function cdn(t: TestApp, url: string) {
   const first = await t.request({ method: 'GET', url });
   if (first.statusCode !== 302) return first;
-  return t.request({ method: 'GET', url: first.headers.location as string });
+  return t.request({ method: 'GET', url: first.headers.location });
 }
 
 describe('app API: the large contents template (contents_large)', () => {

@@ -41,7 +41,7 @@ describe('nested delete: nothing is left behind', () => {
   const cdn = async (url: string) => {
     const first = await t.request({ method: 'GET', url });
     if (first.statusCode !== 302) return first;
-    return t.request({ method: 'GET', url: first.headers.location as string });
+    return t.request({ method: 'GET', url: first.headers.location });
   };
 
   beforeAll(async () => {

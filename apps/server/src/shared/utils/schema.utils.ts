@@ -1,8 +1,6 @@
 import {
   Schema,
-  SchemaComponent,
   SchemaComponentExport,
-  SchemaEnum,
   SchemaEnumExport,
   SchemaExport,
   SchemaField,
@@ -111,21 +109,19 @@ export interface SchemaPushPlan {
  */
 export function docSchemaToExport(id: string, schema: Schema): SchemaExport {
   if (schema.type === SchemaType.ENUM) {
-    const enumSchema = schema as SchemaEnum;
-    const out: SchemaEnumExport = { id, type: enumSchema.type };
-    if (enumSchema.displayName) out.displayName = enumSchema.displayName;
-    if (enumSchema.description) out.description = enumSchema.description;
-    if (enumSchema.labels) out.labels = enumSchema.labels;
-    if (enumSchema.values) out.values = enumSchema.values;
+    const out: SchemaEnumExport = { id, type: schema.type };
+    if (schema.displayName) out.displayName = schema.displayName;
+    if (schema.description) out.description = schema.description;
+    if (schema.labels) out.labels = schema.labels;
+    if (schema.values) out.values = schema.values;
     return out;
   }
-  const component = schema as SchemaComponent;
-  const out: SchemaComponentExport = { id, type: component.type };
-  if (component.displayName) out.displayName = component.displayName;
-  if (component.description) out.description = component.description;
-  if (component.labels) out.labels = component.labels;
-  if (component.previewField) out.previewField = component.previewField;
-  if (component.fields) out.fields = component.fields;
+  const out: SchemaComponentExport = { id, type: schema.type };
+  if (schema.displayName) out.displayName = schema.displayName;
+  if (schema.description) out.description = schema.description;
+  if (schema.labels) out.labels = schema.labels;
+  if (schema.previewField) out.previewField = schema.previewField;
+  if (schema.fields) out.fields = schema.fields;
   return out;
 }
 
@@ -147,15 +143,11 @@ export function isSchemaChanged(existing: Schema, imported: SchemaExport): boole
     (existing.type === SchemaType.ROOT || existing.type === SchemaType.NODE) &&
     (imported.type === SchemaType.ROOT || imported.type === SchemaType.NODE)
   ) {
-    const e = existing as SchemaComponent;
-    const i = imported as SchemaComponentExport;
-    if ((e.previewField ?? undefined) !== (i.previewField ?? undefined)) return true;
-    if (stableStringify(e.fields ?? []) !== stableStringify(i.fields ?? [])) return true;
+    if ((existing.previewField ?? undefined) !== (imported.previewField ?? undefined)) return true;
+    if (stableStringify(existing.fields ?? []) !== stableStringify(imported.fields ?? [])) return true;
   }
   if (existing.type === SchemaType.ENUM && imported.type === SchemaType.ENUM) {
-    const e = existing as SchemaEnum;
-    const i = imported as SchemaEnumExport;
-    if (stableStringify(e.values ?? []) !== stableStringify(i.values ?? [])) return true;
+    if (stableStringify(existing.values ?? []) !== stableStringify(imported.values ?? [])) return true;
   }
   return false;
 }
@@ -186,7 +178,7 @@ export function planSchemaPush(existing: Map<string, Schema>, incoming: SchemaEx
     }
     for (const schema of incoming) {
       if (schema.type === SchemaType.ENUM) continue;
-      for (const field of (schema as SchemaComponentExport).fields ?? []) {
+      for (const field of schema.fields ?? []) {
         for (const name of deletes.filter(it => fieldRefersTo(field, it))) {
           errors.push(`Cannot delete schema '${name}': still referenced by '${schema.id}' field '${field.name}'`);
         }

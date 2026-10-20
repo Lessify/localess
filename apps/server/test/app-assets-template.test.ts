@@ -44,14 +44,16 @@ describe('app API: the large assets template (assets_large)', () => {
     const space = response.json();
 
     const base = `/api/app/spaces/${space.id}/assets`;
-    const root = (await admin.get(`${base}?parentId=`)).json() as { id: string; name: string }[];
+    const root = (await admin.get(`${base}?parentId=`)).json<{ id: string; name: string }[]>();
     expect(root.map(it => it.name)).toEqual(['Bulk', 'Empty', 'Nested']);
-    const bulk = (await admin.get(`${base}?parentId=${root[0].id}`)).json() as {
-      name: string;
-      type: string;
-      size: number;
-      metadata?: Record<string, unknown>;
-    }[];
+    const bulk = (await admin.get(`${base}?parentId=${root[0].id}`)).json<
+      {
+        name: string;
+        type: string;
+        size: number;
+        metadata?: Record<string, unknown>;
+      }[]
+    >();
     expect(bulk).toHaveLength(1_000);
     expect(bulk.filter(it => it.type === 'image/png')).toHaveLength(100);
     expect(bulk.find(it => it.name === 'file-0010')?.metadata).toMatchObject({ width: 16, height: 16 });

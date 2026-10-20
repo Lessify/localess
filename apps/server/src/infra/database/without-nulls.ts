@@ -5,7 +5,7 @@ export function withoutNulls<T extends object>(row: T): T {
 
 /** `withoutNulls` for a picked set of columns, typed: each one optional and never `null`. */
 export function present<T extends object>(columns: T): { [K in keyof T]?: NonNullable<T[K]> } {
-  return withoutNulls(columns) as { [K in keyof T]?: NonNullable<T[K]> };
+  return withoutNulls(columns);
 }
 
 /*

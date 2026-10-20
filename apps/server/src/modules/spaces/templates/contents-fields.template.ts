@@ -59,10 +59,13 @@ function fieldsSchema(name: string, translatable: boolean, card: string): SpaceT
   return { id: name, type: SchemaType.ROOT, displayName: name, previewField: 'text', fields };
 }
 
-const title = (translatable: boolean): SchemaField =>
-  ({ name: 'title', kind: SchemaFieldKind.TEXT, displayName: 'Title', ...(translatable ? { translatable: true } : {}) }) as SchemaField;
-const child = (next: string): SchemaField =>
-  ({ name: 'child', kind: SchemaFieldKind.SCHEMA, displayName: 'Child', schemas: [next] }) as SchemaField;
+const title = (translatable: boolean): SchemaField => ({
+  name: 'title',
+  kind: SchemaFieldKind.TEXT,
+  displayName: 'Title',
+  ...(translatable ? { translatable: true } : {}),
+});
+const child = (next: string): SchemaField => ({ name: 'child', kind: SchemaFieldKind.SCHEMA, displayName: 'Child', schemas: [next] });
 
 const SCHEMAS: SpaceTemplateSchema[] = [
   {
@@ -105,9 +108,9 @@ function localised(field: string, value: (locale: Locale, i: number) => ContentV
 
 const richText = (text: string): ContentValue =>
   ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] }) as unknown as ContentValue;
-const asset = (uri: string): ContentValue => ({ kind: 'ASSET', uri }) as ContentValue;
-const reference = (uri: string): ContentValue => ({ kind: 'REFERENCE', uri }) as ContentValue;
-const block = (schema: string, values: Values): ContentValue => ({ _id: newUuid(), _schema: schema, ...values }) as ContentValue;
+const asset = (uri: string): ContentValue => ({ kind: 'ASSET', uri });
+const reference = (uri: string): ContentValue => ({ kind: 'REFERENCE', uri });
+const block = (schema: string, values: Values): ContentValue => ({ _id: newUuid(), _schema: schema, ...values });
 
 function plainData(id: (key: string) => string): Values {
   return {
@@ -122,7 +125,7 @@ function plainData(id: (key: string) => string): Values {
     boolean: true,
     option: 'green',
     options: ['red', 'blue'],
-    link: { kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com/plain' } as ContentValue,
+    link: { kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com/plain' },
     reference: reference(id('alpha')),
     references: [reference(id('alpha')), reference(id('beta'))] as ContentValue,
     asset: asset(id('red')),
@@ -151,8 +154,8 @@ function translatedData(id: (key: string) => string): Values {
     ...localised('options', pick([['red'], ['red', 'green'], ['green', 'blue']])),
     ...localised('link', l =>
       l === 'en'
-        ? ({ kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com/en' } as ContentValue)
-        : ({ kind: 'LINK', type: 'content', target: '_self', uri: id(l === 'de' ? 'beta' : 'gamma') } as ContentValue),
+        ? { kind: 'LINK', type: 'url', target: '_blank', uri: 'https://example.com/en' }
+        : { kind: 'LINK', type: 'content', target: '_self', uri: id(l === 'de' ? 'beta' : 'gamma') },
     ),
     ...localised('asset', l => asset(id(l === 'en' ? 'red' : 'blue'))),
     ...localised(

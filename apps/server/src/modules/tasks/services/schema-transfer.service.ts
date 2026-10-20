@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { SchemaExport, TaskExportMetadata } from '@localess/shared';
+import { TaskExportMetadata } from '@localess/shared';
 import { zSchemaExportArraySchema } from '@localess/shared/zod';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
@@ -42,7 +42,7 @@ export class SchemaTransferService {
     if (!parse.success) return this.importFileService.invalid(task, 'SCHEMA', parse.error);
     await this.taskLogService.log(task, 'INFO', `valid=${parse.data.length}`);
     const rows = await this.schemaTransferRepository.findAll(task.spaceId);
-    const plan = planSchemaPush(schemasByName(rows), parse.data as SchemaExport[], 'upsert');
+    const plan = planSchemaPush(schemasByName(rows), parse.data, 'upsert');
     const errors = plan.errors.length ? plan.errors : await this.schemaTransferRepository.applyImport(task.spaceId, plan);
     if (errors.length) {
       for (const error of errors) await this.taskLogService.log(task, 'WARN', error);
