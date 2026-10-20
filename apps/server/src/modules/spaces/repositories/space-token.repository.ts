@@ -16,7 +16,7 @@ export type TokenValues = Pick<TokenEntity, 'type' | 'token' | 'tokenHash' | 'hi
  * 5-minute token cache on every instance.
  */
 @Injectable()
-export class TokenRepository {
+export class SpaceTokenRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,

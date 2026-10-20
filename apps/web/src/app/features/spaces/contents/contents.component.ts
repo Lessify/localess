@@ -18,8 +18,8 @@ import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { breadcrumbs } from '@core/utils/folder-tree';
@@ -133,7 +133,7 @@ export class ContentsComponent implements AfterViewInit {
   private readonly router = inject(Router);
   private readonly schemasService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
-  private readonly tokenService = inject(TokenService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(HlmDialogService);
 
@@ -479,7 +479,7 @@ export class ContentsComponent implements AfterViewInit {
 
   /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
   private withApiToken(types: TokenType[], open: (token: string) => void): void {
-    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+    this.spaceTokenService.firstValue(this.spaceId(), types).subscribe({
       next: token => {
         if (token) open(token);
         else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);

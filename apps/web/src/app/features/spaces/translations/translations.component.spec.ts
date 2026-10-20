@@ -5,7 +5,7 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale, Space, Token, TokenType, Translation } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { SpaceStore } from '@core/stores/space.store';
@@ -64,7 +64,7 @@ describe('TranslationsComponent', () => {
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
-        { provide: TokenService, useValue: { firstValue } },
+        { provide: SpaceTokenService, useValue: { firstValue } },
         {
           provide: SpaceStore,
           useValue: {

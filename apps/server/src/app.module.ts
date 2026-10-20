@@ -15,7 +15,6 @@ import { PluginModule } from './modules/plugins/plugin.module.js';
 import { SchemaModule } from './modules/schemas/schema.module.js';
 import { SpaceModule } from './modules/spaces/space.module.js';
 import { TaskModule } from './modules/tasks/task.module.js';
-import { TokenModule } from './modules/tokens/token.module.js';
 import { TranslationModule } from './modules/translations/translation.module.js';
 import { UserModule } from './modules/users/user.module.js';
 import { WebhookModule } from './modules/webhooks/webhook.module.js';
@@ -42,7 +41,6 @@ export class AppModule {
         ContentModule,
         TranslationModule,
         AssetModule,
-        TokenModule,
         TaskModule,
         FirebaseImportModule,
         PluginModule,

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Space, Token, TokenType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -39,7 +39,7 @@ describe('TokensComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TokenService, useValue: { findAll, create, update, delete: deleteToken, regenerate } },
+        { provide: SpaceTokenService, useValue: { findAll, create, update, remove: deleteToken, regenerate } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },

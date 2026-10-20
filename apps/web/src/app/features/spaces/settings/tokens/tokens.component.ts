@@ -3,7 +3,7 @@ import { DatePipe, DOCUMENT } from '@angular/common';
 import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Token, TokenType } from '@localess/shared';
@@ -71,7 +71,7 @@ import { TokenSecretDialogComponent, TokenSecretDialogContext } from './token-se
   ],
 })
 export class TokensComponent implements AfterViewInit {
-  private readonly tokenService = inject(TokenService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -97,7 +97,7 @@ export class TokensComponent implements AfterViewInit {
     toObservable(this.spaceStore.selectedSpace)
       .pipe(
         filter(it => it !== undefined), // Skip initial data
-        switchMap(it => this.tokenService.findAll(it!.id)),
+        switchMap(it => this.spaceTokenService.findAll(it!.id)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
@@ -126,7 +126,7 @@ export class TokensComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.tokenService.create(spaceId!, it)),
+        switchMap(it => this.spaceTokenService.create(spaceId!, it)),
       )
       .subscribe({
         next: token => {
@@ -154,7 +154,7 @@ export class TokensComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.tokenService.update(spaceId!, element.id, { name: it.name, cacheTtl: it.cacheTtl })),
+        switchMap(it => this.spaceTokenService.update(spaceId!, element.id, { name: it.name, cacheTtl: it.cacheTtl })),
       )
       .subscribe({
         next: () => {
@@ -181,7 +181,7 @@ export class TokensComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.tokenService.regenerate(spaceId!, element)),
+        switchMap(() => this.spaceTokenService.regenerate(spaceId!, element)),
       )
       .subscribe({
         next: token => {
@@ -208,7 +208,7 @@ export class TokensComponent implements AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.tokenService.delete(spaceId!, element.id)),
+        switchMap(() => this.spaceTokenService.remove(spaceId!, element.id)),
       )
       .subscribe({
         next: () => {

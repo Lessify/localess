@@ -46,10 +46,11 @@ export type {
   SpaceLocaleMove,
   SpaceLocalePageable,
   SpacePageable,
+  SpaceTokenCreate,
+  SpaceTokenUpdate,
   SpaceUpdate,
 } from './models/space.zod.js';
 export type { TaskCreate, TaskImportCreate, TaskPageable } from './models/task.zod.js';
-export type { TokenCreate, TokenUpdate } from './models/token.zod.js';
 export type {
   TranslationCreate,
   TranslationLocaleUpdate,

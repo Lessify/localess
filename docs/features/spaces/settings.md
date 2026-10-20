@@ -189,11 +189,11 @@ only its "I've copied it" button closes it.
 
 - `openAddDialog()` / `openEditDialog(element)` — open `TokenDialogComponent`; edit sends the name and cache TTL only
 - `openRegenerateDialog(element)` — confirmation that every client using the current token loses access, then
-  `TokenService.regenerate()`: same id, type and name under a new value (shown once for management tokens)
+  `SpaceTokenService.regenerate()`: same id, type and name under a new value (shown once for management tokens)
 - `openDeleteDialog(element)` — confirmation dialog then deletes the token
 - `copied()` — feedback when a public or preview token value is copied (management tokens have no copy button)
 
-**Services:** `TokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
+**Services:** `SpaceTokenService`, `NotificationService`, `HlmDialogService`, `SpaceStore`
 
 ### TokenDialogComponent
 
@@ -279,7 +279,7 @@ in this component.
 | `SpaceLocaleService`  | The space's locales: page, add, move, delete (`SpaceLocaleController`; in `settings/locales/`) |
 | `SpaceEnvironmentService` | The space's Visual Editor environments: page, names, add, update, delete, move (`SpaceEnvironmentController`) |
 | `LocaleService`       | The locale catalog (`LocaleController`) and what the translation provider supports |
-| `TokenService`        | CRUD for API tokens                          |
+| `SpaceTokenService`   | CRUD for API tokens                          |
 | `TranslationService`  | Delete all translations (Danger Zone)        |
 | `NotificationService` | Snackbar feedback                            |
 | `SpaceStore`          | Read selected space data                     |

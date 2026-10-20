@@ -18,7 +18,7 @@ import {
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { computed, signal } from '@angular/core';
@@ -92,7 +92,7 @@ describe('EditDocumentComponent', () => {
       providers: [
         { provide: ContentService, useValue: { publish, unpublish, updateDocumentData } },
         { provide: TranslateService, useValue: { translateBatch } },
-        { provide: TokenService, useValue: { firstValue } },
+        { provide: SpaceTokenService, useValue: { firstValue } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: PlatformService, useValue: { isActionSave } },

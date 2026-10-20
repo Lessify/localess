@@ -6,11 +6,11 @@ import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { Token, TokenType } from '@localess/shared';
-import { TokenService } from './token.service';
+import { SpaceTokenService } from './space-token.service';
 
 const BASE = '/api/app/spaces/space-1/tokens';
 
-describe('TokenService', () => {
+describe('SpaceTokenService', () => {
   let http: HttpTestingController;
   let events: Subject<ChangeEvent>;
 
@@ -20,7 +20,7 @@ describe('TokenService', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
     });
     http = TestBed.inject(HttpTestingController);
-    return TestBed.inject(TokenService);
+    return TestBed.inject(SpaceTokenService);
   }
 
   afterEach(() => {
@@ -124,9 +124,9 @@ describe('TokenService', () => {
     expect((await result).id).toBe('t2');
   });
 
-  it('delete() deletes the token', async () => {
+  it('remove() deletes the token', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', 't1'));
+    const done = firstValueFrom(service.remove('space-1', 't1'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/t1` }).flush(null);
     await done;
   });

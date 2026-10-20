@@ -48,8 +48,9 @@ src/
                 password reset, the guard and decorators, ApiTokenModule (v1 token check)
   shared/       SharedModule (global): mail, webhook delivery; transformers, data rules, shared utils
   modules/      independent features, a folder per layer inside (controllers/, services/, repositories/,
-                utils/, workers/: docs/server/architecture.md) — spaces, settings, schemas (+ OpenAPI),
-                contents, translations, assets, tokens, webhooks, tasks, plugins, users (+ me, first admin),
+                utils/, workers/: docs/server/architecture.md) — spaces (+ locales, environments, API
+                tokens), settings, schemas (+ OpenAPI), contents, translations, assets, webhooks, tasks,
+                plugins, users (+ me, first admin),
                 firebase-import
   cli/          commands, check
 ```

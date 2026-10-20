@@ -52,7 +52,7 @@ apps/web/src/app/features/spaces/contents/
 File-system-like browser that shows a breadcrumb path and lists folders/documents at the current path level. Driven by
 `SpaceStore.contentPath`.
 
-**Injected services:** `ContentService`, `SchemaService`, `TokenService`, `TaskService`, `HlmDialogService` (injected twice, as `dialog` and
+**Injected services:** `ContentService`, `SchemaService`, `SpaceTokenService`, `TaskService`, `HlmDialogService` (injected twice, as `dialog` and
 `hlmDialog`), `Router`, `Injector`, `SpaceStore`, `NotificationService`
 
 **Key behaviour:**
@@ -422,7 +422,7 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 | --------------------- | ------------------------------------------------------ |
 | `ContentService`      | CRUD, publish, unpublish, move, clone via `/api/app/spaces/:s/contents` (reads are live) |
 | `SchemaService`       | Load schemas for picker + editor field rendering       |
-| `TokenService`        | API token for CDN preview links                        |
+| `SpaceTokenService`   | API token for CDN preview links                        |
 | `TaskService`         | Create import/export tasks                             |
 | `NotificationService` | Snackbar feedback                                      |
 | `SpaceStore`          | Current space, `contentPath` for breadcrumb navigation |

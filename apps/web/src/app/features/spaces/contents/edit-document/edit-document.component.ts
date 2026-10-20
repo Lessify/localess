@@ -18,7 +18,7 @@ import { DirtyFormGuardComponent } from '@core/guards/dirty-form.guard';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
@@ -167,7 +167,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   readonly platformService = inject(PlatformService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly contentService = inject(ContentService);
-  private readonly tokenService = inject(TokenService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
   private readonly contentHelperService = inject(ContentHelperService);
@@ -403,7 +403,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
   private withApiToken(types: TokenType[], open: (token: string) => void): void {
-    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+    this.spaceTokenService.firstValue(this.spaceId(), types).subscribe({
       next: token => {
         if (token) open(token);
         else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);

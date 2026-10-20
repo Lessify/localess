@@ -45,7 +45,7 @@ apps/web/src/app/shared/components/
 The main component is one of the most complex in the app. It renders a hierarchical tree (or flat list) of translation keys across all
 locales of the selected space.
 
-**Injected services:** `TranslationService`, `TaskService`, `TokenService`, `TranslateService`, `NotificationService`, `HlmDialogService`, `LocalSettingsStore`, `SpaceStore`
+**Injected services:** `TranslationService`, `TaskService`, `SpaceTokenService`, `TranslateService`, `NotificationService`, `HlmDialogService`, `LocalSettingsStore`, `SpaceStore`
 
 **Key behaviour:**
 
@@ -104,7 +104,7 @@ users, are gone; the Firebase import keeps such a value as the text it was store
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
 | `TranslationService`  | CRUD + publish + translate-locale via `/api/app/spaces/:s/translations` (reads are live)                 |
 | `TaskService`         | Create import/export tasks                                                                               |
-| `TokenService`        | Retrieve API token for CDN preview links                                                                 |
+| `SpaceTokenService`   | Retrieve API token for CDN preview links                                                                 |
 | `TranslateService`    | AI translation via `POST /api/app/translate` (`translate()` single, `translateBatch()` batch)            |
 | `NotificationService` | Snackbar feedback                                                                                        |
 | `LocaleService`       | Load space locales (used by `TranslationDetailComponent`, not the main component)                        |

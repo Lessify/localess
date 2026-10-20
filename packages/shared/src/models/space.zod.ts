@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { zBoolean, zPreviewUrl } from './common.zod.js';
 import { zPageable, zSearch } from './page.zod.js';
 import { SPACE_ENVIRONMENT_SORT_FIELDS, SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
+import { TokenType } from './token.model.js';
 
-// App API requests of spaces, their environments and their locales. Bodies are strict (an unknown field is a 400 that
+// App API requests of spaces, their environments, their locales and their API tokens. Bodies are strict (an unknown field is a 400 that
 // names it); queries are not (a link may carry parameters of its own).
 
 const zName = z.string().trim().min(1).max(200);
@@ -69,3 +70,15 @@ export type SpaceLocaleMove = z.infer<typeof zSpaceLocaleMove>;
 /** `PUT /api/app/spaces/:spaceId/default-locale`: one of the space's locales. */
 export const zSpaceDefaultLocaleUpdate = z.strictObject({ defaultLocaleId: zLocaleId });
 export type SpaceDefaultLocaleUpdate = z.infer<typeof zSpaceDefaultLocaleUpdate>;
+
+/** `POST …/tokens`. */
+export const zSpaceTokenCreate = z.strictObject({
+  name: z.string().trim().min(1).max(200),
+  type: z.enum(TokenType),
+  cacheTtl: z.number().int().min(0).max(31_536_000).nullish(),
+});
+export type SpaceTokenCreate = z.infer<typeof zSpaceTokenCreate>;
+
+/** `PUT …/tokens/:id`: the name and the cache TTL. The type can't change: a `type` key is a 400. */
+export const zSpaceTokenUpdate = zSpaceTokenCreate.omit({ type: true });
+export type SpaceTokenUpdate = z.infer<typeof zSpaceTokenUpdate>;

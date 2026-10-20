@@ -10,7 +10,7 @@
   (v1) controller adds its API: `content.cdn.controller.ts` / `ContentCdnController`,
   `schema.management.controller.ts` / `SchemaManagementController`.
 - **Why:** one name per thing, found by its file name; a sub-entity reads as what it is (`space-locale`).
-- **Example:** `modules/spaces/` (`space`, `space-locale`, `space-environment`).
+- **Example:** `modules/spaces/` (`space`, `space-locale`, `space-environment`, `space-token`).
 - **Don't:** plural names (`spaces.controller.ts`, `SpacesService`), or a name that hides the entity
   (`locales.controller.ts` for a space's locales).
 

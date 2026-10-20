@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, Destro
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
@@ -98,7 +98,7 @@ export class TranslationsComponent implements OnInit {
   private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
-  private readonly tokenService = inject(TokenService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
 
   // Input
   spaceId = input.required<string>();
@@ -416,7 +416,7 @@ export class TranslationsComponent implements OnInit {
 
   /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
   private withApiToken(types: TokenType[], open: (token: string) => void): void {
-    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+    this.spaceTokenService.firstValue(this.spaceId(), types).subscribe({
       next: token => {
         if (token) open(token);
         else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);

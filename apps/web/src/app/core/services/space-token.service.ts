@@ -2,13 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Token, TokenCreate, TokenType, TokenUpdate } from '@localess/shared';
+import { SpaceTokenCreate, SpaceTokenUpdate, Token, TokenType } from '@localess/shared';
 import { TokenForm } from '@shared/models/token.model';
 import { Observable, of, switchMap } from 'rxjs';
 
 /** API tokens of a space (`/api/app/spaces/:spaceId/tokens`); reads are live, newest first. */
 @Injectable({ providedIn: 'root' })
-export class TokenService {
+export class SpaceTokenService {
   private readonly http = inject(HttpClient);
   private readonly events = inject(ChangeEventsService);
 
@@ -49,12 +49,15 @@ export class TokenService {
       name: model.name,
       type: model.type,
       cacheTtl: model.cacheTtl ?? null,
-    } satisfies TokenCreate);
+    } satisfies SpaceTokenCreate);
   }
 
   /** The name and cache TTL; the type never changes. */
   update(spaceId: string, id: string, model: Omit<TokenForm, 'type'>): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}`, { name: model.name, cacheTtl: model.cacheTtl ?? null } satisfies TokenUpdate);
+    return this.http.put<void>(`${this.base(spaceId)}/${id}`, {
+      name: model.name,
+      cacheTtl: model.cacheTtl ?? null,
+    } satisfies SpaceTokenUpdate);
   }
 
   /** Same token under a new value; resolves to the new token, value included. */
@@ -62,7 +65,7 @@ export class TokenService {
     return this.http.post<Token>(`${this.base(spaceId)}/${token.id}/regenerate`, {});
   }
 
-  delete(spaceId: string, id: string): Observable<void> {
+  remove(spaceId: string, id: string): Observable<void> {
     return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }
 }

@@ -12,7 +12,7 @@
   needs, `findOne` only when a rule reads the parent (`space.spaceLocales`).
 - **Why:** each file is about one thing, small enough to read; a sub-entity's methods are the plain ones (`create`,
   `remove`, `move`) instead of `addLocale`, `removeEnvironment` on the parent.
-- **Example:** spaces: `space`, `space-locale`, `space-environment`; webhooks: `webhook`, `webhook-log`; tasks: `task`,
+- **Example:** spaces: `space`, `space-locale`, `space-environment`, `space-token`; webhooks: `webhook`, `webhook-log`; tasks: `task`,
   `task-log`.
 - **Don't:** one controller for the entity and everything under it.
 

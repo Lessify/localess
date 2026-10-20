@@ -7,7 +7,7 @@ import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -84,7 +84,7 @@ describe('ContentsComponent', () => {
           },
         },
         { provide: TaskService, useValue: { createContentImportTask, createContentExportTask } },
-        { provide: TokenService, useValue: { firstValue } },
+        { provide: SpaceTokenService, useValue: { firstValue } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
