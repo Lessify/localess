@@ -24,8 +24,10 @@
 
 **A rule several sets follow** lives once, as a helper in the module (or in `shared/data-rules/` when other modules
 write the same table): `modules/spaces/repositories/space-change.ts` (`changeSpace`) is the rule that a change of a
-space, its locales or its environments touches the space's `updated_at` and sends one `spaces` event, in one
-transaction; the three repositories call it.
+space, its locales or its environments runs under the space's row lock (changes of one space one after the other,
+each re-checking under it what a service's check could have missed: the default locale stays one of the space's,
+409 otherwise), touches the space's `updated_at` and sends one `spaces` event, in one transaction; the three
+repositories call it.
 
 ## Controllers
 

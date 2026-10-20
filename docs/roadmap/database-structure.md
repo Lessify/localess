@@ -123,7 +123,9 @@ features, and the fallback follows from that:
 - **Contents:** the default locale's value is the bare field (`title`), other locales are `title_i18n_<locale>`
   (see [concepts.md](../concepts.md#how-localised-values-are-stored)); a locale with no value falls back to the bare field.
 
-That it is one of the space's locales is enforced by the API, not the database. Changing it asks for confirmation
+That it is one of the space's locales is enforced by the API, not the database: the service checks it (400), and the
+repository checks it again under the space's row lock (`changeSpace`), so a removal and a change of the default at the
+same moment can not leave a default outside the space's locales (the one overtaken answers 409). Changing it asks for confirmation
 and warns that the content's bare values are then read as the new locale (they are not moved).
 
 Translation values are written only for the space's locales: creating a translation, updating a locale value,
@@ -348,6 +350,10 @@ snapshot versions (`draft`, `published`: as the public API spells them, `?versio
 
 - **Removing a locale from a space:** decide what happens to its values in translations and contents (keep as today,
   purge, or archive).
+- **The default locale held by the database:** a composite foreign key `spaces(id, default_locale_id)` →
+  `space_locales(space_id, locale_id)` would make the rule above the database's. It is circular (a space is inserted
+  before its first locale), so `DEFERRABLE INITIALLY DEFERRED`, a migration, and every writer inserting in that order
+  (space create, templates, the Firebase import); the row lock covers it until then.
 - **Changing the default locale of a space with content:** move the values (bare ↔ `_i18n_<locale>`, published
   snapshots included) instead of only warning.
 - **Content data validated against its schema:** a `blockSchema(schema, { schemas, locales, defaultLocale })` in

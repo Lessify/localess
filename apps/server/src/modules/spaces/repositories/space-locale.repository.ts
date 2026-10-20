@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { SpaceLocalePageable } from '@localess/shared';
 import { and, asc, desc, eq, ilike, inArray, max, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -69,21 +69,31 @@ export class SpaceLocaleRepository {
     });
   }
 
-  /** At the end of the space's list; the translation drafts gain the locale. */
+  /** At the end of the space's list; the translation drafts gain the locale. Already there (added meanwhile): nothing changes. */
   create(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
       const [{ last }] = await t
         .select({ last: max(spaceLocales.position) })
         .from(spaceLocales)
         .where(eq(spaceLocales.spaceId, spaceId));
-      await t.insert(spaceLocales).values({ spaceId, localeId, position: (last ?? -1) + 1 });
+      const added = await t
+        .insert(spaceLocales)
+        .values({ spaceId, localeId, position: (last ?? -1) + 1 })
+        .onConflictDoNothing()
+        .returning({ localeId: spaceLocales.localeId });
+      if (!added.length) return false;
       await dropTranslationDrafts(t, spaceId);
+      return {}; // the space touched alone
     });
   }
 
-  /** Its values stay; its translation maps and content snapshots go (requests for it get the default locale's). */
+  /**
+   * Its values stay; its translation maps and content snapshots go (requests for it get the default locale's). The
+   * default locale is refused (409: it became the default after the service checked).
+   */
   delete(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
-    return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
+    return changeSpace(this.db, this.eventService, spaceId, tx, async (t, space) => {
+      if (space.defaultLocaleId === localeId) throw new ConflictException(`Locale ${localeId} is the space's default locale`);
       await t.delete(spaceLocales).where(and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
       await dropTranslationDrafts(t, spaceId);
       await dropTranslationLocale(t, spaceId, localeId);

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import type { SpacePageable } from '@localess/shared';
 import { and, asc, count, desc, eq, ilike, inArray, notExists, or, sql, type SQL } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
@@ -103,6 +103,9 @@ export class SpaceRepository {
    */
   setDefaultLocale(spaceId: string, localeId: string, tx?: Transaction): Promise<void> {
     return changeSpace(this.db, this.eventService, spaceId, tx, async t => {
+      // 409: removed after the service checked (the database does not hold the default to the space's locales).
+      const listed = await t.$count(spaceLocales, and(eq(spaceLocales.spaceId, spaceId), eq(spaceLocales.localeId, localeId)));
+      if (!listed) throw new ConflictException(`Locale ${localeId} is not in space locales`);
       await dropTranslationDrafts(t, spaceId);
       await dropContentDrafts(t, spaceId);
       return { defaultLocaleId: localeId };

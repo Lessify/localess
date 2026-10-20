@@ -350,6 +350,41 @@ describe('app API: spaces, locales, instance label', () => {
       for (const id of ['fr', 'it']) await manager.delete(`${base}/locales/${id}`);
     });
 
+    it('keeps the default one of the space locales when it is set and removed at the same time', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      for (let round = 0; round < 10; round++) {
+        await manager.post(`${base}/locales`, { localeId: 'de' });
+        const [setDefault, removed] = await Promise.all([
+          manager.put(`${base}/default-locale`, { defaultLocaleId: 'de' }),
+          manager.delete(`${base}/locales/de`),
+        ]);
+        // One wins; the other is refused (400 when it read the winner's commit, 409 when it found it under the lock).
+        expect([200, 400, 409], setDefault.body).toContain(setDefault.statusCode);
+        expect([204, 400, 409], removed.body).toContain(removed.statusCode);
+        const space = (await reader.get(base)).json();
+        expect(localesOf(space).map(it => it.id)).toContain(space.defaultLocaleId);
+        await manager.put(`${base}/default-locale`, { defaultLocaleId: 'en' });
+        await manager.delete(`${base}/locales/de`);
+      }
+    });
+
+    it('adds a locale sent twice at once once; environments added at once take distinct places', async () => {
+      const base = `/api/app/spaces/${spaceId}`;
+      const addFr = () => manager.post(`${base}/locales`, { localeId: 'fr' });
+      const twice = await Promise.all([addFr(), addFr()]);
+      expect(twice.map(it => it.statusCode)).toEqual([201, 201]);
+      expect(twice.map(it => it.json().localeId)).toEqual(['fr', 'fr']);
+      expect(localesOf((await reader.get(base)).json()).filter(it => it.id === 'fr')).toHaveLength(1);
+      await manager.delete(`${base}/locales/fr`);
+
+      const added = await Promise.all(
+        ['A', 'B', 'C'].map(name => manager.post(`${base}/environments`, { name, url: `https://${name.toLowerCase()}.example.com` })),
+      );
+      const positions = added.map(it => it.json().position);
+      expect(new Set(positions).size).toBe(3);
+      for (const environment of added) await manager.delete(`${base}/environments/${environment.json().id}`);
+    });
+
     it('lists every locale a space can add, read-only', async () => {
       const response = await reader.get('/api/app/locales');
       expect(response.statusCode).toBe(200);
