@@ -48,47 +48,33 @@ export class SpaceTokenRepository {
     return this.db.$count(tokens, this.where(spaceId, query));
   }
 
-  async findById(spaceId: string, id: string): Promise<TokenEntity | undefined> {
-    const [row] = await this.db.select().from(tokens).where(this.byId(spaceId, id));
-    return row;
+  findOne(spaceId: string, tokenId: string): Promise<TokenEntity | undefined> {
+    return this.db.query.tokens.findFirst({ where: this.byId(spaceId, tokenId) });
   }
 
-  create(spaceId: string, values: TokenValues, tx?: Transaction): Promise<TokenEntity> {
+  /** Answers the new token's id. */
+  async create(spaceId: string, values: TokenValues, tx?: Transaction): Promise<string> {
+    const id = newUuid();
+    await transaction(this.db, tx, async t => {
+      await t.insert(tokens).values({ id, spaceId, ...values });
+      await this.eventService.publish({ spaceId, entity: 'tokens', id, op: 'created' }, t);
+    });
+    return id;
+  }
+
+  /** The name and cache TTL, or a new value (`token`, `token_hash` and `hint` together); the type never changes. */
+  update(spaceId: string, tokenId: string, values: Partial<Omit<TokenValues, 'type'>>, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      const [row] = await t
-        .insert(tokens)
-        .values({ id: newUuid(), spaceId, ...values })
-        .returning();
-      await this.eventService.publish({ spaceId, entity: 'tokens', id: row.id, op: 'created' }, t);
-      return row;
+      await t.update(tokens).set(values).where(this.byId(spaceId, tokenId));
+      await this.eventService.publish({ spaceId, entity: 'tokens', id: tokenId, op: 'updated' }, t);
     });
   }
 
-  /**
-   * Changes a token from what it is now: `change` gets the row, locked until the transaction ends, so two changes
-   * of one token never interleave. `undefined` when the space has no token `id`.
-   */
-  update(
-    spaceId: string,
-    id: string,
-    change: (current: TokenEntity) => Partial<TokenValues>,
-    tx?: Transaction,
-  ): Promise<TokenEntity | undefined> {
+  /** The event only when a row went (deleted meanwhile: nothing to announce). */
+  delete(spaceId: string, tokenId: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      const [current] = await t.select().from(tokens).where(this.byId(spaceId, id)).for('update');
-      if (!current) return undefined;
-      const [row] = await t.update(tokens).set(change(current)).where(this.byId(spaceId, id)).returning();
-      await this.eventService.publish({ spaceId, entity: 'tokens', id, op: 'updated' }, t);
-      return row;
-    });
-  }
-
-  /** Whether the space had token `id`. */
-  delete(spaceId: string, id: string, tx?: Transaction): Promise<boolean> {
-    return transaction(this.db, tx, async t => {
-      const deleted = await t.delete(tokens).where(this.byId(spaceId, id)).returning({ id: tokens.id });
-      if (deleted.length) await this.eventService.publish({ spaceId, entity: 'tokens', id, op: 'deleted' }, t);
-      return deleted.length > 0;
+      const deleted = await t.delete(tokens).where(this.byId(spaceId, tokenId)).returning({ id: tokens.id });
+      if (deleted.length) await this.eventService.publish({ spaceId, entity: 'tokens', id: tokenId, op: 'deleted' }, t);
     });
   }
 
@@ -103,7 +89,7 @@ export class SpaceTokenRepository {
     return and(...conditions);
   }
 
-  private byId(spaceId: string, id: string) {
-    return and(eq(tokens.spaceId, spaceId), eq(tokens.id, id));
+  private byId(spaceId: string, tokenId: string): SQL | undefined {
+    return and(eq(tokens.spaceId, spaceId), eq(tokens.id, tokenId));
   }
 }

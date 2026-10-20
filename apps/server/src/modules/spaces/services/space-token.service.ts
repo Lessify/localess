@@ -10,11 +10,6 @@ import { SpaceTokenRepository } from '../repositories/space-token.repository.js'
 
 const NO_CACHE_FOR_MANAGEMENT = 'Management tokens are never cached: leave the cache TTL empty.';
 
-function found(entity: TokenEntity | undefined): Token {
-  if (!entity) throw new NotFoundException('Token not found');
-  return toToken(entity);
-}
-
 /**
  * A space's API tokens. The value is returned on create and regenerate; afterwards only for public and preview tokens.
  * Every route checks the space first (404 "Space not found" before "Token not found").
@@ -37,48 +32,55 @@ export class SpaceTokenService {
   }
 
   async findOne(spaceId: string, tokenId: string): Promise<Token> {
-    await this.requireSpace(spaceId);
-    return found(await this.spaceTokenRepository.findById(spaceId, tokenId));
+    return toToken(await this.requireToken(spaceId, tokenId));
   }
 
+  /** Answers the token with its value: the only time a management token's value is returned. */
   async create(spaceId: string, token: SpaceTokenCreate): Promise<Token> {
     if (token.type === TokenType.MANAGEMENT && token.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
     await this.requireSpace(spaceId);
     const value = newApiToken(token.type);
-    const entity = await this.spaceTokenRepository.create(spaceId, {
+    const tokenId = await this.spaceTokenRepository.create(spaceId, {
       type: token.type,
       name: token.name,
       cacheTtl: token.cacheTtl ?? null,
       ...tokenColumns(token.type, value),
     });
-    return { ...toToken(entity), token: value };
+    return { ...toToken(await this.findToken(spaceId, tokenId)), token: value };
   }
 
+  /** The name and the cache TTL; a management token takes no TTL (its type never changes, so it is read before). */
   async update(spaceId: string, tokenId: string, token: SpaceTokenUpdate): Promise<Token> {
-    await this.requireSpace(spaceId);
-    return found(
-      await this.spaceTokenRepository.update(spaceId, tokenId, current => {
-        if (current.type === 'management' && token.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
-        return { name: token.name, cacheTtl: token.cacheTtl ?? null };
-      }),
-    );
+    const current = await this.requireToken(spaceId, tokenId);
+    if (current.type === 'management' && token.cacheTtl != null) throw new BadRequestException(NO_CACHE_FOR_MANAGEMENT);
+    await this.spaceTokenRepository.update(spaceId, tokenId, { name: token.name, cacheTtl: token.cacheTtl ?? null });
+    return toToken(await this.findToken(spaceId, tokenId));
   }
 
-  /** The same token (id, type, name) under a new value, returned once. */
+  /** The same token (id, type, name) under a new value of its type, returned once. */
   async regenerate(spaceId: string, tokenId: string): Promise<Token> {
-    await this.requireSpace(spaceId);
-    let value = '';
-    const entity = await this.spaceTokenRepository.update(spaceId, tokenId, current => {
-      const type = current.type as TokenType;
-      value = newApiToken(type);
-      return tokenColumns(type, value);
-    });
-    return { ...found(entity), token: value };
+    const type = (await this.requireToken(spaceId, tokenId)).type as TokenType;
+    const value = newApiToken(type);
+    await this.spaceTokenRepository.update(spaceId, tokenId, tokenColumns(type, value));
+    return { ...toToken(await this.findToken(spaceId, tokenId)), token: value };
   }
 
   async remove(spaceId: string, tokenId: string): Promise<void> {
+    await this.requireToken(spaceId, tokenId);
+    await this.spaceTokenRepository.delete(spaceId, tokenId);
+  }
+
+  /** The space first: its 404 comes before the token's. */
+  private async requireToken(spaceId: string, tokenId: string): Promise<TokenEntity> {
     await this.requireSpace(spaceId);
-    if (!(await this.spaceTokenRepository.delete(spaceId, tokenId))) throw new NotFoundException('Token not found');
+    return this.findToken(spaceId, tokenId);
+  }
+
+  /** The token alone, the space already checked (the re-read after a write). */
+  private async findToken(spaceId: string, tokenId: string): Promise<TokenEntity> {
+    const token = await this.spaceTokenRepository.findOne(spaceId, tokenId);
+    if (!token) throw new NotFoundException('Token not found');
+    return token;
   }
 
   private async requireSpace(spaceId: string): Promise<void> {
