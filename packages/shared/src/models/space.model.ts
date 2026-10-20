@@ -77,6 +77,10 @@ export type SpaceLocaleSortField = (typeof SPACE_LOCALE_SORT_FIELDS)[number];
 export const SPACE_ENVIRONMENT_SORT_FIELDS = ['position', 'name', 'url'] as const;
 export type SpaceEnvironmentSortField = (typeof SPACE_ENVIRONMENT_SORT_FIELDS)[number];
 
+/** The fields Space Settings → Tokens may sort by (`createdAt` newest first unless sorted otherwise). */
+export const SPACE_TOKEN_SORT_FIELDS = ['createdAt', 'updatedAt', 'name', 'type'] as const;
+export type SpaceTokenSortField = (typeof SPACE_TOKEN_SORT_FIELDS)[number];
+
 /** Dashboard numbers, computed on request (`GET /api/app/spaces/:id/overview`). */
 export interface SpaceOverview {
   counts: {

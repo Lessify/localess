@@ -90,7 +90,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const created = (await manager.post(base, { name: 'CI', type: 'management' })).json();
       expect(created.token).toMatch(/^mgt_[A-Za-z0-9]{38}$/);
       expect(created.hint).toBe(`mgt_…${created.token.slice(-4)}`);
-      const listed = (await manager.get(base)).json().find((it: { id: string }) => it.id === created.id);
+      const listed = (await manager.get(base)).json().items.find((it: { id: string }) => it.id === created.id);
       expect(listed).not.toHaveProperty('token');
       expect(listed.hint).toBe(created.hint);
       expect((await manager.get(`${base}/${created.id}`)).json()).not.toHaveProperty('token');
@@ -106,8 +106,10 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('filters by type', async () => {
-      expect((await manager.get(`${base}?type=management&limit=1`)).json().map((it: { type: string }) => it.type)).toEqual(['management']);
-      expect((await manager.get(`${base}?type=public`)).json().every((it: { type: string }) => it.type === 'public')).toBe(true);
+      expect((await manager.get(`${base}?type=management&size=1`)).json().items.map((it: { type: string }) => it.type)).toEqual([
+        'management',
+      ]);
+      expect((await manager.get(`${base}?type=public`)).json().items.every((it: { type: string }) => it.type === 'public')).toBe(true);
       expect((await manager.get(`${base}?type=DEV_TOOLS`)).statusCode).toBe(400);
     });
 

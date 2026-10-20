@@ -64,7 +64,7 @@ describe('app API: space templates', () => {
         description: 'Page 12 of section 7',
       });
 
-      const [token] = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json();
+      const [token] = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json().items;
       const base = `/api/v1/spaces/${space.id}/translations`;
       for (const locale of ['en', 'de', 'fr']) {
         expect((await cdn(t, `${base}/${locale}?token=${token.token}`)).statusCode).toBe(404);
@@ -124,7 +124,7 @@ describe('app API: space templates', () => {
       const id = response.json().id;
       const names = (await admin.get(`/api/app/spaces/${id}/schemas`)).json().map((it: { name: string }) => it.name);
       expect(names.sort()).toEqual(['author', 'blogpost', 'blogtag', 'category']);
-      const list = (await admin.get(`/api/app/spaces/${id}/tokens`)).json();
+      const list = (await admin.get(`/api/app/spaces/${id}/tokens`)).json().items;
       expect(list).toHaveLength(1);
       expect(list[0]).toMatchObject({ type: 'preview' });
     });

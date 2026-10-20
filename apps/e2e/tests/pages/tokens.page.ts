@@ -14,9 +14,9 @@ export interface TokenDto {
   token?: string;
 }
 
-/** The space's tokens, from the App API. */
-export function tokensOf(api: AppApi, spaceId: string): Promise<TokenDto[]> {
-  return api.get(`/api/app/spaces/${spaceId}/tokens`);
+/** The space's tokens, newest first, from the App API (one page of 100: a test space has a few). */
+export async function tokensOf(api: AppApi, spaceId: string): Promise<TokenDto[]> {
+  return (await api.get<{ items: TokenDto[] }>(`/api/app/spaces/${spaceId}/tokens?size=100`)).items;
 }
 
 /** A token's value by name (fails if there is no such token or it has no listed value). */

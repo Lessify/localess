@@ -2,7 +2,13 @@ import { z } from 'zod';
 
 import { zBoolean, zPreviewUrl } from './common.zod.js';
 import { zPageable, zSearch } from './page.zod.js';
-import { SPACE_ENVIRONMENT_SORT_FIELDS, SPACE_LOCALE_SORT_FIELDS, SPACE_SORT_FIELDS, SPACE_TEMPLATE_IDS } from './space.model.js';
+import {
+  SPACE_ENVIRONMENT_SORT_FIELDS,
+  SPACE_LOCALE_SORT_FIELDS,
+  SPACE_SORT_FIELDS,
+  SPACE_TEMPLATE_IDS,
+  SPACE_TOKEN_SORT_FIELDS,
+} from './space.model.js';
 import { TokenType } from './token.model.js';
 
 // App API requests of spaces, their environments, their locales and their API tokens. Bodies are strict (an unknown field is a 400 that
@@ -71,6 +77,16 @@ export type SpaceLocaleMove = z.infer<typeof zSpaceLocaleMove>;
 export const zSpaceDefaultLocaleUpdate = z.strictObject({ defaultLocaleId: zLocaleId });
 export type SpaceDefaultLocaleUpdate = z.infer<typeof zSpaceDefaultLocaleUpdate>;
 
+/**
+ * `GET …/tokens`: one page, newest first unless sorted otherwise; `?type=` (one type), `?search=` (the name or the
+ * hint, `pub_…aB3x`).
+ */
+export const zSpaceTokenPageable = zPageable(SPACE_TOKEN_SORT_FIELDS, 'createdAt', 'desc').extend({
+  type: z.enum(TokenType).optional(),
+  search: zSearch,
+});
+export type SpaceTokenPageable = z.infer<typeof zSpaceTokenPageable>;
+
 /** `POST …/tokens`. */
 export const zSpaceTokenCreate = z.strictObject({
   name: z.string().trim().min(1).max(200),
@@ -79,6 +95,6 @@ export const zSpaceTokenCreate = z.strictObject({
 });
 export type SpaceTokenCreate = z.infer<typeof zSpaceTokenCreate>;
 
-/** `PUT …/tokens/:id`: the name and the cache TTL. The type can't change: a `type` key is a 400. */
+/** `PUT …/tokens/:tokenId`: the name and the cache TTL. The type can't change: a `type` key is a 400. */
 export const zSpaceTokenUpdate = zSpaceTokenCreate.omit({ type: true });
 export type SpaceTokenUpdate = z.infer<typeof zSpaceTokenUpdate>;

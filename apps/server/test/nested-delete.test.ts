@@ -51,7 +51,7 @@ describe('nested delete: nothing is left behind', () => {
     cookie = await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' });
     admin = api(t, cookie);
     spaceId = (await admin.post('/api/app/spaces', { name: 'Nested' })).json().id;
-    token = (await admin.get(`/api/app/spaces/${spaceId}/tokens`)).json()[0].token;
+    token = (await admin.get(`/api/app/spaces/${spaceId}/tokens`)).json().items[0].token;
     await t.db
       .insert(schemas)
       .values({ id: newUuid(), spaceId, name: 'page', type: 'ROOT', fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] });

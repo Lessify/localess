@@ -1,15 +1,20 @@
-import { type SpaceTokenCreate, type SpaceTokenUpdate, type Token, TokenType, UserPermission } from '@localess/shared';
-import { zSpaceTokenCreate, zSpaceTokenUpdate } from '@localess/shared/zod';
-import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
+import {
+  type Page,
+  type SpaceTokenCreate,
+  type SpaceTokenPageable,
+  type SpaceTokenUpdate,
+  type Token,
+  UserPermission,
+} from '@localess/shared';
+import { zSpaceTokenCreate, zSpaceTokenPageable, zSpaceTokenUpdate } from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 
 import { RequirePermission } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SpaceTokenService } from '../services/space-token.service.js';
 
-const TOKEN_TYPES: readonly string[] = Object.values(TokenType);
-
 /**
- * Space API tokens. Routes use the UUID `id`; the value is `token`, which only this controller returns (to
+ * A space's API tokens. Routes use the UUID `tokenId`; the value is `token`, which only this controller returns (to
  * SPACE_MANAGEMENT users), and for management tokens only once.
  */
 @Controller('api/app/spaces/:spaceId/tokens')
@@ -17,44 +22,42 @@ const TOKEN_TYPES: readonly string[] = Object.values(TokenType);
 export class SpaceTokenController {
   constructor(private readonly spaceTokenService: SpaceTokenService) {}
 
-  /** `?type=` keeps tokens of that type; `?limit=` caps the list (newest first). */
+  /** One page for Space Settings → Tokens: `?page=&size=&sort=&direction=` (Pageable), `?type=`, `?search=` (name or hint). */
   @Get()
-  findAll(@Param('spaceId') spaceId: string, @Query('type') type?: string, @Query('limit') limit?: string): Promise<Token[]> {
-    if (type !== undefined && !TOKEN_TYPES.includes(type)) throw new BadRequestException('Unknown token type');
-    return this.spaceTokenService.findAll(
-      spaceId,
-      type as TokenType | undefined,
-      limit ? Math.max(1, Math.min(1000, Number(limit) || 1)) : undefined,
-    );
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zSpaceTokenPageable }) query: SpaceTokenPageable,
+  ): Promise<Page<Token>> {
+    return this.spaceTokenService.findAll(spaceId, query);
   }
 
-  @Get(':id')
-  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<Token> {
-    return this.spaceTokenService.findOne(spaceId, id);
+  @Get(':tokenId')
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('tokenId', UuidParamPipe) tokenId: string): Promise<Token> {
+    return this.spaceTokenService.findOne(spaceId, tokenId);
   }
 
   @Post()
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zSpaceTokenCreate }) body: SpaceTokenCreate): Promise<Token> {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSpaceTokenCreate }) body: SpaceTokenCreate): Promise<Token> {
     return this.spaceTokenService.create(spaceId, body);
   }
 
-  @Put(':id')
+  @Put(':tokenId')
   update(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('tokenId', UuidParamPipe) tokenId: string,
     @Body({ schema: zSpaceTokenUpdate }) body: SpaceTokenUpdate,
   ): Promise<Token> {
-    return this.spaceTokenService.update(spaceId, id, body);
+    return this.spaceTokenService.update(spaceId, tokenId, body);
   }
 
-  @Post(':id/regenerate')
-  regenerate(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<Token> {
-    return this.spaceTokenService.regenerate(spaceId, id);
+  @Post(':tokenId/regenerate')
+  regenerate(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('tokenId', UuidParamPipe) tokenId: string): Promise<Token> {
+    return this.spaceTokenService.regenerate(spaceId, tokenId);
   }
 
-  @Delete(':id')
+  @Delete(':tokenId')
   @HttpCode(204)
-  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.spaceTokenService.remove(spaceId, id);
+  async remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('tokenId', UuidParamPipe) tokenId: string): Promise<void> {
+    await this.spaceTokenService.remove(spaceId, tokenId);
   }
 }

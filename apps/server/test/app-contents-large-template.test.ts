@@ -56,7 +56,7 @@ describe('app API: the large contents template (contents_large)', () => {
     expect(post.references).toEqual([previous.id]);
     expect(post.data).toMatchObject({ title: 'Post 2024-06-03', related: { kind: 'REFERENCE', uri: previous.id } });
 
-    const [token] = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json();
+    const [token] = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json().items;
     const links = (await cdn(t, `/api/v1/spaces/${space.id}/links?version=draft&token=${token.token}`)).json();
     expect(Object.keys(links)).toHaveLength(2_067);
     const published = (await cdn(t, `/api/v1/spaces/${space.id}/links?kind=DOCUMENT&token=${token.token}`)).json();

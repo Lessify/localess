@@ -56,9 +56,12 @@ SHA-256 (not argon2) is enough: the values are random, not chosen by people, so 
 would only slow every request.
 
 Tokens are managed in the app (Space Settings → Tokens) through `/api/app/spaces/:spaceId/tokens`
-(`SpaceTokenController` in `apps/server/src/modules/spaces/`, `SPACE_MANAGEMENT`): list (`?type=`, `?limit=`), get, create (`{ name, type, cacheTtl? }`),
-update (`{ name, cacheTtl? }`: no type), delete, and `POST …/:id/regenerate` (same row, id, type and name, new value). `:id` is
-the UUID; anything else answers 404. Change events (SSE) carry the UUID only.
+(`SpaceTokenController` in `apps/server/src/modules/spaces/`, `SPACE_MANAGEMENT`): one page (`SpaceTokenPageable`:
+`?page=&size=&sort=&direction=`, sort `createdAt` (newest first by default), `updatedAt`, `name` or `type`; `?type=` one type;
+`?search=` the name or the hint), get, create (`{ name, type, cacheTtl? }`), update (`{ name, cacheTtl? }`: no type), delete,
+and `POST …/:tokenId/regenerate` (same row, id, type and name, new value). `:spaceId` and `:tokenId` are UUIDs; anything else,
+an unknown space ("Space not found", checked first) or a token of another space answers 404. Change events (SSE) carry
+the UUID only.
 
 ---
 

@@ -170,7 +170,9 @@ dialogs in `features/spaces` now follow this pattern (the delete confirmation in
 
 Create and manage API tokens ([Auth Tokens](../../auth-tokens.md)), displayed in an `ll-table` with columns `hint`, `name`, `type`,
 `cacheTtl`, `updatedAt`, `actions` (`displayedColumns` in `tokens.component.ts`). A new space already has one token, the
-**Auto Generated Preview Token**.
+**Auto Generated Preview Token**. The table is one page from the server (`PagedList`, `SpaceTokenService.findAll`,
+`GET …/tokens?page=&size=&sort=&direction=&search=`), newest first unless sorted by Name or Updated At; the search box
+matches the name or the hint. It reloads on every `tokens` change event.
 
 - **Token** shows the `hint` (prefix and last 4 characters, e.g. `mgt_…aB3x`), never the whole value.
 - **Type** is a badge (icon and label from `TOKEN_TYPE_INFO`, `shared/models/token.model.ts`), its description as tooltip.

@@ -100,7 +100,7 @@ describe('app API: the contents template (contents_fields)', () => {
     for (const it of all) expect(it.publishedAt).toBeUndefined();
     const id = (name: string) => all.find(it => it.name === name)!.id;
 
-    const [token] = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json();
+    const [token] = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json().items;
     const doc = (name: string, query: string) => cdn(t, `/api/v1/spaces/${space.id}/contents/${id(name)}?token=${token.token}${query}`);
     expect((await doc('All fields (plain)', '')).statusCode).toBe(404);
     const plainDe = (await doc('All fields (plain)', '&version=draft&locale=de')).json();

@@ -24,8 +24,11 @@ describe('TokensComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(tokens: Token[], selectedSpace: Space | undefined) {
-    const findAll = vi.fn().mockReturnValue(of(tokens));
+  /** `failLoad`: the page request fails. */
+  function setup(tokens: Token[], selectedSpace: Space | undefined, failLoad = false) {
+    const findAll = vi
+      .fn()
+      .mockReturnValue(failLoad ? throwError(() => new Error('boom')) : of({ items: tokens, page: 0, size: 20, total: tokens.length }));
     const create = vi.fn().mockReturnValue(of(token()));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteToken = vi.fn().mockReturnValue(of(undefined));
@@ -42,7 +45,7 @@ describe('TokensComponent', () => {
         { provide: SpaceTokenService, useValue: { findAll, create, update, remove: deleteToken, regenerate } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
-        { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal('space-1') } },
+        { provide: SpaceStore, useValue: { selectedSpace: signal(selectedSpace), selectedSpaceId: signal(selectedSpace?.id) } },
       ],
     });
     const fixture = TestBed.createComponent(TokensComponent);
@@ -60,17 +63,40 @@ describe('TokensComponent', () => {
     const tokens = [token({ id: 't1' })];
     const { component, findAll } = setup(tokens, space());
 
-    expect(findAll).toHaveBeenCalledWith('space-1');
+    expect(findAll).toHaveBeenCalledWith('space-1', component.list.params());
     expect(component.dataSource.filteredData()).toEqual(tokens);
+    expect(component.total()).toBe(1);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
+  it('onFilterChange() searches on the server, from the first page', () => {
+    const { component, findAll } = setup([], space());
+    component.list.page.set(2);
+
+    component.onFilterChange({ search: ' ci ' });
+    TestBed.tick();
+
+    expect(component.list.page()).toBe(0);
+    expect(findAll).toHaveBeenLastCalledWith('space-1', component.list.params());
+    expect(component.list.params().get('search')).toBe('ci');
+  });
+
+  it('onSortChange() sorts on the server; cleared, back to newest first', () => {
     const { component } = setup([], space());
 
-    component.onFilterChange({ search: 'ci' });
+    component.onSortChange({ active: 'name', direction: 'asc' });
+    expect(component.list.params().get('sort')).toBe('name');
+    expect(component.list.params().get('direction')).toBe('asc');
 
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'ci' }));
+    component.onSortChange({ active: 'name', direction: '' });
+    expect(component.list.params().has('sort')).toBe(false);
+  });
+
+  it('tells a failed load and stops loading', () => {
+    const { component, error } = setup([], space(), true);
+
+    expect(error).toHaveBeenCalledWith('Tokens can not be loaded.');
+    expect(component.isLoading()).toBe(false);
   });
 
   it('openAddDialog() creates the token and notifies success when confirmed', () => {

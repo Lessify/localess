@@ -1,11 +1,11 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { DatePipe, DOCUMENT } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { Token, TokenType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -26,8 +26,8 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { TOKEN_TYPE_INFO, TokenForm } from '@shared/models/token.model';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -35,11 +35,13 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { combineLatest, EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { TokenDialogComponent } from './token-dialog/token-dialog.component';
 import { TokenSecretDialogComponent, TokenSecretDialogContext } from './token-secret-dialog/token-secret-dialog.component';
 
+/** The space's API tokens: one page from the server, newest first unless sorted otherwise; reloads on a token change. */
 @Component({
   selector: 'll-space-settings-tokens',
   templateUrl: './tokens.component.html',
@@ -70,19 +72,19 @@ import { TokenSecretDialogComponent, TokenSecretDialogContext } from './token-se
     }),
   ],
 })
-export class TokensComponent implements AfterViewInit {
+export class TokensComponent {
   private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   private readonly document = inject(DOCUMENT);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
+  /** The page shown: paged, sorted and searched on the server. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly tokens = signal<Token[]>([]);
   readonly dataSource = new TableDataSource<Token>(this.tokens, this.injector);
   displayedColumns: string[] = ['hint', 'name', 'type', 'cacheTtl', 'updatedAt', 'actions'];
@@ -90,31 +92,40 @@ export class TokensComponent implements AfterViewInit {
 
   private destroyRef = inject(DestroyRef);
 
+  /**
+   * The current query's page for the selected space, again whenever either changes (and live). A failed load is told
+   * and ends only that request: the next query change fetches again.
+   */
   constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<Token>({
-      searchFields: token => [token.hint, token.name],
-    });
-    toObservable(this.spaceStore.selectedSpace)
+    combineLatest([toObservable(this.spaceStore.selectedSpaceId).pipe(filter(it => it !== undefined)), toObservable(this.list.params)])
       .pipe(
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(it => this.spaceTokenService.findAll(it!.id)),
+        switchMap(([spaceId, params]) =>
+          this.spaceTokenService.findAll(spaceId!, params).pipe(
+            catchError(() => {
+              this.notificationService.error('Tokens can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: tokens => {
-          this.tokens.set(tokens);
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.tokens.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
       });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
+  /** The search box (the name or the hint), on the server; from the first page. */
+  onFilterChange(value: FilterToolbarValue): void {
+    this.list.setFilters({ search: value.search?.trim() || undefined });
   }
 
-  onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+  /** Cleared: back to newest first. */
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
   }
 
   openAddDialog(): void {

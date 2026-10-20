@@ -12,7 +12,7 @@
 <div class="my-3">
   <ll-filter-toolbar class="mb-3" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="hint">
         <th llHeaderCell *llHeaderCellDef>Token</th>
         <td llCell *llCellDef="let element">
@@ -92,5 +92,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

@@ -43,7 +43,7 @@ describe('app API: spaces, locales, instance label', () => {
   describe('spaces', () => {
     it('gives a new space one preview token, "Auto Generated Preview Token", that reads drafts', async () => {
       const space = (await admin.post('/api/app/spaces', { name: 'With token' })).json();
-      const list = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json();
+      const list = (await admin.get(`/api/app/spaces/${space.id}/tokens`)).json().items;
       expect(list).toHaveLength(1);
       expect(list[0]).toMatchObject({ type: 'preview', name: 'Auto Generated Preview Token' });
       expect(list[0].token).toMatch(/^prv_/);

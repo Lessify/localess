@@ -47,6 +47,7 @@ export type {
   SpaceLocalePageable,
   SpacePageable,
   SpaceTokenCreate,
+  SpaceTokenPageable,
   SpaceTokenUpdate,
   SpaceUpdate,
 } from './models/space.zod.js';
