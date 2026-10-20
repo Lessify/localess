@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Page, User, UserPermission } from '@localess/shared';
+import { Page, User } from '@localess/shared';
 import { UserService } from './user.service';
 
 describe('UserService', () => {
@@ -61,20 +61,20 @@ describe('UserService', () => {
     expect(await result).toEqual({ id: 'u1' });
   });
 
-  it('update() patches role, permissions and lock', async () => {
+  it('update() patches the role', async () => {
     const service = setup();
-    const done = firstValueFrom(service.update('u1', { role: 'CUSTOM', permissions: [UserPermission.CONTENT_READ], lock: true }));
+    const done = firstValueFrom(service.update('u1', { role: 'EDITOR' }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
-    expect(request.request.body).toEqual({ role: 'CUSTOM', permissions: ['CONTENT_READ'], lock: true });
+    expect(request.request.body).toEqual({ role: 'EDITOR' });
     request.flush({});
     await done;
   });
 
   it('update() sends a null role to clear the access', async () => {
     const service = setup();
-    const done = firstValueFrom(service.update('u1', {}));
+    const done = firstValueFrom(service.update('u1', { role: null }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
-    expect(request.request.body).toEqual({ role: null, permissions: undefined, lock: undefined });
+    expect(request.request.body).toEqual({ role: null });
     request.flush({});
     await done;
   });

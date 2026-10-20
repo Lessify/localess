@@ -257,7 +257,7 @@ test.describe('Accessibility of dialogs', () => {
   }
 
   test('Admin → Users: User Invite and User (edit)', async ({ page, createUser }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const users = new AdminUsersPage(page);
     await users.goto(user.email);
     await page.getByRole('button', { name: 'Invite' }).click();
@@ -278,7 +278,7 @@ test.describe('Accessibility of dialogs', () => {
   });
 
   test('Me: Update Profile, Update Email, Update Password', async ({ createUser, signInAs }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const page = await signInAs(user);
     const me = new MePage(page);
     await me.goto(user.email);

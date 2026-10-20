@@ -32,6 +32,7 @@ import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
+import { roleLabel } from '@shared/models/user-role.model';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -46,7 +47,6 @@ import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogContext, UserDialogResult } from './user-dialog/user-dialog.model';
 import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
 import { UserInviteDialogResult } from './user-invite-dialog/user-invite-dialog.model';
-import { canManageUser } from './user-management';
 
 @Component({
   selector: 'll-users',
@@ -116,10 +116,8 @@ export class UsersComponent implements OnInit {
     this.loadData();
   }
 
-  /** Whether the signed-in user may edit or delete `element` - the same limits the server enforces. */
-  canManage(element: User): boolean {
-    return canManageUser({ id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() }, element);
-  }
+  /** Admin → Users is for admins only (the route and the server): every user may be managed. */
+  protected readonly roleLabel = roleLabel;
 
   /** The search box (email or display name) and the Active filter, on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
@@ -182,11 +180,7 @@ export class UsersComponent implements OnInit {
   openEditDialog(element: User): void {
     this.dialog
       .open<UserDialogResult, UserDialogContext>(UserDialogComponent, {
-        context: {
-          role: element.role,
-          permissions: element.permissions,
-          lock: element.lock,
-        },
+        context: { role: element.role },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -230,9 +224,9 @@ export class UsersComponent implements OnInit {
       });
   }
 
-  /** Disable/Enable is offered on everyone you may manage except yourself (the server refuses that too). */
+  /** Disable/Enable is offered on everyone except yourself (the server refuses that too). */
   canChangeStatus(element: User): boolean {
-    return element.id !== this.userStore.id() && this.canManage(element);
+    return element.id !== this.userStore.id();
   }
 
   /** Disabling asks first: it signs the user out at once. Enabling just lets them sign in again. */

@@ -80,7 +80,7 @@
         <ll-translation-string-view [value]="translation.locales[selectedSourceLocale().id]" />
       </div>
 
-      @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+      @if ('TRANSLATORS' | hasRole | async) {
         <div class="flex items-center">
           <div aria-hidden="true" class="w-full border-t"></div>
           <div class="relative flex justify-center">
@@ -117,7 +117,7 @@
   @if (translation(); as translation) {
     <div>
       <div class="align-items-start flex gap-2 p-2">
-        @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" aria-label="Edit Key" (click)="openEditIdDialog(translation)">
             <ng-icon hlm size="sm" name="lucideReplace" />
           </button>
@@ -125,7 +125,7 @@
             <ng-icon hlm size="sm" name="lucidePencil" />
           </button>
         }
-        @if ('TRANSLATION_DELETE' | canUserPerform | async) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" aria-label="Delete" (click)="openDeleteDialog(translation)">
             <ng-icon hlm size="sm" name="lucideTrash" />
           </button>

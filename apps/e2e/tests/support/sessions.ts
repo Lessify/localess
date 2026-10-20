@@ -3,7 +3,6 @@ import type { APIRequestContext } from '@playwright/test';
 export interface Access {
   signIn: boolean;
   role?: string | null;
-  permissions?: string[];
   /** Status of `GET /api/app/users` and `GET /api/app/spaces` for this user. */
   users?: number;
   spaces?: number;
@@ -32,7 +31,6 @@ export class SessionProbe {
     return {
       signIn: true,
       role: user.role ?? null,
-      permissions: user.permissions ?? [],
       users: (await this.client.get('/api/app/users')).status(),
       // Any role reads the spaces it can open (the sidebar list).
       spaces: (await this.client.get('/api/app/spaces/names')).status(),

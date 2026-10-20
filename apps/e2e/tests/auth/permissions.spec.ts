@@ -2,15 +2,20 @@ import { Shell } from '../pages/shell.page';
 import { expect, test } from '../support/fixtures';
 
 test.describe('What a restricted user sees', () => {
-  test('a translator sees translations, but no settings and no admin area', async ({ space, createUser, signInAs }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'] });
+  test('a translator reads the space, but sees no settings, no writing actions and no admin area', async ({
+    space,
+    createUser,
+    signInAs,
+  }) => {
+    const user = await createUser({ role: 'TRANSLATOR' });
     const page = await signInAs(user);
     const shell = new Shell(page);
 
     await page.goto(`/features/spaces/${space.id}/dashboard`);
     await expect(shell.navLink('Translations')).toBeVisible();
+    // Every role reads schemas; settings are a developer's.
+    await expect(shell.navLink('Schemas')).toBeVisible();
     await expect(shell.navLink('Settings')).toHaveCount(0);
-    await expect(shell.navLink('Schemas')).toHaveCount(0);
     await expect(shell.navLink('Users')).toHaveCount(0);
 
     // The route guards send them away from pages they may not open.

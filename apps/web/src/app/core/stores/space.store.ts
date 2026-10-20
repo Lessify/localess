@@ -5,8 +5,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
 import { SpaceEnvironmentService } from '@core/services/space-environment.service';
-import { canAny } from '@core/utils/permissions';
-import { ContentDocument, IdName, IdNameUrl, Locale, Schema, Space, UserPermission } from '@localess/shared';
+import { ANY_ROLE, ContentDocument, hasRole, IdName, IdNameUrl, Locale, Schema, Space } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -138,9 +137,9 @@ export const SpaceStore = signalStore(
     const schemaService = inject(SchemaService);
     const notificationService = inject(NotificationService);
     const userStore = inject(UserStore);
-    // The server's rule for the two lists (canAny → canPerform): without it every request is a 403, retried forever
-    // with a "Lost connection" toast (e.g. for a translator).
-    const can = (...permissions: UserPermission[]): boolean => canAny(userStore, ...permissions);
+    // The server's rule for the two lists (`ANY_ROLE`): without a role every request is a 403, retried forever with a
+    // "Lost connection" toast.
+    const canRead = (): boolean => hasRole({ role: userStore.role() }, ANY_ROLE);
 
     const listen = <T>(query: () => Observable<T>, logMessage: string, notification: string): Observable<T> =>
       defer(query).pipe(retryWithBackoff<T>(notificationService, logMessage, notification));
@@ -182,14 +181,14 @@ export const SpaceStore = signalStore(
                       environment: resolveEnvironment(spaceId, environments, state.selectedEnvironmentBySpaceId()),
                     })),
                   ),
-                  can(UserPermission.CONTENT_READ)
+                  canRead()
                     ? listen(
                         () => contentService.findAllDocuments(spaceId),
                         'findAllDocuments listener failed',
                         'Lost connection to content updates. Retrying…',
                       ).pipe(map(documents => ({ documents })))
                     : EMPTY,
-                  can(UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ)
+                  canRead()
                     ? listen(
                         () => schemaService.findAll(spaceId),
                         'schemaService.findAll listener failed',

@@ -22,7 +22,7 @@ import { VersionService } from '@core/services/version.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
-import { Space, USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@localess/shared';
+import { RoleListName, Space } from '@localess/shared';
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
@@ -64,7 +64,7 @@ import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { Version } from '@shared/models/version.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -98,7 +98,8 @@ interface SideMenuItem {
   icon: IconType;
   link: string;
   label: string;
-  permission?: UserPermission | UserPermission[];
+  /** Who sees it (`roles.ts` of @localess/shared); none: everyone signed in. */
+  role?: RoleListName;
   color?: 'primary';
   items?: SideMenuItem[];
   isOpen?: WritableSignal<boolean>;
@@ -112,7 +113,7 @@ interface SideMenuItem {
   imports: [
     InstanceLabelComponent,
     RouterModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     LogoComponent,
     HlmSidebarImports,
@@ -237,7 +238,6 @@ export class FeaturesComponent implements OnInit {
     const url = lastSuccessfulNavigation?.finalUrl?.toString() ?? this.router.url;
     console.log('User Side Menu Computed : Selected Space Id :', selectedSpaceId);
     console.log('User Side Menu Computed : User Role :', this.userStore.role());
-    console.log('User Side Menu Computed : User Permissions :', this.userStore.permissions());
     if (selectedSpaceId) {
       return [
         { link: `spaces/${selectedSpaceId}/dashboard`, label: 'Dashboard', icon: 'lucideGauge' },
@@ -245,23 +245,23 @@ export class FeaturesComponent implements OnInit {
           link: `spaces/${selectedSpaceId}/translations`,
           label: 'Translations',
           icon: 'lucideLanguages',
-          permission: UserPermission.TRANSLATION_READ,
+          role: 'ANY_ROLE',
         },
         {
           link: `spaces/${selectedSpaceId}/contents`,
           label: 'Content',
           icon: 'lucideGalleryHorizontal',
-          permission: UserPermission.CONTENT_READ,
+          role: 'ANY_ROLE',
         },
-        { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', permission: UserPermission.ASSET_READ },
-        { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', permission: UserPermission.SCHEMA_READ },
+        { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', role: 'ANY_ROLE' },
+        { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', role: 'ANY_ROLE' },
         ...(FEATURE_FLAGS.importExport
           ? [
               {
                 link: `spaces/${selectedSpaceId}/tasks`,
                 label: 'Tasks',
                 icon: 'lucideFileCheck',
-                permission: USER_PERMISSIONS_IMPORT_EXPORT,
+                role: 'CONTENT_WRITERS' as const,
               },
             ]
           : []),
@@ -269,20 +269,20 @@ export class FeaturesComponent implements OnInit {
           link: '',
           label: 'Developers',
           icon: 'lucideCode2',
-          permission: [UserPermission.DEV_OPEN_API, UserPermission.DEV_WEBHOOK],
+          role: 'DEVELOPERS',
           isOpen: signal(url.includes(`/spaces/${selectedSpaceId}/developers/`)),
           items: [
             {
               link: `spaces/${selectedSpaceId}/developers/webhooks`,
               label: 'Webhooks',
               icon: 'lucideWebhook',
-              permission: UserPermission.DEV_WEBHOOK,
+              role: 'DEVELOPERS',
             },
             {
               link: `spaces/${selectedSpaceId}/developers/open-api`,
               label: 'Open API',
               icon: 'tablerApi',
-              permission: UserPermission.DEV_OPEN_API,
+              role: 'DEVELOPERS',
             },
           ],
         },
@@ -290,7 +290,7 @@ export class FeaturesComponent implements OnInit {
           link: `spaces/${selectedSpaceId}/settings`,
           label: 'Settings',
           icon: 'lucideSettings',
-          permission: UserPermission.SPACE_MANAGEMENT,
+          role: 'DEVELOPERS',
         },
       ];
     } else {
@@ -299,8 +299,8 @@ export class FeaturesComponent implements OnInit {
   });
 
   adminSideMenu: SideMenuItem[] = [
-    { link: 'admin/users', label: 'Users', icon: 'lucideUsers', permission: UserPermission.USER_MANAGEMENT },
-    { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'admin/users', label: 'Users', icon: 'lucideUsers', role: 'ADMINS' },
+    { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', role: 'ADMINS' },
   ];
 
   communitySideMenu: SideMenuItem[] = [

@@ -1,22 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { UserStore } from '@core/stores/user.store';
+import { UserRole } from '@localess/shared';
+import { roleDescription, roleLabel, USER_ROLE_OPTIONS } from '@shared/models/user-role.model';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
-import { HlmCheckboxImports } from '@spartan-ng/helm/checkbox';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
-import { HlmLabelImports } from '@spartan-ng/helm/label';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
-import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
-import { HlmSwitchImports } from '@spartan-ng/helm/switch';
-import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 
-import { canGrantAdmin, canGrantPermission, UserManager } from '../user-management';
-import { USER_PERMISSION_GROUPS } from '../user-permissions';
 import { UserInviteDialogResult } from './user-invite-dialog.model';
 
 @Component({
@@ -24,19 +19,7 @@ import { UserInviteDialogResult } from './user-invite-dialog.model';
   templateUrl: './user-invite-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [
-    HlmDialogImports,
-    ReactiveFormsModule,
-    HlmButtonImports,
-    HlmFieldImports,
-    HlmInputImports,
-    HlmSelectImports,
-    HlmSwitchImports,
-    HlmCheckboxImports,
-    HlmLabelImports,
-    HlmSeparatorImports,
-    HlmTooltipImports,
-  ],
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputImports, HlmSelectImports],
 })
 export class UserInviteDialogComponent {
   private readonly fb = inject(FormBuilder);
@@ -47,42 +30,17 @@ export class UserInviteDialogComponent {
     email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),
     password: this.fb.control('', [Validators.required, Validators.minLength(6)]),
     displayName: this.fb.control('', [Validators.minLength(2)]),
-    role: this.fb.control<string | undefined>(undefined),
-    // Not null: the server takes a list / a boolean or nothing, and refuses null (400).
-    permissions: this.fb.nonNullable.control<string[]>([]),
-    lock: this.fb.nonNullable.control(false),
+    role: this.fb.control<UserRole | null>(null),
   });
 
   settingsStore = inject(LocalSettingsStore);
 
-  protected readonly permissionGroups = USER_PERMISSION_GROUPS;
+  protected readonly roleOptions = USER_ROLE_OPTIONS;
+  protected readonly roleItemToString = (value: UserRole | null): string => roleLabel(value);
 
-  // The admin role and each permission are offered only when the signed-in user may grant them;
-  // The server enforces the same limits (canGrant in @localess/shared).
-  private readonly userStore = inject(UserStore);
-  private manager(): UserManager {
-    return { id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() };
-  }
-  protected readonly canGrantAdmin = computed(() => canGrantAdmin(this.manager()));
-
-  canGrantPermission(permission: string): boolean {
-    return canGrantPermission(this.manager(), permission);
-  }
-
-  protected readonly roleItemToString = (value: string): string => {
-    const labels: Record<string, string> = { CUSTOM: 'Custom', ADMIN: 'Admin' };
-    return labels[value] ?? value;
-  };
-
-  isPermissionSelected(permission: string): boolean {
-    return this.form.controls['permissions'].value?.includes(permission) ?? false;
-  }
-
-  togglePermission(permission: string, checked: boolean): void {
-    const current: string[] = this.form.controls['permissions'].value ?? [];
-    const updated = checked ? [...current, permission] : current.filter((p: string) => p !== permission);
-    this.form.controls['permissions'].setValue(updated);
-  }
+  private readonly role = toSignal(this.form.controls['role'].valueChanges, { initialValue: this.form.controls['role'].value });
+  /** What the chosen role lets the user do. */
+  protected readonly roleDescription = computed(() => roleDescription(this.role()));
 
   save(): void {
     this.dialogRef.close(this.form.value as UserInviteDialogResult);

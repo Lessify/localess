@@ -27,13 +27,9 @@ export class UserService {
     return liveQueryWith(this.events, { entities: ['users'], id }, () => this.http.get<User>(`${BASE}/${id}`));
   }
 
-  /** `role` null clears the access; the server drops permissions/lock for non-custom roles. */
+  /** The user's role; `null` takes the access away. */
   update(id: string, model: UserUpdate): Observable<void> {
-    return this.http.patch<void>(`${BASE}/${id}`, {
-      role: model.role ?? null,
-      permissions: model.permissions,
-      lock: model.lock,
-    } satisfies UserUpdate);
+    return this.http.patch<void>(`${BASE}/${id}`, { role: model.role } satisfies UserUpdate);
   }
 
   delete(id: string): Observable<void> {

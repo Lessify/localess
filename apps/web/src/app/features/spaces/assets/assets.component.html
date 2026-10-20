@@ -23,7 +23,7 @@
       <ng-icon hlm size="sm" name="lucideLayoutGrid" />
     </button>
   </hlm-toggle-group>
-  @if ('ASSET_CREATE' | canUserPerform | async) {
+  @if ('CONTENT_WRITERS' | hasRole | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="uploadExtraMenu">
       <ng-icon hlm size="sm" name="lucideUpload" />
       Upload Assets
@@ -53,27 +53,27 @@
       Create Folder
     </button>
   }
-  @if ((importExportEnabled ? ['ASSET_IMPORT', 'ASSET_EXPORT'] : 'ASSET_REGEN_METADATA') | canUserPerform | async) {
+  @if ((importExportEnabled ? 'CONTENT_WRITERS' : 'ADMINS') | hasRole | async) {
     <button hlmBtn size="icon" variant="ghost" aria-label="More" [hlmDropdownMenuTrigger]="extraMenu">
       <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="w-50">
         @if (importExportEnabled) {
-          @if ('ASSET_IMPORT' | canUserPerform | async) {
+          @if ('CONTENT_WRITERS' | hasRole | async) {
             <button hlmDropdownMenuItem (click)="openImportDialog()">
               <ng-icon hlm size="sm" name="lucideUploadCloud" />
               Import
             </button>
           }
-          @if ('ASSET_EXPORT' | canUserPerform | async) {
+          @if ('CONTENT_WRITERS' | hasRole | async) {
             <button hlmDropdownMenuItem (click)="openExportDialog()">
               <ng-icon hlm size="sm" name="lucideCloudDownload" />
               Export
             </button>
           }
         }
-        @if ('ASSET_REGEN_METADATA' | canUserPerform | async) {
+        @if ('ADMINS' | hasRole | async) {
           @if (importExportEnabled) {
             <hlm-dropdown-menu-separator />
           }
@@ -218,7 +218,7 @@
                     </hlm-dropdown-menu-group>
                     <hlm-dropdown-menu-separator />
                   }
-                  @if ('ASSET_UPDATE' | canUserPerform | async) {
+                  @if ('CONTENT_WRITERS' | hasRole | async) {
                     <hlm-dropdown-menu-group>
                       <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                         <ng-icon hlm size="sm" name="lucidePencil" />
@@ -230,7 +230,7 @@
                       </button>
                     </hlm-dropdown-menu-group>
                   }
-                  @if ('ASSET_DELETE' | canUserPerform | async) {
+                  @if ('CONTENT_WRITERS' | hasRole | async) {
                     <hlm-dropdown-menu-separator />
                     <hlm-dropdown-menu-group>
                       <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">
@@ -275,17 +275,17 @@
                 <ng-icon hlm size="sm" name="lucideDownload" />
               </button>
             }
-            @if ('ASSET_UPDATE' | canUserPerform | async) {
+            @if ('CONTENT_WRITERS' | hasRole | async) {
               <button hlmBtn size="icon" variant="ghost" (click)="openEditDialog(item)" hlmTooltip="Edit" aria-label="Edit">
                 <ng-icon hlm size="sm" name="lucidePencil" />
               </button>
             }
-            @if ('ASSET_UPDATE' | canUserPerform | async) {
+            @if ('CONTENT_WRITERS' | hasRole | async) {
               <button hlmBtn size="icon" variant="ghost" (click)="openMoveDialog(item)" hlmTooltip="Move" aria-label="Move">
                 <ng-icon hlm size="sm" name="lucideFolderInput" />
               </button>
             }
-            @if ('ASSET_DELETE' | canUserPerform | async) {
+            @if ('CONTENT_WRITERS' | hasRole | async) {
               <button hlmBtn size="icon" variant="ghost" (click)="openDeleteDialog(item)" hlmTooltip="Delete" aria-label="Delete">
                 <ng-icon hlm size="sm" name="lucideTrash" />
               </button>

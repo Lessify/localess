@@ -1,5 +1,8 @@
 import { type APIRequestContext, type APIResponse, expect } from '@playwright/test';
 
+/** A user's one role (`@localess/shared` roles.ts); `null`: signed up, no access yet. */
+export type Role = 'ADMIN' | 'DEVELOPER' | 'EDITOR' | 'TRANSLATOR' | 'VIEWER';
+
 /**
  * The App API (`/api/app/**`) with the signed-in admin's session, for creating test data without the UI.
  * State-changing calls need `X-Requested-With` (CSRF guard, apps/server/src/auth/auth.guard.ts).
@@ -143,14 +146,7 @@ export class AppApi {
 
   // --- Users ----------------------------------------------------------------------------------------------
 
-  createUser(body: {
-    email: string;
-    password: string;
-    displayName?: string;
-    role?: 'ADMIN' | 'CUSTOM' | null;
-    permissions?: string[];
-    lock?: boolean;
-  }): Promise<{ id: string; email: string }> {
+  createUser(body: { email: string; password: string; displayName?: string; role?: Role | null }): Promise<{ id: string; email: string }> {
     return this.send('post', '/api/app/users', body);
   }
 
@@ -224,9 +220,7 @@ export interface UserDto {
   email: string;
   displayName?: string;
   photoURL?: string;
-  role?: 'ADMIN' | 'CUSTOM' | null;
-  permissions?: string[];
-  lock?: boolean;
+  role?: Role | null;
   disabled?: boolean;
   /** `password`, `google.com`, `microsoft.com`. */
   providers?: string[];

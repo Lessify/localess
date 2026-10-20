@@ -1,5 +1,5 @@
 <div class="flex items-center justify-end gap-2 p-2">
-  @if ('CONTENT_CREATE' | canUserPerform | async) {
+  @if ('CONTENT_WRITERS' | hasRole | async) {
     <button hlmBtn [hlmDropdownMenuTrigger]="contentCreateMenu">
       <ng-icon hlm size="sm" name="lucidePlus" />
       Add Content
@@ -23,13 +23,13 @@
   <ng-template #extraMenu>
     <hlm-dropdown-menu>
       @if (importExportEnabled) {
-        @if ('CONTENT_IMPORT' | canUserPerform | async) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <button hlmDropdownMenuItem (click)="openImportDialog()">
             <ng-icon hlm size="sm" name="lucideUploadCloud" />
             Import
           </button>
         }
-        @if ('CONTENT_EXPORT' | canUserPerform | async) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <button hlmDropdownMenuItem (click)="openExportDialog()">
             <ng-icon hlm size="sm" name="lucideCloudDownload" />
             Export
@@ -141,7 +141,7 @@
           </button>
           <ng-template #actionsMenu>
             <hlm-dropdown-menu class="text-nowrap">
-              @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+              @if ('CONTENT_WRITERS' | hasRole | async) {
                 <hlm-dropdown-menu-group>
                   <button hlmDropdownMenuItem (click)="openPublishDialog(element)">
                     <ng-icon hlm size="sm" name="lucideUpload" />
@@ -170,26 +170,26 @@
               </hlm-dropdown-menu-group>
               <hlm-dropdown-menu-separator />
               <hlm-dropdown-menu-group>
-                @if ('CONTENT_UPDATE' | canUserPerform | async) {
+                @if ('CONTENT_WRITERS' | hasRole | async) {
                   <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                     <ng-icon hlm size="sm" name="lucidePencil" />
                     Edit
                   </button>
                 }
-                @if (('CONTENT_CREATE' | canUserPerform | async) && element.kind === 'DOCUMENT') {
+                @if (('CONTENT_WRITERS' | hasRole | async) && element.kind === 'DOCUMENT') {
                   <button hlmDropdownMenuItem (click)="openCloneDialog(element)">
                     <ng-icon hlm size="sm" name="lucideBookCopy" />
                     Clone
                   </button>
                 }
-                @if ('CONTENT_UPDATE' | canUserPerform | async) {
+                @if ('CONTENT_WRITERS' | hasRole | async) {
                   <button hlmDropdownMenuItem (click)="openMoveDialog(element)">
                     <ng-icon hlm size="sm" name="lucideFolderInput" />
                     Move
                   </button>
                 }
               </hlm-dropdown-menu-group>
-              @if ('CONTENT_DELETE' | canUserPerform | async) {
+              @if ('CONTENT_WRITERS' | hasRole | async) {
                 <hlm-dropdown-menu-separator />
                 <hlm-dropdown-menu-group>
                   <button hlmDropdownMenuItem variant="destructive" (click)="openDeleteDialog(element)">

@@ -102,7 +102,7 @@ test.describe('Cancelling a confirmation changes nothing', () => {
   });
 
   test('Admin → Users → Disable', async ({ page, api, createUser, probe }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const users = new AdminUsersPage(page);
     await users.goto(user.email);
     await expect(users.status(user.email, 'Active')).toBeVisible();
@@ -219,19 +219,19 @@ test.describe('Cancelling a form dialog saves nothing', () => {
   });
 
   test("Admin → Users → Edit (a user's role)", async ({ page, api, createUser }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const users = new AdminUsersPage(page);
     await users.goto(user.email);
 
     await cancel(await users.openEditAccess(user.email, { role: 'Admin' }));
 
     await page.reload();
-    await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
-    expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
+    await expect(await users.roleCell(user.email)).toHaveText('Viewer');
+    expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'VIEWER' });
   });
 
   test('Me → Update Email', async ({ api, createUser, signInAs }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const page = await signInAs(user);
     const me = new MePage(page);
     await me.goto(user.email);

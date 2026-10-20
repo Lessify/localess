@@ -16,8 +16,6 @@ export interface UserState {
   email: string | undefined | null;
   emailVerified: boolean;
   role: UserRole | undefined;
-  permissions: string[] | undefined;
-  lock: boolean | undefined;
   photoURL: string | undefined;
   // Provider Data
   isPasswordProvider: boolean;
@@ -38,8 +36,6 @@ export const initialState: UserState = {
   emailVerified: false,
   role: undefined,
   photoURL: undefined,
-  permissions: undefined,
-  lock: undefined,
   isPasswordProvider: false,
   isGoogleProvider: false,
   isMicrosoftProvider: false,
@@ -56,7 +52,7 @@ const initialStateFactory = (): UserState => {
   return { ...initialState };
 };
 
-/** The signed-in user as state: identity, providers, role and permissions (from the session, not token claims). */
+/** The signed-in user as state: identity, providers and role (from the session). */
 export function userToState(user: User): Partial<UserState> {
   return {
     id: user.id,
@@ -72,8 +68,6 @@ export function userToState(user: User): Partial<UserState> {
     emailVerified: user.emailVerified,
     photoURL: user.photoURL || undefined,
     role: user.role,
-    permissions: user.permissions,
-    lock: user.lock,
     numberProviders: user.providers.length,
     isPasswordProvider: user.providers.includes('password'),
     isGoogleProvider: user.providers.includes('google.com'),
@@ -118,7 +112,6 @@ export const UserStore = signalStore(
   withComputed(state => {
     return {
       isRoleAdmin: computed(() => state.role() === 'ADMIN'),
-      isLocked: computed(() => state.lock() === true),
     };
   }),
   withHooks({

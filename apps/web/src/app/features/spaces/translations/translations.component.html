@@ -18,13 +18,13 @@
         <ng-icon hlm size="sm" name="lucideListTree" />
       </button>
     </hlm-toggle-group>
-    @if ('TRANSLATION_CREATE' | canUserPerform | async) {
+    @if ('CONTENT_WRITERS' | hasRole | async) {
       <button hlmBtn (click)="openAddDialog()">
         <ng-icon hlm size="sm" name="lucidePlus" />
         Add Translation
       </button>
     }
-    @if ('TRANSLATION_PUBLISH' | canUserPerform | async) {
+    @if ('CONTENT_WRITERS' | hasRole | async) {
       <button
         hlmBtn
         variant="outline"
@@ -44,7 +44,7 @@
     </button>
     <ng-template #extraMenu>
       <hlm-dropdown-menu class="text-nowrap">
-        @if ('TRANSLATION_UPDATE' | canUserPerform | async) {
+        @if ('TRANSLATORS' | hasRole | async) {
           <hlm-dropdown-menu-group>
             <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog(spaceStore.locales())">
               <ng-icon hlm size="sm" name="lucideLanguages" />
@@ -53,15 +53,15 @@
           </hlm-dropdown-menu-group>
           <hlm-dropdown-menu-separator />
         }
-        @if (importExportEnabled && (['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT'] | canUserPerform | async)) {
+        @if (importExportEnabled && ('CONTENT_WRITERS' | hasRole | async)) {
           <hlm-dropdown-menu-group>
-            @if ('TRANSLATION_IMPORT' | canUserPerform | async) {
+            @if ('CONTENT_WRITERS' | hasRole | async) {
               <button hlmDropdownMenuItem (click)="openImportDialog(spaceStore.locales())">
                 <ng-icon hlm size="sm" name="lucideUploadCloud" />
                 Import
               </button>
             }
-            @if ('TRANSLATION_EXPORT' | canUserPerform | async) {
+            @if ('CONTENT_WRITERS' | hasRole | async) {
               <button hlmDropdownMenuItem (click)="openExportDialog(spaceStore.locales())">
                 <ng-icon hlm size="sm" name="lucideCloudDownload" />
                 Export

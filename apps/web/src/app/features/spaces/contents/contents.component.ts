@@ -68,7 +68,7 @@ import { LlTableImports, TableDataSource, TableSort } from '@shared/components/t
 import { sortContent } from '@shared/models/content.model';
 import { sortSchema } from '@shared/models/schema.model';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -93,7 +93,7 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
   styleUrls: ['./contents.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     ClipboardModule,
     LlTableImports,

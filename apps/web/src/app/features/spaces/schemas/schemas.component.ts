@@ -50,7 +50,7 @@ import {
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -76,7 +76,7 @@ import { describeSchemaUsage } from './shared/schema-usage';
   styleUrls: ['./schemas.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     LlTableImports,
     LlPaginatorImports,

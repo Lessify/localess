@@ -1,4 +1,4 @@
-import { AdminUsersPage, permission } from '../pages/admin-users.page';
+import { AdminUsersPage } from '../pages/admin-users.page';
 import { choose, dialog, expectRowMenu } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { ResetPasswordPage } from '../pages/reset-password.page';
@@ -29,12 +29,12 @@ test.describe('Admin → Users', () => {
       await users.invite({ email, password: 'admin-password', displayName: 'New Admin', role: 'Admin' });
 
       // Post-check
-      await expect(await users.roleCell(email)).toHaveText('ADMIN');
+      await expect(await users.roleCell(email)).toHaveText('Admin');
       await expect(users.row(email)).toContainText('New Admin');
       await expect(users.status(email, 'Active')).toBeVisible();
       await page.reload();
       await users.find(email);
-      await expect(await users.roleCell(email)).toHaveText('ADMIN');
+      await expect(await users.roleCell(email)).toHaveText('Admin');
       expect(await api.findUserByEmail(email)).toMatchObject({ email, displayName: 'New Admin', role: 'ADMIN' });
       expect(await probe.accessOf(email, 'admin-password')).toMatchObject({ signIn: true, role: 'ADMIN', users: 200, spaces: 200 });
       const own = await signInAs({ id: '', email, password: 'admin-password' });
@@ -42,7 +42,7 @@ test.describe('Admin → Users', () => {
       await expect(new Shell(own).navLink('Users')).toBeVisible();
     });
 
-    test('as Custom: the user gets exactly the chosen permissions', async ({ page, api, cleanup, space, signInAs, probe }) => {
+    test('as Translator: the user edits translations and sees no admin area', async ({ page, api, cleanup, space, signInAs, probe }) => {
       const users = new AdminUsersPage(page);
       const email = newEmail();
       cleanup.user(email);
@@ -53,51 +53,37 @@ test.describe('Admin → Users', () => {
       expect(await api.findUserByEmail(email)).toBeUndefined();
 
       // Action
-      await users.invite({
-        email,
-        password: 'custom-password',
-        role: 'Custom',
-        permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'],
-      });
+      await users.invite({ email, password: 'translator-password', role: 'Translator' });
 
       // Post-check
-      await expect(await users.roleCell(email)).toHaveText('CUSTOM');
+      await expect(await users.roleCell(email)).toHaveText('Translator');
       await page.reload();
       await users.find(email);
-      await expect(await users.roleCell(email)).toHaveText('CUSTOM');
-      expect(await api.findUserByEmail(email)).toMatchObject({
-        role: 'CUSTOM',
-        permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'],
-        lock: false,
-      });
-      expect(await probe.accessOf(email, 'custom-password')).toMatchObject({ signIn: true, role: 'CUSTOM', users: 403 });
-      const own = await signInAs({ id: '', email, password: 'custom-password' });
+      await expect(await users.roleCell(email)).toHaveText('Translator');
+      expect(await api.findUserByEmail(email)).toMatchObject({ role: 'TRANSLATOR' });
+      expect(await probe.accessOf(email, 'translator-password')).toMatchObject({ signIn: true, role: 'TRANSLATOR', users: 403 });
+      const own = await signInAs({ id: '', email, password: 'translator-password' });
       await own.goto(`/features/spaces/${space.id}/dashboard`);
       await expect(new Shell(own).navLink('Translations')).toBeVisible();
+      await expect(new Shell(own).navLink('Settings')).toHaveCount(0);
       await expect(new Shell(own).navLink('Users')).toHaveCount(0);
     });
 
-    test('as Custom with every permission the dialog offers: all are stored', async ({ page, api, cleanup }) => {
+    test('the Role select offers None and the five roles, and describes the chosen one', async ({ page }) => {
       const users = new AdminUsersPage(page);
-      const email = newEmail();
-      cleanup.user(email);
-
-      // Pre-check: the checkboxes the dialog offers (ids are the permission ids).
-      await users.goto(email);
+      await users.goto();
       await page.getByRole('button', { name: 'Invite' }).click();
       const form = await dialog(page, 'User Invite');
-      await choose(page, form.getByLabel('Role', { exact: true }), 'Custom');
-      const offered = await form.getByRole('checkbox').evaluateAll(boxes => boxes.map(it => it.id));
-      expect(offered.length).toBeGreaterThan(20);
+
+      await form.getByLabel('Role', { exact: true }).click();
+      const offered = await page.getByRole('option').allTextContents();
+      expect(offered.map(it => it.trim())).toEqual(['None', 'Admin', 'Developer', 'Editor', 'Translator', 'Viewer']);
+      await page.getByRole('option', { name: 'Editor' }).click();
+      await expect(form.getByText('Contents, assets and translations: create, edit, delete, publish.')).toBeVisible();
+      await choose(page, form.getByLabel('Role', { exact: true }), 'None');
+      await expect(form.getByText(/^No access yet/)).toBeVisible();
       await form.getByRole('button', { name: 'Cancel' }).click();
       await expect(form).toBeHidden();
-
-      // Action: tick them all.
-      await users.invite({ email, password: 'all-permissions', role: 'Custom', permissions: offered });
-
-      // Post-check: every one stored (a permission the server does not know failed the whole invite).
-      await expect(await users.roleCell(email)).toHaveText('CUSTOM');
-      expect([...((await api.findUserByEmail(email))?.permissions ?? [])].sort()).toEqual([...offered].sort());
     });
 
     test('as None: the user signs in but has no access', async ({ page, api, cleanup, signInAs, probe }) => {
@@ -113,10 +99,10 @@ test.describe('Admin → Users', () => {
       await users.invite({ email, password: 'none-password', role: 'None' });
 
       // Post-check
-      await expect(await users.roleCell(email)).toHaveText('NONE');
+      await expect(await users.roleCell(email)).toHaveText('None');
       await page.reload();
       await users.find(email);
-      await expect(await users.roleCell(email)).toHaveText('NONE');
+      await expect(await users.roleCell(email)).toHaveText('None');
       expect((await api.findUserByEmail(email))?.role ?? null).toBeNull();
       expect(await probe.accessOf(email, 'none-password')).toMatchObject({ signIn: true, role: null, users: 403, spaces: 403 });
       const own = await signInAs({ id: '', email, password: 'none-password' });
@@ -125,7 +111,7 @@ test.describe('Admin → Users', () => {
     });
 
     test('refuses an email that is already taken', async ({ page, api, createUser, probe }) => {
-      const existing = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const existing = await createUser({ role: 'VIEWER' });
       const users = new AdminUsersPage(page);
 
       // Pre-check: one user with that email.
@@ -147,108 +133,57 @@ test.describe('Admin → Users', () => {
     });
   });
 
-  test.describe('user manager (custom user with User Management)', () => {
-    test('the invite dialog offers only what the manager holds, and no Admin role', async ({ createUser, signInAs }) => {
-      const manager = await createUser({ permissions: ['USER_MANAGEMENT', 'TRANSLATION_READ'] });
-      const own = await signInAs(manager);
+  test.describe('for admins only', () => {
+    test('a developer has no Users link, and the page sends them back', async ({ createUser, signInAs }) => {
+      const developer = await createUser({ role: 'DEVELOPER' });
+      const own = await signInAs(developer);
+      await own.goto('/features/welcome');
+      await expect(new Shell(own).navLink('Users')).toHaveCount(0);
+
       await own.goto('/features/admin/users');
-      await own.getByRole('button', { name: 'Invite' }).click();
-      const form = await dialog(own, 'User Invite');
-
-      // No Admin among the roles.
-      await form.getByLabel('Role', { exact: true }).click();
-      await expect(own.getByRole('option', { name: 'Custom' })).toBeVisible();
-      await expect(own.getByRole('option', { name: 'Admin' })).toHaveCount(0);
-      await own.getByRole('option', { name: 'Custom' }).click();
-      await expect(own.getByRole('listbox')).toHaveCount(0);
-
-      // Only the held permissions can be ticked.
-      const checkboxes = form.getByRole('checkbox');
-      const enabled = await checkboxes.evaluateAll(boxes =>
-        boxes.filter(it => !it.hasAttribute('disabled') && it.getAttribute('aria-disabled') !== 'true').map(it => it.id),
-      );
-      expect(enabled.sort()).toEqual(['TRANSLATION_READ', 'USER_MANAGEMENT']);
-      await expect(permission(form, 'SPACE_MANAGEMENT')).toBeDisabled();
+      await expect(own).not.toHaveURL(/\/admin\/users/);
+      await expect(own.getByRole('button', { name: 'Invite' })).toHaveCount(0);
     });
   });
 
   test.describe('role and access', () => {
-    test('changes the role Custom → Admin → None → Custom; access follows each change', async ({ page, api, createUser, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    test('changes the role Viewer → Admin → None → Editor; access follows each change', async ({ page, api, createUser, space, probe }) => {
+      const user = await createUser({ role: 'VIEWER' });
       const users = new AdminUsersPage(page);
+      const createFolder = () => probe.request.post(`/api/app/spaces/${space.id}/assets/folders`, { data: { name: uniqueId('folder-') } });
 
-      // Pre-check: Custom, no admin access.
+      // Pre-check: a viewer reads, writes nothing, no admin access.
       await users.goto(user.email);
-      await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
-      expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'CUSTOM', users: 403, spaces: 200 });
+      await expect(await users.roleCell(user.email)).toHaveText('Viewer');
+      expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'VIEWER', users: 403, spaces: 200 });
+      expect((await createFolder()).status()).toBe(403);
 
       // Action 1: → Admin. Post-check.
       await users.editAccess(user.email, { role: 'Admin' });
-      await expect(await users.roleCell(user.email)).toHaveText('ADMIN');
+      await expect(await users.roleCell(user.email)).toHaveText('Admin');
       expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'ADMIN' });
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'ADMIN', users: 200, spaces: 200 });
 
       // Action 2: → None. Post-check.
       await users.editAccess(user.email, { role: 'None' });
-      await expect(await users.roleCell(user.email)).toHaveText('NONE');
+      await expect(await users.roleCell(user.email)).toHaveText('None');
       expect((await api.findUserByEmail(user.email))?.role ?? null).toBeNull();
       expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: null, users: 403, spaces: 403 });
 
-      // Action 3: → Custom with user management. Post-check (also after a reload).
-      await users.editAccess(user.email, { role: 'Custom', togglePermissions: ['USER_MANAGEMENT'] });
+      // Action 3: → Editor. Post-check (also after a reload): writes contents and assets, still no admin area.
+      await users.editAccess(user.email, { role: 'Editor' });
       await page.reload();
       await users.find(user.email);
-      await expect(await users.roleCell(user.email)).toHaveText('CUSTOM');
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'CUSTOM', permissions: ['USER_MANAGEMENT'] });
-      expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'CUSTOM', users: 200 });
-    });
-
-    test('adds and removes permissions of a custom user', async ({ page, api, createUser, space, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
-      const users = new AdminUsersPage(page);
-      const contents = () => probe.request.get(`/api/app/spaces/${space.id}/contents`);
-
-      // Pre-check: may read translations, not contents.
-      await users.goto(user.email);
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ permissions: ['TRANSLATION_READ'] });
-      await probe.accessOf(user.email, user.password);
-      expect((await contents()).status()).toBe(403);
-
-      // Action: add CONTENT_READ, remove TRANSLATION_READ.
-      await users.editAccess(user.email, { role: 'Custom', togglePermissions: ['CONTENT_READ', 'TRANSLATION_READ'] });
-
-      // Post-check
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'CUSTOM', permissions: ['CONTENT_READ'] });
-      await probe.accessOf(user.email, user.password);
-      expect((await contents()).status()).toBe(200);
-      expect((await probe.request.get(`/api/app/spaces/${space.id}/translations`)).status()).toBe(403);
-    });
-
-    test('locks a custom user: they may no longer change their own data', async ({ page, api, createUser, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
-      const users = new AdminUsersPage(page);
-      const rename = () => probe.request.patch('/api/app/me', { data: { displayName: 'Changed by me' } });
-
-      // Pre-check: not locked; the user can change their name.
-      await users.goto(user.email);
-      await expect(await users.lockIcon(user.email)).toHaveCount(0);
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ lock: false });
-      await probe.accessOf(user.email, user.password);
-      expect((await rename()).ok()).toBe(true);
-
-      // Action
-      await users.editAccess(user.email, { role: 'Custom', toggleLock: true });
-
-      // Post-check: locked in the API and shown in the table; the user's own change is refused.
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ lock: true });
-      await expect(await users.lockIcon(user.email)).toBeVisible();
-      expect((await rename()).ok()).toBe(false);
+      await expect(await users.roleCell(user.email)).toHaveText('Editor');
+      expect(await api.findUserByEmail(user.email)).toMatchObject({ role: 'EDITOR' });
+      expect(await probe.accessOf(user.email, user.password)).toMatchObject({ role: 'EDITOR', users: 403 });
+      expect((await createFolder()).status()).toBe(201);
     });
   });
 
   test.describe('status', () => {
     test('disables a user (sign-in refused), then enables them again', async ({ page, api, createUser, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const users = new AdminUsersPage(page);
 
       // Pre-check: active, can sign in.
@@ -274,7 +209,7 @@ test.describe('Admin → Users', () => {
     });
 
     test('disabling signs out a user who is signed in', async ({ page, createUser, signInAs }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const own = await signInAs(user);
       const users = new AdminUsersPage(page);
 
@@ -306,7 +241,7 @@ test.describe('Admin → Users', () => {
     test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
 
     test('copies a link that lets the user set a new password', async ({ page, signedOutPage, createUser, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const users = new AdminUsersPage(page);
 
       // Pre-check: the current password works.
@@ -330,7 +265,7 @@ test.describe('Admin → Users', () => {
 
   test.describe('delete', () => {
     test('deletes a user, who can then no longer sign in @smoke', async ({ page, api, createUser, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const users = new AdminUsersPage(page);
 
       // Pre-check
@@ -352,7 +287,7 @@ test.describe('Admin → Users', () => {
     });
 
     test('cancelling the confirmation keeps the user', async ({ page, api, createUser, probe }) => {
-      const user: TestUser = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user: TestUser = await createUser({ role: 'VIEWER' });
       const users = new AdminUsersPage(page);
 
       // Pre-check

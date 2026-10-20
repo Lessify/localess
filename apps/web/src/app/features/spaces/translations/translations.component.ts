@@ -33,7 +33,7 @@ import {
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -61,7 +61,7 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     TranslationFilterComponent,
     TranslationListComponent,
     TranslationDetailComponent,

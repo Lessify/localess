@@ -15,7 +15,7 @@ import { formValueKey } from '@core/utils/form-value';
 import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { LabelValidator } from '@shared/validators/label.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
@@ -46,7 +46,7 @@ import { SchemaValidator } from '../shared/schema.validator';
     '(window:keydown)': 'captureKeyboard($event)',
   },
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     HlmTabsImports,
     ReactiveFormsModule,

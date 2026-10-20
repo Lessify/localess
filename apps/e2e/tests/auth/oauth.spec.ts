@@ -35,7 +35,7 @@ test.describe('Sign in with Google or Microsoft', () => {
     ['Microsoft', 'microsoft.com'],
   ] as const) {
     test(`an invited user signs in with ${provider}; the identity is linked`, async ({ page, signedOutPage, api, createUser }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       // Pre-check: a password account only.
       expect(await api.findUserByEmail(user.email)).toMatchObject({ providers: ['password'] });
 
@@ -71,7 +71,7 @@ test.describe('Sign in with Google or Microsoft', () => {
   });
 
   test('an email the provider did not verify is refused', async ({ signedOutPage, api, createUser }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const page = await signedOutPage();
     await signInWith(page, 'Microsoft', { email: user.email, verified: false });
 
@@ -83,7 +83,7 @@ test.describe('Sign in with Google or Microsoft', () => {
   });
 
   test('a disabled account is refused', async ({ signedOutPage, api, createUser }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     await api.send('patch', `/api/app/users/${user.id}/status`, { disabled: true });
     const page = await signedOutPage();
     await signInWith(page, 'Google', { email: user.email });

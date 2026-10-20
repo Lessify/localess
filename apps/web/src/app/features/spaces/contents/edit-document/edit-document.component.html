@@ -76,7 +76,7 @@
         </hlm-dropdown-menu>
       </ng-template>
     }
-    @if ('CONTENT_UPDATE' | canUserPerform | async) {
+    @if ('CONTENT_WRITERS' | hasRole | async) {
       <button hlmBtn variant="default" hlmTooltip="Save the changes" [disabled]="isSaveLoading() || isPublishLoading()" (click)="save()">
         @if (isSaveLoading()) {
           <hlm-spinner class="size-4" />
@@ -87,7 +87,7 @@
         <kbd hlmKbd>{{ platformService.actionSaveLabel }}</kbd>
       </button>
     }
-    @if ('CONTENT_PUBLISH' | canUserPerform | async) {
+    @if ('CONTENT_WRITERS' | hasRole | async) {
       @let publishedAt = documentPublishedAt();
       <div hlmButtonGroup>
         <button
@@ -149,7 +149,7 @@
           </button>
         </hlm-dropdown-menu-group>
         <hlm-dropdown-menu-separator />
-        @if ('CONTENT_UPDATE' | canUserPerform | async) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <hlm-dropdown-menu-group>
             <button hlmDropdownMenuItem (click)="openTranslateLocaleDialog()">
               <ng-icon hlm size="sm" name="lucideLanguages" />

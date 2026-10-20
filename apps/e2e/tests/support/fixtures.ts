@@ -8,7 +8,9 @@ import {
   test as base,
 } from '@playwright/test';
 
-import { AppApi, CSRF } from './app-api';
+import { AppApi, CSRF, type Role } from './app-api';
+
+export type { Role };
 import { AUTH_STATE } from './env';
 import { SessionProbe } from './sessions';
 
@@ -26,10 +28,9 @@ export interface TestUser {
 }
 
 export interface UserOptions {
-  role?: 'ADMIN' | 'CUSTOM' | null;
-  permissions?: string[];
+  /** A viewer unless given. */
+  role?: Role | null;
   displayName?: string;
-  lock?: boolean;
 }
 
 /** A unique suffix: the database lives for the whole run and tests run in parallel. */
@@ -113,7 +114,7 @@ export const test = base.extend<Fixtures>({
     await use(async (options = {}) => {
       const email = `${uniqueId('user-')}@e2e.localess.test`;
       const password = `pw-${unique()}`;
-      const user = await api.createUser({ email, password, role: 'CUSTOM', permissions: [], ...options });
+      const user = await api.createUser({ email, password, role: 'VIEWER', ...options });
       created.push(user.id);
       return { id: user.id, email, password };
     });

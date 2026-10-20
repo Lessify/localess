@@ -51,7 +51,7 @@ import {
 } from '@ng-icons/lucide';
 import { tablerMarkdown, tablerNumber } from '@ng-icons/tabler-icons';
 import { assetFileTypeDescriptions, schemaFieldKindDescriptions } from '@shared/models/schema.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { CommonValidator } from '@shared/validators/common.validator';
 import { LabelValidator } from '@shared/validators/label.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
@@ -86,7 +86,7 @@ import { SchemaValidator } from '../shared/schema.validator';
     '(window:keydown)': 'captureKeyboard($event)',
   },
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     HlmTabsImports,
     ReactiveFormsModule,

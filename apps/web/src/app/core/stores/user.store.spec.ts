@@ -12,9 +12,7 @@ const user: User = {
   emailVerified: true,
   displayName: 'Ada Lovelace',
   disabled: false,
-  role: 'CUSTOM',
-  permissions: ['CONTENT_READ'],
-  lock: true,
+  role: 'EDITOR',
   providers: ['password', 'google.com'],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
@@ -32,16 +30,14 @@ describe('UserStore', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => http.verify());
 
-  it('loads the session user with role, permissions and providers', () => {
+  it('loads the session user with role and providers', () => {
     const store = setup();
     expect(store.loaded()).toBe(false);
     http.expectOne('/api/auth/me').flush({ user });
     expect(store.loaded()).toBe(true);
     expect(store.isAuthenticated()).toBe(true);
     expect(store.initials()).toBe('AL');
-    expect(store.role()).toBe('CUSTOM');
-    expect(store.permissions()).toEqual(['CONTENT_READ']);
-    expect(store.isLocked()).toBe(true);
+    expect(store.role()).toBe('EDITOR');
     expect(store.isRoleAdmin()).toBe(false);
     expect(store.isPasswordProvider()).toBe(true);
     expect(store.isGoogleProvider()).toBe(true);
@@ -66,7 +62,6 @@ describe('UserStore', () => {
     store.signedOut();
     expect(store.isAuthenticated()).toBe(false);
     expect(store.role()).toBeUndefined();
-    expect(store.permissions()).toBeUndefined();
   });
 
   it('stays loaded and signed out after signedOut(), so the login page (guestGuard) lets the user in', async () => {

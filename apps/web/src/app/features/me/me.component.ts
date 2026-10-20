@@ -1,9 +1,10 @@
-import { NgOptimizedImage, UpperCasePipe } from '@angular/common';
+import { NgOptimizedImage } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { NotificationService } from '@core/services/notification.service';
 import { UserStore } from '@core/stores/user.store';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
+import { roleDescription, roleLabel } from '@shared/models/user-role.model';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -23,9 +24,11 @@ import { MePasswordDialogResult } from './me-password-dialog/me-password-dialog.
   templateUrl: './me.component.html',
   styleUrls: ['./me.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [HlmCardImports, HlmSeparatorImports, HlmButtonImports, NgOptimizedImage, UpperCasePipe],
+  imports: [HlmCardImports, HlmSeparatorImports, HlmButtonImports, NgOptimizedImage],
 })
 export class MeComponent {
+  protected readonly roleLabel = roleLabel;
+  protected readonly roleDescription = roleDescription;
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly meService = inject(MeService);

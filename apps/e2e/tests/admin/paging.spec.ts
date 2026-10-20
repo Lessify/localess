@@ -25,7 +25,7 @@ test.describe('Admin → Users, one page at a time', () => {
     const email = (n: number | string) => `${prefix}-${typeof n === 'number' ? pad(n) : n}@e2e.localess.test`;
     for (let i = 0; i < 25; i++) {
       cleanup.user(email(i));
-      await api.createUser({ email: email(i), password: 'pager-password', role: 'CUSTOM', permissions: [] });
+      await api.createUser({ email: email(i), password: 'pager-password', role: 'VIEWER' });
     }
     // The emails of the rows shown, in order.
     const emails = async () =>

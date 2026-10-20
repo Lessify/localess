@@ -39,8 +39,8 @@ import { AssetCardComponent } from '@shared/components/asset-card/asset-card.com
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
 import { fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } from '@shared/models/asset.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -71,7 +71,7 @@ import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-se
     CommonModule,
     HlmDialogImports,
     LlPaginatorImports,
-    CanUserPerformPipe,
+    HasRolePipe,
     LlTableImports,
     TimeDurationPipe,
     FormatFileSizePipe,

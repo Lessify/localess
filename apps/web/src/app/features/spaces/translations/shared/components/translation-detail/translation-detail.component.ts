@@ -29,7 +29,7 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -60,7 +60,7 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
   imports: [
     CommonModule,
     ClipboardModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     TranslationStringViewComponent,
     TranslationStringEditComponent,
     HlmButtonImports,

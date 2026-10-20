@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { IdName, IdNameUrl, Space } from '@localess/shared';
+import { IdName, IdNameUrl, Space, UserRole } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
@@ -57,8 +57,7 @@ describe('SpaceStore', () => {
     isAuthenticated?: ReturnType<typeof signal<boolean>>;
     /** The signed-in user; an admin unless a test says otherwise. */
     /** `null`: no role (signed up, no access yet). */
-    role?: 'ADMIN' | 'CUSTOM' | null;
-    permissions?: string[];
+    role?: UserRole | null;
   };
 
   /** The space data listeners stay silent unless a test hands them something to emit. */
@@ -82,7 +81,6 @@ describe('SpaceStore', () => {
             isAuthenticated: listeners.isAuthenticated ?? signal(true),
             loaded: signal(true),
             role: signal(listeners.role === undefined ? 'ADMIN' : listeners.role),
-            permissions: signal(listeners.permissions ?? []),
           },
         },
       ],
@@ -260,38 +258,23 @@ describe('SpaceStore', () => {
       expect(findAllDocuments.mock.calls).toEqual([['a']]);
     });
 
-    it('only listens to what the user may read (a translator reads neither documents nor schemas)', () => {
+    it('listens to documents and schemas for every role, a viewer included (as the server)', () => {
       const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
-      const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
-      createStore([space('a')], { findAllDocuments, findAllSchemas, role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
+      const store = createStore([space('a')], { findAllDocuments, findAllSchemas: () => of([{ id: 'schema' }]), role: 'VIEWER' });
       TestBed.tick();
 
-      expect(findAllDocuments).not.toHaveBeenCalled();
-      expect(findAllSchemas).not.toHaveBeenCalled();
-    });
-
-    it('listens to nothing for a user without a role, whatever permissions are left on the account (as the server)', () => {
-      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
-      const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
-      createStore([space('a')], { findAllDocuments, findAllSchemas, role: null, permissions: ['CONTENT_READ', 'SCHEMA_READ'] });
-      TestBed.tick();
-
-      expect(findAllDocuments).not.toHaveBeenCalled();
-      expect(findAllSchemas).not.toHaveBeenCalled();
-    });
-
-    it('reads schemas, but not documents, with SCHEMA_READ alone', () => {
-      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
-      const store = createStore([space('a')], {
-        findAllDocuments,
-        findAllSchemas: () => of([{ id: 'schema' }]),
-        role: 'CUSTOM',
-        permissions: ['SCHEMA_READ'],
-      });
-      TestBed.tick();
-
-      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findAllDocuments.mock.calls).toEqual([['a']]);
       expect(store.schemas()).toEqual([{ id: 'schema' }]);
+    });
+
+    it('listens to nothing for a user without a role (as the server)', () => {
+      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
+      createStore([space('a')], { findAllDocuments, findAllSchemas, role: null });
+      TestBed.tick();
+
+      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findAllSchemas).not.toHaveBeenCalled();
     });
 
     it("closes the previous space's listeners and drops its data when the space changes", () => {

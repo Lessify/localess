@@ -3,7 +3,7 @@ import { expect, test } from '../support/fixtures';
 
 test.describe('App API permissions', () => {
   test('a custom user can do what their permissions allow, and nothing else', async ({ space, createUser, newClient }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const client = await newClient();
     expect((await client.post('/api/auth/login', { headers: CSRF, data: user })).ok()).toBeTruthy();
 
@@ -18,7 +18,7 @@ test.describe('App API permissions', () => {
   });
 
   test('a disabled user can not sign in', async ({ api, createUser, newClient }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     await api.send('patch', `/api/app/users/${user.id}/status`, { disabled: true });
     const client = await newClient();
     const login = await client.post('/api/auth/login', { headers: CSRF, data: user });

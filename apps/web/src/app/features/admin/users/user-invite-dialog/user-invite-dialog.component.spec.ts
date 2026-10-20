@@ -1,53 +1,29 @@
-import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { UserStore } from '@core/stores/user.store';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 
-import { USER_PERMISSION_GROUPS } from '../user-permissions';
+import { USER_ROLE_OPTIONS } from '@shared/models/user-role.model';
 import { UserInviteDialogComponent } from './user-invite-dialog.component';
 
-interface CurrentUser {
-  id: string;
-  role: string | undefined;
-  permissions: string[] | undefined;
-}
-
-const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN', permissions: undefined };
-const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
-
-function userStoreOf(user: CurrentUser) {
-  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
-}
-
 describe('UserInviteDialogComponent', () => {
-  function setup(currentUser = ADMIN) {
+  function setup() {
     const close = vi.fn();
     TestBed.overrideComponent(UserInviteDialogComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }, userStoreOf(currentUser)] });
+    TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
     const fixture = TestBed.createComponent(UserInviteDialogComponent);
     fixture.detectChanges();
     return { component: fixture.componentInstance, close };
   }
 
-  it('exposes every permission group', () => {
-    const { component } = setup();
-
-    expect(component['permissionGroups']).toBe(USER_PERMISSION_GROUPS);
+  it('offers the five roles', () => {
+    expect(setup().component['roleOptions']).toBe(USER_ROLE_OPTIONS);
   });
 
-  it('starts with an invalid, empty form', () => {
+  it('starts with an invalid, empty form without a role', () => {
     const { component } = setup();
 
     expect(component.form.invalid).toBe(true);
-    expect(component.form.value).toMatchObject({ email: '', password: '', displayName: '' });
-  });
-
-  it('sends lock and permissions the server accepts when they are left untouched', () => {
-    const { component } = setup();
-
-    // The server takes a boolean / a list or nothing; null is refused (400), so the defaults are false and [].
-    expect(component.form.value).toMatchObject({ permissions: [], lock: false });
+    expect(component.form.value).toEqual({ email: '', password: '', displayName: '', role: null });
   });
 
   it('is valid once email and password meet their requirements', () => {
@@ -74,52 +50,19 @@ describe('UserInviteDialogComponent', () => {
     expect(component.form.controls['password'].valid).toBe(false);
   });
 
-  it('roleItemToString() maps known roles and falls back to the raw value', () => {
+  it('labels the roles, and no role as None', () => {
     const { component } = setup();
 
-    expect(component['roleItemToString']('ADMIN')).toBe('Admin');
-    expect(component['roleItemToString']('CUSTOM')).toBe('Custom');
-    expect(component['roleItemToString']('other')).toBe('other');
+    expect(component['roleItemToString']('VIEWER')).toBe('Viewer');
+    expect(component['roleItemToString'](null)).toBe('None');
   });
 
-  it('isPermissionSelected() reflects the current permissions list', () => {
-    const { component } = setup();
-    component.form.controls['permissions'].setValue(['USER_MANAGEMENT']);
-
-    expect(component.isPermissionSelected('USER_MANAGEMENT')).toBe(true);
-    expect(component.isPermissionSelected('SPACE_MANAGEMENT')).toBe(false);
-  });
-
-  it('togglePermission() adds a permission when checked', () => {
-    const { component } = setup();
-
-    component.togglePermission('USER_MANAGEMENT', true);
-
-    expect(component.form.value.permissions).toEqual(['USER_MANAGEMENT']);
-  });
-
-  it('togglePermission() removes a permission when unchecked', () => {
-    const { component } = setup();
-    component.form.controls['permissions'].setValue(['USER_MANAGEMENT', 'SPACE_MANAGEMENT']);
-
-    component.togglePermission('USER_MANAGEMENT', false);
-
-    expect(component.form.value.permissions).toEqual(['SPACE_MANAGEMENT']);
-  });
-  it('closes with the form value when saved', () => {
+  it('closes with the form value, the role included, when saved', () => {
     const { component, close } = setup();
-    component.form.patchValue({ email: 'new@example.com', password: 'secret123' });
+    component.form.patchValue({ email: 'new@example.com', password: 'secret123', role: 'EDITOR' });
 
     component.save();
 
-    expect(close).toHaveBeenCalledWith(expect.objectContaining({ email: 'new@example.com', password: 'secret123' }));
-  });
-
-  it('does not let a user manager invite an admin or grant permissions they lack', () => {
-    const { component } = setup(USER_MANAGER);
-
-    expect(component['canGrantAdmin']()).toBe(false);
-    expect(component.canGrantPermission('CONTENT_READ')).toBe(true);
-    expect(component.canGrantPermission('SPACE_MANAGEMENT')).toBe(false);
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ email: 'new@example.com', password: 'secret123', role: 'EDITOR' }));
   });
 });

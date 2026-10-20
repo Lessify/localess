@@ -76,8 +76,8 @@ import {
   filePreview as isPreviewableFileType,
 } from '@shared/models/asset.model';
 import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
@@ -114,7 +114,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
   },
   imports: [
     AssetCardComponent,
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     FileDragAndDropDirective,
     LlTableImports,

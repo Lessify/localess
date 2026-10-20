@@ -96,7 +96,7 @@ tests/
 │                           # `answerConfirm`, row menus; toasts; drag and drop)
 ├── auth.setup.ts           # signs in once for the other specs
 ├── seed.spec.ts            # where the Playwright Test Agents start (a fresh space)
-├── api/                    # platform, CDN API, Management API (translations, schemas, OpenAPI), permission matrix, user managers
+├── api/                    # platform, CDN API, Management API (translations, schemas, OpenAPI), role matrix, users for admins only
 ├── auth/                   # login, logout, deep links, password reset (link and email), Google / Microsoft, restricted users
 ├── admin/                  # Admin → Users, Admin → Spaces
 ├── me/                     # profile
@@ -145,12 +145,12 @@ Import `test` and `expect` from `./support/fixtures` (not `@playwright/test`):
 |---|---|
 | `space` | A new space (default locale English, plus its auto-generated preview token), deleted after the test. With `test.use({ spaceTemplate: 'translations_large' })` it is made from that template in the same request (below) |
 | `api` | `AppApi` as the admin, for test data: `createTranslation`, `createSchema` (with fields), `createDocument`, `saveDocumentData`, `publishContent`, `uploadAsset`, `createToken`, `createWebhook`, `createUser`, ... It has its own session, so it works in specs that start signed out |
-| `createUser(options)` | A user with a unique email and known password (`role` CUSTOM unless given, `permissions`, `lock`), deleted after the test |
+| `createUser(options)` | A user with a unique email and known password (`role`: a viewer unless given, `null` for none), deleted after the test |
 | `signInAs(user)` | A page in its own browser context, signed in as that user (no localStorage: like a fresh browser) |
 | `signedOutPage()` | A page in its own browser context, signed out (no session, no localStorage), with the error guard and offline routing |
 | `page` | As usual, plus the **error guard** (below) |
 | `anonymousRequest()` | An HTTP client without the admin session (for token-only and signed-out checks) |
-| `probe` | Signs in with an email and password in a client of its own: `canSignIn`, `accessOf` (role, permissions, which App API areas answer), then `probe.request` as that user |
+| `probe` | Signs in with an email and password in a client of its own: `canSignIn`, `accessOf` (role, which App API areas answer), then `probe.request` as that user |
 
 **Prepared spaces.** Instead of building large test data call by call, a spec can start from a **test template**
 (offered only with `LOCALESS_TEST_TEMPLATES=true`, which the e2e server and `pnpm dev` set; never in production):

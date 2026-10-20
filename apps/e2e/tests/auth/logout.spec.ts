@@ -3,7 +3,7 @@ import { expect, test } from '../support/fixtures';
 
 test.describe('Logout', () => {
   test('ends the session: the app sends the user back to the login page', async ({ createUser, signInAs }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const page = await signInAs(user);
     await page.goto('/features/welcome');
 

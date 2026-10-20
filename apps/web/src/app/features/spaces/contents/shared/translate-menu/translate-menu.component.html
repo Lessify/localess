@@ -11,7 +11,7 @@
   size="icon-xs"
   align="end"
   [class]="placementClass()"
-  [disabled]="('CONTENT_UPDATE' | canUserPerform | async) === false || disabled()"
+  [disabled]="('CONTENT_WRITERS' | hasRole | async) === false || disabled()"
   [hlmDropdownMenuTrigger]="translationMenu"
   aria-label="Translate the field"
   [hlmTooltip]="tooltip()">

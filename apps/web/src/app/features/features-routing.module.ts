@@ -1,9 +1,9 @@
 import { inject, NgModule } from '@angular/core';
 import { Router, RouterModule, Routes } from '@angular/router';
 import { FEATURE_FLAGS } from '@core/feature-flags';
-import { permissionGuard } from '@core/guards/permission.guard';
+import { roleGuard } from '@core/guards/role.guard';
 import { spaceSelectionGuard } from '@core/guards/space-selection.guard';
-import { UserPermission } from '@localess/shared';
+import { ADMINS, ANY_ROLE, CONTENT_WRITERS, DEVELOPERS } from '@localess/shared';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 
 import { FeaturesComponent } from './features.component';
@@ -56,7 +56,7 @@ const routes: Routes = [
             path: 'translations',
             title: 'Translations',
             loadChildren: () => import('./spaces/translations/translations.module').then(m => m.TranslationsModule),
-            canActivate: [permissionGuard(UserPermission.TRANSLATION_READ)],
+            canActivate: [roleGuard(ANY_ROLE)],
             data: {
               breadcrumb: {
                 label: 'Translations',
@@ -68,7 +68,7 @@ const routes: Routes = [
             path: 'contents',
             title: 'Contents',
             loadChildren: () => import('./spaces/contents/contents.module').then(m => m.ContentsModule),
-            canActivate: [permissionGuard(UserPermission.CONTENT_READ)],
+            canActivate: [roleGuard(ANY_ROLE)],
             data: {
               breadcrumb: {
                 label: 'Contents',
@@ -80,7 +80,7 @@ const routes: Routes = [
             path: 'assets',
             title: 'Assets',
             loadChildren: () => import('./spaces/assets/assets.module').then(m => m.AssetsModule),
-            canActivate: [permissionGuard(UserPermission.ASSET_READ)],
+            canActivate: [roleGuard(ANY_ROLE)],
             data: {
               breadcrumb: {
                 label: 'Assets',
@@ -92,7 +92,7 @@ const routes: Routes = [
             path: 'schemas',
             title: 'Schemas',
             loadChildren: () => import('./spaces/schemas/schemas.module').then(m => m.SchemasModule),
-            canActivate: [permissionGuard(UserPermission.SCHEMA_READ)],
+            canActivate: [roleGuard(ANY_ROLE)],
             data: {
               breadcrumb: {
                 label: 'Schemas',
@@ -106,18 +106,7 @@ const routes: Routes = [
             // Hidden with Import/Export (FEATURE_FLAGS): an old link lands on the start page instead.
             canMatch: [() => FEATURE_FLAGS.importExport || inject(Router).parseUrl('/features')],
             loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
-            canActivate: [
-              permissionGuard(
-                UserPermission.ASSET_EXPORT,
-                UserPermission.ASSET_IMPORT,
-                UserPermission.CONTENT_EXPORT,
-                UserPermission.CONTENT_IMPORT,
-                UserPermission.SCHEMA_EXPORT,
-                UserPermission.SCHEMA_IMPORT,
-                UserPermission.TRANSLATION_EXPORT,
-                UserPermission.TRANSLATION_IMPORT,
-              ),
-            ],
+            canActivate: [roleGuard(CONTENT_WRITERS)],
             data: {
               breadcrumb: {
                 label: 'Tasks',
@@ -128,6 +117,7 @@ const routes: Routes = [
             path: 'developers',
             title: 'Developers',
             loadChildren: () => import('./spaces/developers/developers.module').then(m => m.DevelopersModule),
+            canActivate: [roleGuard(DEVELOPERS)],
             data: {
               breadcrumb: {
                 label: 'Developers',
@@ -138,7 +128,7 @@ const routes: Routes = [
             path: 'settings',
             title: 'Settings',
             loadChildren: () => import('./spaces/settings/settings.module').then(m => m.SettingsModule),
-            canActivate: [permissionGuard(UserPermission.SPACE_MANAGEMENT)],
+            canActivate: [roleGuard(DEVELOPERS)],
             data: {
               breadcrumb: {
                 label: 'Settings',
@@ -151,7 +141,7 @@ const routes: Routes = [
         path: 'admin/users',
         title: 'Users',
         loadChildren: () => import('./admin/users/users.module').then(m => m.UsersModule),
-        canActivate: [permissionGuard(UserPermission.USER_MANAGEMENT)],
+        canActivate: [roleGuard(ADMINS)],
         data: {
           breadcrumb: {
             label: 'Users',
@@ -162,7 +152,7 @@ const routes: Routes = [
         path: 'admin/spaces',
         title: 'Spaces',
         loadChildren: () => import('./admin/spaces/spaces.module').then(m => m.SpacesModule),
-        canActivate: [permissionGuard(UserPermission.SPACE_MANAGEMENT)],
+        canActivate: [roleGuard(ADMINS)],
         data: {
           breadcrumb: {
             label: 'Spaces',

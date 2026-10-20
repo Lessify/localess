@@ -3,7 +3,7 @@ import { expect, test } from '../support/fixtures';
 test.describe('Deep links', () => {
   // signInAs opens a browser with only the session cookie, no localStorage: a private window, or cleared site data.
   test('open their page in a browser that only has the session cookie', async ({ space, createUser, signInAs }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const page = await signInAs(user);
 
     await page.goto('/features/me');

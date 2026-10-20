@@ -7,8 +7,8 @@ import { anonymousRequest, expect, test, uniqueId } from '../support/fixtures';
 // post-check (the page, again after a reload, the API, and what the account can now do).
 test.describe('Me → profile', () => {
   test.describe('view', () => {
-    test('opens from the user menu and shows a custom user with their permissions', async ({ createUser, signInAs }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ', 'CONTENT_READ'] });
+    test('opens from the user menu and shows the role, and what it may do', async ({ createUser, signInAs }) => {
+      const user = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
       await page.goto('/features/welcome');
@@ -19,23 +19,22 @@ test.describe('Me → profile', () => {
       await expect(page).toHaveURL(/\/features\/me$/);
       await expect(me.field('Email')).toHaveText(`Email: ${user.email}`);
       await expect(me.field('Email Verified')).toHaveText('Email Verified: No');
-      await expect(me.field('Role')).toHaveText('Role: CUSTOM');
-      await expect(me.field('Permissions')).toContainText('TRANSLATION_READ');
-      await expect(me.field('Permissions')).toContainText('CONTENT_READ');
+      await expect(me.field('Role')).toHaveText('Role: Viewer');
+      await expect(page.getByText('Reads contents, assets, translations and schemas; changes nothing.')).toBeVisible();
       for (const button of ['Update Profile', 'Update Email', 'Update Password'] as const) {
         await expect(me.button(button)).toBeVisible();
       }
     });
 
-    test('shows an admin without a permission list', async ({ createUser, signInAs }) => {
+    test('shows an admin as Admin, and that they may do everything', async ({ createUser, signInAs }) => {
       const user = await createUser({ role: 'ADMIN' });
       const page = await signInAs(user);
       const me = new MePage(page);
 
       await me.goto(user.email);
 
-      await expect(me.field('Role')).toHaveText('Role: ADMIN');
-      await expect(me.field('Permissions')).toHaveCount(0);
+      await expect(me.field('Role')).toHaveText('Role: Admin');
+      await expect(page.getByText('Everything: users, creating and deleting spaces, every space.')).toBeVisible();
     });
   });
 
@@ -45,7 +44,7 @@ test.describe('Me → profile', () => {
       createUser,
       signInAs,
     }) => {
-      const user = await createUser({ displayName: 'Before', permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ displayName: 'Before', role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
       const newName = `After ${uniqueId('')}`;
@@ -67,7 +66,7 @@ test.describe('Me → profile', () => {
     });
 
     test('sets an avatar URL; an invalid URL is refused and nothing changes', async ({ api, createUser, signInAs }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
       const avatarUrl = 'https://images.example.com/avatar.png';
@@ -92,7 +91,7 @@ test.describe('Me → profile', () => {
     });
 
     test('cancelling keeps the display name', async ({ api, createUser, signInAs }) => {
-      const user = await createUser({ displayName: 'Kept', permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ displayName: 'Kept', role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
 
@@ -119,7 +118,7 @@ test.describe('Me → profile', () => {
       cleanup,
       probe,
     }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const newEmail = `${uniqueId('moved-')}@e2e.localess.test`;
       cleanup.user(newEmail);
       const page = await signInAs(user);
@@ -145,7 +144,7 @@ test.describe('Me → profile', () => {
     });
 
     test('refuses a wrong current password', async ({ api, createUser, signInAs, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
       const newEmail = `${uniqueId('nope-')}@e2e.localess.test`;
@@ -165,8 +164,8 @@ test.describe('Me → profile', () => {
     });
 
     test('refuses an email another user has', async ({ api, createUser, signInAs, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
-      const other = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
+      const other = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
 
@@ -194,7 +193,7 @@ test.describe('Me → profile', () => {
       baseURL,
       probe,
     }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
       const otherSession = await anonymousRequest(playwright, baseURL, CSRF);
@@ -221,7 +220,7 @@ test.describe('Me → profile', () => {
     });
 
     test('refuses a wrong current password', async ({ createUser, signInAs, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
 
@@ -238,7 +237,7 @@ test.describe('Me → profile', () => {
     });
 
     test('a new password under 6 characters can not be submitted; cancelling changes nothing', async ({ createUser, signInAs, probe }) => {
-      const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+      const user = await createUser({ role: 'VIEWER' });
       const page = await signInAs(user);
       const me = new MePage(page);
 
@@ -257,28 +256,6 @@ test.describe('Me → profile', () => {
       await form.getByRole('button', { name: 'Cancel' }).click();
       await expect(form).toBeHidden();
       expect(await probe.canSignIn(user.email, user.password)).toBe(true);
-    });
-  });
-
-  test.describe('locked account', () => {
-    test('a locked user sees why, has no buttons, and the API refuses changes too', async ({ api, createUser, signInAs }) => {
-      const user = await createUser({ lock: true, displayName: 'Locked', permissions: ['TRANSLATION_READ'] });
-      const page = await signInAs(user);
-      const me = new MePage(page);
-
-      await me.goto(user.email);
-
-      await expect(page.getByText("Your account is locked. You can't manage your personal data and password.")).toBeVisible();
-      for (const button of ['Update Profile', 'Update Email', 'Update Password'] as const) {
-        await expect(me.button(button)).toHaveCount(0);
-      }
-      const own = page.request;
-      const headers = CSRF;
-      expect((await own.patch('/api/app/me', { headers, data: { displayName: 'Hacked' } })).status()).toBe(403);
-      expect(
-        (await own.put('/api/app/me/password', { headers, data: { currentPassword: user.password, newPassword: 'abcdef' } })).status(),
-      ).toBe(403);
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ displayName: 'Locked' });
     });
   });
 });

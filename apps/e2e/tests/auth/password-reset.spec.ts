@@ -10,7 +10,7 @@ test.describe('Password reset', () => {
   // The e2e server has SMTP (a mail catcher, scripts/start-server.mjs); the page without it ("ask an administrator")
   // is covered by reset.component.spec.ts.
   test('Forgot password? emails a link that sets a new password, once', async ({ page, createUser, baseURL, probe }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const reset = new ResetPasswordPage(page);
     const newPassword = 'emailed-new-password';
 
@@ -59,7 +59,7 @@ test.describe('Password reset', () => {
   });
 
   test('a reset link from an administrator sets a new password', async ({ page, api, createUser }) => {
-    const user = await createUser({ permissions: ['TRANSLATION_READ'] });
+    const user = await createUser({ role: 'VIEWER' });
     const { url } = await api.passwordResetLink(user.id);
     const newPassword = 'brand-new-password';
     const reset = new ResetPasswordPage(page);

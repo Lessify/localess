@@ -1,12 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
-/** What a route needs, as the server's access decorators say (`apps/server/src/auth/decorators.ts`). */
-export type RouteAccess =
-  | { kind: 'admin' }
-  | { kind: 'anyRole' }
-  | { kind: 'anyOf'; permissions: string[] }
-  | { kind: 'allOf'; permissions: string[] };
+/** The roles a route lets in, as its `@RequireRole` says (`apps/server/src/auth/decorators.ts`). */
+export interface RouteAccess {
+  roles: string[];
+}
 
 export interface AppRoute {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -18,6 +16,7 @@ export interface AppRoute {
 }
 
 const SERVER_SRC = resolve(import.meta.dirname, '../../../server/src');
+const ROLES_FILE = resolve(import.meta.dirname, '../../../../packages/shared/src/roles.ts');
 
 function controllerFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -27,54 +26,34 @@ function controllerFiles(dir: string): string[] {
   });
 }
 
-/** The source of `name` as `path` declares it: the file itself, or the file it imports `name` from. */
-function declaring(name: string, path: string, file: string): string {
-  if (new RegExp(`const ${name}\\s*=`).test(file)) return file;
-  const imported = file.match(new RegExp(`import \\{[^}]*\\b${name}\\b[^}]*\\} from '([^']+)'`));
-  if (!imported) return file;
-  return readFileSync(resolve(dirname(path), imported[1].replace(/\.js$/, '.ts')), 'utf8');
-}
-
-/** `UserPermission.X` and `...CONST` (an array of them, declared in the file or imported into it) to permission names. */
-function permissionsOf(args: string, file: string, path: string): string[] {
-  return args
-    .split(',')
-    .map(it => it.trim())
-    .filter(Boolean)
-    .flatMap(arg => {
-      const spread = arg.match(/^\.\.\.(\w+)$/);
-      if (spread) {
-        const source = declaring(spread[1], path, file);
-        const list = source.match(new RegExp(`const ${spread[1]}\\s*=\\s*\\[([^\\]]*)\\]`));
-        if (!list) throw new Error(`can not resolve ...${spread[1]}`);
-        return permissionsOf(list[1], source, path);
-      }
-      const name = arg.match(/^UserPermission\.(\w+)$/);
-      if (!name) throw new Error(`unknown permission argument ${arg}`);
-      return [name[1]];
-    });
-}
-
-function accessOf(decorator: string, args: string, file: string, path: string): RouteAccess {
-  switch (decorator) {
-    case 'RequireAdmin':
-      return { kind: 'admin' };
-    case 'RequireAnyRole':
-      return { kind: 'anyRole' };
-    case 'RequirePermission':
-      return { kind: 'anyOf', permissions: permissionsOf(args, file, path) };
-    default:
-      return { kind: 'allOf', permissions: permissionsOf(args, file, path) };
+/** The role lists of `@localess/shared` (`roles.ts`), by name: `CONTENT_WRITERS` → `['ADMIN', 'DEVELOPER', 'EDITOR']`. */
+export function roleLists(): Record<string, string[]> {
+  const lists: Record<string, string[]> = {};
+  const source = readFileSync(ROLES_FILE, 'utf8');
+  for (const match of source.matchAll(/export const (\w+) = \[([^\]]*)\] as const/g)) {
+    lists[match[1]] = [...match[2].matchAll(/'(\w+)'/g)].map(it => it[1]);
   }
+  return lists;
 }
 
-const ACCESS = /@(RequireAdmin|RequireAnyRole|RequirePermission|RequireAllPermissions)\(([^)]*)\)/;
+/** `@RequireRole(…)`'s argument to roles: a list's name, one role (`'ADMIN'`) or an inline list. */
+function rolesOf(arg: string, lists: Record<string, string[]>): string[] {
+  const value = arg.trim();
+  if (/^'\w+'$/.test(value)) return [value.slice(1, -1)];
+  if (value.startsWith('[')) return [...value.matchAll(/'(\w+)'/g)].map(it => it[1]);
+  const list = lists[value];
+  if (!list) throw new Error(`unknown role list ${value}`);
+  return list;
+}
+
+const ACCESS = /@RequireRole\(([^)]*)\)/;
 
 /**
  * Every App API route (`/api/app/**`) that declares its access, read from the server's controllers: a method's own
  * decorator, else its class's. Routes with none (signed in is enough: `me`, `events`, `locales`) are left out.
  */
 export function appRoutes(): AppRoute[] {
+  const lists = roleLists();
   const routes: AppRoute[] = [];
   for (const path of controllerFiles(join(SERVER_SRC, 'modules'))) {
     const file = readFileSync(path, 'utf8');
@@ -94,7 +73,7 @@ export function appRoutes(): AppRoute[] {
       routes.push({
         method: verb.toUpperCase() as AppRoute['method'],
         path: `/${controller[1]}${sub ? `/${sub}` : ''}`,
-        access: accessOf(found[1], found[2], file, path),
+        access: { roles: rolesOf(found[1], lists) },
         source: `${path.slice(SERVER_SRC.length + 1)} › ${name}`,
       });
     }

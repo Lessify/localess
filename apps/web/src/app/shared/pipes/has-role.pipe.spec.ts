@@ -1,65 +1,32 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { UserStore } from '@core/stores/user.store';
+import { RoleListName, UserRole } from '@localess/shared';
 
-import { CanUserPerformPipe } from './can-user-perform.pipe';
+import { HasRolePipe } from './has-role.pipe';
 
-describe('CanUserPerformPipe', () => {
-  function createPipe(role: 'ADMIN' | 'CUSTOM' | undefined, permissions?: string[]): CanUserPerformPipe {
-    const fakeUserStore = {
-      role: signal(role),
-      permissions: signal(permissions),
-    };
-    TestBed.configureTestingModule({
-      providers: [{ provide: UserStore, useValue: fakeUserStore }],
-    });
-    return TestBed.runInInjectionContext(() => new CanUserPerformPipe());
-  }
-
-  function transformSync(pipe: CanUserPerformPipe, permission?: string | string[]): boolean | undefined {
+describe('HasRolePipe', () => {
+  function check(role: UserRole | undefined, list?: RoleListName): boolean | undefined {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [{ provide: UserStore, useValue: { role: signal(role) } }] });
+    const pipe = TestBed.runInInjectionContext(() => new HasRolePipe());
     let result: boolean | undefined;
-    pipe.transform(permission).subscribe(v => (result = v));
+    pipe.transform(list).subscribe(it => (result = it));
     TestBed.tick();
     return result;
   }
 
-  it('is always true when no permission is required', () => {
-    const pipe = createPipe(undefined);
-    expect(transformSync(pipe, undefined)).toBe(true);
+  it('is true when no list is named', () => {
+    expect(check(undefined)).toBe(true);
   });
 
-  it('is false when there is no role and a permission is required', () => {
-    const pipe = createPipe(undefined);
-    expect(transformSync(pipe, 'contents:read')).toBe(false);
+  it('is true for a role of the named list', () => {
+    expect(check('EDITOR', 'CONTENT_WRITERS')).toBe(true);
+    expect(check('ADMIN', 'ADMINS')).toBe(true);
   });
 
-  it('is true for the admin role regardless of the single permission requested', () => {
-    const pipe = createPipe('ADMIN');
-    expect(transformSync(pipe, 'contents:read')).toBe(true);
-  });
-
-  it('is true for a custom role that has the exact permission', () => {
-    const pipe = createPipe('CUSTOM', ['contents:read']);
-    expect(transformSync(pipe, 'contents:read')).toBe(true);
-  });
-
-  it('is false for a custom role missing the permission', () => {
-    const pipe = createPipe('CUSTOM', ['contents:write']);
-    expect(transformSync(pipe, 'contents:read')).toBe(false);
-  });
-
-  it('is true for the admin role regardless of the permission array requested', () => {
-    const pipe = createPipe('ADMIN');
-    expect(transformSync(pipe, ['contents:read', 'contents:write'])).toBe(true);
-  });
-
-  it('is true for a custom role that has at least one of the requested permissions', () => {
-    const pipe = createPipe('CUSTOM', ['contents:write']);
-    expect(transformSync(pipe, ['contents:read', 'contents:write'])).toBe(true);
-  });
-
-  it('is false for a custom role with none of the requested permissions', () => {
-    const pipe = createPipe('CUSTOM', ['assets:read']);
-    expect(transformSync(pipe, ['contents:read', 'contents:write'])).toBe(false);
+  it('is false for a role outside it, and without a role', () => {
+    expect(check('TRANSLATOR', 'CONTENT_WRITERS')).toBe(false);
+    expect(check(undefined, 'ANY_ROLE')).toBe(false);
   });
 });

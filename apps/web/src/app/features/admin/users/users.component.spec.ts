@@ -18,14 +18,12 @@ function user(overrides: Partial<User> = {}): User {
 interface CurrentUser {
   id: string;
   role: string | undefined;
-  permissions: string[] | undefined;
 }
 
-const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN', permissions: undefined };
-const USER_MANAGER: CurrentUser = { id: 'mgr', role: 'CUSTOM', permissions: ['USER_MANAGEMENT', 'CONTENT_READ'] };
+const ADMIN: CurrentUser = { id: 'adm', role: 'ADMIN' };
 
 function userStoreOf(user: CurrentUser) {
-  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role), permissions: signal(user.permissions) } };
+  return { provide: UserStore, useValue: { id: signal(user.id), role: signal(user.role) } };
 }
 
 const pageOf = <T>(items: T[], params: HttpParams): Page<T> => ({
@@ -324,21 +322,17 @@ describe('UsersComponent', () => {
     expect(error).toHaveBeenCalledWith("Password reset link for 'user@example.com' can not be created.");
   });
 
-  describe('canManage()', () => {
-    it('lets an admin manage every user', () => {
-      const { component } = setup();
+  it('offers Disable / Enable on every user but yourself', () => {
+    const { component } = setup();
 
-      expect(component.canManage(user({ role: 'ADMIN' }))).toBe(true);
-      expect(component.canManage(user({ id: 'adm', role: 'ADMIN' }))).toBe(true);
-    });
+    expect(component.canChangeStatus(user({ id: 'u1' }))).toBe(true);
+    expect(component.canChangeStatus(user({ id: 'adm' }))).toBe(false);
+  });
 
-    it('stops a user manager at themselves, admins and users with more permissions', () => {
-      const { component } = setup([], undefined, USER_MANAGER);
+  it('shows a role by its label, no role as None', () => {
+    const { component } = setup();
 
-      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['CONTENT_READ'] as User['permissions'] }))).toBe(true);
-      expect(component.canManage(user({ id: 'mgr', role: 'CUSTOM' }))).toBe(false);
-      expect(component.canManage(user({ role: 'ADMIN' }))).toBe(false);
-      expect(component.canManage(user({ role: 'CUSTOM', permissions: ['SPACE_MANAGEMENT'] as User['permissions'] }))).toBe(false);
-    });
+    expect(component['roleLabel']('EDITOR')).toBe('Editor');
+    expect(component['roleLabel'](undefined)).toBe('None');
   });
 });

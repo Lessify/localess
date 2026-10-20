@@ -69,7 +69,7 @@ import { SplitterValueDirective } from '@shared/directives/splitter-value.direct
 import { ContentError } from '@shared/models/content.model';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -117,7 +117,7 @@ import { SchemaPathItem } from './edit-document.model';
   },
   imports: [
     ClipboardModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     ContentPreviewComponent,
     EditDocumentSchemaComponent,

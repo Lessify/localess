@@ -8,7 +8,7 @@
       <div class="text-muted-foreground line-clamp-1">#{{ entity?.name }}</div>
     </div>
   </div>
-  @if ('SCHEMA_UPDATE' | canUserPerform | async) {
+  @if ('DEVELOPERS' | hasRole | async) {
     <button hlmBtn hlmTooltip="Save the changes" [disabled]="!form.valid || isSaveLoading()" (click)="save()">
       @if (isSaveLoading()) {
         <hlm-spinner class="size-4" />
