@@ -70,14 +70,6 @@ describe('TranslationDetailComponent', () => {
     };
   }
 
-  it('statusLabel() names the status in words, not as the raw enum value', () => {
-    const { component } = setup();
-
-    expect(component.statusLabel(translation({ locales: {} }))).toBe('Untranslated');
-    expect(component.statusLabel(translation({ locales: { en: 'Hi' } }))).toBe('Partially Translated');
-    expect(component.statusLabel(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe('Translated');
-  });
-
   describe('live refreshes (new objects, same values)', () => {
     it('keep the chosen target locale', () => {
       const { component, fixture } = setup();
@@ -316,12 +308,30 @@ describe('TranslationDetailComponent', () => {
     });
   });
 
-  it('copied() notifies success', () => {
-    const { component, success } = setup();
+  describe('details sheet', () => {
+    it('runs an action only once the sheet has closed (two dialogs at once collide)', () => {
+      const { component, open } = setup();
+      open.mockReturnValue({ closed$: of(undefined) });
+      component.openDetails();
 
-    component.copied();
+      component.fromDetails('remove', translation({ id: 't1' }));
+      expect(component.detailsOpen()).toBe(false);
+      expect(open).not.toHaveBeenCalled();
 
-    expect(success).toHaveBeenCalledWith('Translation ID copied to clipboard.');
+      component.onDetailsClosed();
+      expect(open).toHaveBeenCalledTimes(1);
+      component.onDetailsClosed();
+      expect(open).toHaveBeenCalledTimes(1);
+    });
+
+    it('runs an action at once when the sheet is not open (the panel)', () => {
+      const { component, open } = setup();
+      open.mockReturnValue({ closed$: of(undefined) });
+
+      component.fromDetails('edit', translation({ id: 't1' }));
+
+      expect(open).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('captureKeyboard', () => {

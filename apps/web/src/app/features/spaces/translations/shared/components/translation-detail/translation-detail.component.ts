@@ -1,4 +1,3 @@
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -20,7 +19,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { translateErrorMessage } from '@core/utils/translate-error';
 import { DEFAULT_LOCALE, Locale, Translation, TranslationUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowRight, lucideCopy, lucideLanguages, lucidePencil, lucideReplace, lucideSave, lucideTrash } from '@ng-icons/lucide';
+import { lucideArrowRight, lucideInfo, lucideLanguages, lucideSave } from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -30,7 +29,6 @@ import {
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
 import { HasRolePipe } from '@shared/pipes/has-role.pipe';
-import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -38,6 +36,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmKbdImports } from '@spartan-ng/helm/kbd';
 import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
+import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { Observable } from 'rxjs';
@@ -46,7 +45,8 @@ import { filter, switchMap, take } from 'rxjs/operators';
 import { EditDialogComponent, EditDialogContext, EditDialogResult } from '../../../edit-dialog';
 import { EditIdDialogComponent, EditIdDialogContext, EditIdDialogResult } from '../../../edit-id-dialog';
 import { identifyTranslationStatus } from '../../models/translation.model';
-import { TRANSLATION_STATUS_LABELS, TranslationStatus } from '../../models/translation-status.model';
+import { TranslationStatus } from '../../models/translation-status.model';
+import { TranslationInfoComponent } from '../translation-info/translation-info.component';
 import { TranslationStringEditComponent } from '../translation-string-edit/translation-string-edit.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
 
@@ -60,17 +60,17 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
   },
   imports: [
     CommonModule,
-    ClipboardModule,
     HasRolePipe,
     TranslationStringViewComponent,
+    TranslationInfoComponent,
     TranslationStringEditComponent,
     HlmButtonImports,
     HlmIconImports,
     HlmTooltipImports,
     HlmSpinnerImports,
     HlmSelectImports,
+    HlmSheetImports,
     HlmFieldImports,
-    HlmBadgeImports,
     HlmSeparatorImports,
     HlmKbdImports,
     LocaleIconComponent,
@@ -78,11 +78,8 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
   providers: [
     provideIcons({
       lucideArrowRight,
+      lucideInfo,
       lucideLanguages,
-      lucideReplace,
-      lucidePencil,
-      lucideTrash,
-      lucideCopy,
       lucideSave,
     }),
   ],
@@ -92,6 +89,10 @@ export class TranslationDetailComponent {
   private readonly localeService = inject(LocaleService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
+  /** Whether the details sheet is open (narrow pages, where the info panel is hidden). */
+  readonly detailsOpen = signal(false);
+  /** The action waiting for the details sheet to close. */
+  private afterDetailsClosed?: () => void;
   private readonly cd = inject(ChangeDetectorRef);
   private readonly translateService = inject(TranslateService);
   private readonly translationService = inject(TranslationService);
@@ -139,10 +140,6 @@ export class TranslationDetailComponent {
 
   identifyTranslationStatus(translate: Translation): TranslationStatus {
     return identifyTranslationStatus(translate, this.availableLocales());
-  }
-
-  statusLabel(translate: Translation): string {
-    return TRANSLATION_STATUS_LABELS[this.identifyTranslationStatus(translate)];
   }
 
   translate(): void {
@@ -208,6 +205,37 @@ export class TranslationDetailComponent {
       return `${target.name} is not supported as a translation target`;
     }
     return 'Translate';
+  }
+
+  /** The details (key, status, labels, dates and their actions) in a sheet from the right: the panel is hidden on a
+   * narrow page. */
+  openDetails(): void {
+    this.detailsOpen.set(true);
+  }
+
+  /**
+   * An action of the details sheet opens its own dialog: only once the sheet has closed (the sheet is a dialog too, and
+   * two open at once collide). From the panel, at once.
+   */
+  fromDetails(action: 'editKey' | 'edit' | 'remove', translation: Translation): void {
+    const run = () => {
+      if (action === 'editKey') this.openEditIdDialog(translation);
+      else if (action === 'edit') this.openEditDialog(translation);
+      else this.openDeleteDialog(translation);
+    };
+    if (!this.detailsOpen()) {
+      run();
+      return;
+    }
+    this.afterDetailsClosed = run;
+    this.detailsOpen.set(false);
+  }
+
+  onDetailsClosed(): void {
+    this.detailsOpen.set(false);
+    const action = this.afterDetailsClosed;
+    this.afterDetailsClosed = undefined;
+    action?.();
   }
 
   openEditIdDialog(translation: Translation): void {
@@ -287,10 +315,6 @@ export class TranslationDetailComponent {
           this.notificationService.error('Translation can not be deleted.');
         },
       });
-  }
-
-  copied() {
-    this.notificationService.success(`Translation ID copied to clipboard.`);
   }
 
   captureKeyboard(event: KeyboardEvent): void {

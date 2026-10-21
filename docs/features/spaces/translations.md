@@ -60,6 +60,14 @@ locales of the selected space.
 - `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` (`POST /api/app/spaces/:s/translations/translate-locale`) to bulk-translate one locale into another with the configured machine-translation provider, in a single transaction
 - Layout toggle: **list** (flat) ↔ **tree** (hierarchical), persisted in `LocalSettingsStore.translationLayout`
 
+The page fills the window below the header; its columns follow the width the page has (container queries): list,
+editor and the info panel when wide; list beside the editor when medium; list over the editor when narrow. The info
+panel (`TranslationInfoComponent`, `shared/components/translation-info/`: key, status, description, labels, dates,
+and Edit Key / Edit / Delete) shows only when wide; narrower, the editor's **Details** button opens it in a sheet
+from the right. An action of the sheet runs once the sheet has closed, and every declared sheet has an `id` of its
+own: Spartan numbers declared and opened dialogs with two counters that both make `brn-dialog-N`, so a sheet and a
+dialog opened from it can collide.
+
 `TranslationDetailComponent` (`shared/components/translation-detail/`) owns per-key editing: it injects `PlatformService`, `LocaleService`,
 `TranslateService`, `TranslationService`, `NotificationService`, `HlmDialogService`, handles keyboard shortcuts via a `(window:keydown)` host listener
 (`captureKeyboard()`), and runs AI-assisted translation in `translate()`, which goes through `TranslateService.translate()` → `POST /api/app/translate`

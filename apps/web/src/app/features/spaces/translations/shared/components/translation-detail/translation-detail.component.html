@@ -72,6 +72,16 @@
                   <ng-icon hlm size="sm" name="lucideLanguages" />
                 }
               </button>
+              <button
+                hlmBtn
+                class="shrink-0 @4xl:hidden"
+                size="icon"
+                variant="outline"
+                aria-label="Details"
+                hlmTooltip="Details"
+                (click)="openDetails()">
+                <ng-icon hlm size="sm" name="lucideInfo" />
+              </button>
             </div>
           </div>
         </fieldset>
@@ -120,108 +130,30 @@
     </div>
   }
 </div>
-<!-- The info panel only where the page is wide enough for a third column. -->
-<div class="hidden h-full min-h-0 overflow-y-auto border break-all @4xl:block">
-  @if (translation(); as translation) {
-    <div>
-      <div class="align-items-start flex gap-2 p-2">
-        @if ('CONTENT_WRITERS' | hasRole | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit Key" aria-label="Edit Key" (click)="openEditIdDialog(translation)">
-            <ng-icon hlm size="sm" name="lucideReplace" />
-          </button>
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Edit" aria-label="Edit" (click)="openEditDialog(translation)">
-            <ng-icon hlm size="sm" name="lucidePencil" />
-          </button>
-        }
-        @if ('CONTENT_WRITERS' | hasRole | async) {
-          <button hlmBtn size="icon" variant="outline" hlmTooltip="Delete" aria-label="Delete" (click)="openDeleteDialog(translation)">
-            <ng-icon hlm size="sm" name="lucideTrash" />
-          </button>
-        }
-      </div>
-      <hlm-separator />
-      <ul role="list" aria-label="Translation details" class="divide-y">
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all">Key</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              <code>{{ translation.key }}</code>
-              <button
-                hlmBtn
-                size="icon"
-                variant="ghost"
-                hlmTooltip="Copy Key"
-                aria-label="Copy Key"
-                [cdkCopyToClipboard]="translation.key"
-                (cdkCopyToClipboardCopied)="copied()">
-                <ng-icon hlm size="sm" name="lucideCopy" />
-              </button>
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Status</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ statusLabel(translation) }}
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Description</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              @if (translation.description) {
-                {{ translation.description }}
-              } @else {
-                No description available.
-              }
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Labels</div>
-            </div>
-            <div class="flex items-center gap-2 text-xs leading-5 break-words">
-              @for (label of translation.labels; track label) {
-                <span hlmBadge [variant]="selectedLabels().includes(label) ? 'secondary' : 'outline'">
-                  {{ label }}
-                </span>
-              } @empty {
-                No label available.
-              }
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Created At</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ translation.createdAt | date: 'medium' }}
-            </div>
-          </div>
-        </li>
-        <li role="listitem" class="relative flex items-center p-2">
-          <div class="min-w-0 flex-auto">
-            <div class="flex items-center gap-x-3">
-              <div class="text-sm leading-6 font-semibold break-all"> Updated At</div>
-            </div>
-            <div class="flex items-center gap-x-2.5 text-xs leading-5 break-words">
-              {{ translation.updatedAt | date: 'medium' }}
-            </div>
-          </div>
-        </li>
-      </ul>
-    </div>
-  }
-</div>
+<!-- The info panel only where the page is wide enough for a third column; narrower, the editor's Details button
+     opens the same details in a sheet from the right. -->
+<ll-translation-info
+  class="hidden h-full min-h-0 overflow-y-auto border break-all @4xl:block"
+  [translation]="translation()"
+  [availableLocales]="availableLocales()"
+  [selectedLabels]="selectedLabels()"
+  (editKey)="openEditIdDialog($event)"
+  (edit)="openEditDialog($event)"
+  (remove)="openDeleteDialog($event)" />
+
+<!-- An id of its own: Spartan numbers declared and opened dialogs with two counters that both make "brn-dialog-N". -->
+<hlm-sheet id="translation-details-sheet" side="right" [state]="detailsOpen() ? 'open' : 'closed'" (closed)="onDetailsClosed()">
+  <hlm-sheet-content *hlmSheetPortal="let ctx" class="overflow-y-auto">
+    <hlm-sheet-header>
+      <h3 hlmSheetTitle>Details</h3>
+    </hlm-sheet-header>
+    <ll-translation-info
+      class="break-all"
+      [translation]="translation()"
+      [availableLocales]="availableLocales()"
+      [selectedLabels]="selectedLabels()"
+      (editKey)="fromDetails('editKey', $event)"
+      (edit)="fromDetails('edit', $event)"
+      (remove)="fromDetails('remove', $event)" />
+  </hlm-sheet-content>
+</hlm-sheet>
