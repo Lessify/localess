@@ -32,8 +32,11 @@ describe('WebhooksComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(webhooks: WebHook[] = []) {
-    const findAll = vi.fn().mockReturnValue(of(webhooks));
+  /** `failLoad`: the page request fails. */
+  function setup(webhooks: WebHook[] = [], failLoad = false) {
+    const findAll = vi
+      .fn()
+      .mockReturnValue(failLoad ? throwError(() => new Error('boom')) : of({ items: webhooks, page: 0, size: 20, total: webhooks.length }));
     const create = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const updateStatus = vi.fn().mockReturnValue(of(undefined));
@@ -64,17 +67,47 @@ describe('WebhooksComponent', () => {
     const webhooks = [webhook({ id: 'w1' }), webhook({ id: 'w2' })];
     const { component, findAll } = setup(webhooks);
 
-    expect(findAll).toHaveBeenCalledWith('space-1');
+    expect(findAll).toHaveBeenCalledWith('space-1', component.list.params());
     expect(component.dataSource.filteredData()).toEqual(webhooks);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
+  it('onFilterChange() searches and filters on the server, from the first page', () => {
+    const { component, findAll } = setup();
+    component.list.page.set(2);
+
+    component.onFilterChange({
+      search: ' slack ',
+      enabled: 'false',
+      events: [WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.TRANSLATION_CHANGED],
+    });
+    TestBed.tick();
+
+    const params = component.list.params();
+    expect(component.list.page()).toBe(0);
+    expect(findAll).toHaveBeenLastCalledWith('space-1', params);
+    expect(params.get('search')).toBe('slack');
+    expect(params.get('enabled')).toBe('false');
+    expect(params.getAll('event')).toEqual([WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.TRANSLATION_CHANGED]);
+  });
+
+  it('onSortChange() sorts on the server; cleared, back to by name', () => {
     const { component } = setup();
 
-    component.onFilterChange({ search: 'slack' });
+    component.onSortChange({ active: 'updatedAt', direction: 'desc' });
+    expect(component.list.params().get('sort')).toBe('updatedAt');
+    expect(component.list.params().get('direction')).toBe('desc');
 
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'slack' }));
+    component.onSortChange({ active: 'updatedAt', direction: '' });
+    expect(component.list.params().has('sort')).toBe(false);
+  });
+
+  it('tells a failed load and stops loading', () => {
+    const { component, error } = setup([], true);
+
+    expect(error).toHaveBeenCalledWith('Webhooks can not be loaded.');
+    expect(component.isLoading()).toBe(false);
   });
 
   it('navigateToDetail() navigates to the webhook detail route', () => {

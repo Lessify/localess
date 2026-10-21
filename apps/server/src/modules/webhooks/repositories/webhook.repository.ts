@@ -1,5 +1,6 @@
+import type { WebHookPageable } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, arrayOverlaps, asc, desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -7,6 +8,7 @@ import { webhooks } from '../../../infra/database/schema.js';
 import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
+import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 
 export type WebhookValues = Pick<WebhookEntity, 'name' | 'url' | 'events'> & Partial<Pick<WebhookEntity, 'headers' | 'secret' | 'enabled'>>;
 
@@ -18,8 +20,21 @@ export class WebhookRepository {
     private readonly eventService: EventService,
   ) {}
 
-  findAll(spaceId: string): Promise<WebhookEntity[]> {
-    return this.db.select().from(webhooks).where(eq(webhooks.spaceId, spaceId)).orderBy(asc(webhooks.name));
+  /** One page by the query's sort (`name` case-insensitive, the default), then the id so equal values page stably. */
+  findAll(spaceId: string, query: WebHookPageable): Promise<WebhookEntity[]> {
+    const order = query.direction === 'desc' ? desc : asc;
+    const column = { name: sql`lower(${webhooks.name})`, enabled: webhooks.enabled, updatedAt: webhooks.updatedAt }[query.sort];
+    return this.db.query.webhooks.findMany({
+      where: this.where(spaceId, query),
+      orderBy: [order(column), asc(webhooks.id)],
+      limit: query.size,
+      offset: offsetOf(query),
+    });
+  }
+
+  /** How many of the space's webhooks match the query's filters and search. */
+  findAllCount(spaceId: string, query: WebHookPageable): Promise<number> {
+    return this.db.$count(webhooks, this.where(spaceId, query));
   }
 
   async findById(spaceId: string, id: string): Promise<WebhookEntity | undefined> {
@@ -55,6 +70,17 @@ export class WebhookRepository {
       if (deleted.length) await this.eventService.publish({ spaceId, entity: 'webhooks', id, op: 'deleted' }, t);
       return deleted.length > 0;
     });
+  }
+
+  private where(spaceId: string, query: WebHookPageable): SQL | undefined {
+    const conditions: SQL[] = [eq(webhooks.spaceId, spaceId)];
+    if (query.enabled !== undefined) conditions.push(eq(webhooks.enabled, query.enabled));
+    if (query.event) conditions.push(arrayOverlaps(webhooks.events, query.event));
+    if (query.search) {
+      const pattern = containsPattern(query.search);
+      conditions.push(or(ilike(webhooks.name, pattern), ilike(webhooks.url, pattern)) as SQL);
+    }
+    return and(...conditions);
   }
 
   private byId(spaceId: string, id: string) {

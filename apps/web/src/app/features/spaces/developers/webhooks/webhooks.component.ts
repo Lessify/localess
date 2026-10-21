@@ -1,11 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { WebHook, WebHookEvent } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -25,8 +25,8 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -34,12 +34,14 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { combineLatest, EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { WebHookService } from './webhook.service';
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog/webhook-dialog.model';
 
+/** The space's webhooks: one page from the server, by name unless sorted otherwise; reloads on a webhook change. */
 @Component({
   selector: 'll-space-developers-webhooks',
   templateUrl: './webhooks.component.html',
@@ -69,19 +71,19 @@ import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog/webh
     }),
   ],
 })
-export class WebhooksComponent implements AfterViewInit {
+export class WebhooksComponent {
   private readonly webhookService = inject(WebHookService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
   spaceStore = inject(SpaceStore);
 
+  /** The page shown: paged, sorted, filtered and searched on the server. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly webhooks = signal<WebHook[]>([]);
   readonly dataSource = new TableDataSource<WebHook>(this.webhooks, this.injector);
   displayedColumns: string[] = ['name', 'enabled', 'events', 'updatedAt', 'actions'];
@@ -106,35 +108,40 @@ export class WebhooksComponent implements AfterViewInit {
 
   private destroyRef = inject(DestroyRef);
 
+  /**
+   * The current query's page for the selected space, again whenever either changes (and live). A failed load is told
+   * and ends only that request: the next query change fetches again.
+   */
   constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<WebHook>({
-      searchFields: webhook => [webhook.name, webhook.url],
-      filterFields: [
-        { key: 'enabled', accessor: webhook => String(webhook.enabled) },
-        { key: 'events', accessor: webhook => webhook.events },
-      ],
-    });
-    toObservable(this.spaceStore.selectedSpace)
+    combineLatest([toObservable(this.spaceStore.selectedSpaceId).pipe(filter(it => it !== undefined)), toObservable(this.list.params)])
       .pipe(
-        filter(it => it !== undefined),
-        switchMap(it => this.webhookService.findAll(it!.id)),
+        switchMap(([spaceId, params]) =>
+          this.webhookService.findAll(spaceId!, params).pipe(
+            catchError(() => {
+              this.notificationService.error('Webhooks can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: webhooks => {
-          this.webhooks.set(webhooks);
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.webhooks.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
       });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
+  /** The search box (name or URL), Status and Events (any of them), on the server; from the first page. */
+  onFilterChange(value: FilterToolbarValue): void {
+    this.list.setFilters({ search: value.search?.trim() || undefined, enabled: value['enabled'], event: value['events'] });
   }
 
-  onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+  /** Cleared: back to by name. */
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
   }
 
   navigateToDetail(webhook: WebHook): void {

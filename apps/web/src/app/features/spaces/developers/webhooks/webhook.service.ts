@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { WebHook, WebHookCreate, WebHookLog, WebHookStatusUpdate, WebHookUpdate } from '@localess/shared';
+import { Page, WebHook, WebHookCreate, WebHookLog, WebHookStatusUpdate, WebHookUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -16,9 +16,11 @@ export class WebHookService {
     return `/api/app/spaces/${spaceId}/webhooks`;
   }
 
-  /** Ordered by name (server side). */
-  findAll(spaceId: string): Observable<WebHook[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['webhooks'] }, () => this.http.get<WebHook[]>(this.base(spaceId)));
+  /** One page (`params`: a `PagedList`'s), by name unless sorted otherwise. */
+  findAll(spaceId: string, params: HttpParams): Observable<Page<WebHook>> {
+    return liveQueryWith(this.events, { spaceId, entities: ['webhooks'] }, () =>
+      this.http.get<Page<WebHook>>(this.base(spaceId), { params }),
+    );
   }
 
   findById(spaceId: string, id: string): Observable<WebHook> {

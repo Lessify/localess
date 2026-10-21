@@ -295,7 +295,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     });
 
     it('lists by name and deletes with logs, for developers only', async () => {
-      expect((await manager.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
+      expect((await manager.get(base)).json().items.map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
       expect((await nobody.get(base)).statusCode).toBe(403);
       expect((await manager.delete(`${base}/${hook.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(webhookLogs)).toEqual([]);

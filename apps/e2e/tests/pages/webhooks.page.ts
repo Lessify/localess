@@ -29,6 +29,24 @@ export class WebhooksPage {
     return this.page.getByText('No webhooks yet.');
   }
 
+  /** The names of the rows shown, in order. */
+  async names(): Promise<string[]> {
+    const rows = await this.page.locator('tr[ll-row]').all();
+    return Promise.all(rows.map(async row => (await row.getByRole('cell').first().innerText()).split('\n')[0].trim()));
+  }
+
+  /** The search box (name or URL, on the server). */
+  async search(text: string): Promise<void> {
+    await this.page.getByPlaceholder('Search...').fill(text);
+  }
+
+  /** Picks one value in the "Status" filter (on the server). */
+  async filterStatus(status: 'Enabled' | 'Disabled'): Promise<void> {
+    await this.page.getByRole('button', { name: 'Status' }).click();
+    await this.page.getByRole('option', { name: status, exact: true }).click();
+    await this.page.keyboard.press('Escape');
+  }
+
   row(name: string): Locator {
     return this.page.getByRole('row').filter({ hasText: name });
   }

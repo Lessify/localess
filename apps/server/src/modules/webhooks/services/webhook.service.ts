@@ -1,10 +1,11 @@
-import type { WebHookEvent } from '@localess/shared';
+import type { WebHookEvent, WebHookPageable } from '@localess/shared';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
+import { toPage } from '../../../shared/utils/paging.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 
@@ -43,9 +44,14 @@ export class WebhookService {
     if (!checked.ok) throw new BadRequestException(`Webhook URL is not allowed: ${checked.reason}`);
   }
 
-  async findAll(spaceId: string) {
+  /** One page, by name unless sorted otherwise. */
+  async findAll(spaceId: string, query: WebHookPageable) {
     await this.requireSpace(spaceId);
-    return (await this.webhookRepository.findAll(spaceId)).map(toWebhook);
+    const [rows, total] = await Promise.all([
+      this.webhookRepository.findAll(spaceId, query),
+      this.webhookRepository.findAllCount(spaceId, query),
+    ]);
+    return toPage(rows, total, query, toWebhook);
   }
 
   async findOne(spaceId: string, webhookId: string) {

@@ -22,10 +22,14 @@ App API (`apps/server/src/modules/webhooks/controllers/webhook.controller.ts`):
 
 | Method | Path | |
 |---|---|---|
-| `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | list (by name) / create |
+| `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | one page (`Page<WebHook>`, `zWebHookPageable`) / create |
 | `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId` | read / update / delete |
 | `PATCH` | `/api/app/spaces/:spaceId/webhooks/:webhookId/status` | `{ enabled }` |
 | `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs[?limit=]` | newest first; the 100 newest, or `limit` clamped to 1–1000 |
+
+The list is paged on the server ([Pagination](server/pagination.md)): `?page=&size=&sort=&direction=`, sorts `name`
+(the default, case-insensitive), `enabled`, `updatedAt` (ties by id); `?enabled=true|false`; `?event=` (repeated: a
+webhook listening to any of them); `?search=` (the name or the URL, case-insensitive contains).
 
 Every route checks the space first: an unknown space is 404 "Space not found" (the list too), then "Webhook not found"; a `spaceId` or `webhookId` that isn't a UUID is 404. Request bodies are strict: an unknown field is a 400.
 
@@ -213,7 +217,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 - `events`: required, at least one selected
 - `secret`: optional, displayed as a password field
 
-Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
+Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) shows one page from the server (`PagedList`, `ll-paginator`): the sort headers, the search box and the Status / Events filters change the query. It supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
 
 `WebhookDetailComponent` shows the full log history for a single webhook: search by log id, filter by event/status, paginated (`HlmPaginationImports`), plus enable/disable, edit, and delete actions.
 

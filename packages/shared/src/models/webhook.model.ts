@@ -12,6 +12,10 @@ export interface WebHook {
   updatedAt: Timestamp;
 }
 
+/** What a space's webhook list sorts by: the name (case-insensitive, the default), enabled first or last, last updated. */
+export const WEBHOOK_SORT_FIELDS = ['name', 'enabled', 'updatedAt'] as const;
+export type WebHookSortField = (typeof WEBHOOK_SORT_FIELDS)[number];
+
 export enum WebHookEvent {
   CONTENT_PUBLISHED = 'content.published',
   CONTENT_UNPUBLISHED = 'content.unpublished',

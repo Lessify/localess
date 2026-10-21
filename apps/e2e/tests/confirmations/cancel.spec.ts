@@ -87,7 +87,7 @@ test.describe('Cancelling a confirmation changes nothing', () => {
 
   test('Webhooks → Delete', async ({ page, api, space }) => {
     await api.createWebhook(space.id, { name: 'Deploy', url: 'https://hooks.example.com/deploy', events: ['translation.published'] });
-    const list = () => api.get(`/api/app/spaces/${space.id}/webhooks`);
+    const list = () => api.findWebhooks(space.id);
     const before = await list();
     const webhooks = new WebhooksPage(page);
     await webhooks.goto(space.id);
@@ -178,7 +178,7 @@ test.describe('Cancelling a form dialog saves nothing', () => {
 
   test('Webhooks → Edit', async ({ page, api, space }) => {
     await api.createWebhook(space.id, { name: 'Deploy', url: 'https://hooks.example.com/deploy', events: ['translation.published'] });
-    const list = () => api.get(`/api/app/spaces/${space.id}/webhooks`);
+    const list = () => api.findWebhooks(space.id);
     const before = await list();
     const webhooks = new WebhooksPage(page);
     await webhooks.goto(space.id);

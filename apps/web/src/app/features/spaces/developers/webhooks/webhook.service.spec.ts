@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
@@ -27,11 +27,14 @@ describe('WebHookService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the space webhooks', async () => {
+  it('findAll() reads one page of the space webhooks with the query', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll('space-1'));
-    http.expectOne({ method: 'GET', url: base }).flush([{ id: 'w1' }]);
-    expect(await result).toEqual([{ id: 'w1' }]);
+    const page = { items: [{ id: 'w1' }], page: 1, size: 10, total: 11 };
+    const result = firstValueFrom(
+      service.findAll('space-1', new HttpParams().set('page', 1).set('size', 10).append('event', 'content.published')),
+    );
+    http.expectOne({ method: 'GET', url: `${base}?page=1&size=10&event=content.published` }).flush(page);
+    expect(await result).toEqual(page);
   });
 
   it('findById() reads one webhook', async () => {

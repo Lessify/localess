@@ -1,6 +1,6 @@
-import { DEVELOPERS, type WebHookCreate, type WebHookStatusUpdate, type WebHookUpdate } from '@localess/shared';
-import { zWebHookCreate, zWebHookStatusUpdate, zWebHookUpdate } from '@localess/shared/zod';
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
+import { DEVELOPERS, type WebHookCreate, type WebHookPageable, type WebHookStatusUpdate, type WebHookUpdate } from '@localess/shared';
+import { zWebHookCreate, zWebHookPageable, zWebHookStatusUpdate, zWebHookUpdate } from '@localess/shared/zod';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
@@ -12,9 +12,10 @@ import { WebhookService } from '../services/webhook.service.js';
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 
+  /** One page for Developers → Webhooks: `?page=&size=&sort=&direction=` (Pageable), `?enabled=`, `?event=`, `?search=` (name or URL). */
   @Get()
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string) {
-    return this.webhookService.findAll(spaceId);
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zWebHookPageable }) query: WebHookPageable) {
+    return this.webhookService.findAll(spaceId, query);
   }
 
   @Get(':webhookId')

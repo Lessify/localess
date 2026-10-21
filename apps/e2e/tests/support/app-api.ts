@@ -144,6 +144,15 @@ export class AppApi {
     return this.send('post', `/api/app/spaces/${spaceId}/webhooks`, body);
   }
 
+  setWebhookEnabled(spaceId: string, webhookId: string, enabled: boolean): Promise<unknown> {
+    return this.send('patch', `/api/app/spaces/${spaceId}/webhooks/${webhookId}/status`, { enabled });
+  }
+
+  /** The space's webhooks, by name (`GET /api/app/spaces/:id/webhooks`, every page). */
+  findWebhooks(spaceId: string): Promise<WebhookDto[]> {
+    return this.everyPage<WebhookDto>(`/api/app/spaces/${spaceId}/webhooks`);
+  }
+
   // --- Users ----------------------------------------------------------------------------------------------
 
   createUser(body: { email: string; password: string; displayName?: string; role?: Role | null }): Promise<{ id: string; email: string }> {
@@ -206,6 +215,14 @@ export interface SpaceDto {
   defaultLocaleId: string;
   defaultLocale?: { id: string; name: string };
   spaceLocales?: { position: number; locale: { id: string; name: string } }[];
+}
+
+export interface WebhookDto {
+  id: string;
+  name: string;
+  url: string;
+  events: string[];
+  enabled: boolean;
 }
 
 export interface EnvironmentDto {
