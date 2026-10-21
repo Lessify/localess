@@ -78,7 +78,8 @@ export class WebhookRepository {
     if (query.event) conditions.push(arrayOverlaps(webhooks.events, query.event));
     if (query.search) {
       const pattern = containsPattern(query.search);
-      conditions.push(or(ilike(webhooks.name, pattern), ilike(webhooks.url, pattern)) as SQL);
+      // The URL without its query: its values are credentials, never answered, so never searched either.
+      conditions.push(or(ilike(webhooks.name, pattern), ilike(sql`split_part(${webhooks.url}, '?', 1)`, pattern)) as SQL);
     }
     return and(...conditions);
   }

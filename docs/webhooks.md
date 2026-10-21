@@ -68,6 +68,13 @@ kept). At most 20; a name is an HTTP token, a value one line of at most 2000 cha
 (see [Destination restrictions](#destination-restrictions-ssrf-protection)) or one given twice (case-insensitive) is a 400,
 and so is `null` for a header that has no value.
 
+The URL's query values are masked the same way (`shared/utils/webhook-url.ts`): build and deploy hooks (GCP Cloud Build's
+`…:webhook?key=…&secret=…`), revalidation routes (`?secret=…`) and automation tools put their credentials there. A webhook
+answers `url` with every query value as `••••` (names kept), delivery logs store and show the URL that way, and the list's
+search looks at the URL without its query. An update sends the URL back as answered: a `••••` keeps the stored value of
+that parameter, a typed value replaces it; a `••••` with nothing stored (and any `••••` on create) is a 400. A secret in
+the **path** (Netlify, Vercel or Slack hook URLs) can't be told apart from a plain path and is shown as it is.
+
 ### Events
 
 | Event                   | Value                   | Triggered by                                      |
@@ -258,6 +265,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 **Form validation** (`WebhookDialogComponent`):
 - `name`: required, 3–50 chars, no leading/trailing spaces
 - `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhookService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
+- When the URL has masked query values (editing), a hint says a `••••` keeps the stored value and a typed one replaces it
 - `events`: required, at least one selected
 - Headers (optional, "Add Header"): a name and a value per row. Editing, a header shows its name (fixed) and an empty value: left empty it is kept, typed it is replaced; removing the row removes the header
 - "Sign deliveries" (adding only): the server makes a secret, shown once after saving; signing an existing webhook is on its page (Signing card)

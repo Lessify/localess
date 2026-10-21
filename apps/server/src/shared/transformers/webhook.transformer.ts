@@ -2,16 +2,18 @@ import { type WebHook, WebHookErrorType, type WebHookEvent, type WebHookLog, Web
 
 import type { WebhookEntity } from '../entities/webhook.entity.js';
 import type { WebhookLogEntity } from '../entities/webhook-log.entity.js';
+import { maskWebhookUrl } from '../utils/webhook-url.js';
 
 /**
- * A webhook as the App API returns it (developers only): no `spaceId`; the custom headers' names, never their values
+ * A webhook as the App API returns it (developers only): no `spaceId`; the URL with its query values masked; the custom
+ * headers' names, never their values
  * (often credentials); never the secret, only `hasSecret`.
  */
 export function toWebhook(entity: WebhookEntity): WebHook {
   const webhook: WebHook = {
     id: entity.id,
     name: entity.name,
-    url: entity.url,
+    url: maskWebhookUrl(entity.url),
     enabled: entity.enabled,
     events: entity.events as WebHookEvent[],
     hasSecret: !!entity.secret,

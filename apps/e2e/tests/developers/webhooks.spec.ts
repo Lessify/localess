@@ -293,6 +293,42 @@ test.describe('Developers → Webhooks', () => {
     expect(receiver.requests[2].headers).not.toHaveProperty('authorization');
   });
 
+  test('the URL query (a key, a secret) is delivered but never shown nor logged; kept on edit', async ({ page, api, space }) => {
+    const webhook = await api.createWebhook(space.id, {
+      name: 'Build',
+      url: `${receiver.url}?key=e2e-key`,
+      events: ['translation.published'],
+    });
+    const masked = `${receiver.url}?key=••••`;
+    const list = new WebhooksPage(page);
+    await list.goto(space.id);
+    await expect(list.row('Build')).toContainText(masked);
+    await expect(page.getByText('e2e-key')).toHaveCount(0);
+
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(1);
+    expect(receiver.requests[0].url).toBe('/hook?key=e2e-key');
+
+    // The webhook page and its log show the masked URL.
+    await list.gotoDetail(space.id, webhook.id);
+    await expect(page.getByText(masked).first()).toBeVisible();
+    await expect(list.logs).toHaveCount(1);
+    await list.logs.first().click();
+    await expect(list.logField('Target URL')).toHaveText(masked);
+    await expect(page.getByText('e2e-key')).toHaveCount(0);
+
+    // Action → post-check: renamed with the URL as shown, the key is kept.
+    await list.goto(space.id);
+    const form = await list.openEdit('Build', { name: 'Build renamed' });
+    await expect(form.getByLabel('URL', { exact: true })).toHaveValue(masked);
+    await expect(form.getByText('a •••• keeps the stored value')).toBeVisible();
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(2);
+    expect(receiver.requests[1].url).toBe('/hook?key=e2e-key');
+  });
+
   test("the webhook page logs a failed delivery with the receiver's status code", async ({ page, api, space }) => {
     const webhook = await api.createWebhook(space.id, { name: 'Failing', url: receiver.url, events: ['translation.published'] });
     receiver.status = 500;

@@ -339,6 +339,7 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | Webhooks: signed delivery on publish (verified with the `standardwebhooks` library), logged | API + local receiver + UI | ✅ `developers/webhooks` @smoke |
 | Webhooks: added signed, the secret shown once; regenerated (the old one stops); signing turned off (no signature) | UI + API + receiver | ✅ `developers/webhooks` |
 | Webhooks: a custom header (Authorization) sent with every delivery, its value never answered nor in the form; kept on edit, removed | UI + API + receiver | ✅ `developers/webhooks` |
+| Webhooks: the URL's query (`?key=`) delivered, but masked in the list, the webhook page, the log and the form; kept on edit | UI + API + receiver | ✅ `developers/webhooks` |
 | Webhooks: the list a page at a time (22 webhooks), the Status filter and the URL search on the server | UI + API | ✅ `developers/webhooks` |
 | Webhooks: a webhook's logs a page at a time (25 deliveries), the Status filter and the id search on the server | UI + receiver | ✅ `developers/webhooks` |
 | Webhooks: content events carry id and full slug | API + receiver | ✅ `contents/delivery` |

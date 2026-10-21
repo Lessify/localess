@@ -4,6 +4,8 @@ import type { AddressInfo } from 'node:net';
 export interface ReceivedRequest {
   headers: IncomingHttpHeaders;
   body: string;
+  /** The path and query asked for (`/hook?key=…`). */
+  url: string;
 }
 
 /**
@@ -23,7 +25,7 @@ export class WebhookReceiver {
       const chunks: Buffer[] = [];
       request.on('data', chunk => chunks.push(chunk as Buffer));
       request.on('end', () => {
-        requests.push({ headers: request.headers, body: Buffer.concat(chunks).toString('utf8') });
+        requests.push({ headers: request.headers, body: Buffer.concat(chunks).toString('utf8'), url: request.url ?? '' });
         response.writeHead(receiver?.status ?? 200, { 'content-type': 'text/plain' }).end('ok');
       });
     });

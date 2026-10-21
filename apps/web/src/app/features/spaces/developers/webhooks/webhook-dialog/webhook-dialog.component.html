@@ -18,6 +18,12 @@
   <div hlmField>
     <label hlmFieldLabel for="url">URL</label>
     <input hlmInput id="url" type="url" formControlName="url" required autocomplete="off" class="w-full" />
+    @if (hasMaskedUrl) {
+      <hlm-field-description>
+        Query values (often a key or secret, e.g. Cloud Build's <code>?key=&secret=</code>) are never shown again: a <code>••••</code> keeps
+        the stored value, a typed one replaces it.
+      </hlm-field-description>
+    }
     @if (form.controls['url'].errors; as errors) {
       <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
     }

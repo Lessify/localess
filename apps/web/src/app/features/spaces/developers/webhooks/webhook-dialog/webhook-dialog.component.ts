@@ -50,6 +50,8 @@ export class WebhookDialogComponent {
    */
   readonly context = injectBrnDialogContext<Partial<WebhookDialogContext>>({ optional: true });
   readonly isEdit = this.context?.id != null;
+  /** The URL as the server answers it, its query values masked (`••••`): sent back unchanged, they are kept. */
+  readonly hasMaskedUrl = this.isEdit && (this.context?.url ?? '').includes('••••');
 
   webhookEvents = Object.values(WebHookEvent);
 

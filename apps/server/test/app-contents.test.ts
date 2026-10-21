@@ -27,6 +27,7 @@ const SECRET = newWebhookSecret();
 interface Received {
   headers: IncomingMessage['headers'];
   body: string;
+  url?: string;
 }
 
 describe('app API: contents', () => {
@@ -70,7 +71,7 @@ describe('app API: contents', () => {
       let body = '';
       request.on('data', chunk => (body += chunk));
       request.on('end', () => {
-        received.push({ headers: request.headers, body });
+        received.push({ headers: request.headers, body, url: request.url });
         response.writeHead(200).end('ok');
       });
     });
@@ -80,7 +81,7 @@ describe('app API: contents', () => {
       spaceId: S1,
       name: 'site',
       enabled: true,
-      url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,
+      url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook?token=site-key`,
       events: ['content.published', 'content.unpublished', 'content.changed'],
       secret: SECRET,
       headers: { Authorization: 'Bearer site-token' },
@@ -292,6 +293,8 @@ describe('app API: contents', () => {
       expect(delivery.headers['x-webhook-event']).toBe('content.changed');
       expect(delivery.headers['webhook-signature']).toMatch(/^v1,/);
       expect(delivery.headers['authorization']).toBe('Bearer site-token');
+      // Delivered to the URL as stored; logged without its query values.
+      expect(delivery.url).toBe('/hook?token=site-key');
       expect(new Webhook(SECRET).verify(delivery.body, delivery.headers as Record<string, string>)).toMatchObject({
         event: 'content.changed',
       });
@@ -301,6 +304,7 @@ describe('app API: contents', () => {
         .from(webhookLogs)
         .where(eq(webhookLogs.deliveryId, delivery.headers['webhook-id'] as string));
       expect(logs).toEqual([expect.objectContaining({ status: 'SUCCESS', statusCode: 200, event: 'content.changed', responseBody: 'ok' })]);
+      expect(logs[0].url).toMatch(/\/hook\?token=••••$/);
     });
 
     it('renames a folder: one row, and every path under it follows', async () => {

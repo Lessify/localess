@@ -11,6 +11,7 @@ import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repo
 import { errorMessage } from '../utils/error-message.js';
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
 import { signWebhook } from '../utils/webhook-signature.js';
+import { maskWebhookUrl } from '../utils/webhook-url.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
@@ -81,7 +82,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       id: newUuid(),
       webhookId: webhook.id,
       event: payload.event,
-      url: webhook.url,
+      // Logged without its query values: they are often the destination's credentials.
+      url: maskWebhookUrl(webhook.url),
       requestSize,
       deliveryId,
       data: payload.data,

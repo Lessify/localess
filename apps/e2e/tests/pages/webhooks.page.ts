@@ -139,6 +139,7 @@ export class WebhooksPage {
     }
     for (const name of input.removeHeaders ?? []) {
       const rows = form.getByRole('group', { name: 'Headers (Optional)' }).locator(':scope > div');
+      await expect(rows.first()).toBeVisible();
       const index = await rows.evaluateAll(
         (all, wanted) => all.findIndex(row => (row.querySelector('input') as HTMLInputElement).value === wanted),
         name,
@@ -146,9 +147,11 @@ export class WebhooksPage {
       expect(index, `header ${name}`).toBeGreaterThanOrEqual(0);
       await form.getByRole('button', { name: `Remove header ${index + 1}` }).click();
     }
+    const rows = form.getByRole('group', { name: 'Headers (Optional)' }).locator(':scope > div');
     for (const [name, value] of Object.entries(input.headers ?? {})) {
+      const count = (await rows.count()) + 1;
       await form.getByRole('button', { name: 'Add Header' }).click();
-      const count = await form.getByRole('group', { name: 'Headers (Optional)' }).locator(':scope > div').count();
+      await expect(rows).toHaveCount(count);
       await form.getByLabel(`Header ${count} name`).fill(name);
       await form.getByLabel(`Header ${count} value`).fill(value);
     }

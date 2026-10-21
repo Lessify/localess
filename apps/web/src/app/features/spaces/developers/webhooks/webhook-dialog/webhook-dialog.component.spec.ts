@@ -133,6 +133,15 @@ describe('WebhookDialogComponent', () => {
     expect(editing.close).toHaveBeenLastCalledWith({ ...base, headers: {} });
   });
 
+  it('accepts the URL as answered, its query values masked, and sends it back unchanged', () => {
+    const url = 'https://cloudbuild.googleapis.com/v1/projects/p/triggers/deploy:webhook?key=••••&secret=••••';
+    const { component, close } = setup({ ...existing, url } as WebHook);
+    expect(component.hasMaskedUrl).toBe(true);
+    expect(component.form.valid).toBe(true);
+    component.save();
+    expect(close).toHaveBeenLastCalledWith(expect.objectContaining({ url }));
+  });
+
   it('rejects a url without an http(s) scheme', () => {
     const { component } = setup(CREATE_CONTEXT);
 

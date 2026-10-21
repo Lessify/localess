@@ -272,6 +272,36 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await manager.delete(`${base}/${id}`)).statusCode).toBe(204);
     });
 
+    it('never answers nor searches the URL query values; a masked value sent back keeps the stored one', async () => {
+      const real = 'https://cloudbuild.googleapis.com/v1/projects/p/triggers/deploy:webhook?key=AIzaK3y&secret=s3cr3t';
+      const masked = 'https://cloudbuild.googleapis.com/v1/projects/p/triggers/deploy:webhook?key=••••&secret=••••';
+      const body = { name: 'Build', events: ['content.published'] };
+      const created = await manager.post(base, { ...body, url: real });
+      expect(created.json().url).toBe(masked);
+      const id = created.json().id;
+      const urlOf = async () => (await t.db.select({ url: webhooks.url }).from(webhooks).where(eq(webhooks.id, id)))[0].url;
+      expect(await urlOf()).toBe(real);
+      for (const answer of [(await manager.get(`${base}/${id}`)).body, (await manager.get(base)).body]) {
+        expect(answer).not.toContain('s3cr3t');
+        expect(answer).not.toContain('AIzaK3y');
+      }
+      // The search looks at the URL without its query.
+      expect((await manager.get(`${base}?search=s3cr3t`)).json().total).toBe(0);
+      expect((await manager.get(`${base}?search=deploy:webhook`)).json().total).toBe(1);
+
+      // Sent back as answered: kept. One value typed: replaced, the other kept.
+      expect((await manager.put(`${base}/${id}`, { ...body, url: masked })).json().url).toBe(masked);
+      expect(await urlOf()).toBe(real);
+      await manager.put(`${base}/${id}`, { ...body, url: masked.replace('secret=••••', 'secret=n3w') });
+      expect(await urlOf()).toBe(real.replace('s3cr3t', 'n3w'));
+      // A mask with nothing stored, on update or create: 400.
+      const nothing = await manager.put(`${base}/${id}`, { ...body, url: `${masked}&token=••••` });
+      expect(nothing.statusCode).toBe(400);
+      expect(nothing.json().message).toBe('Webhook URL has a •••• value with nothing stored to keep');
+      expect((await manager.post(base, { ...body, url: masked })).statusCode).toBe(400);
+      expect((await manager.delete(`${base}/${id}`)).statusCode).toBe(204);
+    });
+
     it('makes a new secret (shown once, the old one stops) and removes it', async () => {
       const before = await secretOf(hook.id);
       const renewed = await manager.post(`${base}/${hook.id}/secret`);

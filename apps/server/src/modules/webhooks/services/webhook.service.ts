@@ -8,6 +8,7 @@ import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { checkWebhookUrl, isReservedWebhookHeader } from '../../../shared/utils/webhook-request.js';
 import { newWebhookSecret } from '../../../shared/utils/webhook-signature.js';
+import { unmaskWebhookUrl, WEBHOOK_URL_MASK } from '../../../shared/utils/webhook-url.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 
 /** No headers is `null` (the column), not `{}`. */
@@ -50,6 +51,8 @@ export class WebhookService {
   }
 
   async create(spaceId: string, input: WebHookCreate): Promise<WebHook> {
+    if (input.url.includes(WEBHOOK_URL_MASK))
+      throw new BadRequestException(`Webhook URL has a ${WEBHOOK_URL_MASK} value with nothing stored to keep`);
     this.assertDeliverable(input.url);
     await this.requireSpace(spaceId);
     this.assertHeaders(Object.keys(input.headers ?? {}));
@@ -70,11 +73,14 @@ export class WebhookService {
    * without `headers` all are kept. The secret has its own routes.
    */
   async update(spaceId: string, webhookId: string, input: WebHookUpdate): Promise<WebHook> {
-    this.assertDeliverable(input.url);
     const current = await this.requireWebhook(spaceId, webhookId);
+    // The URL comes back as it was answered: a masked query value keeps the stored one.
+    const url = unmaskWebhookUrl(input.url, current.url);
+    if (url === undefined) throw new BadRequestException(`Webhook URL has a ${WEBHOOK_URL_MASK} value with nothing stored to keep`);
+    this.assertDeliverable(url);
     await this.webhookRepository.update(spaceId, webhookId, {
       name: input.name,
-      url: input.url,
+      url,
       events: input.events,
       ...(input.headers ? { headers: this.mergeHeaders(current.headers ?? {}, input.headers) } : {}),
     });
