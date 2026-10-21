@@ -6,7 +6,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
-import { Public } from '../decorators.js';
+import { Public, SignedIn } from '../decorators.js';
 import { CurrentUser } from '../request-context.js';
 import { AuthService } from '../services/auth.service.js';
 import { PasswordResetService } from '../services/password-reset.service.js';
@@ -70,6 +70,7 @@ export class AuthController {
   }
 
   /** The signed-in user, with their role. */
+  @SignedIn()
   @Get('me')
   async me(@CurrentUser() user: UserEntity): Promise<{ user: User }> {
     return { user: await this.authService.toUser(user) };

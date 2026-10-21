@@ -62,7 +62,8 @@ current role:
 | `@Public()` | always (login, OAuth, `/api/config`, the public `/api/v1` API, health) |
 | `@RequireRole('ADMIN')` | the role is the one named |
 | `@RequireRole(CONTENT_WRITERS)` | the role is in the list (one of `roles.ts`, or an inline `['ADMIN', 'EDITOR']`) |
-| *(none)* | any signed-in session, even without a role (e.g. `GET /api/auth/me`, the profile writes under `/api/app/me`, sign-out) |
+| `@SignedIn()` | any signed-in session, even without a role (`GET /api/auth/me`, the profile writes under `/api/app/me`) |
+| *(none)* | **refused** (403, logged): every session route declares `@RequireRole` or `@SignedIn`, so a forgotten role never opens a route to every signed-in user. `architecture.test.ts` fails on such a route before it runs |
 
 On a method `@RequireRole` replaces the controller's. No session → `401`; a role outside the list → `403`. Checks that
 depend on the body live in the service: creating or deleting a task needs the roles its `kind` names
@@ -131,7 +132,7 @@ to anyone. Two rules remain: at least one active admin always remains (a change 
 
 - `packages/shared/src/models/user.model.ts` — `User`, `UserRole`, `USER_ROLES`
 - `packages/shared/src/roles.ts` — the role lists, `ROLE_LISTS`, `hasRole` (server and web)
-- `apps/server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireRole`, global guard + CSRF check
+- `apps/server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireRole`, `@SignedIn`, global guard (fails closed) + CSRF check
 - `apps/server/src/shared/http/event-access.ts` — who receives which change event
 - `apps/server/src/modules/tasks/utils/task-roles.ts` — the roles of each task kind
 - `apps/server/src/modules/users/` — user management API (admins only)

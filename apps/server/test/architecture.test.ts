@@ -157,6 +157,29 @@ describe('server rules: return types', () => {
   });
 });
 
+describe('server rules: access', () => {
+  it('every route declares who may call it: @Public, a token (@CdnToken, @ManagementToken), @RequireRole or @SignedIn', () => {
+    const ACCESS = /^@(Public|CdnToken|ManagementToken|RequireRole|SignedIn)\b/;
+    const VERB = /^@(Get|Post|Put|Patch|Delete|All)\b/;
+    const declares = (node: ts.HasDecorators, file: File) => (ts.getDecorators(node) ?? []).some(d => ACCESS.test(d.getText(file.source)));
+    expect(
+      breaks(
+        file =>
+          classes(file)
+            .filter(it => (ts.getDecorators(it) ?? []).some(d => /^@Controller\b/.test(d.getText(file.source))))
+            .flatMap(controller =>
+              controller.members
+                .filter(ts.isMethodDeclaration)
+                .filter(method => (ts.getDecorators(method) ?? []).some(d => VERB.test(d.getText(file.source))))
+                .filter(method => !declares(method, file) && !declares(controller, file))
+                .map(method => `${controller.name!.text}.${method.name.getText(file.source)} declares no access`),
+            ),
+        file => layerOf(file) === 'controller',
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('server rules: queries', () => {
   it('a count or an existence check is `$count`, not a select of `count()` (in the modules reworked so far)', () => {
     expect(

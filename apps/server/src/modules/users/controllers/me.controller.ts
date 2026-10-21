@@ -2,12 +2,14 @@ import type { MeEmailUpdate, MePasswordUpdate, MeUpdate, User } from '@localess/
 import { zMeEmailUpdate, zMePasswordUpdate, zMeUpdate } from '@localess/shared/zod';
 import { Body, Controller, HttpCode, Patch, Put } from '@nestjs/common';
 
+import { SignedIn } from '../../../auth/decorators.js';
 import { CurrentSessionId, CurrentUser } from '../../../auth/request-context.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import { MeService } from '../services/me.service.js';
 
 /** The signed-in user's own profile: name and photo, email, password. Who is signed in is `GET /api/auth/me`. */
 @Controller('api/app/me')
+@SignedIn()
 export class MeController {
   constructor(private readonly meService: MeService) {}
 

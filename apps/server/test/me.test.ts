@@ -57,4 +57,16 @@ describe('own profile', () => {
     expect(response.json()).toMatchObject({ email: 'moved@example.com', emailVerified: false });
     await expect(login(t, 'moved@example.com', 'new-pass')).resolves.toContain('localess_session=');
   });
+
+  it('is open to a signed-in user without a role (@SignedIn), as is who is signed in', async () => {
+    await createUser(t, { email: 'pending@example.com', password: 'pending-pass', role: null });
+    const cookie = await login(t, 'pending@example.com', 'pending-pass');
+    expect((await call(cookie, 'GET', '/api/auth/me')).statusCode).toBe(200);
+    expect((await call(cookie, 'PATCH', '/api/app/me', { displayName: 'Pending' })).json()).toMatchObject({ displayName: 'Pending' });
+    expect(
+      (await call(cookie, 'PUT', '/api/app/me/password', { currentPassword: 'pending-pass', newPassword: 'pending-2' })).statusCode,
+    ).toBe(204);
+    // Everything else needs a role.
+    expect((await call(cookie, 'GET', '/api/app/spaces/names')).statusCode).toBe(403);
+  });
 });

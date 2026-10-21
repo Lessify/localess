@@ -26,6 +26,8 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 `apps/server/src` and fails when a rule is broken:
 
 - **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service.
+- **Access:** every route declares who may call it: `@Public`, a token (`@CdnToken`, `@ManagementToken`), `@RequireRole` or
+  `@SignedIn` (on the method or its controller); the guard refuses a session route that declares none.
 - **Return types:** every public method and exported function declares one, in the modules reworked so far
   (`REWORKED`: `modules/spaces/`, `modules/webhooks/`, `modules/users/`).
 - **Queries:** a count or an existence check is `$count` (no `count()` imported from `drizzle-orm`), in the modules
