@@ -30,6 +30,8 @@ Displays one page of users (`ll-table`, `ll-paginator`), paged, sorted and searc
 
 **Injected services:** `HlmDialogService`, `ChangeDetectorRef`, `NotificationService`, `UserService`, `Injector`
 
+The **Sign-in** column shows how each user signs in: a mail icon when they have a password (`hasPassword`), a shield per linked OAuth login (`identities`: Google, Microsoft).
+
 **Key behaviour:**
 - `loadData()` — fetches all users via `UserService`
 - `onFilterChange(value: FilterToolbarValue)` — sends the toolbar's search and the Active filter to the server, from the first page; `onSortChange()` sends the sorted column and direction

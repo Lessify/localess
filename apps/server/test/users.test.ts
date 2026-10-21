@@ -68,8 +68,13 @@ describe('user management', () => {
         email: 'new-admin@example.com',
         displayName: 'New Admin',
         role: 'ADMIN',
-        providers: ['password'],
+        hasPassword: true,
+        identities: [],
       });
+      // The credential is answered as a flag only: never its hash nor its algorithm.
+      for (const answer of [response.body, (await call(adminCookie, 'GET', `/api/app/users/${response.json().id}`)).body]) {
+        expect(answer).not.toMatch(/argon|passwordHash|hashAlgo|\$argon2/);
+      }
       await expect(login(t, 'new-admin@example.com', 'secret1')).resolves.toContain('localess_session=');
     });
 

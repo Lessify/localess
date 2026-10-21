@@ -26,9 +26,9 @@ describe('MeService', () => {
 
   it('updateProfile() patches display name and photo, then reloads the user', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateProfile({ displayName: 'Alex', photoURL: 'https://example.com/a.png' }));
+    const done = firstValueFrom(service.updateProfile({ displayName: 'Alex', photoUrl: 'https://example.com/a.png' }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/me' });
-    expect(request.request.body).toEqual({ displayName: 'Alex', photoURL: 'https://example.com/a.png' });
+    expect(request.request.body).toEqual({ displayName: 'Alex', photoUrl: 'https://example.com/a.png' });
     request.flush({ id: 'u1' });
     await done;
     expect(load).toHaveBeenCalled();

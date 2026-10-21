@@ -1,37 +1,30 @@
 import type { Timestamp } from './timestamp.js';
 
-export interface User {
-  readonly id: string;
-  /**
-   * The user's primary email, if set.
-   */
-  readonly email?: string;
-  /**
-   * Whether or not the user's primary email is verified.
-   */
-  readonly emailVerified: boolean;
-  /**
-   * The user's display name.
-   */
-  readonly displayName?: string;
-  /**
-   * The user's photo URL.
-   */
-  readonly photoURL?: string;
-  /**
-   * The user's primary phone number, if set.
-   */
-  readonly phoneNumber?: string;
-  /**
-   * Whether or not the user is disabled: true for disabled; false for enabled.
-   */
-  readonly disabled: boolean;
+/** The OAuth providers a user may sign in with (`/api/auth/google`). */
+export const OAUTH_PROVIDERS = ['google', 'microsoft'] as const;
+export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 
-  /** Absent: signed up, no access yet. */
+/** An OAuth login linked to a user (a `user_identities` row, without the provider's subject id). */
+export interface UserIdentity {
+  provider: OAuthProvider;
+  createdAt: Timestamp;
+}
+
+/**
+ * A user as the App API answers it: the `users` row, with how they sign in. `identities` and `hasPassword` come with every
+ * answer about a user; `hasPassword` stands for the `user_credentials` row, whose hash is never sent.
+ */
+export interface User {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+  displayName?: string;
+  photoUrl?: string;
+  disabled: boolean;
+  /** Absent: signed up or invited, no access yet. */
   role?: UserRole;
-  // Providers
-  providers: string[];
-  // Metadata
+  identities?: UserIdentity[];
+  hasPassword?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

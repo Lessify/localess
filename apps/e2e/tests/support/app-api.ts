@@ -238,11 +238,13 @@ export interface UserDto {
   id: string;
   email: string;
   displayName?: string;
-  photoURL?: string;
+  photoUrl?: string;
   role?: Role | null;
   disabled?: boolean;
-  /** `password`, `google.com`, `microsoft.com`. */
-  providers?: string[];
+  /** Whether the user has a password (the credential itself is never answered). */
+  hasPassword?: boolean;
+  /** The linked OAuth logins. */
+  identities?: { provider: 'google' | 'microsoft'; createdAt: string }[];
 }
 
 export interface SchemaFieldInput {

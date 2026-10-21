@@ -35,7 +35,7 @@ export type UserPageable = z.infer<typeof zUserPageable>;
 /** `PATCH /api/app/me`. */
 export const zMeUpdate = z.object({
   displayName: z.string().trim().max(200).nullish(),
-  photoURL: z.string().trim().url().max(2048).or(z.literal('')).nullish(),
+  photoUrl: z.string().trim().url().max(2048).or(z.literal('')).nullish(),
 });
 export type MeUpdate = z.infer<typeof zMeUpdate>;
 

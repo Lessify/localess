@@ -5,7 +5,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
 import { UserStore } from '@core/stores/user.store';
 import { PagedList } from '@core/utils/paged-list';
-import { User } from '@localess/shared';
+import { OAuthProvider, User } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -96,7 +96,10 @@ export class UsersComponent implements OnInit {
   readonly total = signal(0);
   private readonly users = signal<User[]>([]);
   readonly dataSource = new TableDataSource<User>(this.users, this.injector);
-  displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
+  /** How an OAuth login is named in the Sign-in column. */
+  protected readonly loginLabel = (provider: OAuthProvider): string => (provider === 'google' ? 'Google' : 'Microsoft');
+
+  displayedColumns: string[] = ['email', 'name', 'active', 'signIn', 'role', 'createdAt', 'updatedAt', 'actions'];
 
   readonly filters: FilterDef[] = [
     {

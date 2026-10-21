@@ -8,7 +8,7 @@ import { sessions, userCredentials, users } from '../../../infra/database/schema
 import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import { findUserLogins } from '../../../shared/queries/user.query.js';
+import { findUserSignIns, type UserSignIn } from '../../../shared/queries/user.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 
 const SORT_COLUMNS = {
@@ -70,9 +70,9 @@ export class UserRepository {
     return user;
   }
 
-  /** How each user signs in (`findUserLogins`). */
-  findLogins(userIds: string[]): Promise<Map<string, string[]>> {
-    return findUserLogins(this.db, userIds);
+  /** How each user signs in (`findUserSignIns`). */
+  findSignIns(userIds: string[]): Promise<Map<string, UserSignIn>> {
+    return findUserSignIns(this.db, userIds);
   }
 
   /** A new user, with an argon2id password hash when given one. */

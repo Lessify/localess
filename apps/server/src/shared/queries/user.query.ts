@@ -1,23 +1,33 @@
+import type { UserIdentity } from '@localess/shared';
 import { inArray } from 'drizzle-orm';
 
 import type { Database } from '../../infra/database/database.module.js';
-import { userCredentials, userIdentities } from '../../infra/database/schema.js';
+import { users } from '../../infra/database/schema.js';
 
-/**
- * How each user signs in, by user id: `password` when they have a credential, then their OAuth providers
- * (`google`, `microsoft`). The users module and auth both return users with it (`toUser`).
- */
-export async function findUserLogins(db: Pick<Database, 'select'>, userIds: string[]): Promise<Map<string, string[]>> {
-  const logins = new Map<string, string[]>();
-  if (!userIds.length) return logins;
-  const [credentials, identities] = await Promise.all([
-    db.select({ userId: userCredentials.userId }).from(userCredentials).where(inArray(userCredentials.userId, userIds)),
-    db
-      .select({ userId: userIdentities.userId, provider: userIdentities.provider })
-      .from(userIdentities)
-      .where(inArray(userIdentities.userId, userIds)),
-  ]);
-  for (const { userId } of credentials) logins.set(userId, ['password']);
-  for (const { userId, provider } of identities) logins.set(userId, [...(logins.get(userId) ?? []), provider]);
-  return logins;
+/** How a user signs in: their OAuth identities, and whether they have a password (the credential, never its hash). */
+export interface UserSignIn {
+  identities: UserIdentity[];
+  hasPassword: boolean;
+}
+
+/** How each user signs in, by user id (the `identities` and `credential` relations). The users module and auth use it. */
+export async function findUserSignIns(db: Pick<Database, 'query'>, userIds: string[]): Promise<Map<string, UserSignIn>> {
+  if (!userIds.length) return new Map();
+  const rows = await db.query.users.findMany({
+    where: inArray(users.id, userIds),
+    columns: { id: true },
+    with: {
+      identities: { columns: { provider: true, createdAt: true }, orderBy: (it, { asc }) => [asc(it.createdAt)] },
+      credential: { columns: { userId: true } },
+    },
+  });
+  return new Map(
+    rows.map(row => [
+      row.id,
+      {
+        identities: row.identities.map(it => ({ provider: it.provider, createdAt: it.createdAt.toISOString() })),
+        hasPassword: row.credential != null,
+      },
+    ]),
+  );
 }

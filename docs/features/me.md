@@ -39,10 +39,10 @@ Displays the current user's profile card — avatar, name, email, email-verified
 ## Dialogs
 
 ### MeDialogComponent
-Form: `displayName`, `photoURL` (plain URL text field — no upload).
+Form: `displayName`, `photoUrl` (plain URL text field — no upload).
 
 ### MeEmailDialogComponent
-Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.isPasswordProvider()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`), then reloads the current user. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
+Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.hasPassword()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`), then reloads the current user. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
 
 ### MePasswordDialogComponent
 Form: `newPassword` (min length 6), plus `currentPassword` for accounts that have a password. Calls `MeService.updatePassword()` (`PUT /api/app/me/password`). Changing the password signs out every other session of the user.
@@ -55,4 +55,4 @@ Form: `newPassword` (min length 6), plus `currentPassword` for accounts that hav
 |---------|---------|
 | `MeService` | Update display name / photo (`PATCH /api/app/me`), email (`PUT /api/app/me/email`), password (`PUT /api/app/me/password`); reloads `UserStore` afterwards |
 | `NotificationService` | Toast feedback |
-| `UserStore` | Read current user state (email, providers, displayName) |
+| `UserStore` | Read current user state (email, how they sign in, displayName) |

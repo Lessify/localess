@@ -27,11 +27,11 @@ Reads the session from `GET /api/auth/me` (via `load()`, run in `onInit`). The r
 ```typescript
 // Key state
 {
-  id, displayName, initials, email, emailVerified, photoURL,
+  id, displayName, initials, email, emailVerified, photoUrl,
   role: UserRole | undefined,   // ADMIN, DEVELOPER, EDITOR, TRANSLATOR, VIEWER
   isAuthenticated: boolean,
   loaded: boolean,            // the /api/auth/me check has answered at least once
-  isPasswordProvider, isGoogleProvider, isMicrosoftProvider, numberProviders
+  hasPassword, hasGoogleLogin, hasMicrosoftLogin   // from the user's hasPassword and identities
 }
 
 // Key computed

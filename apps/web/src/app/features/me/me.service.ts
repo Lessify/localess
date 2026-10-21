@@ -14,7 +14,7 @@ export class MeService {
   private readonly userStore = inject(UserStore);
 
   updateProfile(model: MeUpdate): Observable<void> {
-    return this.http.patch(BASE, { displayName: model.displayName, photoURL: model.photoURL } satisfies MeUpdate).pipe(
+    return this.http.patch(BASE, { displayName: model.displayName, photoUrl: model.photoUrl } satisfies MeUpdate).pipe(
       tap(() => this.userStore.load()),
       map(() => undefined),
     );

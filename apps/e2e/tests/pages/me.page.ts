@@ -30,15 +30,15 @@ export class MePage {
   }
 
   /** Opens "Update Profile" and fills it, without saving. */
-  async openProfile(values: { displayName?: string; photoURL?: string }): Promise<Locator> {
+  async openProfile(values: { displayName?: string; photoUrl?: string }): Promise<Locator> {
     await this.button('Update Profile').click();
     const form = await dialog(this.page, 'User');
     if (values.displayName !== undefined) await form.getByLabel('Display Name').fill(values.displayName);
-    if (values.photoURL !== undefined) await form.getByLabel('Avatar URL').fill(values.photoURL);
+    if (values.photoUrl !== undefined) await form.getByLabel('Avatar URL').fill(values.photoUrl);
     return form;
   }
 
-  async updateProfile(values: { displayName?: string; photoURL?: string }): Promise<void> {
+  async updateProfile(values: { displayName?: string; photoUrl?: string }): Promise<void> {
     const form = await this.openProfile(values);
     await form.getByRole('button', { name: 'Save' }).click();
     await expect(form).toBeHidden();

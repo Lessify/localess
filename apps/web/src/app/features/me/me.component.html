@@ -3,7 +3,7 @@
     <div hlmCard>
       <div hlmCardHeader>
         <div class="flex items-center gap-3">
-          <img [ngSrc]="user.photoURL() || '/assets/account_circle.svg'" alt="avatar" width="40" height="40" class="rounded-full" />
+          <img [ngSrc]="user.photoUrl() || '/assets/account_circle.svg'" alt="avatar" width="40" height="40" class="rounded-full" />
           <h2 hlmCardTitle>{{ user.displayName() }}</h2>
         </div>
       </div>
@@ -17,10 +17,10 @@
       <hlm-separator />
       <div hlmCardFooter class="flex flex-wrap gap-2">
         <button hlmBtn variant="outline" (click)="openEditDialog()">Update Profile</button>
-        @if (user.isPasswordProvider()) {
+        @if (user.hasPassword()) {
           <button hlmBtn variant="outline" (click)="openUpdateEmailDialog()">Update Email</button>
           <button hlmBtn variant="outline" (click)="openUpdatePasswordDialog()">Update Password</button>
-        } @else if (user.isGoogleProvider() || user.isMicrosoftProvider()) {
+        } @else if (user.hasGoogleLogin() || user.hasMicrosoftLogin()) {
           <p class="text-muted-foreground text-sm">
             Your account is linked to an external authentication provider. You can't manage your personal data and password here.
           </p>

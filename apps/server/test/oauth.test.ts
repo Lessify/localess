@@ -92,7 +92,12 @@ describe('OAuth sign-in', () => {
       expect(response.headers.location).toBe('/features/spaces');
 
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'Alice@Example.com', role: 'VIEWER', providers: ['google.com'] });
+      expect(me.json().user).toMatchObject({
+        email: 'Alice@Example.com',
+        role: 'VIEWER',
+        hasPassword: false,
+        identities: [{ provider: 'google', createdAt: expect.any(String) }],
+      });
       expect(await t.db.select().from(userIdentities)).toEqual([
         expect.objectContaining({ provider: 'google', providerSubject: 'google-sub-1' }),
       ]);
@@ -139,7 +144,11 @@ describe('OAuth sign-in', () => {
       const response = await signIn(t, 'microsoft');
       expect(response.headers.location).toBe('/features');
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'bob@contoso.com', providers: ['microsoft.com'] });
+      expect(me.json().user).toMatchObject({
+        email: 'bob@contoso.com',
+        hasPassword: false,
+        identities: [{ provider: 'microsoft', createdAt: expect.any(String) }],
+      });
 
       // Already linked: the stored identity decides, so a token without the optional claims still signs in.
       claims = { sub: 'ms-sub-1', preferred_username: 'bob@contoso.com' };
@@ -192,7 +201,11 @@ describe('OAuth sign-in', () => {
       claims = { sub: 'ms-new', email: 'carol@contoso.com', xms_edov: true, name: 'Carol' };
       const response = await signIn(t, 'microsoft');
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'carol@contoso.com', providers: ['microsoft.com'] });
+      expect(me.json().user).toMatchObject({
+        email: 'carol@contoso.com',
+        hasPassword: false,
+        identities: [{ provider: 'microsoft', createdAt: expect.any(String) }],
+      });
     });
   });
 
@@ -220,7 +233,8 @@ describe('OAuth sign-in', () => {
         email: 'alice@example.com',
         displayName: 'Alice',
         emailVerified: true,
-        providers: ['google.com'],
+        hasPassword: false,
+        identities: [{ provider: 'google', createdAt: expect.any(String) }],
       });
       expect(me.json().user).not.toHaveProperty('role');
     });

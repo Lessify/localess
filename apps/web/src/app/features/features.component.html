@@ -248,7 +248,7 @@
         <li hlmSidebarMenuItem>
           <button hlmSidebarMenuButton size="lg" [hlmDropdownMenuTrigger]="userMenu" side="right" class="flex gap-2">
             <hlm-avatar>
-              <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+              <img [src]="userStore.photoUrl()" hlmAvatarImage alt="User Avatar" />
               <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
             </hlm-avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
@@ -261,7 +261,7 @@
             <hlm-dropdown-menu class="w-60">
               <div class="flex gap-2 p-2">
                 <hlm-avatar>
-                  <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+                  <img [src]="userStore.photoUrl()" hlmAvatarImage alt="User Avatar" />
                   <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
                 </hlm-avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">

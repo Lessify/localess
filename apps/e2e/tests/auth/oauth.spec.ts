@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { AdminUsersPage } from '../pages/admin-users.page';
 import { LoginPage } from '../pages/login.page';
-import { CSRF } from '../support/app-api';
+import { CSRF, type UserDto } from '../support/app-api';
 import { expect, test, uniqueId } from '../support/fixtures';
 import { type ProviderAccount, providerAccount } from '../support/oauth';
 
@@ -17,7 +17,7 @@ async function signInWith(page: Page, provider: 'Google' | 'Microsoft', account:
   return login;
 }
 
-async function me(page: Page): Promise<{ email: string; providers: string[] } | undefined> {
+async function me(page: Page): Promise<UserDto | undefined> {
   const response = await page.request.get('/api/auth/me', { headers: CSRF });
   return response.ok() ? (await response.json()).user : undefined;
 }
@@ -31,13 +31,13 @@ test.describe('Sign in with Google or Microsoft', () => {
   });
 
   for (const [provider, id] of [
-    ['Google', 'google.com'],
-    ['Microsoft', 'microsoft.com'],
+    ['Google', 'google'],
+    ['Microsoft', 'microsoft'],
   ] as const) {
     test(`an invited user signs in with ${provider}; the identity is linked`, async ({ page, signedOutPage, api, createUser }) => {
       const user = await createUser({ role: 'VIEWER' });
       // Pre-check: a password account only.
-      expect(await api.findUserByEmail(user.email)).toMatchObject({ providers: ['password'] });
+      expect(await api.findUserByEmail(user.email)).toMatchObject({ hasPassword: true, identities: [] });
 
       // Action: the provider returns the same (verified) email, in another letter case.
       const own = await signedOutPage();
@@ -46,12 +46,12 @@ test.describe('Sign in with Google or Microsoft', () => {
       // Post-check: signed in as that user, with the provider linked.
       await login.expectSignedIn();
       expect(await me(own)).toMatchObject({ email: user.email });
-      expect((await me(own))?.providers.sort()).toEqual([id, 'password'].sort());
+      expect(await me(own)).toMatchObject({ hasPassword: true, identities: [{ provider: id, createdAt: expect.any(String) }] });
 
       // The admin sees the new provider; the Me page still offers email and password (the account has one).
       const users = new AdminUsersPage(page);
       await users.goto(user.email);
-      await expect(users.row(user.email).getByRole('img', { name: id })).toBeVisible();
+      await expect(users.row(user.email).getByRole('img', { name: provider, exact: true })).toBeVisible();
       await expect(users.row(user.email).getByRole('img', { name: 'Email & Password' })).toBeVisible();
       await own.goto('/features/me');
       await expect(own.getByRole('button', { name: 'Update Password' })).toBeVisible();
@@ -79,7 +79,7 @@ test.describe('Sign in with Google or Microsoft', () => {
     await expect(page.getByText('The provider did not confirm your email address.')).toBeVisible();
     expect(await me(page)).toBeUndefined();
     // Nothing was linked.
-    expect(await api.findUserByEmail(user.email)).toMatchObject({ providers: ['password'] });
+    expect(await api.findUserByEmail(user.email)).toMatchObject({ hasPassword: true, identities: [] });
   });
 
   test('a disabled account is refused', async ({ signedOutPage, api, createUser }) => {
@@ -92,6 +92,6 @@ test.describe('Sign in with Google or Microsoft', () => {
     await expect(page.getByText('This account is disabled.')).toBeVisible();
     expect(await me(page)).toBeUndefined();
     // Nothing was linked.
-    expect(await api.findUserByEmail(user.email)).toMatchObject({ providers: ['password'] });
+    expect(await api.findUserByEmail(user.email)).toMatchObject({ hasPassword: true, identities: [] });
   });
 });

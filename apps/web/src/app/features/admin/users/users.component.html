@@ -43,18 +43,19 @@
           }
         </td>
       </ng-container>
-      <ng-container llColumnDef="providers">
-        <th llHeaderCell *llHeaderCellDef>Providers</th>
+      <ng-container llColumnDef="signIn">
+        <th llHeaderCell *llHeaderCellDef>Sign-in</th>
         <td llCell *llCellDef="let element">
-          @for (provider of element.providers; track provider) {
-            @switch (provider) {
-              @case ('password') {
-                <ng-icon name="lucideMail" hlmTooltip="Email & Password" role="img" aria-hidden="false" aria-label="Email & Password" />
-              }
-              @default {
-                <ng-icon name="lucideShieldCheck" [hlmTooltip]="provider" role="img" aria-hidden="false" [attr.aria-label]="provider" />
-              }
-            }
+          @if (element.hasPassword) {
+            <ng-icon name="lucideMail" hlmTooltip="Email & Password" role="img" aria-hidden="false" aria-label="Email & Password" />
+          }
+          @for (identity of element.identities ?? []; track identity.provider) {
+            <ng-icon
+              name="lucideShieldCheck"
+              [hlmTooltip]="loginLabel(identity.provider)"
+              role="img"
+              aria-hidden="false"
+              [attr.aria-label]="loginLabel(identity.provider)" />
           }
         </td>
       </ng-container>

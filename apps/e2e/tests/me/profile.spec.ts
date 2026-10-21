@@ -78,18 +78,18 @@ test.describe('Me → profile', () => {
       await expect(me.avatar).toHaveAttribute('src', /account_circle\.svg/);
 
       // Action 1: a valid URL. Post-check.
-      await me.updateProfile({ photoURL: avatarUrl });
+      await me.updateProfile({ photoUrl: avatarUrl });
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
       await page.reload();
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
-      expect((await api.findUserByEmail(user.email))?.photoURL).toBe(avatarUrl);
+      expect((await api.findUserByEmail(user.email))?.photoUrl).toBe(avatarUrl);
 
       // Action 2: not a URL. Post-check: refused, the valid one stays.
-      const form = await me.openProfile({ photoURL: 'not a url' });
+      const form = await me.openProfile({ photoUrl: 'not a url' });
       await me.save(form, 'User can not be updated.');
       await page.reload();
       await expect(me.avatar).toHaveAttribute('src', avatarUrl);
-      expect((await api.findUserByEmail(user.email))?.photoURL).toBe(avatarUrl);
+      expect((await api.findUserByEmail(user.email))?.photoUrl).toBe(avatarUrl);
     });
 
     test('cancelling keeps the display name', async ({ api, createUser, signInAs }) => {

@@ -13,10 +13,11 @@ const user: User = {
   displayName: 'Ada Lovelace',
   disabled: false,
   role: 'EDITOR',
-  providers: ['password', 'google.com'],
+  hasPassword: true,
+  identities: [{ provider: 'google', createdAt: '2026-01-02T00:00:00.000Z' }],
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-} as User;
+};
 
 describe('UserStore', () => {
   let http: HttpTestingController;
@@ -30,7 +31,7 @@ describe('UserStore', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => http.verify());
 
-  it('loads the session user with role and providers', () => {
+  it('loads the session user with role and how they sign in', () => {
     const store = setup();
     expect(store.loaded()).toBe(false);
     http.expectOne('/api/auth/me').flush({ user });
@@ -39,10 +40,9 @@ describe('UserStore', () => {
     expect(store.initials()).toBe('AL');
     expect(store.role()).toBe('EDITOR');
     expect(store.isRoleAdmin()).toBe(false);
-    expect(store.isPasswordProvider()).toBe(true);
-    expect(store.isGoogleProvider()).toBe(true);
-    expect(store.isMicrosoftProvider()).toBe(false);
-    expect(store.numberProviders()).toBe(2);
+    expect(store.hasPassword()).toBe(true);
+    expect(store.hasGoogleLogin()).toBe(true);
+    expect(store.hasMicrosoftLogin()).toBe(false);
     expect(JSON.parse(localStorage.getItem('LL-USER-STATE')!)).toEqual({ isAuthenticated: true });
   });
 

@@ -20,11 +20,11 @@ describe('own profile', () => {
 
   it('updates display name and photo', async () => {
     const cookie = await login(t, 'me@example.com', 'old-pass');
-    const response = await call(cookie, 'PATCH', '/api/app/me', { displayName: 'Me Myself', photoURL: 'https://example.com/me.png' });
+    const response = await call(cookie, 'PATCH', '/api/app/me', { displayName: 'Me Myself', photoUrl: 'https://example.com/me.png' });
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({ displayName: 'Me Myself', photoURL: 'https://example.com/me.png' });
-    const cleared = await call(cookie, 'PATCH', '/api/app/me', { photoURL: '' });
-    expect(cleared.json()).not.toHaveProperty('photoURL');
+    expect(response.json()).toMatchObject({ displayName: 'Me Myself', photoUrl: 'https://example.com/me.png' });
+    const cleared = await call(cookie, 'PATCH', '/api/app/me', { photoUrl: '' });
+    expect(cleared.json()).not.toHaveProperty('photoUrl');
     expect(cleared.json().displayName).toBe('Me Myself');
   });
 

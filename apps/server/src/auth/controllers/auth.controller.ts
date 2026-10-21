@@ -1,4 +1,4 @@
-import type { AuthLogin, PasswordResetConfirm, PasswordResetRequest } from '@localess/shared';
+import type { AuthLogin, PasswordResetConfirm, PasswordResetRequest, User } from '@localess/shared';
 import { zAuthLogin, zPasswordResetConfirm, zPasswordResetRequest } from '@localess/shared/zod';
 import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { RouteConfig } from '@nestjs/platform-fastify';
@@ -6,7 +6,6 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
-import type { UserDto } from '../../shared/transformers/user.transformer.js';
 import { Public } from '../decorators.js';
 import { CurrentUser } from '../request-context.js';
 import { AuthService } from '../services/auth.service.js';
@@ -35,7 +34,7 @@ export class AuthController {
     @Body({ schema: zAuthLogin }) body: AuthLogin,
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
-  ): Promise<{ user: UserDto }> {
+  ): Promise<{ user: User }> {
     const user = await this.authService.verifyCredentials(body.email, body.password);
     const { token, expiresAt } = await this.sessionService.create(user.id, { userAgent: request.headers['user-agent'], ip: request.ip });
     setSessionCookie(request, reply, token, expiresAt);
@@ -72,7 +71,7 @@ export class AuthController {
 
   /** The signed-in user, with their role. */
   @Get('me')
-  async me(@CurrentUser() user: UserEntity): Promise<{ user: UserDto }> {
+  async me(@CurrentUser() user: UserEntity): Promise<{ user: User }> {
     return { user: await this.authService.toUser(user) };
   }
 }

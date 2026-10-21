@@ -1,10 +1,9 @@
-import type { MeEmailUpdate, MePasswordUpdate, MeUpdate } from '@localess/shared';
+import type { MeEmailUpdate, MePasswordUpdate, MeUpdate, User } from '@localess/shared';
 import { zMeEmailUpdate, zMePasswordUpdate, zMeUpdate } from '@localess/shared/zod';
 import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
 
 import { CurrentSessionId, CurrentUser } from '../../../auth/request-context.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import type { UserDto } from '../../../shared/transformers/user.transformer.js';
 import { MeService } from '../services/me.service.js';
 
 /** The signed-in user's own profile (was `updateProfile` / `updateEmail` / `updatePassword` on Firebase Auth). */
@@ -13,17 +12,17 @@ export class MeController {
   constructor(private readonly meService: MeService) {}
 
   @Get()
-  async findOne(@CurrentUser() user: UserEntity): Promise<UserDto> {
+  async findOne(@CurrentUser() user: UserEntity): Promise<User> {
     return this.meService.findOne(user);
   }
 
   @Patch()
-  async updateProfile(@CurrentUser() user: UserEntity, @Body({ schema: zMeUpdate }) body: MeUpdate): Promise<UserDto> {
+  async updateProfile(@CurrentUser() user: UserEntity, @Body({ schema: zMeUpdate }) body: MeUpdate): Promise<User> {
     return this.meService.updateProfile(user, body);
   }
 
   @Put('email')
-  async updateEmail(@CurrentUser() user: UserEntity, @Body({ schema: zMeEmailUpdate }) body: MeEmailUpdate): Promise<UserDto> {
+  async updateEmail(@CurrentUser() user: UserEntity, @Body({ schema: zMeEmailUpdate }) body: MeEmailUpdate): Promise<User> {
     return this.meService.updateEmail(user, body.email, body.currentPassword);
   }
 

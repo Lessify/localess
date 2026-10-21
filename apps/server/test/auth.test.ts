@@ -37,7 +37,7 @@ describe('authentication', () => {
       payload: { email: 'admin@example.com', password: 'admin-pass' },
     });
     expect(response.statusCode).toBe(200);
-    expect(response.json().user).toMatchObject({ email: 'admin@example.com', role: 'ADMIN', providers: ['password'] });
+    expect(response.json().user).toMatchObject({ email: 'admin@example.com', role: 'ADMIN', hasPassword: true, identities: [] });
     expect(response.json().user).not.toHaveProperty('permissions');
     expect(response.json().user).not.toHaveProperty('lock');
 

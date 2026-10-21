@@ -335,4 +335,11 @@ describe('UsersComponent', () => {
     expect(component['roleLabel']('EDITOR')).toBe('Editor');
     expect(component['roleLabel'](undefined)).toBe('None');
   });
+
+  it('names the OAuth logins of the Sign-in column', () => {
+    const { component } = setup();
+
+    expect(component['loginLabel']('google')).toBe('Google');
+    expect(component['loginLabel']('microsoft')).toBe('Microsoft');
+  });
 });

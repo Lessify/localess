@@ -1,10 +1,10 @@
-import type { Page, UserPageable, UserRole } from '@localess/shared';
+import type { Page, User, UserPageable, UserRole } from '@localess/shared';
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import { toUser, type UserDto } from '../../../shared/transformers/user.transformer.js';
+import { toUser } from '../../../shared/transformers/user.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
@@ -34,7 +34,7 @@ export class UserService {
   ) {}
 
   /** One page of Admin → Users. */
-  async findAll(query: UserPageable): Promise<Page<UserDto>> {
+  async findAll(query: UserPageable): Promise<Page<User>> {
     const { rows, total } = await this.userRepository.findPage(query);
     return toPage(await this.toDtos(rows), total, query, it => it);
   }
@@ -43,12 +43,12 @@ export class UserService {
     return found(await this.userRepository.findById(id));
   }
 
-  async findOne(id: string): Promise<UserDto> {
+  async findOne(id: string): Promise<User> {
     return this.toDto(await this.findOneRow(id));
   }
 
   /** A new user, with the role given (none: no access yet). */
-  async invite(input: CreateUser): Promise<UserDto> {
+  async invite(input: CreateUser): Promise<User> {
     return this.toDto(await this.create(input));
   }
 
@@ -69,7 +69,7 @@ export class UserService {
   }
 
   /** A user's role (`null`: no access). The last active admin keeps theirs (`UserRepository`). */
-  async changeAccess(id: string, role: UserRole | null): Promise<UserDto> {
+  async changeAccess(id: string, role: UserRole | null): Promise<User> {
     await this.findOneRow(id);
     return this.toDto(await this.updateAccess(id, role));
   }
@@ -79,7 +79,7 @@ export class UserService {
   }
 
   /** Blocks (or restores) sign-in; disabling signs the user out at once. */
-  async changeStatus(caller: UserEntity, id: string, disabled: boolean): Promise<UserDto> {
+  async changeStatus(caller: UserEntity, id: string, disabled: boolean): Promise<User> {
     const target = await this.findOneRow(id);
     // Nobody disables themselves: an admin could lock the install out of user management.
     if (caller.id === target.id) throw new ForbiddenException();
@@ -98,14 +98,14 @@ export class UserService {
     if (!(await this.userRepository.delete(id))) throw new NotFoundException('User not found');
   }
 
-  async toDto(user: UserEntity): Promise<UserDto> {
+  async toDto(user: UserEntity): Promise<User> {
     const [dto] = await this.toDtos([user]);
     return dto;
   }
 
-  async toDtos(rows: UserEntity[]): Promise<UserDto[]> {
+  async toDtos(rows: UserEntity[]): Promise<User[]> {
     if (!rows.length) return [];
-    const logins = await this.userRepository.findLogins(rows.map(it => it.id));
-    return rows.map(user => toUser(user, logins.get(user.id)));
+    const signIns = await this.userRepository.findSignIns(rows.map(it => it.id));
+    return rows.map(user => toUser(user, signIns.get(user.id) ?? { identities: [], hasPassword: false }));
   }
 }

@@ -40,7 +40,7 @@ export class MeComponent {
       .open<MeDialogResult, MeDialogContext>(MeDialogComponent, {
         context: {
           displayName: this.userStore.displayName() || undefined,
-          photoURL: this.userStore.photoURL() || undefined,
+          photoUrl: this.userStore.photoUrl() || undefined,
         },
         contentClass: DIALOG_WIDTH_SM,
       })

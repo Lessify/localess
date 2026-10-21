@@ -1,7 +1,8 @@
+import type { User } from '@localess/shared';
 import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 
 import type { UserEntity } from '../../shared/entities/user.entity.js';
-import { toUser, type UserDto } from '../../shared/transformers/user.transformer.js';
+import { toUser } from '../../shared/transformers/user.transformer.js';
 import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 import { verifyPassword } from '../utils/password.js';
 
@@ -33,7 +34,7 @@ export class AuthService {
   }
 
   /** The user as sign-in and `/api/auth/me` return it, with how they sign in. */
-  async toUser(user: UserEntity): Promise<UserDto> {
-    return toUser(user, await this.authUserRepository.findLogins(user.id));
+  async toUser(user: UserEntity): Promise<User> {
+    return toUser(user, await this.authUserRepository.findSignIn(user.id));
   }
 }
