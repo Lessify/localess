@@ -39,7 +39,7 @@ Displays the current user's profile card — avatar, name, email, email-verified
 ## Dialogs
 
 ### MeDialogComponent
-Form: `displayName`, `photoUrl` (plain URL text field — no upload).
+Form: `displayName`, `photoUrl` (plain URL text field — no upload; an http(s) URL, `''` clears it). The Me bodies are strict: an unknown field is a 400.
 
 ### MeEmailDialogComponent
 Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.hasPassword()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`), then reloads the current user. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.

@@ -5,7 +5,9 @@ test.describe('App API roles', () => {
   test('a viewer reads, and changes nothing', async ({ space, createUser, newClient }) => {
     const user = await createUser({ role: 'VIEWER' });
     const client = await newClient();
-    expect((await client.post('/api/auth/login', { headers: CSRF, data: user })).ok()).toBeTruthy();
+    expect(
+      (await client.post('/api/auth/login', { headers: CSRF, data: { email: user.email, password: user.password } })).ok(),
+    ).toBeTruthy();
 
     expect((await client.get(`/api/app/spaces/${space.id}/translations`)).status()).toBe(200);
     const create = await client.post(`/api/app/spaces/${space.id}/translations`, {
@@ -21,7 +23,7 @@ test.describe('App API roles', () => {
     const user = await createUser({ role: 'VIEWER' });
     await api.send('patch', `/api/app/users/${user.id}/status`, { disabled: true });
     const client = await newClient();
-    const login = await client.post('/api/auth/login', { headers: CSRF, data: user });
+    const login = await client.post('/api/auth/login', { headers: CSRF, data: { email: user.email, password: user.password } });
     // Refused as a wrong password would be (no hint that the account exists).
     expect(login.status()).toBe(401);
     expect((await client.get('/api/auth/me')).status()).toBe(401);

@@ -203,7 +203,7 @@ test.describe('Me → profile', () => {
       try {
         // Pre-check: two sessions, both working.
         await me.goto(user.email);
-        expect((await otherSession.post('/api/auth/login', { data: user })).ok()).toBe(true);
+        expect((await otherSession.post('/api/auth/login', { data: { email: user.email, password: user.password } })).ok()).toBe(true);
         expect((await otherSession.get('/api/auth/me')).status()).toBe(200);
 
         // Action

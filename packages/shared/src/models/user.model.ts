@@ -29,6 +29,12 @@ export interface User {
   updatedAt: Timestamp;
 }
 
+/** `POST /api/app/users/:id/password-reset-link`: a one-time link that sets a new password, until `expiresAt`. */
+export interface PasswordResetLink {
+  url: string;
+  expiresAt: Timestamp;
+}
+
 /** The shortest password a user may set. Request schemas: `user.zod.ts`, `auth.zod.ts`. */
 export const PASSWORD_MIN_LENGTH = 6;
 

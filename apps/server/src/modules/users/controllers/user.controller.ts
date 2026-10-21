@@ -1,4 +1,13 @@
-import { ADMINS, type Page, type User, type UserInvite, type UserPageable, type UserStatusUpdate, type UserUpdate } from '@localess/shared';
+import {
+  ADMINS,
+  type Page,
+  type PasswordResetLink,
+  type User,
+  type UserInvite,
+  type UserPageable,
+  type UserStatusUpdate,
+  type UserUpdate,
+} from '@localess/shared';
 import { zUserInvite, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
@@ -53,10 +62,7 @@ export class UserController {
 
   /** A one-hour reset link to hand to the user — the way to reset passwords when SMTP isn't configured. */
   @Post(':id/password-reset-link')
-  async passwordResetLink(
-    @Param('id', UuidParamPipe) id: string,
-    @Req() request: FastifyRequest,
-  ): Promise<{ url: string; expiresAt: string }> {
+  async passwordResetLink(@Param('id', UuidParamPipe) id: string, @Req() request: FastifyRequest): Promise<PasswordResetLink> {
     const link = await this.userService.createPasswordResetLink(id, publicOrigin(this.config, request));
     return { url: link.url, expiresAt: link.expiresAt.toISOString() };
   }
