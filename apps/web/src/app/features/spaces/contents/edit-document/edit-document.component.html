@@ -165,7 +165,7 @@
           </hlm-dropdown-menu-label>
           @for (locale of availableLocales(); track locale.id) {
             <button hlmDropdownMenuItem (click)="openDraftV1InNewTab(locale.id)">
-              <ll-locale-icon [locale]="locale.id === 'default' ? selectedSpace()?.defaultLocale?.id : locale.id" />
+              <ll-locale-icon [locale]="(locale.id === 'default' ? selectedSpace()?.defaultLocale?.id : locale.id) ?? locale.id" />
               <span>Draft {{ locale.name }} JSON</span>
               <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
             </button>
@@ -179,7 +179,7 @@
           </hlm-dropdown-menu-label>
           @for (locale of availableLocales(); track locale.id) {
             <button hlmDropdownMenuItem (click)="openPublishedV1InNewTab(locale.id)">
-              <ll-locale-icon [locale]="locale.id === 'default' ? selectedSpace()?.defaultLocale?.id : locale.id" />
+              <ll-locale-icon [locale]="(locale.id === 'default' ? selectedSpace()?.defaultLocale?.id : locale.id) ?? locale.id" />
               <span>Published {{ locale.name }} JSON</span>
               <ng-icon hlm size="sm" name="lucideExternalLink" class="ml-auto" />
             </button>

@@ -116,8 +116,9 @@ export class LinkSelectComponent implements OnInit {
     this.selectedDocument.set(null);
   }
 
-  onDocumentSelect(doc: ContentDocument | null): void {
-    this.selectedDocument.set(doc);
+  /** Cleared: `undefined` from the combobox, kept as `null`. */
+  onDocumentSelect(doc: ContentDocument | null | undefined): void {
+    this.selectedDocument.set(doc ?? null);
     this.form()
       .get('uri')
       ?.setValue(doc?.id ?? null);

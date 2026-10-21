@@ -92,10 +92,10 @@
           }
           <!--RICH_TEXT-->
           @case ('RICH_TEXT') {
-            @if (form.controls[field.name]; as control) {
+            @if (form.controls[field.name]) {
               <ll-rich-text-editor
                 [data]="data()"
-                [form]="control"
+                [form]="controlOf(field.name)"
                 [component]="field"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()"
@@ -104,12 +104,12 @@
           }
           <!--MARKDOWN-->
           @case ('MARKDOWN') {
-            @if (form.controls[field.name]; as control) {
+            @if (form.controls[field.name]) {
               <ll-markdown-editor
                 [data]="data()"
-                [form]="control"
+                [form]="controlOf(field.name)"
                 [component]="field"
-                [default]="isDefaultLocale() ? undefined : data()[field.name]"
+                [default]="isDefaultLocale() ? undefined : textValue(field.name)"
                 [selectedLocale]="selectedLocale()"
                 [availableLocales]="availableLocales()"
                 [defaultLocale]="space()?.defaultLocale" />
@@ -259,7 +259,9 @@
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
                 <hlm-select-trigger class="w-full" [buttonId]="'schema-field-' + field.name + '-trigger'">
-                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
+                  <hlm-select-value
+                    class="flex-1"
+                    [placeholder]="(!isDefaultLocale() && placeholderValue(field.name)) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
@@ -303,7 +305,9 @@
                 [formControlName]="field.name"
                 [itemToString]="optionItemToStringMap().get(field.source)">
                 <hlm-select-trigger class="w-full" [buttonId]="'schema-field-' + field.name + '-trigger'">
-                  <hlm-select-value class="flex-1" [placeholder]="(!isDefaultLocale() && data()[field.name]) || 'Select a value'" />
+                  <hlm-select-value
+                    class="flex-1"
+                    [placeholder]="(!isDefaultLocale() && placeholderValue(field.name)) || 'Select a value'" />
                   @if (form.controls[field.name]?.value) {
                     <span
                       role="button"
@@ -331,43 +335,47 @@
           }
           <!--LINK-->
           @case ('LINK') {
-            @if (form.controls[field.name]; as control) {
+            @if (form.controls[field.name]) {
               <ll-link-select
-                [form]="control"
+                [form]="groupOf(field.name)"
                 [component]="field"
                 [documents]="documents()"
-                [default]="isDefaultLocale() ? undefined : data()[field.name]" />
+                [default]="isDefaultLocale() ? undefined : linkValue(field.name)" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCE') {
-            @if (form.controls[field.name]; as control) {
-              <ll-reference-select [form]="control" [component]="field" [space]="space()" [locked]="isLockedInLocale(field)" />
+            @if (form.controls[field.name] && space(); as sp) {
+              <ll-reference-select [form]="groupOf(field.name)" [component]="field" [space]="sp" [locked]="isLockedInLocale(field)" />
             }
           }
           <!--REFERENCE-->
           @case ('REFERENCES') {
-            @if (form.controls[field.name]; as control) {
-              <ll-references-select [form]="control" [component]="field" [space]="space()" [locked]="isLockedInLocale(field)" />
+            @if (form.controls[field.name] && space(); as sp) {
+              <ll-references-select [form]="arrayOf(field.name)" [component]="field" [space]="sp" [locked]="isLockedInLocale(field)" />
             }
           }
           <!--ASSET-->
           @case ('ASSET') {
-            <ll-asset-select
-              [component]="field"
-              [form]="form.controls[field.name]"
-              [space]="space()"
-              [hover]="hoverSchemaField() === field.name"
-              [locked]="isLockedInLocale(field)" />
+            @if (space(); as sp) {
+              <ll-asset-select
+                [component]="field"
+                [form]="groupOf(field.name)"
+                [space]="sp"
+                [hover]="hoverSchemaField() === field.name"
+                [locked]="isLockedInLocale(field)" />
+            }
           }
           <!--ASSETS-->
           @case ('ASSETS') {
-            <ll-assets-select
-              [component]="field"
-              [form]="form.controls[field.name]"
-              [space]="space()"
-              [locked]="isLockedInLocale(field)"
-              (assetsChange)="onAssetsChange()" />
+            @if (space(); as sp) {
+              <ll-assets-select
+                [component]="field"
+                [form]="arrayOf(field.name)"
+                [space]="sp"
+                [locked]="isLockedInLocale(field)"
+                (assetsChange)="onAssetsChange()" />
+            }
           }
           <!--SCHEMA-->
           @case ('SCHEMA') {
@@ -382,7 +390,7 @@
                     [hlmDropdownMenuTrigger]="menu"
                     hlmTooltip="Add Schema"
                     aria-label="Add Schema"
-                    [disabled]="data()[field.name]">
+                    [disabled]="!!data()[field.name]">
                     <ng-icon hlm size="sm" name="lucideCirclePlus" />
                   </button>
                   <ng-template #menu>
@@ -400,7 +408,7 @@
                 }
                 <hlm-field-separator />
                 <div hlmItemGroup role="list" class="gap-2">
-                  @if (data()[field.name]; as item) {
+                  @if (blockValue(field.name); as item) {
                     <div
                       [id]="item._id"
                       hlmItem
@@ -472,8 +480,13 @@
                   <p hlmFieldDescription class="line-clamp-2">{{ field.description }}</p>
                 }
                 <hlm-field-separator />
-                <div hlmItemGroup role="list" class="gap-2" cdkDropList (cdkDropListDropped)="schemaDropDrop($event, data()[field.name])">
-                  @for (item of data()[field.name] || []; track item; let index = $index) {
+                <div
+                  hlmItemGroup
+                  role="list"
+                  class="gap-2"
+                  cdkDropList
+                  (cdkDropListDropped)="schemaDropDrop($event, blocksValue(field.name))">
+                  @for (item of blocksValue(field.name); track item; let index = $index) {
                     <div
                       [id]="item._id"
                       hlmItem
@@ -577,7 +590,7 @@
             </div>
           }
           @default {
-            {{ field.kind }} is not implemented
+            {{ kindOf(field) }} is not implemented
           }
         }
       </div>
@@ -594,7 +607,7 @@
     <hlm-accordion-item>
       <h3 class="contents">
         <button hlmAccordionTrigger>
-          EditDocumentSchema Form => {{ form?.valid }}
+          EditDocumentSchema Form => {{ form.valid }}
           <ng-icon name="lucideChevronDown" hlm hlmAccIcon />
         </button>
       </h3>

@@ -16,7 +16,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormArray, FormBuilder, FormRecord, ReactiveFormsModule } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TranslateService } from '@core/services/translate.service';
@@ -27,7 +27,9 @@ import {
   ContentAsset,
   ContentData,
   ContentDocument,
+  ContentLink,
   ContentReference,
+  ContentValue,
   isFieldTranslatable,
   Locale,
   Schema,
@@ -73,6 +75,13 @@ import { SchemaSelectChange } from './edit-document-schema.model';
 
 // Preview updates are sent at most this often while typing.
 const FORM_CHANGE_INTERVAL = 200;
+
+const isObject = (value: ContentValue | undefined): value is Exclude<ContentValue, string | number | boolean | unknown[]> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** A block of a SCHEMA(S) field: an object with its schema. */
+const isBlock = (value: unknown): value is ContentData =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) && '_schema' in value && '_id' in value;
 
 @Component({
   selector: 'll-content-document-schema-edit',
@@ -469,6 +478,62 @@ export class EditDocumentSchemaComponent {
     if (event.previousIndex === event.currentIndex) return;
     moveItemInArray(data, event.previousIndex, event.currentIndex);
     this.structureChange.emit(`schemaDropDrop from-${event.previousIndex} to-${event.currentIndex}`);
+  }
+
+  // --- Typed access for the template: the form is built per field kind (`generateSchemaForm`) -----------------------
+
+  /** A scalar field's control (MARKDOWN, RICH_TEXT). */
+  protected controlOf(name: string): FormControl {
+    return this.form.controls[name] as FormControl;
+  }
+
+  /** An object field's control group (LINK, REFERENCE, ASSET). */
+  protected groupOf(name: string): FormGroup {
+    return this.form.controls[name] as FormGroup;
+  }
+
+  /** A list field's control array (REFERENCES, ASSETS). */
+  protected arrayOf(name: string): FormArray {
+    return this.form.controls[name] as FormArray;
+  }
+
+  /** A field's value as text (a markdown field's default): only a string is text. */
+  protected textValue(name: string): string | undefined {
+    const value = this.data()[name];
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  /** What a select shows before a value is chosen in another locale: the default locale's value, an option list joined. */
+  protected placeholderValue(name: string): string | undefined {
+    const value = this.data()[name];
+    if (Array.isArray(value) && value.every(it => typeof it === 'string')) return value.join(', ') || undefined;
+    return typeof value === 'string' ? value || undefined : undefined;
+  }
+
+  /** A LINK field's value. */
+  protected linkValue(name: string): ContentLink | undefined {
+    const value = this.data()[name];
+    return isObject(value) && 'kind' in value && value.kind === 'LINK' ? (value as ContentLink) : undefined;
+  }
+
+  /** A SCHEMA field's block. */
+  protected blockValue(name: string): ContentData | undefined {
+    const value = this.data()[name];
+    return isBlock(value) ? value : undefined;
+  }
+
+  /**
+   * A SCHEMAS field's blocks, in their order: the stored array itself, never a copy (a drop reorders it in place,
+   * `schemaDropDrop`).
+   */
+  protected blocksValue(name: string): ContentData[] {
+    const value = this.data()[name];
+    return Array.isArray(value) && value.every(isBlock) ? value : [];
+  }
+
+  /** The kind of a field no case above renders (the template's `@default`). */
+  protected kindOf(field: { kind: string }): string {
+    return field.kind;
   }
 
   previewText(content: ContentData, schema: SchemaComponent, localeId: string): string | undefined {
