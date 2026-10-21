@@ -265,7 +265,7 @@
         @for (item of dataSource.renderedData(); track item.id) {
           <ll-asset-card
             role="listitem"
-            [attr.aria-label]="item.kind === 'FILE' ? item.name + (item.extension ?? '') : item.name"
+            [attr.aria-label]="item.kind === 'FILE' ? item.name + item.extension : item.name"
             [item]="item"
             [spaceId]="spaceId()"
             [zoomCursor]="true"

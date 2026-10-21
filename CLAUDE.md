@@ -142,6 +142,7 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 - **Services**: `providedIn: 'root'` for singletons
 - **Images**: Use `NgOptimizedImage` for static images
 - **TypeScript**: Strict mode, avoid `any` (use `unknown`), prefer type inference
+- **Templates**: type-checked strictly (`strictTemplates`); give a template typed values (a typed getter or lookup in the component) rather than `$any()` or an untyped `form.controls[name]`
 
 ## Git Commits
 

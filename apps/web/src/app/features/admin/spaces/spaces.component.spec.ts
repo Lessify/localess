@@ -255,8 +255,8 @@ describe('SpacesComponent', () => {
     const { component } = setup();
     expect(component.importHint(imported('FAILED'))).toBe('Delete the space and import it again');
     expect(component.importHint(imported('RUNNING'))).toBe('It opens once the import has finished');
-    expect(component.importHint(imported('FINISHED'))).toBeUndefined();
-    expect(component.importHint({} as Space)).toBeUndefined();
+    expect(component.importHint(imported('FINISHED'))).toBeNull();
+    expect(component.importHint({} as Space)).toBeNull();
   });
 
   it('openEditDialog() updates the space and notifies success when confirmed', () => {

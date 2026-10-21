@@ -71,7 +71,9 @@ export class MoveDialogComponent {
 
   protected readonly noOpFilter = (): boolean => true;
 
-  choose(target: MoveTarget | null): void {
+  /** Cleared: `undefined` from the combobox, kept as `null`. */
+  choose(target: MoveTarget | null | undefined): void {
+    target = target ?? null;
     this.selected.set(target);
     this.form.controls['target'].setValue(target);
   }

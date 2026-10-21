@@ -19,8 +19,12 @@
       <label hlmFieldLabel for="alt">Alt Text</label>
       <div hlmInputGroup>
         <textarea hlmInputGroupTextarea id="alt" formControlName="alt" maxlength="500" autocomplete="off" rows="3"></textarea>
+        <hlm-input-group-addon align="block-end">
+          <span hlmInputGroupText class="text-muted-foreground text-xs" data-testid="alt-length"
+            >{{ form.controls['alt'].value?.length || 0 }}/500</span
+          >
+        </hlm-input-group-addon>
       </div>
-      <hlm-field-hint align="end" class="text-muted-foreground text-xs">{{ form.controls['alt'].value?.length || 0 }}/500</hlm-field-hint>
     </div>
   }
 </form>

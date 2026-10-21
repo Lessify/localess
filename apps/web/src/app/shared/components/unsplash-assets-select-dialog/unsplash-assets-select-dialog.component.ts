@@ -64,6 +64,11 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
 
   orientation = signal<'landscape' | 'portrait' | 'squarish' | undefined>(undefined);
 
+  /** The single-choice toggle group: one orientation, or none (cleared). */
+  onOrientationChange(value: 'landscape' | 'portrait' | 'squarish' | ('landscape' | 'portrait' | 'squarish')[] | null | undefined): void {
+    this.orientation.set(Array.isArray(value) ? value[0] : (value ?? undefined));
+  }
+
   selection = new SelectionModel<UnsplashPhoto>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   // Subscriptions
   private destroyRef = inject(DestroyRef);

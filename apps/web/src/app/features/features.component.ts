@@ -22,7 +22,7 @@ import { VersionService } from '@core/services/version.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
-import { RoleListName, Space } from '@localess/shared';
+import { IdName, RoleListName } from '@localess/shared';
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
@@ -400,7 +400,7 @@ export class FeaturesComponent implements OnInit {
   }
 
   /** The URL selects the space (see `spaceSelectionGuard`), so an unsaved-changes prompt can still cancel it. */
-  onSpaceSelection(space: Space): void {
+  onSpaceSelection(space: IdName): void {
     this.router.navigate(['features', 'spaces', space.id, 'dashboard']);
   }
 

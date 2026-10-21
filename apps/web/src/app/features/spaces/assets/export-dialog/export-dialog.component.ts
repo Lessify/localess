@@ -50,7 +50,9 @@ export class ExportDialogComponent {
   protected readonly displayItem = (item?: Asset): string => (item ? item.name : '');
   protected readonly noOpFilter = (): boolean => true;
 
-  onValueChange(item: Asset | null): void {
+  /** Cleared: `undefined` from the combobox, kept as `null`. */
+  onValueChange(item: Asset | null | undefined): void {
+    item = item ?? null;
     this.selectedItem.set(item);
     this.form.controls['path'].setValue(item?.id ?? undefined);
   }

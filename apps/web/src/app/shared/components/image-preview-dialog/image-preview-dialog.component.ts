@@ -1,5 +1,6 @@
 import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import type { AssetFileMetadata } from '@localess/shared';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { injectBrnDialogContext } from '@spartan-ng/brain/dialog';
@@ -16,6 +17,10 @@ import { ImagePreviewDialogContext } from './image-preview-dialog.model';
   imports: [HlmDialogImports, NgOptimizedImage, FormatFileSizePipe, TimeDurationPipe, HlmButtonImports],
 })
 export class ImagePreviewDialogComponent {
+  /** The playback length of an animated image or a video (seconds); other files have none. */
+  protected readonly durationOf = (metadata: AssetFileMetadata): number | undefined =>
+    'duration' in metadata ? metadata.duration : undefined;
+
   /** Read-only preview: there is no result, so the dialog needs no `BrnDialogRef`. */
   readonly context = injectBrnDialogContext<ImagePreviewDialogContext>();
 }

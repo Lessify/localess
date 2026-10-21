@@ -104,8 +104,9 @@ export class Paginator {
    * still be displayed using the new page size, mirroring MatPaginator's
    * _changePageSize (rather than always resetting to page 0).
    */
-  onPageSizeChange(pageSize: number): void {
-    if (this.disabled()) return;
+  /** A cleared select (`null` / `undefined`) keeps the page size. */
+  onPageSizeChange(pageSize: number | null | undefined): void {
+    if (this.disabled() || pageSize == null) return;
     const previousPageIndex = this.pageIndex();
     const startIndex = previousPageIndex * this.pageSize();
     this.pageSize.set(pageSize);

@@ -1,6 +1,6 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { Asset } from '@localess/shared';
+import { Asset, type AssetFileMetadata } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -47,6 +47,10 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   ],
 })
 export class AssetCardComponent {
+  /** The playback length of an animated image or a video (seconds); other files have none. */
+  protected readonly durationOf = (metadata: AssetFileMetadata): number | undefined =>
+    'duration' in metadata ? metadata.duration : undefined;
+
   // Inputs
   readonly item = input.required<Asset>();
   readonly spaceId = input.required<string>();

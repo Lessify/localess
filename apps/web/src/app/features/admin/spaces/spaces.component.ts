@@ -163,10 +163,11 @@ export class SpacesComponent implements OnInit {
   }
 
   /** What to do about it: a failed import is not retried into its space. */
-  importHint(space: Space): string | undefined {
+  /** The tooltip of a space being imported or whose import failed; `null`: none. */
+  importHint(space: Space): string | null {
     if (space.firebaseImport?.status === 'RUNNING') return 'It opens once the import has finished';
     if (space.firebaseImport?.status === 'FAILED') return 'Delete the space and import it again';
-    return undefined;
+    return null;
   }
 
   openAddDialog(): void {

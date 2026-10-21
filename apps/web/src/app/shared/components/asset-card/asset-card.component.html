@@ -4,7 +4,7 @@
     class="cursor-pointer border-b"
     role="button"
     tabindex="0"
-    [attr.aria-label]="'Open ' + asset.name + (asset.kind === 'FILE' ? (asset.extension ?? '') : '')"
+    [attr.aria-label]="'Open ' + asset.name + (asset.kind === 'FILE' ? asset.extension : '')"
     (click)="assetSelect.emit(asset)"
     (keydown.enter)="assetSelect.emit(asset)"
     (keydown.space)="$event.preventDefault(); assetSelect.emit(asset)">
@@ -53,7 +53,7 @@
           @if (metadata.width && metadata.height) {
             W{{ metadata.width }} x H{{ metadata.height }}
           }
-          @if (metadata.duration; as duration) {
+          @if (durationOf(metadata); as duration) {
             <div> Duration: {{ duration | timeDuration }}</div>
           }
         }

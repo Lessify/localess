@@ -131,7 +131,7 @@ export class TranslationDetailComponent {
 
   localeToString = (locale: Locale): string => locale?.name ?? '';
 
-  compareLocale = (a: Locale, b: Locale | null): boolean => {
+  compareLocale = (a: Locale, b: Locale | null | undefined): boolean => {
     return a.id === b?.id;
   };
 

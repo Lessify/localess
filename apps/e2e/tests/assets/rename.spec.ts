@@ -50,6 +50,12 @@ test.describe('Assets → rename', () => {
     const again = await assets.openEdit('hero.png', 'File');
     await expect(again.getByLabel('Alt Text')).toHaveValue('A mountain at sunrise');
     await expect(again.getByLabel('Name', { exact: true })).toHaveValue('hero');
+    // The length counter sits inside the field's frame, at its bottom (the input group), as on the Name field.
+    const counter = again.getByTestId('alt-length');
+    await expect(counter).toHaveText('21/500');
+    const frame = await again.getByLabel('Alt Text').locator('xpath=..').boundingBox();
+    const box = await counter.boundingBox();
+    expect(box && frame && box.y >= frame.y && box.y + box.height <= frame.y + frame.height).toBe(true);
     await cancel(again);
   });
 
