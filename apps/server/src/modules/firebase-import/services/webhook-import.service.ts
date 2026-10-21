@@ -1,4 +1,4 @@
-import { WebHookEvent } from '@localess/shared';
+import { WebhookEvent } from '@localess/shared';
 import { Injectable } from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
@@ -16,7 +16,7 @@ export class WebhookImportService {
   async import(stage: ImportStage): Promise<number> {
     const hookDocs = await stage.client.list(stage.sourceSpaceId, 'webhooks');
     for (const doc of hookDocs) {
-      const events = knownValues(WebHookEvent, doc['events']);
+      const events = knownValues(WebhookEvent, doc['events']);
       for (const it of events.dropped) stage.warn(`${str(doc['name']) ?? doc.id}: unknown event ${it}, dropped`);
       // Signed deliveries now follow Standard Webhooks: the same key, a new signature format.
       const secret = str(doc['secret']);

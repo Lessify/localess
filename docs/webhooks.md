@@ -22,11 +22,11 @@ App API (`apps/server/src/modules/webhooks/controllers/webhook.controller.ts`):
 
 | Method | Path | |
 |---|---|---|
-| `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | one page (`Page<WebHook>`, `zWebHookPageable`) / create |
+| `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | one page (`Page<Webhook>`, `zWebhookPageable`) / create |
 | `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId` | read / update / delete |
 | `PATCH` | `/api/app/spaces/:spaceId/webhooks/:webhookId/status` | `{ enabled }` |
 | `POST` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId/secret` | a new signing secret, answered once (`secret` in the webhook) / stop signing |
-| `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs` | one page (`Page<WebHookLog>`, `zWebHookLogPageable`), newest first |
+| `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs` | one page (`Page<WebhookLog>`, `zWebhookLogPageable`), newest first |
 
 The list is paged on the server ([Pagination](server/pagination.md)): `?page=&size=&sort=&direction=`, sorts `name`
 (the default, case-insensitive), `enabled`, `updatedAt` (ties by id); `?enabled=true|false`; `?event=` (repeated: a
@@ -41,12 +41,12 @@ Every route checks the space first: an unknown space is 404 "Space not found" (t
 ## Data Model
 
 ```typescript
-interface WebHook {
+interface Webhook {
   id: string;
   name: string;
   url: string;
   enabled: boolean;
-  events: WebHookEvent[];
+  events: WebhookEvent[];
   headerNames?: string[];            // custom request headers: names only, never their values
   hasSecret: boolean;                // whether deliveries are signed
   secret?: string;                   // whsec_…: only in the answer that made it
@@ -91,15 +91,15 @@ Events are dispatched only **after** the transaction that caused them commits, a
 ## Payload
 
 ```typescript
-interface WebHookPayload {
-  event: WebHookEvent;
+interface WebhookPayload {
+  event: WebhookEvent;
   spaceId: string;
   timestamp: string;           // ISO 8601
-  data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
+  data: ContentWebhookPayloadData | TranslationWebhookPayloadData;
 }
 ```
 
-Content events send `data: { id, fullSlug }` (`ContentWebHookPayloadData`) — the content's ID and full slug. Translation events send an empty `data` object.
+Content events send `data: { id, fullSlug }` (`ContentWebhookPayloadData`) — the content's ID and full slug. Translation events send an empty `data` object.
 
 ---
 
@@ -117,7 +117,7 @@ webhook-signature: v1,<base64>      ← only when the webhook is signed
 X-Webhook-Event: <event>
 <custom headers from webhook.headers, minus reserved ones — see below>
 
-Body: JSON-serialised WebHookPayload
+Body: JSON-serialised WebhookPayload
 ```
 
 - Timeout: **30 seconds**
@@ -181,41 +181,41 @@ the import warns, regenerate and update the receiver.
 
 ## Execution Logging
 
-Every delivery — success or failure — inserts a `webhook_logs` row and emits a `webhook_logs` change event, so an open log view refreshes over SSE. `WebHookLog` is a discriminated union on `status`:
+Every delivery — success or failure — inserts a `webhook_logs` row and emits a `webhook_logs` change event, so an open log view refreshes over SSE. `WebhookLog` is a discriminated union on `status`:
 
 ```typescript
-enum WebHookStatus {
+enum WebhookStatus {
   SUCCESS = 'SUCCESS',
   FAILURE = 'FAILURE',
 }
 
-enum WebHookErrorType {
+enum WebhookErrorType {
   TIMEOUT = 'TIMEOUT',
   NETWORK = 'NETWORK',
   HTTP = 'HTTP',
 }
 
-interface WebHookLogBase {
-  event: WebHookEvent;
+interface WebhookLogBase {
+  event: WebhookEvent;
   url: string;
   requestSize: number;
-  data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
+  data: ContentWebhookPayloadData | TranslationWebhookPayloadData;
   deliveryId: string;
   duration: number;       // milliseconds
   createdAt: string;      // ISO 8601
 }
 
-interface WebHookLogSuccess extends WebHookLogBase {
-  status: WebHookStatus.SUCCESS;
+interface WebhookLogSuccess extends WebhookLogBase {
+  status: WebhookStatus.SUCCESS;
   statusCode: number;
   statusText: string;
   responseBody?: string;
   responseBodyTruncated?: boolean;
 }
 
-interface WebHookLogFailure extends WebHookLogBase {
-  status: WebHookStatus.FAILURE;
-  errorType: WebHookErrorType;       // timeout | network | http
+interface WebhookLogFailure extends WebhookLogBase {
+  status: WebhookStatus.FAILURE;
+  errorType: WebhookErrorType;       // timeout | network | http
   statusCode?: number;
   statusText?: string;
   responseBody?: string;
@@ -223,10 +223,10 @@ interface WebHookLogFailure extends WebHookLogBase {
   errorMessage?: string;
 }
 
-type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
+type WebhookLog = WebhookLogSuccess | WebhookLogFailure;
 ```
 
-Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns one page, newest first: every delivery kept can be reached page by page; the frontend `WebHookService.findLogs()` takes a `PagedList`'s params. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebHookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history a page at a time, filtered and searched on the server.
+Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns one page, newest first: every delivery kept can be reached page by page; the frontend `WebhookService.findLogs()` takes a `PagedList`'s params. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebhookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history a page at a time, filtered and searched on the server.
 
 ---
 
@@ -281,7 +281,7 @@ Webhooks created in the app start enabled (`WebhookRepository.create` sets `enab
 | File                                             | Purpose                                                                   |
 |--------------------------------------------------|---------------------------------------------------------------------------|
 | `apps/server/src/infra/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
-| `packages/shared/src/models/webhook.model.ts`         | Types — `WebHookEvent` and friends (server and web)                       |
+| `packages/shared/src/models/webhook.model.ts`         | Types — `WebhookEvent` and friends (server and web)                       |
 | `apps/server/src/modules/webhooks/controllers/webhook.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
 | `apps/server/src/shared/services/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
 | `apps/server/src/shared/utils/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |

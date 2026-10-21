@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
+import { Webhook, WebhookEvent, WebhookLog, WebhookStatus } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
-import { WebHookService } from '../webhook.service';
+import { WebhookService } from '../webhook.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -12,15 +12,15 @@ import { vi } from 'vitest';
 import { WebhookSecretDialogComponent } from '../webhook-secret-dialog/webhook-secret-dialog.component';
 import { WebhookDetailComponent } from './webhook-detail.component';
 
-function webhook(overrides: Partial<WebHook> = {}): WebHook {
+function webhook(overrides: Partial<Webhook> = {}): Webhook {
   return {
     id: 'w1',
     name: 'Slack',
     url: 'https://example.com',
     enabled: true,
-    events: [WebHookEvent.CONTENT_PUBLISHED],
+    events: [WebhookEvent.CONTENT_PUBLISHED],
     ...overrides,
-  } as WebHook;
+  } as Webhook;
 }
 
 describe('WebhookDetailComponent', () => {
@@ -29,7 +29,7 @@ describe('WebhookDetailComponent', () => {
   });
 
   /** `failLogs`: the logs request fails. */
-  function setup(found: WebHook, logs: WebHookLog[] = [], failLogs = false) {
+  function setup(found: Webhook, logs: WebhookLog[] = [], failLogs = false) {
     const findById = vi.fn().mockReturnValue(of(found));
     const findLogs = vi
       .fn()
@@ -48,7 +48,7 @@ describe('WebhookDetailComponent', () => {
     TestBed.configureTestingModule({
       providers: [
         {
-          provide: WebHookService,
+          provide: WebhookService,
           useValue: { findById, findLogs, update, updateStatus, delete: deleteWebhook, createSecret, removeSecret },
         },
         { provide: NotificationService, useValue: { success, error } },
@@ -78,8 +78,8 @@ describe('WebhookDetailComponent', () => {
 
   it('loads the webhook and its logs on init', () => {
     const found = webhook();
-    const logs: WebHookLog[] = [
-      { id: 'l1', event: WebHookEvent.CONTENT_PUBLISHED, status: WebHookStatus.SUCCESS } as unknown as WebHookLog,
+    const logs: WebhookLog[] = [
+      { id: 'l1', event: WebhookEvent.CONTENT_PUBLISHED, status: WebhookStatus.SUCCESS } as unknown as WebhookLog,
     ];
     const { component, findById, findLogs } = setup(found, logs);
 
@@ -96,15 +96,15 @@ describe('WebhookDetailComponent', () => {
     const { component, findLogs } = setup(webhook());
     component.list.page.set(3);
 
-    component.onFilterChange({ search: ' 019a ', event: [WebHookEvent.CONTENT_PUBLISHED], status: [WebHookStatus.FAILURE] });
+    component.onFilterChange({ search: ' 019a ', event: [WebhookEvent.CONTENT_PUBLISHED], status: [WebhookStatus.FAILURE] });
     TestBed.tick();
 
     const params = component.list.params();
     expect(component.list.page()).toBe(0);
     expect(findLogs).toHaveBeenLastCalledWith('space-1', 'w1', params);
     expect(params.get('search')).toBe('019a');
-    expect(params.getAll('event')).toEqual([WebHookEvent.CONTENT_PUBLISHED]);
-    expect(params.getAll('status')).toEqual([WebHookStatus.FAILURE]);
+    expect(params.getAll('event')).toEqual([WebhookEvent.CONTENT_PUBLISHED]);
+    expect(params.getAll('status')).toEqual([WebhookStatus.FAILURE]);
   });
 
   it('tells a failed logs load and stops loading them', () => {
@@ -165,7 +165,7 @@ describe('WebhookDetailComponent', () => {
 
   it('openEditDialog() updates the webhook and notifies success when confirmed', () => {
     const { component, open, update, success } = setup(webhook({ id: 'w1' }));
-    const model = { name: 'Renamed', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const model = { name: 'Renamed', url: 'https://example.com', events: [WebhookEvent.CONTENT_PUBLISHED] };
     open.mockReturnValue({ closed$: of(model) });
 
     component.openEditDialog();
@@ -243,7 +243,7 @@ describe('WebhookDetailComponent', () => {
   it('eventsToText() joins events with newlines', () => {
     const { component } = setup(webhook());
 
-    expect(component['eventsToText']([WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.CONTENT_CHANGED])).toBe(
+    expect(component['eventsToText']([WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.CONTENT_CHANGED])).toBe(
       'content.published\ncontent.changed',
     );
   });

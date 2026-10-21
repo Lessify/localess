@@ -2,9 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { Space, WebHook, WebHookEvent } from '@localess/shared';
+import { Space, Webhook, WebhookEvent } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
-import { WebHookService } from './webhook.service';
+import { WebhookService } from './webhook.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
@@ -17,15 +17,15 @@ function space(id: string): Space {
   return { id, name: `Space ${id}` } as unknown as Space;
 }
 
-function webhook(overrides: Partial<WebHook> = {}): WebHook {
+function webhook(overrides: Partial<Webhook> = {}): Webhook {
   return {
     id: 'w1',
     name: 'Slack',
     url: 'https://example.com',
     enabled: true,
-    events: [WebHookEvent.CONTENT_PUBLISHED],
+    events: [WebhookEvent.CONTENT_PUBLISHED],
     ...overrides,
-  } as WebHook;
+  } as Webhook;
 }
 
 describe('WebhooksComponent', () => {
@@ -34,7 +34,7 @@ describe('WebhooksComponent', () => {
   });
 
   /** `failLoad`: the page request fails. */
-  function setup(webhooks: WebHook[] = [], failLoad = false) {
+  function setup(webhooks: Webhook[] = [], failLoad = false) {
     const findAll = vi
       .fn()
       .mockReturnValue(failLoad ? throwError(() => new Error('boom')) : of({ items: webhooks, page: 0, size: 20, total: webhooks.length }));
@@ -52,7 +52,7 @@ describe('WebhooksComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: WebHookService, useValue: { findAll, create, update, updateStatus, delete: deleteWebhook } },
+        { provide: WebhookService, useValue: { findAll, create, update, updateStatus, delete: deleteWebhook } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },
@@ -81,7 +81,7 @@ describe('WebhooksComponent', () => {
     component.onFilterChange({
       search: ' slack ',
       enabled: 'false',
-      events: [WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.TRANSLATION_CHANGED],
+      events: [WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.TRANSLATION_CHANGED],
     });
     TestBed.tick();
 
@@ -90,7 +90,7 @@ describe('WebhooksComponent', () => {
     expect(findAll).toHaveBeenLastCalledWith('space-1', params);
     expect(params.get('search')).toBe('slack');
     expect(params.get('enabled')).toBe('false');
-    expect(params.getAll('event')).toEqual([WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.TRANSLATION_CHANGED]);
+    expect(params.getAll('event')).toEqual([WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.TRANSLATION_CHANGED]);
   });
 
   it('onSortChange() sorts on the server; cleared, back to by name', () => {
@@ -121,7 +121,7 @@ describe('WebhooksComponent', () => {
 
   it('openAddDialog() creates the webhook and notifies success when confirmed', () => {
     const { component, open, create, success } = setup();
-    const model = { name: 'Slack', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const model = { name: 'Slack', url: 'https://example.com', events: [WebhookEvent.CONTENT_PUBLISHED] };
     open.mockReturnValue({ closed$: of(model) });
 
     component.openAddDialog();
@@ -166,7 +166,7 @@ describe('WebhooksComponent', () => {
 
   it('openEditDialog() updates the webhook and notifies success when confirmed', () => {
     const { component, open, update, success } = setup();
-    const model = { name: 'Renamed', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const model = { name: 'Renamed', url: 'https://example.com', events: [WebhookEvent.CONTENT_PUBLISHED] };
     open.mockReturnValue({ closed$: of(model) });
 
     component.openEditDialog(webhook({ id: 'w1' }));
@@ -246,7 +246,7 @@ describe('WebhooksComponent', () => {
   it('eventsToText() joins events with newlines', () => {
     const { component } = setup();
 
-    expect(component['eventsToText']([WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.CONTENT_CHANGED])).toBe(
+    expect(component['eventsToText']([WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.CONTENT_CHANGED])).toBe(
       'content.published\ncontent.changed',
     );
   });

@@ -1,4 +1,4 @@
-import { type Translation, WebHookEvent } from '@localess/shared';
+import { type Translation, WebhookEvent } from '@localess/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
@@ -102,7 +102,7 @@ export class TranslationService {
    */
   async publish(spaceId: string): Promise<void> {
     await this.translationSnapshotRepository.publish(spaceId);
-    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.TRANSLATION_PUBLISHED);
+    this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_PUBLISHED);
   }
 
   /**
@@ -137,7 +137,7 @@ export class TranslationService {
 
   /** After a committed write: `translation.changed`. */
   private changed<T>(spaceId: string, result: T): T {
-    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
+    this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_CHANGED);
     return result;
   }
 

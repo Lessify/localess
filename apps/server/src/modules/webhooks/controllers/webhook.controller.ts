@@ -1,13 +1,13 @@
 import {
   DEVELOPERS,
   type Page,
-  type WebHook,
-  type WebHookCreate,
-  type WebHookPageable,
-  type WebHookStatusUpdate,
-  type WebHookUpdate,
+  type Webhook,
+  type WebhookCreate,
+  type WebhookPageable,
+  type WebhookStatusUpdate,
+  type WebhookUpdate,
 } from '@localess/shared';
-import { zWebHookCreate, zWebHookPageable, zWebHookStatusUpdate, zWebHookUpdate } from '@localess/shared/zod';
+import { zWebhookCreate, zWebhookPageable, zWebhookStatusUpdate, zWebhookUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
@@ -24,18 +24,18 @@ export class WebhookController {
   @Get()
   findAll(
     @Param('spaceId', UuidParamPipe) spaceId: string,
-    @Query({ schema: zWebHookPageable }) query: WebHookPageable,
-  ): Promise<Page<WebHook>> {
+    @Query({ schema: zWebhookPageable }) query: WebhookPageable,
+  ): Promise<Page<Webhook>> {
     return this.webhookService.findAll(spaceId, query);
   }
 
   @Get(':webhookId')
-  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<WebHook> {
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<Webhook> {
     return this.webhookService.findOne(spaceId, webhookId);
   }
 
   @Post()
-  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate): Promise<WebHook> {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zWebhookCreate }) body: WebhookCreate): Promise<Webhook> {
     return this.webhookService.create(spaceId, body);
   }
 
@@ -43,8 +43,8 @@ export class WebhookController {
   update(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
-    @Body({ schema: zWebHookUpdate }) body: WebHookUpdate,
-  ): Promise<WebHook> {
+    @Body({ schema: zWebhookUpdate }) body: WebhookUpdate,
+  ): Promise<Webhook> {
     return this.webhookService.update(spaceId, webhookId, body);
   }
 
@@ -52,14 +52,14 @@ export class WebhookController {
   updateStatus(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
-    @Body({ schema: zWebHookStatusUpdate }) body: WebHookStatusUpdate,
-  ): Promise<WebHook> {
+    @Body({ schema: zWebhookStatusUpdate }) body: WebhookStatusUpdate,
+  ): Promise<Webhook> {
     return this.webhookService.updateStatus(spaceId, webhookId, body.enabled);
   }
 
   /** A new signing secret (the one before stops), answered this once: `secret` in the webhook. */
   @Post(':webhookId/secret')
-  createSecret(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<WebHook> {
+  createSecret(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<Webhook> {
     return this.webhookService.createSecret(spaceId, webhookId);
   }
 

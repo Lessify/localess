@@ -15,10 +15,10 @@ import {
   TokenType,
   TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
-  WebHookErrorType,
-  WebHookEvent,
-  type WebHookPayloadData,
-  WebHookStatus,
+  WebhookErrorType,
+  WebhookEvent,
+  type WebhookPayloadData,
+  WebhookStatus,
 } from '@localess/shared';
 import { type SQL, sql } from 'drizzle-orm';
 import {
@@ -540,14 +540,14 @@ export const webhooks = pgTable(
     url: text('url').notNull(),
     // A new webhook sends nothing until it is enabled (the App API's create enables it; the Firebase import does not).
     enabled: boolean('enabled').notNull().default(false),
-    events: text('events', { enum: values(WebHookEvent) })
+    events: text('events', { enum: values(WebhookEvent) })
       .array()
       .notNull(),
     headers: jsonb('headers').$type<Record<string, string>>(),
     secret: text('secret'),
     ...timestamps,
   },
-  t => [index('webhooks_space_idx').on(t.spaceId, t.name), allOf('webhooks_events_check', t.events, values(WebHookEvent))],
+  t => [index('webhooks_space_idx').on(t.spaceId, t.name), allOf('webhooks_events_check', t.events, values(WebhookEvent))],
 );
 
 export const webhookLogs = pgTable(
@@ -557,16 +557,16 @@ export const webhookLogs = pgTable(
     webhookId: uuid('webhook_id')
       .notNull()
       .references(() => webhooks.id, { onDelete: 'cascade' }),
-    event: text('event', { enum: values(WebHookEvent) }).notNull(),
+    event: text('event', { enum: values(WebhookEvent) }).notNull(),
     url: text('url').notNull(),
-    status: text('status', { enum: values(WebHookStatus) }).notNull(),
+    status: text('status', { enum: values(WebhookStatus) }).notNull(),
     statusCode: integer('status_code'),
     statusText: text('status_text'),
-    errorType: text('error_type', { enum: values(WebHookErrorType) }),
+    errorType: text('error_type', { enum: values(WebhookErrorType) }),
     errorMessage: text('error_message'),
     requestSize: integer('request_size').notNull(),
     // The payload's `data` as it was sent.
-    data: jsonb('data').$type<WebHookPayloadData>().notNull(),
+    data: jsonb('data').$type<WebhookPayloadData>().notNull(),
     deliveryId: text('delivery_id').notNull(),
     duration: integer('duration').notNull(),
     responseBody: text('response_body'),
@@ -575,9 +575,9 @@ export const webhookLogs = pgTable(
   },
   t => [
     index('webhook_logs_webhook_idx').on(t.webhookId, t.createdAt.desc()),
-    oneOf('webhook_logs_event_check', t.event, values(WebHookEvent)),
-    oneOf('webhook_logs_status_check', t.status, values(WebHookStatus)),
-    oneOf('webhook_logs_error_type_check', t.errorType, values(WebHookErrorType)),
+    oneOf('webhook_logs_event_check', t.event, values(WebhookEvent)),
+    oneOf('webhook_logs_status_check', t.status, values(WebhookStatus)),
+    oneOf('webhook_logs_error_type_check', t.errorType, values(WebhookErrorType)),
   ],
 );
 

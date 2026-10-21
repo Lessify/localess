@@ -1,4 +1,4 @@
-import { isTranslationKey, TaskExportMetadata, TranslationExport, WebHookEvent } from '@localess/shared';
+import { isTranslationKey, TaskExportMetadata, TranslationExport, WebhookEvent } from '@localess/shared';
 import { zTranslationExportArraySchema, zTranslationFlatExportSchema } from '@localess/shared/zod';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
@@ -148,7 +148,7 @@ export class TranslationTransferService {
   /** `translation.changed` after commit, when the import wrote anything. */
   private async imported(task: TaskEntity, changes: number): Promise<TaskOutcome> {
     await this.taskLogService.log(task, 'INFO', `total changes : ${changes}`);
-    if (changes) this.webhookDispatcher.dispatch(task.spaceId, WebHookEvent.TRANSLATION_CHANGED);
+    if (changes) this.webhookDispatcher.dispatch(task.spaceId, WebhookEvent.TRANSLATION_CHANGED);
     return { status: 'FINISHED' };
   }
 

@@ -1,4 +1,4 @@
-import { isTranslationKey, type TranslationUpdateResponse, WebHookEvent } from '@localess/shared';
+import { isTranslationKey, type TranslationUpdateResponse, WebhookEvent } from '@localess/shared';
 import { Injectable } from '@nestjs/common';
 
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
@@ -99,7 +99,7 @@ export class TranslationDeliveryService {
     else if (type === 'update-existing') await this.translationRepository.setLocaleByKeys(spaceId, locale, pick());
     else if (type === 'delete-missing-value') await this.translationRepository.deleteLocaleByKeys(spaceId, locale, actionable);
     else await this.translationRepository.deleteByKeys(spaceId, actionable);
-    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.TRANSLATION_CHANGED);
+    this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_CHANGED);
     return { message: `${past} ${actionable.length} ${noun}`, ids: actionable };
   }
 }

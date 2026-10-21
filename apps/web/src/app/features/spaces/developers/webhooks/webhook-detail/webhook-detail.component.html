@@ -118,7 +118,7 @@
           <ng-container llColumnDef="status">
             <th llHeaderCell *llHeaderCellDef>Status</th>
             <td llCell *llCellDef="let element">
-              @if (element.status === WebHookStatus.SUCCESS) {
+              @if (element.status === WebhookStatus.SUCCESS) {
                 <span hlmBadge>Success</span>
               } @else {
                 <span hlmBadge variant="destructive">Failure</span>
@@ -177,7 +177,7 @@
                       hlmTooltip="Whether the delivery succeeded (the target server responded with a 2xx code) or failed." />
                   </dt>
                   <dd>
-                    @if (element.status === WebHookStatus.SUCCESS) {
+                    @if (element.status === WebhookStatus.SUCCESS) {
                       <span hlmBadge>Success</span>
                     } @else {
                       <span hlmBadge variant="destructive">Failure</span>

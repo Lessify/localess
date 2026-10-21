@@ -1,4 +1,4 @@
-import { type Content, type ContentData, type ContentFolderSummary, WebHookEvent } from '@localess/shared';
+import { type Content, type ContentData, type ContentFolderSummary, WebhookEvent } from '@localess/shared';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
@@ -111,16 +111,16 @@ export class ContentService {
    */
   async publish(spaceId: string, id: string): Promise<void> {
     const target = found(await this.contentRepository.publish(spaceId, id));
-    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.CONTENT_PUBLISHED, { id, fullSlug: target.fullSlug });
+    this.webhookDispatcher.dispatch(spaceId, WebhookEvent.CONTENT_PUBLISHED, { id, fullSlug: target.fullSlug });
   }
 
   /** Stops serving a document (or every published document under a folder). */
   async unpublish(spaceId: string, id: string): Promise<void> {
     const target = found(await this.contentRepository.unpublish(spaceId, id));
-    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.CONTENT_UNPUBLISHED, { id, fullSlug: target.fullSlug });
+    this.webhookDispatcher.dispatch(spaceId, WebhookEvent.CONTENT_UNPUBLISHED, { id, fullSlug: target.fullSlug });
   }
 
   private changed(spaceId: string, content: Pick<ContentWithPath, 'id' | 'fullSlug'>): void {
-    this.webhookDispatcher.dispatch(spaceId, WebHookEvent.CONTENT_CHANGED, { id: content.id, fullSlug: content.fullSlug });
+    this.webhookDispatcher.dispatch(spaceId, WebhookEvent.CONTENT_CHANGED, { id: content.id, fullSlug: content.fullSlug });
   }
 }

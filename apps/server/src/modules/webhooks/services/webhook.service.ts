@@ -1,4 +1,4 @@
-import type { Page, WebHook, WebHookCreate, WebHookPageable, WebHookUpdate } from '@localess/shared';
+import type { Page, Webhook, WebhookCreate, WebhookPageable, WebhookUpdate } from '@localess/shared';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
@@ -37,7 +37,7 @@ export class WebhookService {
   }
 
   /** One page, by name unless sorted otherwise. */
-  async findAll(spaceId: string, query: WebHookPageable): Promise<Page<WebHook>> {
+  async findAll(spaceId: string, query: WebhookPageable): Promise<Page<Webhook>> {
     await this.requireSpace(spaceId);
     const [rows, total] = await Promise.all([
       this.webhookRepository.findAll(spaceId, query),
@@ -46,11 +46,11 @@ export class WebhookService {
     return toPage(rows, total, query, toWebhook);
   }
 
-  async findOne(spaceId: string, webhookId: string): Promise<WebHook> {
+  async findOne(spaceId: string, webhookId: string): Promise<Webhook> {
     return toWebhook(await this.requireWebhook(spaceId, webhookId));
   }
 
-  async create(spaceId: string, input: WebHookCreate): Promise<WebHook> {
+  async create(spaceId: string, input: WebhookCreate): Promise<Webhook> {
     if (input.url.includes(WEBHOOK_URL_MASK))
       throw new BadRequestException(`Webhook URL has a ${WEBHOOK_URL_MASK} value with nothing stored to keep`);
     this.assertDeliverable(input.url);
@@ -72,7 +72,7 @@ export class WebhookService {
    * `headers` is every header the webhook keeps: a value replaces, `null` keeps the current value, one left out goes;
    * without `headers` all are kept. The secret has its own routes.
    */
-  async update(spaceId: string, webhookId: string, input: WebHookUpdate): Promise<WebHook> {
+  async update(spaceId: string, webhookId: string, input: WebhookUpdate): Promise<Webhook> {
     const current = await this.requireWebhook(spaceId, webhookId);
     // The URL comes back as it was answered: a masked query value keeps the stored one.
     const url = unmaskWebhookUrl(input.url, current.url);
@@ -87,7 +87,7 @@ export class WebhookService {
     return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
 
-  async updateStatus(spaceId: string, webhookId: string, enabled: boolean): Promise<WebHook> {
+  async updateStatus(spaceId: string, webhookId: string, enabled: boolean): Promise<Webhook> {
     await this.requireWebhook(spaceId, webhookId);
     await this.webhookRepository.update(spaceId, webhookId, { enabled });
     return toWebhook(await this.findWebhook(spaceId, webhookId));
@@ -97,7 +97,7 @@ export class WebhookService {
    * A new signing secret, which the answer holds: the only time it is shown. The one before (if any) stops at once;
    * a webhook without one starts signing.
    */
-  async createSecret(spaceId: string, webhookId: string): Promise<WebHook> {
+  async createSecret(spaceId: string, webhookId: string): Promise<Webhook> {
     await this.requireWebhook(spaceId, webhookId);
     const secret = newWebhookSecret();
     await this.webhookRepository.update(spaceId, webhookId, { secret });

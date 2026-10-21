@@ -1,4 +1,4 @@
-import type { WebHookEvent } from '@localess/shared';
+import type { WebhookEvent } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, arrayContains, eq } from 'drizzle-orm';
 
@@ -17,7 +17,7 @@ export class WebhookDeliveryRepository {
   ) {}
 
   /** The space's enabled webhooks subscribed to `event`. */
-  findTargets(spaceId: string, event: WebHookEvent): Promise<WebhookEntity[]> {
+  findTargets(spaceId: string, event: WebhookEvent): Promise<WebhookEntity[]> {
     return this.db
       .select()
       .from(webhooks)

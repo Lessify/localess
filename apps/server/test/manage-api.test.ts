@@ -1,4 +1,4 @@
-import { TokenType, WebHookEvent } from '@localess/shared';
+import { TokenType, WebhookEvent } from '@localess/shared';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
@@ -112,7 +112,7 @@ describe('management API', () => {
     /** A push that wrote something fires translation.changed and refreshes open editors; others notify nobody. */
     const expectNotified = (notified: boolean) => {
       if (notified) {
-        expect(dispatch.mock.calls).toEqual([[S1, WebHookEvent.TRANSLATION_CHANGED]]);
+        expect(dispatch.mock.calls).toEqual([[S1, WebhookEvent.TRANSLATION_CHANGED]]);
         expect(publish.mock.calls.map(([event]) => event)).toEqual([{ spaceId: S1, entity: 'translations', op: 'updated' }]);
       } else {
         expect(dispatch).not.toHaveBeenCalled();

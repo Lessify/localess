@@ -9,9 +9,9 @@ import {
   TokenType,
   TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
-  WebHookErrorType,
-  WebHookEvent,
-  WebHookStatus,
+  WebhookErrorType,
+  WebhookEvent,
+  WebhookStatus,
 } from '@localess/shared';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -37,10 +37,10 @@ const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][]
   ['tasks', 'type', TRANSLATION_IMPORT_FORMATS],
   ['task_logs', 'level', Object.values(TaskLogLevel)],
   ['tokens', 'type', Object.values(TokenType)],
-  ['webhooks', 'events', Object.values(WebHookEvent)],
-  ['webhook_logs', 'event', Object.values(WebHookEvent)],
-  ['webhook_logs', 'status', Object.values(WebHookStatus)],
-  ['webhook_logs', 'error_type', Object.values(WebHookErrorType)],
+  ['webhooks', 'events', Object.values(WebhookEvent)],
+  ['webhook_logs', 'event', Object.values(WebhookEvent)],
+  ['webhook_logs', 'status', Object.values(WebhookStatus)],
+  ['webhook_logs', 'error_type', Object.values(WebhookErrorType)],
   ['firebase_imports', 'status', FIREBASE_IMPORT_STATUSES],
 ];
 

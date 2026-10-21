@@ -1,4 +1,4 @@
-import type { WebHookPageable } from '@localess/shared';
+import type { WebhookPageable } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, arrayOverlaps, asc, desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm';
 
@@ -21,7 +21,7 @@ export class WebhookRepository {
   ) {}
 
   /** One page by the query's sort (`name` case-insensitive, the default), then the id so equal values page stably. */
-  findAll(spaceId: string, query: WebHookPageable): Promise<WebhookEntity[]> {
+  findAll(spaceId: string, query: WebhookPageable): Promise<WebhookEntity[]> {
     const order = query.direction === 'desc' ? desc : asc;
     const column = { name: sql`lower(${webhooks.name})`, enabled: webhooks.enabled, updatedAt: webhooks.updatedAt }[query.sort];
     return this.db.query.webhooks.findMany({
@@ -33,7 +33,7 @@ export class WebhookRepository {
   }
 
   /** How many of the space's webhooks match the query's filters and search. */
-  findAllCount(spaceId: string, query: WebHookPageable): Promise<number> {
+  findAllCount(spaceId: string, query: WebhookPageable): Promise<number> {
     return this.db.$count(webhooks, this.where(spaceId, query));
   }
 
@@ -72,7 +72,7 @@ export class WebhookRepository {
     });
   }
 
-  private where(spaceId: string, query: WebHookPageable): SQL | undefined {
+  private where(spaceId: string, query: WebhookPageable): SQL | undefined {
     const conditions: SQL[] = [eq(webhooks.spaceId, spaceId)];
     if (query.enabled !== undefined) conditions.push(eq(webhooks.enabled, query.enabled));
     if (query.event) conditions.push(arrayOverlaps(webhooks.events, query.event));

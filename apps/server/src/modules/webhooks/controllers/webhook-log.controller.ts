@@ -1,5 +1,5 @@
-import { DEVELOPERS, type Page, type WebHookLog, type WebHookLogPageable } from '@localess/shared';
-import { zWebHookLogPageable } from '@localess/shared/zod';
+import { DEVELOPERS, type Page, type WebhookLog, type WebhookLogPageable } from '@localess/shared';
+import { zWebhookLogPageable } from '@localess/shared/zod';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
@@ -17,8 +17,8 @@ export class WebhookLogController {
   findAll(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
-    @Query({ schema: zWebHookLogPageable }) query: WebHookLogPageable,
-  ): Promise<Page<WebHookLog>> {
+    @Query({ schema: zWebhookLogPageable }) query: WebhookLogPageable,
+  ): Promise<Page<WebhookLog>> {
     return this.webhookLogService.findAll(spaceId, webhookId, query);
   }
 }

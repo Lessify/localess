@@ -6,7 +6,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { PagedList } from '@core/utils/paged-list';
-import { WebHook, WebHookCreate, WebHookEvent, WebHookUpdate } from '@localess/shared';
+import { Webhook, WebhookCreate, WebhookEvent, WebhookUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideEllipsisVertical,
@@ -37,7 +37,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { combineLatest, EMPTY } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
-import { WebHookService } from './webhook.service';
+import { WebhookService } from './webhook.service';
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext } from './webhook-dialog/webhook-dialog.model';
 import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from './webhook-secret-dialog/webhook-secret-dialog.component';
@@ -73,7 +73,7 @@ import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from './webh
   ],
 })
 export class WebhooksComponent {
-  private readonly webhookService = inject(WebHookService);
+  private readonly webhookService = inject(WebhookService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
@@ -85,8 +85,8 @@ export class WebhooksComponent {
   /** The page shown: paged, sorted, filtered and searched on the server. */
   readonly list = new PagedList(20);
   readonly total = signal(0);
-  private readonly webhooks = signal<WebHook[]>([]);
-  readonly dataSource = new TableDataSource<WebHook>(this.webhooks, this.injector);
+  private readonly webhooks = signal<Webhook[]>([]);
+  readonly dataSource = new TableDataSource<Webhook>(this.webhooks, this.injector);
   displayedColumns: string[] = ['name', 'enabled', 'events', 'updatedAt', 'actions'];
 
   readonly filters: FilterDef[] = [
@@ -103,7 +103,7 @@ export class WebhooksComponent {
       key: 'events',
       label: 'Events',
       mode: 'multiple',
-      options: Object.values(WebHookEvent).map(event => ({ value: event, label: event })),
+      options: Object.values(WebhookEvent).map(event => ({ value: event, label: event })),
     },
   ];
 
@@ -145,7 +145,7 @@ export class WebhooksComponent {
     this.list.setSort(sort.active, sort.direction);
   }
 
-  navigateToDetail(webhook: WebHook): void {
+  navigateToDetail(webhook: Webhook): void {
     const spaceId = this.spaceStore.selectedSpaceId()!;
     this.router.navigate(['features', 'spaces', spaceId, 'developers', 'webhooks', webhook.id]);
   }
@@ -153,7 +153,7 @@ export class WebhooksComponent {
   openAddDialog(): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<WebHookCreate>(WebhookDialogComponent, {
+      .open<WebhookCreate>(WebhookDialogComponent, {
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -178,10 +178,10 @@ export class WebhooksComponent {
       });
   }
 
-  openEditDialog(element: WebHook): void {
+  openEditDialog(element: Webhook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<WebHookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
+      .open<WebhookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
         context: element,
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -199,7 +199,7 @@ export class WebhooksComponent {
       });
   }
 
-  changeStatus(element: WebHook): void {
+  changeStatus(element: Webhook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.webhookService.updateStatus(spaceId!, element.id, !element.enabled).subscribe({
       next: () => this.notificationService.success(`Webhook '${element.name}' has been ${!element.enabled ? 'enabled' : 'disabled'}.`),
@@ -210,7 +210,7 @@ export class WebhooksComponent {
     });
   }
 
-  openDeleteDialog(element: WebHook): void {
+  openDeleteDialog(element: Webhook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
@@ -232,7 +232,7 @@ export class WebhooksComponent {
       });
   }
 
-  protected eventsToText(events: WebHookEvent[]) {
+  protected eventsToText(events: WebhookEvent[]) {
     return events.join('\n');
   }
 }

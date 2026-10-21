@@ -2,13 +2,13 @@ import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
-import { Page, WebHookEvent, WebHookLog } from '@localess/shared';
+import { Page, WebhookEvent, WebhookLog } from '@localess/shared';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { WebHookService } from './webhook.service';
+import { WebhookService } from './webhook.service';
 
-describe('WebHookService', () => {
+describe('WebhookService', () => {
   let http: HttpTestingController;
   let events: Subject<ChangeEvent>;
   const base = '/api/app/spaces/space-1/webhooks';
@@ -19,7 +19,7 @@ describe('WebHookService', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), { provide: ChangeEventsService, useValue: { changes: () => events } }],
     });
     http = TestBed.inject(HttpTestingController);
-    return TestBed.inject(WebHookService);
+    return TestBed.inject(WebhookService);
   }
 
   afterEach(() => {
@@ -46,7 +46,7 @@ describe('WebHookService', () => {
 
   it('create() posts the webhook, leaving out empty headers, and answers it (signed: with its secret)', async () => {
     const service = setup();
-    const entity = { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const entity = { name: 'Hook', url: 'https://example.com', events: [WebhookEvent.CONTENT_PUBLISHED] };
     const plain = firstValueFrom(service.create('space-1', { ...entity, signed: false }));
     const plainRequest = http.expectOne({ method: 'POST', url: base });
     expect(plainRequest.request.body).toEqual({ ...entity, events: ['content.published'] });
@@ -65,7 +65,7 @@ describe('WebHookService', () => {
     const entity = {
       name: 'Hook',
       url: 'https://example.com',
-      events: [WebHookEvent.CONTENT_CHANGED],
+      events: [WebhookEvent.CONTENT_CHANGED],
       headers: { 'X-Key': 'v', Authorization: null },
     };
     const done = firstValueFrom(service.update('space-1', 'w1', entity));
@@ -113,9 +113,9 @@ describe('WebHookService', () => {
   it('findLogs() refetches on new logs of that webhook only', async () => {
     vi.useFakeTimers();
     const service = setup();
-    const results: Page<WebHookLog>[] = [];
+    const results: Page<WebhookLog>[] = [];
     const empty = { items: [], page: 0, size: 20, total: 0 };
-    const one = { items: [{ id: '1' } as WebHookLog], page: 0, size: 20, total: 1 };
+    const one = { items: [{ id: '1' } as WebhookLog], page: 0, size: 20, total: 1 };
     const subscription = service.findLogs('space-1', 'w1', new HttpParams()).subscribe(it => results.push(it));
     http.expectOne(`${base}/w1/logs`).flush(empty);
 

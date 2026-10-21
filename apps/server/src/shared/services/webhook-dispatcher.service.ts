@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
+import { WebhookErrorType, WebhookEvent, WebhookStatus } from '@localess/shared';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
@@ -17,7 +17,7 @@ const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
 
 export interface WebhookPayload {
-  event: WebHookEvent;
+  event: WebhookEvent;
   spaceId: string;
   timestamp: string;
   data: { id: string; fullSlug: string } | Record<string, never>;
@@ -41,7 +41,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
   ) {}
 
   /** Fire-and-forget: never throws, never delays the caller. */
-  dispatch(spaceId: string, event: WebHookEvent, data: WebhookPayload['data'] = {}): void {
+  dispatch(spaceId: string, event: WebhookEvent, data: WebhookPayload['data'] = {}): void {
     const payload: WebhookPayload = { event, spaceId, timestamp: new Date().toISOString(), data };
     const delivery = this.deliverAll(payload)
       .catch(error => this.logger.error(`Webhook dispatch for ${event} failed: ${error}`))
@@ -104,8 +104,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       const ok = response.status >= 200 && response.status < 300;
       log = {
         ...base,
-        status: ok ? WebHookStatus.SUCCESS : WebHookStatus.FAILURE,
-        errorType: ok ? null : WebHookErrorType.HTTP,
+        status: ok ? WebhookStatus.SUCCESS : WebhookStatus.FAILURE,
+        errorType: ok ? null : WebhookErrorType.HTTP,
         statusCode: response.status,
         statusText: response.statusText,
         duration: Date.now() - startTime,
@@ -116,8 +116,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
       log = {
         ...base,
-        status: WebHookStatus.FAILURE,
-        errorType: isTimeout ? WebHookErrorType.TIMEOUT : WebHookErrorType.NETWORK,
+        status: WebhookStatus.FAILURE,
+        errorType: isTimeout ? WebhookErrorType.TIMEOUT : WebhookErrorType.NETWORK,
         errorMessage: err.message,
         duration: Date.now() - startTime,
       };

@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { PagedList } from '@core/utils/paged-list';
-import { WebHook, WebHookEvent, WebHookLog, WebHookStatus, WebHookUpdate } from '@localess/shared';
+import { Webhook, WebhookEvent, WebhookLog, WebhookStatus, WebhookUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -37,7 +37,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, of } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
-import { WebHookService } from '../webhook.service';
+import { WebhookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext } from '../webhook-dialog/webhook-dialog.model';
 import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../webhook-secret-dialog/webhook-secret-dialog.component';
@@ -73,7 +73,7 @@ import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../web
   ],
 })
 export class WebhookDetailComponent implements OnInit {
-  private readonly webhookService = inject(WebHookService);
+  private readonly webhookService = inject(WebhookService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
   private readonly router = inject(Router);
@@ -85,31 +85,31 @@ export class WebhookDetailComponent implements OnInit {
 
   isLoading = signal(true);
   isLogsLoading = signal(true);
-  webhook = signal<WebHook | undefined>(undefined);
+  webhook = signal<Webhook | undefined>(undefined);
 
   /** The page of delivery logs shown: newest first, filtered and searched on the server. */
   readonly list = new PagedList(20);
   readonly logsTotal = signal(0);
-  private readonly logs = signal<WebHookLog[]>([]);
-  readonly dataSource = new TableDataSource<WebHookLog>(this.logs, this.injector);
+  private readonly logs = signal<WebhookLog[]>([]);
+  readonly dataSource = new TableDataSource<WebhookLog>(this.logs, this.injector);
   displayedColumns: string[] = ['expand', 'id', 'event', 'status', 'duration', 'createdAt'];
 
   expandedLogs = signal<Set<string>>(new Set());
 
-  protected readonly WebHookStatus = WebHookStatus;
+  protected readonly WebhookStatus = WebhookStatus;
 
   readonly filters: FilterDef[] = [
     {
       key: 'event',
       label: 'Event Type',
       mode: 'multiple',
-      options: Object.values(WebHookEvent).map(event => ({ value: event, label: event })),
+      options: Object.values(WebhookEvent).map(event => ({ value: event, label: event })),
     },
     {
       key: 'status',
       label: 'Status',
       mode: 'multiple',
-      options: Object.values(WebHookStatus).map(status => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) })),
+      options: Object.values(WebhookStatus).map(status => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) })),
     },
   ];
 
@@ -157,7 +157,7 @@ export class WebhookDetailComponent implements OnInit {
     const webhook = this.webhook();
     if (!webhook) return;
     this.dialog
-      .open<WebHookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
+      .open<WebhookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
         context: webhook,
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -294,7 +294,7 @@ export class WebhookDetailComponent implements OnInit {
     this.expandedLogs.set(current);
   }
 
-  protected eventsToText(events: WebHookEvent[]): string {
+  protected eventsToText(events: WebhookEvent[]): string {
     return events.join('\n');
   }
 }

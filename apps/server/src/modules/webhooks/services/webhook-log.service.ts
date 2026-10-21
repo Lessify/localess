@@ -1,4 +1,4 @@
-import type { Page, WebHookLog, WebHookLogPageable } from '@localess/shared';
+import type { Page, WebhookLog, WebhookLogPageable } from '@localess/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
@@ -17,7 +17,7 @@ export class WebhookLogService {
   ) {}
 
   /** One page, newest first: every delivery kept (`LOCALESS_WEBHOOK_LOG_DAYS`) can be reached. */
-  async findAll(spaceId: string, webhookId: string, query: WebHookLogPageable): Promise<Page<WebHookLog>> {
+  async findAll(spaceId: string, webhookId: string, query: WebhookLogPageable): Promise<Page<WebhookLog>> {
     if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
     if (!(await this.webhookRepository.exists(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
     const [rows, total] = await Promise.all([

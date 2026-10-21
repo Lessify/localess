@@ -161,4 +161,4 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   `defaultLocale` and `spaceLocales`; the sidebar `IdName[]` (`GET /spaces/names`); the Visual Editor `IdNameUrl[]`
   (`GET /spaces/:spaceId/environments/names`).
 - **Don't:** a computed field for the web's convenience (`importStatus`, `legacyId`, a flattened `locales`).
-- **Reworked so far:** spaces, webhooks (`WebHook` answers `hasSecret`, never the secret). The other models keep their shapes until their module is reworked.
+- **Reworked so far:** spaces, webhooks (`Webhook` answers `hasSecret`, never the secret). The other models keep their shapes until their module is reworked.

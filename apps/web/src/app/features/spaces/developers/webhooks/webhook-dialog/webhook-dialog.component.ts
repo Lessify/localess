@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { WEBHOOK_HEADERS_MAX, WebHookCreate, WebHookEvent, WebHookUpdate } from '@localess/shared';
+import { WEBHOOK_HEADERS_MAX, WebhookCreate, WebhookEvent, WebhookUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucidePlus, lucideX } from '@ng-icons/lucide';
 import { ChipRemoveLabelDirective } from '@shared/directives/chip-remove-label.directive';
@@ -53,7 +53,7 @@ export class WebhookDialogComponent {
   /** The URL as the server answers it, its query values masked (`••••`): sent back unchanged, they are kept. */
   readonly hasMaskedUrl = this.isEdit && (this.context?.url ?? '').includes('••••');
 
-  webhookEvents = Object.values(WebHookEvent);
+  webhookEvents = Object.values(WebhookEvent);
 
   form: FormGroup = this.fb.group({
     name: this.fb.control(this.context?.name || '', WebhookValidator.NAME),
@@ -92,13 +92,13 @@ export class WebhookDialogComponent {
     const { name, url, events, signed, headers } = this.form.getRawValue() as {
       name: string;
       url: string;
-      events: WebHookEvent[];
+      events: WebhookEvent[];
       signed: boolean;
       headers: { name: string; value: string; kept: boolean }[];
     };
     if (this.isEdit) {
       // Every header kept: a typed value replaces, an empty one keeps the value it has.
-      const update: WebHookUpdate = {
+      const update: WebhookUpdate = {
         name,
         url,
         events,
@@ -107,7 +107,7 @@ export class WebhookDialogComponent {
       this.dialogRef.close(update);
       return;
     }
-    const create: WebHookCreate = { name, url, events };
+    const create: WebhookCreate = { name, url, events };
     if (headers.length) create.headers = Object.fromEntries(headers.map(it => [it.name.trim(), it.value]));
     // Signing an existing webhook is on its page (a new secret, shown once).
     if (signed) create.signed = true;

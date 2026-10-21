@@ -1,4 +1,4 @@
-import type { WebHookLogPageable } from '@localess/shared';
+import type { WebhookLogPageable } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, ilike, inArray, lt, type SQL, sql } from 'drizzle-orm';
 
@@ -13,7 +13,7 @@ export class WebhookLogRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   /** One page, newest first unless asked otherwise; equal times by id (`webhook_logs_webhook_idx` covers it). */
-  findAll(webhookId: string, query: WebHookLogPageable): Promise<WebhookLogEntity[]> {
+  findAll(webhookId: string, query: WebhookLogPageable): Promise<WebhookLogEntity[]> {
     const order = query.direction === 'desc' ? desc : asc;
     return this.db.query.webhookLogs.findMany({
       where: this.where(webhookId, query),
@@ -24,7 +24,7 @@ export class WebhookLogRepository {
   }
 
   /** How many of the webhook's logs match the query's filters and search. */
-  findAllCount(webhookId: string, query: WebHookLogPageable): Promise<number> {
+  findAllCount(webhookId: string, query: WebhookLogPageable): Promise<number> {
     return this.db.$count(webhookLogs, this.where(webhookId, query));
   }
 
@@ -33,7 +33,7 @@ export class WebhookLogRepository {
     await this.db.delete(webhookLogs).where(lt(webhookLogs.createdAt, before));
   }
 
-  private where(webhookId: string, query: WebHookLogPageable): SQL | undefined {
+  private where(webhookId: string, query: WebhookLogPageable): SQL | undefined {
     const conditions: SQL[] = [eq(webhookLogs.webhookId, webhookId)];
     if (query.event) conditions.push(inArray(webhookLogs.event, query.event));
     if (query.status) conditions.push(inArray(webhookLogs.status, query.status));
