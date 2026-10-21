@@ -38,10 +38,10 @@ The **Sign-in** column shows how each user signs in: a mail icon when they have 
 - `inviteDialog()` — opens `UserInviteDialogComponent`
 - `openEditDialog(user)` — opens `UserDialogComponent` to change the role
 - `openDeleteDialog(user)` — opens `ConfirmationDialogComponent`, then deletes
-- `toggleDisabled(user)` — **Disable** (after a confirmation) or **Enable** via `UserService.setDisabled()` (`PATCH /api/app/users/:id/status` `{ disabled }`). Disabling deletes the user's sessions, so they are signed out at once; password and OAuth sign-in are refused while `users.disabled` is set, and the list shows them as *inactive*. Offered on every user but the caller's own account (`canChangeStatus()`); the server refuses that too (403). Replaces the Firebase Authentication console's "Disable account"
-- `copyPasswordResetLink(user)` — calls `UserService.passwordResetLink()` (`POST /api/app/users/:id/password-reset-link`) and copies the returned one-hour reset link to the clipboard. This is how passwords get reset when the server has no SMTP configured. Admins only, as every route of the page
+- `toggleDisabled(user)` — **Disable** (after a confirmation) or **Enable** via `UserService.updateStatus()` (`PATCH /api/app/users/:id/status` `{ disabled }`). Disabling deletes the user's sessions, so they are signed out at once; password and OAuth sign-in are refused while `users.disabled` is set, and the list shows them as *inactive*. Offered on every user but the caller's own account (`canChangeStatus()`); the server refuses that too (403). Replaces the Firebase Authentication console's "Disable account"
+- `copyPasswordResetLink(user)` — calls `UserService.createPasswordResetLink()` (`POST /api/app/users/:id/password-reset-link`) and copies the returned one-hour reset link to the clipboard. This is how passwords get reset when the server has no SMTP configured. Admins only, as every route of the page
 
-The list is live: `UserService.findPage(params)` is a `liveQuery` that reads the current page again on `users` change events from the SSE stream. There is no "Sync" action any more — the role lives only in the `users` table, so there is nothing to sync.
+The list is live: `UserService.findAll(params)` is a `liveQuery` that reads the current page again on `users` change events from the SSE stream. There is no "Sync" action any more — the role lives only in the `users` table, so there is nothing to sync.
 
 ## Dialogs
 

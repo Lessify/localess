@@ -1,16 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { UserService } from '../src/modules/users/services/user.service.js';
-import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 describe('own profile', () => {
   let t: TestApp;
 
   beforeAll(async () => {
     t = await createTestApp();
-    const users = t.app.get(UserService);
-    await users.create({ email: 'me@example.com', password: 'old-pass', role: 'VIEWER' });
-    await users.create({ email: 'taken@example.com', password: 'whatever', role: 'VIEWER' });
+    await createUser(t, { email: 'me@example.com', password: 'old-pass', role: 'VIEWER' });
+    await createUser(t, { email: 'taken@example.com', password: 'whatever', role: 'VIEWER' });
   });
 
   afterAll(() => t?.close());

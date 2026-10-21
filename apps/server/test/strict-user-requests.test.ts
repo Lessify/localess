@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { UserService } from '../src/modules/users/services/user.service.js';
-import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 /**
  * Users and sign-in take strict bodies: an unknown field (a typo, an old client's name) is a 400 naming it, never a
@@ -15,10 +14,9 @@ describe('users and sign-in: strict request bodies', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    const users = t.app.get(UserService);
-    await users.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
-    await users.create({ email: 'me@example.com', password: 'my-pass', role: 'VIEWER' });
-    targetId = (await users.create({ email: 'target@example.com', password: 'target-pass', role: 'VIEWER' })).id;
+    await createUser(t, { email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
+    await createUser(t, { email: 'me@example.com', password: 'my-pass', role: 'VIEWER' });
+    targetId = (await createUser(t, { email: 'target@example.com', password: 'target-pass', role: 'VIEWER' })).id;
     admin = await login(t, 'admin@example.com', 'admin-pass');
     me = await login(t, 'me@example.com', 'my-pass');
   });

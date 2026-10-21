@@ -2,18 +2,15 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { sessions, users } from '../src/infra/database/schema.js';
-import { UserService } from '../src/modules/users/services/user.service.js';
-import { createTestApp, login, sessionCookie, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, sessionCookie, TestApp, XHR } from './test-app.js';
 
 describe('authentication', () => {
   let t: TestApp;
-  let usersService: UserService;
 
   beforeAll(async () => {
     t = await createTestApp();
-    usersService = t.app.get(UserService);
-    await usersService.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
-    await usersService.create({
+    await createUser(t, { email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
+    await createUser(t, {
       email: 'Editor@Example.com',
       password: 'editor-pass',
       role: 'VIEWER',
@@ -112,7 +109,7 @@ describe('authentication', () => {
   });
 
   it('blocks disabled users, including their existing sessions', async () => {
-    const user = await usersService.create({ email: 'leaver@example.com', password: 'leaver-pass', role: 'VIEWER' });
+    const user = await createUser(t, { email: 'leaver@example.com', password: 'leaver-pass', role: 'VIEWER' });
     const cookie = await login(t, 'leaver@example.com', 'leaver-pass');
     await t.db.update(users).set({ disabled: true }).where(eq(users.id, user.id));
     expect((await me(cookie)).statusCode).toBe(401);
@@ -126,10 +123,10 @@ describe('authentication', () => {
   });
 
   it('applies role changes immediately, without signing in again', async () => {
-    const user = await usersService.create({ email: 'promoted@example.com', password: 'promo-pass', role: 'VIEWER' });
+    const user = await createUser(t, { email: 'promoted@example.com', password: 'promo-pass', role: 'VIEWER' });
     const cookie = await login(t, 'promoted@example.com', 'promo-pass');
     expect((await t.request({ method: 'GET', url: '/api/app/users', headers: { cookie } })).statusCode).toBe(403);
-    await usersService.updateAccess(user.id, 'ADMIN');
+    await t.db.update(users).set({ role: 'ADMIN' }).where(eq(users.id, user.id));
     expect((await t.request({ method: 'GET', url: '/api/app/users', headers: { cookie } })).statusCode).toBe(200);
   });
 

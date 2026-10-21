@@ -39,12 +39,12 @@ describe('UsersComponent', () => {
   });
 
   function setup(users: User[] = [], findPageImpl?: (params: HttpParams) => Observable<Page<User>>, currentUser = ADMIN) {
-    const findPage = vi.fn(findPageImpl ?? ((params: HttpParams) => of(pageOf(users, params))));
+    const findAll = vi.fn(findPageImpl ?? ((params: HttpParams) => of(pageOf(users, params))));
     const invite = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteUser = vi.fn().mockReturnValue(of(undefined));
-    const setDisabled = vi.fn().mockReturnValue(of(undefined));
-    const passwordResetLink = vi
+    const updateStatus = vi.fn().mockReturnValue(of(undefined));
+    const createPasswordResetLink = vi
       .fn()
       .mockReturnValue(of({ url: 'https://cms.example.com/reset?token=t', expiresAt: '2026-01-01T00:00:00.000Z' }));
     const success = vi.fn();
@@ -56,7 +56,7 @@ describe('UsersComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserService, useValue: { findPage, invite, update, delete: deleteUser, passwordResetLink, setDisabled } },
+        { provide: UserService, useValue: { findAll, create: invite, update, remove: deleteUser, createPasswordResetLink, updateStatus } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         userStoreOf(currentUser),
@@ -64,17 +64,17 @@ describe('UsersComponent', () => {
     });
     const fixture = TestBed.createComponent(UsersComponent);
     fixture.detectChanges();
-    const lastQuery = () => findPage.mock.calls.at(-1)![0].toString();
+    const lastQuery = () => findAll.mock.calls.at(-1)![0].toString();
     return {
       fixture,
       component: fixture.componentInstance,
-      findPage,
+      findAll,
       lastQuery,
       invite,
       update,
       deleteUser,
-      setDisabled,
-      passwordResetLink,
+      updateStatus,
+      createPasswordResetLink,
       success,
       error,
       open,
@@ -112,7 +112,7 @@ describe('UsersComponent', () => {
 
   it('keeps answering the table after a failed load: the next query change fetches again', () => {
     let calls = 0;
-    const { fixture, component, findPage, error } = setup([], params =>
+    const { fixture, component, findAll, error } = setup([], params =>
       ++calls === 1
         ? throwError(() => new Error('boom'))
         : of({ items: [user({ id: 'u1' })], page: Number(params.get('page')), size: 20, total: 1 }),
@@ -122,7 +122,7 @@ describe('UsersComponent', () => {
     component.onFilterChange({ search: 'ali' });
     fixture.detectChanges();
 
-    expect(findPage).toHaveBeenCalledTimes(2);
+    expect(findAll).toHaveBeenCalledTimes(2);
     expect(component.total()).toBe(1);
   });
 
@@ -217,8 +217,8 @@ describe('UsersComponent', () => {
     });
 
     it('is shown on a failed disable', () => {
-      const { component, open, setDisabled, error } = setup();
-      setDisabled.mockReturnValue(lastAdmin());
+      const { component, open, updateStatus, error } = setup();
+      updateStatus.mockReturnValue(lastAdmin());
       open.mockReturnValue({ closed$: of(true) });
       component.toggleDisabled(user());
       expect(error).toHaveBeenCalledWith("User 'user@example.com' can not be disabled.", reason);
@@ -256,38 +256,38 @@ describe('UsersComponent', () => {
 
   describe('disable / enable', () => {
     it('disables after confirmation and notifies success', () => {
-      const { component, open, setDisabled, success } = setup();
+      const { component, open, updateStatus, success } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: false }));
 
       expect(open).toHaveBeenCalled();
-      expect(setDisabled).toHaveBeenCalledWith('u1', true);
+      expect(updateStatus).toHaveBeenCalledWith('u1', { disabled: true });
       expect(success).toHaveBeenCalledWith("User 'user@example.com' has been disabled. They are signed out and cannot sign in.");
     });
 
     it('does not disable when cancelled', () => {
-      const { component, open, setDisabled } = setup();
+      const { component, open, updateStatus } = setup();
       open.mockReturnValue({ closed$: of(undefined) });
 
       component.toggleDisabled(user({ id: 'u1', disabled: false }));
 
-      expect(setDisabled).not.toHaveBeenCalled();
+      expect(updateStatus).not.toHaveBeenCalled();
     });
 
     it('enables without confirmation', () => {
-      const { component, open, setDisabled, success } = setup();
+      const { component, open, updateStatus, success } = setup();
 
       component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: true }));
 
       expect(open).not.toHaveBeenCalled();
-      expect(setDisabled).toHaveBeenCalledWith('u1', false);
+      expect(updateStatus).toHaveBeenCalledWith('u1', { disabled: false });
       expect(success).toHaveBeenCalledWith("User 'user@example.com' has been enabled.");
     });
 
     it('notifies an error on failure', () => {
-      const { component, setDisabled, error } = setup();
-      setDisabled.mockReturnValue(throwError(() => new Error('boom')));
+      const { component, updateStatus, error } = setup();
+      updateStatus.mockReturnValue(throwError(() => new Error('boom')));
 
       component.toggleDisabled(user({ id: 'u1', email: 'user@example.com', disabled: true }));
 
@@ -303,19 +303,19 @@ describe('UsersComponent', () => {
 
   it('copyPasswordResetLink() copies the link to the clipboard and notifies success', async () => {
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
-    const { component, passwordResetLink, success } = setup();
+    const { component, createPasswordResetLink, success } = setup();
 
     component.copyPasswordResetLink(user({ id: 'u1', email: 'user@example.com' }));
     await vi.waitFor(() => expect(success).toHaveBeenCalled());
 
-    expect(passwordResetLink).toHaveBeenCalledWith('u1');
+    expect(createPasswordResetLink).toHaveBeenCalledWith('u1');
     expect(writeText).toHaveBeenCalledWith('https://cms.example.com/reset?token=t');
     writeText.mockRestore();
   });
 
   it('copyPasswordResetLink() notifies an error on failure', () => {
-    const { component, passwordResetLink, error } = setup();
-    passwordResetLink.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, createPasswordResetLink, error } = setup();
+    createPasswordResetLink.mockReturnValue(throwError(() => new Error('boom')));
 
     component.copyPasswordResetLink(user({ id: 'u1', email: 'user@example.com' }));
 

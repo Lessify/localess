@@ -41,30 +41,29 @@ export class UserController {
   }
 
   @Post()
-  async invite(@Body({ schema: zUserInvite }) body: UserInvite): Promise<User> {
-    return this.userService.invite(body);
+  async create(@Body({ schema: zUserInvite }) body: UserInvite): Promise<User> {
+    return this.userService.create(body);
   }
 
   @Patch(':id')
-  async updateAccess(@Param('id', UuidParamPipe) id: string, @Body({ schema: zUserUpdate }) body: UserUpdate): Promise<User> {
-    return this.userService.changeAccess(id, body.role);
+  async update(@Param('id', UuidParamPipe) id: string, @Body({ schema: zUserUpdate }) body: UserUpdate): Promise<User> {
+    return this.userService.update(id, body);
   }
 
-  /** Blocks (or restores) sign-in without deleting the user; was the Firebase Auth console's "Disable account". */
+  /** Blocks (or restores) sign-in without deleting the user. */
   @Patch(':id/status')
   async updateStatus(
     @CurrentUser() caller: UserEntity,
     @Param('id', UuidParamPipe) id: string,
     @Body({ schema: zUserStatusUpdate }) body: UserStatusUpdate,
   ): Promise<User> {
-    return this.userService.changeStatus(caller, id, body.disabled);
+    return this.userService.updateStatus(caller, id, body);
   }
 
   /** A one-hour reset link to hand to the user — the way to reset passwords when SMTP isn't configured. */
   @Post(':id/password-reset-link')
-  async passwordResetLink(@Param('id', UuidParamPipe) id: string, @Req() request: FastifyRequest): Promise<PasswordResetLink> {
-    const link = await this.userService.createPasswordResetLink(id, publicOrigin(this.config, request));
-    return { url: link.url, expiresAt: link.expiresAt.toISOString() };
+  async createPasswordResetLink(@Param('id', UuidParamPipe) id: string, @Req() request: FastifyRequest): Promise<PasswordResetLink> {
+    return this.userService.createPasswordResetLink(id, publicOrigin(this.config, request));
   }
 
   @Delete(':id')

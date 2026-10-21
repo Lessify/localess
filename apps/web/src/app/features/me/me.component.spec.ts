@@ -75,7 +75,7 @@ describe('MeComponent', () => {
 
       component.openUpdateEmailDialog();
 
-      expect(updateEmail).toHaveBeenCalledWith('new@example.com', 'old-secret');
+      expect(updateEmail).toHaveBeenCalledWith({ email: 'new@example.com', currentPassword: 'old-secret' });
       expect(success).toHaveBeenCalledWith('User email has been updated.');
     });
 
@@ -106,7 +106,7 @@ describe('MeComponent', () => {
 
       component.openUpdatePasswordDialog();
 
-      expect(updatePassword).toHaveBeenCalledWith('new-password', 'old-secret');
+      expect(updatePassword).toHaveBeenCalledWith({ newPassword: 'new-password', currentPassword: 'old-secret' });
       expect(success).toHaveBeenCalledWith('User password has been updated.');
     });
 

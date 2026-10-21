@@ -1,11 +1,11 @@
+import { and, eq, ne } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { UserService } from '../src/modules/users/services/user.service.js';
-import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import { users } from '../src/infra/database/schema.js';
+import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 describe('user management', () => {
   let t: TestApp;
-  let usersService: UserService;
   let adminCookie: string;
   /** Every role short of admin may do nothing in Admin → Users: a developer stands for them. */
   let developerCookie: string;
@@ -14,10 +14,9 @@ describe('user management', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    usersService = t.app.get(UserService);
-    const admin = await usersService.create({ email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
-    const developer = await usersService.create({ email: 'developer@example.com', password: 'secret1', role: 'DEVELOPER' });
-    const reader = await usersService.create({ email: 'reader@example.com', password: 'secret1', role: 'VIEWER' });
+    const admin = await createUser(t, { email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
+    const developer = await createUser(t, { email: 'developer@example.com', password: 'secret1', role: 'DEVELOPER' });
+    const reader = await createUser(t, { email: 'reader@example.com', password: 'secret1', role: 'VIEWER' });
     ids = { admin: admin.id, developer: developer.id, reader: reader.id };
     adminCookie = await login(t, 'admin@example.com', 'secret1');
     developerCookie = await login(t, 'developer@example.com', 'secret1');
@@ -127,7 +126,7 @@ describe('user management', () => {
     const me = (cookie: string) => t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie } });
 
     it('disables a user: their sessions end and sign-in is refused; enabling lets them back in', async () => {
-      const user = await usersService.create({
+      const user = await createUser(t, {
         email: 'leaver@example.com',
         password: 'secret1',
         role: 'VIEWER',
@@ -159,7 +158,7 @@ describe('user management', () => {
 
   describe('delete', () => {
     it('deletes the user and ends their sessions', async () => {
-      const victim = await usersService.create({
+      const victim = await createUser(t, {
         email: 'victim@example.com',
         password: 'secret1',
         role: 'VIEWER',
@@ -174,14 +173,14 @@ describe('user management', () => {
   // Last: these change who is an admin.
   describe('the last active admin', () => {
     const LAST_ADMIN = { message: 'At least one active admin must remain', statusCode: 409 };
-    const role = async (id: string) => (await usersService.findOneRow(id)).role;
+    const role = async (id: string) => (await t.db.select({ role: users.role }).from(users).where(eq(users.id, id)))[0].role;
 
     // Earlier cases invited other admins: `admin` becomes the only one.
     beforeAll(async () => {
-      const all = await usersService.findAll({ page: 0, size: 100, sort: 'email', direction: 'asc' });
-      for (const user of all.items) {
-        if (user.role === 'ADMIN' && user.id !== ids.admin) await usersService.updateAccess(user.id, null);
-      }
+      await t.db
+        .update(users)
+        .set({ role: null })
+        .where(and(eq(users.role, 'ADMIN'), ne(users.id, ids.admin)));
     });
 
     it('cannot remove their own role or delete themselves', async () => {
@@ -193,7 +192,7 @@ describe('user management', () => {
     });
 
     it('counts only enabled admins', async () => {
-      const second = await usersService.create({ email: 'second-admin@example.com', password: 'secret1', role: 'ADMIN' });
+      const second = await createUser(t, { email: 'second-admin@example.com', password: 'secret1', role: 'ADMIN' });
       expect((await call(adminCookie, 'PATCH', `/api/app/users/${second.id}/status`, { disabled: true })).statusCode).toBe(200);
       expect((await call(adminCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: null })).statusCode).toBe(409);
 
@@ -204,13 +203,17 @@ describe('user management', () => {
     });
 
     it('survives two admins demoting each other at the same time', async () => {
-      const other = await usersService.create({ email: 'other-admin@example.com', password: 'secret1', role: 'ADMIN' });
+      const other = await createUser(t, { email: 'other-admin@example.com', password: 'secret1', role: 'ADMIN' });
       const otherCookie = await login(t, 'other-admin@example.com', 'secret1');
       const answers = await Promise.all([
         call(adminCookie, 'PATCH', `/api/app/users/${other.id}`, { role: null }),
         call(otherCookie, 'PATCH', `/api/app/users/${ids.admin}`, { role: null }),
       ]);
-      expect(answers.map(it => it.statusCode).sort()).toEqual([200, 409]);
+      // One wins. The other is refused: 409 when both run at once (the row locks), 403 when the winner committed first
+      // (its caller is no admin any more, so the role guard stops it).
+      const [won, refused] = answers.map(it => it.statusCode).sort();
+      expect(won).toBe(200);
+      expect([403, 409]).toContain(refused);
       expect([await role(ids.admin), await role(other.id)].filter(it => it === 'ADMIN')).toHaveLength(1);
     });
   });

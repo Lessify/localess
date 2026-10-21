@@ -4,9 +4,8 @@ import { OAuth2Server } from 'oauth2-mock-server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { userIdentities, users } from '../src/infra/database/schema.js';
-import { UserService } from '../src/modules/users/services/user.service.js';
 import { freePort } from './free-port.js';
-import { createTestApp, sessionCookie, TestApp } from './test-app.js';
+import { createTestApp, createUser, sessionCookie, TestApp } from './test-app.js';
 
 const ORIGIN = 'http://localess.test';
 
@@ -67,9 +66,8 @@ describe('OAuth sign-in', () => {
 
     beforeAll(async () => {
       t = await appFor();
-      const service = t.app.get(UserService);
-      await service.create({ email: 'Alice@Example.com', role: 'VIEWER' });
-      await service.create({ email: 'blocked@example.com', role: 'VIEWER' });
+      await createUser(t, { email: 'Alice@Example.com', role: 'VIEWER' });
+      await createUser(t, { email: 'blocked@example.com', role: 'VIEWER' });
       await t.db.update(users).set({ disabled: true }).where(eq(users.email, 'blocked@example.com'));
     });
 
@@ -130,7 +128,7 @@ describe('OAuth sign-in', () => {
     });
 
     it('never links by a Microsoft email the directory did not verify', async () => {
-      await t.app.get(UserService).create({ email: 'bob@contoso.com', role: 'VIEWER' });
+      await createUser(t, { email: 'bob@contoso.com', role: 'VIEWER' });
       claims = { sub: 'ms-impostor', preferred_username: 'bob@contoso.com' };
       expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
       claims = { sub: 'ms-impostor', email: 'bob@contoso.com' };

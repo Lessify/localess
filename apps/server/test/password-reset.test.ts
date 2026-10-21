@@ -1,10 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
 
 import { passwordResetTokens } from '../src/infra/database/schema.js';
-import { UserService } from '../src/modules/users/services/user.service.js';
 import type { UserEntity } from '../src/shared/entities/user.entity.js';
 import { MailMessage, MailService } from '../src/shared/services/mail.service.js';
-import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 const tokenFrom = (url: string) => new URL(url).searchParams.get('token') as string;
 
@@ -16,10 +15,9 @@ describe('password reset', () => {
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_SMTP_URL: 'smtp://127.0.0.1:2525', LOCALESS_PUBLIC_URL: 'https://cms.example.com' });
-    const users = t.app.get(UserService);
-    admin = await users.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
-    target = await users.create({ email: 'forgetful@example.com', password: 'old-pass', role: 'VIEWER' });
-    await users.create({ email: 'manager@example.com', password: 'manager-pass', role: 'DEVELOPER' });
+    admin = await createUser(t, { email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
+    target = await createUser(t, { email: 'forgetful@example.com', password: 'old-pass', role: 'VIEWER' });
+    await createUser(t, { email: 'manager@example.com', password: 'manager-pass', role: 'DEVELOPER' });
     send = vi.spyOn(t.app.get(MailService), 'send').mockResolvedValue();
   });
 
@@ -98,7 +96,7 @@ describe('password reset without SMTP', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.app.get(UserService).create({ email: 'someone@example.com', password: 'secret1', role: 'VIEWER' });
+    await createUser(t, { email: 'someone@example.com', password: 'secret1', role: 'VIEWER' });
   });
 
   afterAll(() => t?.close());

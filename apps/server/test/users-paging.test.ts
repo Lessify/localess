@@ -2,8 +2,7 @@ import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { users } from '../src/infra/database/schema.js';
-import { UserService } from '../src/modules/users/services/user.service.js';
-import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 type Listed = { items: { email: string; role: string | null; disabled: boolean }[]; page: number; size: number; total: number };
 
@@ -14,13 +13,12 @@ describe('app API: users, one page at a time', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    const service = t.app.get(UserService);
-    await service.create({ email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
+    await createUser(t, { email: 'admin@example.com', password: 'secret1', role: 'ADMIN' });
     // 25 more: every third one an admin (roles tie), two disabled, two with display names to search.
     for (let i = 0; i < 25; i++) {
       const email = `user-${String(i).padStart(2, '0')}@example.com`;
       const displayName = i === 7 ? 'Alice Smith' : i === 12 ? 'Malice Jones' : undefined;
-      await service.create({ email, password: 'secret1', role: i % 3 === 0 ? 'ADMIN' : 'EDITOR', displayName });
+      await createUser(t, { email, password: 'secret1', role: i % 3 === 0 ? 'ADMIN' : 'EDITOR', displayName });
       emails.push(email);
     }
     await t.db

@@ -23,7 +23,7 @@ export class MeController {
 
   @Put('email')
   async updateEmail(@CurrentUser() user: UserEntity, @Body({ schema: zMeEmailUpdate }) body: MeEmailUpdate): Promise<User> {
-    return this.meService.updateEmail(user, body.email, body.currentPassword);
+    return this.meService.updateEmail(user, body);
   }
 
   /** Changing the password signs out every other session. */
@@ -34,6 +34,6 @@ export class MeController {
     @CurrentSessionId() sessionId: string,
     @Body({ schema: zMePasswordUpdate }) body: MePasswordUpdate,
   ): Promise<void> {
-    await this.meService.updatePassword(user, sessionId, body.currentPassword, body.newPassword);
+    await this.meService.updatePassword(user, sessionId, body);
   }
 }

@@ -140,7 +140,7 @@ export class UsersComponent implements OnInit {
     toObservable(this.list.params, { injector: this.injector })
       .pipe(
         switchMap(params =>
-          this.userService.findPage(params).pipe(
+          this.userService.findAll(params).pipe(
             catchError(() => {
               this.notificationService.error('Users can not be loaded.');
               this.isLoading.set(false);
@@ -168,7 +168,7 @@ export class UsersComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.userService.invite(it!)),
+        switchMap(it => this.userService.create(it!)),
       )
       .subscribe({
         next: () => {
@@ -215,7 +215,7 @@ export class UsersComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.userService.delete(element.id)),
+        switchMap(() => this.userService.remove(element.id)),
       )
       .subscribe({
         next: () => {
@@ -250,7 +250,7 @@ export class UsersComponent implements OnInit {
             filter(it => it || false),
           )
       : of(true);
-    confirmed$.pipe(switchMap(() => this.userService.setDisabled(element.id, disabled))).subscribe({
+    confirmed$.pipe(switchMap(() => this.userService.updateStatus(element.id, { disabled }))).subscribe({
       next: () => {
         this.notificationService.success(
           disabled
@@ -266,7 +266,7 @@ export class UsersComponent implements OnInit {
 
   copyPasswordResetLink(element: User): void {
     this.userService
-      .passwordResetLink(element.id)
+      .createPasswordResetLink(element.id)
       .pipe(switchMap(({ url }) => navigator.clipboard.writeText(url)))
       .subscribe({
         next: () => {

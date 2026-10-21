@@ -20,17 +20,17 @@ export class MeService {
     );
   }
 
-  updateEmail(email: string, currentPassword?: string): Observable<void> {
-    return this.http.put(`${BASE}/email`, { email, currentPassword } satisfies MeEmailUpdate).pipe(
+  updateEmail(model: MeEmailUpdate): Observable<void> {
+    return this.http.put(`${BASE}/email`, { email: model.email, currentPassword: model.currentPassword } satisfies MeEmailUpdate).pipe(
       tap(() => this.userStore.load()),
       map(() => undefined),
     );
   }
 
   /** Signs out every other session. */
-  updatePassword(newPassword: string, currentPassword?: string): Observable<void> {
+  updatePassword(model: MePasswordUpdate): Observable<void> {
     return this.http
-      .put<void>(`${BASE}/password`, { currentPassword, newPassword } satisfies MePasswordUpdate)
+      .put<void>(`${BASE}/password`, { currentPassword: model.currentPassword, newPassword: model.newPassword } satisfies MePasswordUpdate)
       .pipe(tap(() => this.userStore.load()));
   }
 }

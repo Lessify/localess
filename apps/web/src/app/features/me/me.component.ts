@@ -69,7 +69,7 @@ export class MeComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updateEmail(it!.newEmail, it!.currentPassword)),
+        switchMap(it => this.meService.updateEmail({ email: it!.newEmail, currentPassword: it!.currentPassword })),
       )
       .subscribe({
         next: () => {
@@ -90,7 +90,7 @@ export class MeComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.meService.updatePassword(it!.newPassword, it!.currentPassword)),
+        switchMap(it => this.meService.updatePassword({ newPassword: it!.newPassword, currentPassword: it!.currentPassword })),
       )
       .subscribe({
         next: () => {

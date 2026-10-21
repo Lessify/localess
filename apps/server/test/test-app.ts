@@ -16,6 +16,7 @@ import { newUuid } from '../src/infra/database/id.js';
 import * as schema from '../src/infra/database/schema.js';
 import { TranslationSnapshotRepository } from '../src/modules/translations/repositories/translation-snapshot.repository.js';
 import type { SpaceInsertEntity } from '../src/shared/entities/space.entity.js';
+import type { UserEntity } from '../src/shared/entities/user.entity.js';
 import { createTestDatabase, TestDatabase } from './database.js';
 
 export interface TestApp {
@@ -107,10 +108,30 @@ export async function login(t: TestApp, email: string, password: string): Promis
   return sessionCookie(response);
 }
 
+/** A user to seed: no password for one who signs in with Google or Microsoft only; no role: no access yet. */
+export interface TestUserSeed {
+  email: string;
+  password?: string;
+  displayName?: string;
+  emailVerified?: boolean;
+  role?: UserRole | null;
+}
+
+/** Writes a user (and their password) straight through the repository, as the first-admin seeding does. */
+export async function createUser(t: TestApp, seed: TestUserSeed): Promise<UserEntity> {
+  const { UserRepository } = await import('../src/modules/users/repositories/user.repository.js');
+  const { hashPassword } = await import('../src/auth/utils/password.js');
+  return t.app
+    .get(UserRepository)
+    .create(
+      { email: seed.email, emailVerified: seed.emailVerified ?? false, displayName: seed.displayName ?? null, role: seed.role ?? null },
+      seed.password ? await hashPassword(seed.password) : undefined,
+    );
+}
+
 /** Creates a user with the given access and returns a signed-in session cookie. */
 export async function userWithAccess(t: TestApp, email: string, access: { role: UserRole | null }): Promise<string> {
-  const { UserService } = await import('../src/modules/users/services/user.service.js');
-  await t.app.get(UserService).create({ email, password: 'secret1', role: access.role });
+  await createUser(t, { email, password: 'secret1', role: access.role });
   return login(t, email, 'secret1');
 }
 
