@@ -13,9 +13,9 @@ export interface FirstAdmin {
 }
 
 /**
- * Creates the first administrator together with the "Hello World" starter space, in one transaction
- * (what scripts/localess/admin-user.mjs did against Firebase). Deliberately not an HTTP endpoint: an
- * unauthenticated "claim the admin account" route is what the old `setup` callable was removed for.
+ * Creates the first administrator together with the "Hello World" starter space, in one transaction.
+ * Deliberately not an HTTP endpoint: an unauthenticated "claim the admin account" route would let anyone
+ * who reaches a fresh install take it over.
  *
  * Runs from the CLI (`admin:create`), or on boot when LOCALESS_ADMIN_EMAIL and LOCALESS_ADMIN_PASSWORD
  * are set and the database has no users yet.
