@@ -12,8 +12,8 @@ export class MePage {
     await expect(this.field('Email')).toContainText(email);
   }
 
-  /** A line of the profile card, e.g. field('Role') → "Role: CUSTOM". */
-  field(label: 'Email' | 'Email Verified' | 'Role' | 'Permissions'): Locator {
+  /** A line of the profile card, e.g. field('Role') → "Role: Editor". */
+  field(label: 'Email' | 'Email Verified' | 'Role'): Locator {
     return this.page.locator('[hlmCardContent] > div').filter({ hasText: new RegExp(`^${label}:`) });
   }
 

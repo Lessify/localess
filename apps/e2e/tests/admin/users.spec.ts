@@ -1,5 +1,5 @@
 import { AdminUsersPage } from '../pages/admin-users.page';
-import { choose, dialog, expectRowMenu } from '../pages/dialogs';
+import { dialog, expectRowMenu } from '../pages/dialogs';
 import { expectToast } from '../pages/notifications';
 import { ResetPasswordPage } from '../pages/reset-password.page';
 import { Shell } from '../pages/shell.page';
@@ -69,19 +69,33 @@ test.describe('Admin → Users', () => {
       await expect(new Shell(own).navLink('Users')).toHaveCount(0);
     });
 
-    test('the Role select offers None and the five roles, and describes the chosen one', async ({ page }) => {
+    test('the role cards offer None and the five roles, each with what it lets the user do', async ({ page }) => {
       const users = new AdminUsersPage(page);
       await users.goto();
       await page.getByRole('button', { name: 'Invite' }).click();
       const form = await dialog(page, 'User Invite');
 
-      await form.getByLabel('Role', { exact: true }).click();
-      const offered = await page.getByRole('option').allTextContents();
-      expect(offered.map(it => it.trim())).toEqual(['None', 'Admin', 'Developer', 'Editor', 'Translator', 'Viewer']);
-      await page.getByRole('option', { name: 'Editor' }).click();
-      await expect(form.getByText('Contents, assets and translations: create, edit, delete, publish.')).toBeVisible();
-      await choose(page, form.getByLabel('Role', { exact: true }), 'None');
-      await expect(form.getByText(/^No access yet/)).toBeVisible();
+      const cards = users.roleCards(form);
+      await expect(cards).toHaveCount(6);
+      const names = await cards.evaluateAll(all => all.map(it => it.getAttribute('aria-labelledby')));
+      expect(names).toEqual([
+        'role-NONE-title',
+        'role-ADMIN-title',
+        'role-DEVELOPER-title',
+        'role-EDITOR-title',
+        'role-TRANSLATOR-title',
+        'role-VIEWER-title',
+      ]);
+      // None is chosen at first; each card says what the role may do.
+      await expect(form.getByRole('radio', { name: 'None', exact: true })).toBeChecked();
+      await expect(form.getByRole('radio', { name: 'Editor', exact: true })).toHaveAccessibleDescription(
+        /^Writes and publishes: contents, assets and translations/,
+      );
+      await expect(form.getByRole('radio', { name: 'Translator', exact: true })).toHaveAccessibleDescription(
+        /Can not add, rename or delete keys, nor publish\.$/,
+      );
+      await users.chooseRole(form, 'Developer');
+      await expect(form.getByRole('radio', { name: 'None', exact: true })).not.toBeChecked();
       await form.getByRole('button', { name: 'Cancel' }).click();
       await expect(form).toBeHidden();
     });

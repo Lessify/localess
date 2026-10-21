@@ -26,24 +26,7 @@
     }
   </div>
 
-  <div hlmField>
-    <label hlmFieldLabel for="role">Role</label>
-    <hlm-select formControlName="role" [itemToString]="roleItemToString">
-      <hlm-select-trigger class="w-full" buttonId="role">
-        <hlm-select-value placeholder="None" />
-      </hlm-select-trigger>
-      <hlm-select-content *hlmSelectPortal>
-        <hlm-select-item [value]="null">None</hlm-select-item>
-        @for (option of roleOptions; track option.id) {
-          <hlm-select-item [value]="option.id">{{ option.label }}</hlm-select-item>
-        }
-      </hlm-select-content>
-    </hlm-select>
-    <p hlmFieldDescription>{{ roleDescription() }}</p>
-    @if (form.controls['role'].errors; as errors) {
-      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
-    }
-  </div>
+  <ll-user-role-choice [control]="roleControl" />
 </form>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>

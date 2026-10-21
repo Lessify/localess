@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 
-import { USER_ROLE_OPTIONS } from '@shared/models/user-role.model';
 import { UserInviteDialogComponent } from './user-invite-dialog.component';
 
 describe('UserInviteDialogComponent', () => {
@@ -15,15 +14,11 @@ describe('UserInviteDialogComponent', () => {
     return { component: fixture.componentInstance, close };
   }
 
-  it('offers the five roles', () => {
-    expect(setup().component['roleOptions']).toBe(USER_ROLE_OPTIONS);
-  });
-
   it('starts with an invalid, empty form without a role', () => {
     const { component } = setup();
 
     expect(component.form.invalid).toBe(true);
-    expect(component.form.value).toEqual({ email: '', password: '', displayName: '', role: null });
+    expect(component.form.value).toEqual({ email: '', password: '', displayName: '', role: '' });
   });
 
   it('is valid once email and password meet their requirements', () => {
@@ -50,13 +45,6 @@ describe('UserInviteDialogComponent', () => {
     expect(component.form.controls['password'].valid).toBe(false);
   });
 
-  it('labels the roles, and no role as None', () => {
-    const { component } = setup();
-
-    expect(component['roleItemToString']('VIEWER')).toBe('Viewer');
-    expect(component['roleItemToString'](null)).toBe('None');
-  });
-
   it('closes with the form value, the role included, when saved', () => {
     const { component, close } = setup();
     component.form.patchValue({ email: 'new@example.com', password: 'secret123', role: 'EDITOR' });
@@ -64,5 +52,14 @@ describe('UserInviteDialogComponent', () => {
     component.save();
 
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ email: 'new@example.com', password: 'secret123', role: 'EDITOR' }));
+  });
+
+  it('answers None as null', () => {
+    const { component, close } = setup();
+    component.form.patchValue({ email: 'new@example.com', password: 'secret123' });
+
+    component.save();
+
+    expect(close).toHaveBeenCalledWith(expect.objectContaining({ role: null }));
   });
 });

@@ -30,8 +30,8 @@ import { expect, test } from '../support/fixtures';
 const KNOWN_CONTRAST = [
   /^kbd$/,
   /#brn-tabs-label-danger-zone$/,
-  // The description of a choice card (token type, space template) on the selected card's background: 4.27:1.
-  /^#(token-type-\w+|EMPTY|blog|ecommerce|marketing)-description$/,
+  // The description of a choice card (token type, space template, user role) on the selected card's background: 4.27:1.
+  /^#(token-type-\w+|EMPTY|blog|ecommerce|marketing|role-[A-Z]+)-description$/,
   // The destructive button: white on the destructive colour (a confirmation's OK, the Danger Zone's button).
   /\.spartan-button-variant-destructive$/,
   /^#deleteTranslations$/,

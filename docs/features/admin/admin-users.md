@@ -18,9 +18,10 @@ Manage all platform users — invite new users, give each one role (Admin, Devel
 apps/web/src/app/features/admin/users/
   users.component.ts/html/scss       ← main user list
   user-dialog/                       ← edit the role
+  user-role-choice/                  ← the role as choice cards (both dialogs)
   user-invite-dialog/                ← invite new user
 apps/web/src/app/shared/models/user-role.model.ts
-                                     ← USER_ROLE_OPTIONS (the roles with a label and a description), roleLabel()
+                                     ← USER_ROLE_OPTIONS (the roles with a label, an icon and what each may do), roleLabel()
 ```
 
 ## UsersComponent
@@ -52,7 +53,7 @@ Changes an existing user's role.
 
 Form field: `role`
 
-Both dialogs show the role as one select (`USER_ROLE_OPTIONS`), with what the chosen role may do written under it (none: "No access yet").
+Both dialogs show the role as choice cards (`UserRoleChoiceComponent`, as Create Space shows its templates): None first, then the five roles, each card with its icon and what the role may do (`USER_ROLE_OPTIONS`, the same text as the table in [User Roles](../../frontend-permissions.md)). None is the form's `''` and is answered as `null`.
 
 **The last active admin stays.** At least one user with the Admin role who is not disabled always remains: removing the role from the last one (their own included), disabling them or deleting them is refused with 409 *At least one active admin must remain*, which the list shows under the error toast. Disabled admins don't count. The server checks this with the active admins' rows locked (`UserRepository`), so two admins removing each other at once can't both succeed.
 

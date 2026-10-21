@@ -22,10 +22,10 @@ no access yet (the user can sign in and sees "Please contact your administrator"
 
 | Role | Who it is for | Can do |
 |---|---|---|
-| `ADMIN` | runs the installation | Everything: users, creating and deleting spaces, every space's settings and data |
-| `DEVELOPER` | builds the site that reads Localess | Everything an editor can, plus schemas, Space Settings (general, locales, environments, API tokens), webhooks and Open API |
-| `EDITOR` | writes and publishes content | Contents, assets and translations: create, edit, delete, publish; import and export |
-| `TRANSLATOR` | translates | Translation values: edit, auto-translate a locale, machine-translate a text. Reads contents and assets. Can't add, rename or delete keys, nor publish. |
+| `ADMIN` | runs the installation | Invites and manages users, creates and deletes spaces (Admin → Spaces, the Firebase import), regenerates asset metadata, and does everything a developer does in every space |
+| `DEVELOPER` | builds the site that reads Localess | Everything an editor does, plus schemas (edit, import, export), Space Settings (general, locales, environments, API tokens), webhooks, Open API, and deleting all translations |
+| `EDITOR` | writes and publishes content | Contents, assets and translations (create, edit, delete, publish), translation keys (add, rename, labels), import and export tasks, Unsplash |
+| `TRANSLATOR` | translates | Edits translation values, Translate Locale, machine translation; reads contents, assets and schemas. Can't add, rename or delete keys, nor publish |
 | `VIEWER` | reviews, follows along | Reads contents, assets, translations and schemas; changes nothing |
 
 Permissions are global: a role applies to every space. The role is read from the `users` row on **every request** (the
@@ -139,5 +139,5 @@ to anyone. Two rules remain: at least one active admin always remains (a change 
 - `apps/web/src/app/core/guards/role.guard.ts` — `roleGuard(roles)`
 - `apps/web/src/app/shared/pipes/has-role.pipe.ts` — `hasRole` template pipe
 - `apps/web/src/app/features/features-routing.module.ts` — all route guards (`roleGuard`)
-- `apps/web/src/app/shared/models/user-role.model.ts` — the roles as Admin → Users and Me show them (label, description)
+- `apps/web/src/app/shared/models/user-role.model.ts` — the roles as Admin → Users (`user-role-choice`, a card per role) and Me show them; keep its descriptions and the table above the same (label, description)
 - `apps/server/test/roles.test.ts`, `apps/e2e/tests/api/role-matrix.spec.ts` — every role against the routes

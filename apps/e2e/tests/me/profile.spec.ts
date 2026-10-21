@@ -20,7 +20,9 @@ test.describe('Me → profile', () => {
       await expect(me.field('Email')).toHaveText(`Email: ${user.email}`);
       await expect(me.field('Email Verified')).toHaveText('Email Verified: No');
       await expect(me.field('Role')).toHaveText('Role: Viewer');
-      await expect(page.getByText('Reads contents, assets, translations and schemas; changes nothing.')).toBeVisible();
+      await expect(
+        page.getByText('Reviews and follows along: reads contents, assets, translations and schemas; changes nothing.'),
+      ).toBeVisible();
       for (const button of ['Update Profile', 'Update Email', 'Update Password'] as const) {
         await expect(me.button(button)).toBeVisible();
       }
@@ -34,7 +36,7 @@ test.describe('Me → profile', () => {
       await me.goto(user.email);
 
       await expect(me.field('Role')).toHaveText('Role: Admin');
-      await expect(page.getByText('Everything: users, creating and deleting spaces, every space.')).toBeVisible();
+      await expect(page.getByText(/^Runs the installation: invites and manages users/)).toBeVisible();
     });
   });
 

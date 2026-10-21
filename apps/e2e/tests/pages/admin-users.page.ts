@@ -1,10 +1,10 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { choose, dialog, rowMenu } from './dialogs';
+import { dialog, rowMenu } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
 import { cellUnder } from './table';
 
-/** A role as the Role select and the Role column show it. */
+/** A role as the role cards and the Role column show it. */
 export type RoleLabel = 'None' | 'Admin' | 'Developer' | 'Editor' | 'Translator' | 'Viewer';
 
 export interface InviteInput {
@@ -61,7 +61,7 @@ export class AdminUsersPage {
     await form.getByLabel('Email').fill(input.email);
     await form.getByLabel('Password').fill(input.password);
     if (input.displayName) await form.getByLabel('Display Name').fill(input.displayName);
-    await choose(this.page, form.getByLabel('Role', { exact: true }), input.role);
+    await this.chooseRole(form, input.role);
     await form.getByRole('button', { name: 'Invite' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'User has been invited.');
@@ -79,8 +79,20 @@ export class AdminUsersPage {
   async openEditAccess(email: string, input: AccessInput): Promise<Locator> {
     await this.action(email, 'Edit');
     const form = await dialog(this.page, 'User');
-    await choose(this.page, form.getByLabel('Role', { exact: true }), input.role);
+    await this.chooseRole(form, input.role);
     return form;
+  }
+
+  /** The role cards (a radio each, named by its title): None, Admin, Developer, Editor, Translator, Viewer. */
+  roleCards(form: Locator): Locator {
+    return form.getByRole('group', { name: 'Role' }).getByRole('radio');
+  }
+
+  async chooseRole(form: Locator, role: RoleLabel): Promise<void> {
+    const card = form.getByRole('radio', { name: role, exact: true });
+    // The radio input is visually hidden: click the card's title, as a user does.
+    await form.getByRole('group', { name: 'Role' }).getByText(role, { exact: true }).click();
+    await expect(card).toBeChecked();
   }
 
   async action(email: string, item: string): Promise<void> {

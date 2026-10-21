@@ -65,7 +65,7 @@ the UI, then the table (also after a reload), the API, and what the user can now
 |---|---|---|
 | Invite as **Admin**: full access, admin area visible | UI + API + the user's session | ✅ `admin/users` |
 | Invite as **Translator**: edits translations, no admin area | UI + API + the user's session | ✅ `admin/users` |
-| The Role select offers None and the five roles, and describes the chosen one | UI | ✅ `admin/users` |
+| The role cards offer None and the five roles, each with what it lets the user do; None chosen at first | UI | ✅ `admin/users` |
 | Invite as **None**: signs in, no access, asked to contact an administrator | UI + API + the user's session | ✅ `admin/users` |
 | Invite with a taken email is refused; the existing user is unchanged | UI + API | ✅ `admin/users` |
 | Change role Viewer → Admin → None → Editor; access follows each change | UI + API + the user's session | ✅ `admin/users` |
@@ -443,7 +443,7 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Content rules (required, lengths, limits) are checked in the browser only: the API stores content that breaks them | `contents/validation` pins today's behaviour |
 | The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
-| Color contrast: keyboard hints (`kbd`: the theme's muted text on muted, 4.34:1), the inactive Danger Zone tab (destructive at 60 %, 3.06:1), a choice card's description on the selected card (token type, space template: 4.27:1) and destructive buttons (a confirmation's OK) are under WCAG AA's 4.5:1 | Theme decision; `a11y/pages` skips only these two |
+| Color contrast: keyboard hints (`kbd`: the theme's muted text on muted, 4.34:1), the inactive Danger Zone tab (destructive at 60 %, 3.06:1), a choice card's description on the selected card (token type, space template, user role: 4.27:1) and destructive buttons (a confirmation's OK) are under WCAG AA's 4.5:1 | Theme decision; `a11y/pages` skips only these two |
 | The Content Security Policy (report-only) allows one script hash, but the build's inline critical-CSS loader (`data-beasties-media`) has another: enforced, the policy would block it | `apps/server/src/infra/static/static-site.ts`; not asserted |
 | Admin → Users: an admin's own row offers Delete, and the server allows it (only disabling oneself is refused): the last admin can delete their account and leave the install without one | `apps/server/src/modules/users/services/users.service.ts` `delete`; `admin/users` asserts only that Disable is not offered |
 | Deleting a locale keeps its stored values (translations, content): the CDN no longer serves them, but adding the locale again brings the old values back | Product decision; `space/locales` pins today's behaviour |

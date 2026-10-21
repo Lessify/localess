@@ -1,16 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { UserRole } from '@localess/shared';
-import { roleDescription, roleLabel, USER_ROLE_OPTIONS } from '@shared/models/user-role.model';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
-import { HlmSelectImports } from '@spartan-ng/helm/select';
 
+import { NO_ROLE, UserRoleChoiceComponent } from '../user-role-choice/user-role-choice.component';
 import { UserDialogContext, UserDialogResult } from './user-dialog.model';
 
 @Component({
@@ -18,7 +16,7 @@ import { UserDialogContext, UserDialogResult } from './user-dialog.model';
   templateUrl: './user-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmSelectImports],
+  imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, UserRoleChoiceComponent],
 })
 export class UserDialogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -29,7 +27,7 @@ export class UserDialogComponent implements OnInit {
   private readonly context = injectBrnDialogContext<UserDialogContext>({ optional: true });
 
   form: FormGroup = this.fb.group({
-    role: this.fb.control<UserRole | null>(null),
+    role: this.fb.control<string>(NO_ROLE, { nonNullable: true }),
   });
 
   settingsStore = inject(LocalSettingsStore);
@@ -37,18 +35,15 @@ export class UserDialogComponent implements OnInit {
   ngOnInit(): void {
     // `?.` because the injection above is optional - without it this throws when no context was passed.
     if (this.context != null) {
-      this.form.patchValue({ role: this.context.role ?? null });
+      this.form.patchValue({ role: this.context.role ?? NO_ROLE });
     }
   }
 
-  protected readonly roleOptions = USER_ROLE_OPTIONS;
-  protected readonly roleItemToString = (value: UserRole | null): string => roleLabel(value);
+  protected readonly roleControl = this.form.controls['role'] as FormControl<string>;
 
-  private readonly role = toSignal(this.form.controls['role'].valueChanges, { initialValue: this.form.controls['role'].value });
-  /** What the chosen role lets the user do. */
-  protected readonly roleDescription = computed(() => roleDescription(this.role()));
-
+  /** None (`NO_ROLE`) is answered as `null`. */
   save(): void {
-    this.dialogRef.close(this.form.value as UserDialogResult);
+    const role = this.roleControl.value;
+    this.dialogRef.close({ role: (role || null) as UserRole | null });
   }
 }
