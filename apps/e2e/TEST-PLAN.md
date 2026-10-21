@@ -336,7 +336,8 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | Webhooks: edit name, URL and events; deliveries go to the new URL only | UI + API + receiver | ✅ `developers/webhooks` |
 | Webhooks: disable (no delivery), enable again; delete (no delivery) | UI + API + receiver | ✅ `developers/webhooks` |
 | Webhooks: a failed delivery is logged with status code, error type and URL | UI + receiver answering 500 | ✅ `developers/webhooks` |
-| Webhooks: signed delivery on publish, logged | API + local receiver + UI | ✅ `developers/webhooks` @smoke |
+| Webhooks: signed delivery on publish (verified with the `standardwebhooks` library), logged | API + local receiver + UI | ✅ `developers/webhooks` @smoke |
+| Webhooks: added signed, the secret shown once; regenerated (the old one stops); signing turned off (no signature) | UI + API + receiver | ✅ `developers/webhooks` |
 | Webhooks: the list a page at a time (22 webhooks), the Status filter and the URL search on the server | UI + API | ✅ `developers/webhooks` |
 | Webhooks: a webhook's logs a page at a time (25 deliveries), the Status filter and the id search on the server | UI + receiver | ✅ `developers/webhooks` |
 | Webhooks: content events carry id and full slug | API + receiver | ✅ `contents/delivery` |
@@ -368,7 +369,7 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 |---|---|---|
 | No uncaught or reported errors on any page under test | `page` fixture | ✅ |
 | Accessibility scan of the sign-in page, a space's pages, admin and profile | `@axe-core/playwright`, WCAG 2 A / AA, fails on serious / critical | ✅ `a11y/pages` |
-| Accessibility scan of dialogs (each has a name, then scanned on its own): Add Translation, Add Document / Folder, Create new Schema, asset folder and file dialogs, image preview, Token Form and the token secret, Add Locale, a confirmation, Edit Environment, Edit Webhook, User Invite / Edit, Create / Edit Space, the Me dialogs | `a11y/pages`, axe `include('[role="dialog"]')` | ✅ `a11y/pages` |
+| Accessibility scan of dialogs (each has a name, then scanned on its own): Add Translation, Add Document / Folder, Create new Schema, asset folder and file dialogs, image preview, Token Form and the token secret, Add Locale, a confirmation, Edit Environment, Edit Webhook, the webhook signing secret, User Invite / Edit, Create / Edit Space, the Me dialogs | `a11y/pages`, axe `include('[role="dialog"]')` | ✅ `a11y/pages` |
 | Accessibility scan of the Visual Editor (not the customer site in it), a webhook's page, Danger Zone, Forgot password and the reset-link page | `a11y/pages` | ✅ `a11y/pages` |
 | Cancelling a destructive confirmation changes nothing: Delete All Translations, Regenerate / Delete Token, Delete Locale, Change Default Locale, Delete Environment, Delete Webhook, Disable User, Delete Folder (contents, assets), Unpublish Document | UI (Cancel) → reload, API equal to the pre-check (and the CDN) | ✅ `confirmations/cancel` |
 | Cancelling a form dialog saves nothing: Token Edit, Webhook Edit, Edit Environment, Add Locale, User Edit, Update Email, Edit Translation | UI → reload, API | ✅ `confirmations/cancel` |

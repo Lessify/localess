@@ -248,6 +248,15 @@ test.describe('Accessibility of dialogs', () => {
       name: 'Edit Webhook',
       open: (page, id) => gotoThen(page, `/features/spaces/${id}/developers/webhooks`, () => new WebhooksPage(page).openEdit('Deploy', {})),
     },
+    {
+      name: 'Copy the signing secret',
+      open: (page, id) =>
+        gotoThen(page, `/features/spaces/${id}/developers/webhooks`, async () => {
+          const webhooks = new WebhooksPage(page);
+          await webhooks.create({ name: 'Signed', url: 'https://hooks.example.com/signed', events: ['content.published'], signed: true });
+          return webhooks.secretDialog();
+        }),
+    },
   ];
   for (const { name, open } of SPACE_DIALOGS) {
     test(`a space: ${name}`, async ({ page, api, space }) => {

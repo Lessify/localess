@@ -151,7 +151,10 @@ describe('Firebase import run', () => {
     const spaceTokens = await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id));
     expect(spaceTokens).toHaveLength(1);
     expect(spaceTokens[0]).toMatchObject({ type: 'preview', name: 'Auto Generated Preview Token' });
-    expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({ enabled: false, secret: 's' });
+    expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({
+      enabled: false,
+      secret: `whsec_${Buffer.from('s').toString('base64')}`,
+    });
     expect((await t.db.select().from(translations).where(eq(translations.spaceId, space.id))).map(it => it.key).sort()).toEqual([
       'bye',
       'greeting',
@@ -194,6 +197,7 @@ describe('Firebase import run', () => {
 
     const warnings = run.stages.flatMap(it => it.warnings ?? []).join('\n');
     expect(warnings).toMatch(/missing: no file/); // a2 has no file in Firebase
+    expect(warnings).toMatch(/Site: signed; regenerate its secret/);
     expect(warnings).toMatch(/missing: parent folder 'gone' not found, imported at the root/);
     expect(warnings).toMatch(/home: data is not valid JSON/);
     expect(warnings).toMatch(/blog\/post: no content 'deleted'/);

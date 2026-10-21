@@ -48,31 +48,16 @@
     }
   </div>
 
-  <div hlmField>
-    <label hlmFieldLabel for="secret">{{ hasSecret ? 'New Secret (Optional)' : 'Secret (Optional)' }}</label>
-    <input
-      hlmInput
-      id="secret"
-      type="password"
-      formControlName="secret"
-      autocomplete="new-password"
-      data-1p-ignore
-      data-lpignore="true"
-      data-bwignore="true"
-      data-form-type="other"
-      class="w-full" />
-    <hlm-field-description>
-      @if (hasSecret) {
-        Used to sign webhook payloads. A secret is set: leave empty to keep it.
-      } @else {
-        Used to sign webhook payloads.
-      }
-    </hlm-field-description>
-  </div>
-  @if (hasSecret) {
-    <div hlmField class="flex-row items-center gap-3">
-      <hlm-checkbox inputId="removeSecret" formControlName="removeSecret" />
-      <label hlmFieldLabel for="removeSecret">Remove the secret (payloads are no longer signed)</label>
+  @if (!isEdit) {
+    <div hlmField class="flex-row items-start gap-3">
+      <hlm-checkbox inputId="signed" formControlName="signed" />
+      <div class="grid gap-1.5 leading-none">
+        <label hlmFieldLabel for="signed">Sign deliveries</label>
+        <hlm-field-description>
+          Localess makes a signing secret, shown once, so your receiver can check that a delivery is genuine (Standard Webhooks). Not needed
+          for build hooks or automation tools: their URL carries the secret.
+        </hlm-field-description>
+      </div>
     </div>
   }
 </form>

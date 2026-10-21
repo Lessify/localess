@@ -1,4 +1,4 @@
-import { createHmac, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
@@ -10,6 +10,7 @@ import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
 import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
 import { errorMessage } from '../utils/error-message.js';
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
+import { signWebhook } from '../utils/webhook-signature.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
@@ -21,13 +22,10 @@ export interface WebhookPayload {
   data: { id: string; fullSlug: string } | Record<string, never>;
 }
 
-export function generateSignature(secret: string, payload: string): string {
-  return 'sha256=' + createHmac('sha256', secret).update(payload).digest('hex');
-}
-
 /**
  * Delivers webhook events (ported from functions/src/utils/webhook-utils.ts): one POST per enabled
- * webhook subscribed to the event, signed with HMAC when it has a secret, SSRF-checked, logged to
+ * webhook subscribed to the event, signed when it has a secret (Standard Webhooks: `webhook-id`,
+ * `webhook-timestamp`, `webhook-signature`), SSRF-checked, logged to
  * `webhook_logs`. Deliveries run after the request that caused them has answered; shutdown waits for
  * the ones in flight.
  */
@@ -69,14 +67,16 @@ export class WebhookDispatcher implements OnApplicationShutdown {
     const deliveryId = randomUUID();
     const payloadJson = JSON.stringify(payload);
     const requestSize = Buffer.byteLength(payloadJson, 'utf8');
+    const timestamp = Math.floor(startTime / 1000);
     const headers: Record<string, string> = {
       ...sanitizeWebhookHeaders(webhook.headers ?? undefined),
       'Content-Type': 'application/json',
-      'User-Agent': 'Localess-WebHook/1.0',
+      'User-Agent': 'Localess-Webhook/1.0',
+      'webhook-id': deliveryId,
+      'webhook-timestamp': String(timestamp),
       'X-Webhook-Event': payload.event,
-      'X-Webhook-Delivery': deliveryId,
     };
-    if (webhook.secret) headers['X-Webhook-Signature'] = generateSignature(webhook.secret, payloadJson);
+    if (webhook.secret) headers['webhook-signature'] = signWebhook(webhook.secret, deliveryId, timestamp, payloadJson);
     const base = {
       id: newUuid(),
       webhookId: webhook.id,

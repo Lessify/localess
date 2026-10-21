@@ -1,9 +1,15 @@
-import { createHmac } from 'node:crypto';
+import { Webhook } from 'standardwebhooks';
 
+import { confirmDialog } from '../pages/notifications';
 import { WebhooksPage } from '../pages/webhooks.page';
 import type { AppApi } from '../support/app-api';
 import { expect, test, uniqueId } from '../support/fixtures';
-import { WebhookReceiver } from '../support/webhook-receiver';
+import { type ReceivedRequest, WebhookReceiver } from '../support/webhook-receiver';
+
+/** Checks a delivery as a receiver would (Standard Webhooks: signature and time); throws when it isn't genuine. */
+function verify(secret: string, delivery: ReceivedRequest): unknown {
+  return new Webhook(secret).verify(delivery.body, delivery.headers as Record<string, string>);
+}
 
 /** Publishes the translations, which fires `translation.published`. */
 async function publish(api: AppApi, spaceId: string): Promise<void> {
@@ -159,16 +165,16 @@ test.describe('Developers → Webhooks', () => {
       name: 'Receiver',
       url: receiver.url,
       events: ['translation.published'],
-      secret: 'e2e-secret',
+      signed: true,
     });
+    expect(webhook.secret).toMatch(/^whsec_/);
     await publish(api, space.id);
 
     await expect.poll(() => receiver.requests.length).toBe(1);
     const [delivery] = receiver.requests;
     expect(delivery.headers['x-webhook-event']).toBe('translation.published');
-    expect(JSON.parse(delivery.body)).toMatchObject({ event: 'translation.published', spaceId: space.id });
-    const expected = `sha256=${createHmac('sha256', 'e2e-secret').update(delivery.body).digest('hex')}`;
-    expect(delivery.headers['x-webhook-signature']).toBe(expected);
+    // What a receiver does: the standardwebhooks library checks the signature and the time.
+    expect(verify(webhook.secret!, delivery)).toMatchObject({ event: 'translation.published', spaceId: space.id });
 
     const detail = new WebhooksPage(page);
     await detail.gotoDetail(space.id, webhook.id);
@@ -214,30 +220,41 @@ test.describe('Developers → Webhooks', () => {
     await expect(detail.logs.first()).toContainText(lastOnFirstPage);
   });
 
-  test('the secret is never shown: saving without one keeps it, and it can be removed', async ({ page, api, space }) => {
-    await api.createWebhook(space.id, { name: 'Signed', url: receiver.url, events: ['translation.published'], secret: 'e2e-secret' });
-    expect(await api.findWebhooks(space.id)).toEqual([expect.objectContaining({ name: 'Signed', hasSecret: true })]);
-    expect((await api.findWebhooks(space.id))[0]).not.toHaveProperty('secret');
+  test('a signed webhook: its secret is shown once, regenerated (the old one stops) and turned off', async ({ page, api, space }) => {
     const list = new WebhooksPage(page);
     await list.goto(space.id);
 
-    // Pre-check → action: the Edit form doesn't hold the secret; saved with another name, it keeps it.
-    const form = await list.openEdit('Signed', { name: 'Still signed' });
-    await expect(form.getByLabel('Secret (Optional)')).toHaveValue('');
-    await expect(form.getByText('A secret is set: leave empty to keep it.')).toBeVisible();
-    await form.getByRole('button', { name: 'Save' }).click();
-    await expect(form).toBeHidden();
+    // Action: add it signed; the secret is shown once, never answered again.
+    await list.create({ name: 'Signed', url: receiver.url, events: ['translation.published'], signed: true });
+    const first = await list.takeSecret();
+    expect(first).toMatch(/^whsec_/);
+    const [stored] = await api.findWebhooks(space.id);
+    expect(stored).toMatchObject({ name: 'Signed', hasSecret: true });
+    expect(stored).not.toHaveProperty('secret');
     await publish(api, space.id);
     await expect.poll(() => receiver.requests.length).toBe(1);
-    const signed = receiver.requests[0];
-    expect(signed.headers['x-webhook-signature']).toBe(`sha256=${createHmac('sha256', 'e2e-secret').update(signed.body).digest('hex')}`);
+    expect(verify(first, receiver.requests[0])).toMatchObject({ event: 'translation.published' });
 
-    // Action → post-check: removed, the next delivery is not signed.
-    await list.edit('Still signed', { removeSecret: true });
-    expect((await api.findWebhooks(space.id))[0].hasSecret).toBe(false);
+    // Action → post-check: regenerated on its page, after a confirmation; deliveries verify with the new one only.
+    await list.gotoDetail(space.id, stored.id);
+    await expect(list.signing).toContainText('Signed');
+    await list.signing.getByRole('button', { name: 'Regenerate Secret' }).click();
+    await confirmDialog(page, 'Regenerate Secret');
+    const second = await list.takeSecret();
+    expect(second).not.toBe(first);
     await publish(api, space.id);
     await expect.poll(() => receiver.requests.length).toBe(2);
-    expect(receiver.requests[1].headers).not.toHaveProperty('x-webhook-signature');
+    expect(verify(second, receiver.requests[1])).toBeTruthy();
+    expect(() => verify(first, receiver.requests[1])).toThrow();
+
+    // Action → post-check: turned off, deliveries carry no signature.
+    await list.signing.getByRole('button', { name: 'Turn Off Signing' }).click();
+    await confirmDialog(page, 'Turn Off Signing');
+    await expect(list.signing).toContainText('Not signed');
+    expect((await api.findWebhooks(space.id))[0].hasSecret).toBe(false);
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(3);
+    expect(receiver.requests[2].headers).not.toHaveProperty('webhook-signature');
   });
 
   test("the webhook page logs a failed delivery with the receiver's status code", async ({ page, api, space }) => {

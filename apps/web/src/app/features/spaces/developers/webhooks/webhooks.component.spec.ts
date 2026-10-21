@@ -10,6 +10,7 @@ import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { WebhookSecretDialogComponent } from './webhook-secret-dialog/webhook-secret-dialog.component';
 import { WebhooksComponent } from './webhooks.component';
 
 function space(id: string): Space {
@@ -37,7 +38,7 @@ describe('WebhooksComponent', () => {
     const findAll = vi
       .fn()
       .mockReturnValue(failLoad ? throwError(() => new Error('boom')) : of({ items: webhooks, page: 0, size: 20, total: webhooks.length }));
-    const create = vi.fn().mockReturnValue(of(undefined));
+    const create = vi.fn().mockReturnValue(of(webhook({ id: 'w-new', hasSecret: false })));
     const update = vi.fn().mockReturnValue(of(undefined));
     const updateStatus = vi.fn().mockReturnValue(of(undefined));
     const deleteWebhook = vi.fn().mockReturnValue(of(undefined));
@@ -127,6 +128,21 @@ describe('WebhooksComponent', () => {
 
     expect(create).toHaveBeenCalledWith('space-1', model);
     expect(success).toHaveBeenCalledWith('Webhook has been created.');
+    // Unsigned: no secret to show.
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it('openAddDialog() shows the secret of a signed webhook once it is created', () => {
+    const { component, open, create } = setup();
+    create.mockReturnValue(of(webhook({ id: 'w-new', name: 'Signed', hasSecret: true, secret: 'whsec_once' })));
+    open.mockReturnValueOnce({ closed$: of({ name: 'Signed', url: 'https://example.com', events: [], signed: true }) });
+
+    component.openAddDialog();
+
+    expect(open).toHaveBeenLastCalledWith(
+      WebhookSecretDialogComponent,
+      expect.objectContaining({ context: { name: 'Signed', secret: 'whsec_once' } }),
+    );
   });
 
   it('openAddDialog() does nothing when dismissed without a result', () => {

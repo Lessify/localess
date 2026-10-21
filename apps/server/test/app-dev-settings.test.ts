@@ -169,6 +169,8 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   describe('webhooks', () => {
     const base = `/api/app/spaces/${S1}/webhooks`;
     let hook: { id: string };
+    const secretOf = async (id: string) =>
+      (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, id)))[0].secret;
 
     it('creates enabled webhooks, refusing a URL delivery would refuse', async () => {
       expect((await manager.post(base, { name: 'Bad', url: 'http://example.com/hook', events: ['content.published'] })).statusCode).toBe(
@@ -187,49 +189,61 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect(
         (await manager.post(base, { name: 'Alpha', url: 'https://alpha.example.com/hook', events: ['content.changed'] })).statusCode,
       ).toBe(201);
-      hook = (
-        await manager.post(base, {
-          name: 'Site',
-          url: 'https://example.com/hook',
-          events: ['content.published'],
-          secret: 's3cret',
-          headers: { 'X-Site': 'a' },
-        })
-      ).json();
-      expect(hook).toMatchObject({ enabled: true, hasSecret: true, headers: { 'X-Site': 'a' } });
-      expect(hook).not.toHaveProperty('secret');
-      expect((await manager.get(`${base}/${hook.id}`)).json()).not.toHaveProperty('secret');
-    });
+      // Unsigned unless asked: no secret, none answered.
+      expect((await manager.get(base)).json().items[0]).toMatchObject({ name: 'Alpha', hasSecret: false });
+      expect((await manager.get(base)).json().items[0]).not.toHaveProperty('secret');
+      // A typed secret is refused: the server makes it.
+      const typed = { name: 'Typed', url: 'https://example.com/hook', events: ['content.published'], secret: 's3cret' };
+      expect((await manager.post(base, typed)).statusCode).toBe(400);
 
-    it('keeps the secret and headers when an update leaves them out', async () => {
-      const updated = (
-        await manager.put(`${base}/${hook.id}`, {
-          name: 'Site 2',
-          url: 'https://example.com/v2',
-          events: ['content.published', 'content.unpublished'],
-        })
-      ).json();
-      expect(updated).toMatchObject({
-        name: 'Site 2',
-        hasSecret: true,
+      const created = await manager.post(base, {
+        name: 'Site',
+        url: 'https://example.com/hook',
+        events: ['content.published'],
+        signed: true,
         headers: { 'X-Site': 'a' },
-        events: ['content.published', 'content.unpublished'],
       });
-      const secretOf = async () =>
-        (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, hook.id)))[0].secret;
-      expect(await secretOf()).toBe('s3cret');
+      expect(created.statusCode).toBe(201);
+      hook = created.json();
+      expect(hook).toMatchObject({ enabled: true, hasSecret: true, headers: { 'X-Site': 'a' }, secret: expect.stringMatching(/^whsec_/) });
+      expect(await secretOf(hook.id)).toBe(created.json().secret);
+      // Shown once: never again.
+      expect((await manager.get(`${base}/${hook.id}`)).json()).not.toHaveProperty('secret');
+      expect((await manager.get(base)).json().items.find((it: { id: string }) => it.id === hook.id)).not.toHaveProperty('secret');
     });
 
-    it('replaces the secret when one is sent, and removes it with secret: null', async () => {
+    it('keeps the secret and headers when an update leaves them out, and refuses a secret in an update', async () => {
+      const before = await secretOf(hook.id);
       const body = { name: 'Site 2', url: 'https://example.com/v2', events: ['content.published', 'content.unpublished'] };
-      const secretOf = async () =>
-        (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, hook.id)))[0].secret;
-      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: 'n3w' })).json().hasSecret).toBe(true);
-      expect(await secretOf()).toBe('n3w');
-      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: null })).json().hasSecret).toBe(false);
-      expect(await secretOf()).toBeNull();
-      // Creating takes a secret or none, not null.
-      expect((await manager.post(base, { ...body, name: 'Null', secret: null })).statusCode).toBe(400);
+      const updated = (await manager.put(`${base}/${hook.id}`, body)).json();
+      expect(updated).toMatchObject({ ...body, hasSecret: true, headers: { 'X-Site': 'a' } });
+      expect(updated).not.toHaveProperty('secret');
+      expect(await secretOf(hook.id)).toBe(before);
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: 'n3w' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: null })).statusCode).toBe(400);
+    });
+
+    it('makes a new secret (shown once, the old one stops) and removes it', async () => {
+      const before = await secretOf(hook.id);
+      const renewed = await manager.post(`${base}/${hook.id}/secret`);
+      expect(renewed.statusCode).toBe(201);
+      expect(renewed.json()).toMatchObject({ id: hook.id, hasSecret: true, secret: expect.stringMatching(/^whsec_/) });
+      expect(renewed.json().secret).not.toBe(before);
+      expect(await secretOf(hook.id)).toBe(renewed.json().secret);
+
+      expect((await manager.delete(`${base}/${hook.id}/secret`)).statusCode).toBe(204);
+      expect(await secretOf(hook.id)).toBeNull();
+      expect((await manager.get(`${base}/${hook.id}`)).json().hasSecret).toBe(false);
+      // An unsigned webhook starts signing the same way; then signed again for the tests below.
+      expect((await manager.post(`${base}/${hook.id}/secret`)).json().hasSecret).toBe(true);
+      for (const response of [
+        await manager.post(`${base}/${S2}/secret`),
+        await manager.delete(`${base}/${S2}/secret`),
+        await manager.post(`/api/app/spaces/${S2}/webhooks/${hook.id}/secret`),
+      ]) {
+        expect(response.statusCode).toBe(404);
+      }
+      expect((await nobody.post(`${base}/${hook.id}/secret`)).statusCode).toBe(403);
     });
 
     it('enables and disables, and lists newest logs first', async () => {

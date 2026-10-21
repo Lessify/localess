@@ -7,7 +7,16 @@ import { SpaceStore } from '@core/stores/space.store';
 import { PagedList } from '@core/utils/paged-list';
 import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideChevronRight, lucideInfo, lucidePencil, lucideWebhook, lucideWebhookOff } from '@ng-icons/lucide';
+import {
+  lucideArrowLeft,
+  lucideChevronRight,
+  lucideInfo,
+  lucideKeyRound,
+  lucidePencil,
+  lucideRefreshCw,
+  lucideWebhook,
+  lucideWebhookOff,
+} from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -25,12 +34,13 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { WebHookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/webhook-dialog.model';
+import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../webhook-secret-dialog/webhook-secret-dialog.component';
 
 @Component({
   selector: 'll-webhook-detail',
@@ -51,6 +61,8 @@ import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/web
   ],
   providers: [
     provideIcons({
+      lucideKeyRound,
+      lucideRefreshCw,
       lucideArrowLeft,
       lucidePencil,
       lucideChevronRight,
@@ -174,6 +186,66 @@ export class WebhookDetailComponent implements OnInit {
         this.notificationService.error(`Webhook '${webhook.name}' can not be ${!webhook.enabled ? 'enabled' : 'disabled'}.`);
       },
     });
+  }
+
+  /**
+   * Signs deliveries with a new secret, shown once. Replacing one asks first: the receiver must get the new secret, or
+   * it refuses every delivery from then on.
+   */
+  createSecret(): void {
+    const spaceId = this.spaceStore.selectedSpaceId()!;
+    const webhook = this.webhook();
+    if (!webhook) return;
+    const confirmed = webhook.hasSecret
+      ? this.dialog
+          .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+            context: {
+              title: 'Regenerate Secret',
+              content: `The current secret of '${webhook.name}' stops at once: deliveries are signed with the new one, which your receiver needs.`,
+              variant: 'destructive',
+            },
+            contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+          })
+          .closed$.pipe(
+            take(1),
+            filter(it => it || false),
+          )
+      : of(true);
+    confirmed.pipe(switchMap(() => this.webhookService.createSecret(spaceId, webhook.id))).subscribe({
+      next: updated => {
+        this.notificationService.success(`Webhook '${webhook.name}' signs its deliveries with a new secret.`);
+        this.dialog.open<void, WebhookSecretDialogContext>(WebhookSecretDialogComponent, {
+          context: { name: updated.name, secret: updated.secret! },
+          contentClass: DIALOG_WIDTH_SM,
+        });
+      },
+      error: () => this.notificationService.error(`A secret for webhook '${webhook.name}' can not be made.`),
+    });
+  }
+
+  /** Deliveries are no longer signed: asks first, a receiver that checks signatures refuses them. */
+  removeSecret(): void {
+    const spaceId = this.spaceStore.selectedSpaceId()!;
+    const webhook = this.webhook();
+    if (!webhook) return;
+    this.dialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
+          title: 'Turn Off Signing',
+          content: `Deliveries of '${webhook.name}' will no longer be signed; a receiver that checks signatures refuses them.`,
+          variant: 'destructive',
+        },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+      })
+      .closed$.pipe(
+        take(1),
+        filter(it => it || false),
+        switchMap(() => this.webhookService.removeSecret(spaceId, webhook.id)),
+      )
+      .subscribe({
+        next: () => this.notificationService.success(`Webhook '${webhook.name}' no longer signs its deliveries.`),
+        error: () => this.notificationService.error(`Signing of webhook '${webhook.name}' can not be turned off.`),
+      });
   }
 
   openDeleteDialog(): void {

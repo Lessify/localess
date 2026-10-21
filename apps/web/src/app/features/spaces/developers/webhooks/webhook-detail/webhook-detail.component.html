@@ -33,7 +33,7 @@
     </div>
 
     <!-- Info cards -->
-    <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Status</p>
         @if (wh.enabled) {
@@ -50,6 +50,28 @@
             <hlm-badge variant="outline">{{ event }}</hlm-badge>
           }
         </p>
+      </div>
+      <div class="rounded-lg border p-3" data-testid="webhook-signing">
+        <p class="text-muted-foreground text-xs font-medium">Signing</p>
+        @if (wh.hasSecret) {
+          <span hlmBadge class="mt-1">Signed</span>
+        } @else {
+          <span hlmBadge variant="secondary" class="mt-1">Not signed</span>
+        }
+        <div class="mt-2 flex flex-wrap gap-1">
+          @if (wh.hasSecret) {
+            <button hlmBtn variant="outline" size="sm" (click)="createSecret()">
+              <ng-icon hlm size="sm" name="lucideRefreshCw" />
+              Regenerate Secret
+            </button>
+            <button hlmBtn variant="ghost" size="sm" (click)="removeSecret()">Turn Off Signing</button>
+          } @else {
+            <button hlmBtn variant="outline" size="sm" (click)="createSecret()">
+              <ng-icon hlm size="sm" name="lucideKeyRound" />
+              Sign Deliveries
+            </button>
+          }
+        </div>
       </div>
       <div class="rounded-lg border p-3">
         <p class="text-muted-foreground text-xs font-medium">Created At</p>

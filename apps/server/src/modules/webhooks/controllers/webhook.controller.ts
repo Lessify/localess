@@ -57,6 +57,22 @@ export class WebhookController {
     return this.webhookService.updateStatus(spaceId, webhookId, body.enabled);
   }
 
+  /** A new signing secret (the one before stops), answered this once: `secret` in the webhook. */
+  @Post(':webhookId/secret')
+  createSecret(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<WebHook> {
+    return this.webhookService.createSecret(spaceId, webhookId);
+  }
+
+  /** Deliveries are no longer signed. */
+  @Delete(':webhookId/secret')
+  @HttpCode(204)
+  async removeSecret(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('webhookId', UuidParamPipe) webhookId: string,
+  ): Promise<void> {
+    await this.webhookService.removeSecret(spaceId, webhookId);
+  }
+
   /** Logs cascade. */
   @Delete(':webhookId')
   @HttpCode(204)

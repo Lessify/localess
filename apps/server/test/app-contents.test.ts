@@ -1,10 +1,10 @@
-import { createHmac } from 'node:crypto';
 import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
 
 import { SchemaFieldKind, TokenType } from '@localess/shared';
 import { ConflictException } from '@nestjs/common';
 import { and, eq, isNull, sql } from 'drizzle-orm';
+import { Webhook } from 'standardwebhooks';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
@@ -16,9 +16,13 @@ import { lockContents } from '../src/shared/data-rules/content-snapshots.js';
 import { subtree } from '../src/shared/queries/content-tree.query.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { newWebhookSecret } from '../src/shared/utils/webhook-signature.js';
 import { S1, UUID_V7 } from './ids.js';
 import { tokenRow } from './seed.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+
+/** The test webhook's signing secret. */
+const SECRET = newWebhookSecret();
 
 interface Received {
   headers: IncomingMessage['headers'];
@@ -78,7 +82,7 @@ describe('app API: contents', () => {
       enabled: true,
       url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,
       events: ['content.published', 'content.unpublished', 'content.changed'],
-      secret: 'shh',
+      secret: SECRET,
     });
   });
 
@@ -280,16 +284,20 @@ describe('app API: contents', () => {
       expect((await row(post.id)).data).toEqual(before);
     });
 
-    it('signs deliveries with the webhook secret over the exact body, and logs them', async () => {
+    it('signs deliveries as Standard Webhooks (the standardwebhooks library verifies them), and logs them', async () => {
       await editor.patch(`${base}/${post.id}`, { name: 'Post!' });
       await deliveries();
       const [delivery] = received;
       expect(delivery.headers['x-webhook-event']).toBe('content.changed');
-      expect(delivery.headers['x-webhook-signature']).toBe('sha256=' + createHmac('sha256', 'shh').update(delivery.body).digest('hex'));
+      expect(delivery.headers['webhook-signature']).toMatch(/^v1,/);
+      expect(new Webhook(SECRET).verify(delivery.body, delivery.headers as Record<string, string>)).toMatchObject({
+        event: 'content.changed',
+      });
+      expect(() => new Webhook(newWebhookSecret()).verify(delivery.body, delivery.headers as Record<string, string>)).toThrow();
       const logs = await t.db
         .select()
         .from(webhookLogs)
-        .where(eq(webhookLogs.deliveryId, delivery.headers['x-webhook-delivery'] as string));
+        .where(eq(webhookLogs.deliveryId, delivery.headers['webhook-id'] as string));
       expect(logs).toEqual([expect.objectContaining({ status: 'SUCCESS', statusCode: 200, event: 'content.changed', responseBody: 'ok' })]);
     });
 

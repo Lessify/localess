@@ -73,7 +73,9 @@ describe('sanitizeWebhookHeaders', () => {
         Host: 'internal',
         'Metadata-Flavor': 'Google',
         'content-length': '1',
-        'X-Webhook-Signature': 'forged',
+        'X-Webhook-Event': 'forged',
+        'Webhook-Signature': 'v1,forged',
+        'webhook-timestamp': '0',
         'User-Agent': 'spoof',
       }),
     ).toEqual({ Authorization: 'Bearer x', 'X-Custom': 'y' });

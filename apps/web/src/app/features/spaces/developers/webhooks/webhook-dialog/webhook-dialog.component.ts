@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { WebHookEvent } from '@localess/shared';
@@ -46,8 +45,6 @@ export class WebhookDialogComponent {
    */
   readonly context = injectBrnDialogContext<Partial<WebhookDialogContext>>({ optional: true });
   readonly isEdit = this.context?.id != null;
-  /** The secret is never sent to the browser: the field starts empty, and empty keeps the one set. */
-  readonly hasSecret = this.isEdit && this.context?.hasSecret === true;
 
   webhookEvents = Object.values(WebHookEvent);
 
@@ -55,28 +52,16 @@ export class WebhookDialogComponent {
     name: this.fb.control(this.context?.name || '', WebhookValidator.NAME),
     url: this.fb.control(this.context?.url || '', WebhookValidator.URL),
     events: this.fb.control(this.context?.events || [], WebhookValidator.EVENTS),
-    secret: this.fb.control(''),
-    removeSecret: this.fb.control(false),
+    signed: this.fb.control(false),
   });
-
-  constructor() {
-    // Removing the secret: nothing to type.
-    this.form.controls['removeSecret'].valueChanges.pipe(takeUntilDestroyed()).subscribe(remove => {
-      const secret = this.form.controls['secret'];
-      if (remove) {
-        secret.setValue('');
-        secret.disable();
-      } else secret.enable();
-    });
-  }
 
   protected readonly eventItemToString = (value: string): string => value;
 
   save(): void {
-    const { name, url, events, secret, removeSecret } = this.form.getRawValue();
+    const { name, url, events, signed } = this.form.getRawValue();
     const result: WebhookDialogResult = { name, url, events };
-    if (removeSecret) result.secret = null;
-    else if (secret) result.secret = secret;
+    // Signing an existing webhook is on its page (a new secret, shown once).
+    if (!this.isEdit && signed) result.signed = true;
     this.dialogRef.close(result);
   }
 }

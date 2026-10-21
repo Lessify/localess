@@ -33,9 +33,8 @@ describe('WebhookDialogComponent', () => {
   it('starts with empty defaults and an invalid form when there is no data', () => {
     const { component } = setup(CREATE_CONTEXT);
 
-    expect(component.form.value).toEqual({ name: '', url: '', events: [], secret: '', removeSecret: false });
+    expect(component.form.value).toEqual({ name: '', url: '', events: [], signed: false });
     expect(component.form.invalid).toBe(true);
-    expect(component.hasSecret).toBe(false);
   });
 
   it('is in add mode without a webhook and in edit mode with one', () => {
@@ -47,7 +46,7 @@ describe('WebhookDialogComponent', () => {
     ).toBe(true);
   });
 
-  const withSecret: WebHook = {
+  const existing: WebHook = {
     id: 'w1',
     name: 'Slack',
     url: 'https://example.com/hook',
@@ -56,39 +55,33 @@ describe('WebhookDialogComponent', () => {
     hasSecret: true,
   } as unknown as WebHook;
 
-  it('prefills the form from the given webhook; the secret field starts empty (it is never sent)', () => {
-    const { component } = setup(withSecret);
+  it('prefills the form from the given webhook', () => {
+    const { component } = setup(existing);
 
     expect(component.form.value).toEqual({
       name: 'Slack',
       url: 'https://example.com/hook',
       events: [WebHookEvent.CONTENT_PUBLISHED],
-      secret: '',
-      removeSecret: false,
+      signed: false,
     });
     expect(component.form.valid).toBe(true);
-    expect(component.hasSecret).toBe(true);
   });
 
-  it('keeps the secret when left empty, replaces it when typed, removes it when asked', () => {
-    const { component, close } = setup(withSecret);
+  it('asks for a signed webhook only when adding one (signing an existing one is on its page)', () => {
     const base = { name: 'Slack', url: 'https://example.com/hook', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const adding = setup(CREATE_CONTEXT);
+    adding.component.form.patchValue({ ...base, signed: true });
+    adding.component.save();
+    expect(adding.close).toHaveBeenLastCalledWith({ ...base, signed: true });
+    adding.component.form.patchValue({ signed: false });
+    adding.component.save();
+    expect(adding.close).toHaveBeenLastCalledWith(base);
 
-    component.save();
-    expect(close).toHaveBeenLastCalledWith(base);
-
-    component.form.controls['secret'].setValue('n3w');
-    component.save();
-    expect(close).toHaveBeenLastCalledWith({ ...base, secret: 'n3w' });
-
-    component.form.controls['removeSecret'].setValue(true);
-    expect(component.form.controls['secret'].disabled).toBe(true);
-    expect(component.form.controls['secret'].value).toBe('');
-    component.save();
-    expect(close).toHaveBeenLastCalledWith({ ...base, secret: null });
-
-    component.form.controls['removeSecret'].setValue(false);
-    expect(component.form.controls['secret'].enabled).toBe(true);
+    TestBed.resetTestingModule();
+    const editing = setup(existing);
+    editing.component.form.patchValue({ signed: true });
+    editing.component.save();
+    expect(editing.close).toHaveBeenLastCalledWith(base);
   });
 
   it('rejects a url without an http(s) scheme', () => {
@@ -114,15 +107,11 @@ describe('WebhookDialogComponent', () => {
 
     expect(component.form.controls['events'].valid).toBe(false);
   });
-  it('closes with the form value when saved, an empty secret left out', () => {
+  it('closes with the form value when saved', () => {
     const { component, close } = setup(CREATE_CONTEXT);
     component.form.patchValue({ name: 'Slack', url: 'https://example.com', events: [] });
 
     component.save();
     expect(close).toHaveBeenLastCalledWith({ name: 'Slack', url: 'https://example.com', events: [] });
-
-    component.form.patchValue({ secret: 'shh' });
-    component.save();
-    expect(close).toHaveBeenLastCalledWith({ name: 'Slack', url: 'https://example.com', events: [], secret: 'shh' });
   });
 });

@@ -24,6 +24,7 @@
     "eslint-plugin-simple-import-sort": "catalog:",
     "oauth2-mock-server": "catalog:",
     "pg": "catalog:",
+    "standardwebhooks": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
   }

@@ -125,7 +125,7 @@ export function sanitizeWebhookHeaders(headers: Record<string, string> | undefin
   const safe: Record<string, string> = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
     const lower = name.toLowerCase();
-    if (RESERVED_HEADERS.has(lower) || lower.startsWith('x-webhook-')) continue;
+    if (RESERVED_HEADERS.has(lower) || lower.startsWith('x-webhook-') || lower.startsWith('webhook-')) continue;
     if (typeof value !== 'string') continue;
     safe[name] = value;
   }

@@ -40,6 +40,7 @@ import { catchError, filter, switchMap, take } from 'rxjs/operators';
 import { WebHookService } from './webhook.service';
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog/webhook-dialog.model';
+import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from './webhook-secret-dialog/webhook-secret-dialog.component';
 
 /** The space's webhooks: one page from the server, by name unless sorted otherwise; reloads on a webhook change. */
 @Component({
@@ -158,10 +159,18 @@ export class WebhooksComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.webhookService.create(spaceId!, { ...it!, secret: it!.secret ?? undefined })),
+        switchMap(it => this.webhookService.create(spaceId!, it!)),
       )
       .subscribe({
-        next: () => this.notificationService.success('Webhook has been created.'),
+        next: webhook => {
+          this.notificationService.success('Webhook has been created.');
+          if (webhook.secret) {
+            this.dialog.open<void, WebhookSecretDialogContext>(WebhookSecretDialogComponent, {
+              context: { name: webhook.name, secret: webhook.secret },
+              contentClass: DIALOG_WIDTH_SM,
+            });
+          }
+        },
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error(apiErrorMessage(err, 'Webhook can not be created.'));

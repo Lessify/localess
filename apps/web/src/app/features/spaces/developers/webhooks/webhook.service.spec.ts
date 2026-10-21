@@ -44,47 +44,41 @@ describe('WebHookService', () => {
     expect(await result).toEqual({ id: 'w1' });
   });
 
-  it('create() posts the webhook, leaving out empty headers and secret, and returns its id', async () => {
+  it('create() posts the webhook, leaving out empty headers, and answers it (signed: with its secret)', async () => {
     const service = setup();
-    const result = firstValueFrom(
-      service.create('space-1', { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED], secret: '' }),
-    );
-    const request = http.expectOne({ method: 'POST', url: base });
-    expect(request.request.body).toEqual({ name: 'Hook', url: 'https://example.com', events: ['content.published'] });
-    request.flush({ id: 'w1', name: 'Hook' });
-    expect(await result).toBe('w1');
+    const entity = { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const plain = firstValueFrom(service.create('space-1', { ...entity, signed: false }));
+    const plainRequest = http.expectOne({ method: 'POST', url: base });
+    expect(plainRequest.request.body).toEqual({ ...entity, events: ['content.published'] });
+    plainRequest.flush({ id: 'w1', name: 'Hook', hasSecret: false });
+    expect(await plain).toEqual({ id: 'w1', name: 'Hook', hasSecret: false });
+
+    const signed = firstValueFrom(service.create('space-1', { ...entity, signed: true }));
+    const signedRequest = http.expectOne({ method: 'POST', url: base });
+    expect(signedRequest.request.body).toEqual({ ...entity, events: ['content.published'], signed: true });
+    signedRequest.flush({ id: 'w2', hasSecret: true, secret: 'whsec_x' });
+    expect(await signed).toMatchObject({ secret: 'whsec_x' });
   });
 
-  it('update() puts the webhook with headers and secret when given', async () => {
+  it('update() puts the webhook with headers when given', async () => {
     const service = setup();
-    const entity = {
-      name: 'Hook',
-      url: 'https://example.com',
-      events: [WebHookEvent.CONTENT_CHANGED],
-      headers: { 'X-Key': 'v' },
-      secret: 'shh',
-    };
+    const entity = { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_CHANGED], headers: { 'X-Key': 'v' } };
     const done = firstValueFrom(service.update('space-1', 'w1', entity));
     const request = http.expectOne({ method: 'PUT', url: `${base}/w1` });
-    expect(request.request.body).toEqual({ ...entity, events: ['content.changed'] });
+    expect(request.request.body).toEqual(entity);
     request.flush({});
     await done;
   });
 
-  it('update() sends secret: null to remove the secret, and leaves an empty one out', async () => {
+  it('createSecret() posts for a new secret and answers it; removeSecret() deletes it', async () => {
     const service = setup();
-    const entity = { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_CHANGED] };
-    const removed = firstValueFrom(service.update('space-1', 'w1', { ...entity, secret: null }));
-    const remove = http.expectOne({ method: 'PUT', url: `${base}/w1` });
-    expect(remove.request.body).toEqual({ ...entity, secret: null });
-    remove.flush({});
-    await removed;
+    const created = firstValueFrom(service.createSecret('space-1', 'w1'));
+    http.expectOne({ method: 'POST', url: `${base}/w1/secret` }).flush({ id: 'w1', hasSecret: true, secret: 'whsec_y' });
+    expect(await created).toMatchObject({ secret: 'whsec_y' });
 
-    const kept = firstValueFrom(service.update('space-1', 'w1', { ...entity, secret: '' }));
-    const keep = http.expectOne({ method: 'PUT', url: `${base}/w1` });
-    expect(keep.request.body).toEqual(entity);
-    keep.flush({});
-    await kept;
+    const removed = firstValueFrom(service.removeSecret('space-1', 'w1'));
+    http.expectOne({ method: 'DELETE', url: `${base}/w1/secret` }).flush(null);
+    await removed;
   });
 
   it('updateStatus() patches enabled', async () => {

@@ -8,10 +8,8 @@ export interface WebhookInput {
   url?: string;
   /** Events to add (the chips have no accessible remove button). */
   events?: string[];
-  /** A new secret (the field starts empty when editing: the secret is never sent back). */
-  secret?: string;
-  /** Ticks "Remove the secret" (editing a webhook that has one). */
-  removeSecret?: boolean;
+  /** Ticks "Sign deliveries" (adding only): the server makes a secret, shown once. */
+  signed?: boolean;
 }
 
 /** Space → Developers → Webhooks: the list (`/developers/webhooks`) and a webhook's page with its logs (`/:id`). */
@@ -83,6 +81,25 @@ export class WebhooksPage {
     await expectToast(this.page, `Webhook '${name}' has been deleted.`);
   }
 
+  /** The "Copy the signing secret" dialog (shown once, after a signed webhook is added or its secret regenerated). */
+  secretDialog(): Promise<Locator> {
+    return dialog(this.page, 'Copy the signing secret');
+  }
+
+  /** The "Copy the signing secret" dialog's secret, then closes it ("I've copied it"). */
+  async takeSecret(): Promise<string> {
+    const shown = await this.secretDialog();
+    const secret = (await shown.getByTestId('webhook-secret').innerText()).trim();
+    await shown.getByRole('button', { name: "I've copied it" }).click();
+    await expect(shown).toBeHidden();
+    return secret;
+  }
+
+  /** The webhook page's Signing card. */
+  get signing(): Locator {
+    return this.page.getByTestId('webhook-signing');
+  }
+
   /** The log rows of the webhook page (not their expanded details). */
   get logs(): Locator {
     return this.page.locator('tr[ll-row]').filter({ has: this.page.locator('td.font-mono') });
@@ -116,13 +133,12 @@ export class WebhooksPage {
       await form.getByRole('heading', { name: title }).click();
       await expect(this.page.getByRole('listbox')).toHaveCount(0);
     }
-    if (input.secret !== undefined) await form.getByLabel('Secret (Optional)').fill(input.secret);
-    if (input.removeSecret) {
+    if (input.signed) {
       // The Spartan checkbox is a button with role checkbox: clicked, not `check()`ed.
-      const remove = form.getByRole('checkbox', { name: /^Remove the secret/ });
-      await expect(remove).not.toBeChecked();
-      await remove.click();
-      await expect(remove).toBeChecked();
+      const signed = form.getByRole('checkbox', { name: 'Sign deliveries' });
+      await expect(signed).not.toBeChecked();
+      await signed.click();
+      await expect(signed).toBeChecked();
     }
     return form;
   }

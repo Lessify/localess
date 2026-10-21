@@ -9,6 +9,7 @@ import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { WebhookSecretDialogComponent } from '../webhook-secret-dialog/webhook-secret-dialog.component';
 import { WebhookDetailComponent } from './webhook-detail.component';
 
 function webhook(overrides: Partial<WebHook> = {}): WebHook {
@@ -36,6 +37,8 @@ describe('WebhookDetailComponent', () => {
     const update = vi.fn().mockReturnValue(of(undefined));
     const updateStatus = vi.fn().mockReturnValue(of(undefined));
     const deleteWebhook = vi.fn().mockReturnValue(of(undefined));
+    const createSecret = vi.fn().mockReturnValue(of({ ...found, hasSecret: true, secret: 'whsec_new' }));
+    const removeSecret = vi.fn().mockReturnValue(of(undefined));
     const navigate = vi.fn();
     const success = vi.fn();
     const error = vi.fn();
@@ -44,7 +47,10 @@ describe('WebhookDetailComponent', () => {
     TestBed.overrideComponent(WebhookDetailComponent, { set: { template: '<ll-paginator [length]="0" />' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: WebHookService, useValue: { findById, findLogs, update, updateStatus, delete: deleteWebhook } },
+        {
+          provide: WebHookService,
+          useValue: { findById, findLogs, update, updateStatus, delete: deleteWebhook, createSecret, removeSecret },
+        },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },
@@ -61,6 +67,8 @@ describe('WebhookDetailComponent', () => {
       update,
       updateStatus,
       deleteWebhook,
+      createSecret,
+      removeSecret,
       navigate,
       success,
       error,
@@ -104,6 +112,43 @@ describe('WebhookDetailComponent', () => {
 
     expect(error).toHaveBeenCalledWith('Logs can not be loaded.');
     expect(component.isLogsLoading()).toBe(false);
+  });
+
+  it('createSecret() signs an unsigned webhook at once and shows the new secret', () => {
+    const { component, createSecret, open } = setup(webhook({ hasSecret: false }));
+
+    component.createSecret();
+
+    expect(createSecret).toHaveBeenCalledWith('space-1', 'w1');
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(open).toHaveBeenCalledWith(
+      WebhookSecretDialogComponent,
+      expect.objectContaining({ context: { name: 'Slack', secret: 'whsec_new' } }),
+    );
+  });
+
+  it('createSecret() asks before replacing a secret; cancelled, nothing changes', () => {
+    const { component, createSecret, open } = setup(webhook({ hasSecret: true }));
+    open.mockReturnValueOnce({ closed$: of(false) });
+    component.createSecret();
+    expect(createSecret).not.toHaveBeenCalled();
+
+    open.mockReturnValueOnce({ closed$: of(true) });
+    component.createSecret();
+    expect(createSecret).toHaveBeenCalledWith('space-1', 'w1');
+    expect(open).toHaveBeenLastCalledWith(WebhookSecretDialogComponent, expect.anything());
+  });
+
+  it('removeSecret() asks first, then turns signing off', () => {
+    const { component, removeSecret, open, success } = setup(webhook({ hasSecret: true }));
+    open.mockReturnValueOnce({ closed$: of(false) });
+    component.removeSecret();
+    expect(removeSecret).not.toHaveBeenCalled();
+
+    open.mockReturnValueOnce({ closed$: of(true) });
+    component.removeSecret();
+    expect(removeSecret).toHaveBeenCalledWith('space-1', 'w1');
+    expect(success).toHaveBeenCalledWith("Webhook 'Slack' no longer signs its deliveries.");
   });
 
   it('isLogExpanded()/toggleLogExpanded() track expanded log ids', () => {

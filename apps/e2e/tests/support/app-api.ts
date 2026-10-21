@@ -139,8 +139,8 @@ export class AppApi {
 
   createWebhook(
     spaceId: string,
-    body: { name: string; url: string; events: string[]; secret?: string },
-  ): Promise<{ id: string; name: string }> {
+    body: { name: string; url: string; events: string[]; signed?: boolean },
+  ): Promise<{ id: string; name: string; secret?: string }> {
     return this.send('post', `/api/app/spaces/${spaceId}/webhooks`, body);
   }
 

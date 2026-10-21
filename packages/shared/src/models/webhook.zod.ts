@@ -35,23 +35,22 @@ export const zWebHookLogPageable = zPageable(WEBHOOK_LOG_SORT_FIELDS, 'createdAt
 });
 export type WebHookLogPageable = z.infer<typeof zWebHookLogPageable>;
 
-/** `POST /api/app/spaces/:spaceId/webhooks`. */
-export const zWebHookCreate = z.strictObject({
+/** `PUT …/webhooks/:webhookId`: the whole webhook again; headers are kept when left out. */
+export const zWebHookUpdate = z.strictObject({
   name: z.string().trim().min(1).max(200),
   url: zWebHookUrl,
   events: z.array(z.enum(WEBHOOK_EVENTS)).min(1),
   headers: z.record(z.string().max(200), z.string().max(2000)).optional(),
-  secret: z.string().max(500).optional(),
 });
-export type WebHookCreate = z.infer<typeof zWebHookCreate>;
-
-/**
- * `PUT …/webhooks/:webhookId`: the whole webhook again. Headers and secret are kept when left out; `secret: null`
- * removes the secret (a webhook answers only `hasSecret`, so the form can't send it back).
- */
-export const zWebHookUpdate = zWebHookCreate.extend({ secret: z.string().max(500).nullable().optional() });
 export type WebHookUpdate = z.infer<typeof zWebHookUpdate>;
 
-/** `PATCH …/webhooks/:id/status`. */
+/**
+ * `POST /api/app/spaces/:spaceId/webhooks`. `signed`: the server generates a signing secret, answered once. The secret
+ * is never typed: `POST …/:webhookId/secret` makes a new one, `DELETE` removes it.
+ */
+export const zWebHookCreate = zWebHookUpdate.extend({ signed: z.boolean().optional() });
+export type WebHookCreate = z.infer<typeof zWebHookCreate>;
+
+/** `PATCH …/webhooks/:webhookId/status`. */
 export const zWebHookStatusUpdate = z.strictObject({ enabled: z.boolean() });
 export type WebHookStatusUpdate = z.infer<typeof zWebHookStatusUpdate>;

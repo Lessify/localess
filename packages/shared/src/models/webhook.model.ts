@@ -1,6 +1,9 @@
 import type { Timestamp } from './timestamp.js';
 
-/** A webhook as the App API answers it. The signing secret is never sent back: `hasSecret` says whether one is set. */
+/**
+ * A webhook as the App API answers it. Whether deliveries are signed is `hasSecret`; the secret (`whsec_…`, Standard
+ * Webhooks) is answered only once, by the create with `signed` and by `POST …/:webhookId/secret`.
+ */
 export interface WebHook {
   id: string;
   name: string;
@@ -9,6 +12,7 @@ export interface WebHook {
   events: WebHookEvent[];
   headers?: Record<string, string>;
   hasSecret: boolean;
+  secret?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -45,7 +49,6 @@ export interface WebHookPayload {
   spaceId: string;
   timestamp: string;
   data: WebHookPayloadData;
-  signature?: string;
 }
 
 export interface ContentWebHookPayloadData {

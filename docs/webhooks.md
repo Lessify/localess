@@ -25,6 +25,7 @@ App API (`apps/server/src/modules/webhooks/controllers/webhook.controller.ts`):
 | `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | one page (`Page<WebHook>`, `zWebHookPageable`) / create |
 | `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId` | read / update / delete |
 | `PATCH` | `/api/app/spaces/:spaceId/webhooks/:webhookId/status` | `{ enabled }` |
+| `POST` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId/secret` | a new signing secret, answered once (`secret` in the webhook) / stop signing |
 | `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs` | one page (`Page<WebHookLog>`, `zWebHookLogPageable`), newest first |
 
 The list is paged on the server ([Pagination](server/pagination.md)): `?page=&size=&sort=&direction=`, sorts `name`
@@ -47,16 +48,18 @@ interface WebHook {
   enabled: boolean;
   events: WebHookEvent[];
   headers?: Record<string, string>;  // custom request headers
-  hasSecret: boolean;                // whether an HMAC-SHA256 signing key is set
+  hasSecret: boolean;                // whether deliveries are signed
+  secret?: string;                   // whsec_…: only in the answer that made it
   createdAt: string;  // ISO 8601
   updatedAt: string;
 }
 ```
 
-The signing secret (`webhooks.secret`) is write-only: it is accepted on create and update but never answered, so it
-doesn't reach the browser, its dev tools or a proxy's logs; `hasSecret` says whether one is set (`toWebhook`,
-`shared/transformers/webhook.transformer.ts`, lists every field it sends). An update without `secret` (or with an empty
-one) keeps it; `secret: null` removes it.
+The signing secret (`webhooks.secret`) is made by the server and never typed: `POST …/webhooks` with `signed: true`, or
+`POST …/:webhookId/secret` (a new one; the one before stops at once), answers it in `secret`, the only time it is shown.
+Every other answer has only `hasSecret` (`toWebhook`, `shared/transformers/webhook.transformer.ts`, lists every field it
+sends), so it doesn't reach the browser again, its dev tools or a proxy's logs. `DELETE …/:webhookId/secret` stops
+signing. A request that sends `secret` is a 400.
 
 ### Events
 
@@ -79,7 +82,6 @@ interface WebHookPayload {
   spaceId: string;
   timestamp: string;           // ISO 8601
   data: ContentWebHookPayloadData | TranslationWebHookPayloadData;
-  signature?: string;          // internal only — the signature is delivered in the X-Webhook-Signature header, not the body
 }
 ```
 
@@ -94,13 +96,14 @@ Every webhook dispatch sends:
 ```
 POST <webhook.url>
 Content-Type: application/json
-User-Agent: Localess-WebHook/1.0
+User-Agent: Localess-Webhook/1.0
+webhook-id: <uuid>                  ← unique per dispatch; same value as the log's deliveryId
+webhook-timestamp: <unix seconds>
+webhook-signature: v1,<base64>      ← only when the webhook is signed
 X-Webhook-Event: <event>
-X-Webhook-Delivery: <uuid>          ← unique per dispatch; same value as the log's deliveryId
-X-Webhook-Signature: sha256=<hex>   ← only if secret is set
 <custom headers from webhook.headers, minus reserved ones — see below>
 
-Body: JSON-serialised WebHookPayload (without `signature`)
+Body: JSON-serialised WebHookPayload
 ```
 
 - Timeout: **30 seconds**
@@ -115,24 +118,50 @@ Delivery runs from the Localess server, inside your network, and the URL and hea
 
 - **URL** (`checkWebhookUrl`): `https:` only, on the default port, with no credentials in the URL. `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal` and private IP literals are refused. The WHATWG URL parser normalises shorthand forms such as `0x7f.1` and `2130706433` before the check.
 - **Resolved address** (`isBlockedAddress`, applied in the socket's DNS `lookup`): the connection is refused if the host resolves to any loopback, private, link-local, CGNAT, multicast, reserved or documentation range, IPv4 or IPv6, including IPv4-mapped IPv6. The check runs on the exact address being connected to, so DNS rebinding can't get around it.
-- **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` header. Those are dropped.
+- **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` or `webhook-*` header. Those are dropped.
 - **Local development** (`LOCALESS_WEBHOOK_ALLOW_INTERNAL=true`, default `false`): `http:` and local or private targets are allowed, and the resolved-address check is skipped, so a local receiver can be used. Never enable it in production.
 
 A refused delivery sends nothing. It is logged as a `NETWORK` failure with `errorMessage` "Webhook URL is not allowed: …".
 
 ---
 
-## HMAC Signing
+## Signing (Standard Webhooks)
 
-When a webhook has a `secret`, the payload is signed before dispatch:
+Signing is optional ("Sign deliveries"). Most destinations don't need it: build and deploy hooks (GCP Cloud Build,
+Netlify, Vercel, Cloudflare Pages), automation tools (Zapier, Make, n8n) and chat incoming webhooks authenticate the call
+with a secret in their URL. Sign when the receiver is your own code (an API, a serverless function, an on-demand
+revalidation route) and should check that a delivery is genuine.
+
+Deliveries follow [Standard Webhooks](https://www.standardwebhooks.com) (`shared/utils/webhook-signature.ts`):
 
 ```
-body      = JSON.stringify(payload)          // serialised once, before signing
-signature = HMAC-SHA256(secret, body)
-header:   X-Webhook-Signature: sha256=<hex_digest>
+secret    = whsec_<base64 of 32 random bytes>       // made by the server, shown once
+key       = base64-decode(secret without "whsec_")
+signature = base64(HMAC-SHA256(key, "<webhook-id>.<webhook-timestamp>.<raw body>"))
+header:   webhook-signature: v1,<signature>
 ```
 
-The signature is delivered **only** in the `X-Webhook-Signature` header. Receivers must read it from the header and verify it by computing the HMAC over the **raw request body** exactly as received (do not re-serialise parsed JSON, and do not rely on any `signature` field in the body).
+The signature covers the delivery id and the time as well as the body, so a receiver can refuse a replayed delivery. It
+is only in the header; the body has no signature field.
+
+### Verifying a delivery
+
+Use the `standardwebhooks` library (Node, Python, Go, PHP, Java, Ruby, Rust, C#…) on the **raw request body**, exactly
+as received (don't re-serialise parsed JSON). It checks the signature and refuses a timestamp more than 5 minutes off:
+
+```ts
+import { Webhook } from 'standardwebhooks';
+
+const webhook = new Webhook(process.env.LOCALESS_WEBHOOK_SECRET); // whsec_…
+const payload = webhook.verify(rawBody, request.headers); // throws if it isn't genuine
+```
+
+### Regenerating
+
+On the webhook's page, the Signing card: **Sign Deliveries** (an unsigned webhook), **Regenerate Secret** (asks first: the
+old secret stops at once, so update the receiver), **Turn Off Signing**. A new secret is shown once in "Copy the signing
+secret". Webhooks imported from Firebase keep their key (as `whsec_` of the same bytes), but the signature format is new:
+the import warns, regenerate and update the receiver.
 
 ---
 
@@ -223,7 +252,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 - `name`: required, 3–50 chars, no leading/trailing spaces
 - `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhookService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
-- `secret`: optional, a password field. Editing a webhook that has one, the field starts empty ("A secret is set: leave empty to keep it") and "Remove the secret" sends `secret: null`
+- "Sign deliveries" (adding only): the server makes a secret, shown once after saving; signing an existing webhook is on its page (Signing card)
 
 Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) shows one page from the server (`PagedList`, `ll-paginator`): the sort headers, the search box and the Status / Events filters change the query. It supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
 

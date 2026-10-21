@@ -7,6 +7,7 @@ import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup
 import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
+import { newWebhookSecret } from '../../../shared/utils/webhook-signature.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 
 /**
@@ -48,11 +49,19 @@ export class WebhookService {
   async create(spaceId: string, input: WebHookCreate): Promise<WebHook> {
     this.assertDeliverable(input.url);
     await this.requireSpace(spaceId);
-    const webhookId = await this.webhookRepository.create(spaceId, input);
-    return toWebhook(await this.findWebhook(spaceId, webhookId));
+    const secret = input.signed ? newWebhookSecret() : null;
+    const webhookId = await this.webhookRepository.create(spaceId, {
+      name: input.name,
+      url: input.url,
+      events: input.events,
+      headers: input.headers ?? null,
+      secret,
+    });
+    const webhook = toWebhook(await this.findWebhook(spaceId, webhookId));
+    return secret ? { ...webhook, secret } : webhook;
   }
 
-  /** Headers and secret are only replaced when sent (the form leaves them out to keep them); `secret: null` removes it. */
+  /** Headers are only replaced when sent (the form leaves them out to keep them); the secret has its own routes. */
   async update(spaceId: string, webhookId: string, input: WebHookUpdate): Promise<WebHook> {
     this.assertDeliverable(input.url);
     await this.requireWebhook(spaceId, webhookId);
@@ -61,7 +70,6 @@ export class WebhookService {
       url: input.url,
       events: input.events,
       ...(input.headers ? { headers: input.headers } : {}),
-      ...(input.secret ? { secret: input.secret } : input.secret === null ? { secret: null } : {}),
     });
     return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
@@ -70,6 +78,23 @@ export class WebhookService {
     await this.requireWebhook(spaceId, webhookId);
     await this.webhookRepository.update(spaceId, webhookId, { enabled });
     return toWebhook(await this.findWebhook(spaceId, webhookId));
+  }
+
+  /**
+   * A new signing secret, which the answer holds: the only time it is shown. The one before (if any) stops at once;
+   * a webhook without one starts signing.
+   */
+  async createSecret(spaceId: string, webhookId: string): Promise<WebHook> {
+    await this.requireWebhook(spaceId, webhookId);
+    const secret = newWebhookSecret();
+    await this.webhookRepository.update(spaceId, webhookId, { secret });
+    return { ...toWebhook(await this.findWebhook(spaceId, webhookId)), secret };
+  }
+
+  /** Deliveries are no longer signed. */
+  async removeSecret(spaceId: string, webhookId: string): Promise<void> {
+    await this.requireWebhook(spaceId, webhookId);
+    await this.webhookRepository.update(spaceId, webhookId, { secret: null });
   }
 
   /** Its logs cascade. */
