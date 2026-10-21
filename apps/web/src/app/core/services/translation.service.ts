@@ -29,14 +29,7 @@ export class TranslationService {
     return `/api/app/spaces/${spaceId}/translations`;
   }
 
-  /** One page of the list (`params`: a `PagedList`'s query and the filter); read again on every translation change. */
-  findAll(spaceId: string, params: HttpParams): Observable<Page<Translation>> {
-    return liveQueryWith(this.events, { spaceId, entities: ['translations'] }, () =>
-      this.http.get<Page<Translation>>(this.base(spaceId), { params }),
-    );
-  }
-
-  /** One page of the matching keys, read once (the tree's small filtered results: `TranslationTree`). */
+  /** One page of the keys (`params`: page, size and the filter), read once; `TranslationPages` reads again on changes. */
   findPage(spaceId: string, params: HttpParams): Observable<Page<Translation>> {
     return this.http.get<Page<Translation>>(this.base(spaceId), { params });
   }

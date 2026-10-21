@@ -81,6 +81,19 @@ describe('TranslationTree', () => {
     expect(tree.rows().every(row => row.kind === 'node')).toBe(true);
   });
 
+  it('reads nothing past the end of a level, nor twice at once', async () => {
+    const many = Array.from({ length: 150 }, (_, i) => node(`k${String(i).padStart(3, '0')}`));
+    const { service, findNodes } = server({ '': many });
+    const tree = new TranslationTree(service);
+    await tree.load('space-1', {});
+
+    await Promise.all([tree.loadMore(''), tree.loadMore('')]);
+    await tree.loadMore('');
+
+    expect(findNodes).toHaveBeenCalledTimes(2);
+    expect(tree.loadingMore()).toEqual(new Set());
+  });
+
   it(`opens every group of a filter with at most ${TREE_EXPAND_ALL_MAX} matches`, async () => {
     const { service, findNodes } = server(levels, [translation('home.hero.title'), translation('checkout.title')]);
     const tree = new TranslationTree(service);

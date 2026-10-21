@@ -49,7 +49,7 @@ locales of the selected space.
 
 **Key behaviour:**
 
-- Keys come from the server, never all at once (see [Pagination](../../server/pagination.md#translations-a-paged-list-and-a-tree-read-by-level)): the **list** view reads one page (`translationService.findAll(spaceId, params)`, 50 a page, a live query refetched on `translations` change events) and starts at the top on a new page or filter; the **tree** view reads one level at a time (`TranslationTree`, `GET …/translations/nodes`), opening every group of a filter with at most 200 matches
+- Keys come from the server, never all at once (see [Pagination](../../server/pagination.md#translations-a-paged-list-and-a-tree-read-by-level)): the **list** view loads as you scroll (`TranslationPages`: the first 50 keys, then 50 more each time the end marker of the virtual list comes into view, `llInView`; no paginator, a count line under the list) and starts at the top on a new filter; the **tree** view reads one level at a time (`TranslationTree`, `GET …/translations/nodes`), its "Load more" row loading by itself when scrolled into view, opening every group of a filter with at most 200 matches. After a `translations` change event both read again what they show, in place
 - `ngOnInit()` — loads the labels for the filter (`findLabels`); the selected translation is read by id (`findOne`, live), so an edit elsewhere shows at once and a deleted one clears the panel
 - Search — runs on Enter or the Search button inside the box, not while typing; the box is marked (amber) and the button is primary while its text is not searched yet; emptying the box shows every key again
 - Add and rename dialogs ask the server whether a key is taken (`isKeyTaken`: `?key=` in any letter case), so they work in a space of any size

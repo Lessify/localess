@@ -96,7 +96,7 @@ The Tasks list is the reference; each step names the file.
 ## Translations: a paged list and a tree read by level
 
 - **List** — `GET …/translations` answers `Page<Translation>` (`zTranslationPageable`: sort `key`, `createdAt`,
-  `updatedAt`, default `key`; 50 a page in the web). Filters: `search` (the key, or the value in `locale`;
+  `updatedAt`, default `key`; the web reads 50 at a time as the list scrolls, `TranslationPages`). Filters: `search` (the key, or the value in `locale`;
   case-insensitive contains), `key` (this key in any letter case: the add and rename dialogs' check), `label`
   (repeated: any of them), `status` (`TRANSLATED`, `PARTIALLY_TRANSLATED`, `UNTRANSLATED` over the space's locales)
   and `localeStatus` (`TRANSLATED`, `UNTRANSLATED` in `locale`).
@@ -106,7 +106,7 @@ The Tasks list is the reference; each step names the file.
   match uses the byte-order index `translations_key_bytes_idx` (`key COLLATE "C"`); the order is the list's.
 - **Labels** — `GET …/translations/labels`: every label of the space, for the filter.
 - **Web** — `TranslationTree` (`features/spaces/translations/shared/models/translation-tree.ts`) reads a level when
-  its group first opens, "Load more" for a level of more than 100, and the open levels again after a change. With
+  its group first opens, "Load more" for a level of more than 100 (loading by itself when scrolled into view), and the open levels again after a change. With
   a filter of at most `TREE_EXPAND_ALL_MAX` (200) matches it reads them all and shows the tree fully open; more stay
   collapsed with their counts. Clearing the filter restores what was open while browsing.
 

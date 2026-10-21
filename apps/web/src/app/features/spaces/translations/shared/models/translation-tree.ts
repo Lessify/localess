@@ -46,6 +46,8 @@ export class TranslationTree {
   /** How many keys match the filter (`undefined`: no filter). */
   readonly matches = signal<number | undefined>(undefined);
   readonly expandedKeys = signal<ReadonlySet<string>>(new Set<string>());
+  /** The levels reading their next nodes: their "Load more" row shows "Loading…". */
+  readonly loadingMore = signal<ReadonlySet<string>>(new Set<string>());
 
   private readonly levels = signal<ReadonlyMap<string, Level>>(new Map());
   private readonly openMatches = signal<Translation[]>([]);
@@ -118,16 +120,23 @@ export class TranslationTree {
     await this.loadLevels(generation, opened.filter(key => !this.levels().has(key)).sort(byDepth), keys);
   }
 
-  /** The next nodes of a level ("Load more"). */
+  /** The next nodes of a level ("Load more": clicked, or scrolled into view); nothing while that level is reading. */
   async loadMore(parent: string): Promise<void> {
     const level = this.levels().get(parent);
-    if (!level) return;
+    if (!level || level.nodes.length >= level.total || this.loadingMore().has(parent)) return;
     const generation = this.generation;
-    const read = await this.readLevel(parent, level.pages, LEVEL_SIZE);
-    if (generation !== this.generation) return;
-    const levels = new Map(this.levels());
-    levels.set(parent, { nodes: [...level.nodes, ...read.items], total: read.total, pages: level.pages + 1 });
-    this.levels.set(levels);
+    this.loadingMore.update(it => new Set([...it, parent]));
+    try {
+      const read = await this.readLevel(parent, level.pages, LEVEL_SIZE);
+      if (generation !== this.generation) return;
+      const levels = new Map(this.levels());
+      const shown = new Set(level.nodes.map(it => it.path));
+      const nodes = [...level.nodes, ...read.items.filter(it => !shown.has(it.path))];
+      levels.set(parent, { nodes, total: read.total, pages: level.pages + 1 });
+      this.levels.set(levels);
+    } finally {
+      this.loadingMore.update(it => new Set([...it].filter(key => key !== parent)));
+    }
   }
 
   /**

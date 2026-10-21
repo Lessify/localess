@@ -31,30 +31,11 @@ describe('TranslationService', () => {
   const page = (items: Translation[], total = items.length): Page<Translation> => ({ items, page: 0, size: 50, total });
   const params = new HttpParams().set('page', 0).set('size', 50).set('search', 'home');
 
-  it('findAll() reads one page with the given query', async () => {
+  it('findPage() reads one page with the given query, once', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll('space-1', params));
+    const result = firstValueFrom(service.findPage('space-1', params));
     http.expectOne(`${BASE}?page=0&size=50&search=home`).flush(page([{ id: 'hello' } as Translation]));
     expect(await result).toEqual(page([{ id: 'hello' } as Translation]));
-  });
-
-  it('findAll() refetches when a translation of the space changes, ignoring other entities', async () => {
-    vi.useFakeTimers();
-    const service = setup();
-    const results: Page<Translation>[] = [];
-    const subscription = service.findAll('space-1', params).subscribe(it => results.push(it));
-    const url = `${BASE}?page=0&size=50&search=home`;
-    http.expectOne(url).flush(page([]));
-
-    events.next({ spaceId: 'space-1', entity: 'schemas', id: 's', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(url);
-
-    events.next({ spaceId: 'space-1', entity: 'translations', id: 'hello', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(url).flush(page([{ id: 'hello' } as Translation]));
-    expect(results).toEqual([page([]), page([{ id: 'hello' } as Translation])]);
-    subscription.unsubscribe();
   });
 
   it('findNodes() reads one level of the tree once', async () => {

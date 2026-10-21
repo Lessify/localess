@@ -26,35 +26,30 @@ test.describe('Translations → list view', () => {
     await expect(translations.valueEditor).toHaveValue('Hello');
   });
 
-  test('pages through many keys, 50 a page, rendering only what is visible of a page', async ({ page, api, space }) => {
+  test('loads more keys as the list scrolls to its end, rendering only what is visible', async ({ page, api, space }) => {
     for (let i = 0; i < 120; i++) {
       await api.createTranslation(space.id, { key: `bulk.key${String(i).padStart(3, '0')}`, locales: { en: `Value ${i}` } });
     }
     const translations = new TranslationsPage(page);
-    const next = page.getByRole('button', { name: 'Next page' });
 
-    // Pre-check: the first page, of three; its first keys rendered, not its last.
+    // Pre-check: the count of every key, the first ones rendered, not the last; no paginator.
     await translations.goto(space.id);
-    await expect(page.getByText('120 total items')).toBeVisible();
-    await expect(page.getByText('Page 1 of 3')).toBeVisible();
+    await expect(page.getByTestId('list-count')).toHaveText('120 keys');
     await expect(translations.item('bulk.key000')).toBeVisible();
-    await expect(translations.item('bulk.key049')).toHaveCount(0);
+    await expect(translations.item('bulk.key119')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Next page' })).toHaveCount(0);
     expect(await translations.items.count()).toBeLessThan(50);
 
-    // Action: scroll to the end of the page, then on to the last page.
-    await translations.scrollToEnd();
-    await expect(translations.item('bulk.key049')).toBeVisible();
-    await next.click();
-    await expect(translations.item('bulk.key050')).toBeVisible();
-    await next.click();
-    await expect(page.getByText('Page 3 of 3')).toBeVisible();
+    // Action: scroll to the end until the last key is there (50 more each time the end comes into view).
+    await expect(async () => {
+      await translations.scrollToEnd();
+      await expect(translations.item('bulk.key119')).toBeVisible({ timeout: 1_000 });
+    }).toPass();
 
-    // Post-check: a new page starts at its top; the last key is at its end and opens.
-    await expect(translations.item('bulk.key100')).toBeVisible();
-    await translations.scrollToEnd();
-    await expect(translations.item('bulk.key119')).toBeVisible();
+    // Post-check: the last key opens; the end marker is gone.
     await translations.select('bulk.key119');
     await expect(translations.valueEditor).toHaveValue('Value 119');
+    await expect(page.getByText('Loading more…')).toHaveCount(0);
   });
 
   test('shows a key added elsewhere without a reload (live updates)', async ({ page, api, space }) => {
