@@ -1,5 +1,5 @@
 import { isTranslationKey, TaskExportMetadata, TranslationExport, WebhookEvent } from '@localess/shared';
-import { zTranslationExportArraySchema, zTranslationFlatExportSchema } from '@localess/shared/zod';
+import { zTranslationFile, zTranslationFlatFile } from '@localess/shared/zod';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
@@ -57,7 +57,7 @@ export class TranslationTransferService {
     const opened = await this.importFileService.open(task, 'TRANSLATION');
     if (!('zip' in opened)) return opened;
     const raw = await opened.zip.readJson('translations.json', MAX_JSON_BYTES);
-    const parse = zTranslationExportArraySchema.safeParse(raw);
+    const parse = zTranslationFile.safeParse(raw);
     if (!parse.success) return this.importFileService.invalid(task, 'TRANSLATION', parse.error);
     // Values are written only for the space's locales; the others are skipped and logged.
     const spaceLocales = new Set(await this.spaceLocaleIds(spaceId));
@@ -113,7 +113,7 @@ export class TranslationTransferService {
     } catch {
       return { status: 'ERROR', message: 'It is not a Translation Export file.' };
     }
-    const parse = zTranslationFlatExportSchema.safeParse(raw);
+    const parse = zTranslationFlatFile.safeParse(raw);
     if (!parse.success) return this.importFileService.invalid(task, 'TRANSLATION', parse.error);
     const values = parse.data;
     if (!(await this.spaceLocaleIds(spaceId)).includes(locale)) {

@@ -102,7 +102,7 @@ ignored and the untransformed image was returned; it now returns `400 invalid-ar
 | `GET`  | `/api/manage/v1/spaces/:spaceId/schemas`              | `SchemaExport[]` (id + type-specific fields, no timestamps) |
 | `POST` | `/api/manage/v1/spaces/:spaceId/schemas`              | `zSchemaPushSchema` (schema push, below) |
 | `GET`  | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `Record<string, string>` — the values stored for `locale`, **without** fallback filling (keys with no or an empty value are absent); `400` for a locale not in the space. Used by `localess translation pull --raw` |
-| `POST` | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `zTranslationManageUpdateSchema` (translation push, below) |
+| `POST` | `/api/manage/v1/spaces/:spaceId/translations/:locale` | `zTranslationPush` (translation push, below) |
 
 These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) routes under `/api/v1`; the old URLs now answer 404. `GET …/translations/:locale/values` lost its `/values` suffix. A space that is being imported (or whose import failed) answers `503` here too, but only after the token is checked: a caller without the space's management token gets the usual 401 and learns nothing about the import. (On the CDN API the 503 comes first, from the `space-id.ts` hook.)
 
@@ -110,7 +110,7 @@ These were the dev-tools (`?token=` with `DEV_TOOLS`) and manage (`X-API-KEY`) r
 
 ### Translation push (`POST …/translations/:locale`)
 
-**Request body (`zTranslationManageUpdateSchema`):**
+**Request body (`zTranslationPush`):**
 
 ```typescript
 {

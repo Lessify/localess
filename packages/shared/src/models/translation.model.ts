@@ -1,7 +1,4 @@
-import type { z } from 'zod';
-
 import type { Timestamp } from './timestamp.js';
-import type { zTranslationManageUpdateSchema } from './translation.zod.js';
 
 /**
  * A translation key: a letter first, then letters, digits, `-`, `_` or `.`, ending in a letter or digit (the nested
@@ -38,9 +35,6 @@ export interface PublishTranslationsData {
 export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt'> & { /** The key. */ id: string };
 
 // App API requests: translation.zod.ts
-
-/** Body of the public MANAGE API `POST /api/v1/spaces/{spaceId}/translations/{locale}`. */
-export type TranslationManageUpdate = z.infer<typeof zTranslationManageUpdateSchema>;
 
 export interface TranslationUpdateResponse {
   message: string;

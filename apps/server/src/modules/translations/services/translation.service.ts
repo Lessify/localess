@@ -1,4 +1,12 @@
-import { type Translation, WebhookEvent } from '@localess/shared';
+import {
+  type Translation,
+  type TranslationCreate,
+  type TranslationLocaleUpdate,
+  type TranslationRename,
+  type TranslationTranslateLocale,
+  type TranslationUpdate,
+  WebhookEvent,
+} from '@localess/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
@@ -51,10 +59,7 @@ export class TranslationService {
     return found(await this.translationRepository.findById(spaceId, translationId));
   }
 
-  async create(
-    spaceId: string,
-    input: { key: string; locales: Record<string, string>; labels?: string[]; description?: string },
-  ): Promise<Translation> {
+  async create(spaceId: string, input: TranslationCreate): Promise<Translation> {
     requireSpaceLocales(await this.requireSpace(spaceId), Object.keys(input.locales));
     const entity = await this.translationRepository.create(spaceId, {
       ...input,
@@ -64,7 +69,7 @@ export class TranslationService {
     return this.changed(spaceId, toTranslation(entity));
   }
 
-  async update(spaceId: string, translationId: string, input: { labels?: string[]; description?: string }): Promise<Translation> {
+  async update(spaceId: string, translationId: string, input: TranslationUpdate): Promise<Translation> {
     await this.requireTranslation(spaceId, translationId);
     const entity = await this.translationRepository.update(spaceId, translationId, {
       labels: input.labels?.length ? input.labels : null,
@@ -74,16 +79,16 @@ export class TranslationService {
   }
 
   /** One locale's value, for a locale of the space; an empty string removes it (for any locale: leftovers of a removed locale). */
-  async updateLocale(spaceId: string, translationId: string, localeId: string, value: string): Promise<Translation> {
+  async updateLocale(spaceId: string, translationId: string, localeId: string, input: TranslationLocaleUpdate): Promise<Translation> {
     const space = await this.requireTranslation(spaceId, translationId);
-    if (value) requireSpaceLocales(space, [localeId]);
-    return this.changed(spaceId, found(await this.translationRepository.setLocale(spaceId, translationId, localeId, value)));
+    if (input.value) requireSpaceLocales(space, [localeId]);
+    return this.changed(spaceId, found(await this.translationRepository.setLocale(spaceId, translationId, localeId, input.value)));
   }
 
   /** Changes the key; the id stays. */
-  async rename(spaceId: string, translationId: string, key: string): Promise<Translation> {
+  async rename(spaceId: string, translationId: string, input: TranslationRename): Promise<Translation> {
     await this.requireTranslation(spaceId, translationId);
-    return this.changed(spaceId, found(await this.translationRepository.update(spaceId, translationId, { key })));
+    return this.changed(spaceId, found(await this.translationRepository.update(spaceId, translationId, { key: input.key })));
   }
 
   async remove(spaceId: string, translationId: string): Promise<void> {
@@ -113,12 +118,9 @@ export class TranslationService {
    * Machine-translates every key that has a source value (and no target value, unless `overwrite`).
    * Returns how many keys were written; keys the provider failed on are left untouched.
    */
-  async translateLocale(
-    spaceId: string,
-    sourceLocale: string,
-    targetLocale: string,
-    overwrite: boolean,
-  ): Promise<{ translated: number; failed: number }> {
+  async translateLocale(spaceId: string, input: TranslationTranslateLocale): Promise<{ translated: number; failed: number }> {
+    const { sourceLocaleId: sourceLocale, targetLocaleId: targetLocale } = input;
+    const overwrite = input.overwrite === true;
     // The space first (404), then the locales (400), then whether machine translation is configured (412).
     requireSpaceLocales(await this.requireSpace(spaceId), [sourceLocale, targetLocale]);
     this.translateService.requireProvider();

@@ -72,7 +72,7 @@ export class TranslationController {
     @Param('localeId') localeId: string,
     @Body({ schema: zTranslationLocaleUpdate }) body: TranslationLocaleUpdate,
   ) {
-    return this.translationService.updateLocale(spaceId, translationId, localeId, body.value);
+    return this.translationService.updateLocale(spaceId, translationId, localeId, body);
   }
 
   @Put(':translationId/key')
@@ -82,7 +82,7 @@ export class TranslationController {
     @Param('translationId', UuidParamPipe) translationId: string,
     @Body({ schema: zTranslationRename }) body: TranslationRename,
   ) {
-    return this.translationService.rename(spaceId, translationId, body.key);
+    return this.translationService.rename(spaceId, translationId, body);
   }
 
   @Delete(':translationId')
@@ -116,6 +116,6 @@ export class TranslationController {
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale,
   ) {
-    return this.translationService.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
+    return this.translationService.translateLocale(spaceId, body);
   }
 }

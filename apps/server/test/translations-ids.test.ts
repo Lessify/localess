@@ -71,4 +71,29 @@ describe('app API: translations check their space and ids', () => {
     }
     expect((await admin.get(`${base}/${translationId}`)).json()).toMatchObject({ key: 'hello', locales: { en: 'Hello' } });
   });
+
+  it('refuses an unknown field on every body, naming it, and changes nothing', async () => {
+    for (const [call, field] of [
+      [() => admin.post(base, { key: 'typo', locales: { en: 'x' }, label: ['a'] }), 'label'],
+      [() => admin.patch(`${base}/${translationId}`, { label: ['a'] }), 'label'],
+      [() => admin.put(`${base}/${translationId}/locales/en`, { value: 'Hi', locale: 'en' }), 'locale'],
+      [() => admin.put(`${base}/${translationId}/key`, { key: 'renamed', id: 'x' }), 'id'],
+      [() => admin.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'en', overWrite: true }), 'overWrite'],
+      [() => admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'Hi', html: true }), 'html'],
+      [
+        () => admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', items: [{ id: 'a', content: 'Hi', path: 'x' }] }),
+        'path',
+      ],
+    ] as const) {
+      const response = await call();
+      expect(response.statusCode, field).toBe(400);
+      expect(response.body, field).toContain(field);
+    }
+    // Both forms of a translate request at once is no form.
+    expect((await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'Hi', items: [] })).statusCode).toBe(
+      400,
+    );
+    expect((await admin.get(`${base}/${translationId}`)).json()).toMatchObject({ key: 'hello', locales: { en: 'Hello' } });
+    expect((await admin.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hello']);
+  });
 });

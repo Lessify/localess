@@ -1,4 +1,4 @@
-import { zTranslationManageUpdateSchema } from '@localess/shared/zod';
+import { zTranslationPush } from '@localess/shared/zod';
 import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -45,7 +45,7 @@ export class TranslationManagementController {
   @HttpCode(200)
   async updateTranslations(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     const { spaceId, locale } = request.params as Params;
-    const body = zTranslationManageUpdateSchema.safeParse(request.body);
+    const body = zTranslationPush.safeParse(request.body);
     if (!body.success) {
       sendV1Error(reply, 400, 'invalid-argument', 'Bad request body', { details: body.error });
       return;
