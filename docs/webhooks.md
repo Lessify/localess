@@ -91,13 +91,14 @@ Events are dispatched only **after** the transaction that caused them commits, a
 ## Payload
 
 ```typescript
-interface WebhookPayload {
-  event: WebhookEvent;
-  spaceId: string;
-  timestamp: string;           // ISO 8601
-  data: ContentWebhookPayloadData | TranslationWebhookPayloadData;
-}
+type WebhookPayload = { spaceId: string; timestamp: string } & (   // timestamp: ISO 8601
+  | { event: ContentWebhookEvent; data: { id: string; fullSlug: string } }   // content.published / unpublished / changed
+  | { event: TranslationWebhookEvent; data: {} }                             // translation.published / changed
+);
 ```
+
+Defined once in `@localess/shared` (`webhook.model.ts`); `WebhookDispatcher.dispatch` takes a content event with its
+data, or a translation event without, so a caller can't pair them wrongly.
 
 Content events send `data: { id, fullSlug }` (`ContentWebhookPayloadData`) — the content's ID and full slug. Translation events send an empty `data` object.
 

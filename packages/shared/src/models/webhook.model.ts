@@ -37,6 +37,18 @@ export enum WebhookEvent {
   TRANSLATION_CHANGED = 'translation.changed',
 }
 
+/** The events about a content: their `data` is the content's id and full slug. */
+export const CONTENT_WEBHOOK_EVENTS = [
+  WebhookEvent.CONTENT_PUBLISHED,
+  WebhookEvent.CONTENT_UNPUBLISHED,
+  WebhookEvent.CONTENT_CHANGED,
+] as const;
+export type ContentWebhookEvent = (typeof CONTENT_WEBHOOK_EVENTS)[number];
+
+/** The events about a space's translations: their `data` is empty. */
+export const TRANSLATION_WEBHOOK_EVENTS = [WebhookEvent.TRANSLATION_PUBLISHED, WebhookEvent.TRANSLATION_CHANGED] as const;
+export type TranslationWebhookEvent = (typeof TRANSLATION_WEBHOOK_EVENTS)[number];
+
 export enum WebhookStatus {
   SUCCESS = 'SUCCESS',
   FAILURE = 'FAILURE',
@@ -48,23 +60,22 @@ export enum WebhookErrorType {
   HTTP = 'HTTP',
 }
 
-export interface WebhookPayload {
-  event: WebhookEvent;
-  spaceId: string;
-  timestamp: string;
-  data: WebhookPayloadData;
-}
-
+/** A content event's `data`. */
 export interface ContentWebhookPayloadData {
   id: string;
   fullSlug: string;
 }
 
-export interface TranslationWebhookPayloadData {
-  translationId?: string;
-}
+/** A translation event's `data`: nothing (the receiver reads the space's translations). */
+export type TranslationWebhookPayloadData = Record<string, never>;
 
 export type WebhookPayloadData = ContentWebhookPayloadData | TranslationWebhookPayloadData;
+
+/** The body of a delivery (JSON), signed as it is sent. Each event carries its own `data`. */
+export type WebhookPayload = { spaceId: string; timestamp: string } & (
+  | { event: ContentWebhookEvent; data: ContentWebhookPayloadData }
+  | { event: TranslationWebhookEvent; data: TranslationWebhookPayloadData }
+);
 
 export interface WebhookLogBase {
   id: string;

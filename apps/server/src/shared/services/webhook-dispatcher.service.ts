@@ -1,6 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
-import { WebhookErrorType, WebhookEvent, WebhookStatus } from '@localess/shared';
+import {
+  type ContentWebhookEvent,
+  type ContentWebhookPayloadData,
+  type TranslationWebhookEvent,
+  WebhookErrorType,
+  WebhookEvent,
+  type WebhookPayload,
+  type WebhookPayloadData,
+  WebhookStatus,
+} from '@localess/shared';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
@@ -15,13 +24,6 @@ import { maskWebhookUrl } from '../utils/webhook-url.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
-
-export interface WebhookPayload {
-  event: WebhookEvent;
-  spaceId: string;
-  timestamp: string;
-  data: { id: string; fullSlug: string } | Record<string, never>;
-}
 
 /**
  * Delivers webhook events (ported from functions/src/utils/webhook-utils.ts): one POST per enabled
@@ -40,9 +42,13 @@ export class WebhookDispatcher implements OnApplicationShutdown {
     private readonly webhookDeliveryRepository: WebhookDeliveryRepository,
   ) {}
 
-  /** Fire-and-forget: never throws, never delays the caller. */
-  dispatch(spaceId: string, event: WebhookEvent, data: WebhookPayload['data'] = {}): void {
-    const payload: WebhookPayload = { event, spaceId, timestamp: new Date().toISOString(), data };
+  /** Fire-and-forget: never throws, never delays the caller. A content event carries the content's id and full slug. */
+  dispatch(spaceId: string, event: ContentWebhookEvent, data: ContentWebhookPayloadData): void;
+  /** Fire-and-forget: never throws, never delays the caller. A translation event carries no data. */
+  dispatch(spaceId: string, event: TranslationWebhookEvent): void;
+  dispatch(spaceId: string, event: WebhookEvent, data: WebhookPayloadData = {}): void {
+    // The signatures above pair each event with its data.
+    const payload = { event, spaceId, timestamp: new Date().toISOString(), data } as WebhookPayload;
     const delivery = this.deliverAll(payload)
       .catch(error => this.logger.error(`Webhook dispatch for ${event} failed: ${error}`))
       .finally(() => this.inFlight.delete(delivery));
