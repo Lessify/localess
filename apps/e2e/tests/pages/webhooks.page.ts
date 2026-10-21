@@ -10,6 +10,10 @@ export interface WebhookInput {
   events?: string[];
   /** Ticks "Sign deliveries" (adding only): the server makes a secret, shown once. */
   signed?: boolean;
+  /** Headers to add, name → value ("Add Header", a new row each). */
+  headers?: Record<string, string>;
+  /** Kept headers (editing) to remove, by name. */
+  removeHeaders?: string[];
 }
 
 /** Space → Developers → Webhooks: the list (`/developers/webhooks`) and a webhook's page with its logs (`/:id`). */
@@ -132,6 +136,21 @@ export class WebhooksPage {
       // Closes the list (Escape would close the dialog once the list is gone).
       await form.getByRole('heading', { name: title }).click();
       await expect(this.page.getByRole('listbox')).toHaveCount(0);
+    }
+    for (const name of input.removeHeaders ?? []) {
+      const rows = form.getByRole('group', { name: 'Headers (Optional)' }).locator(':scope > div');
+      const index = await rows.evaluateAll(
+        (all, wanted) => all.findIndex(row => (row.querySelector('input') as HTMLInputElement).value === wanted),
+        name,
+      );
+      expect(index, `header ${name}`).toBeGreaterThanOrEqual(0);
+      await form.getByRole('button', { name: `Remove header ${index + 1}` }).click();
+    }
+    for (const [name, value] of Object.entries(input.headers ?? {})) {
+      await form.getByRole('button', { name: 'Add Header' }).click();
+      const count = await form.getByRole('group', { name: 'Headers (Optional)' }).locator(':scope > div').count();
+      await form.getByLabel(`Header ${count} name`).fill(name);
+      await form.getByLabel(`Header ${count} value`).fill(value);
     }
     if (input.signed) {
       // The Spartan checkbox is a button with role checkbox: clicked, not `check()`ed.

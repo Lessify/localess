@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { zMultiValue, zPageable, zSearch } from './page.zod.js';
-import { WEBHOOK_LOG_SORT_FIELDS, WEBHOOK_SORT_FIELDS, WebHookEvent, WebHookStatus } from './webhook.model.js';
+import { WEBHOOK_HEADERS_MAX, WEBHOOK_LOG_SORT_FIELDS, WEBHOOK_SORT_FIELDS, WebHookEvent, WebHookStatus } from './webhook.model.js';
 
 // App API requests of webhooks.
 
@@ -35,21 +35,48 @@ export const zWebHookLogPageable = zPageable(WEBHOOK_LOG_SORT_FIELDS, 'createdAt
 });
 export type WebHookLogPageable = z.infer<typeof zWebHookLogPageable>;
 
-/** `PUT …/webhooks/:webhookId`: the whole webhook again; headers are kept when left out. */
-export const zWebHookUpdate = z.strictObject({
+/** A header name (an HTTP token). Which ones Localess sets itself, and refuses, is the server's rule. */
+const zWebHookHeaderName = z
+  .string()
+  .max(100)
+  .regex(/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/, 'Not a valid header name');
+/** A header value: one line. */
+const zWebHookHeaderValue = z
+  .string()
+  .min(1)
+  .max(2000)
+  .regex(/^[^\r\n]*$/, 'A header value is one line');
+const headersOf = <V extends z.ZodType>(value: V) =>
+  z.record(zWebHookHeaderName, value).refine(it => Object.keys(it).length <= WEBHOOK_HEADERS_MAX, `At most ${WEBHOOK_HEADERS_MAX} headers`);
+
+const zWebHookFields = {
   name: z.string().trim().min(1).max(200),
   url: zWebHookUrl,
   events: z.array(z.enum(WEBHOOK_EVENTS)).min(1),
-  headers: z.record(z.string().max(200), z.string().max(2000)).optional(),
-});
-export type WebHookUpdate = z.infer<typeof zWebHookUpdate>;
+};
 
 /**
- * `POST /api/app/spaces/:spaceId/webhooks`. `signed`: the server generates a signing secret, answered once. The secret
- * is never typed: `POST …/:webhookId/secret` makes a new one, `DELETE` removes it.
+ * `POST /api/app/spaces/:spaceId/webhooks`. `headers`: sent with every delivery (a value is never answered back).
+ * `signed`: the server generates a signing secret, answered once; the secret is never typed: `POST …/:webhookId/secret`
+ * makes a new one, `DELETE` removes it.
  */
-export const zWebHookCreate = zWebHookUpdate.extend({ signed: z.boolean().optional() });
+export const zWebHookCreate = z.strictObject({
+  ...zWebHookFields,
+  headers: headersOf(zWebHookHeaderValue).optional(),
+  signed: z.boolean().optional(),
+});
 export type WebHookCreate = z.infer<typeof zWebHookCreate>;
+
+/**
+ * `PUT …/webhooks/:webhookId`: the whole webhook again. `headers` is every header it keeps: a value replaces, `null` keeps
+ * the value the header has (values are never answered, so the form can't send them back), a header left out is
+ * removed. Without `headers`, all are kept.
+ */
+export const zWebHookUpdate = z.strictObject({
+  ...zWebHookFields,
+  headers: headersOf(zWebHookHeaderValue.nullable()).optional(),
+});
+export type WebHookUpdate = z.infer<typeof zWebHookUpdate>;
 
 /** `PATCH …/webhooks/:webhookId/status`. */
 export const zWebHookStatusUpdate = z.strictObject({ enabled: z.boolean() });

@@ -48,6 +48,47 @@
     }
   </div>
 
+  <div hlmField>
+    <span hlmFieldLabel id="headers-label">Headers (Optional)</span>
+    <hlm-field-description>
+      Sent with every delivery, e.g. <code>Authorization</code> for an API. A value is never shown again: leave a kept one empty to keep it.
+    </hlm-field-description>
+    <div formArrayName="headers" class="flex flex-col gap-2" role="group" aria-labelledby="headers-label">
+      @for (header of headers.controls; track header; let i = $index) {
+        <div [formGroupName]="i" class="flex items-start gap-2">
+          <input
+            hlmInput
+            formControlName="name"
+            placeholder="Name"
+            autocomplete="off"
+            class="w-2/5"
+            [attr.aria-label]="'Header ' + (i + 1) + ' name'" />
+          <input
+            hlmInput
+            type="password"
+            formControlName="value"
+            autocomplete="new-password"
+            data-1p-ignore
+            data-lpignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            class="flex-1"
+            [placeholder]="header.controls['kept'].value ? '•••••• kept' : 'Value'"
+            [attr.aria-label]="'Header ' + (i + 1) + ' value'" />
+          <button hlmBtn type="button" size="icon" variant="ghost" (click)="removeHeader(i)" [attr.aria-label]="'Remove header ' + (i + 1)">
+            <ng-icon hlm size="sm" name="lucideX" />
+          </button>
+        </div>
+      }
+    </div>
+    @if (headers.length < headersMax) {
+      <button hlmBtn type="button" variant="outline" size="sm" class="self-start" (click)="addHeader()">
+        <ng-icon hlm size="sm" name="lucidePlus" />
+        Add Header
+      </button>
+    }
+  </div>
+
   @if (!isEdit) {
     <div hlmField class="flex-row items-start gap-3">
       <hlm-checkbox inputId="signed" formControlName="signed" />

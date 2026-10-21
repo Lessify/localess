@@ -47,7 +47,7 @@ interface WebHook {
   url: string;
   enabled: boolean;
   events: WebHookEvent[];
-  headers?: Record<string, string>;  // custom request headers
+  headerNames?: string[];            // custom request headers: names only, never their values
   hasSecret: boolean;                // whether deliveries are signed
   secret?: string;                   // whsec_…: only in the answer that made it
   createdAt: string;  // ISO 8601
@@ -60,6 +60,13 @@ The signing secret (`webhooks.secret`) is made by the server and never typed: `P
 Every other answer has only `hasSecret` (`toWebhook`, `shared/transformers/webhook.transformer.ts`, lists every field it
 sends), so it doesn't reach the browser again, its dev tools or a proxy's logs. `DELETE …/:webhookId/secret` stops
 signing. A request that sends `secret` is a 400.
+
+Custom headers (an `Authorization` token for an API, a key for a purge endpoint) are credentials too: their values are
+write-only. A webhook answers `headerNames` only. Create takes `headers: { name: value }`; update takes every header the
+webhook keeps, a value replaces, `null` keeps the one it has, a header left out is removed (without `headers`, all are
+kept). At most 20; a name is an HTTP token, a value one line of at most 2000 characters; a name Localess sets itself
+(see [Destination restrictions](#destination-restrictions-ssrf-protection)) or one given twice (case-insensitive) is a 400,
+and so is `null` for a header that has no value.
 
 ### Events
 
@@ -118,7 +125,7 @@ Delivery runs from the Localess server, inside your network, and the URL and hea
 
 - **URL** (`checkWebhookUrl`): `https:` only, on the default port, with no credentials in the URL. `localhost`, `*.localhost`, `*.internal`, `metadata.google.internal` and private IP literals are refused. The WHATWG URL parser normalises shorthand forms such as `0x7f.1` and `2130706433` before the check.
 - **Resolved address** (`isBlockedAddress`, applied in the socket's DNS `lookup`): the connection is refused if the host resolves to any loopback, private, link-local, CGNAT, multicast, reserved or documentation range, IPv4 or IPv6, including IPv4-mapped IPv6. The check runs on the exact address being connected to, so DNS rebinding can't get around it.
-- **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` or `webhook-*` header. Those are dropped.
+- **Headers** (`sanitizeWebhookHeaders`): custom headers can't set `Host`, `Metadata-Flavor`, `Content-Length`, `Transfer-Encoding`, `Connection`, `Content-Type`, `User-Agent`, or any `X-Webhook-*` or `webhook-*` header: saving one is a 400 (`isReservedWebhookHeader`), and one stored before is dropped at delivery.
 - **Local development** (`LOCALESS_WEBHOOK_ALLOW_INTERNAL=true`, default `false`): `http:` and local or private targets are allowed, and the resolved-address check is skipped, so a local receiver can be used. Never enable it in production.
 
 A refused delivery sends nothing. It is logged as a `NETWORK` failure with `errorMessage` "Webhook URL is not allowed: …".
@@ -252,6 +259,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 - `name`: required, 3–50 chars, no leading/trailing spaces
 - `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhookService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
+- Headers (optional, "Add Header"): a name and a value per row. Editing, a header shows its name (fixed) and an empty value: left empty it is kept, typed it is replaced; removing the row removes the header
 - "Sign deliveries" (adding only): the server makes a secret, shown once after saving; signing an existing webhook is on its page (Signing card)
 
 Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) shows one page from the server (`PagedList`, `ll-paginator`): the sort headers, the search box and the Status / Events filters change the query. It supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.

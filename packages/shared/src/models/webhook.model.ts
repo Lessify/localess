@@ -10,12 +10,16 @@ export interface WebHook {
   url: string;
   enabled: boolean;
   events: WebHookEvent[];
-  headers?: Record<string, string>;
+  /** The custom headers' names; their values (often credentials) are never answered. */
+  headerNames?: string[];
   hasSecret: boolean;
   secret?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
+
+/** At most this many custom headers on a webhook. */
+export const WEBHOOK_HEADERS_MAX = 20;
 
 /** What a space's webhook list sorts by: the name (case-insensitive, the default), enabled first or last, last updated. */
 export const WEBHOOK_SORT_FIELDS = ['name', 'enabled', 'updatedAt'] as const;

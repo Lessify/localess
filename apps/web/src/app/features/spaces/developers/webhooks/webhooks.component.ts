@@ -6,7 +6,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { PagedList } from '@core/utils/paged-list';
-import { WebHook, WebHookEvent } from '@localess/shared';
+import { WebHook, WebHookCreate, WebHookEvent, WebHookUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideEllipsisVertical,
@@ -39,7 +39,7 @@ import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { WebHookService } from './webhook.service';
 import { WebhookDialogComponent } from './webhook-dialog/webhook-dialog.component';
-import { WebhookDialogContext, WebhookDialogResult } from './webhook-dialog/webhook-dialog.model';
+import { WebhookDialogContext } from './webhook-dialog/webhook-dialog.model';
 import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from './webhook-secret-dialog/webhook-secret-dialog.component';
 
 /** The space's webhooks: one page from the server, by name unless sorted otherwise; reloads on a webhook change. */
@@ -153,7 +153,7 @@ export class WebhooksComponent {
   openAddDialog(): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<WebhookDialogResult>(WebhookDialogComponent, {
+      .open<WebHookCreate>(WebhookDialogComponent, {
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -181,7 +181,7 @@ export class WebhooksComponent {
   openEditDialog(element: WebHook): void {
     const spaceId = this.spaceStore.selectedSpaceId();
     this.dialog
-      .open<WebhookDialogResult, WebhookDialogContext>(WebhookDialogComponent, {
+      .open<WebHookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
         context: element,
         contentClass: DIALOG_WIDTH_SM,
       })

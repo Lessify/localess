@@ -224,6 +224,7 @@ export interface WebhookDto {
   events: string[];
   enabled: boolean;
   hasSecret: boolean;
+  headerNames?: string[];
 }
 
 export interface EnvironmentDto {

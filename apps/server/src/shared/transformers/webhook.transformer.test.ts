@@ -50,9 +50,12 @@ describe('webhook transformers', () => {
       createdAt: '2026-10-21T08:00:00.000Z',
       updatedAt: '2026-10-21T08:00:00.000Z',
     });
-    expect(toWebhook({ ...webhook, secret: null, headers: { 'X-Site': 'a' } })).toMatchObject({
+    const withHeaders = toWebhook({ ...webhook, secret: null, headers: { Authorization: 'Bearer t', 'X-Site': 'a' } });
+    expect(withHeaders).not.toHaveProperty('headers');
+    expect(JSON.stringify(withHeaders)).not.toContain('Bearer');
+    expect(withHeaders).toMatchObject({
       hasSecret: false,
-      headers: { 'X-Site': 'a' },
+      headerNames: ['Authorization', 'X-Site'],
     });
   });
 

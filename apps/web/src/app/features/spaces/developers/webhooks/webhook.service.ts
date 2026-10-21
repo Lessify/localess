@@ -26,16 +26,22 @@ export class WebHookService {
     return liveQueryWith(this.events, { spaceId, entities: ['webhooks'], id }, () => this.http.get<WebHook>(`${this.base(spaceId)}/${id}`));
   }
 
-  /** The new webhook; with `signed`, its `secret`, answered this once. */
+  /** The new webhook; with `signed`, its `secret`, answered this once. Headers carry their values. */
   create(spaceId: string, entity: WebHookCreate): Observable<WebHook> {
-    const body: WebHookCreate = this.body(entity);
+    const body: WebHookCreate = { name: entity.name, url: entity.url, events: entity.events };
+    if (entity.headers && Object.keys(entity.headers).length) body.headers = entity.headers;
     if (entity.signed) body.signed = true;
     return this.http.post<WebHook>(this.base(spaceId), body);
   }
 
-  /** Headers are only replaced when sent; the secret has its own calls. */
+  /**
+   * `headers`, when given, is every header kept: a value replaces, `null` keeps the one it has, one left out goes; the
+   * secret has its own calls.
+   */
   update(spaceId: string, id: string, entity: WebHookUpdate): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}`, this.body(entity));
+    const body: WebHookUpdate = { name: entity.name, url: entity.url, events: entity.events };
+    if (entity.headers) body.headers = entity.headers;
+    return this.http.put<void>(`${this.base(spaceId)}/${id}`, body);
   }
 
   /** A new signing secret (the one before stops): the webhook with its `secret`, answered this once. */
@@ -61,12 +67,5 @@ export class WebHookService {
     return liveQueryWith(this.events, { spaceId, entities: ['webhook_logs'], id: webhookId }, () =>
       this.http.get<Page<WebHookLog>>(`${this.base(spaceId)}/${webhookId}/logs`, { params }),
     );
-  }
-
-  /** Empty headers are left out (kept on update). */
-  private body(entity: WebHookUpdate): WebHookUpdate {
-    const body: WebHookUpdate = { name: entity.name, url: entity.url, events: entity.events };
-    if (entity.headers) body.headers = entity.headers;
-    return body;
   }
 }

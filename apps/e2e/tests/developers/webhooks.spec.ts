@@ -257,6 +257,42 @@ test.describe('Developers → Webhooks', () => {
     expect(receiver.requests[2].headers).not.toHaveProperty('webhook-signature');
   });
 
+  test('a header is sent with every delivery, its value never shown; kept on edit, then removed', async ({ page, api, space }) => {
+    const list = new WebhooksPage(page);
+    await list.goto(space.id);
+
+    // Action: added with an Authorization header; the API answers its name only.
+    await list.create({
+      name: 'Api',
+      url: receiver.url,
+      events: ['translation.published'],
+      headers: { Authorization: 'Bearer e2e-token' },
+    });
+    const [stored] = await api.findWebhooks(space.id);
+    expect(stored).toMatchObject({ headerNames: ['Authorization'] });
+    expect(JSON.stringify(stored)).not.toContain('e2e-token');
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(1);
+    expect(receiver.requests[0].headers['authorization']).toBe('Bearer e2e-token');
+
+    // Pre-check → action: the Edit form holds the name, never the value; renamed, the header is kept.
+    const form = await list.openEdit('Api', { name: 'Api renamed' });
+    await expect(form.getByLabel('Header 1 name')).toHaveValue('Authorization');
+    await expect(form.getByLabel('Header 1 value')).toHaveValue('');
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(2);
+    expect(receiver.requests[1].headers['authorization']).toBe('Bearer e2e-token');
+
+    // Action → post-check: removed, no longer sent.
+    await list.edit('Api renamed', { removeHeaders: ['Authorization'] });
+    expect((await api.findWebhooks(space.id))[0]).not.toHaveProperty('headerNames');
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(3);
+    expect(receiver.requests[2].headers).not.toHaveProperty('authorization');
+  });
+
   test("the webhook page logs a failed delivery with the receiver's status code", async ({ page, api, space }) => {
     const webhook = await api.createWebhook(space.id, { name: 'Failing', url: receiver.url, events: ['translation.published'] });
     receiver.status = 500;

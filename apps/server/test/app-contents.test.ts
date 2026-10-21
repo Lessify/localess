@@ -83,6 +83,7 @@ describe('app API: contents', () => {
       url: `http://127.0.0.1:${(receiver.address() as AddressInfo).port}/hook`,
       events: ['content.published', 'content.unpublished', 'content.changed'],
       secret: SECRET,
+      headers: { Authorization: 'Bearer site-token' },
     });
   });
 
@@ -290,6 +291,7 @@ describe('app API: contents', () => {
       const [delivery] = received;
       expect(delivery.headers['x-webhook-event']).toBe('content.changed');
       expect(delivery.headers['webhook-signature']).toMatch(/^v1,/);
+      expect(delivery.headers['authorization']).toBe('Bearer site-token');
       expect(new Webhook(SECRET).verify(delivery.body, delivery.headers as Record<string, string>)).toMatchObject({
         event: 'content.changed',
       });

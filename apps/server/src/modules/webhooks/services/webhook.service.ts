@@ -6,9 +6,12 @@ import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
-import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
+import { checkWebhookUrl, isReservedWebhookHeader } from '../../../shared/utils/webhook-request.js';
 import { newWebhookSecret } from '../../../shared/utils/webhook-signature.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
+
+/** No headers is `null` (the column), not `{}`. */
+const nonEmpty = (headers: Record<string, string>): Record<string, string> | null => (Object.keys(headers).length ? headers : null);
 
 /**
  * Webhook configuration (the delivery logs: `WebhookLogService`); delivery is `WebhookDispatcher` (shared). Every route
@@ -49,27 +52,31 @@ export class WebhookService {
   async create(spaceId: string, input: WebHookCreate): Promise<WebHook> {
     this.assertDeliverable(input.url);
     await this.requireSpace(spaceId);
+    this.assertHeaders(Object.keys(input.headers ?? {}));
     const secret = input.signed ? newWebhookSecret() : null;
     const webhookId = await this.webhookRepository.create(spaceId, {
       name: input.name,
       url: input.url,
       events: input.events,
-      headers: input.headers ?? null,
+      headers: nonEmpty(input.headers ?? {}),
       secret,
     });
     const webhook = toWebhook(await this.findWebhook(spaceId, webhookId));
     return secret ? { ...webhook, secret } : webhook;
   }
 
-  /** Headers are only replaced when sent (the form leaves them out to keep them); the secret has its own routes. */
+  /**
+   * `headers` is every header the webhook keeps: a value replaces, `null` keeps the current value, one left out goes;
+   * without `headers` all are kept. The secret has its own routes.
+   */
   async update(spaceId: string, webhookId: string, input: WebHookUpdate): Promise<WebHook> {
     this.assertDeliverable(input.url);
-    await this.requireWebhook(spaceId, webhookId);
+    const current = await this.requireWebhook(spaceId, webhookId);
     await this.webhookRepository.update(spaceId, webhookId, {
       name: input.name,
       url: input.url,
       events: input.events,
-      ...(input.headers ? { headers: input.headers } : {}),
+      ...(input.headers ? { headers: this.mergeHeaders(current.headers ?? {}, input.headers) } : {}),
     });
     return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
@@ -101,6 +108,27 @@ export class WebhookService {
   async remove(spaceId: string, webhookId: string): Promise<void> {
     await this.requireWebhook(spaceId, webhookId);
     await this.webhookRepository.delete(spaceId, webhookId);
+  }
+
+  /** The headers to store: a `null` value keeps the one the header has (a 400 when it has none). */
+  private mergeHeaders(current: Record<string, string>, input: Record<string, string | null>): Record<string, string> | null {
+    this.assertHeaders(Object.keys(input));
+    const headers: Record<string, string> = {};
+    for (const [name, value] of Object.entries(input)) {
+      const kept = value ?? Object.entries(current).find(([it]) => it.toLowerCase() === name.toLowerCase())?.[1];
+      if (kept === undefined) throw new BadRequestException(`Header ${name} has no value to keep`);
+      headers[name] = kept;
+    }
+    return nonEmpty(headers);
+  }
+
+  /** Names Localess sets itself are refused, and a name given twice (headers are case-insensitive). */
+  private assertHeaders(names: string[]): void {
+    const reserved = names.find(isReservedWebhookHeader);
+    if (reserved) throw new BadRequestException(`Header ${reserved} is set by Localess`);
+    const lower = names.map(it => it.toLowerCase());
+    const twice = names.find((_, index) => lower.indexOf(lower[index]) !== index);
+    if (twice) throw new BadRequestException(`Header ${twice} is given twice`);
   }
 
   /** The space first: its 404 comes before the webhook's. */

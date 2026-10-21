@@ -115,6 +115,12 @@ export function checkWebhookUrl(raw: unknown, allowInternal: boolean): WebhookUr
   return { ok: true, url };
 }
 
+/** Whether a custom header would override a transport or Localess header (refused on save, dropped at delivery). */
+export function isReservedWebhookHeader(name: string): boolean {
+  const lower = name.toLowerCase();
+  return RESERVED_HEADERS.has(lower) || lower.startsWith('x-webhook-') || lower.startsWith('webhook-');
+}
+
 /**
  * Drops custom headers that would override transport or Localess headers.
  *
@@ -124,8 +130,7 @@ export function checkWebhookUrl(raw: unknown, allowInternal: boolean): WebhookUr
 export function sanitizeWebhookHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   const safe: Record<string, string> = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
-    const lower = name.toLowerCase();
-    if (RESERVED_HEADERS.has(lower) || lower.startsWith('x-webhook-') || lower.startsWith('webhook-')) continue;
+    if (isReservedWebhookHeader(name)) continue;
     if (typeof value !== 'string') continue;
     safe[name] = value;
   }

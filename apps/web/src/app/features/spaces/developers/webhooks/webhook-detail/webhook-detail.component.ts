@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { PagedList } from '@core/utils/paged-list';
-import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
+import { WebHook, WebHookEvent, WebHookLog, WebHookStatus, WebHookUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideArrowLeft,
@@ -39,7 +39,7 @@ import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { WebHookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
-import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/webhook-dialog.model';
+import { WebhookDialogContext } from '../webhook-dialog/webhook-dialog.model';
 import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../webhook-secret-dialog/webhook-secret-dialog.component';
 
 @Component({
@@ -157,7 +157,7 @@ export class WebhookDetailComponent implements OnInit {
     const webhook = this.webhook();
     if (!webhook) return;
     this.dialog
-      .open<WebhookDialogResult, WebhookDialogContext>(WebhookDialogComponent, {
+      .open<WebHookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
         context: webhook,
         contentClass: DIALOG_WIDTH_SM,
       })

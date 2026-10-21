@@ -169,6 +169,8 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
   describe('webhooks', () => {
     const base = `/api/app/spaces/${S1}/webhooks`;
     let hook: { id: string };
+    const headersOf = async (id: string) =>
+      (await t.db.select({ headers: webhooks.headers }).from(webhooks).where(eq(webhooks.id, id)))[0].headers;
     const secretOf = async (id: string) =>
       (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, id)))[0].secret;
 
@@ -205,7 +207,8 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       });
       expect(created.statusCode).toBe(201);
       hook = created.json();
-      expect(hook).toMatchObject({ enabled: true, hasSecret: true, headers: { 'X-Site': 'a' }, secret: expect.stringMatching(/^whsec_/) });
+      expect(hook).toMatchObject({ enabled: true, hasSecret: true, headerNames: ['X-Site'], secret: expect.stringMatching(/^whsec_/) });
+      expect(hook).not.toHaveProperty('headers');
       expect(await secretOf(hook.id)).toBe(created.json().secret);
       // Shown once: never again.
       expect((await manager.get(`${base}/${hook.id}`)).json()).not.toHaveProperty('secret');
@@ -216,11 +219,57 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const before = await secretOf(hook.id);
       const body = { name: 'Site 2', url: 'https://example.com/v2', events: ['content.published', 'content.unpublished'] };
       const updated = (await manager.put(`${base}/${hook.id}`, body)).json();
-      expect(updated).toMatchObject({ ...body, hasSecret: true, headers: { 'X-Site': 'a' } });
+      expect(updated).toMatchObject({ ...body, hasSecret: true, headerNames: ['X-Site'] });
+      expect(await headersOf(hook.id)).toEqual({ 'X-Site': 'a' });
       expect(updated).not.toHaveProperty('secret');
       expect(await secretOf(hook.id)).toBe(before);
       expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: 'n3w' })).statusCode).toBe(400);
       expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: null })).statusCode).toBe(400);
+    });
+
+    it('never answers a header value; an update keeps (null), replaces or removes each header', async () => {
+      const body = { name: 'Headers', url: 'https://example.com/h', events: ['content.published'] };
+      const created = await manager.post(base, { ...body, headers: { Authorization: 'Bearer t0k3n', 'X-Site': 'a' } });
+      expect(created.json()).toMatchObject({ headerNames: ['Authorization', 'X-Site'] });
+      const id = created.json().id;
+      for (const answer of [created.body, (await manager.get(`${base}/${id}`)).body, (await manager.get(base)).body]) {
+        expect(answer).not.toContain('t0k3n');
+      }
+
+      // Kept (null), replaced, and one added; X-Site left out: removed.
+      const kept = await manager.put(`${base}/${id}`, { ...body, headers: { authorization: null, 'X-New': 'n' } });
+      expect(kept.json().headerNames).toEqual(['authorization', 'X-New']);
+      expect(await headersOf(id)).toEqual({ authorization: 'Bearer t0k3n', 'X-New': 'n' });
+      await manager.put(`${base}/${id}`, { ...body, headers: { authorization: 'Bearer other', 'X-New': null } });
+      expect(await headersOf(id)).toEqual({ authorization: 'Bearer other', 'X-New': 'n' });
+      // Without headers: all kept; an empty set: none.
+      await manager.put(`${base}/${id}`, body);
+      expect(await headersOf(id)).toEqual({ authorization: 'Bearer other', 'X-New': 'n' });
+      const none = await manager.put(`${base}/${id}`, { ...body, headers: {} });
+      expect(none.json()).not.toHaveProperty('headerNames');
+      expect(await headersOf(id)).toBeNull();
+
+      for (const [headers, message] of [
+        [{ 'X-Gone': null }, 'Header X-Gone has no value to keep'],
+        [{ 'webhook-signature': 'v1,x' }, 'Header webhook-signature is set by Localess'],
+        [{ 'X-Webhook-Event': 'x' }, 'Header X-Webhook-Event is set by Localess'],
+        [{ Host: 'internal' }, 'Header Host is set by Localess'],
+        [{ 'X-A': 'a', 'x-a': 'b' }, 'Header x-a is given twice'],
+      ] as const) {
+        const response = await manager.put(`${base}/${id}`, { ...body, headers });
+        expect(response.statusCode, message).toBe(400);
+        expect(response.json().message).toBe(message);
+      }
+      for (const headers of [
+        { 'Bad Name': 'x' },
+        { 'X-A': 'line\nbreak' },
+        { 'X-A': '' },
+        Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`X-${i}`, 'v'])),
+      ]) {
+        expect((await manager.post(base, { ...body, headers })).statusCode).toBe(400);
+      }
+      expect((await manager.post(base, { ...body, headers: { 'X-A': null } })).statusCode).toBe(400);
+      expect((await manager.delete(`${base}/${id}`)).statusCode).toBe(204);
     });
 
     it('makes a new secret (shown once, the old one stops) and removes it', async () => {

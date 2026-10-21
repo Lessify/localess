@@ -60,9 +60,14 @@ describe('WebHookService', () => {
     expect(await signed).toMatchObject({ secret: 'whsec_x' });
   });
 
-  it('update() puts the webhook with headers when given', async () => {
+  it('update() puts the webhook with its headers (null keeps a value) when given', async () => {
     const service = setup();
-    const entity = { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_CHANGED], headers: { 'X-Key': 'v' } };
+    const entity = {
+      name: 'Hook',
+      url: 'https://example.com',
+      events: [WebHookEvent.CONTENT_CHANGED],
+      headers: { 'X-Key': 'v', Authorization: null },
+    };
     const done = firstValueFrom(service.update('space-1', 'w1', entity));
     const request = http.expectOne({ method: 'PUT', url: `${base}/w1` });
     expect(request.request.body).toEqual(entity);

@@ -33,7 +33,7 @@ describe('WebhookDialogComponent', () => {
   it('starts with empty defaults and an invalid form when there is no data', () => {
     const { component } = setup(CREATE_CONTEXT);
 
-    expect(component.form.value).toEqual({ name: '', url: '', events: [], signed: false });
+    expect(component.form.value).toEqual({ name: '', url: '', events: [], signed: false, headers: [] });
     expect(component.form.invalid).toBe(true);
   });
 
@@ -63,8 +63,57 @@ describe('WebhookDialogComponent', () => {
       url: 'https://example.com/hook',
       events: [WebHookEvent.CONTENT_PUBLISHED],
       signed: false,
+      // A kept header's name is fixed (disabled: left out of `value`), its value empty.
+      headers: [],
     });
     expect(component.form.valid).toBe(true);
+  });
+
+  it('adds headers with their values when adding a webhook', () => {
+    const { component, close } = setup(CREATE_CONTEXT);
+    component.form.patchValue({ name: 'Slack', url: 'https://example.com/hook', events: [WebHookEvent.CONTENT_PUBLISHED] });
+    component.addHeader();
+    expect(component.form.valid).toBe(false); // a new header needs a name and a value
+    component.headers.at(0).patchValue({ name: 'Authorization', value: 'Bearer t' });
+    component.addHeader();
+    component.headers.at(1).patchValue({ name: 'Bad Name', value: 'x' });
+    expect(component.form.valid).toBe(false);
+    component.removeHeader(1);
+    expect(component.form.valid).toBe(true);
+
+    component.save();
+
+    expect(close).toHaveBeenLastCalledWith({
+      name: 'Slack',
+      url: 'https://example.com/hook',
+      events: [WebHookEvent.CONTENT_PUBLISHED],
+      headers: { Authorization: 'Bearer t' },
+    });
+  });
+
+  it('editing keeps a header left empty (null), replaces a typed one, and drops a removed one', () => {
+    const { component, close } = setup({ ...existing, headerNames: ['Authorization', 'X-Site', 'X-Old'] } as WebHook);
+    expect(component.headers.length).toBe(3);
+    expect(component.headers.at(0).controls['name'].disabled).toBe(true);
+    expect(component.form.valid).toBe(true); // a kept value may stay empty
+
+    component.headers.at(1).patchValue({ value: 'b' });
+    component.removeHeader(2);
+    component.addHeader();
+    component.headers.at(2).patchValue({ name: 'X-New', value: 'n' });
+    component.save();
+
+    expect(close).toHaveBeenLastCalledWith({
+      name: 'Slack',
+      url: 'https://example.com/hook',
+      events: [WebHookEvent.CONTENT_PUBLISHED],
+      headers: { Authorization: null, 'X-Site': 'b', 'X-New': 'n' },
+    });
+
+    // Every header removed: an empty set, so the server removes them all.
+    while (component.headers.length) component.removeHeader(0);
+    component.save();
+    expect(close).toHaveBeenLastCalledWith(expect.objectContaining({ headers: {} }));
   });
 
   it('asks for a signed webhook only when adding one (signing an existing one is on its page)', () => {
@@ -81,7 +130,7 @@ describe('WebhookDialogComponent', () => {
     const editing = setup(existing);
     editing.component.form.patchValue({ signed: true });
     editing.component.save();
-    expect(editing.close).toHaveBeenLastCalledWith(base);
+    expect(editing.close).toHaveBeenLastCalledWith({ ...base, headers: {} });
   });
 
   it('rejects a url without an http(s) scheme', () => {

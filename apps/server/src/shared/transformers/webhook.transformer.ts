@@ -3,7 +3,10 @@ import { type WebHook, WebHookErrorType, type WebHookEvent, type WebHookLog, Web
 import type { WebhookEntity } from '../entities/webhook.entity.js';
 import type { WebhookLogEntity } from '../entities/webhook-log.entity.js';
 
-/** A webhook as the App API returns it (developers only): no `spaceId`, and never the secret, only `hasSecret`. */
+/**
+ * A webhook as the App API returns it (developers only): no `spaceId`; the custom headers' names, never their values
+ * (often credentials); never the secret, only `hasSecret`.
+ */
 export function toWebhook(entity: WebhookEntity): WebHook {
   const webhook: WebHook = {
     id: entity.id,
@@ -15,7 +18,9 @@ export function toWebhook(entity: WebhookEntity): WebHook {
     createdAt: entity.createdAt.toISOString(),
     updatedAt: entity.updatedAt.toISOString(),
   };
-  if (entity.headers) webhook.headers = entity.headers;
+  // By name: jsonb keeps no order.
+  const headerNames = Object.keys(entity.headers ?? {}).sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+  if (headerNames.length) webhook.headerNames = headerNames;
   return webhook;
 }
 
