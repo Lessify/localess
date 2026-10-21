@@ -4,14 +4,10 @@ import { ConflictException, ForbiddenException, Injectable, NotFoundException } 
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
+import type { UserWithSignIn } from '../../../shared/queries/user.query.js';
 import { toUser } from '../../../shared/transformers/user.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { UserRepository } from '../repositories/user.repository.js';
-
-function found(user: UserEntity | undefined): UserEntity {
-  if (!user) throw new NotFoundException('User not found');
-  return user;
-}
 
 /**
  * Admin → Users (`ADMINS` only, on the controller): one role per user. At least one active admin always remains
@@ -26,30 +22,29 @@ export class UserService {
 
   /** One page of Admin → Users. */
   async findAll(query: UserPageable): Promise<Page<User>> {
-    const { rows, total } = await this.userRepository.findPage(query);
-    return toPage(await this.toUsers(rows), total, query, it => it);
+    const [rows, total] = await Promise.all([this.userRepository.findAll(query), this.userRepository.findAllCount(query)]);
+    return toPage(rows, total, query, toUser);
   }
 
   async findOne(id: string): Promise<User> {
-    return this.toUser(await this.requireUser(id));
+    return toUser(await this.requireUser(id));
   }
 
   /** Invites a user with a password and the role given (none: no access yet); the email is free (409 otherwise). */
   async create(input: UserInvite): Promise<User> {
-    if (await this.userRepository.findByEmail(input.email)) {
-      throw new ConflictException('A user with this email already exists');
-    }
-    const user = await this.userRepository.create(
+    if (await this.userRepository.existsByEmail(input.email)) throw new ConflictException('A user with this email already exists');
+    const id = await this.userRepository.create(
       { email: input.email, emailVerified: false, displayName: input.displayName || null, role: input.role ?? null },
       await hashPassword(input.password),
     );
-    return this.toUser(user);
+    return this.findOne(id);
   }
 
   /** A user's role (`null`: no access). The last active admin keeps theirs (`UserRepository`). */
   async update(id: string, input: UserUpdate): Promise<User> {
     await this.requireUser(id);
-    return this.toUser(found(await this.userRepository.update(id, { role: input.role })));
+    await this.userRepository.update(id, { role: input.role });
+    return this.findOne(id);
   }
 
   /** Blocks (or restores) sign-in; disabling signs the user out at once. Nobody disables themselves. */
@@ -57,7 +52,8 @@ export class UserService {
     const target = await this.requireUser(id);
     // An admin disabling themselves could lock the install out of user management.
     if (caller.id === target.id) throw new ForbiddenException();
-    return this.toUser(found(await this.userRepository.setDisabled(id, input.disabled)));
+    await this.userRepository.updateStatus(id, input.disabled);
+    return this.findOne(id);
   }
 
   /** A one-hour reset link for another user, at the app's public `origin`. */
@@ -66,25 +62,15 @@ export class UserService {
     return { url: link.url, expiresAt: link.expiresAt.toISOString() };
   }
 
+  /** Sessions, credentials and identities cascade. */
   async remove(id: string): Promise<void> {
     await this.requireUser(id);
-    // Sessions, credentials and identities cascade.
-    if (!(await this.userRepository.delete(id))) throw new NotFoundException('User not found');
+    await this.userRepository.delete(id);
   }
 
-  private async requireUser(id: string): Promise<UserEntity> {
-    return found(await this.userRepository.findById(id));
-  }
-
-  private async toUser(user: UserEntity): Promise<User> {
-    const [answer] = await this.toUsers([user]);
-    return answer;
-  }
-
-  /** The users with how each signs in, read in one query. */
-  private async toUsers(rows: UserEntity[]): Promise<User[]> {
-    if (!rows.length) return [];
-    const signIns = await this.userRepository.findSignIns(rows.map(it => it.id));
-    return rows.map(user => toUser(user, signIns.get(user.id) ?? { identities: [], hasPassword: false }));
+  private async requireUser(id: string): Promise<UserWithSignIn> {
+    const user = await this.userRepository.findOne(id);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 }

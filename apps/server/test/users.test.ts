@@ -1,7 +1,8 @@
 import { and, eq, ne } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { users } from '../src/infra/database/schema.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 describe('user management', () => {
@@ -164,9 +165,19 @@ describe('user management', () => {
         role: 'VIEWER',
       });
       const victimCookie = await login(t, 'victim@example.com', 'secret1');
+      const publish = vi.spyOn(t.app.get(EventService), 'publish');
       expect((await call(adminCookie, 'DELETE', `/api/app/users/${victim.id}`)).statusCode).toBe(204);
       expect((await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: victimCookie } })).statusCode).toBe(401);
       expect((await call(adminCookie, 'GET', `/api/app/users/${victim.id}`)).statusCode).toBe(404);
+      // Already gone: 404, and no second event.
+      expect((await call(adminCookie, 'DELETE', `/api/app/users/${victim.id}`)).json()).toMatchObject({
+        statusCode: 404,
+        message: 'User not found',
+      });
+      expect(publish.mock.calls.filter(([event]) => event.entity === 'users')).toEqual([
+        [{ spaceId: null, entity: 'users', id: victim.id, op: 'deleted' }, expect.anything()],
+      ]);
+      publish.mockRestore();
     });
   });
 

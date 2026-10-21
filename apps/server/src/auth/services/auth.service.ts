@@ -35,6 +35,6 @@ export class AuthService {
 
   /** The user as sign-in and `/api/auth/me` return it, with how they sign in. */
   async toUser(user: UserEntity): Promise<User> {
-    return toUser(user, await this.authUserRepository.findSignIn(user.id));
+    return toUser((await this.authUserRepository.findOneWithSignIn(user.id)) ?? user);
   }
 }

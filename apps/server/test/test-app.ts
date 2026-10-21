@@ -121,12 +121,14 @@ export interface TestUserSeed {
 export async function createUser(t: TestApp, seed: TestUserSeed): Promise<UserEntity> {
   const { UserRepository } = await import('../src/modules/users/repositories/user.repository.js');
   const { hashPassword } = await import('../src/auth/utils/password.js');
-  return t.app
+  const id = await t.app
     .get(UserRepository)
     .create(
       { email: seed.email, emailVerified: seed.emailVerified ?? false, displayName: seed.displayName ?? null, role: seed.role ?? null },
       seed.password ? await hashPassword(seed.password) : undefined,
     );
+  const [user] = await t.db.select().from(schema.users).where(eq(schema.users.id, id));
+  return user;
 }
 
 /** Creates a user with the given access and returns a signed-in session cookie. */

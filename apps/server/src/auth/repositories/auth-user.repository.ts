@@ -8,7 +8,7 @@ import { userCredentials, userIdentities, users } from '../../infra/database/sch
 import { type Transaction, transaction } from '../../infra/database/transaction.js';
 import type { UserEntity } from '../../shared/entities/user.entity.js';
 import type { UserCredentialEntity } from '../../shared/entities/user-credential.entity.js';
-import { findUserSignIns, type UserSignIn } from '../../shared/queries/user.query.js';
+import { USER_SIGN_IN, type UserWithSignIn } from '../../shared/queries/user.query.js';
 
 /** Users, their passwords and OAuth identities, as sign-in, OAuth and password reset need them. */
 @Injectable()
@@ -35,9 +35,9 @@ export class AuthUserRepository {
     return credential;
   }
 
-  /** How the user signs in (`findUserSignIns`). */
-  async findSignIn(userId: string): Promise<UserSignIn> {
-    return (await findUserSignIns(this.db, [userId])).get(userId) ?? { identities: [], hasPassword: false };
+  /** The user with how they sign in (`USER_SIGN_IN`), as `/api/auth/me` answers them. */
+  findOneWithSignIn(userId: string): Promise<UserWithSignIn | undefined> {
+    return this.db.query.users.findFirst({ where: eq(users.id, userId), with: USER_SIGN_IN });
   }
 
   /** The user signing in with this provider account. */

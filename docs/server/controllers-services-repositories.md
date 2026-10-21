@@ -90,7 +90,7 @@ repositories call it.
 
 Reworked so far: the Spaces and Webhooks modules (`REWORKED` in `apps/server/test/architecture.test.ts`). The others still read
 with `findPage` (rows and total together), count with `select({ … count() })` (assets, contents, schemas,
-translations, tasks, users) and some writes answer rows; each module moves to these shapes when it is reworked, and
+translations, tasks) and some writes answer rows; each module moves to these shapes when it is reworked, and
 joins `REWORKED` then.
 
 **Reading a space from another module:** `SpaceLookupRepository` (`shared/repositories/space-lookup.repository.ts`,

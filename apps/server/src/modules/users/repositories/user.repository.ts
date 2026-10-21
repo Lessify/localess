@@ -1,14 +1,14 @@
 import type { UserPageable } from '@localess/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, ne, or, type SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { sessions, userCredentials, users } from '../../../infra/database/schema.js';
 import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import { findUserSignIns, type UserSignIn } from '../../../shared/queries/user.query.js';
+import { USER_SIGN_IN, type UserWithSignIn } from '../../../shared/queries/user.query.js';
 import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 
 const SORT_COLUMNS = {
@@ -34,86 +34,66 @@ export class UserRepository {
     private readonly eventService: EventService,
   ) {}
 
-  /** One page by the query's sort (then the id, so ties page stably), and how many match its filters. */
-  async findPage(query: UserPageable): Promise<{ rows: UserEntity[]; total: number }> {
-    const conditions: SQL[] = [];
-    if (query.search) {
-      const pattern = containsPattern(query.search);
-      conditions.push(or(ilike(users.email, pattern), ilike(users.displayName, pattern)) as SQL);
-    }
-    if (query.active) conditions.push(eq(users.disabled, query.active === 'inactive'));
-    const where = and(...conditions);
+  /** One page by the query's sort (then the id, so ties page stably), each user with how they sign in. */
+  findAll(query: UserPageable): Promise<UserWithSignIn[]> {
     const order = query.direction === 'desc' ? desc : asc;
-    const rows = await this.db
-      .select()
-      .from(users)
-      .where(where)
-      .orderBy(order(SORT_COLUMNS[query.sort]), asc(users.id))
-      .limit(query.size)
-      .offset(offsetOf(query));
-    const [{ total }] = await this.db.select({ total: count() }).from(users).where(where);
-    return { rows, total };
-  }
-
-  async findById(id: string): Promise<UserEntity | undefined> {
-    if (!isUuid(id)) return undefined;
-    const [user] = await this.db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  /** Case-insensitive. */
-  async findByEmail(email: string): Promise<UserEntity | undefined> {
-    const [user] = await this.db
-      .select()
-      .from(users)
-      .where(sql`lower(${users.email}) = ${email.toLowerCase()}`);
-    return user;
-  }
-
-  /** How each user signs in (`findUserSignIns`). */
-  findSignIns(userIds: string[]): Promise<Map<string, UserSignIn>> {
-    return findUserSignIns(this.db, userIds);
-  }
-
-  /** A new user, with an argon2id password hash when given one. */
-  create(values: UserValues, passwordHash?: string, tx?: Transaction): Promise<UserEntity> {
-    return transaction(this.db, tx, async t => {
-      const [user] = await t
-        .insert(users)
-        .values({ id: newUuid(), ...values })
-        .returning();
-      if (passwordHash) {
-        await t.insert(userCredentials).values({ userId: user.id, passwordHash, hashAlgo: 'argon2id' });
-      }
-      await this.changed(user.id, 'created', t);
-      return user;
+    return this.db.query.users.findMany({
+      where: this.where(query),
+      orderBy: [order(SORT_COLUMNS[query.sort]), asc(users.id)],
+      limit: query.size,
+      offset: offsetOf(query),
+      with: USER_SIGN_IN,
     });
   }
 
-  /** `undefined` when there is no user `id`. */
-  update(id: string, values: UserUpdate, tx?: Transaction): Promise<UserEntity | undefined> {
+  /** How many users match the query's search and status. */
+  findAllCount(query: UserPageable): Promise<number> {
+    return this.db.$count(users, this.where(query));
+  }
+
+  /** The user with how they sign in. */
+  findOne(id: string): Promise<UserWithSignIn | undefined> {
+    return this.db.query.users.findFirst({ where: eq(users.id, id), with: USER_SIGN_IN });
+  }
+
+  /** Whether another user has this email (case-insensitive); `exceptId`: the user changing theirs. */
+  async existsByEmail(email: string, exceptId?: string): Promise<boolean> {
+    const sameEmail = sql`lower(${users.email}) = ${email.toLowerCase()}`;
+    return (await this.db.$count(users, exceptId ? and(sameEmail, ne(users.id, exceptId)) : sameEmail)) > 0;
+  }
+
+  /** A new user, with an argon2id password hash when given one. Answers the new user's id. */
+  async create(values: UserValues, passwordHash?: string, tx?: Transaction): Promise<string> {
+    const id = newUuid();
+    await transaction(this.db, tx, async t => {
+      await t.insert(users).values({ id, ...values });
+      if (passwordHash) await t.insert(userCredentials).values({ userId: id, passwordHash, hashAlgo: 'argon2id' });
+      await this.changed(id, 'created', t);
+    });
+    return id;
+  }
+
+  /** The user is checked by the service; taking the last active admin's role away is a `ConflictException`. */
+  update(id: string, values: UserUpdate, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       if (values.role !== undefined && values.role !== 'ADMIN') await this.keepAnActiveAdmin(t, id);
-      const [user] = await t.update(users).set(values).where(eq(users.id, id)).returning();
-      if (user) await this.changed(id, 'updated', t);
-      return user;
+      await t.update(users).set(values).where(eq(users.id, id));
+      await this.changed(id, 'updated', t);
     });
   }
 
   /** Sets `disabled`; disabling also deletes the user's sessions, so they are signed out at once. */
-  setDisabled(id: string, disabled: boolean, tx?: Transaction): Promise<UserEntity | undefined> {
+  updateStatus(id: string, disabled: boolean, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       if (disabled) await this.keepAnActiveAdmin(t, id);
-      const [user] = await t.update(users).set({ disabled }).where(eq(users.id, id)).returning();
-      if (!user) return undefined;
+      await t.update(users).set({ disabled }).where(eq(users.id, id));
       if (disabled) await t.delete(sessions).where(eq(sessions.userId, id));
       await this.changed(id, 'updated', t);
-      return user;
     });
   }
 
   /** Sets (or replaces) the user's argon2id password hash. */
-  setPasswordHash(userId: string, passwordHash: string, tx?: Transaction): Promise<void> {
+  updatePasswordHash(userId: string, passwordHash: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t
         .insert(userCredentials)
@@ -125,14 +105,23 @@ export class UserRepository {
     });
   }
 
-  /** Whether there was a user `id`. Credentials, identities, sessions and reset tokens cascade. */
-  delete(id: string, tx?: Transaction): Promise<boolean> {
+  /** Credentials, identities, sessions and reset tokens cascade. The event only when a row went (deleted meanwhile: nothing to announce). */
+  delete(id: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
       await this.keepAnActiveAdmin(t, id);
       const deleted = await t.delete(users).where(eq(users.id, id)).returning({ id: users.id });
       if (deleted.length) await this.changed(id, 'deleted', t);
-      return deleted.length > 0;
     });
+  }
+
+  private where(query: UserPageable): SQL | undefined {
+    const conditions: SQL[] = [];
+    if (query.search) {
+      const pattern = containsPattern(query.search);
+      conditions.push(or(ilike(users.email, pattern), ilike(users.displayName, pattern)) as SQL);
+    }
+    if (query.active) conditions.push(eq(users.disabled, query.active === 'inactive'));
+    return and(...conditions);
   }
 
   /**

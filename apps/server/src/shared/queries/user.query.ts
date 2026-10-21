@@ -1,33 +1,21 @@
-import type { UserIdentity } from '@localess/shared';
-import { inArray } from 'drizzle-orm';
+import { asc } from 'drizzle-orm';
 
-import type { Database } from '../../infra/database/database.module.js';
-import { users } from '../../infra/database/schema.js';
+import { userIdentities } from '../../infra/database/schema.js';
+import type { UserEntity } from '../entities/user.entity.js';
+import type { UserIdentityEntity } from '../entities/user-identity.entity.js';
 
-/** How a user signs in: their OAuth identities, and whether they have a password (the credential, never its hash). */
-export interface UserSignIn {
-  identities: UserIdentity[];
-  hasPassword: boolean;
-}
+/**
+ * The relations a user is read with wherever the App API answers one (`with: USER_SIGN_IN`): their OAuth identities
+ * (provider and when it was linked, oldest first) and whether they have a credential (its key only: the hash is never
+ * read for an answer).
+ */
+export const USER_SIGN_IN = {
+  identities: { columns: { provider: true as const, createdAt: true as const }, orderBy: [asc(userIdentities.createdAt)] },
+  credential: { columns: { userId: true as const } },
+};
 
-/** How each user signs in, by user id (the `identities` and `credential` relations). The users module and auth use it. */
-export async function findUserSignIns(db: Pick<Database, 'query'>, userIds: string[]): Promise<Map<string, UserSignIn>> {
-  if (!userIds.length) return new Map();
-  const rows = await db.query.users.findMany({
-    where: inArray(users.id, userIds),
-    columns: { id: true },
-    with: {
-      identities: { columns: { provider: true, createdAt: true }, orderBy: (it, { asc }) => [asc(it.createdAt)] },
-      credential: { columns: { userId: true } },
-    },
-  });
-  return new Map(
-    rows.map(row => [
-      row.id,
-      {
-        identities: row.identities.map(it => ({ provider: it.provider, createdAt: it.createdAt.toISOString() })),
-        hasPassword: row.credential != null,
-      },
-    ]),
-  );
-}
+/** A user row read `with: USER_SIGN_IN`. */
+export type UserWithSignIn = UserEntity & {
+  identities: Pick<UserIdentityEntity, 'provider' | 'createdAt'>[];
+  credential: { userId: string } | null;
+};
