@@ -37,38 +37,38 @@ export class WebhookRepository {
     return this.db.$count(webhooks, this.where(spaceId, query));
   }
 
-  async findById(spaceId: string, id: string): Promise<WebhookEntity | undefined> {
-    const [row] = await this.db.select().from(webhooks).where(this.byId(spaceId, id));
-    return row;
+  findOne(spaceId: string, webhookId: string): Promise<WebhookEntity | undefined> {
+    return this.db.query.webhooks.findFirst({ where: this.byId(spaceId, webhookId) });
   }
 
-  /** Enabled; the space is checked by the service. */
-  create(spaceId: string, values: WebhookValues, tx?: Transaction): Promise<WebhookEntity> {
+  /** Whether the space has webhook `webhookId`. */
+  async exists(spaceId: string, webhookId: string): Promise<boolean> {
+    return (await this.db.$count(webhooks, this.byId(spaceId, webhookId))) > 0;
+  }
+
+  /** Enabled; the space is checked by the service. Answers the new webhook's id. */
+  async create(spaceId: string, values: WebhookValues, tx?: Transaction): Promise<string> {
+    const id = newUuid();
+    await transaction(this.db, tx, async t => {
+      await t.insert(webhooks).values({ id, spaceId, enabled: true, ...values });
+      await this.eventService.publish({ spaceId, entity: 'webhooks', id, op: 'created' }, t);
+    });
+    return id;
+  }
+
+  /** The webhook is checked by the service. */
+  update(spaceId: string, webhookId: string, values: Partial<WebhookValues>, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      const [row] = await t
-        .insert(webhooks)
-        .values({ id: newUuid(), spaceId, enabled: true, ...values })
-        .returning();
-      await this.eventService.publish({ spaceId, entity: 'webhooks', id: row.id, op: 'created' }, t);
-      return row;
+      await t.update(webhooks).set(values).where(this.byId(spaceId, webhookId));
+      await this.eventService.publish({ spaceId, entity: 'webhooks', id: webhookId, op: 'updated' }, t);
     });
   }
 
-  /** `undefined` when the space has no webhook `id`. */
-  update(spaceId: string, id: string, values: Partial<WebhookValues>, tx?: Transaction): Promise<WebhookEntity | undefined> {
+  /** Its logs cascade. The event only when a row went (deleted meanwhile: nothing to announce). */
+  delete(spaceId: string, webhookId: string, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {
-      const [row] = await t.update(webhooks).set(values).where(this.byId(spaceId, id)).returning();
-      if (row) await this.eventService.publish({ spaceId, entity: 'webhooks', id, op: 'updated' }, t);
-      return row;
-    });
-  }
-
-  /** Its logs cascade. Whether the space had webhook `id`. */
-  delete(spaceId: string, id: string, tx?: Transaction): Promise<boolean> {
-    return transaction(this.db, tx, async t => {
-      const deleted = await t.delete(webhooks).where(this.byId(spaceId, id)).returning({ id: webhooks.id });
-      if (deleted.length) await this.eventService.publish({ spaceId, entity: 'webhooks', id, op: 'deleted' }, t);
-      return deleted.length > 0;
+      const deleted = await t.delete(webhooks).where(this.byId(spaceId, webhookId)).returning({ id: webhooks.id });
+      if (deleted.length) await this.eventService.publish({ spaceId, entity: 'webhooks', id: webhookId, op: 'deleted' }, t);
     });
   }
 
@@ -83,7 +83,7 @@ export class WebhookRepository {
     return and(...conditions);
   }
 
-  private byId(spaceId: string, id: string) {
-    return and(eq(webhooks.spaceId, spaceId), eq(webhooks.id, id));
+  private byId(spaceId: string, webhookId: string): SQL | undefined {
+    return and(eq(webhooks.spaceId, spaceId), eq(webhooks.id, webhookId));
   }
 }

@@ -17,11 +17,6 @@ export interface WebhookInput {
   secret?: string;
 }
 
-function found(entity: WebhookEntity | undefined) {
-  if (!entity) throw new NotFoundException('Webhook not found');
-  return toWebhook(entity);
-}
-
 /**
  * Webhook configuration (the delivery logs: `WebhookLogService`); delivery is `WebhookDispatcher` (shared). Every route
  * checks the space first (404 "Space not found" before "Webhook not found").
@@ -55,39 +50,53 @@ export class WebhookService {
   }
 
   async findOne(spaceId: string, webhookId: string) {
-    await this.requireSpace(spaceId);
-    return found(await this.webhookRepository.findById(spaceId, webhookId));
+    return toWebhook(await this.requireWebhook(spaceId, webhookId));
   }
 
   async create(spaceId: string, input: WebhookInput) {
     this.assertDeliverable(input.url);
     await this.requireSpace(spaceId);
-    return toWebhook(await this.webhookRepository.create(spaceId, input));
+    const webhookId = await this.webhookRepository.create(spaceId, input);
+    return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
 
   /** Headers and secret are only replaced when sent (the form leaves them out to keep them). */
   async update(spaceId: string, webhookId: string, input: WebhookInput) {
     this.assertDeliverable(input.url);
-    await this.requireSpace(spaceId);
-    return found(
-      await this.webhookRepository.update(spaceId, webhookId, {
-        name: input.name,
-        url: input.url,
-        events: input.events,
-        ...(input.headers ? { headers: input.headers } : {}),
-        ...(input.secret ? { secret: input.secret } : {}),
-      }),
-    );
+    await this.requireWebhook(spaceId, webhookId);
+    await this.webhookRepository.update(spaceId, webhookId, {
+      name: input.name,
+      url: input.url,
+      events: input.events,
+      ...(input.headers ? { headers: input.headers } : {}),
+      ...(input.secret ? { secret: input.secret } : {}),
+    });
+    return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
 
   async updateStatus(spaceId: string, webhookId: string, enabled: boolean) {
-    await this.requireSpace(spaceId);
-    return found(await this.webhookRepository.update(spaceId, webhookId, { enabled }));
+    await this.requireWebhook(spaceId, webhookId);
+    await this.webhookRepository.update(spaceId, webhookId, { enabled });
+    return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
 
+  /** Its logs cascade. */
   async remove(spaceId: string, webhookId: string): Promise<void> {
+    await this.requireWebhook(spaceId, webhookId);
+    await this.webhookRepository.delete(spaceId, webhookId);
+  }
+
+  /** The space first: its 404 comes before the webhook's. */
+  private async requireWebhook(spaceId: string, webhookId: string): Promise<WebhookEntity> {
     await this.requireSpace(spaceId);
-    if (!(await this.webhookRepository.delete(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
+    return this.findWebhook(spaceId, webhookId);
+  }
+
+  /** The webhook alone, the space already checked (the re-read after a write). */
+  private async findWebhook(spaceId: string, webhookId: string): Promise<WebhookEntity> {
+    const webhook = await this.webhookRepository.findOne(spaceId, webhookId);
+    if (!webhook) throw new NotFoundException('Webhook not found');
+    return webhook;
   }
 
   private async requireSpace(spaceId: string): Promise<void> {

@@ -4,10 +4,11 @@ import { join } from 'node:path';
 
 import { SchemaFieldKind, TokenType } from '@localess/shared';
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
 import { schemas, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookLogCleanupService } from '../src/modules/webhooks/services/webhook-log-cleanup.service.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
 import { S1, S2, UUID_V7 } from './ids.js';
@@ -299,8 +300,15 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     it('lists by name and deletes with logs, for developers only', async () => {
       expect((await manager.get(base)).json().items.map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
       expect((await nobody.get(base)).statusCode).toBe(403);
+      const publish = vi.spyOn(t.app.get(EventService), 'publish');
       expect((await manager.delete(`${base}/${hook.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(webhookLogs)).toEqual([]);
+      // Already gone: 404, and no second event.
+      expect((await manager.delete(`${base}/${hook.id}`)).json()).toMatchObject({ statusCode: 404, message: 'Webhook not found' });
+      expect(publish.mock.calls.filter(([event]) => event.entity === 'webhooks')).toEqual([
+        [{ spaceId: S1, entity: 'webhooks', id: hook.id, op: 'deleted' }, expect.anything()],
+      ]);
+      publish.mockRestore();
     });
   });
 

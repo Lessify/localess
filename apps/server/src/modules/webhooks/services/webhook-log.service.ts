@@ -19,7 +19,7 @@ export class WebhookLogService {
   /** One page, newest first: every delivery kept (`LOCALESS_WEBHOOK_LOG_DAYS`) can be reached. */
   async findAll(spaceId: string, webhookId: string, query: WebHookLogPageable) {
     if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
-    if (!(await this.webhookRepository.findById(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
+    if (!(await this.webhookRepository.exists(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
     const [rows, total] = await Promise.all([
       this.webhookLogRepository.findAll(webhookId, query),
       this.webhookLogRepository.findAllCount(webhookId, query),
