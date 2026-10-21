@@ -10,7 +10,6 @@ import {
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
-import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toTranslation } from '../../../shared/transformers/translation.transformer.js';
@@ -22,11 +21,6 @@ import { TranslateService } from './translate.service.js';
 function requireSpaceLocales(space: SpaceWithLocales, localeIds: string[]): void {
   const unknown = localeIds.filter(id => !space.spaceLocales.some(it => it.localeId === id));
   if (unknown.length) throw new BadRequestException(`Not in space locales: ${unknown.join(', ')}`);
-}
-
-function found(entity: TranslationEntity | undefined): Translation {
-  if (!entity) throw new NotFoundException('Translation not found');
-  return toTranslation(entity);
 }
 
 /**
@@ -56,44 +50,46 @@ export class TranslationService {
 
   async findOne(spaceId: string, translationId: string): Promise<Translation> {
     await this.requireSpace(spaceId);
-    return found(await this.translationRepository.findOne(spaceId, translationId));
+    return this.findTranslation(spaceId, translationId);
   }
 
   async create(spaceId: string, input: TranslationCreate): Promise<Translation> {
     requireSpaceLocales(await this.requireSpace(spaceId), Object.keys(input.locales));
-    const entity = await this.translationRepository.create(spaceId, {
+    const translationId = await this.translationRepository.create(spaceId, {
       ...input,
       labels: input.labels?.length ? input.labels : null,
       description: input.description || null,
     });
-    return this.changed(spaceId, toTranslation(entity));
+    return this.changed(spaceId, await this.findTranslation(spaceId, translationId));
   }
 
   async update(spaceId: string, translationId: string, input: TranslationUpdate): Promise<Translation> {
     await this.requireTranslation(spaceId, translationId);
-    const entity = await this.translationRepository.update(spaceId, translationId, {
+    await this.translationRepository.update(spaceId, translationId, {
       labels: input.labels?.length ? input.labels : null,
       description: input.description || null,
     });
-    return this.changed(spaceId, found(entity));
+    return this.changed(spaceId, await this.findTranslation(spaceId, translationId));
   }
 
   /** One locale's value, for a locale of the space; an empty string removes it (for any locale: leftovers of a removed locale). */
   async updateLocale(spaceId: string, translationId: string, localeId: string, input: TranslationLocaleUpdate): Promise<Translation> {
     const space = await this.requireTranslation(spaceId, translationId);
     if (input.value) requireSpaceLocales(space, [localeId]);
-    return this.changed(spaceId, found(await this.translationRepository.updateLocale(spaceId, translationId, localeId, input.value)));
+    await this.translationRepository.updateLocale(spaceId, translationId, localeId, input.value);
+    return this.changed(spaceId, await this.findTranslation(spaceId, translationId));
   }
 
   /** Changes the key; the id stays. */
   async rename(spaceId: string, translationId: string, input: TranslationRename): Promise<Translation> {
     await this.requireTranslation(spaceId, translationId);
-    return this.changed(spaceId, found(await this.translationRepository.update(spaceId, translationId, { key: input.key })));
+    await this.translationRepository.update(spaceId, translationId, { key: input.key });
+    return this.changed(spaceId, await this.findTranslation(spaceId, translationId));
   }
 
   async remove(spaceId: string, translationId: string): Promise<void> {
     await this.requireTranslation(spaceId, translationId);
-    if (!(await this.translationRepository.delete(spaceId, translationId))) throw new NotFoundException('Translation not found');
+    await this.translationRepository.delete(spaceId, translationId);
     this.changed(spaceId, undefined);
   }
 
@@ -151,8 +147,15 @@ export class TranslationService {
   /** The space, then the translation: "Space not found" comes before "Translation not found". */
   private async requireTranslation(spaceId: string, translationId: string): Promise<SpaceWithLocales> {
     const space = await this.requireSpace(spaceId);
-    found(await this.translationRepository.findOne(spaceId, translationId));
+    await this.findTranslation(spaceId, translationId);
     return space;
+  }
+
+  /** The translation alone, the space already checked (a read, or the re-read after a write). */
+  private async findTranslation(spaceId: string, translationId: string): Promise<Translation> {
+    const entity = await this.translationRepository.findOne(spaceId, translationId);
+    if (!entity) throw new NotFoundException('Translation not found');
+    return toTranslation(entity);
   }
 
   /** The space with its locales; a 404 when there is none. */

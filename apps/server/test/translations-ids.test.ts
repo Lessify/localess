@@ -1,6 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
 /** Every translation route checks its space first, then the translation; ids that aren't UUIDs are 404s. */
@@ -95,5 +96,16 @@ describe('app API: translations check their space and ids', () => {
     );
     expect((await admin.get(`${base}/${translationId}`)).json()).toMatchObject({ key: 'hello', locales: { en: 'Hello' } });
     expect((await admin.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hello']);
+  });
+
+  it('deletes a translation once: already gone is a 404, and only one deleted event is sent', async () => {
+    const id = (await admin.post(base, { key: 'bye', locales: { en: 'Bye' } })).json().id;
+    const publish = vi.spyOn(t.app.get(EventService), 'publish');
+    expect((await admin.delete(`${base}/${id}`)).statusCode).toBe(204);
+    expect((await admin.delete(`${base}/${id}`)).json()).toMatchObject({ statusCode: 404, message: 'Translation not found' });
+    expect(publish.mock.calls.filter(([event]) => event.entity === 'translations')).toEqual([
+      [expect.objectContaining({ entity: 'translations', id, op: 'deleted' }), expect.anything()],
+    ]);
+    publish.mockRestore();
   });
 });

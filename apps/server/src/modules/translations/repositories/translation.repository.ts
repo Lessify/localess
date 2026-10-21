@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -28,60 +28,57 @@ export class TranslationRepository {
 
   /** For the app: by key, in the database collation. */
   findAll(spaceId: string): Promise<TranslationEntity[]> {
-    return this.db.select().from(translations).where(eq(translations.spaceId, spaceId)).orderBy(asc(translations.key));
+    return this.db.query.translations.findMany({ where: eq(translations.spaceId, spaceId), orderBy: [asc(translations.key)] });
   }
 
   /** For the public API and export files: by key in byte order, as Firestore returned documents. */
   findAllInByteOrder(spaceId: string): Promise<TranslationEntity[]> {
-    return this.db
-      .select()
-      .from(translations)
-      .where(eq(translations.spaceId, spaceId))
-      .orderBy(asc(sql`${translations.key} collate "C"`));
+    return this.db.query.translations.findMany({
+      where: eq(translations.spaceId, spaceId),
+      orderBy: [asc(sql`${translations.key} collate "C"`)],
+    });
   }
 
   findByKeys(spaceId: string, keys: string[]): Promise<TranslationEntity[]> {
     if (!keys.length) return Promise.resolve([]);
-    return this.db.select().from(translations).where(this.byKeys(spaceId, keys));
+    return this.db.query.translations.findMany({ where: this.byKeys(spaceId, keys) });
   }
 
-  async findOne(spaceId: string, id: string): Promise<TranslationEntity | undefined> {
-    const [row] = await this.db.select().from(translations).where(this.byId(spaceId, id));
-    return row;
+  findOne(spaceId: string, id: string): Promise<TranslationEntity | undefined> {
+    return this.db.query.translations.findFirst({ where: this.byId(spaceId, id) });
   }
 
-  async count(spaceId: string): Promise<number> {
-    const [{ value }] = await this.db.select({ value: count() }).from(translations).where(eq(translations.spaceId, spaceId));
-    return Number(value);
+  count(spaceId: string): Promise<number> {
+    return this.db.$count(translations, eq(translations.spaceId, spaceId));
   }
 
-  create(spaceId: string, values: NewTranslation, tx?: Transaction): Promise<TranslationEntity> {
+  /** Answers the new translation's id. */
+  async create(spaceId: string, values: NewTranslation, tx?: Transaction): Promise<string> {
+    const id = newUuid();
+    await this.write(spaceId, tx, async t => {
+      await t.insert(translations).values({ id, spaceId, ...values });
+      return { result: undefined, changed: [{ id, op: 'created' }] };
+    });
+    return id;
+  }
+
+  /** The translation is checked by the service; the change event only when a row changed. */
+  update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
-      const [row] = await t
-        .insert(translations)
-        .values({ id: newUuid(), spaceId, ...values })
-        .returning();
-      return { result: row, changed: [{ id: row.id, op: 'created' }] };
+      const changed = await t.update(translations).set(values).where(this.byId(spaceId, id)).returning({ id: translations.id });
+      return { result: undefined, changed: changed.length ? [{ id, op: 'updated' }] : [] };
     });
   }
 
-  /** `undefined` when the space has no translation `id`. */
-  update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction): Promise<TranslationEntity | undefined> {
+  /** One locale's value; an empty `value` removes it. The translation is checked by the service. */
+  updateLocale(spaceId: string, id: string, locale: string, value: string, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
-      const [row] = await t.update(translations).set(values).where(this.byId(spaceId, id)).returning();
-      return { result: row, changed: row ? [{ id, op: 'updated' }] : [] };
-    });
-  }
-
-  /** One locale's value; an empty `value` removes it. `undefined` when the space has no translation `id`. */
-  updateLocale(spaceId: string, id: string, locale: string, value: string, tx?: Transaction): Promise<TranslationEntity | undefined> {
-    return this.write(spaceId, tx, async t => {
-      const [row] = await t
+      const changed = await t
         .update(translations)
         .set({ locales: this.localeValue(locale, value) })
         .where(this.byId(spaceId, id))
-        .returning();
-      return { result: row, changed: row ? [{ id, op: 'updated' }] : [] };
+        .returning({ id: translations.id });
+      return { result: undefined, changed: changed.length ? [{ id, op: 'updated' }] : [] };
     });
   }
 
@@ -98,11 +95,11 @@ export class TranslationRepository {
     });
   }
 
-  /** Whether the space had translation `id`. */
-  delete(spaceId: string, id: string, tx?: Transaction): Promise<boolean> {
+  /** The event only when a row went (deleted meanwhile: nothing to announce). */
+  delete(spaceId: string, id: string, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       const deleted = await t.delete(translations).where(this.byId(spaceId, id)).returning({ id: translations.id });
-      return { result: deleted.length > 0, changed: deleted.length ? [{ id, op: 'deleted' }] : [] };
+      return { result: undefined, changed: deleted.length ? [{ id, op: 'deleted' }] : [] };
     });
   }
 

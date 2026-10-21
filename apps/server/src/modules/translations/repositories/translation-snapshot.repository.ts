@@ -21,17 +21,15 @@ export class TranslationSnapshotRepository {
     private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
-  async findOne(spaceId: string, version: SnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
-    const [row] = await this.db
-      .select()
-      .from(translationSnapshots)
-      .where(and(this.ofVersion(spaceId, version), eq(translationSnapshots.locale, locale)));
-    return row;
+  findOne(spaceId: string, version: SnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
+    return this.db.query.translationSnapshots.findFirst({
+      where: and(this.ofVersion(spaceId, version), eq(translationSnapshots.locale, locale)),
+    });
   }
 
   /** A publish: every locale's published map. Publishing an empty space is allowed and serves `{}`. */
-  publish(spaceId: string, tx?: Transaction): Promise<TranslationSnapshotEntity[]> {
-    return transaction(this.db, tx, t => this.store(t, spaceId, 'published'));
+  async publish(spaceId: string, tx?: Transaction): Promise<void> {
+    await transaction(this.db, tx, t => this.store(t, spaceId, 'published'));
   }
 
   /** The space's draft maps, built when a write dropped them (or kept, when another request built them meanwhile). */
