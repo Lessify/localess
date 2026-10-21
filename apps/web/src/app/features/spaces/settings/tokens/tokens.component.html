@@ -32,7 +32,7 @@
           </span>
         </td>
       </ng-container>
-      <ng-container llColumnDef="cacheTtl">
+      <ng-container llColumnDef="cacheTtl" llColumnDefClass="hidden @3xl/table:table-cell">
         <th llHeaderCell *llHeaderCellDef>Cache TTL</th>
         <td llCell *llCellDef="let element">
           @if (element.type === 'management') {
@@ -46,7 +46,7 @@
           }
         </td>
       </ng-container>
-      <ng-container llColumnDef="updatedAt">
+      <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @3xl/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
         <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
           {{ element.updatedAt | date: 'mediumDate' }}

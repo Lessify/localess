@@ -349,7 +349,12 @@
     }
     <router-outlet></router-outlet>
   </main>
-  <hlm-sheet side="right" [state]="showDebugSettings() ? 'open' : 'closed'" (closed)="showDebugSettings.set(false)">
+  <!-- An id of its own: Spartan numbers declared and opened dialogs with two counters that both make "brn-dialog-N". -->
+  <hlm-sheet
+    id="debug-settings-sheet"
+    side="right"
+    [state]="showDebugSettings() ? 'open' : 'closed'"
+    (closed)="showDebugSettings.set(false)">
     <hlm-sheet-content *hlmSheetPortal="let ctx">
       <hlm-sheet-header>
         <h3 hlmSheetTitle>Debug Settings</h3>

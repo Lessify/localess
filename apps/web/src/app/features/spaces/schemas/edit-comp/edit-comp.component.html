@@ -229,7 +229,12 @@
   </div>
 }
 
-<hlm-sheet side="right" [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'" (closed)="selectedFieldIdx.set(undefined)">
+<!-- An id of its own: Spartan numbers declared and opened dialogs with two counters that both make "brn-dialog-N". -->
+<hlm-sheet
+  id="schema-field-sheet"
+  side="right"
+  [state]="selectedFieldIdx() !== undefined ? 'open' : 'closed'"
+  (closed)="selectedFieldIdx.set(undefined)">
   <hlm-sheet-content *hlmSheetPortal="let ctx">
     <hlm-sheet-header>
       <h3 hlmSheetTitle>Edit Field</h3>

@@ -58,7 +58,7 @@
         <th llHeaderCell *llHeaderCellDef>Description</th>
         <td llCell *llCellDef="let element">{{ element.description }}</td>
       </ng-container>
-      <ng-container llColumnDef="labels">
+      <ng-container llColumnDef="labels" llColumnDefClass="hidden @3xl/table:table-cell">
         <th llHeaderCell *llHeaderCellDef>Labels</th>
         <td llCell *llCellDef="let element">
           <div class="flex items-center gap-1 px-2">
@@ -68,7 +68,7 @@
           </div>
         </td>
       </ng-container>
-      <ng-container llColumnDef="updatedAt">
+      <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @3xl/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
         <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
           {{ element.updatedAt | date: 'mediumDate' }}
