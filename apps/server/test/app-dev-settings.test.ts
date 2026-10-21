@@ -73,7 +73,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     const base = `/api/app/spaces/${S1}/tokens`;
     const cdn = (value: string) => t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/links?token=${value}` });
 
-    it('creates typed tokens with a UUIDv7 id and a prefixed value, for SPACE_MANAGEMENT only', async () => {
+    it('creates typed tokens with a UUIDv7 id and a prefixed value, for developers only', async () => {
       const response = await manager.post(base, { name: 'Website', type: 'public', cacheTtl: 120 });
       expect(response.statusCode).toBe(201);
       const body = response.json();
@@ -265,7 +265,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect(kept).toContain('bulk-0');
     });
 
-    it('lists by name and deletes with logs, for SPACE_MANAGEMENT only', async () => {
+    it('lists by name and deletes with logs, for developers only', async () => {
       expect((await manager.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Alpha', 'Site 2']);
       expect((await nobody.get(base)).statusCode).toBe(403);
       expect((await manager.delete(`${base}/${hook.id}`)).statusCode).toBe(204);

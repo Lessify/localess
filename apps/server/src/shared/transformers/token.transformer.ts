@@ -3,7 +3,7 @@ import type { Token, TokenType } from '@localess/shared';
 import type { TokenEntity } from '../entities/token.entity.js';
 
 /**
- * A token as the App API returns it (SPACE_MANAGEMENT only): no hash, no `spaceId`; a management token has no `token`
+ * A token as the App API returns it (developers only): no hash, no `spaceId`; a management token has no `token`
  * (it is shown once, by the create and regenerate answers), and no `cacheTtl` when it uses the default.
  */
 export function toToken(entity: TokenEntity): Token {

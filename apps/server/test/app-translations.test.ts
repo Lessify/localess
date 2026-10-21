@@ -264,7 +264,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
   });
 
   describe('deleting', () => {
-    it('deletes one key, or all keys with SPACE_MANAGEMENT', async () => {
+    it('deletes one key, or all keys as a developer', async () => {
       expect((await editor.delete(url('taken'))).statusCode).toBe(204);
       expect((await editor.delete(base)).statusCode).toBe(403);
       const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));

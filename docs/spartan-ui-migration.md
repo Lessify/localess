@@ -608,13 +608,13 @@ for separators:
 } }
 ```
 
-Move the data into a separate shared file to avoid duplication across dialogs. See `apps/web/src/app/features/admin/users/user-roles.ts` (it replaced `user-permissions.ts`) as a
-reference:
+Move the data into a separate shared file to avoid duplication across dialogs. Admin → Users used this pattern for its
+permission checkboxes until users got one role (2026-10-20); its options now live the same way in
+`apps/web/src/app/shared/models/user-role.model.ts`:
 
 ```typescript
-export interface UserPermission { id: string; label: string; desc: string; }
-export interface UserPermissionGroup { label: string; permissions: UserPermission[]; }
-export const USER_PERMISSION_GROUPS: UserPermissionGroup[] = [ ... ];
+export interface UserRoleOption { id: UserRole; label: string; desc: string; }
+export const USER_ROLE_OPTIONS: readonly UserRoleOption[] = [ ... ];
 ```
 
 ---

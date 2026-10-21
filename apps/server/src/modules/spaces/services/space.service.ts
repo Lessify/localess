@@ -58,7 +58,7 @@ export class SpaceService {
 
   /**
    * What the Create Space dialog offers, in order (docs/roadmap/space-templates.md). Whoever may create a space may
-   * create it from any template (the route needs SPACE_MANAGEMENT, as creating does).
+   * create it from any template (the route needs ADMINS, as creating does).
    */
   findTemplates(): SpaceTemplateId[] {
     return this.available().map(it => it.id);
@@ -67,7 +67,7 @@ export class SpaceService {
   /**
    * With everything its template holds, in one transaction; no template: the space alone (its default locale and preview
    * token). A test template while they are off is a 400 (an unknown id is refused by the controller's schema). No
-   * permission beyond creating a space (SPACE_MANAGEMENT): a template is part of creating one.
+   * role beyond creating a space (ADMINS): a template is part of creating one.
    */
   async create(space: SpaceCreate): Promise<Space> {
     if (!space.template) return this.findOne(await this.spaceRepository.create(space.name, DEFAULT_LOCALE.id));

@@ -56,7 +56,7 @@ the API, not only by the toast.
 | Disabled user can not sign in | API | ✅ `api/permissions`, `admin/users` |
 | Disabling a signed-in user signs them out at once | UI: user's page gets sent to login after an admin disables them | ✅ `admin/users` |
 
-### 3. Users and permissions
+### 3. Users and roles
 
 Admin → Users tests follow **pre-check → action → post-check**: the state in the UI and the API before, the action in
 the UI, then the table (also after a reload), the API, and what the user can now do with their own session.
@@ -64,24 +64,22 @@ the UI, then the table (also after a reload), the API, and what the user can now
 | Scenario | How | Status |
 |---|---|---|
 | Invite as **Admin**: full access, admin area visible | UI + API + the user's session | ✅ `admin/users` |
-| Invite as **Custom**: exactly the chosen permissions | UI + API + the user's session | ✅ `admin/users` |
+| Invite as **Translator**: edits translations, no admin area | UI + API + the user's session | ✅ `admin/users` |
+| The Role select offers None and the five roles, and describes the chosen one | UI | ✅ `admin/users` |
 | Invite as **None**: signs in, no access, asked to contact an administrator | UI + API + the user's session | ✅ `admin/users` |
 | Invite with a taken email is refused; the existing user is unchanged | UI + API | ✅ `admin/users` |
-| Change role Custom → Admin → None → Custom; access follows each change | UI + API + the user's session | ✅ `admin/users` |
-| Add / remove permissions of a custom user | UI + API + the user's session | ✅ `admin/users` |
-| Lock a custom user: they can no longer change their own data | UI + API + the user's session | ✅ `admin/users` |
+| Change role Viewer → Admin → None → Editor; access follows each change | UI + API + the user's session | ✅ `admin/users` |
 | Disable (sign-in refused) / enable | UI + API + the user's session | ✅ `admin/users` |
 | Disabling signs out a user who is signed in | UI + the user's open session | ✅ `admin/users` |
 | The admin can not disable themself | UI | ✅ `admin/users` |
 | Copy password reset link; the user sets a new password with it | UI (clipboard) + the user's browser | ✅ `admin/users` |
 | Delete a user (sign-in refused); cancelling keeps them | UI + API | ✅ `admin/users` @smoke |
 | Email, display name and password of another user | Not a feature: the admin sets them when inviting; later only a reset link (the user changes their own in Me) | ➖ |
-| A custom user with `USER_MANAGEMENT` can only grant what they hold (no Admin role), and only manage users they outrank | UI: checkboxes disabled; API: 403, nothing changed | ✅ `admin/users`, `api/user-management` |
-| Invite with every permission the dialog offers: all stored | UI + API | ✅ `admin/users` |
+| Users are for admins only: a developer has no Users link and the route sends them back; every other role gets 403 on every user route, nothing changed | UI + API | ✅ `admin/users`, `api/user-management` |
 | Translator sees translations only; guards redirect elsewhere | UI | ✅ `auth/permissions` |
 | User without a role is asked to contact an administrator | UI | ✅ `auth/permissions` |
-| API refuses what the permissions don't allow | API | ✅ `api/permissions` |
-| Permission matrix: every App API route × each permission, no role, admin, no session (401 / 403 / let through, never a 5xx) | API, routes read from the server's access decorators | ✅ `api/permission-matrix` |
+| A viewer reads, and the API refuses their writes | API | ✅ `api/permissions` |
+| Role matrix: every App API route × each role, no role, no session (401 / 403 / let through, never a 5xx) | API, routes and their lists read from the server's `@RequireRole` | ✅ `api/role-matrix` |
 
 ### 4. Me (profile)
 
@@ -90,8 +88,8 @@ whether the account can sign in).
 
 | Scenario | How | Status |
 |---|---|---|
-| Opens from the user menu; shows email, verification, role and a custom user's permissions | UI | ✅ `me/profile` |
-| An admin has no permission list | UI | ✅ `me/profile` |
+| Opens from the user menu; shows email, verification, the role and what it may do | UI | ✅ `me/profile` |
+| An admin is shown as Admin, who may do everything | UI | ✅ `me/profile` |
 | Display name: page, user menu, API, after a reload | UI + API | ✅ `me/profile` @smoke |
 | Avatar URL is used; an invalid URL is refused | UI + API | ✅ `me/profile` |
 | Cancelling the profile dialog keeps everything | UI + API | ✅ `me/profile` |
@@ -99,7 +97,6 @@ whether the account can sign in).
 | Email change refused: wrong current password, email of another user | UI + API + sign-in | ✅ `me/profile` |
 | Password change: old one stops working, other sessions end, this one stays | UI + a second session + sign-in | ✅ `me/profile` @smoke |
 | Password change refused: wrong current password; under 6 characters can't be submitted | UI + sign-in | ✅ `me/profile` |
-| Locked user: message, no buttons, API refuses changes | UI + API | ✅ `me/profile` |
 | Google / Microsoft account without a password: email and password can't be changed here | Such accounts come only from auto-register (off in e2e, so unknown accounts stay refused) or an import; needs a second server, or a component test of the Me template | ⬜ |
 
 ### 5. Spaces (admin) and space settings
@@ -441,7 +438,6 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Content rules (required, lengths, limits) are checked in the browser only: the API stores content that breaks them | `contents/validation` pins today's behaviour |
 | The Errors list on Save doesn't jump to the field; Rich Text min/max length has no effect (the value is JSON); a Schemas field's blocks aren't validated | Not asserted |
 | Enum values are sorted by name in the content editor, whatever their order in the enum (which the enum editor lets you change by drag); the sort also mutates the shared schema objects | Product decision; `schemas/references` asserts today's order |
-| Webhooks: the sidebar shows Developers → Webhooks for `DEV_WEBHOOK`, but every webhook route needs `SPACE_MANAGEMENT` (pinned by a server test): a user with only `DEV_WEBHOOK` opens a page whose requests are refused | Product decision; `api/permission-matrix` asserts the server's rule |
 | Color contrast: keyboard hints (`kbd`: the theme's muted text on muted, 4.34:1), the inactive Danger Zone tab (destructive at 60 %, 3.06:1), a choice card's description on the selected card (token type, space template: 4.27:1) and destructive buttons (a confirmation's OK) are under WCAG AA's 4.5:1 | Theme decision; `a11y/pages` skips only these two |
 | The Content Security Policy (report-only) allows one script hash, but the build's inline critical-CSS loader (`data-beasties-media`) has another: enforced, the policy would block it | `apps/server/src/infra/static/static-site.ts`; not asserted |
 | Admin → Users: an admin's own row offers Delete, and the server allows it (only disabling oneself is refused): the last admin can delete their account and leave the install without one | `apps/server/src/modules/users/services/users.service.ts` `delete`; `admin/users` asserts only that Disable is not offered |

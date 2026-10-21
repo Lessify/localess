@@ -23,7 +23,7 @@ apps/web/src/app/features/admin/spaces/
 
 ## SpacesComponent
 
-Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/spaces` answers a `Page<Space>` (`?page=&size=&sort=&direction=`, `?search=` on the name or any part of the id, `?importing=false` to leave out spaces being imported; sorts: `name` (default, case-insensitive), `id`, `updatedAt`; ties by id), each item with its `firebaseImport` when it has one. `SPACE_MANAGEMENT` only, as the page: the import carries who ran it and from where; every other user reads the sidebar list (`GET /api/app/spaces/names`, any role). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
+Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and searched on the server: `GET /api/app/spaces` answers a `Page<Space>` (`?page=&size=&sort=&direction=`, `?search=` on the name or any part of the id, `?importing=false` to leave out spaces being imported; sorts: `name` (default, case-insensitive), `id`, `updatedAt`; ties by id), each item with its `firebaseImport` when it has one. Admins only (`ADMINS`), as the page: the import carries who ran it and from where; every other user reads the sidebar list (`GET /api/app/spaces/names`, any role). A `PagedList` (`core/utils/paged-list.ts`) holds the query.
 
 **Injected services:** `SpaceService`, `HlmDialogService`, `NotificationService`, `Injector`
 

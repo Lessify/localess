@@ -26,7 +26,7 @@ export class SpaceController {
 
   /**
    * One page for Admin → Spaces: `?page=&size=&sort=&direction=` (Pageable), `?search=` (name, or the id),
-   * `?importing=false`. SPACE_MANAGEMENT only: each item carries its Firebase import (who ran it, from where).
+   * `?importing=false`. Admins only: each item carries its Firebase import (who ran it, from where).
    */
   @Get()
   @RequireRole(ADMINS)

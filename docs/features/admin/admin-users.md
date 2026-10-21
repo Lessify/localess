@@ -17,9 +17,10 @@ Manage all platform users — invite new users, give each one role (Admin, Devel
 ```
 apps/web/src/app/features/admin/users/
   users.component.ts/html/scss       ← main user list
-  user-roles.ts                      ← USER_ROLE_OPTIONS (the roles with a label and a description), roleLabel()
   user-dialog/                       ← edit the role
   user-invite-dialog/                ← invite new user
+apps/web/src/app/shared/models/user-role.model.ts
+                                     ← USER_ROLE_OPTIONS (the roles with a label and a description), roleLabel()
 ```
 
 ## UsersComponent

@@ -11,7 +11,7 @@ Monitor and manage background jobs (Tasks) triggered by import and export operat
 ## Route
 
 ```
-/features/spaces/:spaceId/tasks             [any *_IMPORT / *_EXPORT permission] → TasksComponent
+/features/spaces/:spaceId/tasks             [CONTENT_WRITERS] → TasksComponent
 /features/spaces/:spaceId/tasks/:taskId                        → TaskDetailComponent
 ```
 
@@ -64,9 +64,9 @@ Most tasks are created by other modules' import/export actions and processed by 
 
 ### Who can create a task
 
-The server (`assertCanManage` in `apps/server/src/modules/tasks/utils/task-permissions.ts`) treats the task type as the permission required to create or delete it: a `CONTENT_IMPORT` task needs `CONTENT_IMPORT`, and so on. `ASSET_REGEN_METADATA` is not a permission, so only admins can create it. Request bodies are validated per kind (zod), and the server always creates the task as `INITIATED`. There is no update endpoint; only the task worker writes status, results and errors. A task still `IN_PROGRESS` after an hour is treated as interrupted and marked `ERROR` (not re-run, because an import may be half applied).
+The server (`assertCanManage` in `apps/server/src/modules/tasks/utils/task-roles.ts`) checks the roles the task kind names before creating or deleting it: schema imports and exports need `DEVELOPERS`, `ASSET_REGEN_METADATA` needs `ADMINS`, every other kind `CONTENT_WRITERS`. Request bodies are validated per kind (zod), and the server always creates the task as `INITIATED`. There is no update endpoint; only the task worker writes status, results and errors. A task still `IN_PROGRESS` after an hour is treated as interrupted and marked `ERROR` (not re-run, because an import may be half applied).
 
-Reading tasks, their logs and their files requires any one of the eight import/export permissions. The task list is not filtered per kind.
+Reading tasks, their logs and their files requires `CONTENT_WRITERS`. The task list is not filtered per kind.
 
 ## Task Status Flow
 

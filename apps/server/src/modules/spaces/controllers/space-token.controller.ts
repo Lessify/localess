@@ -8,7 +8,7 @@ import { SpaceTokenService } from '../services/space-token.service.js';
 
 /**
  * A space's API tokens. Routes use the UUID `tokenId`; the value is `token`, which only this controller returns (to
- * SPACE_MANAGEMENT users), and for management tokens only once.
+ * developers), and for management tokens only once.
  */
 @Controller('api/app/spaces/:spaceId/tokens')
 @RequireRole(DEVELOPERS)

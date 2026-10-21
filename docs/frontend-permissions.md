@@ -139,5 +139,5 @@ to anyone. Two rules remain: at least one active admin always remains (a change 
 - `apps/web/src/app/core/guards/role.guard.ts` — `roleGuard(roles)`
 - `apps/web/src/app/shared/pipes/has-role.pipe.ts` — `hasRole` template pipe
 - `apps/web/src/app/features/features-routing.module.ts` — all route guards (`roleGuard`)
-- `apps/web/src/app/features/admin/users/user-roles.ts` — the roles as Admin → Users offers them (label, description)
+- `apps/web/src/app/shared/models/user-role.model.ts` — the roles as Admin → Users and Me show them (label, description)
 - `apps/server/test/roles.test.ts`, `apps/e2e/tests/api/role-matrix.spec.ts` — every role against the routes

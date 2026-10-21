@@ -1,8 +1,8 @@
 import { CSRF } from '../support/app-api';
 import { expect, test } from '../support/fixtures';
 
-test.describe('App API permissions', () => {
-  test('a custom user can do what their permissions allow, and nothing else', async ({ space, createUser, newClient }) => {
+test.describe('App API roles', () => {
+  test('a viewer reads, and changes nothing', async ({ space, createUser, newClient }) => {
     const user = await createUser({ role: 'VIEWER' });
     const client = await newClient();
     expect((await client.post('/api/auth/login', { headers: CSRF, data: user })).ok()).toBeTruthy();
