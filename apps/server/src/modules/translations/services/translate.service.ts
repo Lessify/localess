@@ -15,13 +15,13 @@ import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { translateItems } from '../utils/translate-batch.js';
 import { deeplTranslateOptions, googleMimeType } from '../utils/translate-format.utils.js';
 
-/** 424 like the callable's `failed-precondition`: the provider rejected the request (key, quota, API off). */
 /** 412: the request is fine, the environment lacks the provider (DeepL or Google Cloud Translation). */
 const notConfigured = () =>
   new PreconditionFailedException(
     'Machine translation is not configured on this environment (set GOOGLE_CLOUD_PROJECT for Google Translate, or DEEPL_API_KEY)',
   );
 
+/** 424: the provider rejected the request (key, quota, API off). */
 class ProviderError extends HttpException {
   constructor(message: string) {
     super({ statusCode: HttpStatus.FAILED_DEPENDENCY, error: 'Failed Dependency', message }, HttpStatus.FAILED_DEPENDENCY);
@@ -29,9 +29,8 @@ class ProviderError extends HttpException {
 }
 
 /**
- * Machine translation (was the `translate` callable and `translateWithGoogle`). DeepL when an API key
- * is configured, otherwise Google Cloud Translation v3; the provider is fixed at boot from env
- * (it used to be read from Remote Config on every call).
+ * Machine translation: DeepL when an API key is configured, otherwise Google Cloud Translation v3. The provider is
+ * fixed at boot from the environment.
  */
 @Injectable()
 export class TranslateService {

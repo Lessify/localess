@@ -47,7 +47,7 @@ export class TranslationSnapshotRepository {
 
   /**
    * Replaces the space's `version` maps with one per space locale, built from the rows as they are now, all with the
-   * same `built_at` (a locale the space no longer has loses its map). Keys in byte order, like Firestore returned them.
+   * same `built_at` (a locale the space no longer has loses its map). Keys in byte order, the order the public API has always served.
    */
   private async store(tx: Transaction, spaceId: string, version: SnapshotVersion): Promise<TranslationSnapshotEntity[]> {
     await lockTranslations(tx, spaceId);

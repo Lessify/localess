@@ -25,9 +25,9 @@ function requireSpaceLocales(space: SpaceWithLocales, localeIds: string[]): void
 }
 
 /**
- * Translation keys of a space for the app. Routes use the UUID `id`; `key` is the translation key, unique per space.
- * Every write fires `translation.changed` after commit — what the SPA's `translation-publishdraft` call after each
- * write used to do (the repository drops the draft maps in the write's transaction).
+ * Translation keys of a space for the app. Routes use the UUID; `key` is the translation key, unique per space. Every
+ * write fires `translation.changed` after commit (the repository drops the draft maps in the write's transaction, so
+ * the next draft request builds them again).
  */
 @Injectable()
 export class TranslationService {
@@ -97,8 +97,7 @@ export class TranslationService {
   }
 
   /**
-   * The published map of every locale, filled from the default locale (was the `translation-publish` callable); the
-   * new `built_at` is the published cv. Publishing an empty space is allowed and serves `{}`.
+   * The published map of every locale, filled from the default locale; the new `built_at` is the published cv. Publishing an empty space is allowed and serves `{}`.
    */
   async publish(spaceId: string): Promise<void> {
     await this.requireSpace(spaceId);

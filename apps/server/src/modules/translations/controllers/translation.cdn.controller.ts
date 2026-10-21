@@ -20,7 +20,7 @@ import { TranslationDeliveryService } from '../services/translation-delivery.ser
 
 /**
  * Translations on the CDN API: the published (or draft) map for a locale (`?token=` with a public or preview token,
- * cached behind `cv`). Ported from functions/src/v1/cdn.ts; URL, status codes, bodies and Cache-Control are unchanged.
+ * cached behind `cv`). Its URL, status codes, bodies and Cache-Control are a public contract (the SDK reads them).
  */
 @CdnToken({
   published: TokenType.PUBLIC,

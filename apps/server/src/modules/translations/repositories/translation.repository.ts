@@ -31,7 +31,7 @@ export class TranslationRepository {
     return this.db.query.translations.findMany({ where: eq(translations.spaceId, spaceId), orderBy: [asc(translations.key)] });
   }
 
-  /** For the public API and export files: by key in byte order, as Firestore returned documents. */
+  /** For the public API and export files: by key in byte order, so the order consumers have always seen stays stable. */
   findAllInByteOrder(spaceId: string): Promise<TranslationEntity[]> {
     return this.db.query.translations.findMany({
       where: eq(translations.spaceId, spaceId),
