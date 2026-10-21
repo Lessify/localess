@@ -27,9 +27,12 @@ describe('WebhookDetailComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(found: WebHook, logs: WebHookLog[] = []) {
+  /** `failLogs`: the logs request fails. */
+  function setup(found: WebHook, logs: WebHookLog[] = [], failLogs = false) {
     const findById = vi.fn().mockReturnValue(of(found));
-    const findLogs = vi.fn().mockReturnValue(of(logs));
+    const findLogs = vi
+      .fn()
+      .mockReturnValue(failLogs ? throwError(() => new Error('boom')) : of({ items: logs, page: 0, size: 20, total: logs.length }));
     const update = vi.fn().mockReturnValue(of(undefined));
     const updateStatus = vi.fn().mockReturnValue(of(undefined));
     const deleteWebhook = vi.fn().mockReturnValue(of(undefined));
@@ -73,19 +76,34 @@ describe('WebhookDetailComponent', () => {
     const { component, findById, findLogs } = setup(found, logs);
 
     expect(findById).toHaveBeenCalledWith('space-1', 'w1');
-    expect(findLogs).toHaveBeenCalledWith('space-1', 'w1');
+    expect(findLogs).toHaveBeenCalledWith('space-1', 'w1', component.list.params());
     expect(component.webhook()).toEqual(found);
     expect(component.dataSource.filteredData()).toEqual(logs);
+    expect(component.logsTotal()).toBe(1);
     expect(component.isLoading()).toBe(false);
     expect(component.isLogsLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
-    const { component } = setup(webhook());
+  it('onFilterChange() searches and filters the logs on the server, from the first page', () => {
+    const { component, findLogs } = setup(webhook());
+    component.list.page.set(3);
 
-    component.onFilterChange({ search: 'w1' });
+    component.onFilterChange({ search: ' 019a ', event: [WebHookEvent.CONTENT_PUBLISHED], status: [WebHookStatus.FAILURE] });
+    TestBed.tick();
 
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'w1' }));
+    const params = component.list.params();
+    expect(component.list.page()).toBe(0);
+    expect(findLogs).toHaveBeenLastCalledWith('space-1', 'w1', params);
+    expect(params.get('search')).toBe('019a');
+    expect(params.getAll('event')).toEqual([WebHookEvent.CONTENT_PUBLISHED]);
+    expect(params.getAll('status')).toEqual([WebHookStatus.FAILURE]);
+  });
+
+  it('tells a failed logs load and stops loading them', () => {
+    const { component, error } = setup(webhook(), [], true);
+
+    expect(error).toHaveBeenCalledWith('Logs can not be loaded.');
+    expect(component.isLogsLoading()).toBe(false);
   });
 
   it('isLogExpanded()/toggleLogExpanded() track expanded log ids', () => {

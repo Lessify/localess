@@ -69,4 +69,4 @@ export type {
   UserStatusUpdate,
   UserUpdate,
 } from './models/user.zod.js';
-export type { WebHookCreate, WebHookPageable, WebHookStatusUpdate, WebHookUpdate } from './models/webhook.zod.js';
+export type { WebHookCreate, WebHookLogPageable, WebHookPageable, WebHookStatusUpdate, WebHookUpdate } from './models/webhook.zod.js';

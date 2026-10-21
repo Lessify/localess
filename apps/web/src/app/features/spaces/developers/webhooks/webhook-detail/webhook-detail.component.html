@@ -295,7 +295,7 @@
           </tr>
         </table>
       </div>
-      <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+      <ll-paginator [sticky]="true" [length]="logsTotal()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
     </div>
   </div>
 }

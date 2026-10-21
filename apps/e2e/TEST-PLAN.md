@@ -337,6 +337,8 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | Webhooks: disable (no delivery), enable again; delete (no delivery) | UI + API + receiver | ✅ `developers/webhooks` |
 | Webhooks: a failed delivery is logged with status code, error type and URL | UI + receiver answering 500 | ✅ `developers/webhooks` |
 | Webhooks: signed delivery on publish, logged | API + local receiver + UI | ✅ `developers/webhooks` @smoke |
+| Webhooks: the list a page at a time (22 webhooks), the Status filter and the URL search on the server | UI + API | ✅ `developers/webhooks` |
+| Webhooks: a webhook's logs a page at a time (25 deliveries), the Status filter and the id search on the server | UI + receiver | ✅ `developers/webhooks` |
 | Webhooks: content events carry id and full slug | API + receiver | ✅ `contents/delivery` |
 | Tasks page | Hidden behind `FEATURE_FLAGS.importExport` | ➖ until enabled |
 

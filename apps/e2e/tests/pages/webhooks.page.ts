@@ -35,15 +35,15 @@ export class WebhooksPage {
     return Promise.all(rows.map(async row => (await row.getByRole('cell').first().innerText()).split('\n')[0].trim()));
   }
 
-  /** The search box (name or URL, on the server). */
+  /** The search box, on the server: the name or URL on the list, the log id on a webhook's page. */
   async search(text: string): Promise<void> {
-    await this.page.getByPlaceholder('Search...').fill(text);
+    await this.page.getByRole('searchbox').fill(text);
   }
 
-  /** Picks one value in the "Status" filter (on the server). */
-  async filterStatus(status: 'Enabled' | 'Disabled'): Promise<void> {
-    await this.page.getByRole('button', { name: 'Status' }).click();
-    await this.page.getByRole('option', { name: status, exact: true }).click();
+  /** Picks one value in the "Status" filter (on the server): Enabled / Disabled on the list, a delivery's on the logs. */
+  async filterStatus(status: string | RegExp): Promise<void> {
+    await this.page.getByRole('button', { name: 'Status', exact: true }).click();
+    await this.page.getByRole('option', typeof status === 'string' ? { name: status, exact: true } : { name: status }).click();
     await this.page.keyboard.press('Escape');
   }
 

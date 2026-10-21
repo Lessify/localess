@@ -2,7 +2,7 @@ import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
-import { WebHookEvent, WebHookLog } from '@localess/shared';
+import { Page, WebHookEvent, WebHookLog } from '@localess/shared';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -87,23 +87,22 @@ describe('WebHookService', () => {
     await done;
   });
 
-  it('findLogs() reads the logs, limited when max is given', async () => {
+  it('findLogs() reads one page of the logs with the query', async () => {
     const service = setup();
-    const limited = firstValueFrom(service.findLogs('space-1', 'w1', 20));
-    http.expectOne({ method: 'GET', url: `${base}/w1/logs?limit=20` }).flush([{ id: '1' }]);
-    expect(await limited).toEqual([{ id: '1' }]);
-
-    const all = firstValueFrom(service.findLogs('space-1', 'w1'));
-    http.expectOne({ method: 'GET', url: `${base}/w1/logs` }).flush([]);
-    expect(await all).toEqual([]);
+    const page = { items: [{ id: '1' }], page: 0, size: 20, total: 1 };
+    const result = firstValueFrom(service.findLogs('space-1', 'w1', new HttpParams().set('page', 0).append('status', 'FAILURE')));
+    http.expectOne({ method: 'GET', url: `${base}/w1/logs?page=0&status=FAILURE` }).flush(page);
+    expect(await result).toEqual(page);
   });
 
   it('findLogs() refetches on new logs of that webhook only', async () => {
     vi.useFakeTimers();
     const service = setup();
-    const results: WebHookLog[][] = [];
-    const subscription = service.findLogs('space-1', 'w1').subscribe(it => results.push(it));
-    http.expectOne(`${base}/w1/logs`).flush([]);
+    const results: Page<WebHookLog>[] = [];
+    const empty = { items: [], page: 0, size: 20, total: 0 };
+    const one = { items: [{ id: '1' } as WebHookLog], page: 0, size: 20, total: 1 };
+    const subscription = service.findLogs('space-1', 'w1', new HttpParams()).subscribe(it => results.push(it));
+    http.expectOne(`${base}/w1/logs`).flush(empty);
 
     events.next({ spaceId: 'space-1', entity: 'webhook_logs', id: 'w2', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
@@ -111,8 +110,8 @@ describe('WebHookService', () => {
 
     events.next({ spaceId: 'space-1', entity: 'webhook_logs', id: 'w1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${base}/w1/logs`).flush([{ id: '1' } as WebHookLog]);
-    expect(results).toEqual([[], [{ id: '1' }]]);
+    http.expectOne(`${base}/w1/logs`).flush(one);
+    expect(results).toEqual([empty, one]);
     subscription.unsubscribe();
   });
 });

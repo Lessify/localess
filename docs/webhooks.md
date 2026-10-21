@@ -25,11 +25,13 @@ App API (`apps/server/src/modules/webhooks/controllers/webhook.controller.ts`):
 | `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | one page (`Page<WebHook>`, `zWebHookPageable`) / create |
 | `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId` | read / update / delete |
 | `PATCH` | `/api/app/spaces/:spaceId/webhooks/:webhookId/status` | `{ enabled }` |
-| `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs[?limit=]` | newest first; the 100 newest, or `limit` clamped to 1–1000 |
+| `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs` | one page (`Page<WebHookLog>`, `zWebHookLogPageable`), newest first |
 
 The list is paged on the server ([Pagination](server/pagination.md)): `?page=&size=&sort=&direction=`, sorts `name`
 (the default, case-insensitive), `enabled`, `updatedAt` (ties by id); `?enabled=true|false`; `?event=` (repeated: a
-webhook listening to any of them); `?search=` (the name or the URL, case-insensitive contains).
+webhook listening to any of them); `?search=` (the name or the URL, case-insensitive contains). The logs too: sort
+`createdAt` only (newest first by default, equal times by id); `?event=`, `?status=` (repeated: any of them); `?search=`
+(the log id, case-insensitive contains).
 
 Every route checks the space first: an unknown space is 404 "Space not found" (the list too), then "Webhook not found"; a `spaceId` or `webhookId` that isn't a UUID is 404. Request bodies are strict: an unknown field is a 400.
 
@@ -175,7 +177,7 @@ interface WebHookLogFailure extends WebHookLogBase {
 type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns rows newest first: the 100 newest, or `?limit=` (clamped to 1–1000); the frontend `WebHookService.findLogs()` takes an optional `max`. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebHookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
+Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns one page, newest first: every delivery kept can be reached page by page; the frontend `WebHookService.findLogs()` takes a `PagedList`'s params. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebHookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history a page at a time, filtered and searched on the server.
 
 ---
 
@@ -219,7 +221,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 
 Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) shows one page from the server (`PagedList`, `ll-paginator`): the sort headers, the search box and the Status / Events filters change the query. It supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
 
-`WebhookDetailComponent` shows the full log history for a single webhook: search by log id, filter by event/status, paginated (`HlmPaginationImports`), plus enable/disable, edit, and delete actions.
+`WebhookDetailComponent` shows a webhook's log history one page at a time from the server (`PagedList`, `ll-paginator`; a new delivery reloads the page shown): search by log id, filter by event/status, plus enable/disable, edit, and delete actions.
 
 ---
 

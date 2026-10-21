@@ -230,13 +230,13 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
         { ...log, id: newUuid(), deliveryId: 'old', createdAt: new Date('2026-01-01') },
         { ...log, id: newUuid(), deliveryId: 'new', createdAt: new Date('2026-02-01') },
       ]);
-      const logs = (await manager.get(`${base}/${hook.id}/logs?limit=1`)).json();
+      const logs = (await manager.get(`${base}/${hook.id}/logs?size=1`)).json().items;
       expect(logs).toEqual([expect.objectContaining({ deliveryId: 'new', id: expect.stringMatching(UUID_V7) })]);
       expect((await manager.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
       expect(logs[0]).not.toHaveProperty('webhookId');
     });
 
-    it('lists at most 100 logs unless asked for more, and deletes those older than the retention', async () => {
+    it('pages through every log kept, and deletes those older than the retention', async () => {
       const log = {
         webhookId: hook.id,
         event: 'content.published' as const,
@@ -256,11 +256,13 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
         })),
       );
       await t.db.insert(webhookLogs).values({ ...log, id: newUuid(), deliveryId: 'stale', createdAt: new Date(Date.now() - 31 * day) });
-      expect((await manager.get(`${base}/${hook.id}/logs`)).json()).toHaveLength(100);
-      expect((await manager.get(`${base}/${hook.id}/logs?limit=500`)).json().length).toBeGreaterThan(101);
+      // Every delivery can be reached, a page at a time: 'old' and 'new' (above), the 101 bulk ones and the stale one.
+      expect((await manager.get(`${base}/${hook.id}/logs`)).json()).toMatchObject({ page: 0, size: 20, total: 104 });
 
       await t.app.get(WebhookLogCleanupService).cleanup();
-      const kept = (await manager.get(`${base}/${hook.id}/logs?limit=1000`)).json().map((it: { deliveryId: string }) => it.deliveryId);
+      // 'old', 'new' (January, February) and 'stale' are past the 30 days.
+      expect((await manager.get(`${base}/${hook.id}/logs`)).json().total).toBe(101);
+      const kept = (await t.db.select({ deliveryId: webhookLogs.deliveryId }).from(webhookLogs)).map(it => it.deliveryId);
       expect(kept).not.toContain('stale');
       expect(kept).toContain('bulk-0');
     });

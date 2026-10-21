@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, effect, inject, Injector, input, OnInit, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideChevronRight, lucideInfo, lucidePencil, lucideWebhook, lucideWebhookOff } from '@ng-icons/lucide';
@@ -16,7 +16,7 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -25,7 +25,8 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { WebHookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
@@ -70,17 +71,13 @@ export class WebhookDetailComponent implements OnInit {
 
   webhookId = input.required<string>();
 
-  // Optional: the paginator is inside `@if (webhook())`, so it is not there until the webhook has loaded (a required
-  // query threw NG0951 and the logs were never paginated).
-  paginator = viewChild(Paginator);
-  private readonly wirePaginator = effect(() => {
-    this.dataSource.paginator = this.paginator() ?? null;
-  });
-
   isLoading = signal(true);
   isLogsLoading = signal(true);
   webhook = signal<WebHook | undefined>(undefined);
 
+  /** The page of delivery logs shown: newest first, filtered and searched on the server. */
+  readonly list = new PagedList(20);
+  readonly logsTotal = signal(0);
   private readonly logs = signal<WebHookLog[]>([]);
   readonly dataSource = new TableDataSource<WebHookLog>(this.logs, this.injector);
   displayedColumns: string[] = ['expand', 'id', 'event', 'status', 'duration', 'createdAt'];
@@ -104,16 +101,6 @@ export class WebhookDetailComponent implements OnInit {
     },
   ];
 
-  constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<WebHookLog>({
-      searchFields: log => [log.id],
-      filterFields: [
-        { key: 'event', accessor: log => log.event },
-        { key: 'status', accessor: log => log.status },
-      ],
-    });
-  }
-
   ngOnInit(): void {
     const spaceId = this.spaceStore.selectedSpaceId()!;
 
@@ -125,17 +112,32 @@ export class WebhookDetailComponent implements OnInit {
         this.isLoading.set(false);
       });
 
-    this.webhookService
-      .findLogs(spaceId, this.webhookId())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(logs => {
-        this.logs.set(logs);
+    // The current query's page, again whenever it changes, and live (a new delivery reloads the page shown). A failed
+    // load is told and ends only that request.
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params =>
+          this.webhookService.findLogs(spaceId, this.webhookId(), params).pipe(
+            catchError(() => {
+              this.notificationService.error('Logs can not be loaded.');
+              this.isLogsLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        this.logs.set(page.items);
+        this.logsTotal.set(page.total);
+        this.list.onLoaded(page);
         this.isLogsLoading.set(false);
       });
   }
 
+  /** The search box (the log id), Event Type and Status (any of them), on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+    this.list.setFilters({ search: value.search?.trim() || undefined, event: value['event'], status: value['status'] });
   }
 
   openEditDialog(): void {

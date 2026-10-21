@@ -16,6 +16,10 @@ export interface WebHook {
 export const WEBHOOK_SORT_FIELDS = ['name', 'enabled', 'updatedAt'] as const;
 export type WebHookSortField = (typeof WEBHOOK_SORT_FIELDS)[number];
 
+/** What a webhook's delivery logs sort by: when, newest first by default. */
+export const WEBHOOK_LOG_SORT_FIELDS = ['createdAt'] as const;
+export type WebHookLogSortField = (typeof WEBHOOK_LOG_SORT_FIELDS)[number];
+
 export enum WebHookEvent {
   CONTENT_PUBLISHED = 'content.published',
   CONTENT_UNPUBLISHED = 'content.unpublished',

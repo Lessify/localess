@@ -1,4 +1,5 @@
-import { DEVELOPERS } from '@localess/shared';
+import { DEVELOPERS, type WebHookLogPageable } from '@localess/shared';
+import { zWebHookLogPageable } from '@localess/shared/zod';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
@@ -11,12 +12,13 @@ import { WebhookLogService } from '../services/webhook-log.service.js';
 export class WebhookLogController {
   constructor(private readonly webhookLogService: WebhookLogService) {}
 
+  /** One page for the webhook's page: `?page=&size=&sort=&direction=` (Pageable, newest first), `?event=`, `?status=`, `?search=` (the log id). */
   @Get()
   findAll(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
-    @Query('limit') limit?: string,
+    @Query({ schema: zWebHookLogPageable }) query: WebHookLogPageable,
   ) {
-    return this.webhookLogService.findAll(spaceId, webhookId, limit ? Math.max(1, Math.min(1000, Number(limit) || 100)) : 100);
+    return this.webhookLogService.findAll(spaceId, webhookId, query);
   }
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { zMultiValue, zPageable, zSearch } from './page.zod.js';
-import { WEBHOOK_SORT_FIELDS, WebHookEvent } from './webhook.model.js';
+import { WEBHOOK_LOG_SORT_FIELDS, WEBHOOK_SORT_FIELDS, WebHookEvent, WebHookStatus } from './webhook.model.js';
 
 // App API requests of webhooks.
 
@@ -23,6 +23,17 @@ export const zWebHookPageable = zPageable(WEBHOOK_SORT_FIELDS, 'name').extend({
   search: zSearch,
 });
 export type WebHookPageable = z.infer<typeof zWebHookPageable>;
+
+/**
+ * `GET …/webhooks/:webhookId/logs`: one page of the delivery logs, newest first; `?event=`, `?status=` (repeated: any of
+ * them), `?search=` (the log id).
+ */
+export const zWebHookLogPageable = zPageable(WEBHOOK_LOG_SORT_FIELDS, 'createdAt', 'desc').extend({
+  event: zMultiValue(WEBHOOK_EVENTS).optional(),
+  status: zMultiValue(Object.values(WebHookStatus) as [WebHookStatus, ...WebHookStatus[]]).optional(),
+  search: zSearch,
+});
+export type WebHookLogPageable = z.infer<typeof zWebHookLogPageable>;
 
 /** `POST /api/app/spaces/:spaceId/webhooks`. */
 export const zWebHookCreate = z.strictObject({

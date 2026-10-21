@@ -45,11 +45,10 @@ export class WebHookService {
     return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }
 
-  /** Newest first. */
-  findLogs(spaceId: string, webhookId: string, max?: number): Observable<WebHookLog[]> {
-    const params = max ? new HttpParams().set('limit', max) : undefined;
+  /** One page of a webhook's delivery logs (`params`: a `PagedList`'s), newest first; a new delivery reloads it. */
+  findLogs(spaceId: string, webhookId: string, params: HttpParams): Observable<Page<WebHookLog>> {
     return liveQueryWith(this.events, { spaceId, entities: ['webhook_logs'], id: webhookId }, () =>
-      this.http.get<WebHookLog[]>(`${this.base(spaceId)}/${webhookId}/logs`, { params }),
+      this.http.get<Page<WebHookLog>>(`${this.base(spaceId)}/${webhookId}/logs`, { params }),
     );
   }
 

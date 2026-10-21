@@ -177,6 +177,43 @@ test.describe('Developers → Webhooks', () => {
     await expect(detail.logs.first()).toContainText('Success');
   });
 
+  test('the webhook page shows its logs a page at a time; the status filter and the id search narrow on the server', async ({
+    page,
+    api,
+    space,
+  }) => {
+    const webhook = await api.createWebhook(space.id, { name: 'Busy', url: receiver.url, events: ['translation.published'] });
+    // 22 delivered, then 3 refused by the receiver: 25 logs, 3 of them failures.
+    for (let i = 0; i < 25; i++) {
+      if (i === 22) receiver.status = 500;
+      await publish(api, space.id);
+      await expect.poll(() => receiver.requests.length).toBe(i + 1);
+    }
+    const detail = new WebhooksPage(page);
+    const status = page.getByRole('status').filter({ hasText: /^Page \d+ of \d+$/ });
+
+    await detail.gotoDetail(space.id, webhook.id);
+    await expect(page.getByText('25 total items')).toBeVisible();
+    await expect(status).toHaveText('Page 1 of 2');
+    await expect(detail.logs).toHaveCount(20);
+    // Newest first: the 3 failures lead.
+    await expect(detail.logs.first()).toContainText('Failure');
+    const lastOnFirstPage = (await detail.logs.last().locator('td.font-mono').innerText()).trim();
+    await page.getByRole('button', { name: 'Next page' }).click();
+    await expect(status).toHaveText('Page 2 of 2');
+    await expect(detail.logs).toHaveCount(5);
+
+    await detail.filterStatus(/failure/i);
+    await expect(page.getByText('3 total items')).toBeVisible();
+    await expect(detail.logs).toHaveCount(3);
+
+    // Without the filter, a log of the first page by its id.
+    await page.getByRole('button', { name: 'Reset' }).click();
+    await detail.search(lastOnFirstPage);
+    await expect(detail.logs).toHaveCount(1);
+    await expect(detail.logs.first()).toContainText(lastOnFirstPage);
+  });
+
   test("the webhook page logs a failed delivery with the receiver's status code", async ({ page, api, space }) => {
     const webhook = await api.createWebhook(space.id, { name: 'Failing', url: receiver.url, events: ['translation.published'] });
     receiver.status = 500;
