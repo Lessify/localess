@@ -18,14 +18,16 @@ Postgres tables defined in `apps/server/src/infra/database/schema.ts`. Enabled w
 
 **Access control:** Developers and Admins (`@RequireRole(DEVELOPERS)` on `WebhookController` and `WebhookLogController`; the Developers route has `roleGuard(DEVELOPERS)`, the `webhooks` / `webhook_logs` events go to the same roles). Logs are read-only through the API; only the server's dispatcher writes them.
 
-App API (`apps/server/src/modules/webhooks/webhook.controller.ts`):
+App API (`apps/server/src/modules/webhooks/controllers/webhook.controller.ts`):
 
 | Method | Path | |
 |---|---|---|
 | `GET` / `POST` | `/api/app/spaces/:spaceId/webhooks` | list (by name) / create |
-| `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:id` | read / update / delete |
-| `PATCH` | `/api/app/spaces/:spaceId/webhooks/:id/status` | `{ enabled }` |
-| `GET` | `/api/app/spaces/:spaceId/webhooks/:id/logs[?limit=]` | newest first; the 100 newest, or `limit` clamped to 1–1000 |
+| `GET` / `PUT` / `DELETE` | `/api/app/spaces/:spaceId/webhooks/:webhookId` | read / update / delete |
+| `PATCH` | `/api/app/spaces/:spaceId/webhooks/:webhookId/status` | `{ enabled }` |
+| `GET` | `/api/app/spaces/:spaceId/webhooks/:webhookId/logs[?limit=]` | newest first; the 100 newest, or `limit` clamped to 1–1000 |
+
+Every route checks the space first: an unknown space is 404 "Space not found" (the list too), then "Webhook not found"; a `spaceId` or `webhookId` that isn't a UUID is 404. Request bodies are strict: an unknown field is a 400.
 
 ---
 
@@ -169,7 +171,7 @@ interface WebHookLogFailure extends WebHookLogBase {
 type WebHookLog = WebHookLogSuccess | WebHookLogFailure;
 ```
 
-Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:id/logs` returns rows newest first: the 100 newest, or `?limit=` (clamped to 1–1000); the frontend `WebHookService.findLogs()` takes an optional `max`. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebHookPayloadData`). Webhook and log ids are UUIDv7s; a `:id` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
+Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns rows newest first: the 100 newest, or `?limit=` (clamped to 1–1000); the frontend `WebHookService.findLogs()` takes an optional `max`. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebHookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history with pagination and filtering.
 
 ---
 
@@ -223,7 +225,7 @@ Webhooks created in the app start enabled (`WebhookRepository.create` sets `enab
 |--------------------------------------------------|---------------------------------------------------------------------------|
 | `apps/server/src/infra/database/schema.ts`                  | `webhooks` and `webhook_logs` tables                                      |
 | `packages/shared/src/models/webhook.model.ts`         | Types — `WebHookEvent` and friends (server and web)                       |
-| `apps/server/src/modules/webhooks/webhook.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
+| `apps/server/src/modules/webhooks/controllers/webhook.controller.ts` | App API — CRUD, status toggle, logs, URL validation                   |
 | `apps/server/src/shared/services/webhook-dispatcher.service.ts` | HTTP dispatch, HMAC signing, execution logging                         |
 | `apps/server/src/shared/utils/webhook-request.ts`       | Destination checks (URL, resolved address, headers), guarded POST         |
 | `apps/web/src/app/features/spaces/developers/webhooks/webhook.service.ts`     | Frontend HttpClient CRUD + log queries (live queries over SSE)            |

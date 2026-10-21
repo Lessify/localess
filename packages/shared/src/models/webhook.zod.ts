@@ -8,7 +8,7 @@ import { WebHookEvent } from './webhook.model.js';
 const zWebHookUrl = z.string().max(2048);
 
 /** `POST /api/app/spaces/:spaceId/webhooks`. */
-export const zWebHookCreate = z.object({
+export const zWebHookCreate = z.strictObject({
   name: z.string().trim().min(1).max(200),
   url: zWebHookUrl,
   events: z.array(z.enum(Object.values(WebHookEvent) as [WebHookEvent, ...WebHookEvent[]])).min(1),
@@ -22,5 +22,5 @@ export const zWebHookUpdate = zWebHookCreate;
 export type WebHookUpdate = z.infer<typeof zWebHookUpdate>;
 
 /** `PATCH …/webhooks/:id/status`. */
-export const zWebHookStatusUpdate = z.object({ enabled: z.boolean() });
+export const zWebHookStatusUpdate = z.strictObject({ enabled: z.boolean() });
 export type WebHookStatusUpdate = z.infer<typeof zWebHookStatusUpdate>;

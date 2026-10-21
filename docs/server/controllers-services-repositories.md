@@ -7,7 +7,7 @@
 
 - **Rule:** a module holds one controller, one service and one repository per entity it serves, and one set per
   sub-entity: what is addressed under another entity's id and has rows of its own (`/spaces/:spaceId/locales`,
-  `/webhooks/:id/logs`, `/tasks/:id/logs`). A service may use any repository of its module; a sub-entity's service
+  `/webhooks/:webhookId/logs`, `/tasks/:id/logs`). A service may use any repository of its module; a sub-entity's service
   reads the parent through the parent's repository (404 when it is not there): `exists` when the check is all it
   needs, `findOne` only when a rule reads the parent (`space.spaceLocales`).
 - **Why:** each file is about one thing, small enough to read; a sub-entity's methods are the plain ones (`create`,

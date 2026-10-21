@@ -10,7 +10,7 @@ import { newUuid } from '../src/infra/database/id.js';
 import { schemas, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
 import { WebhookLogCleanupService } from '../src/modules/webhooks/services/webhook-log-cleanup.service.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
-import { S1, UUID_V7 } from './ids.js';
+import { S1, S2, UUID_V7 } from './ids.js';
 import { tokenRow } from './seed.js';
 import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
 
@@ -263,6 +263,35 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       const kept = (await manager.get(`${base}/${hook.id}/logs?limit=1000`)).json().map((it: { deliveryId: string }) => it.deliveryId);
       expect(kept).not.toContain('stale');
       expect(kept).toContain('bulk-0');
+    });
+
+    it('checks the space first, answers 404 for ids that are not UUIDs, and refuses unknown fields', async () => {
+      const unknown = `/api/app/spaces/${S2}/webhooks`;
+      const body = { name: 'X', url: 'https://example.com/x', events: ['content.published'] };
+      const responses = [
+        await manager.get(unknown),
+        await manager.post(unknown, body),
+        await manager.get(`${unknown}/${hook.id}`),
+        await manager.put(`${unknown}/${hook.id}`, body),
+        await manager.patch(`${unknown}/${hook.id}/status`, { enabled: true }),
+        await manager.delete(`${unknown}/${hook.id}`),
+        await manager.get(`${unknown}/${hook.id}/logs`),
+      ];
+      for (const response of responses) {
+        expect(response.statusCode).toBe(404);
+        expect(response.json().message).toBe('Space not found');
+      }
+      expect((await manager.get(`${base}/${S2}`)).json().message).toBe('Webhook not found');
+      expect((await manager.get(`${base}/${S2}/logs`)).json().message).toBe('Webhook not found');
+
+      expect((await manager.get('/api/app/spaces/abc/webhooks')).statusCode).toBe(404);
+      expect((await manager.get(`${base}/abc`)).statusCode).toBe(404);
+      expect((await manager.get(`${base}/abc/logs`)).statusCode).toBe(404);
+
+      expect((await manager.post(base, { ...body, secrets: 'x' })).statusCode).toBe(400);
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, enable: true })).statusCode).toBe(400);
+      expect((await manager.patch(`${base}/${hook.id}/status`, { enabled: true, name: 'x' })).statusCode).toBe(400);
+      expect((await manager.get(`${base}/${hook.id}`)).json()).toMatchObject({ name: 'Site 2', enabled: false });
     });
 
     it('lists by name and deletes with logs, for developers only', async () => {

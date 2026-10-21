@@ -2,8 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
-import { spaces, webhooks } from '../../../infra/database/schema.js';
+import { newUuid } from '../../../infra/database/id.js';
+import { webhooks } from '../../../infra/database/schema.js';
 import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
@@ -27,11 +27,9 @@ export class WebhookRepository {
     return row;
   }
 
-  /** Enabled. `undefined` when there is no space `spaceId`. */
-  create(spaceId: string, values: WebhookValues, tx?: Transaction): Promise<WebhookEntity | undefined> {
+  /** Enabled; the space is checked by the service. */
+  create(spaceId: string, values: WebhookValues, tx?: Transaction): Promise<WebhookEntity> {
     return transaction(this.db, tx, async t => {
-      const [space] = isUuid(spaceId) ? await t.select({ id: spaces.id }).from(spaces).where(eq(spaces.id, spaceId)) : [];
-      if (!space) return undefined;
       const [row] = await t
         .insert(webhooks)
         .values({ id: newUuid(), spaceId, enabled: true, ...values })

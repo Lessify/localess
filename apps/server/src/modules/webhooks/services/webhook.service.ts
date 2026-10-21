@@ -3,6 +3,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from '@nes
 
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import type { WebhookEntity } from '../../../shared/entities/webhook.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
@@ -20,11 +21,15 @@ function found(entity: WebhookEntity | undefined) {
   return toWebhook(entity);
 }
 
-/** Webhook configuration (was `spaces/{s}/webhooks`; the delivery logs: `WebhookLogService`); delivery is `WebhookDispatcher` (shared). */
+/**
+ * Webhook configuration (the delivery logs: `WebhookLogService`); delivery is `WebhookDispatcher` (shared). Every route
+ * checks the space first (404 "Space not found" before "Webhook not found").
+ */
 @Injectable()
 export class WebhookService {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
     private readonly webhookRepository: WebhookRepository,
   ) {}
 
@@ -39,25 +44,27 @@ export class WebhookService {
   }
 
   async findAll(spaceId: string) {
+    await this.requireSpace(spaceId);
     return (await this.webhookRepository.findAll(spaceId)).map(toWebhook);
   }
 
-  async findOne(spaceId: string, id: string) {
-    return found(await this.webhookRepository.findById(spaceId, id));
+  async findOne(spaceId: string, webhookId: string) {
+    await this.requireSpace(spaceId);
+    return found(await this.webhookRepository.findById(spaceId, webhookId));
   }
 
   async create(spaceId: string, input: WebhookInput) {
     this.assertDeliverable(input.url);
-    const entity = await this.webhookRepository.create(spaceId, input);
-    if (!entity) throw new NotFoundException('Space not found');
-    return toWebhook(entity);
+    await this.requireSpace(spaceId);
+    return toWebhook(await this.webhookRepository.create(spaceId, input));
   }
 
   /** Headers and secret are only replaced when sent (the form leaves them out to keep them). */
-  async update(spaceId: string, id: string, input: WebhookInput) {
+  async update(spaceId: string, webhookId: string, input: WebhookInput) {
     this.assertDeliverable(input.url);
+    await this.requireSpace(spaceId);
     return found(
-      await this.webhookRepository.update(spaceId, id, {
+      await this.webhookRepository.update(spaceId, webhookId, {
         name: input.name,
         url: input.url,
         events: input.events,
@@ -67,11 +74,17 @@ export class WebhookService {
     );
   }
 
-  async updateStatus(spaceId: string, id: string, enabled: boolean) {
-    return found(await this.webhookRepository.update(spaceId, id, { enabled }));
+  async updateStatus(spaceId: string, webhookId: string, enabled: boolean) {
+    await this.requireSpace(spaceId);
+    return found(await this.webhookRepository.update(spaceId, webhookId, { enabled }));
   }
 
-  async remove(spaceId: string, id: string): Promise<void> {
-    if (!(await this.webhookRepository.delete(spaceId, id))) throw new NotFoundException('Webhook not found');
+  async remove(spaceId: string, webhookId: string): Promise<void> {
+    await this.requireSpace(spaceId);
+    if (!(await this.webhookRepository.delete(spaceId, webhookId))) throw new NotFoundException('Webhook not found');
+  }
+
+  private async requireSpace(spaceId: string): Promise<void> {
+    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
   }
 }

@@ -13,38 +13,42 @@ export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 
   @Get()
-  findAll(@Param('spaceId') spaceId: string) {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string) {
     return this.webhookService.findAll(spaceId);
   }
 
-  @Get(':id')
-  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.webhookService.findOne(spaceId, id);
+  @Get(':webhookId')
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string) {
+    return this.webhookService.findOne(spaceId, webhookId);
   }
 
   @Post()
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate) {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate) {
     return this.webhookService.create(spaceId, body);
   }
 
-  @Put(':id')
-  update(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zWebHookUpdate }) body: WebHookUpdate) {
-    return this.webhookService.update(spaceId, id, body);
+  @Put(':webhookId')
+  update(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('webhookId', UuidParamPipe) webhookId: string,
+    @Body({ schema: zWebHookUpdate }) body: WebHookUpdate,
+  ) {
+    return this.webhookService.update(spaceId, webhookId, body);
   }
 
-  @Patch(':id/status')
+  @Patch(':webhookId/status')
   updateStatus(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('webhookId', UuidParamPipe) webhookId: string,
     @Body({ schema: zWebHookStatusUpdate }) body: WebHookStatusUpdate,
   ) {
-    return this.webhookService.updateStatus(spaceId, id, body.enabled);
+    return this.webhookService.updateStatus(spaceId, webhookId, body.enabled);
   }
 
   /** Logs cascade. */
-  @Delete(':id')
+  @Delete(':webhookId')
   @HttpCode(204)
-  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.webhookService.remove(spaceId, id);
+  async remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<void> {
+    await this.webhookService.remove(spaceId, webhookId);
   }
 }
