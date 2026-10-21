@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Translation } from '@localess/shared';
+import { Page, Translation, TranslationNode } from '@localess/shared';
 import { TranslationService } from './translation.service';
 
 const BASE = '/api/app/spaces/space-1/translations';
@@ -28,29 +28,59 @@ describe('TranslationService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the space translations', async () => {
+  const page = (items: Translation[], total = items.length): Page<Translation> => ({ items, page: 0, size: 50, total });
+  const params = new HttpParams().set('page', 0).set('size', 50).set('search', 'home');
+
+  it('findAll() reads one page with the given query', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(BASE).flush([{ id: 'hello' }]);
-    expect(await result).toEqual([{ id: 'hello' }]);
+    const result = firstValueFrom(service.findAll('space-1', params));
+    http.expectOne(`${BASE}?page=0&size=50&search=home`).flush(page([{ id: 'hello' } as Translation]));
+    expect(await result).toEqual(page([{ id: 'hello' } as Translation]));
   });
 
   it('findAll() refetches when a translation of the space changes, ignoring other entities', async () => {
     vi.useFakeTimers();
     const service = setup();
-    const results: Translation[][] = [];
-    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(BASE).flush([]);
+    const results: Page<Translation>[] = [];
+    const subscription = service.findAll('space-1', params).subscribe(it => results.push(it));
+    const url = `${BASE}?page=0&size=50&search=home`;
+    http.expectOne(url).flush(page([]));
 
     events.next({ spaceId: 'space-1', entity: 'schemas', id: 's', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(BASE);
+    http.expectNone(url);
 
     events.next({ spaceId: 'space-1', entity: 'translations', id: 'hello', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(BASE).flush([{ id: 'hello' } as Translation]);
-    expect(results).toEqual([[], [{ id: 'hello' }]]);
+    http.expectOne(url).flush(page([{ id: 'hello' } as Translation]));
+    expect(results).toEqual([page([]), page([{ id: 'hello' } as Translation])]);
     subscription.unsubscribe();
+  });
+
+  it('findNodes() reads one level of the tree once', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findNodes('space-1', new HttpParams().set('parent', 'home')));
+    const nodes: Page<TranslationNode> = { items: [{ name: 'title', path: 'home.title', children: 0 }], page: 0, size: 100, total: 1 };
+    http.expectOne(`${BASE}/nodes?parent=home`).flush(nodes);
+    expect(await result).toEqual(nodes);
+  });
+
+  it('findLabels() reads the labels of the space', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findLabels('space-1'));
+    http.expectOne(`${BASE}/labels`).flush(['cta', 'form']);
+    expect(await result).toEqual(['cta', 'form']);
+  });
+
+  it('isKeyTaken() asks for that exact key, one row at most', async () => {
+    const service = setup();
+    const taken = firstValueFrom(service.isKeyTaken('space-1', 'home.title'));
+    http.expectOne(`${BASE}?key=home.title&size=1`).flush(page([{ id: 'x' } as Translation]));
+    expect(await taken).toBe(true);
+
+    const free = firstValueFrom(service.isKeyTaken('space-1', 'home.new'));
+    http.expectOne(`${BASE}?key=home.new&size=1`).flush(page([], 0));
+    expect(await free).toBe(false);
   });
 
   it('create() posts the translation with its values as they are, dropping empty labels/description', async () => {

@@ -94,7 +94,7 @@ describe('app API: translations check their space and ids', () => {
       400,
     );
     expect((await admin.get(`${base}/${translationId}`)).json()).toMatchObject({ key: 'hello', locales: { en: 'Hello' } });
-    expect((await admin.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hello']);
+    expect((await admin.get(base)).json().items.map((it: { key: string }) => it.key)).toEqual(['hello']);
   });
 
   it('deletes a translation once: already gone is a 404, and only one deleted event is sent', async () => {

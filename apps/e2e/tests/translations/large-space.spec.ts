@@ -5,7 +5,7 @@ import { TranslationsPage } from '../pages/translations.page';
 import type { AppApi } from '../support/app-api';
 import { expect, test } from '../support/fixtures';
 import { LARGE, largeKey, largePageKeys, largeValue } from '../support/large-translations';
-import { translationsByKey } from '../support/translations';
+import { translationByKey, translationCount } from '../support/translations';
 
 // A prepared space: the "Translations (large)" test template, 10,000 keys in English, German and French, nothing
 // published (support/large-translations.ts). Each test gets its own copy. Pre-check → action (UI) → post-check (the
@@ -33,7 +33,7 @@ test.describe('Translations → a large prepared space', () => {
       expect(draft.status, `draft ${locale}`).toBe(200);
       expect(draft.body?.[key]).toBe(largeValue(7, 12, 'title', locale));
     }
-    expect((await translationsByKey(api, space.id)).size).toBe(LARGE.keys);
+    expect(await translationCount(api, space.id)).toBe(LARGE.keys);
   });
 
   test('searches values in the chosen locale only', async ({ page, space }) => {
@@ -113,7 +113,7 @@ test.describe('Translations → a large prepared space', () => {
     await page.reload();
     await translations.search('extra.key');
     await expect(translations.item('extra.key')).toBeVisible();
-    await expect.poll(async () => (await translationsByKey(api, space.id)).size).toBe(LARGE.keys + 1);
+    await expect.poll(() => translationCount(api, space.id)).toBe(LARGE.keys + 1);
 
     // Edit one German value
     await translations.search(key);
@@ -125,7 +125,7 @@ test.describe('Translations → a large prepared space', () => {
     await translations.filterLocale('German');
     await translations.search(key);
     await expect(translations.valueOf(key)).toHaveText('Geändert');
-    expect((await translationsByKey(api, space.id)).get(key)?.locales).toEqual({
+    expect((await translationByKey(api, space.id, key))?.locales).toEqual({
       en: largeValue(7, 12, 'title', 'en'),
       de: 'Geändert',
       fr: largeValue(7, 12, 'title', 'fr'),
@@ -139,7 +139,7 @@ test.describe('Translations → a large prepared space', () => {
     await page.reload();
     await translations.search('extra.key');
     await expect(translations.items).toHaveCount(0);
-    await expect.poll(async () => (await translationsByKey(api, space.id)).size).toBe(LARGE.keys);
+    await expect.poll(() => translationCount(api, space.id)).toBe(LARGE.keys);
   });
 
   test('draft and published follow one English change', async ({ page, api, space, request }) => {

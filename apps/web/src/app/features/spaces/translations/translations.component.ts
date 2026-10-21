@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
@@ -121,20 +121,10 @@ export class TranslationsComponent implements OnInit {
     return [];
   });
 
-  // Translations
-  translations = signal<Translation[]>([]);
-  /** Keys already taken, for the add and rename dialogs. */
-  translationKeys = computed(() => this.translations().map(it => it.key));
-
-  // Labels
-  allLabels = computed(() => {
-    const tmp = this.translations()
-      .map(it => it.labels)
-      .flat()
-      .filter(it => it != undefined)
-      .map(it => it!);
-    return [...new Set<string>(tmp)];
-  });
+  /** Every label of the space's translations (the filter's choices), from the server. */
+  allLabels = signal<string[]>([]);
+  /** Whether a key is taken, for the add and rename dialogs (exactly: the server's rule). */
+  readonly isKeyTaken = (key: string) => this.translationService.isKeyTaken(this.spaceId(), key);
 
   // Filter state, fed by TranslationFilterComponent
   currentLocale = signal('');
@@ -154,28 +144,34 @@ export class TranslationsComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
   spaceStore = inject(SpaceStore);
 
+  /** The selected translation's id: the detail panel reads it again whenever it changes. */
+  private readonly selectedId = signal<string | undefined>(undefined);
+  private readonly selectedId$ = toObservable(this.selectedId);
+
   ngOnInit(): void {
     this.translationService
-      .findAll(this.spaceId())
+      .findLabels(this.spaceId())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: translations => {
-          this.translations.set(translations);
-          if (translations.length > 0) {
-            if (this.selectedTranslation()) {
-              const tr = translations.find(it => it.id === this.selectedTranslation()?.id);
-              if (tr) {
-                this.selectTranslation(tr);
-              } else {
-                this.selectTranslation(translations[0]);
-              }
-            } else {
-              this.selectTranslation(translations[0]);
-            }
-          }
-          this.isLoading.set(false);
-        },
+      .subscribe({ next: labels => this.allLabels.set(labels), error: () => this.allLabels.set([]) });
+    // The detail panel follows the selected translation: an edit (here or by someone else) shows at once; a deleted one
+    // clears the panel.
+    this.selectedId$
+      .pipe(
+        switchMap(id =>
+          id === undefined ? of(undefined) : this.translationService.findOne(this.spaceId(), id).pipe(catchError(() => of(undefined))),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(translation => {
+        this.selectedTranslation.set(translation);
+        if (!translation) this.selectedId.set(undefined);
       });
+    this.isLoading.set(false);
+  }
+
+  /** The list or tree loaded: its first key is selected when nothing is. */
+  onFirstTranslation(translation: Translation): void {
+    if (this.selectedId() === undefined) this.selectTranslation(translation);
   }
 
   publish(): void {
@@ -205,7 +201,7 @@ export class TranslationsComponent implements OnInit {
     this.dialog
       .open<AddDialogResult, AddDialogContext>(AddDialogComponent, {
         context: {
-          reservedKeys: this.translationKeys(),
+          isKeyTaken: this.isKeyTaken,
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -375,6 +371,7 @@ export class TranslationsComponent implements OnInit {
 
   selectTranslation(translation: Translation): void {
     this.selectedTranslation.set(translation);
+    this.selectedId.set(translation.id);
   }
 
   updateLocale(transaction: Translation, locale: Locale, value: string): void {

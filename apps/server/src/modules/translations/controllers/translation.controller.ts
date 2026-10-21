@@ -2,10 +2,14 @@ import {
   ANY_ROLE,
   CONTENT_WRITERS,
   DEVELOPERS,
+  type Page,
   type TranslateLocaleResult,
   type Translation,
   type TranslationCreate,
   type TranslationLocaleUpdate,
+  type TranslationNode,
+  type TranslationNodePageable,
+  type TranslationPageable,
   type TranslationRename,
   type TranslationTranslateLocale,
   type TranslationUpdate,
@@ -14,11 +18,13 @@ import {
 import {
   zTranslationCreate,
   zTranslationLocaleUpdate,
+  zTranslationNodePageable,
+  zTranslationPageable,
   zTranslationRename,
   zTranslationTranslateLocale,
   zTranslationUpdate,
 } from '@localess/shared/zod';
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
@@ -32,10 +38,31 @@ import { TranslationService } from '../services/translation.service.js';
 export class TranslationController {
   constructor(private readonly translationService: TranslationService) {}
 
+  /** One page of the list: `?page=&size=&sort=&direction=`, and the filter (`search`, `key`, `locale`, `label`, `status`, `localeStatus`). */
   @Get()
   @RequireRole(ANY_ROLE)
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<Translation[]> {
-    return this.translationService.findAll(spaceId);
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zTranslationPageable }) query: TranslationPageable,
+  ): Promise<Page<Translation>> {
+    return this.translationService.findAll(spaceId, query);
+  }
+
+  /** One level of the tree: `?parent=` (none: the top level), the same filter, paged. */
+  @Get('nodes')
+  @RequireRole(ANY_ROLE)
+  findNodes(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zTranslationNodePageable }) query: TranslationNodePageable,
+  ): Promise<Page<TranslationNode>> {
+    return this.translationService.findNodes(spaceId, query);
+  }
+
+  /** Every label of the space's translations. */
+  @Get('labels')
+  @RequireRole(ANY_ROLE)
+  findLabels(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<string[]> {
+    return this.translationService.findLabels(spaceId);
   }
 
   @Get(':translationId')

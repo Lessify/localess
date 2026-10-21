@@ -4,7 +4,6 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCircleX } from '@ng-icons/lucide';
-import { CommonValidator } from '@shared/validators/common.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -43,11 +42,14 @@ export class AddDialogComponent {
   readonly valueMaxLength = TRANSLATION_VALUE_MAX_LENGTH;
   private readonly dialogRef = inject<BrnDialogRef<AddDialogResult>>(BrnDialogRef);
 
-  /** Required: the caller always passes the ids already taken, which the id validator needs. */
+  /** Required: the caller always passes the key check, which the key validator needs. */
   private readonly context = injectBrnDialogContext<AddDialogContext>();
 
   form: FormGroup = this.fb.group({
-    key: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedKeys)]),
+    key: this.fb.control('', {
+      validators: TranslationValidator.ID,
+      asyncValidators: TranslationValidator.keyTaken(this.context.isKeyTaken),
+    }),
     description: this.fb.control(undefined, TranslationValidator.DESCRIPTION),
     value: this.fb.control('', TranslationValidator.STRING_VALUE),
     labels: this.fb.control([], TranslationValidator.LABELS),

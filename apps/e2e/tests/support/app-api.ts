@@ -171,6 +171,11 @@ export class AppApi {
   }
 
   /** All items of a paged list, 100 at a time. */
+  everyPageOf<T>(path: string): Promise<T[]> {
+    return this.everyPage<T>(path);
+  }
+
+  /** All items of a paged list, 100 at a time. */
   private async everyPage<T>(path: string): Promise<T[]> {
     const items: T[] = [];
     for (let page = 0; ; page++) {
@@ -201,6 +206,11 @@ export class AppApi {
   }
 
   /** DELETE that fails on anything but success or 404 (already gone): a silent failure would leak test data. */
+  /** The status a GET answers, for checks that expect a failure (a 404 once a space is gone). */
+  async statusOf(path: string): Promise<number> {
+    return (await this.request.get(path)).status();
+  }
+
   async delete(path: string): Promise<void> {
     const response = await this.request.delete(path, { headers: CSRF });
     if (response.status() === 404) return;

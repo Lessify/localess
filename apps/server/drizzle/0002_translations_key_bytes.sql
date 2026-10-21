@@ -1,0 +1,1 @@
+CREATE INDEX "translations_key_bytes_idx" ON "translations" USING btree ("space_id","key" COLLATE "C");

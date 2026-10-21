@@ -93,10 +93,26 @@ The Tasks list is the reference; each step names the file.
 7. `apps/web/src/app/features/spaces/tasks/tasks.component.ts` and `.html`: `PagedList`, paginator, sort, filters.
 8. Their specs; the e2e helpers if they read the list (`everyPage`); the feature doc (`docs/features/…`).
 
+## Translations: a paged list and a tree read by level
+
+- **List** — `GET …/translations` answers `Page<Translation>` (`zTranslationPageable`: sort `key`, `createdAt`,
+  `updatedAt`, default `key`; 50 a page in the web). Filters: `search` (the key, or the value in `locale`;
+  case-insensitive contains), `key` (this key in any letter case: the add and rename dialogs' check), `label`
+  (repeated: any of them), `status` (`TRANSLATED`, `PARTIALLY_TRANSLATED`, `UNTRANSLATED` over the space's locales)
+  and `localeStatus` (`TRANSLATED`, `UNTRANSLATED` in `locale`).
+- **Tree** — `GET …/translations/nodes?parent=` answers one level of the key tree as `Page<TranslationNode>`: each
+  dotted segment below `parent` once (`name`, `path`), its translation when the path is itself a key, and how many
+  matching keys lie below it (`children`). The same filters apply, so a group's count is its matches. A prefix
+  match uses the byte-order index `translations_key_bytes_idx` (`key COLLATE "C"`); the order is the list's.
+- **Labels** — `GET …/translations/labels`: every label of the space, for the filter.
+- **Web** — `TranslationTree` (`features/spaces/translations/shared/models/translation-tree.ts`) reads a level when
+  its group first opens, "Load more" for a level of more than 100, and the open levels again after a change. With
+  a filter of at most `TREE_EXPAND_ALL_MAX` (200) matches it reads them all and shows the tree fully open; more stay
+  collapsed with their counts. Clearing the filter restores what was open while browsing.
+
 ## Not paged (and why)
 
 - Schemas: bounded per space and needed whole by the editors.
 - Folder lists for breadcrumbs and move targets (`…/folders`): the editor's folder map.
 - `SpaceStore` reads every space (100 a page): paging Spaces buys consistency and a faster admin table, not
   scalability, until the switcher searches the server.
-- Translations: their list and tree views are being designed.

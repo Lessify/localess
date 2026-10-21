@@ -32,6 +32,33 @@ export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | '
 
 // App API requests: translation.zod.ts
 
+/** What the translation list sorts by: the key (the default), when created, when last changed. */
+export const TRANSLATION_SORT_FIELDS = ['key', 'createdAt', 'updatedAt'] as const;
+export type TranslationSortField = (typeof TRANSLATION_SORT_FIELDS)[number];
+
+/** A key's status across the space's locales: a value in every one, in some, in none. */
+export const TRANSLATION_STATUSES = ['TRANSLATED', 'PARTIALLY_TRANSLATED', 'UNTRANSLATED'] as const;
+export type TranslationStatusFilter = (typeof TRANSLATION_STATUSES)[number];
+
+/** A key's status in one locale (`?locale=`): a non-blank value, or none. */
+export const LOCALE_STATUSES = ['TRANSLATED', 'UNTRANSLATED'] as const;
+export type LocaleStatusFilter = (typeof LOCALE_STATUSES)[number];
+
+/**
+ * One node of the translation tree, which `.` in the keys makes (`home.hero.title` → home › hero › title). The tree has no
+ * rows of its own: `GET …/translations/nodes?parent=` resolves one level of it, from the keys that match the filter.
+ */
+export interface TranslationNode {
+  /** The segment: `title`. */
+  name: string;
+  /** The key up to and with this segment: `home.hero.title`. */
+  path: string;
+  /** The translation whose key is exactly `path`; a node can be a key and a group (`home` and `home.title`). */
+  translation?: Translation;
+  /** How many matching keys lie below; 0: no group, nothing to expand. */
+  children: number;
+}
+
 /** `POST …/translations/translate-locale`: keys written, and keys the provider failed on (left unchanged). */
 export interface TranslateLocaleResult {
   translated: number;

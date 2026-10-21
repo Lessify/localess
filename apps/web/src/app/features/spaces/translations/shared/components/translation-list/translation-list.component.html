@@ -1,14 +1,14 @@
 @if (settingsStore.translationLayout() === 'list') {
-  <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay border" role="list" aria-label="Translations">
+  <cdk-virtual-scroll-viewport [itemSize]="55" class="overlay overlay-paged border" role="list" aria-label="Translations">
     <div
       role="listitem"
       [attr.aria-label]="translation.key"
       hlmItem
       class="border-b-border cursor-pointer rounded-b-none p-2"
-      *cdkVirtualFor="let translation of translationsFiltered()"
+      *cdkVirtualFor="let translation of listItems()"
       [variant]="translation.id === selectedId() ? 'muted' : 'default'"
-      (click)="translationSelect.emit(translation)"
-      (keyup.enter)="translationSelect.emit(translation)">
+      (click)="onListSelect(translation)"
+      (keyup.enter)="onListSelect(translation)">
       <div hlmItemContent>
         <div hlmItemTitle class="break-all">
           @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
@@ -23,26 +23,51 @@
         </p>
       </div>
     </div>
+    @if (!listLoading() && listItems().length === 0) {
+      <p class="text-muted-foreground p-4 text-sm">{{ isFiltering() ? 'No translations match.' : 'No translations yet.' }}</p>
+    }
   </cdk-virtual-scroll-viewport>
+  <ll-paginator [length]="listTotal()" [pageSizeOptions]="[25, 50, 100]" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 } @else {
-  <div class="overlay overflow-auto border p-2">
+  <div class="overlay overflow-auto border p-2" role="region" aria-label="Translation tree">
+    @if (tree.matches() !== undefined && tree.mode() === 'lazy' && tree.matches()! > 0) {
+      <p class="text-muted-foreground px-2 pb-2 text-xs" data-testid="tree-matches">
+        {{ tree.matches() }} matches: open a group to see them.
+      </p>
+    }
     <ll-tree
-      [nodes]="translationTreeFiltered()"
-      [expandedKeys]="expandedKeys()"
+      [nodes]="tree.rows()"
+      [expandedKeys]="tree.expandedKeys()"
       (expandedKeysChange)="onExpandedKeysChange($event)"
       [selectedKey]="selectedKey()"
       [guides]="true"
       (nodeSelect)="onNodeSelect($event)">
       <ng-template llTreeNodeDef let-node>
-        @if (translationMap().get(node.key); as translation) {
-          @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
-            <hlm-spinner class="size-4" />
-          } @else {
-            <ll-translation-status [status]="identifyTranslationStatus(translation)" />
+        @switch (node.kind) {
+          @case ('loading') {
+            <span class="text-muted-foreground flex items-center gap-2"><hlm-spinner class="size-3" /> Loading…</span>
+          }
+          @case ('more') {
+            <span class="text-primary">Load more ({{ node.count }})</span>
+          }
+          @default {
+            @if (node.translation; as translation) {
+              @if (isLocaleUpdateLoading() && translationUpdateId() === translation.id) {
+                <hlm-spinner class="size-4" />
+              } @else {
+                <ll-translation-status [status]="identifyTranslationStatus(translation)" />
+              }
+            }
+            <span class="break-all">{{ node.name }}</span>
+            @if (node.count > 0) {
+              <span class="text-muted-foreground text-xs" [attr.aria-label]="node.count + ' keys'">({{ node.count }})</span>
+            }
           }
         }
-        <span class="break-all">{{ node.name }}</span>
       </ng-template>
     </ll-tree>
+    @if (!tree.loading() && tree.rows().length === 0) {
+      <p class="text-muted-foreground p-2 text-sm">{{ isFiltering() ? 'No translations match.' : 'No translations yet.' }}</p>
+    }
   </div>
 }

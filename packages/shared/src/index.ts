@@ -55,6 +55,8 @@ export type { TaskCreate, TaskImportCreate, TaskPageable } from './models/task.z
 export type {
   TranslationCreate,
   TranslationLocaleUpdate,
+  TranslationNodePageable,
+  TranslationPageable,
   TranslationPush,
   TranslationRename,
   TranslationTranslateLocale,

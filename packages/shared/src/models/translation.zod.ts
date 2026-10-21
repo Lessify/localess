@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 import { zLabels } from './common.zod.js';
-import { isTranslationKey, TRANSLATION_VALUE_MAX_LENGTH } from './translation.model.js';
+import { zMultiValue, zPageable, zSearch } from './page.zod.js';
+import {
+  isTranslationKey,
+  LOCALE_STATUSES,
+  TRANSLATION_SORT_FIELDS,
+  TRANSLATION_STATUSES,
+  TRANSLATION_VALUE_MAX_LENGTH,
+} from './translation.model.js';
 
 /** A key a translation is created with or renamed to (`isTranslationKey`). */
 export const zTranslationKey = z.string().refine(isTranslationKey, {
@@ -69,3 +76,31 @@ export const zTranslationTranslateLocale = z.strictObject({
   overwrite: z.boolean().optional(),
 });
 export type TranslationTranslateLocale = z.infer<typeof zTranslationTranslateLocale>;
+
+/**
+ * What both views of the Translations page filter by, the same on the list and the tree: `search` (the key, or the value
+ * in `locale`; case-insensitive contains), `key` (this key in any letter case: the add and rename dialogs' check), `label` (repeated:
+ * any of them), `status` (repeated: across the space's locales) and `localeStatus` (in `locale`).
+ */
+const zTranslationFilter = {
+  search: zSearch,
+  key: z.string().max(150).optional(),
+  locale: z.string().min(1).max(64).optional(),
+  label: z
+    .union([z.string().max(200), z.array(z.string().max(200)).max(100)])
+    .transform(it => (Array.isArray(it) ? it : [it]))
+    .optional(),
+  status: zMultiValue(TRANSLATION_STATUSES).optional(),
+  localeStatus: zMultiValue(LOCALE_STATUSES).optional(),
+};
+
+/** `GET …/translations`: one page of the list, by key unless sorted otherwise. */
+export const zTranslationPageable = zPageable(TRANSLATION_SORT_FIELDS, 'key').extend(zTranslationFilter);
+export type TranslationPageable = z.infer<typeof zTranslationPageable>;
+
+/** `GET …/translations/nodes`: one page of one level of the tree, below `parent` (none: the top level), by name. */
+export const zTranslationNodePageable = zPageable(['name'] as const, 'name').extend({
+  ...zTranslationFilter,
+  parent: z.string().min(1).max(150).optional(),
+});
+export type TranslationNodePageable = z.infer<typeof zTranslationNodePageable>;

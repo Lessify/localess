@@ -1,216 +1,96 @@
+import { HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { Locale, Translation } from '@localess/shared';
-import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
+import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslationService } from '@core/services/translation.service';
+import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { Locale, Page, Translation } from '@localess/shared';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
+import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
 import { TranslationListComponent } from './translation-list.component';
 
 const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
 
-function translation(overrides: Partial<Translation> = {}): Translation {
-  // The key follows the id unless given, so tests can name translations by either.
-  return { id: 't1', key: overrides.id ?? 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
+function translation(key: string, locales: Record<string, string> = { en: 'Hello' }): Translation {
+  return { id: `id-${key}`, key, locales } as Translation;
 }
 
+const page = (items: Translation[]): Page<Translation> => ({ items, page: 0, size: 50, total: items.length });
+
 describe('TranslationListComponent', () => {
-  function setup(translations: Translation[] = [], availableLocales: Locale[] = [en, de]) {
+  function setup(items: Translation[] = []) {
+    const findAll = vi.fn((_spaceId: string, _params: HttpParams) => of(page(items)));
+    localStorage.clear();
     TestBed.overrideComponent(TranslationListComponent, { set: { template: '<div></div>' } });
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: TranslationService, useValue: { findAll, findPage: vi.fn(), findNodes: vi.fn() } },
+        { provide: ChangeEventsService, useValue: { changes: () => new Subject<ChangeEvent>() } },
+        { provide: NotificationService, useValue: { error: vi.fn() } },
+      ],
+    });
+    TestBed.inject(LocalSettingsStore).setTranslationLayout('list');
     const fixture = TestBed.createComponent(TranslationListComponent);
-    fixture.componentRef.setInput('translations', translations);
-    fixture.componentRef.setInput('availableLocales', availableLocales);
+    fixture.componentRef.setInput('spaceId', 'space-1');
+    fixture.componentRef.setInput('availableLocales', [en, de]);
+    fixture.componentRef.setInput('currentLocale', 'en');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, fixture };
+    return { component: fixture.componentInstance, fixture, findAll };
   }
 
-  it('emits translationSelect when a translation is selected', () => {
+  /** The query of the last list read, as `name=value` pairs. */
+  const lastQuery = (findAll: ReturnType<typeof setup>['findAll']) => findAll.mock.calls.at(-1)?.[1].toString();
+
+  it('reads the first page of the list, 50 keys, with the locale', () => {
+    const { component, findAll } = setup([translation('home.title')]);
+
+    expect(lastQuery(findAll)).toBe('page=0&size=50&locale=en');
+    expect(component.listItems().map(it => it.key)).toEqual(['home.title']);
+    expect(component.listTotal()).toBe(1);
+  });
+
+  it('sends the filter as the server names it, and starts again from the first page', () => {
+    const { component, fixture, findAll } = setup();
+    component.list.page.set(3);
+    fixture.detectChanges();
+
+    fixture.componentRef.setInput('filterCriteria', {
+      locale: 'en',
+      search: 'home',
+      labels: ['ui'],
+      states: [TranslationStatus.PARTIALLY_TRANSLATED, LocaleStatus.UNTRANSLATED],
+    });
+    fixture.detectChanges();
+
+    expect(lastQuery(findAll)).toBe('page=0&size=50&locale=en&search=home&label=ui&status=PARTIALLY_TRANSLATED&localeStatus=UNTRANSLATED');
+    expect(component.isFiltering()).toBe(true);
+  });
+
+  it('emits the first key of each page read, and the selection by key', () => {
+    const first = translation('home.title');
+    const { component, fixture } = setup([first]);
+    const firstSpy = vi.fn();
+    const selectSpy = vi.fn();
+    component.firstTranslation.subscribe(firstSpy);
+    component.translationSelect.subscribe(selectSpy);
+
+    component.list.page.set(1);
+    fixture.detectChanges();
+    component.onListSelect(first);
+
+    expect(firstSpy).toHaveBeenCalledWith(first);
+    expect(selectSpy).toHaveBeenCalledWith(first);
+    expect(component.selectedKey()).toBe('home.title');
+  });
+
+  it('identifies the translation status over the available locales', () => {
     const { component } = setup();
-    const t = translation({ id: 't1' });
-    const spy = vi.fn();
-    component.translationSelect.subscribe(spy);
 
-    component.translationSelect.emit(t);
-
-    expect(spy).toHaveBeenCalledWith(t);
-  });
-
-  it("selectedKey is the selected translation's key, which the tree's nodes are keyed by (not its id)", () => {
-    const { component, fixture } = setup([
-      translation({ id: '0190a1b2-0000-7000-8000-000000000001', key: 'nav.about' }),
-      translation({ id: '0190a1b2-0000-7000-8000-000000000002', key: 'nav.home' }),
-    ]);
-
-    fixture.componentRef.setInput('selectedId', '0190a1b2-0000-7000-8000-000000000002');
-
-    expect(component.selectedKey()).toBe('nav.home');
-  });
-
-  describe('filterTranslations', () => {
-    it('returns all items when no filter is active', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'a' }), translation({ id: 'b' })];
-
-      expect(component.filterTranslations(items, 'en', '', [], [], [])).toEqual(items);
-    });
-
-    it('filters by id substring match', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title' }), translation({ id: 'footer.text' })];
-
-      const result = component.filterTranslations(items, 'en', 'home', [], [], []);
-
-      expect(result).toEqual([items[0]]);
-    });
-
-    it('falls back to matching the locale value when the id does not match', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title', locales: { en: 'Welcome home' } })];
-
-      const result = component.filterTranslations(items, 'en', 'welcome', [], [], []);
-
-      expect(result).toEqual(items);
-    });
-
-    it('filters by label', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'a', labels: ['ui'] }), translation({ id: 'b', labels: ['marketing'] })];
-
-      const result = component.filterTranslations(items, 'en', '', ['ui'], [], []);
-
-      expect(result).toEqual([items[0]]);
-    });
-
-    it('filters by translation status', () => {
-      const { component } = setup();
-      const translated = translation({ id: 'a', locales: { en: 'Hi', de: 'Hallo' } });
-      const untranslated = translation({ id: 'b', locales: {} });
-
-      const result = component.filterTranslations([translated, untranslated], 'en', '', [], [TranslationStatus.UNTRANSLATED], []);
-
-      expect(result).toEqual([untranslated]);
-    });
-
-    it('filters by locale status', () => {
-      const { component } = setup();
-      const translatedInEn = translation({ id: 'a', locales: { en: 'Hi' } });
-      const untranslatedInEn = translation({ id: 'b', locales: { en: '' } });
-
-      const result = component.filterTranslations([translatedInEn, untranslatedInEn], 'en', '', [], [], [LocaleStatus.TRANSLATED]);
-
-      expect(result).toEqual([translatedInEn]);
-    });
-  });
-
-  describe('buildTranslationTree', () => {
-    it('builds the tree from keys, not from the row ids', () => {
-      const { component } = setup();
-      const items = [translation({ id: '0190a3b4-0000-7000-8000-000000000001', key: 'nav.home' })];
-
-      expect(component.buildTranslationTree(items)).toEqual([{ name: 'nav', key: 'nav', children: [{ name: 'home', key: 'nav.home' }] }]);
-    });
-
-    it('groups dotted ids into a nested tree', () => {
-      const { component } = setup();
-      const items = [translation({ id: 'home.title' }), translation({ id: 'home.subtitle' }), translation({ id: 'footer' })];
-
-      const tree = component.buildTranslationTree(items);
-
-      expect(tree).toEqual([
-        {
-          name: 'home',
-          key: 'home',
-          children: [
-            { name: 'title', key: 'home.title' },
-            { name: 'subtitle', key: 'home.subtitle' },
-          ],
-        },
-        { name: 'footer', key: 'footer' },
-      ]);
-    });
-  });
-
-  describe('translationsFiltered / translationTreeFiltered', () => {
-    it('applies the filterCriteria input to build the filtered list and tree', () => {
-      const { component, fixture } = setup([translation({ id: 'home.title' }), translation({ id: 'footer' })]);
-
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-
-      expect(component.translationsFiltered().map(it => it.id)).toEqual(['home.title']);
-      expect(component.translationTreeFiltered()).toEqual([
-        { name: 'home', key: 'home', children: [{ name: 'title', key: 'home.title' }] },
-      ]);
-    });
-  });
-
-  describe('identifyTranslationStatus / identifyLocaleStatus', () => {
-    it('is UNTRANSLATED when there are no locale values at all', () => {
-      const { component } = setup();
-
-      expect(component.identifyTranslationStatus(translation({ locales: {} }))).toBe(TranslationStatus.UNTRANSLATED);
-    });
-
-    it('is TRANSLATED when every available locale has a value', () => {
-      const { component } = setup();
-
-      expect(component.identifyTranslationStatus(translation({ locales: { en: 'Hi', de: 'Hallo' } }))).toBe(TranslationStatus.TRANSLATED);
-    });
-
-    it('identifyLocaleStatus treats an empty/whitespace value as untranslated', () => {
-      const { component } = setup();
-
-      expect(component.identifyLocaleStatus(translation({ locales: { en: '  ' } }), 'en')).toBe(LocaleStatus.UNTRANSLATED);
-      expect(component.identifyLocaleStatus(translation({ locales: { en: 'Hi' } }), 'en')).toBe(LocaleStatus.TRANSLATED);
-    });
-  });
-
-  describe('tree expansion', () => {
-    const items = [translation({ id: 'home.title' }), translation({ id: 'home.nav.back' }), translation({ id: 'footer' })];
-
-    it('starts with nothing expanded', () => {
-      const { component } = setup(items);
-
-      expect(component.expandedKeys()).toEqual(new Set());
-    });
-
-    it('remembers manual expansion while no filter is active', () => {
-      const { component } = setup(items);
-
-      component.onExpandedKeysChange(new Set(['home']));
-
-      expect(component.expandedKeys()).toEqual(new Set(['home']));
-    });
-
-    it('expands every group when a filter becomes active', () => {
-      const { component, fixture } = setup(items);
-
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-
-      expect(component.expandedKeys()).toEqual(new Set(['home', 'home.nav']));
-    });
-
-    it('restores the manual expansion state when the filter clears', () => {
-      const { component, fixture } = setup(items);
-      component.onExpandedKeysChange(new Set(['home']));
-
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: '', labels: [], states: [] });
-      fixture.detectChanges();
-
-      expect(component.expandedKeys()).toEqual(new Set(['home']));
-    });
-
-    it('allows collapsing a group while a filter is active', () => {
-      const { component, fixture } = setup(items);
-      fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
-      fixture.detectChanges();
-
-      component.onExpandedKeysChange(new Set(['home']));
-
-      expect(component.expandedKeys()).toEqual(new Set(['home']));
-    });
+    expect(component.identifyTranslationStatus(translation('a', {}))).toBe(TranslationStatus.UNTRANSLATED);
+    expect(component.identifyTranslationStatus(translation('a', { en: 'Hi' }))).toBe(TranslationStatus.PARTIALLY_TRANSLATED);
+    expect(component.identifyTranslationStatus(translation('a', { en: 'Hi', de: 'Hallo' }))).toBe(TranslationStatus.TRANSLATED);
   });
 });

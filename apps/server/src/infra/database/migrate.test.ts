@@ -1,7 +1,7 @@
 import pg from 'pg';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createTestDatabase, TestDatabase } from '../../../test/database.js';
+import { createTestDatabase, MIGRATION_COUNT, TestDatabase } from '../../../test/database.js';
 import { migrateDatabase } from './migrate.js';
 
 const A = '00000000-0000-7000-8000-00000000000a';
@@ -75,7 +75,7 @@ describe('migrateDatabase', () => {
     }
     expect(await tables()).toEqual(EXPECTED_TABLES);
     const applied = await pool.query('select count(*)::int as n from drizzle.__drizzle_migrations');
-    expect(applied.rows[0].n).toBe(2);
+    expect(applied.rows[0].n).toBe(MIGRATION_COUNT);
   });
 
   it('seeds the locales', async () => {

@@ -1,8 +1,12 @@
 import {
+  type Page,
   type TranslateLocaleResult,
   type Translation,
   type TranslationCreate,
   type TranslationLocaleUpdate,
+  type TranslationNode,
+  type TranslationNodePageable,
+  type TranslationPageable,
   type TranslationRename,
   type TranslationTranslateLocale,
   type TranslationUpdate,
@@ -13,7 +17,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
-import { toTranslation } from '../../../shared/transformers/translation.transformer.js';
+import { toTranslation, translationsByKey } from '../../../shared/transformers/translation.transformer.js';
+import { toPage } from '../../../shared/utils/paging.js';
 import { TranslationRepository } from '../repositories/translation.repository.js';
 import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
 import { TranslateService } from './translate.service.js';
@@ -39,9 +44,42 @@ export class TranslationService {
     private readonly translateService: TranslateService,
   ) {}
 
-  async findAll(spaceId: string): Promise<Translation[]> {
+  /** One page of the list, filtered; by key unless sorted otherwise. */
+  async findAll(spaceId: string, query: TranslationPageable): Promise<Page<Translation>> {
+    const localeIds = (await this.requireSpace(spaceId)).spaceLocales.map(it => it.localeId);
+    const [rows, total] = await Promise.all([
+      this.translationRepository.findPage(spaceId, query, localeIds),
+      this.translationRepository.findPageCount(spaceId, query, localeIds),
+    ]);
+    return toPage(rows, total, query, toTranslation);
+  }
+
+  /**
+   * One level of the tree below `parent` (none: the top), from the keys matching the filter: each node with the
+   * translation whose key it is (if any) and how many matching keys lie below it.
+   */
+  async findNodes(spaceId: string, query: TranslationNodePageable): Promise<Page<TranslationNode>> {
+    const localeIds = (await this.requireSpace(spaceId)).spaceLocales.map(it => it.localeId);
+    const { rows, total } = await this.translationRepository.findNodes(spaceId, query, localeIds);
+    const prefix = query.parent ? `${query.parent}.` : '';
+    const keys = translationsByKey(
+      await this.translationRepository.findByKeys(
+        spaceId,
+        rows.filter(it => it.isKey).map(it => prefix + it.name),
+      ),
+    );
+    const nodes: TranslationNode[] = rows.map(row => {
+      const path = prefix + row.name;
+      const translation = row.isKey ? keys.get(path) : undefined;
+      return { name: row.name, path, children: row.children, ...(translation ? { translation } : {}) };
+    });
+    return { items: nodes, page: query.page, size: query.size, total };
+  }
+
+  /** Every label of the space's translations (the filter's choices). */
+  async findLabels(spaceId: string): Promise<string[]> {
     await this.requireSpace(spaceId);
-    return (await this.translationRepository.findAll(spaceId)).map(toTranslation);
+    return this.translationRepository.findLabels(spaceId);
   }
 
   async findOne(spaceId: string, translationId: string): Promise<Translation> {

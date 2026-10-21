@@ -38,9 +38,11 @@ describe('TranslationsComponent', () => {
 
   const NO_SPACE = null;
 
-  function setup(translations: Translation[] = [], selectedSpace: Space | null = space()) {
+  function setup(labels: string[] = [], selectedSpace: Space | null = space()) {
     const resolvedSpace = selectedSpace === NO_SPACE ? undefined : selectedSpace;
-    const findAll = vi.fn().mockReturnValue(of(translations));
+    const findLabels = vi.fn().mockReturnValue(of(labels));
+    const findOne = vi.fn((_spaceId: string, id: string) => of(translation({ id, locales: { en: 'Fresh' } })));
+    const isKeyTaken = vi.fn().mockReturnValue(of(false));
     const create = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const updateLocale = vi.fn().mockReturnValue(of(undefined));
@@ -58,7 +60,7 @@ describe('TranslationsComponent', () => {
       providers: [
         {
           provide: TranslationService,
-          useValue: { findAll, create, publish, updateLocale, translateLocale },
+          useValue: { findLabels, findOne, isKeyTaken, create, publish, updateLocale, translateLocale },
         },
         { provide: TaskService, useValue: { createTranslationImportTask, createTranslationExportTask } },
         { provide: HlmDialogService, useValue: { open } },
@@ -80,7 +82,9 @@ describe('TranslationsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findAll,
+      findLabels,
+      findOne,
+      isKeyTaken,
       create,
       publish,
       updateLocale,
@@ -95,36 +99,42 @@ describe('TranslationsComponent', () => {
     };
   }
 
-  describe('init', () => {
-    it('loads translations and auto-selects the first one', () => {
-      const t1 = translation({ id: 't1' });
-      const t2 = translation({ id: 't2' });
-      const { component, findAll } = setup([t1, t2]);
+  it('loads the labels of the space', () => {
+    const { component, findLabels } = setup(['marketing', 'ui']);
 
-      expect(findAll).toHaveBeenCalledWith('space-1');
-      expect(component.translations()).toEqual([t1, t2]);
-      expect(component.selectedTranslation()).toEqual(t1);
-      expect(component.isLoading()).toBe(false);
-    });
+    expect(findLabels).toHaveBeenCalledWith('space-1');
+    expect(component.allLabels()).toEqual(['marketing', 'ui']);
+    expect(component.isLoading()).toBe(false);
   });
 
-  it('allLabels() dedupes labels across all loaded translations', () => {
-    const { component } = setup([
-      translation({ id: 't1', labels: ['ui', 'marketing'] }),
-      translation({ id: 't2', labels: ['ui'] }),
-      translation({ id: 't3', labels: undefined }),
-    ]);
+  it('selects the first key the list shows when nothing is selected, then follows it live', () => {
+    const { component, findOne } = setup();
 
-    expect(component.allLabels()).toEqual(['ui', 'marketing']);
+    component.onFirstTranslation(translation({ id: 't1' }));
+    TestBed.tick();
+    component.onFirstTranslation(translation({ id: 't2' }));
+    TestBed.tick();
+
+    expect(findOne).toHaveBeenCalledExactlyOnceWith('space-1', 't1');
+    expect(component.selectedTranslation()).toEqual(translation({ id: 't1', locales: { en: 'Fresh' } }));
   });
 
-  it('selectTranslation() sets the selected translation', () => {
-    const { component } = setup();
-    const t = translation({ id: 't1' });
+  it('clears the selection when the selected translation is gone', () => {
+    const { component, findOne } = setup();
+    findOne.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
 
-    component.selectTranslation(t);
+    component.selectTranslation(translation({ id: 't1' }));
+    TestBed.tick();
 
-    expect(component.selectedTranslation()).toEqual(t);
+    expect(component.selectedTranslation()).toBeUndefined();
+  });
+
+  it('asks the server whether a key is taken (the add and rename dialogs)', () => {
+    const { component, isKeyTaken } = setup();
+
+    component.isKeyTaken('home.title').subscribe();
+
+    expect(isKeyTaken).toHaveBeenCalledWith('space-1', 'home.title');
   });
 
   describe('publish', () => {

@@ -22,8 +22,19 @@ export async function withThreeLocales(api: AppApi, space: TestSpace): Promise<v
 
 /** The space's translations, by key. */
 export async function translationsByKey(api: AppApi, spaceId: string): Promise<Map<string, TranslationDto>> {
-  const all = await api.get<TranslationDto[]>(`/api/app/spaces/${spaceId}/translations`);
+  const all = await api.everyPageOf<TranslationDto>(`/api/app/spaces/${spaceId}/translations`);
   return new Map(all.map(it => [it.key, it]));
+}
+
+/** One translation by its exact key (the list's `?key=` filter), without reading the others. */
+export async function translationByKey(api: AppApi, spaceId: string, key: string): Promise<TranslationDto | undefined> {
+  const page = await api.get<{ items: TranslationDto[] }>(`/api/app/spaces/${spaceId}/translations?key=${encodeURIComponent(key)}`);
+  return page.items.find(it => it.key === key);
+}
+
+/** How many translations the space has (the list's total: one request, also for a large space). */
+export async function translationCount(api: AppApi, spaceId: string): Promise<number> {
+  return (await api.get<{ total: number }>(`/api/app/spaces/${spaceId}/translations?size=1`)).total;
 }
 
 /** The public token per space, created on first use (one per space is enough to read the CDN). */

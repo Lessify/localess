@@ -1,27 +1,62 @@
-import { ScrollingModule } from '@angular/cdk/scrolling';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { PagedList } from '@core/utils/paged-list';
 import { Locale, Translation } from '@localess/shared';
-import { collectGroupKeys, LlTreeImports } from '@shared/components/tree/tree.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTreeImports } from '@shared/components/tree/tree.imports';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { combineLatest, EMPTY } from 'rxjs';
+import { catchError, debounceTime, filter, switchMap } from 'rxjs/operators';
 
-import { identifyLocaleStatus, identifyTranslationStatus, TranslationNode } from '../../models/translation.model';
+import { identifyTranslationStatus } from '../../models/translation.model';
 import { isLocaleStatus, isTranslationStatus, LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
+import { isFiltering, TranslationFilterParams, TranslationTree, TranslationTreeRow } from '../../models/translation-tree';
 import { TranslationFilterCriteria } from '../translation-filter/translation-filter.component';
 import { TranslationStatusComponent } from '../translation-status/translation-status.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
 
+/** The filter's statuses as the server names them (`?status=`, `?localeStatus=`). */
+const STATUS_PARAM: Record<TranslationStatus, string> = {
+  [TranslationStatus.TRANSLATED]: 'TRANSLATED',
+  [TranslationStatus.PARTIALLY_TRANSLATED]: 'PARTIALLY_TRANSLATED',
+  [TranslationStatus.UNTRANSLATED]: 'UNTRANSLATED',
+};
+const LOCALE_STATUS_PARAM: Record<LocaleStatus, string> = {
+  [LocaleStatus.TRANSLATED]: 'TRANSLATED',
+  [LocaleStatus.UNTRANSLATED]: 'UNTRANSLATED',
+};
+
+/**
+ * The keys of the Translations page, from the server: the list view one page at a time (`GET …/translations`), the
+ * tree view one level at a time (`TranslationTree`). Both send the same filter; both read again after a change.
+ */
 @Component({
   selector: 'll-translation-list',
   templateUrl: './translation-list.component.html',
   styleUrls: ['./translation-list.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
     ScrollingModule,
     LlTreeImports,
+    LlPaginatorImports,
     TranslationStatusComponent,
     TranslationStringViewComponent,
     HlmItemImports,
@@ -30,9 +65,13 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
 })
 export class TranslationListComponent {
   readonly settingsStore = inject(LocalSettingsStore);
+  private readonly translationService = inject(TranslationService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly events = inject(ChangeEventsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Inputs
-  readonly translations = input.required<Translation[]>();
+  readonly spaceId = input.required<string>();
   readonly availableLocales = input.required<Locale[]>();
   readonly currentLocale = input('');
   readonly filterCriteria = input<TranslationFilterCriteria | undefined>(undefined);
@@ -42,127 +81,129 @@ export class TranslationListComponent {
 
   // Outputs
   readonly translationSelect = output<Translation>();
+  /** The first key shown after a load (the page selects it when nothing is selected yet). */
+  readonly firstTranslation = output<Translation>();
 
-  readonly translationsFiltered = computed(() => {
+  /** The filter both views send. */
+  readonly filterParams = computed<TranslationFilterParams>(() => {
     const criteria = this.filterCriteria();
-    return this.filterTranslations(
-      this.translations(),
-      criteria?.locale || 'en',
-      criteria?.search || '',
-      criteria?.labels || [],
-      criteria?.states?.filter(it => isTranslationStatus(it)) || [],
-      criteria?.states?.filter(it => isLocaleStatus(it)) || [],
-    );
+    const states = criteria?.states ?? [];
+    return {
+      locale: this.currentLocale() || undefined,
+      search: criteria?.search?.trim() || undefined,
+      label: criteria?.labels?.length ? criteria.labels : undefined,
+      status: states.filter(isTranslationStatus).map(it => STATUS_PARAM[it]),
+      localeStatus: states.filter(isLocaleStatus).map(it => LOCALE_STATUS_PARAM[it]),
+    };
   });
-  readonly translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
-  readonly translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.key, it])));
-  /** The tree's nodes are keyed by translation key, while `selectedId` is the translation's id. */
-  readonly selectedKey = computed(() => this.translations().find(it => it.id === this.selectedId())?.key);
+  readonly isFiltering = computed(() => isFiltering(this.filterParams()));
 
-  /** True when any filter narrows the list — search text, labels or states. */
-  readonly isFiltering = computed(() => {
-    const criteria = this.filterCriteria();
-    return !!(criteria?.search || criteria?.labels?.length || criteria?.states?.length);
-  });
+  // List view: one page from the server.
+  readonly list = new PagedList(50);
+  readonly listItems = signal<Translation[]>([]);
+  readonly listTotal = signal(0);
+  readonly listLoading = signal(true);
+  private readonly listViewport = viewChild(CdkVirtualScrollViewport);
+  /** The query of the page shown: another page or filter starts at the top; a live refresh keeps the position. */
+  private shownQuery = '';
 
-  /** Expansion the user chose by hand while browsing unfiltered. */
-  private readonly manualExpandedKeys = signal<ReadonlySet<string>>(new Set<string>());
+  // Tree view: one level at a time.
+  readonly tree = new TranslationTree(this.translationService);
 
-  /**
-   * Expansion the user chose by hand *during* the current filter. Reset to `null`
-   * whenever the criteria change, so each new filter starts fully expanded again.
-   */
-  private readonly filterExpandedKeys = linkedSignal<TranslationFilterCriteria | undefined, ReadonlySet<string> | null>({
-    source: this.filterCriteria,
-    computation: () => null,
-  });
+  /** The tree's key of the selected translation (the tree tracks nodes by key, the page by id). */
+  readonly selectedKey = signal<string | undefined>(undefined);
 
-  /**
-   * While a filter is active the tree opens fully, so no match can hide behind a
-   * collapsed parent; the manual state is restored once the filter clears.
-   */
-  readonly expandedKeys = computed<ReadonlySet<string>>(() => {
-    if (!this.isFiltering()) {
-      return this.manualExpandedKeys();
-    }
-    return this.filterExpandedKeys() ?? collectGroupKeys(this.translationTreeFiltered());
-  });
+  constructor() {
+    // The list: a new filter starts from the first page.
+    effect(() => {
+      const params = this.filterParams();
+      untracked(() => this.list.setFilters(params));
+    });
+    combineLatest([toObservable(this.spaceId), toObservable(this.list.params), toObservable(this.settingsStore.translationLayout)])
+      .pipe(
+        // Only while the list is shown: the tree reads its own levels.
+        switchMap(([spaceId, params, layout]) =>
+          layout !== 'list'
+            ? EMPTY
+            : this.translationService.findAll(spaceId, params).pipe(
+                catchError(() => {
+                  this.notificationService.error('Translations can not be loaded.');
+                  this.listLoading.set(false);
+                  return EMPTY;
+                }),
+              ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        const query = this.list.params().toString();
+        if (query !== this.shownQuery) this.listViewport()?.scrollToIndex(0);
+        this.shownQuery = query;
+        this.listItems.set(page.items);
+        this.listTotal.set(page.total);
+        this.list.onLoaded(page);
+        this.listLoading.set(false);
+        if (page.items[0]) this.firstTranslation.emit(page.items[0]);
+      });
+
+    // The tree: the top level again for a new space, filter or layout; the shown levels again after a change.
+    effect(() => {
+      const spaceId = this.spaceId();
+      const params = this.filterParams();
+      if (this.settingsStore.translationLayout() !== 'tree') return;
+      untracked(() => void this.loadTree(spaceId, params));
+    });
+    toObservable(this.spaceId)
+      .pipe(
+        switchMap(spaceId => this.events.changes(spaceId)),
+        filter(event => event.entity === 'translations' && this.settingsStore.translationLayout() === 'tree'),
+        debounceTime(300),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => void this.tree.refresh().catch(() => this.notificationService.error('Translations can not be loaded.')));
+  }
 
   onExpandedKeysChange(keys: ReadonlySet<string>): void {
-    if (this.isFiltering()) {
-      this.filterExpandedKeys.set(keys);
-    } else {
-      this.manualExpandedKeys.set(keys);
+    void this.tree.setExpanded(keys).catch(() => this.notificationService.error('Translations can not be loaded.'));
+  }
+
+  onNodeSelect(row: TranslationTreeRow): void {
+    if (row.kind === 'more') {
+      void this.tree.loadMore(row.parent ?? '').catch(() => this.notificationService.error('Translations can not be loaded.'));
+      return;
+    }
+    if (row.translation) {
+      this.selectedKey.set(row.translation.key);
+      this.translationSelect.emit(row.translation);
     }
   }
 
-  onNodeSelect(node: TranslationNode): void {
-    const translation = this.translationMap().get(node.key);
-    if (translation) {
-      this.translationSelect.emit(translation);
+  onListSelect(translation: Translation): void {
+    this.selectedKey.set(translation.key);
+    this.translationSelect.emit(translation);
+  }
+
+  identifyTranslationStatus(translation: Translation): TranslationStatus {
+    return identifyTranslationStatus(translation, this.availableLocales());
+  }
+
+  private async loadTree(spaceId: string, params: TranslationFilterParams): Promise<void> {
+    try {
+      await this.tree.load(spaceId, params);
+      const first = firstKey(this.tree.rows());
+      if (first) this.firstTranslation.emit(first);
+    } catch {
+      this.notificationService.error('Translations can not be loaded.');
     }
   }
+}
 
-  identifyTranslationStatus(translate: Translation): TranslationStatus {
-    return identifyTranslationStatus(translate, this.availableLocales());
+/** The first translation of the tree, in the order shown. */
+function firstKey(rows: readonly TranslationTreeRow[]): Translation | undefined {
+  for (const row of rows) {
+    if (row.translation) return row.translation;
+    const below = row.children && firstKey(row.children);
+    if (below) return below;
   }
-
-  identifyLocaleStatus(translate: Translation, locale: string): LocaleStatus {
-    return identifyLocaleStatus(translate, locale);
-  }
-
-  filterTranslations(
-    items: Translation[],
-    locale: string,
-    search: string,
-    labels: string[],
-    translationStates: TranslationStatus[],
-    localeStates: LocaleStatus[],
-  ): Translation[] {
-    const lcFilter = search.trim().toLowerCase();
-    if (!items || (!search && !labels.length && !translationStates.length && !localeStates.length)) {
-      return items;
-    }
-    return items.filter(it => {
-      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
-      const matchByTranslationStatus =
-        !translationStates.length || translationStates.includes(identifyTranslationStatus(it, this.availableLocales()));
-      const matchByLocaleStatus = !localeStates.length || localeStates.includes(identifyLocaleStatus(it, locale));
-      if (!matchByTranslationStatus) return false;
-      if (!matchByLocaleStatus) return false;
-      if (it.key.toLowerCase().includes(lcFilter) && matchByLabel) {
-        return true;
-      } else {
-        const localeValue = it.locales[locale];
-        if (localeValue) {
-          return localeValue.toLowerCase().includes(lcFilter) && matchByLabel;
-        }
-        return false;
-      }
-    });
-  }
-
-  buildTranslationTree(translations: Translation[]): TranslationNode[] {
-    const tTree: Record<string, any> = {};
-    for (const translation of translations) {
-      const keys = translation.key.split('.');
-      let currentNode = tTree;
-      for (const key of keys) {
-        if (!currentNode[key]) {
-          currentNode[key] = {};
-        }
-        currentNode = currentNode[key];
-      }
-    }
-
-    function convertTree(node: Record<string, any>, prefix?: string): TranslationNode[] {
-      return Object.entries(node).map(([key, value]) => ({
-        name: key,
-        key: prefix ? `${prefix}.${key}` : key,
-        ...(Object.keys(value).length > 0 && { children: convertTree(value, prefix ? `${prefix}.${key}` : key) }),
-      }));
-    }
-
-    return convertTree(tTree);
-  }
+  return undefined;
 }

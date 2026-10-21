@@ -26,22 +26,32 @@ test.describe('Translations → list view', () => {
     await expect(translations.valueEditor).toHaveValue('Hello');
   });
 
-  test('scrolls through many keys (the list renders only what is visible)', async ({ page, api, space }) => {
+  test('pages through many keys, 50 a page, rendering only what is visible of a page', async ({ page, api, space }) => {
     for (let i = 0; i < 120; i++) {
       await api.createTranslation(space.id, { key: `bulk.key${String(i).padStart(3, '0')}`, locales: { en: `Value ${i}` } });
     }
     const translations = new TranslationsPage(page);
+    const next = page.getByRole('button', { name: 'Next page' });
 
-    // Pre-check: the first keys are rendered, the last one is not.
+    // Pre-check: the first page, of three; its first keys rendered, not its last.
     await translations.goto(space.id);
+    await expect(page.getByText('120 total items')).toBeVisible();
+    await expect(page.getByText('Page 1 of 3')).toBeVisible();
     await expect(translations.item('bulk.key000')).toBeVisible();
-    await expect(translations.item('bulk.key119')).toHaveCount(0);
-    expect(await translations.items.count()).toBeLessThan(120);
+    await expect(translations.item('bulk.key049')).toHaveCount(0);
+    expect(await translations.items.count()).toBeLessThan(50);
 
-    // Action: scroll to the end.
+    // Action: scroll to the end of the page, then on to the last page.
     await translations.scrollToEnd();
+    await expect(translations.item('bulk.key049')).toBeVisible();
+    await next.click();
+    await expect(translations.item('bulk.key050')).toBeVisible();
+    await next.click();
+    await expect(page.getByText('Page 3 of 3')).toBeVisible();
 
-    // Post-check: the last key is rendered and opens.
+    // Post-check: a new page starts at its top; the last key is at its end and opens.
+    await expect(translations.item('bulk.key100')).toBeVisible();
+    await translations.scrollToEnd();
     await expect(translations.item('bulk.key119')).toBeVisible();
     await translations.select('bulk.key119');
     await expect(translations.valueEditor).toHaveValue('Value 119');

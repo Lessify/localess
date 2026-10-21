@@ -1,6 +1,6 @@
-<div class="bg-background flex items-center justify-between gap-4 py-2">
+<div class="bg-background flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">
   <span class="text-muted-foreground text-sm">{{ length() }} total items</span>
-  <div class="flex items-center gap-8">
+  <div class="flex flex-wrap items-center gap-x-8 gap-y-2">
     @if (!hidePageSize()) {
       <div class="flex items-center gap-2">
         <label class="text-muted-foreground text-sm" [for]="pageSizeId">Rows per page</label>

@@ -142,7 +142,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       const refused = await editor.post(base, { key: 'stray', locales: { en: 'Hi', fr: 'Salut' } });
       expect(refused.statusCode).toBe(400);
       expect(refused.json().message).toMatch(/fr/);
-      expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).not.toContain('stray');
+      expect((await reader.get(base)).json().items.map((it: { key: string }) => it.key)).not.toContain('stray');
 
       expect((await editor.put(`${url('home.title')}/locales/fr`, { value: 'Bienvenue' })).statusCode).toBe(400);
       expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
@@ -184,7 +184,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
     });
 
     it('lists by key', async () => {
-      expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hero.title', 'taken']);
+      expect((await reader.get(base)).json().items.map((it: { key: string }) => it.key)).toEqual(['hero.title', 'taken']);
     });
   });
 
@@ -268,7 +268,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await editor.delete(base)).statusCode).toBe(403);
       const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
       expect((await admin.delete(base)).statusCode).toBe(204);
-      expect((await reader.get(base)).json()).toEqual([]);
+      expect((await reader.get(base)).json()).toMatchObject({ items: [], total: 0 });
     });
   });
 });

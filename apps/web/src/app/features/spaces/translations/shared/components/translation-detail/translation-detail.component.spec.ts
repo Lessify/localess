@@ -53,6 +53,7 @@ describe('TranslationDetailComponent', () => {
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.componentRef.setInput('availableLocales', [en, de]);
     fixture.componentRef.setInput('defaultLocale', en);
+    fixture.componentRef.setInput('isKeyTaken', () => of(false));
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,

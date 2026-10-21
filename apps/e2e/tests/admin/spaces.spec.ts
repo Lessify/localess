@@ -131,7 +131,7 @@ test.describe('Admin → Spaces', () => {
       await spaces.goto(space.name);
       await expect(spaces.row(space.name)).toBeVisible();
       expect(await api.findSpace(space.id)).toBeDefined();
-      expect(await api.get<unknown[]>(`/api/app/spaces/${space.id}/translations`)).toHaveLength(1);
+      expect((await api.get<{ total: number }>(`/api/app/spaces/${space.id}/translations`)).total).toBe(1);
       expect((await cdn()).status()).toBe(200);
 
       // Action
@@ -141,7 +141,7 @@ test.describe('Admin → Spaces', () => {
       await expect(spaces.row(space.name)).toHaveCount(0);
       expect(await api.findSpace(space.id)).toBeUndefined();
       // Its content went with it, and the CDN no longer finds the space.
-      expect(await api.get(`/api/app/spaces/${space.id}/translations`)).toEqual([]);
+      expect(await api.statusOf(`/api/app/spaces/${space.id}/translations`)).toBe(404);
       expect((await cdn()).status()).toBe(404);
       await page.reload();
       await spaces.find(space.name);

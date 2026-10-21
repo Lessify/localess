@@ -115,21 +115,22 @@
         (filterChange)="filterCriteria.set($event)" />
       <div class="grid grid-cols-4 gap-2">
         <ll-translation-list
-          [translations]="translations()"
+          [spaceId]="spaceId()"
           [availableLocales]="availableLocales()"
           [currentLocale]="currentLocale()"
           [filterCriteria]="filterCriteria()"
           [selectedId]="selectedTranslation()?.id"
           [isLocaleUpdateLoading]="isLocaleUpdateLoading()"
           [translationUpdateId]="translationUpdateId()"
-          (translationSelect)="selectTranslation($event)" />
+          (translationSelect)="selectTranslation($event)"
+          (firstTranslation)="onFirstTranslation($event)" />
         @if (selectedTranslation(); as translation) {
           <ll-translation-detail
             [translation]="translation"
             [spaceId]="spaceId()"
             [availableLocales]="availableLocales()"
             [defaultLocale]="selectedSpace()?.defaultLocale"
-            [reservedKeys]="translationKeys()"
+            [isKeyTaken]="isKeyTaken"
             [selectedLabels]="filterCriteria()?.labels || []"
             [isLocaleUpdateLoading]="isLocaleUpdateLoading()"
             (save)="updateLocale($event.translation, $event.locale, $event.value)" />

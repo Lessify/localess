@@ -1,5 +1,6 @@
+import type { TranslationNodePageable, TranslationPageable } from '@localess/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, arrayOverlaps, asc, desc, eq, ilike, inArray, or, type SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -8,11 +9,22 @@ import { isUniqueViolation, type Transaction, transaction } from '../../../infra
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropTranslationDrafts } from '../../../shared/data-rules/translation-drafts.js';
 import type { TranslationEntity } from '../../../shared/entities/translation.entity.js';
+import { containsPattern, escapeLike, offsetOf } from '../../../shared/utils/paging.js';
 
 export type NewTranslation = Pick<TranslationEntity, 'key' | 'locales' | 'labels' | 'description'>;
 export type TranslationUpdate = Partial<Pick<TranslationEntity, 'key' | 'labels' | 'description'>>;
 
 type Change = { id?: string; op: 'created' | 'updated' | 'deleted' };
+
+/** The filter of both views, and the space's locales (what "translated in every locale" counts against). */
+export type TranslationFilter = Omit<TranslationPageable, 'page' | 'size' | 'sort' | 'direction'>;
+
+/** One level of the tree, before its translations are read: the segment, whether a key ends there, the keys below. */
+export interface TranslationNodeRow {
+  name: string;
+  isKey: boolean;
+  children: number;
+}
 
 /**
  * The `translations` rows of a space. Every write, in one transaction: the change, the space's draft maps dropped (the
@@ -37,6 +49,60 @@ export class TranslationRepository {
       where: eq(translations.spaceId, spaceId),
       orderBy: [asc(sql`${translations.key} collate "C"`)],
     });
+  }
+
+  /** One page of the list, filtered (`where`), by the query's sort, then the id so equal values page stably. */
+  findPage(spaceId: string, query: TranslationPageable, localeIds: string[]): Promise<TranslationEntity[]> {
+    const order = query.direction === 'desc' ? desc : asc;
+    const column = { key: translations.key, createdAt: translations.createdAt, updatedAt: translations.updatedAt }[query.sort];
+    return this.db.query.translations.findMany({
+      where: this.where(spaceId, query, localeIds),
+      orderBy: [order(column), asc(translations.id)],
+      limit: query.size,
+      offset: offsetOf(query),
+    });
+  }
+
+  /** How many keys match the filter. */
+  findPageCount(spaceId: string, query: TranslationFilter, localeIds: string[]): Promise<number> {
+    return this.db.$count(translations, this.where(spaceId, query, localeIds));
+  }
+
+  /**
+   * One level of the tree below `parent` (none: the top level), from the keys that match the filter: each segment once,
+   * by name as the list sorts keys (the database collation; byte order breaks ties), with whether a key ends there and how
+   * many matching keys lie below. A group without a match is not there. The prefix match uses the byte-order index.
+   */
+  async findNodes(
+    spaceId: string,
+    query: TranslationNodePageable,
+    localeIds: string[],
+  ): Promise<{ rows: TranslationNodeRow[]; total: number }> {
+    const prefix = query.parent ? `${query.parent}.` : '';
+    const segments = sql`
+      SELECT split_part(substr(${translations.key}, ${prefix.length + 1}), '.', 1) AS name, ${translations.key} AS key
+      FROM ${translations}
+      WHERE ${this.where(spaceId, query, localeIds)}
+        AND ${translations.key} COLLATE "C" LIKE ${`${escapeLike(prefix)}%`}`;
+    const order = query.direction === 'desc' ? sql`DESC` : sql`ASC`;
+    const [rows, [{ total }]] = await Promise.all([
+      this.db.execute<{ name: string; is_key: boolean; children: number }>(sql`
+        SELECT name, bool_or(key = ${prefix} || name) AS is_key, (count(*) FILTER (WHERE key <> ${prefix} || name))::int AS children
+        FROM (${segments}) AS level
+        GROUP BY name
+        ORDER BY name ${order}, name COLLATE "C" ${order}
+        LIMIT ${query.size} OFFSET ${offsetOf(query)}`),
+      this.db.execute<{ total: number }>(sql`SELECT count(DISTINCT name)::int AS total FROM (${segments}) AS level`).then(it => it.rows),
+    ]);
+    return { rows: rows.rows.map(it => ({ name: it.name, isKey: it.is_key, children: it.children })), total };
+  }
+
+  /** Every label the space's translations carry, in byte order. */
+  async findLabels(spaceId: string): Promise<string[]> {
+    const result = await this.db.execute<{ label: string }>(sql`
+      SELECT label FROM (SELECT DISTINCT unnest(${translations.labels}) AS label FROM ${translations} WHERE ${translations.spaceId} = ${spaceId}) AS labels
+      ORDER BY label COLLATE "C"`);
+    return result.rows.map(it => it.label);
   }
 
   findByKeys(spaceId: string, keys: string[]): Promise<TranslationEntity[]> {
@@ -177,6 +243,48 @@ export class TranslationRepository {
     return value
       ? sql`jsonb_set(${translations.locales}, ${`{${locale}}`}::text[], ${JSON.stringify(value)}::jsonb)`
       : sql`${translations.locales} - ${locale}::text`;
+  }
+
+  /**
+   * The filter of both views. `status` counts the space's locales with a value (`localeIds`): all of them, some, none;
+   * `localeStatus` asks for a non-blank value in `locale`.
+   */
+  private where(spaceId: string, query: TranslationFilter, localeIds: string[]): SQL | undefined {
+    const conditions: SQL[] = [eq(translations.spaceId, spaceId)];
+    const valueIn = (locale: string) => sql`(${translations.locales} ->> ${locale})`;
+    // The key in any letter case: the add and rename dialogs refuse a key that differs only in case.
+    if (query.key) conditions.push(sql`lower(${translations.key}) = lower(${query.key})`);
+    if (query.search) {
+      const pattern = containsPattern(query.search);
+      conditions.push(
+        (query.locale
+          ? or(ilike(translations.key, pattern), sql`${valueIn(query.locale)} ILIKE ${pattern}`)
+          : ilike(translations.key, pattern)) as SQL,
+      );
+    }
+    if (query.label?.length) conditions.push(arrayOverlaps(translations.labels, query.label));
+    if (query.status?.length) {
+      const filled = localeIds.length
+        ? sql.join(
+            localeIds.map(id => sql`(coalesce(${valueIn(id)}, '') <> '')::int`),
+            sql` + `,
+          )
+        : sql`0`;
+      const all = localeIds.length;
+      const states = query.status.map(status =>
+        status === 'TRANSLATED'
+          ? sql`(${filled}) = ${all} AND ${all} > 0`
+          : status === 'UNTRANSLATED'
+            ? sql`(${filled}) = 0`
+            : sql`(${filled}) BETWEEN 1 AND ${all - 1}`,
+      );
+      conditions.push(or(...states) as SQL);
+    }
+    if (query.localeStatus?.length && query.locale) {
+      const blank = sql`btrim(coalesce(${valueIn(query.locale)}, '')) = ''`;
+      if (query.localeStatus.length === 1) conditions.push(query.localeStatus[0] === 'UNTRANSLATED' ? blank : sql`NOT ${blank}`);
+    }
+    return and(...conditions);
   }
 
   private byId(spaceId: string, id: string) {

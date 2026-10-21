@@ -6,7 +6,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { runCli } from '../src/cli/commands.js';
-import { createTestDatabase, TestDatabase } from './database.js';
+import { createTestDatabase, MIGRATION_COUNT, TestDatabase } from './database.js';
 
 describe('CLI', () => {
   let database: TestDatabase;
@@ -39,7 +39,7 @@ describe('CLI', () => {
 
   it('db:migrate brings an empty database up to date', async () => {
     expect(await run(['db:migrate'])).toBe(0);
-    expect(await query(`select count(*)::int as n from drizzle.__drizzle_migrations`)).toEqual([{ n: 2 }]);
+    expect(await query(`select count(*)::int as n from drizzle.__drizzle_migrations`)).toEqual([{ n: MIGRATION_COUNT }]);
   });
 
   it('accepts a leading -- (pnpm forwards it to the script)', async () => {

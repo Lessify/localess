@@ -422,7 +422,12 @@ export const translations = pgTable(
     description: text('description'),
     ...timestamps,
   },
-  t => [uniqueIndex('translations_key_idx').on(t.spaceId, t.key)],
+  t => [
+    uniqueIndex('translations_key_idx').on(t.spaceId, t.key),
+    // Byte order: the tree resolves a level by key prefix (`key COLLATE "C" LIKE 'home.%'`), and the public API and the
+    // export files list keys in this order.
+    index('translations_key_bytes_idx').on(t.spaceId, sql`${t.key} COLLATE "C"`),
+  ],
 );
 
 /**

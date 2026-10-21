@@ -1,5 +1,8 @@
+import { Observable } from 'rxjs';
+
 export interface AddDialogContext {
-  reservedKeys: string[];
+  /** Whether the space has this key (the server's check). */
+  isKeyTaken: (key: string) => Observable<boolean>;
 }
 
 export interface AddDialogResult {

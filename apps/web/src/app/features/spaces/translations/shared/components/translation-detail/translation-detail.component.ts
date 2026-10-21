@@ -40,6 +40,7 @@ import { HlmSelectImports } from '@spartan-ng/helm/select';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
+import { Observable } from 'rxjs';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 import { EditDialogComponent, EditDialogContext, EditDialogResult } from '../../../edit-dialog';
@@ -101,7 +102,8 @@ export class TranslationDetailComponent {
   readonly availableLocales = input.required<Locale[]>();
   readonly defaultLocale = input<Locale | undefined>(undefined);
   /** Keys already taken, for the rename dialog. */
-  readonly reservedKeys = input<string[]>([]);
+  /** Whether the space has a key (the rename dialog's check). */
+  readonly isKeyTaken = input.required<(key: string) => Observable<boolean>>();
   readonly selectedLabels = input<string[]>([]);
   readonly isLocaleUpdateLoading = input(false);
 
@@ -213,7 +215,7 @@ export class TranslationDetailComponent {
       .open<EditIdDialogResult, EditIdDialogContext>(EditIdDialogComponent, {
         context: {
           key: translation.key,
-          reservedKeys: this.reservedKeys(),
+          isKeyTaken: this.isKeyTaken(),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
