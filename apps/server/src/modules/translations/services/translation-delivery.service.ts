@@ -42,15 +42,15 @@ export class TranslationDeliveryService {
   /** The published map of a space locale; a locale published never (added since) gets the default locale's map. */
   async findPublished(spaceId: string, locale: string, defaultLocale: string): Promise<TranslationSnapshotEntity | undefined> {
     return (
-      (await this.translationSnapshotRepository.find(spaceId, 'published', locale)) ??
-      (locale !== defaultLocale ? await this.translationSnapshotRepository.find(spaceId, 'published', defaultLocale) : undefined)
+      (await this.translationSnapshotRepository.findOne(spaceId, 'published', locale)) ??
+      (locale !== defaultLocale ? await this.translationSnapshotRepository.findOne(spaceId, 'published', defaultLocale) : undefined)
     );
   }
 
   /** The draft map of a space locale, building every locale's when a write dropped them. */
   async findDraft(spaceId: string, locale: string): Promise<TranslationSnapshotEntity | undefined> {
     return (
-      (await this.translationSnapshotRepository.find(spaceId, 'draft', locale)) ??
+      (await this.translationSnapshotRepository.findOne(spaceId, 'draft', locale)) ??
       (await this.translationSnapshotRepository.buildDrafts(spaceId)).find(it => it.locale === locale)
     );
   }
@@ -95,8 +95,8 @@ export class TranslationDeliveryService {
     if (dryRun) return { message: `[DryRun] Would ${verb} ${actionable.length} ${noun}`, ids: actionable, dryRun: true };
 
     const pick = () => Object.fromEntries(actionable.map(key => [key, values[key]]));
-    if (type === 'add-missing') await this.translationRepository.addKeys(spaceId, locale, pick());
-    else if (type === 'update-existing') await this.translationRepository.setLocaleByKeys(spaceId, locale, pick());
+    if (type === 'add-missing') await this.translationRepository.insertKeys(spaceId, locale, pick());
+    else if (type === 'update-existing') await this.translationRepository.updateLocaleByKeys(spaceId, locale, pick());
     else if (type === 'delete-missing-value') await this.translationRepository.deleteLocaleByKeys(spaceId, locale, actionable);
     else await this.translationRepository.deleteByKeys(spaceId, actionable);
     this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_CHANGED);

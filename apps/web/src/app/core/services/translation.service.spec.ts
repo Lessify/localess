@@ -53,20 +53,6 @@ describe('TranslationService', () => {
     subscription.unsubscribe();
   });
 
-  it('countAll() maps the count response to a number', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.countAll('space-1'));
-    http.expectOne(`${BASE}/count`).flush({ count: 7 });
-    expect(await result).toBe(7);
-  });
-
-  it('findById() reads one translation', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 'hello'));
-    http.expectOne(`${BASE}/hello`).flush({ id: 'hello' });
-    expect(await result).toEqual({ id: 'hello' });
-  });
-
   it('create() posts the translation with its values as they are, dropping empty labels/description', async () => {
     const service = setup();
     const bare = firstValueFrom(service.create('space-1', { key: 'quote', locales: { en: 'Say "hi"' }, labels: [], description: '' }));
@@ -91,9 +77,9 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('updateKey() renames on the server, addressing the translation by id', async () => {
+  it('rename() renames on the server, addressing the translation by id', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateKey('space-1', { id: 'uuid-1', key: 'old' } as Translation, 'new'));
+    const done = firstValueFrom(service.rename('space-1', { id: 'uuid-1', key: 'old' } as Translation, 'new'));
     const request = http.expectOne({ method: 'PUT', url: `${BASE}/uuid-1/key` });
     expect(request.request.body).toEqual({ key: 'new' });
     request.flush({});
@@ -109,13 +95,13 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('delete() and deleteAll() delete one or all translations', async () => {
+  it('remove() and removeAll() delete one or all translations', async () => {
     const service = setup();
-    const one = firstValueFrom(service.delete('space-1', 'hello'));
+    const one = firstValueFrom(service.remove('space-1', 'hello'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/hello` }).flush(null);
     await one;
 
-    const all = firstValueFrom(service.deleteAll('space-1'));
+    const all = firstValueFrom(service.removeAll('space-1'));
     http.expectOne({ method: 'DELETE', url: BASE }).flush(null);
     await all;
   });

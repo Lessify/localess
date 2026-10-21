@@ -40,7 +40,7 @@ describe('TranslationDetailComponent', () => {
     TestBed.overrideComponent(TranslationDetailComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TranslationService, useValue: { update, updateKey, delete: deleteTranslation } },
+        { provide: TranslationService, useValue: { update, rename: updateKey, remove: deleteTranslation } },
         { provide: LocaleService, useValue: { isLocaleTranslatableFrom, isLocaleTranslatableTo } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },

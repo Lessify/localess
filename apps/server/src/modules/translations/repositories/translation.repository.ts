@@ -45,7 +45,7 @@ export class TranslationRepository {
     return this.db.select().from(translations).where(this.byKeys(spaceId, keys));
   }
 
-  async findById(spaceId: string, id: string): Promise<TranslationEntity | undefined> {
+  async findOne(spaceId: string, id: string): Promise<TranslationEntity | undefined> {
     const [row] = await this.db.select().from(translations).where(this.byId(spaceId, id));
     return row;
   }
@@ -74,7 +74,7 @@ export class TranslationRepository {
   }
 
   /** One locale's value; an empty `value` removes it. `undefined` when the space has no translation `id`. */
-  setLocale(spaceId: string, id: string, locale: string, value: string, tx?: Transaction): Promise<TranslationEntity | undefined> {
+  updateLocale(spaceId: string, id: string, locale: string, value: string, tx?: Transaction): Promise<TranslationEntity | undefined> {
     return this.write(spaceId, tx, async t => {
       const [row] = await t
         .update(translations)
@@ -86,7 +86,7 @@ export class TranslationRepository {
   }
 
   /** One locale's value of several translations (by id), e.g. machine translations. */
-  setLocaleValues(spaceId: string, locale: string, values: { id: string; value: string }[], tx?: Transaction): Promise<void> {
+  updateLocaleValues(spaceId: string, locale: string, values: { id: string; value: string }[], tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       for (const { id, value } of values) {
         await t
@@ -116,7 +116,7 @@ export class TranslationRepository {
   // The CLI push (`POST /api/v1/spaces/:s/translations/:locale`) addresses translations by key.
 
   /** New translations with a value for `locale`. */
-  addKeys(spaceId: string, locale: string, values: Record<string, string>, tx?: Transaction): Promise<void> {
+  insertKeys(spaceId: string, locale: string, values: Record<string, string>, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       await t.insert(translations).values(
         Object.entries(values).map(([key, value]) => ({
@@ -130,7 +130,7 @@ export class TranslationRepository {
     });
   }
 
-  setLocaleByKeys(spaceId: string, locale: string, values: Record<string, string>, tx?: Transaction): Promise<void> {
+  updateLocaleByKeys(spaceId: string, locale: string, values: Record<string, string>, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       for (const [key, value] of Object.entries(values)) {
         await t

@@ -21,7 +21,7 @@ export class TranslationSnapshotRepository {
     private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
-  async find(spaceId: string, version: SnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
+  async findOne(spaceId: string, version: SnapshotVersion, locale: string): Promise<TranslationSnapshotEntity | undefined> {
     const [row] = await this.db
       .select()
       .from(translationSnapshots)

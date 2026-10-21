@@ -11,7 +11,6 @@ import {
   TranslationUpdate,
 } from '@localess/shared';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 /**
  * Translations of a space (`/api/app/spaces/:spaceId/translations`); reads are live.
@@ -28,16 +27,6 @@ export class TranslationService {
 
   findAll(spaceId: string): Observable<Translation[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['translations'] }, () => this.http.get<Translation[]>(this.base(spaceId)));
-  }
-
-  countAll(spaceId: string): Observable<number> {
-    return this.http.get<{ count: number }>(`${this.base(spaceId)}/count`).pipe(map(it => it.count));
-  }
-
-  findById(spaceId: string, id: string): Observable<Translation> {
-    return liveQueryWith(this.events, { spaceId, entities: ['translations'], id }, () =>
-      this.http.get<Translation>(`${this.base(spaceId)}/${id}`),
-    );
   }
 
   create(spaceId: string, entity: TranslationCreate): Observable<void> {
@@ -60,7 +49,7 @@ export class TranslationService {
   }
 
   /** Changes the key; the id, values and timestamps are kept. */
-  updateKey(spaceId: string, entity: Translation, key: string): Observable<void> {
+  rename(spaceId: string, entity: Translation, key: string): Observable<void> {
     return this.http.put<void>(`${this.base(spaceId)}/${entity.id}/key`, { key } satisfies TranslationRename);
   }
 
@@ -69,7 +58,7 @@ export class TranslationService {
     return this.http.put<void>(`${this.base(spaceId)}/${id}/locales/${locale}`, { value } satisfies TranslationLocaleUpdate);
   }
 
-  delete(spaceId: string, id: string): Observable<void> {
+  remove(spaceId: string, id: string): Observable<void> {
     return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
   }
 
@@ -77,7 +66,7 @@ export class TranslationService {
     return this.http.post<void>(`${this.base(spaceId)}/publish`, {});
   }
 
-  deleteAll(spaceId: string): Observable<void> {
+  removeAll(spaceId: string): Observable<void> {
     return this.http.delete<void>(this.base(spaceId));
   }
 

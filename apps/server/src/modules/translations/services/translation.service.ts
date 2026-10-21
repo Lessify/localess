@@ -56,7 +56,7 @@ export class TranslationService {
 
   async findOne(spaceId: string, translationId: string): Promise<Translation> {
     await this.requireSpace(spaceId);
-    return found(await this.translationRepository.findById(spaceId, translationId));
+    return found(await this.translationRepository.findOne(spaceId, translationId));
   }
 
   async create(spaceId: string, input: TranslationCreate): Promise<Translation> {
@@ -82,7 +82,7 @@ export class TranslationService {
   async updateLocale(spaceId: string, translationId: string, localeId: string, input: TranslationLocaleUpdate): Promise<Translation> {
     const space = await this.requireTranslation(spaceId, translationId);
     if (input.value) requireSpaceLocales(space, [localeId]);
-    return this.changed(spaceId, found(await this.translationRepository.setLocale(spaceId, translationId, localeId, input.value)));
+    return this.changed(spaceId, found(await this.translationRepository.updateLocale(spaceId, translationId, localeId, input.value)));
   }
 
   /** Changes the key; the id stays. */
@@ -136,7 +136,7 @@ export class TranslationService {
     const written = result.items.filter(it => it.content);
     if (written.length) {
       const values = written.map(it => ({ id: it.id, value: it.content }));
-      await this.translationRepository.setLocaleValues(spaceId, targetLocale, values);
+      await this.translationRepository.updateLocaleValues(spaceId, targetLocale, values);
       this.changed(spaceId, undefined);
     }
     return { translated: written.length, failed: result.failed.length };
@@ -151,7 +151,7 @@ export class TranslationService {
   /** The space, then the translation: "Space not found" comes before "Translation not found". */
   private async requireTranslation(spaceId: string, translationId: string): Promise<SpaceWithLocales> {
     const space = await this.requireSpace(spaceId);
-    found(await this.translationRepository.findById(spaceId, translationId));
+    found(await this.translationRepository.findOne(spaceId, translationId));
     return space;
   }
 

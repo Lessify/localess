@@ -221,7 +221,7 @@ export class TranslationDetailComponent {
         take(1),
         filter(it => it !== undefined),
         switchMap(it => {
-          return this.translationService.updateKey(this.spaceId(), translation, it!);
+          return this.translationService.rename(this.spaceId(), translation, it!);
         }),
       )
       .subscribe({
@@ -275,7 +275,7 @@ export class TranslationDetailComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.translationService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.translationService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
