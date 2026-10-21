@@ -38,8 +38,10 @@ describe('own profile', () => {
       204,
     );
 
-    expect((await call(current, 'GET', '/api/app/me')).statusCode).toBe(200);
-    expect((await call(other, 'GET', '/api/app/me')).statusCode).toBe(401);
+    expect((await call(current, 'GET', '/api/auth/me')).statusCode).toBe(200);
+    expect((await call(other, 'GET', '/api/auth/me')).statusCode).toBe(401);
+    // One way to read the signed-in user: `/api/app/me` has the profile writes only.
+    expect((await call(current, 'GET', '/api/app/me')).statusCode).toBe(404);
     await expect(login(t, 'me@example.com', 'new-pass')).resolves.toContain('localess_session=');
     await expect(login(t, 'me@example.com', 'old-pass')).rejects.toThrow();
   });

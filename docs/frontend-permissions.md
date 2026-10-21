@@ -62,7 +62,7 @@ current role:
 | `@Public()` | always (login, OAuth, `/api/config`, the public `/api/v1` API, health) |
 | `@RequireRole('ADMIN')` | the role is the one named |
 | `@RequireRole(CONTENT_WRITERS)` | the role is in the list (one of `roles.ts`, or an inline `['ADMIN', 'EDITOR']`) |
-| *(none)* | any signed-in session, even without a role (e.g. `/api/app/me`, sign-out) |
+| *(none)* | any signed-in session, even without a role (e.g. `GET /api/auth/me`, the profile writes under `/api/app/me`, sign-out) |
 
 On a method `@RequireRole` replaces the controller's. No session → `401`; a role outside the list → `403`. Checks that
 depend on the body live in the service: creating or deleting a task needs the roles its `kind` names

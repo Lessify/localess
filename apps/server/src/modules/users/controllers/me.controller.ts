@@ -1,20 +1,15 @@
 import type { MeEmailUpdate, MePasswordUpdate, MeUpdate, User } from '@localess/shared';
 import { zMeEmailUpdate, zMePasswordUpdate, zMeUpdate } from '@localess/shared/zod';
-import { Body, Controller, Get, HttpCode, Patch, Put } from '@nestjs/common';
+import { Body, Controller, HttpCode, Patch, Put } from '@nestjs/common';
 
 import { CurrentSessionId, CurrentUser } from '../../../auth/request-context.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import { MeService } from '../services/me.service.js';
 
-/** The signed-in user's own profile (was `updateProfile` / `updateEmail` / `updatePassword` on Firebase Auth). */
+/** The signed-in user's own profile: name and photo, email, password. Who is signed in is `GET /api/auth/me`. */
 @Controller('api/app/me')
 export class MeController {
   constructor(private readonly meService: MeService) {}
-
-  @Get()
-  async findOne(@CurrentUser() user: UserEntity): Promise<User> {
-    return this.meService.findOne(user);
-  }
 
   @Patch()
   async updateProfile(@CurrentUser() user: UserEntity, @Body({ schema: zMeUpdate }) body: MeUpdate): Promise<User> {

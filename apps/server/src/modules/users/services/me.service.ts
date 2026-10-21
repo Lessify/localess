@@ -20,10 +20,6 @@ export class MeService {
     private readonly sessionService: SessionService,
   ) {}
 
-  findOne(user: UserEntity): Promise<User> {
-    return this.userService.findOne(user.id);
-  }
-
   /** A field left out is kept; `''` or `null` clears it. */
   async updateProfile(user: UserEntity, input: MeUpdate): Promise<User> {
     return this.updated(user.id, {

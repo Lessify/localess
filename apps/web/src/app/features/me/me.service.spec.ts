@@ -10,11 +10,13 @@ import { MeService } from './me.service';
 describe('MeService', () => {
   let http: HttpTestingController;
   let load: ReturnType<typeof vi.fn>;
+  let signedIn: ReturnType<typeof vi.fn>;
 
   function setup() {
     load = vi.fn();
+    signedIn = vi.fn();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: UserStore, useValue: { load } }],
+      providers: [provideHttpClient(), provideHttpClientTesting(), { provide: UserStore, useValue: { load, signedIn } }],
     });
     http = TestBed.inject(HttpTestingController);
     return TestBed.inject(MeService);
@@ -24,40 +26,45 @@ describe('MeService', () => {
     http.verify();
   });
 
-  it('updateProfile() patches display name and photo, then reloads the user', async () => {
+  it('updateProfile() patches display name and photo; the store takes the user it answers', async () => {
     const service = setup();
     const done = firstValueFrom(service.updateProfile({ displayName: 'Alex', photoUrl: 'https://example.com/a.png' }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/me' });
     expect(request.request.body).toEqual({ displayName: 'Alex', photoUrl: 'https://example.com/a.png' });
-    request.flush({ id: 'u1' });
+    request.flush({ id: 'u1', displayName: 'Alex' });
     await done;
-    expect(load).toHaveBeenCalled();
+    expect(signedIn).toHaveBeenCalledWith({ id: 'u1', displayName: 'Alex' });
+    expect(load).not.toHaveBeenCalled();
   });
 
-  it('updateEmail() puts the new email with the current password, then reloads the user', async () => {
+  it('updateEmail() puts the new email with the current password; the store takes the user it answers', async () => {
     const service = setup();
     const done = firstValueFrom(service.updateEmail({ email: 'new@example.com', currentPassword: 'old-secret' }));
     const request = http.expectOne({ method: 'PUT', url: '/api/app/me/email' });
     expect(request.request.body).toEqual({ email: 'new@example.com', currentPassword: 'old-secret' });
-    request.flush({ id: 'u1' });
+    request.flush({ id: 'u1', email: 'new@example.com' });
     await done;
-    expect(load).toHaveBeenCalled();
+    expect(signedIn).toHaveBeenCalledWith({ id: 'u1', email: 'new@example.com' });
+    expect(load).not.toHaveBeenCalled();
   });
 
-  it('updatePassword() puts current and new password', async () => {
+  it('updatePassword() puts current and new password, and reads nothing again', async () => {
     const service = setup();
     const done = firstValueFrom(service.updatePassword({ newPassword: 'new-secret', currentPassword: 'old-secret' }));
     const request = http.expectOne({ method: 'PUT', url: '/api/app/me/password' });
     expect(request.request.body).toEqual({ currentPassword: 'old-secret', newPassword: 'new-secret' });
     request.flush(null, { status: 204, statusText: 'No Content' });
     await done;
+    expect(signedIn).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled();
   });
 
-  it('does not reload the user when the server rejects the change', async () => {
+  it('leaves the store alone when the server rejects the change', async () => {
     const service = setup();
     const done = firstValueFrom(service.updateEmail({ email: 'new@example.com', currentPassword: 'wrong' }));
     http.expectOne('/api/app/me/email').flush({ message: 'Current password is incorrect' }, { status: 401, statusText: 'Unauthorized' });
     await expect(done).rejects.toMatchObject({ status: 401 });
+    expect(signedIn).not.toHaveBeenCalled();
     expect(load).not.toHaveBeenCalled();
   });
 });

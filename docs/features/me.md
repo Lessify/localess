@@ -42,7 +42,7 @@ Displays the current user's profile card — avatar, name, email, email-verified
 Form: `displayName`, `photoUrl` (plain URL text field — no upload; an http(s) URL, `''` clears it). The Me bodies are strict: an unknown field is a 400.
 
 ### MeEmailDialogComponent
-Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.hasPassword()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`), then reloads the current user. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
+Form: `newEmail`, plus `currentPassword` for accounts that have a password (`UserStore.hasPassword()`). Calls `MeService.updateEmail()` (`PUT /api/app/me/email`); `UserStore` takes the user it answers. The server checks the current password, rejects an address another user already has (409), and marks the new address unverified.
 
 ### MePasswordDialogComponent
 Form: `newPassword` (min length 6), plus `currentPassword` for accounts that have a password. Calls `MeService.updatePassword()` (`PUT /api/app/me/password`). Changing the password signs out every other session of the user.
@@ -53,6 +53,6 @@ Form: `newPassword` (min length 6), plus `currentPassword` for accounts that hav
 
 | Service | Purpose |
 |---------|---------|
-| `MeService` | Update display name / photo (`PATCH /api/app/me`), email (`PUT /api/app/me/email`), password (`PUT /api/app/me/password`); reloads `UserStore` afterwards |
+| `MeService` | Update display name / photo (`PATCH /api/app/me`), email (`PUT /api/app/me/email`), password (`PUT /api/app/me/password`); `UserStore` takes the user the profile and email changes answer (who is signed in is `GET /api/auth/me`) |
 | `NotificationService` | Toast feedback |
 | `UserStore` | Read current user state (email, how they sign in, displayName) |
