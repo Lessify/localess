@@ -12,13 +12,13 @@ export const zEmail = z.string().trim().pipe(z.email());
 const zRole = z.enum(USER_ROLES).nullable();
 
 /** `POST /api/app/users`: no role given, no access yet. Strict: an old client's `permissions` is a 400, not dropped. */
-export const zUserInvite = z.strictObject({
+export const zUserAdd = z.strictObject({
   email: zEmail,
   password: z.string().min(PASSWORD_MIN_LENGTH),
   displayName: z.string().trim().max(200).optional(),
   role: zRole.optional(),
 });
-export type UserInvite = z.infer<typeof zUserInvite>;
+export type UserAdd = z.infer<typeof zUserAdd>;
 
 /** `PATCH /api/app/users/:id`: the role. */
 export const zUserUpdate = z.strictObject({ role: zRole });

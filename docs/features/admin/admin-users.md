@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Manage all platform users — invite new users, give each one role (Admin, Developer, Editor, Translator, Viewer, or none), disable or enable sign-in, delete users, and hand out password reset links. For admins only.
+Manage all platform users — add new users, give each one role (Admin, Developer, Editor, Translator, Viewer, or none), disable or enable sign-in, delete users, and hand out password reset links. For admins only.
 
 ## Route
 
@@ -19,7 +19,7 @@ apps/web/src/app/features/admin/users/
   users.component.ts/html/scss       ← main user list
   user-dialog/                       ← edit the role
   user-role-choice/                  ← the role as choice cards (both dialogs)
-  user-invite-dialog/                ← invite new user
+  user-add-dialog/                ← add a new user
 apps/web/src/app/shared/models/user-role.model.ts
                                      ← USER_ROLE_OPTIONS (the roles with a label, an icon and what each may do), roleLabel()
 ```
@@ -35,7 +35,7 @@ The **Sign-in** column shows how each user signs in: a mail icon when they have 
 **Key behaviour:**
 - `loadData()` — fetches all users via `UserService`
 - `onFilterChange(value: FilterToolbarValue)` — sends the toolbar's search and the Active filter to the server, from the first page; `onSortChange()` sends the sorted column and direction
-- `inviteDialog()` — opens `UserInviteDialogComponent`
+- `openAddDialog()` — opens `UserAddDialogComponent`
 - `openEditDialog(user)` — opens `UserDialogComponent` to change the role
 - `openDeleteDialog(user)` — opens `ConfirmationDialogComponent`, then deletes
 - `toggleDisabled(user)` — **Disable** (after a confirmation) or **Enable** via `UserService.updateStatus()` (`PATCH /api/app/users/:id/status` `{ disabled }`). Disabling deletes the user's sessions, so they are signed out at once; password and OAuth sign-in are refused while `users.disabled` is set, and the list shows them as *inactive*. Offered on every user but the caller's own account (`canChangeStatus()`); the server refuses that too (403). Replaces the Firebase Authentication console's "Disable account"
@@ -45,7 +45,7 @@ The list is live: `UserService.findAll(params)` is a `liveQuery` that reads the 
 
 ## Dialogs
 
-### UserInviteDialogComponent
+### UserAddDialogComponent
 Creates a new user (row in `users`, argon2id password in `user_credentials`) with its role (or none) via `POST /api/app/users`.
 
 Form fields: `email`, `password`, `displayName`, `role` (None or one of the five)

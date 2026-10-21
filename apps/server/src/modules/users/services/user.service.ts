@@ -1,4 +1,4 @@
-import type { Page, PasswordResetLink, User, UserInvite, UserPageable, UserStatusUpdate, UserUpdate } from '@localess/shared';
+import type { Page, PasswordResetLink, User, UserAdd, UserPageable, UserStatusUpdate, UserUpdate } from '@localess/shared';
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { PasswordResetService } from '../../../auth/services/password-reset.service.js';
@@ -30,8 +30,8 @@ export class UserService {
     return toUser(await this.requireUser(id));
   }
 
-  /** Invites a user with a password and the role given (none: no access yet); the email is free (409 otherwise). */
-  async create(input: UserInvite): Promise<User> {
+  /** Adds a user with a password and the role given (none: no access yet); the email is free (409 otherwise). */
+  async create(input: UserAdd): Promise<User> {
     if (await this.userRepository.existsByEmail(input.email)) throw new ConflictException('A user with this email already exists');
     const id = await this.userRepository.create(
       { email: input.email, emailVerified: false, displayName: input.displayName || null, role: input.role ?? null },

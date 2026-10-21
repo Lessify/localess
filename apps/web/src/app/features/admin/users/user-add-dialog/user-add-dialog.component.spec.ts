@@ -2,14 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { vi } from 'vitest';
 
-import { UserInviteDialogComponent } from './user-invite-dialog.component';
+import { UserAddDialogComponent } from './user-add-dialog.component';
 
-describe('UserInviteDialogComponent', () => {
+describe('UserAddDialogComponent', () => {
   function setup() {
     const close = vi.fn();
-    TestBed.overrideComponent(UserInviteDialogComponent, { set: { template: '<div></div>' } });
+    TestBed.overrideComponent(UserAddDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({ providers: [{ provide: BrnDialogRef, useValue: { close } }] });
-    const fixture = TestBed.createComponent(UserInviteDialogComponent);
+    const fixture = TestBed.createComponent(UserAddDialogComponent);
     fixture.detectChanges();
     return { component: fixture.componentInstance, close };
   }

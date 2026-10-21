@@ -1,7 +1,7 @@
 import { UserRole } from '@localess/shared';
 
-/** The dialog takes no context: an invite starts from a blank form. */
-export interface UserInviteDialogResult {
+/** The dialog takes no context: adding a user starts from a blank form. */
+export interface UserAddDialogResult {
   displayName?: string;
   email: string;
   password: string;

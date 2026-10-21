@@ -10,19 +10,19 @@ import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmInputImports } from '@spartan-ng/helm/input';
 
 import { NO_ROLE, UserRoleChoiceComponent } from '../user-role-choice/user-role-choice.component';
-import { UserInviteDialogResult } from './user-invite-dialog.model';
+import { UserAddDialogResult } from './user-add-dialog.model';
 
 @Component({
-  selector: 'll-user-invite-dialog',
-  templateUrl: './user-invite-dialog.component.html',
+  selector: 'll-user-add-dialog',
+  templateUrl: './user-add-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
   imports: [HlmDialogImports, ReactiveFormsModule, HlmButtonImports, HlmFieldImports, HlmInputImports, UserRoleChoiceComponent],
 })
-export class UserInviteDialogComponent {
+export class UserAddDialogComponent {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
-  private readonly dialogRef = inject<BrnDialogRef<UserInviteDialogResult>>(BrnDialogRef);
+  private readonly dialogRef = inject<BrnDialogRef<UserAddDialogResult>>(BrnDialogRef);
 
   form: FormGroup = this.fb.group({
     email: this.fb.control('', [Validators.required, Validators.minLength(2), Validators.email]),
@@ -37,7 +37,7 @@ export class UserInviteDialogComponent {
 
   /** None (`NO_ROLE`) is answered as `null`. */
   save(): void {
-    const { role, ...rest } = this.form.value as Omit<UserInviteDialogResult, 'role'> & { role: string };
+    const { role, ...rest } = this.form.value as Omit<UserAddDialogResult, 'role'> & { role: string };
     this.dialogRef.close({ ...rest, role: (role || null) as UserRole | null });
   }
 }

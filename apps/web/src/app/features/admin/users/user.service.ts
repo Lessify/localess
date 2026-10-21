@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
-import { Page, PasswordResetLink, User, UserInvite, UserStatusUpdate, UserUpdate } from '@localess/shared';
+import { Page, PasswordResetLink, User, UserAdd, UserStatusUpdate, UserUpdate } from '@localess/shared';
 import { Observable } from 'rxjs';
 
 const BASE = '/api/app/users';
@@ -32,9 +32,9 @@ export class UserService {
     return this.http.patch<void>(`${BASE}/${id}/status`, { disabled: model.disabled } satisfies UserStatusUpdate);
   }
 
-  /** Invites a user (a password, and the role given or none). */
-  create(model: UserInvite): Observable<void> {
-    return this.http.post<void>(BASE, model satisfies UserInvite);
+  /** Adds a user (a password, and the role given or none). */
+  create(model: UserAdd): Observable<void> {
+    return this.http.post<void>(BASE, model satisfies UserAdd);
   }
 
   /** A one-hour reset link an admin can hand over (works without SMTP). */

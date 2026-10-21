@@ -63,11 +63,11 @@ the UI, then the table (also after a reload), the API, and what the user can now
 
 | Scenario | How | Status |
 |---|---|---|
-| Invite as **Admin**: full access, admin area visible | UI + API + the user's session | ✅ `admin/users` |
-| Invite as **Translator**: edits translations, no admin area | UI + API + the user's session | ✅ `admin/users` |
+| Add as **Admin**: full access, admin area visible | UI + API + the user's session | ✅ `admin/users` |
+| Add as **Translator**: edits translations, no admin area | UI + API + the user's session | ✅ `admin/users` |
 | The role cards offer None and the five roles, each with what it lets the user do; None chosen at first | UI | ✅ `admin/users` |
-| Invite as **None**: signs in, no access, asked to contact an administrator | UI + API + the user's session | ✅ `admin/users` |
-| Invite with a taken email is refused; the existing user is unchanged | UI + API | ✅ `admin/users` |
+| Add as **None**: signs in, no access, asked to contact an administrator | UI + API + the user's session | ✅ `admin/users` |
+| Adding with a taken email is refused; the existing user is unchanged | UI + API | ✅ `admin/users` |
 | Change role Viewer → Admin → None → Editor; access follows each change | UI + API + the user's session | ✅ `admin/users` |
 | Disable (sign-in refused) / enable | UI + API + the user's session | ✅ `admin/users` |
 | Disabling signs out a user who is signed in | UI + the user's open session | ✅ `admin/users` |

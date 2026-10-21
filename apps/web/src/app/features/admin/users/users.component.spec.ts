@@ -40,7 +40,7 @@ describe('UsersComponent', () => {
 
   function setup(users: User[] = [], findPageImpl?: (params: HttpParams) => Observable<Page<User>>, currentUser = ADMIN) {
     const findAll = vi.fn(findPageImpl ?? ((params: HttpParams) => of(pageOf(users, params))));
-    const invite = vi.fn().mockReturnValue(of(undefined));
+    const add = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteUser = vi.fn().mockReturnValue(of(undefined));
     const updateStatus = vi.fn().mockReturnValue(of(undefined));
@@ -56,7 +56,7 @@ describe('UsersComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: UserService, useValue: { findAll, create: invite, update, remove: deleteUser, createPasswordResetLink, updateStatus } },
+        { provide: UserService, useValue: { findAll, create: add, update, remove: deleteUser, createPasswordResetLink, updateStatus } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         userStoreOf(currentUser),
@@ -70,7 +70,7 @@ describe('UsersComponent', () => {
       component: fixture.componentInstance,
       findAll,
       lastQuery,
-      invite,
+      add,
       update,
       deleteUser,
       updateStatus,
@@ -145,34 +145,34 @@ describe('UsersComponent', () => {
     expect(component.isLoading()).toBe(false);
   });
 
-  it('inviteDialog() invites the user and notifies success when confirmed', () => {
-    const { component, open, invite, success } = setup();
+  it('openAddDialog() adds the user and notifies success when confirmed', () => {
+    const { component, open, add, success } = setup();
     const model = { email: 'new@example.com', password: 'secret123' };
     open.mockReturnValue({ closed$: of(model) });
 
-    component.inviteDialog();
+    component.openAddDialog();
 
-    expect(invite).toHaveBeenCalledWith(model);
-    expect(success).toHaveBeenCalledWith('User has been invited.');
+    expect(add).toHaveBeenCalledWith(model);
+    expect(success).toHaveBeenCalledWith('User has been added.');
   });
 
-  it('inviteDialog() does nothing when dismissed', () => {
-    const { component, open, invite } = setup();
+  it('openAddDialog() does nothing when dismissed', () => {
+    const { component, open, add } = setup();
     open.mockReturnValue({ closed$: of(undefined) });
 
-    component.inviteDialog();
+    component.openAddDialog();
 
-    expect(invite).not.toHaveBeenCalled();
+    expect(add).not.toHaveBeenCalled();
   });
 
-  it('inviteDialog() notifies an error on failure', () => {
-    const { component, open, invite, error } = setup();
-    invite.mockReturnValue(throwError(() => new Error('boom')));
+  it('openAddDialog() notifies an error on failure', () => {
+    const { component, open, add, error } = setup();
+    add.mockReturnValue(throwError(() => new Error('boom')));
     open.mockReturnValue({ closed$: of({ email: 'new@example.com', password: 'secret123' }) });
 
-    component.inviteDialog();
+    component.openAddDialog();
 
-    expect(error).toHaveBeenCalledWith('User can not be invited.');
+    expect(error).toHaveBeenCalledWith('User can not be added.');
   });
 
   it('openEditDialog() updates the user and notifies success when confirmed', () => {

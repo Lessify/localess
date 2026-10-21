@@ -88,12 +88,12 @@ describe('UserService', () => {
     await done;
   });
 
-  it('create() posts the invite', async () => {
+  it('create() posts the new user', async () => {
     const service = setup();
-    const invite = { email: 'new@example.com', password: 'secret1', role: 'ADMIN' as const };
-    const done = firstValueFrom(service.create(invite));
+    const model = { email: 'new@example.com', password: 'secret1', role: 'ADMIN' as const };
+    const done = firstValueFrom(service.create(model));
     const request = http.expectOne({ method: 'POST', url: '/api/app/users' });
-    expect(request.request.body).toEqual(invite);
+    expect(request.request.body).toEqual(model);
     request.flush({ id: 'u2' });
     await done;
   });

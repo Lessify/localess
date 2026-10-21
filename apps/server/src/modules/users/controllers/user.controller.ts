@@ -3,12 +3,12 @@ import {
   type Page,
   type PasswordResetLink,
   type User,
-  type UserInvite,
+  type UserAdd,
   type UserPageable,
   type UserStatusUpdate,
   type UserUpdate,
 } from '@localess/shared';
-import { zUserInvite, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
+import { zUserAdd, zUserPageable, zUserStatusUpdate, zUserUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Inject, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { FastifyRequest } from 'fastify';
 
@@ -20,7 +20,7 @@ import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import { UserService } from '../services/user.service.js';
 
-/** Admin → Users, for admins only: invite, change a user's role, disable, hand a reset link, delete. */
+/** Admin → Users, for admins only: add, change a user's role, disable, hand a reset link, delete. */
 @Controller('api/app/users')
 @RequireRole(ADMINS)
 export class UserController {
@@ -41,7 +41,7 @@ export class UserController {
   }
 
   @Post()
-  async create(@Body({ schema: zUserInvite }) body: UserInvite): Promise<User> {
+  async create(@Body({ schema: zUserAdd }) body: UserAdd): Promise<User> {
     return this.userService.create(body);
   }
 

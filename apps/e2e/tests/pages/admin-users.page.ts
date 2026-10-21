@@ -7,7 +7,7 @@ import { cellUnder } from './table';
 /** A role as the role cards and the Role column show it. */
 export type RoleLabel = 'None' | 'Admin' | 'Developer' | 'Editor' | 'Translator' | 'Viewer';
 
-export interface InviteInput {
+export interface UserAddInput {
   email: string;
   password: string;
   displayName?: string;
@@ -25,7 +25,7 @@ export class AdminUsersPage {
   /** The list; with `search`, narrowed to it (one page is listed: a given user may be on another). */
   async goto(search?: string): Promise<void> {
     await this.page.goto('/features/admin/users');
-    await expect(this.page.getByRole('button', { name: 'Invite' })).toBeVisible();
+    await expect(this.page.getByRole('button', { name: 'Add User' })).toBeVisible();
     // The table has loaded once its total shows (one page is listed: a given user may be on another).
     await expect(this.page.getByText(/^\d+ total items$/)).toBeVisible();
     if (search !== undefined) await this.find(search);
@@ -55,16 +55,16 @@ export class AdminUsersPage {
     return this.row(email).getByRole('img', { name: `User is ${status}` });
   }
 
-  async invite(input: InviteInput): Promise<void> {
-    await this.page.getByRole('button', { name: 'Invite' }).click();
-    const form = await dialog(this.page, 'User Invite');
+  async add(input: UserAddInput): Promise<void> {
+    await this.page.getByRole('button', { name: 'Add User' }).click();
+    const form = await dialog(this.page, 'Add User');
     await form.getByLabel('Email').fill(input.email);
     await form.getByLabel('Password').fill(input.password);
     if (input.displayName) await form.getByLabel('Display Name').fill(input.displayName);
     await this.chooseRole(form, input.role);
-    await form.getByRole('button', { name: 'Invite' }).click();
+    await form.getByRole('button', { name: 'Add', exact: true }).click();
     await expect(form).toBeHidden();
-    await expectToast(this.page, 'User has been invited.');
+    await expectToast(this.page, 'User has been added.');
   }
 
   /** Edit: the role (all the admin can change on an existing user). */

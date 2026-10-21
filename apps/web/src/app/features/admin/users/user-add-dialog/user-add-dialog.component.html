@@ -1,5 +1,5 @@
 <hlm-dialog-header>
-  <h2 hlmDialogTitle>User Invite</h2>
+  <h2 hlmDialogTitle>Add User</h2>
 </hlm-dialog-header>
 <form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-x-hidden overflow-y-auto">
   <div hlmField>
@@ -30,5 +30,5 @@
 </form>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
-  <button hlmBtn [disabled]="!form.valid" (click)="save()">Invite</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Add</button>
 </hlm-dialog-footer>

@@ -38,7 +38,7 @@ test.describe('Navigation', () => {
     await page.goto(`/features/spaces/${space.id}/developers/open-api`);
     await expect(page.locator('elements-api')).toBeAttached();
     await page.goto('/features/admin/users');
-    await expect(page.getByRole('button', { name: 'Invite' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add User' })).toBeVisible();
     await page.goto('/features/admin/spaces');
     await expect(page.getByRole('button', { name: 'Add Space' })).toBeVisible();
     await page.goto('/features/me');

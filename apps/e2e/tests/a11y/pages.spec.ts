@@ -265,14 +265,14 @@ test.describe('Accessibility of dialogs', () => {
     });
   }
 
-  test('Admin → Users: User Invite and User (edit)', async ({ page, createUser }) => {
+  test('Admin → Users: Add User and User (edit)', async ({ page, createUser }) => {
     const user = await createUser({ role: 'VIEWER' });
     const users = new AdminUsersPage(page);
     await users.goto(user.email);
-    await page.getByRole('button', { name: 'Invite' }).click();
-    const invite = await dialog(page, 'User Invite');
-    await expectAccessible(page, invite);
-    await cancel(invite);
+    await page.getByRole('button', { name: 'Add User' }).click();
+    const add = await dialog(page, 'Add User');
+    await expectAccessible(page, add);
+    await cancel(add);
     await users.action(user.email, 'Edit');
     await expectAccessible(page, await dialog(page, 'User'));
   });

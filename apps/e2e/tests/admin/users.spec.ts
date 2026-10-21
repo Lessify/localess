@@ -7,13 +7,13 @@ import { ADMIN } from '../support/env';
 import { expect, test, type TestUser, uniqueId } from '../support/fixtures';
 
 function newEmail(): string {
-  return `${uniqueId('invited-')}@e2e.localess.test`;
+  return `${uniqueId('added-')}@e2e.localess.test`;
 }
 
 // Every test: pre-check (UI and API) → action (UI) → post-check (UI, again after a reload, API, and what the user
 // can now do with their own session).
 test.describe('Admin → Users', () => {
-  test.describe('invite', () => {
+  test.describe('add', () => {
     test('as Admin: the user signs in with full access, and sees the admin area', async ({ page, api, cleanup, signInAs, probe }) => {
       const users = new AdminUsersPage(page);
       const email = newEmail();
@@ -26,7 +26,7 @@ test.describe('Admin → Users', () => {
       expect((await probe.accessOf(email, 'admin-password')).signIn).toBe(false);
 
       // Action
-      await users.invite({ email, password: 'admin-password', displayName: 'New Admin', role: 'Admin' });
+      await users.add({ email, password: 'admin-password', displayName: 'New Admin', role: 'Admin' });
 
       // Post-check
       await expect(await users.roleCell(email)).toHaveText('Admin');
@@ -53,7 +53,7 @@ test.describe('Admin → Users', () => {
       expect(await api.findUserByEmail(email)).toBeUndefined();
 
       // Action
-      await users.invite({ email, password: 'translator-password', role: 'Translator' });
+      await users.add({ email, password: 'translator-password', role: 'Translator' });
 
       // Post-check
       await expect(await users.roleCell(email)).toHaveText('Translator');
@@ -72,8 +72,8 @@ test.describe('Admin → Users', () => {
     test('the role cards offer None and the five roles, each with what it lets the user do', async ({ page }) => {
       const users = new AdminUsersPage(page);
       await users.goto();
-      await page.getByRole('button', { name: 'Invite' }).click();
-      const form = await dialog(page, 'User Invite');
+      await page.getByRole('button', { name: 'Add User' }).click();
+      const form = await dialog(page, 'Add User');
 
       const cards = users.roleCards(form);
       await expect(cards).toHaveCount(6);
@@ -110,7 +110,7 @@ test.describe('Admin → Users', () => {
       await expect(users.row(email)).toHaveCount(0);
 
       // Action
-      await users.invite({ email, password: 'none-password', role: 'None' });
+      await users.add({ email, password: 'none-password', role: 'None' });
 
       // Post-check
       await expect(await users.roleCell(email)).toHaveText('None');
@@ -133,14 +133,14 @@ test.describe('Admin → Users', () => {
       await expect(users.row(existing.email)).toHaveCount(1);
 
       // Action
-      await page.getByRole('button', { name: 'Invite' }).click();
-      const form = page.getByRole('dialog').filter({ hasText: 'User Invite' });
+      await page.getByRole('button', { name: 'Add User' }).click();
+      const form = page.getByRole('dialog').filter({ hasText: 'Add User' });
       await form.getByLabel('Email').fill(existing.email);
       await form.getByLabel('Password').fill('another-password');
-      await form.getByRole('button', { name: 'Invite' }).click();
+      await form.getByRole('button', { name: 'Add', exact: true }).click();
 
       // Post-check: an error, still one user, and the old password still works.
-      await expectToast(page, 'User can not be invited.');
+      await expectToast(page, 'User can not be added.');
       await expect(users.row(existing.email)).toHaveCount(1);
       expect((await api.listUsers()).filter(it => it.email === existing.email)).toHaveLength(1);
       expect((await probe.accessOf(existing.email, existing.password)).signIn).toBe(true);
@@ -156,7 +156,7 @@ test.describe('Admin → Users', () => {
 
       await own.goto('/features/admin/users');
       await expect(own).not.toHaveURL(/\/admin\/users/);
-      await expect(own.getByRole('button', { name: 'Invite' })).toHaveCount(0);
+      await expect(own.getByRole('button', { name: 'Add User' })).toHaveCount(0);
     });
   });
 

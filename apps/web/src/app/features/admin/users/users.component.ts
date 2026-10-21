@@ -43,10 +43,10 @@ import { EMPTY, of } from 'rxjs';
 import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { UserService } from './user.service';
+import { UserAddDialogComponent } from './user-add-dialog/user-add-dialog.component';
+import { UserAddDialogResult } from './user-add-dialog/user-add-dialog.model';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogContext, UserDialogResult } from './user-dialog/user-dialog.model';
-import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
-import { UserInviteDialogResult } from './user-invite-dialog/user-invite-dialog.model';
 
 @Component({
   selector: 'll-users',
@@ -160,9 +160,9 @@ export class UsersComponent implements OnInit {
       });
   }
 
-  inviteDialog(): void {
+  openAddDialog(): void {
     this.dialog
-      .open<UserInviteDialogResult>(UserInviteDialogComponent, {
+      .open<UserAddDialogResult>(UserAddDialogComponent, {
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -172,10 +172,10 @@ export class UsersComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('User has been invited.');
+          this.notificationService.success('User has been added.');
         },
         error: () => {
-          this.notificationService.error('User can not be invited.');
+          this.notificationService.error('User can not be added.');
         },
       });
   }

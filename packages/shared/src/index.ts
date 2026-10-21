@@ -60,13 +60,5 @@ export type {
   TranslationUpdate,
 } from './models/translation.zod.js';
 export type { UnsplashSearch } from './models/unsplash.zod.js';
-export type {
-  MeEmailUpdate,
-  MePasswordUpdate,
-  MeUpdate,
-  UserInvite,
-  UserPageable,
-  UserStatusUpdate,
-  UserUpdate,
-} from './models/user.zod.js';
+export type { MeEmailUpdate, MePasswordUpdate, MeUpdate, UserAdd, UserPageable, UserStatusUpdate, UserUpdate } from './models/user.zod.js';
 export type { WebhookCreate, WebhookLogPageable, WebhookPageable, WebhookStatusUpdate, WebhookUpdate } from './models/webhook.zod.js';

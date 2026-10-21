@@ -19,7 +19,7 @@ function paginator(page: Page) {
 }
 
 test.describe('Admin → Users, one page at a time', () => {
-  test('pages, sorts and searches on the server; an invited user is found by the search', async ({ page, api, cleanup }) => {
+  test('pages, sorts and searches on the server; an added user is found by the search', async ({ page, api, cleanup }) => {
     const users = new AdminUsersPage(page);
     const prefix = uniqueId('pager');
     const email = (n: number | string) => `${prefix}-${typeof n === 'number' ? pad(n) : n}@e2e.localess.test`;
@@ -52,9 +52,9 @@ test.describe('Admin → Users, one page at a time', () => {
     await expect(pages.status).toHaveText('Page 1 of 2');
     await expect.poll(async () => (await emails())[0]).toBe(email(24));
 
-    // Action → post-check: an invited user shows in the search at once (live), the total one more.
+    // Action → post-check: an added user shows in the search at once (live), the total one more.
     cleanup.user(email('zz'));
-    await users.invite({ email: email('zz'), password: 'pager-password', role: 'None' });
+    await users.add({ email: email('zz'), password: 'pager-password', role: 'None' });
     await expect(page.getByText('26 total items')).toBeVisible();
     await expect.poll(async () => (await emails())[0]).toBe(email('zz'));
   });
