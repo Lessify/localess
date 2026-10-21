@@ -33,7 +33,7 @@
             <hlm-select-trigger class="w-full" buttonId="kind-trigger">
               <hlm-select-placeholder>Select kind</hlm-select-placeholder>
               <ng-template hlmSelectValueTemplate let-value>
-                @if (schemaFieldKindDescriptions[value]; as descriptor) {
+                @if (fieldKindDescription(value); as descriptor) {
                   <div>
                     <ng-icon [name]="descriptor.icon" class="mr-1" />
                     {{ descriptor.name }}
@@ -43,7 +43,7 @@
             </hlm-select-trigger>
             <hlm-select-content *hlmSelectPortal showScroll class="max-h-96">
               @for (kind of fieldKinds; track kind) {
-                @let descriptor = schemaFieldKindDescriptions[kind];
+                @let descriptor = fieldKindDescription(kind);
                 <hlm-select-item [value]="kind" [hlmTooltip]="descriptor.description" (click)="selectFieldKind(kind)">
                   <ng-icon [name]="descriptor.icon" class="mr-1" />
                   {{ descriptor.name }}
@@ -230,7 +230,7 @@
               <hlm-select-trigger class="w-full" buttonId="fileType-trigger">
                 <hlm-select-placeholder>Select file type</hlm-select-placeholder>
                 <ng-template hlmSelectValueTemplate let-value>
-                  @if (assetFileTypeDescriptions[value]; as descriptor) {
+                  @if (fileTypeDescription(value); as descriptor) {
                     <div>
                       <ng-icon [name]="descriptor.icon" class="mr-1" />
                       {{ descriptor.name }}
@@ -240,7 +240,7 @@
               </hlm-select-trigger>
               <hlm-select-content *hlmSelectPortal>
                 @for (fileType of assetTypes; track fileType) {
-                  @let descriptor = assetFileTypeDescriptions[fileType];
+                  @let descriptor = fileTypeDescription(fileType);
                   <hlm-select-item [value]="fileType" [hlmTooltip]="descriptor.description">
                     <ng-icon [name]="descriptor.icon" class="mr-1" />
                     {{ descriptor.name }}
@@ -261,7 +261,7 @@
 @if (settingsStore.debugEnabled()) {
   <hlm-accordion type="multiple">
     <hlm-accordion-item>
-      <hlm-accordion-trigger>Form : {{ form()?.valid }}</hlm-accordion-trigger>
+      <hlm-accordion-trigger>Form : {{ form().valid }}</hlm-accordion-trigger>
       <hlm-accordion-content>
         <pre>{{ form().value | json }}</pre>
         <pre>{{ form().errors | json }}</pre>

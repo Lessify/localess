@@ -26,9 +26,9 @@
       <ng-container llColumnDef="type">
         <th llHeaderCell *llHeaderCellDef>Type</th>
         <td llCell *llCellDef="let element">
-          <span hlmBadge variant="outline" [hlmTooltip]="typeInfo[element.type].description">
-            <ng-icon hlm size="sm" [name]="typeInfo[element.type].icon" />
-            {{ typeInfo[element.type].label }}
+          <span hlmBadge variant="outline" [hlmTooltip]="typeInfoOf(element.type).description">
+            <ng-icon hlm size="sm" [name]="typeInfoOf(element.type).icon" />
+            {{ typeInfoOf(element.type).label }}
           </span>
         </td>
       </ng-container>

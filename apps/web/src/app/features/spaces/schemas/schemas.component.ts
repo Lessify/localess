@@ -117,7 +117,8 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   // Inputs
   spaceId = input.required<string>();
 
-  schemaTypeDescriptions = schemaTypeDescriptions;
+  /** A schema type's name, icon and description (typed key: the table and the select hand over untyped values). */
+  protected readonly schemaTypeDescription = (type: SchemaType) => schemaTypeDescriptions[type];
 
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
   schemas = signal<Schema[]>([]);

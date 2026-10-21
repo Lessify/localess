@@ -40,7 +40,7 @@
       <ng-container llColumnDef="type">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="type">Type</th>
         <td llCell *llCellDef="let element">
-          @let descriptor = schemaTypeDescriptions[element.type];
+          @let descriptor = schemaTypeDescription(element.type);
           <ng-icon hlm size="sm" [name]="descriptor.icon" [hlmTooltip]="descriptor.description" class="mr-2" />
           {{ descriptor.name }}
         </td>

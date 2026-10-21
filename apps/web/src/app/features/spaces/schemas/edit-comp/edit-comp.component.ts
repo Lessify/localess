@@ -157,8 +157,9 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
 
   entity?: Schema;
   schemas: Schema[] = [];
-  schemaFieldKindDescriptions = schemaFieldKindDescriptions;
-  assetFileTypeDescriptions = assetFileTypeDescriptions;
+  /** A field kind's and an asset file type's name, icon and description (typed keys: form values are untyped). */
+  protected readonly fieldKindDescription = (kind: SchemaFieldKind) => schemaFieldKindDescriptions[kind];
+  protected readonly fileTypeDescription = (type: AssetFileType) => assetFileTypeDescriptions[type];
 
   selectedFieldIdx = signal<number | undefined>(undefined);
 

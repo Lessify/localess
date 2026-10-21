@@ -155,7 +155,7 @@
 @if (settingsStore.debugEnabled()) {
   <hlm-accordion type="multiple">
     <hlm-accordion-item>
-      <hlm-accordion-trigger>Form : {{ form?.valid }}</hlm-accordion-trigger>
+      <hlm-accordion-trigger>Form : {{ form.valid }}</hlm-accordion-trigger>
       <hlm-accordion-content>
         <pre>{{ form.value | json }}</pre>
         <pre>{{ form.errors | json }}</pre>

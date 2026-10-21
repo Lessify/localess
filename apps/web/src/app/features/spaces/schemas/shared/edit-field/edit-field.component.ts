@@ -119,8 +119,9 @@ export class EditFieldComponent {
   fieldKinds = Object.values(SchemaFieldKind);
   assetTypes = Object.values(AssetFileType);
 
-  schemaFieldKindDescriptions = schemaFieldKindDescriptions;
-  assetFileTypeDescriptions = assetFileTypeDescriptions;
+  /** A field kind's and an asset file type's name, icon and description (typed keys: form values are untyped). */
+  protected readonly fieldKindDescription = (kind: SchemaFieldKind) => schemaFieldKindDescriptions[kind];
+  protected readonly fileTypeDescription = (type: AssetFileType) => assetFileTypeDescriptions[type];
   nameReadonly = true;
   // Schemas
   nodeSchemas = computed(() =>

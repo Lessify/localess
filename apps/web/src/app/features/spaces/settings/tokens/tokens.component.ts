@@ -88,7 +88,8 @@ export class TokensComponent {
   private readonly tokens = signal<Token[]>([]);
   readonly dataSource = new TableDataSource<Token>(this.tokens, this.injector);
   displayedColumns: string[] = ['hint', 'name', 'type', 'cacheTtl', 'updatedAt', 'actions'];
-  readonly typeInfo = TOKEN_TYPE_INFO;
+  /** A token type's label, icon and description (typed key: table rows are untyped). */
+  protected readonly typeInfoOf = (type: TokenType) => TOKEN_TYPE_INFO[type];
 
   private destroyRef = inject(DestroyRef);
 

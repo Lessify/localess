@@ -64,7 +64,7 @@
                   (click)="selectComponent(index)"
                   (keyup.enter)="selectComponent(index)"
                   [class.border-destructive]="field.invalid">
-                  @let descriptor = schemaFieldKindDescriptions[field.value.kind];
+                  @let descriptor = fieldKindDescription(field.value.kind);
                   <div hlmItemMedia variant="icon">
                     <ng-icon [name]="descriptor.icon" [hlmTooltip]="descriptor.description" />
                   </div>
@@ -82,7 +82,7 @@
                         <span hlmBadge variant="outline">Required</span>
                       }
                       @if (field.value.fileType) {
-                        @let ftDescriptor = assetFileTypeDescriptions[field.value.fileType];
+                        @let ftDescriptor = fileTypeDescription(field.value.fileType);
                         <span hlmBadge variant="outline" [hlmTooltip]="ftDescriptor.description"> File Type: {{ ftDescriptor.name }} </span>
                       }
                       @if (field.value.path) {
@@ -245,7 +245,7 @@
 @if (settingsStore.debugEnabled()) {
   <hlm-accordion type="multiple">
     <hlm-accordion-item>
-      <hlm-accordion-trigger>Form : {{ form?.valid }}</hlm-accordion-trigger>
+      <hlm-accordion-trigger>Form : {{ form.valid }}</hlm-accordion-trigger>
       <hlm-accordion-content>
         <pre>{{ form.value | json }}</pre>
         <pre>{{ form.errors | json }}</pre>
