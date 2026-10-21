@@ -35,6 +35,7 @@ test.describe('Admin → Users, one page at a time', () => {
     // Action: narrow to this test's users.
     await users.goto();
     await page.getByPlaceholder(/^Search/).fill(prefix);
+    await page.getByPlaceholder(/^Search/).press('Enter');
 
     // Post-check: 25 by email, 20 on the first page, the rest on the second.
     await expect(page.getByText('25 total items')).toBeVisible();
@@ -74,6 +75,7 @@ test.describe('Admin → Spaces, one page at a time', () => {
     // Action
     await spaces.goto();
     await page.getByPlaceholder(/^Search/).fill(prefix.toUpperCase());
+    await page.getByPlaceholder(/^Search/).press('Enter');
 
     // Post-check: by name, case-insensitive search; 20 then 5.
     await expect(page.getByText('25 total items')).toBeVisible();

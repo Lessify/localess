@@ -107,7 +107,10 @@ export class TranslationsPage {
   }
 
   async search(text: string): Promise<void> {
-    await this.page.getByPlaceholder('Search...').fill(text);
+    const box = this.page.getByPlaceholder('Search...');
+    await box.fill(text);
+    // The search runs on Enter; an emptied box shows every key again by itself.
+    if (text) await box.press('Enter');
   }
 
   /** Picks a status in the "Status" filter: group "Translation" (all locales) or "Locale" (the filter's locale). */

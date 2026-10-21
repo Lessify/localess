@@ -127,7 +127,10 @@ export class SchemasPage {
   }
 
   async search(text: string): Promise<void> {
-    await this.page.getByPlaceholder('Search...').fill(text);
+    const box = this.page.getByPlaceholder('Search...');
+    await box.fill(text);
+    // The search runs on Enter; an emptied box shows every row again by itself.
+    if (text) await box.press('Enter');
   }
 
   async filterLabel(label: string): Promise<void> {

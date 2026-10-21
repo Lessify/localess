@@ -47,14 +47,19 @@ export class EnvironmentsPage {
   }
 
   /** The environment names in the table's order (the space's order unless sorted; the first is the default). */
+  /** The names shown, in order: read in one go, so a list that re-renders meanwhile can't detach a row mid-read. */
   async names(): Promise<string[]> {
-    const rows = await this.items().all();
-    return Promise.all(rows.map(async row => (await row.getByRole('cell').first().innerText()).replace('(default)', '').trim()));
+    return this.items().evaluateAll(rows =>
+      rows.map(row => (row.querySelector('td, [role="cell"]')?.textContent ?? '').replace('(default)', '').trim()),
+    );
   }
 
   /** The search box (name or URL, on the server). */
   async search(text: string): Promise<void> {
-    await this.page.getByPlaceholder('Search...').fill(text);
+    const box = this.page.getByPlaceholder('Search...');
+    await box.fill(text);
+    // The search runs on Enter; an emptied box shows every row again by itself.
+    if (text) await box.press('Enter');
   }
 
   /** Clicks a sortable column header (Name, URL): ascending, then descending, then the space's order again. */

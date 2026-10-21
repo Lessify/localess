@@ -1,9 +1,28 @@
 <div class="flex flex-wrap items-center gap-2" [formGroup]="form">
   @if (searchEnabled()) {
-    <div hlmInputGroup class="w-full sm:w-64">
-      <input hlmInputGroupInput [placeholder]="searchPlaceholder()" formControlName="search" type="search" />
+    <div hlmInputGroup class="w-full sm:w-80" [attr.data-search-pending]="searchPending() || null">
+      <input
+        hlmInputGroupInput
+        [placeholder]="searchPlaceholder()"
+        formControlName="search"
+        type="search"
+        (keydown.enter)="applySearch($event)" />
       <div hlmInputGroupAddon>
         <ng-icon name="lucideSearch" />
+      </div>
+      <div hlmInputGroupAddon align="inline-end">
+        <button
+          type="button"
+          hlmInputGroupButton
+          [variant]="searchPending() ? 'default' : 'secondary'"
+          [disabled]="!searchPending()"
+          [attr.aria-label]="searchPending() ? 'Search (not applied yet)' : 'Search'"
+          (click)="applySearch()">
+          Search
+          @if (searchPending()) {
+            <kbd class="text-[10px] opacity-70" aria-hidden="true">⏎</kbd>
+          }
+        </button>
       </div>
     </div>
   }
@@ -45,7 +64,7 @@
     </hlm-popover>
   }
   @if (hasActiveValues()) {
-    <button hlmBtn variant="outline" (click)="reset()">
+    <button type="button" hlmBtn variant="outline" (click)="reset()">
       Reset
       <ng-icon name="lucideX" class="ml-2" />
     </button>

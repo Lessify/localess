@@ -42,7 +42,10 @@ export class WebhooksPage {
 
   /** The search box, on the server: the name or URL on the list, the log id on a webhook's page. */
   async search(text: string): Promise<void> {
-    await this.page.getByRole('searchbox').fill(text);
+    const box = this.page.getByRole('searchbox');
+    await box.fill(text);
+    // The search runs on Enter; an emptied box shows every row again by itself.
+    if (text) await box.press('Enter');
   }
 
   /** Picks one value in the "Status" filter (on the server): Enabled / Disabled on the list, a delivery's on the logs. */

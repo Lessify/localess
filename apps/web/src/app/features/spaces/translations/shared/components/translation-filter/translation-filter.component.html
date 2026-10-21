@@ -23,10 +23,24 @@
           </hlm-select-content>
         </hlm-select>
       </div>
-      <div hlmInputGroup>
-        <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" />
+      <div hlmInputGroup [attr.data-search-pending]="searchPending() || null">
+        <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" (keydown.enter)="applySearch($event)" />
         <div hlmInputGroupAddon>
           <ng-icon hlm size="sm" name="lucideSearch" />
+        </div>
+        <div hlmInputGroupAddon align="inline-end">
+          <button
+            type="button"
+            hlmInputGroupButton
+            [variant]="searchPending() ? 'default' : 'secondary'"
+            [disabled]="!searchPending()"
+            [attr.aria-label]="searchPending() ? 'Search (not applied yet)' : 'Search'"
+            (click)="applySearch()">
+            Search
+            @if (searchPending()) {
+              <kbd class="text-[10px] opacity-70" aria-hidden="true">⏎</kbd>
+            }
+          </button>
         </div>
       </div>
       <div hlmField class="col-span-2 flex w-fit flex-row">
@@ -113,7 +127,7 @@
           </hlm-command>
         </hlm-popover>
         @if (isFormChanged()) {
-          <button hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">
+          <button type="button" hlmBtn variant="outline" class="!w-fit" (click)="filterReset()">
             Reset
             <ng-icon hlm name="lucideX" size="sm" class="ml-2" />
           </button>

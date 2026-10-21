@@ -24,7 +24,10 @@ export class AdminSpacesPage {
       response =>
         response.url().includes('/api/app/spaces?') && new URL(response.url()).searchParams.get('search') === (text.trim() || null),
     );
-    await this.page.getByPlaceholder(/^Search/).fill(text);
+    const box = this.page.getByPlaceholder(/^Search/);
+    await box.fill(text);
+    // The search runs on Enter; an emptied box shows every row again by itself.
+    if (text) await box.press('Enter');
     await answered;
   }
 
