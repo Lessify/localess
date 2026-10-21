@@ -138,8 +138,8 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`:id` = UUID), `PUT …/:id/name` (rename), `POST …/template` |
 | Contents | `/api/app/spaces/:s/contents` list/`count`/get/create, `PATCH …/:id` (rename/move), `PUT …/:id/data`, `POST …/:id/clone`, `POST …/:id/publish`, `POST …/:id/unpublish`, `DELETE` |
-| Translations | `/api/app/spaces/:s/translations` CRUD, `GET …/count`, `PUT …/:translationId/locales/:localeId`, `PUT …/:translationId/key` (rename; `:translationId` = UUID), `POST …/publish`, `POST …/translate-locale`, `DELETE` (all); every route checks the space first |
-| Machine translation | `POST /api/app/translate` (`content` or `items`), `GET /api/app/translate/status` |
+| Translations | `/api/app/spaces/:s/translations` CRUD, `PUT …/:translationId/locales/:localeId`, `PUT …/:translationId/key` (rename; `:translationId` = UUID), `POST …/publish`, `POST …/translate-locale`, `DELETE` (all); every route checks the space first |
+| Machine translation | `POST /api/app/translate` (`content` or `items`); whether it is configured: `GET /api/config` (`translate.enabled`) |
 | Assets | `/api/app/spaces/:s/assets` list/`count`/get, `POST …/folders`, `POST …/files` (multipart, fields before file), `PATCH …/:id`, `PUT …/:id/parent`, `DELETE` |
 | Tokens / webhooks | `/api/app/spaces/:s/tokens` (+ `POST …/:id/regenerate`), `/api/app/spaces/:s/webhooks` (+ `PATCH …/:id/status`, `GET …/:id/logs`) |
 | Tasks | `/api/app/spaces/:s/tasks` list/get/`logs`/`download`, `POST` (exports), `POST …/import` (multipart), `DELETE` |

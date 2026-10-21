@@ -183,9 +183,8 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await stored('hero.title')).locales).toEqual({ en: 'Welcome' });
     });
 
-    it('lists by key and counts', async () => {
+    it('lists by key', async () => {
       expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hero.title', 'taken']);
-      expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 2 });
     });
   });
 
@@ -269,7 +268,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await editor.delete(base)).statusCode).toBe(403);
       const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
       expect((await admin.delete(base)).statusCode).toBe(204);
-      expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 0 });
+      expect((await reader.get(base)).json()).toEqual([]);
     });
   });
 });
@@ -294,7 +293,8 @@ describe('app API: without a translation provider or Unsplash key', () => {
 
   it('answers 412 with an explanation, so the UI can tell the user why', async () => {
     const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
-    expect((await admin.get('/api/app/translate/status')).json()).toEqual({ enabled: false, provider: 'none' });
+    expect((await admin.get('/api/config')).json().translate).toEqual({ enabled: false });
+    expect((await admin.get('/api/app/translate/status')).statusCode).toBe(404);
     const single = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' });
     expect(single.statusCode).toBe(412);
     expect(single.json().message).toMatch(/not configured on this environment/);

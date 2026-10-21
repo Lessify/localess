@@ -2,6 +2,8 @@ import {
   ANY_ROLE,
   CONTENT_WRITERS,
   DEVELOPERS,
+  type TranslateLocaleResult,
+  type Translation,
   type TranslationCreate,
   type TranslationLocaleUpdate,
   type TranslationRename,
@@ -32,25 +34,25 @@ export class TranslationController {
 
   @Get()
   @RequireRole(ANY_ROLE)
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string) {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<Translation[]> {
     return this.translationService.findAll(spaceId);
-  }
-
-  @Get('count')
-  @RequireRole(ANY_ROLE)
-  async count(@Param('spaceId', UuidParamPipe) spaceId: string) {
-    return { count: await this.translationService.count(spaceId) };
   }
 
   @Get(':translationId')
   @RequireRole(ANY_ROLE)
-  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('translationId', UuidParamPipe) translationId: string) {
+  findOne(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('translationId', UuidParamPipe) translationId: string,
+  ): Promise<Translation> {
     return this.translationService.findOne(spaceId, translationId);
   }
 
   @Post()
   @RequireRole(CONTENT_WRITERS)
-  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zTranslationCreate }) body: TranslationCreate) {
+  create(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zTranslationCreate }) body: TranslationCreate,
+  ): Promise<Translation> {
     return this.translationService.create(spaceId, body);
   }
 
@@ -60,7 +62,7 @@ export class TranslationController {
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('translationId', UuidParamPipe) translationId: string,
     @Body({ schema: zTranslationUpdate }) body: TranslationUpdate,
-  ) {
+  ): Promise<Translation> {
     return this.translationService.update(spaceId, translationId, body);
   }
 
@@ -71,7 +73,7 @@ export class TranslationController {
     @Param('translationId', UuidParamPipe) translationId: string,
     @Param('localeId') localeId: string,
     @Body({ schema: zTranslationLocaleUpdate }) body: TranslationLocaleUpdate,
-  ) {
+  ): Promise<Translation> {
     return this.translationService.updateLocale(spaceId, translationId, localeId, body);
   }
 
@@ -81,7 +83,7 @@ export class TranslationController {
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('translationId', UuidParamPipe) translationId: string,
     @Body({ schema: zTranslationRename }) body: TranslationRename,
-  ) {
+  ): Promise<Translation> {
     return this.translationService.rename(spaceId, translationId, body);
   }
 
@@ -115,7 +117,7 @@ export class TranslationController {
   translateLocale(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale,
-  ) {
+  ): Promise<TranslateLocaleResult> {
     return this.translationService.translateLocale(spaceId, body);
   }
 }

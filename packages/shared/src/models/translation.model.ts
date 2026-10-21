@@ -27,14 +27,16 @@ export interface Translation {
   updatedAt: Timestamp;
 }
 
-export interface PublishTranslationsData {
-  spaceId: string;
-}
-
 // Import and Export: a translation is identified by its key, carried as `id`; the row UUID never leaves the App API.
 export type TranslationExport = Omit<Translation, 'id' | 'key' | 'createdAt' | 'updatedAt'> & { /** The key. */ id: string };
 
 // App API requests: translation.zod.ts
+
+/** `POST …/translations/translate-locale`: keys written, and keys the provider failed on (left unchanged). */
+export interface TranslateLocaleResult {
+  translated: number;
+  failed: number;
+}
 
 export interface TranslationUpdateResponse {
   message: string;

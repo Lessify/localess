@@ -42,15 +42,7 @@ export class TranslateService {
 
   /** Throws 412 when no provider is configured: the UI keeps its Translate actions and explains this on use. */
   requireProvider(): void {
-    if (!this.enabled) throw notConfigured();
-  }
-
-  get enabled(): boolean {
-    return this.config.translate.provider !== 'none';
-  }
-
-  get provider(): AppConfig['translate']['provider'] {
-    return this.config.translate.provider;
+    if (this.config.translate.provider === 'none') throw notConfigured();
   }
 
   /** Same marker the emulator stub produced, valid for the format. */

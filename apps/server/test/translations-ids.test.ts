@@ -25,7 +25,6 @@ describe('app API: translations check their space and ids', () => {
   /** Every route of a space's translations, for `spaces` and `translationId`. */
   const routes = (spaceBase: string, id: string) => [
     () => admin.get(spaceBase),
-    () => admin.get(`${spaceBase}/count`),
     () => admin.get(`${spaceBase}/${id}`),
     () => admin.post(spaceBase, { key: 'other', locales: { en: 'Other' } }),
     () => admin.patch(`${spaceBase}/${id}`, { description: 'x' }),
@@ -37,7 +36,7 @@ describe('app API: translations check their space and ids', () => {
     () => admin.delete(spaceBase),
   ];
 
-  it('answers "Space not found" on every route of an unknown space, the list and count included', async () => {
+  it('answers "Space not found" on every route of an unknown space, the list included', async () => {
     for (const route of routes(`/api/app/spaces/${newUuid()}/translations`, translationId)) {
       const response = await route();
       expect(response.statusCode, response.body).toBe(404);

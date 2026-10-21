@@ -9,7 +9,6 @@ export function present<T extends object>(columns: T): { [K in keyof T]?: NonNul
 }
 
 /*
- * Row → shared model mappers (`toTranslation`) rely on this: the shared models describe the JSON wire format, where
- * timestamps are ISO strings; rows carry `Date`, which serialises to exactly that, so the mappers only cast. Nothing on
- * the server reads those timestamps. `toSchema` maps its columns with `present` and writes the ISO strings itself.
+ * Transformers list their fields and write ISO timestamps themselves (`toTranslation`, `toWebhook`); `toSchema` maps its
+ * optional columns with `present`.
  */

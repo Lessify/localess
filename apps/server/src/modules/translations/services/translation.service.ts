@@ -1,4 +1,5 @@
 import {
+  type TranslateLocaleResult,
   type Translation,
   type TranslationCreate,
   type TranslationLocaleUpdate,
@@ -41,11 +42,6 @@ export class TranslationService {
   async findAll(spaceId: string): Promise<Translation[]> {
     await this.requireSpace(spaceId);
     return (await this.translationRepository.findAll(spaceId)).map(toTranslation);
-  }
-
-  async count(spaceId: string): Promise<number> {
-    await this.requireSpace(spaceId);
-    return this.translationRepository.count(spaceId);
   }
 
   async findOne(spaceId: string, translationId: string): Promise<Translation> {
@@ -114,7 +110,7 @@ export class TranslationService {
    * Machine-translates every key that has a source value (and no target value, unless `overwrite`).
    * Returns how many keys were written; keys the provider failed on are left untouched.
    */
-  async translateLocale(spaceId: string, input: TranslationTranslateLocale): Promise<{ translated: number; failed: number }> {
+  async translateLocale(spaceId: string, input: TranslationTranslateLocale): Promise<TranslateLocaleResult> {
     const { sourceLocaleId: sourceLocale, targetLocaleId: targetLocale } = input;
     const overwrite = input.overwrite === true;
     // The space first (404), then the locales (400), then whether machine translation is configured (412).

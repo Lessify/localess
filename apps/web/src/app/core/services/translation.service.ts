@@ -3,6 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import {
+  TranslateLocaleResult,
   Translation,
   TranslationCreate,
   TranslationLocaleUpdate,
@@ -71,13 +72,8 @@ export class TranslationService {
   }
 
   /** Keys written, and keys the provider failed on (left unchanged). */
-  translateLocale(
-    spaceId: string,
-    sourceLocaleId: string,
-    targetLocaleId: string,
-    overwrite = false,
-  ): Observable<{ translated: number; failed: number }> {
-    return this.http.post<{ translated: number; failed: number }>(`${this.base(spaceId)}/translate-locale`, {
+  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string, overwrite = false): Observable<TranslateLocaleResult> {
+    return this.http.post<TranslateLocaleResult>(`${this.base(spaceId)}/translate-locale`, {
       sourceLocaleId,
       targetLocaleId,
       overwrite,

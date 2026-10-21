@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { TranslateBatchData, TranslateBatchResult, TranslateSingleData } from '@localess/shared';
+import { TranslateBatchData, TranslateBatchResult, TranslateSingleData, TranslateTextResult } from '@localess/shared';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ export class TranslateService {
     if (data.format) {
       body.format = data.format;
     }
-    return this.http.post<{ content: string }>('/api/app/translate', body).pipe(map(it => it.content));
+    return this.http.post<TranslateTextResult>('/api/app/translate', body).pipe(map(it => it.content));
   }
 
   /** Translate many fields in one call: passing `items` selects batch mode on the same endpoint. */

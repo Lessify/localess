@@ -48,10 +48,6 @@ export class TranslationRepository {
     return this.db.query.translations.findFirst({ where: this.byId(spaceId, id) });
   }
 
-  count(spaceId: string): Promise<number> {
-    return this.db.$count(translations, eq(translations.spaceId, spaceId));
-  }
-
   /** Answers the new translation's id. */
   async create(spaceId: string, values: NewTranslation, tx?: Transaction): Promise<string> {
     const id = newUuid();
