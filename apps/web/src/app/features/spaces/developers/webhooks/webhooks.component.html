@@ -32,6 +32,16 @@
           }
         </td>
       </ng-container>
+      <ng-container llColumnDef="signing">
+        <th llHeaderCell *llHeaderCellDef>Signing</th>
+        <td llCell *llCellDef="let element">
+          @if (element.hasSecret) {
+            <span hlmBadge variant="outline">Signed</span>
+          } @else {
+            <span hlmBadge variant="secondary">Not signed</span>
+          }
+        </td>
+      </ng-container>
       <ng-container llColumnDef="events">
         <th llHeaderCell *llHeaderCellDef>Events</th>
         <td llCell *llCellDef="let element">

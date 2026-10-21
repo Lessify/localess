@@ -87,7 +87,7 @@ export class WebhooksComponent {
   readonly total = signal(0);
   private readonly webhooks = signal<Webhook[]>([]);
   readonly dataSource = new TableDataSource<Webhook>(this.webhooks, this.injector);
-  displayedColumns: string[] = ['name', 'enabled', 'events', 'updatedAt', 'actions'];
+  displayedColumns: string[] = ['name', 'enabled', 'signing', 'events', 'updatedAt', 'actions'];
 
   readonly filters: FilterDef[] = [
     {

@@ -228,6 +228,7 @@ test.describe('Developers → Webhooks', () => {
     await list.create({ name: 'Signed', url: receiver.url, events: ['translation.published'], signed: true });
     const first = await list.takeSecret();
     expect(first).toMatch(/^whsec_/);
+    await expect(list.signingCell('Signed')).toHaveText('Signed');
     const [stored] = await api.findWebhooks(space.id);
     expect(stored).toMatchObject({ name: 'Signed', hasSecret: true });
     expect(stored).not.toHaveProperty('secret');
@@ -255,6 +256,8 @@ test.describe('Developers → Webhooks', () => {
     await publish(api, space.id);
     await expect.poll(() => receiver.requests.length).toBe(3);
     expect(receiver.requests[2].headers).not.toHaveProperty('webhook-signature');
+    await list.goto(space.id);
+    await expect(list.signingCell('Signed')).toHaveText('Not signed');
   });
 
   test('a header is sent with every delivery, its value never shown; kept on edit, then removed', async ({ page, api, space }) => {

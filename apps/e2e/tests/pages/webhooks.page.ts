@@ -99,6 +99,11 @@ export class WebhooksPage {
     return secret;
   }
 
+  /** A list row's Signing cell ("Signed" / "Not signed"): the third column, after Name and Status. */
+  signingCell(name: string): Locator {
+    return this.row(name).getByRole('cell').nth(2);
+  }
+
   /** The webhook page's Signing card. */
   get signing(): Locator {
     return this.page.getByTestId('webhook-signing');
