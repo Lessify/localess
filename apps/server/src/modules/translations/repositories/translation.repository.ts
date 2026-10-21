@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, count, eq, inArray, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { translations } from '../../../infra/database/schema.js';
 import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
@@ -46,7 +46,6 @@ export class TranslationRepository {
   }
 
   async findById(spaceId: string, id: string): Promise<TranslationEntity | undefined> {
-    if (!isUuid(id)) return undefined;
     const [row] = await this.db.select().from(translations).where(this.byId(spaceId, id));
     return row;
   }

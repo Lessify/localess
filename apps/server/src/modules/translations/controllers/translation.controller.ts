@@ -23,8 +23,8 @@ import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TranslationService } from '../services/translation.service.js';
 
 /**
- * Translation keys (was direct `spaces/{s}/translations` access plus the `translation-*` callables). `:id` is the
- * UUID; `key` is the translation key.
+ * Translation keys of a space. `:translationId` is the UUID; `key` is the translation key. Every route checks the space
+ * first (404 "Space not found" before "Translation not found").
  */
 @Controller('api/app/spaces/:spaceId/translations')
 export class TranslationController {
@@ -32,84 +32,90 @@ export class TranslationController {
 
   @Get()
   @RequireRole(ANY_ROLE)
-  findAll(@Param('spaceId') spaceId: string) {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string) {
     return this.translationService.findAll(spaceId);
   }
 
   @Get('count')
   @RequireRole(ANY_ROLE)
-  async count(@Param('spaceId') spaceId: string) {
+  async count(@Param('spaceId', UuidParamPipe) spaceId: string) {
     return { count: await this.translationService.count(spaceId) };
   }
 
-  @Get(':id')
+  @Get(':translationId')
   @RequireRole(ANY_ROLE)
-  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.translationService.findOne(spaceId, id);
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('translationId', UuidParamPipe) translationId: string) {
+    return this.translationService.findOne(spaceId, translationId);
   }
 
   @Post()
   @RequireRole(CONTENT_WRITERS)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zTranslationCreate }) body: TranslationCreate) {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zTranslationCreate }) body: TranslationCreate) {
     return this.translationService.create(spaceId, body);
   }
 
-  @Patch(':id')
+  @Patch(':translationId')
   @RequireRole(CONTENT_WRITERS)
   update(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('translationId', UuidParamPipe) translationId: string,
     @Body({ schema: zTranslationUpdate }) body: TranslationUpdate,
   ) {
-    return this.translationService.update(spaceId, id, body);
+    return this.translationService.update(spaceId, translationId, body);
   }
 
-  @Put(':id/locales/:locale')
+  @Put(':translationId/locales/:localeId')
   @RequireRole(TRANSLATORS)
   updateLocale(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
-    @Param('locale') locale: string,
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('translationId', UuidParamPipe) translationId: string,
+    @Param('localeId') localeId: string,
     @Body({ schema: zTranslationLocaleUpdate }) body: TranslationLocaleUpdate,
   ) {
-    return this.translationService.updateLocale(spaceId, id, locale, body.value);
+    return this.translationService.updateLocale(spaceId, translationId, localeId, body.value);
   }
 
-  @Put(':id/key')
+  @Put(':translationId/key')
   @RequireRole(CONTENT_WRITERS)
   rename(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('translationId', UuidParamPipe) translationId: string,
     @Body({ schema: zTranslationRename }) body: TranslationRename,
   ) {
-    return this.translationService.rename(spaceId, id, body.key);
+    return this.translationService.rename(spaceId, translationId, body.key);
   }
 
-  @Delete(':id')
+  @Delete(':translationId')
   @HttpCode(204)
   @RequireRole(CONTENT_WRITERS)
-  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.translationService.remove(spaceId, id);
+  async remove(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('translationId', UuidParamPipe) translationId: string,
+  ): Promise<void> {
+    await this.translationService.remove(spaceId, translationId);
   }
 
   @Delete()
   @HttpCode(204)
   @RequireRole(DEVELOPERS)
-  async removeAll(@Param('spaceId') spaceId: string): Promise<void> {
+  async removeAll(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<void> {
     await this.translationService.removeAll(spaceId);
   }
 
   @Post('publish')
   @HttpCode(204)
   @RequireRole(CONTENT_WRITERS)
-  async publish(@Param('spaceId') spaceId: string): Promise<void> {
+  async publish(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<void> {
     await this.translationService.publish(spaceId);
   }
 
   @Post('translate-locale')
   @HttpCode(200)
   @RequireRole(TRANSLATORS)
-  translateLocale(@Param('spaceId') spaceId: string, @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale) {
+  translateLocale(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale,
+  ) {
     return this.translationService.translateLocale(spaceId, body.sourceLocaleId, body.targetLocaleId, body.overwrite === true);
   }
 }

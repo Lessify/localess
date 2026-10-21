@@ -37,15 +37,18 @@ export class TranslationService {
   ) {}
 
   async findAll(spaceId: string): Promise<Translation[]> {
+    await this.requireSpace(spaceId);
     return (await this.translationRepository.findAll(spaceId)).map(toTranslation);
   }
 
-  count(spaceId: string): Promise<number> {
+  async count(spaceId: string): Promise<number> {
+    await this.requireSpace(spaceId);
     return this.translationRepository.count(spaceId);
   }
 
-  async findOne(spaceId: string, id: string): Promise<Translation> {
-    return found(await this.translationRepository.findById(spaceId, id));
+  async findOne(spaceId: string, translationId: string): Promise<Translation> {
+    await this.requireSpace(spaceId);
+    return found(await this.translationRepository.findById(spaceId, translationId));
   }
 
   async create(
@@ -61,9 +64,9 @@ export class TranslationService {
     return this.changed(spaceId, toTranslation(entity));
   }
 
-  async update(spaceId: string, id: string, input: { labels?: string[]; description?: string }): Promise<Translation> {
-    await this.requireSpace(spaceId);
-    const entity = await this.translationRepository.update(spaceId, id, {
+  async update(spaceId: string, translationId: string, input: { labels?: string[]; description?: string }): Promise<Translation> {
+    await this.requireTranslation(spaceId, translationId);
+    const entity = await this.translationRepository.update(spaceId, translationId, {
       labels: input.labels?.length ? input.labels : null,
       description: input.description || null,
     });
@@ -71,21 +74,21 @@ export class TranslationService {
   }
 
   /** One locale's value, for a locale of the space; an empty string removes it (for any locale: leftovers of a removed locale). */
-  async updateLocale(spaceId: string, id: string, locale: string, value: string): Promise<Translation> {
-    const space = await this.requireSpace(spaceId);
-    if (value) requireSpaceLocales(space, [locale]);
-    return this.changed(spaceId, found(await this.translationRepository.setLocale(spaceId, id, locale, value)));
+  async updateLocale(spaceId: string, translationId: string, localeId: string, value: string): Promise<Translation> {
+    const space = await this.requireTranslation(spaceId, translationId);
+    if (value) requireSpaceLocales(space, [localeId]);
+    return this.changed(spaceId, found(await this.translationRepository.setLocale(spaceId, translationId, localeId, value)));
   }
 
   /** Changes the key; the id stays. */
-  async rename(spaceId: string, id: string, key: string): Promise<Translation> {
-    await this.requireSpace(spaceId);
-    return this.changed(spaceId, found(await this.translationRepository.update(spaceId, id, { key })));
+  async rename(spaceId: string, translationId: string, key: string): Promise<Translation> {
+    await this.requireTranslation(spaceId, translationId);
+    return this.changed(spaceId, found(await this.translationRepository.update(spaceId, translationId, { key })));
   }
 
-  async remove(spaceId: string, id: string): Promise<void> {
-    await this.requireSpace(spaceId);
-    if (!(await this.translationRepository.delete(spaceId, id))) throw new NotFoundException('Translation not found');
+  async remove(spaceId: string, translationId: string): Promise<void> {
+    await this.requireTranslation(spaceId, translationId);
+    if (!(await this.translationRepository.delete(spaceId, translationId))) throw new NotFoundException('Translation not found');
     this.changed(spaceId, undefined);
   }
 
@@ -101,6 +104,7 @@ export class TranslationService {
    * new `built_at` is the published cv. Publishing an empty space is allowed and serves `{}`.
    */
   async publish(spaceId: string): Promise<void> {
+    await this.requireSpace(spaceId);
     await this.translationSnapshotRepository.publish(spaceId);
     this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_PUBLISHED);
   }
@@ -115,8 +119,9 @@ export class TranslationService {
     targetLocale: string,
     overwrite: boolean,
   ): Promise<{ translated: number; failed: number }> {
-    this.translateService.requireProvider();
+    // The space first (404), then the locales (400), then whether machine translation is configured (412).
     requireSpaceLocales(await this.requireSpace(spaceId), [sourceLocale, targetLocale]);
+    this.translateService.requireProvider();
     const candidates = (await this.translationRepository.findAll(spaceId)).filter(
       row => row.locales[sourceLocale] && (overwrite || !row.locales[targetLocale]),
     );
@@ -139,6 +144,13 @@ export class TranslationService {
   private changed<T>(spaceId: string, result: T): T {
     this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_CHANGED);
     return result;
+  }
+
+  /** The space, then the translation: "Space not found" comes before "Translation not found". */
+  private async requireTranslation(spaceId: string, translationId: string): Promise<SpaceWithLocales> {
+    const space = await this.requireSpace(spaceId);
+    found(await this.translationRepository.findById(spaceId, translationId));
+    return space;
   }
 
   /** The space with its locales; a 404 when there is none. */

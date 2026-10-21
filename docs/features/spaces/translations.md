@@ -119,7 +119,7 @@ a change event in the same transaction (see [Publish Flow](../../publish-flow.md
 ## Values only for the space's locales
 
 The server writes translation values only for the space's locales (`Not in space locales: …`, 400): creating a key with a
-`locales` map, `PUT …/translations/:id/locales/:locale` with a value, and Translate Locale (source and target). Removing a value
+`locales` map, `PUT …/translations/:translationId/locales/:localeId` with a value, and Translate Locale (source and target). Removing a value
 (an empty string) is allowed for any locale, so values left behind by a removed locale can be cleared. v1 push already refused
 other locales. The (hidden) import task skips other locales' values and logs how many, and refuses a single-locale import into a
 locale the space does not have.
