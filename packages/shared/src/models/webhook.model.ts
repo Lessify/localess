@@ -1,5 +1,6 @@
 import type { Timestamp } from './timestamp.js';
 
+/** A webhook as the App API answers it. The signing secret is never sent back: `hasSecret` says whether one is set. */
 export interface WebHook {
   id: string;
   name: string;
@@ -7,7 +8,7 @@ export interface WebHook {
   enabled: boolean;
   events: WebHookEvent[];
   headers?: Record<string, string>;
-  secret?: string;
+  hasSecret: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

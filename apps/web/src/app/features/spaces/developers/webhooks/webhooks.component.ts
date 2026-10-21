@@ -158,7 +158,7 @@ export class WebhooksComponent {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.webhookService.create(spaceId!, it!)),
+        switchMap(it => this.webhookService.create(spaceId!, { ...it!, secret: it!.secret ?? undefined })),
       )
       .subscribe({
         next: () => this.notificationService.success('Webhook has been created.'),

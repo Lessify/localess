@@ -41,16 +41,22 @@ Every route checks the space first: an unknown space is 404 "Space not found" (t
 
 ```typescript
 interface WebHook {
+  id: string;
   name: string;
   url: string;
   enabled: boolean;
   events: WebHookEvent[];
   headers?: Record<string, string>;  // custom request headers
-  secret?: string;                   // HMAC-SHA256 signing key
+  hasSecret: boolean;                // whether an HMAC-SHA256 signing key is set
   createdAt: string;  // ISO 8601
   updatedAt: string;
 }
 ```
+
+The signing secret (`webhooks.secret`) is write-only: it is accepted on create and update but never answered, so it
+doesn't reach the browser, its dev tools or a proxy's logs; `hasSecret` says whether one is set (`toWebhook`,
+`shared/transformers/webhook.transformer.ts`, lists every field it sends). An update without `secret` (or with an empty
+one) keeps it; `secret: null` removes it.
 
 ### Events
 
@@ -217,7 +223,7 @@ All call `WebhookDispatcher.dispatch(spaceId, event, data)` from `apps/server/sr
 - `name`: required, 3–50 chars, no leading/trailing spaces
 - `url`: required, max 2048 chars, `https://` (or `http://localhost` / `http://127.0.0.1` for local development) — error key `webhookUrl`. That client check is feedback only: on create and update the server applies the delivery rule (`checkWebhookUrl` with `LOCALESS_WEBHOOK_ALLOW_INTERNAL`, in `WebhookService`) and answers 400 "Webhook URL is not allowed: <reason>", which the toast shows. So local http is saved only where it can be delivered. Delivery checks the resolved address again, see [Destination restrictions](#destination-restrictions-ssrf-protection).
 - `events`: required, at least one selected
-- `secret`: optional, displayed as a password field
+- `secret`: optional, a password field. Editing a webhook that has one, the field starts empty ("A secret is set: leave empty to keep it") and "Remove the secret" sends `secret: null`
 
 Webhooks created in the app start enabled (`WebhookRepository.create` sets `enabled: true`); the column itself defaults to `false`, so a row written any other way (the Firebase import, a direct insert) sends nothing until it is enabled. `WebhooksComponent` (list view) shows one page from the server (`PagedList`, `ll-paginator`): the sort headers, the search box and the Status / Events filters change the query. It supports enable/disable toggle, edit, delete, and navigating into a webhook's detail page.
 

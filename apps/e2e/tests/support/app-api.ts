@@ -223,6 +223,7 @@ export interface WebhookDto {
   url: string;
   events: string[];
   enabled: boolean;
+  hasSecret: boolean;
 }
 
 export interface EnvironmentDto {

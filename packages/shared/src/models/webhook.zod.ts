@@ -45,8 +45,11 @@ export const zWebHookCreate = z.strictObject({
 });
 export type WebHookCreate = z.infer<typeof zWebHookCreate>;
 
-/** `PUT …/webhooks/:id`: the whole webhook again. */
-export const zWebHookUpdate = zWebHookCreate;
+/**
+ * `PUT …/webhooks/:webhookId`: the whole webhook again. Headers and secret are kept when left out; `secret: null`
+ * removes the secret (a webhook answers only `hasSecret`, so the form can't send it back).
+ */
+export const zWebHookUpdate = zWebHookCreate.extend({ secret: z.string().max(500).nullable().optional() });
 export type WebHookUpdate = z.infer<typeof zWebHookUpdate>;
 
 /** `PATCH …/webhooks/:id/status`. */

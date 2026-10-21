@@ -214,6 +214,32 @@ test.describe('Developers → Webhooks', () => {
     await expect(detail.logs.first()).toContainText(lastOnFirstPage);
   });
 
+  test('the secret is never shown: saving without one keeps it, and it can be removed', async ({ page, api, space }) => {
+    await api.createWebhook(space.id, { name: 'Signed', url: receiver.url, events: ['translation.published'], secret: 'e2e-secret' });
+    expect(await api.findWebhooks(space.id)).toEqual([expect.objectContaining({ name: 'Signed', hasSecret: true })]);
+    expect((await api.findWebhooks(space.id))[0]).not.toHaveProperty('secret');
+    const list = new WebhooksPage(page);
+    await list.goto(space.id);
+
+    // Pre-check → action: the Edit form doesn't hold the secret; saved with another name, it keeps it.
+    const form = await list.openEdit('Signed', { name: 'Still signed' });
+    await expect(form.getByLabel('Secret (Optional)')).toHaveValue('');
+    await expect(form.getByText('A secret is set: leave empty to keep it.')).toBeVisible();
+    await form.getByRole('button', { name: 'Save' }).click();
+    await expect(form).toBeHidden();
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(1);
+    const signed = receiver.requests[0];
+    expect(signed.headers['x-webhook-signature']).toBe(`sha256=${createHmac('sha256', 'e2e-secret').update(signed.body).digest('hex')}`);
+
+    // Action → post-check: removed, the next delivery is not signed.
+    await list.edit('Still signed', { removeSecret: true });
+    expect((await api.findWebhooks(space.id))[0].hasSecret).toBe(false);
+    await publish(api, space.id);
+    await expect.poll(() => receiver.requests.length).toBe(2);
+    expect(receiver.requests[1].headers).not.toHaveProperty('x-webhook-signature');
+  });
+
   test("the webhook page logs a failed delivery with the receiver's status code", async ({ page, api, space }) => {
     const webhook = await api.createWebhook(space.id, { name: 'Failing', url: receiver.url, events: ['translation.published'] });
     receiver.status = 500;

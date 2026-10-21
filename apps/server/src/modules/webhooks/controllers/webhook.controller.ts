@@ -1,4 +1,12 @@
-import { DEVELOPERS, type WebHookCreate, type WebHookPageable, type WebHookStatusUpdate, type WebHookUpdate } from '@localess/shared';
+import {
+  DEVELOPERS,
+  type Page,
+  type WebHook,
+  type WebHookCreate,
+  type WebHookPageable,
+  type WebHookStatusUpdate,
+  type WebHookUpdate,
+} from '@localess/shared';
 import { zWebHookCreate, zWebHookPageable, zWebHookStatusUpdate, zWebHookUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 
@@ -14,17 +22,20 @@ export class WebhookController {
 
   /** One page for Developers → Webhooks: `?page=&size=&sort=&direction=` (Pageable), `?enabled=`, `?event=`, `?search=` (name or URL). */
   @Get()
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zWebHookPageable }) query: WebHookPageable) {
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zWebHookPageable }) query: WebHookPageable,
+  ): Promise<Page<WebHook>> {
     return this.webhookService.findAll(spaceId, query);
   }
 
   @Get(':webhookId')
-  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string) {
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('webhookId', UuidParamPipe) webhookId: string): Promise<WebHook> {
     return this.webhookService.findOne(spaceId, webhookId);
   }
 
   @Post()
-  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate) {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zWebHookCreate }) body: WebHookCreate): Promise<WebHook> {
     return this.webhookService.create(spaceId, body);
   }
 
@@ -33,7 +44,7 @@ export class WebhookController {
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
     @Body({ schema: zWebHookUpdate }) body: WebHookUpdate,
-  ) {
+  ): Promise<WebHook> {
     return this.webhookService.update(spaceId, webhookId, body);
   }
 
@@ -42,7 +53,7 @@ export class WebhookController {
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
     @Body({ schema: zWebHookStatusUpdate }) body: WebHookStatusUpdate,
-  ) {
+  ): Promise<WebHook> {
     return this.webhookService.updateStatus(spaceId, webhookId, body.enabled);
   }
 

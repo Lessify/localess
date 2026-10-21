@@ -1,4 +1,4 @@
-import type { WebHookEvent, WebHookPageable } from '@localess/shared';
+import type { Page, WebHook, WebHookCreate, WebHookPageable, WebHookUpdate } from '@localess/shared';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
@@ -8,14 +8,6 @@ import { toWebhook } from '../../../shared/transformers/webhook.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { checkWebhookUrl } from '../../../shared/utils/webhook-request.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
-
-export interface WebhookInput {
-  name: string;
-  url: string;
-  events: WebHookEvent[];
-  headers?: Record<string, string>;
-  secret?: string;
-}
 
 /**
  * Webhook configuration (the delivery logs: `WebhookLogService`); delivery is `WebhookDispatcher` (shared). Every route
@@ -40,7 +32,7 @@ export class WebhookService {
   }
 
   /** One page, by name unless sorted otherwise. */
-  async findAll(spaceId: string, query: WebHookPageable) {
+  async findAll(spaceId: string, query: WebHookPageable): Promise<Page<WebHook>> {
     await this.requireSpace(spaceId);
     const [rows, total] = await Promise.all([
       this.webhookRepository.findAll(spaceId, query),
@@ -49,19 +41,19 @@ export class WebhookService {
     return toPage(rows, total, query, toWebhook);
   }
 
-  async findOne(spaceId: string, webhookId: string) {
+  async findOne(spaceId: string, webhookId: string): Promise<WebHook> {
     return toWebhook(await this.requireWebhook(spaceId, webhookId));
   }
 
-  async create(spaceId: string, input: WebhookInput) {
+  async create(spaceId: string, input: WebHookCreate): Promise<WebHook> {
     this.assertDeliverable(input.url);
     await this.requireSpace(spaceId);
     const webhookId = await this.webhookRepository.create(spaceId, input);
     return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
 
-  /** Headers and secret are only replaced when sent (the form leaves them out to keep them). */
-  async update(spaceId: string, webhookId: string, input: WebhookInput) {
+  /** Headers and secret are only replaced when sent (the form leaves them out to keep them); `secret: null` removes it. */
+  async update(spaceId: string, webhookId: string, input: WebHookUpdate): Promise<WebHook> {
     this.assertDeliverable(input.url);
     await this.requireWebhook(spaceId, webhookId);
     await this.webhookRepository.update(spaceId, webhookId, {
@@ -69,12 +61,12 @@ export class WebhookService {
       url: input.url,
       events: input.events,
       ...(input.headers ? { headers: input.headers } : {}),
-      ...(input.secret ? { secret: input.secret } : {}),
+      ...(input.secret ? { secret: input.secret } : input.secret === null ? { secret: null } : {}),
     });
     return toWebhook(await this.findWebhook(spaceId, webhookId));
   }
 
-  async updateStatus(spaceId: string, webhookId: string, enabled: boolean) {
+  async updateStatus(spaceId: string, webhookId: string, enabled: boolean): Promise<WebHook> {
     await this.requireWebhook(spaceId, webhookId);
     await this.webhookRepository.update(spaceId, webhookId, { enabled });
     return toWebhook(await this.findWebhook(spaceId, webhookId));

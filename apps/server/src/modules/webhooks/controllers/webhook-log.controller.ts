@@ -1,4 +1,4 @@
-import { DEVELOPERS, type WebHookLogPageable } from '@localess/shared';
+import { DEVELOPERS, type Page, type WebHookLog, type WebHookLogPageable } from '@localess/shared';
 import { zWebHookLogPageable } from '@localess/shared/zod';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 
@@ -18,7 +18,7 @@ export class WebhookLogController {
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('webhookId', UuidParamPipe) webhookId: string,
     @Query({ schema: zWebHookLogPageable }) query: WebHookLogPageable,
-  ) {
+  ): Promise<Page<WebHookLog>> {
     return this.webhookLogService.findAll(spaceId, webhookId, query);
   }
 }

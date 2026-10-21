@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
-import { schemas, taskLogs, tokens, webhookLogs } from '../src/infra/database/schema.js';
+import { schemas, taskLogs, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookLogCleanupService } from '../src/modules/webhooks/services/webhook-log-cleanup.service.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
@@ -196,7 +196,9 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
           headers: { 'X-Site': 'a' },
         })
       ).json();
-      expect(hook).toMatchObject({ enabled: true, secret: 's3cret', headers: { 'X-Site': 'a' } });
+      expect(hook).toMatchObject({ enabled: true, hasSecret: true, headers: { 'X-Site': 'a' } });
+      expect(hook).not.toHaveProperty('secret');
+      expect((await manager.get(`${base}/${hook.id}`)).json()).not.toHaveProperty('secret');
     });
 
     it('keeps the secret and headers when an update leaves them out', async () => {
@@ -209,10 +211,25 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       ).json();
       expect(updated).toMatchObject({
         name: 'Site 2',
-        secret: 's3cret',
+        hasSecret: true,
         headers: { 'X-Site': 'a' },
         events: ['content.published', 'content.unpublished'],
       });
+      const secretOf = async () =>
+        (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, hook.id)))[0].secret;
+      expect(await secretOf()).toBe('s3cret');
+    });
+
+    it('replaces the secret when one is sent, and removes it with secret: null', async () => {
+      const body = { name: 'Site 2', url: 'https://example.com/v2', events: ['content.published', 'content.unpublished'] };
+      const secretOf = async () =>
+        (await t.db.select({ secret: webhooks.secret }).from(webhooks).where(eq(webhooks.id, hook.id)))[0].secret;
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: 'n3w' })).json().hasSecret).toBe(true);
+      expect(await secretOf()).toBe('n3w');
+      expect((await manager.put(`${base}/${hook.id}`, { ...body, secret: null })).json().hasSecret).toBe(false);
+      expect(await secretOf()).toBeNull();
+      // Creating takes a secret or none, not null.
+      expect((await manager.post(base, { ...body, name: 'Null', secret: null })).statusCode).toBe(400);
     });
 
     it('enables and disables, and lists newest logs first', async () => {

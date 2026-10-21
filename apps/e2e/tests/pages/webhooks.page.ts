@@ -8,7 +8,10 @@ export interface WebhookInput {
   url?: string;
   /** Events to add (the chips have no accessible remove button). */
   events?: string[];
+  /** A new secret (the field starts empty when editing: the secret is never sent back). */
   secret?: string;
+  /** Ticks "Remove the secret" (editing a webhook that has one). */
+  removeSecret?: boolean;
 }
 
 /** Space → Developers → Webhooks: the list (`/developers/webhooks`) and a webhook's page with its logs (`/:id`). */
@@ -29,10 +32,10 @@ export class WebhooksPage {
     return this.page.getByText('No webhooks yet.');
   }
 
-  /** The names of the rows shown, in order. */
+  /** The names of the rows shown, in order: read in one go, so a page being replaced is never waited on row by row. */
   async names(): Promise<string[]> {
-    const rows = await this.page.locator('tr[ll-row]').all();
-    return Promise.all(rows.map(async row => (await row.getByRole('cell').first().innerText()).split('\n')[0].trim()));
+    const cells = await this.page.locator('tr[ll-row] > td:first-child').allInnerTexts();
+    return cells.map(it => it.split('\n')[0].trim());
   }
 
   /** The search box, on the server: the name or URL on the list, the log id on a webhook's page. */
@@ -114,6 +117,13 @@ export class WebhooksPage {
       await expect(this.page.getByRole('listbox')).toHaveCount(0);
     }
     if (input.secret !== undefined) await form.getByLabel('Secret (Optional)').fill(input.secret);
+    if (input.removeSecret) {
+      // The Spartan checkbox is a button with role checkbox: clicked, not `check()`ed.
+      const remove = form.getByRole('checkbox', { name: /^Remove the secret/ });
+      await expect(remove).not.toBeChecked();
+      await remove.click();
+      await expect(remove).toBeChecked();
+    }
     return form;
   }
 }

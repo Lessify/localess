@@ -66,8 +66,8 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   Private helpers and inline callbacks may leave it to inference.
 - **Why:** what a method answers is read from its signature, not worked out from its body.
 - **Example:** `modules/spaces/` (every file).
-- **Scope:** checked in the modules reworked so far (`modules/spaces/`); each module joins the check when it is reworked
-  (`DECLARED` in `apps/server/test/architecture.test.ts`).
+- **Scope:** checked in the modules reworked so far (`modules/spaces/`, `modules/webhooks/`); each module joins the check when it is reworked
+  (`REWORKED` in `apps/server/test/architecture.test.ts`).
 
 ## Repository methods
 
@@ -161,4 +161,4 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   `defaultLocale` and `spaceLocales`; the sidebar `IdName[]` (`GET /spaces/names`); the Visual Editor `IdNameUrl[]`
   (`GET /spaces/:spaceId/environments/names`).
 - **Don't:** a computed field for the web's convenience (`importStatus`, `legacyId`, a flattened `locales`).
-- **Reworked so far:** spaces. The other models keep their shapes until their module is reworked.
+- **Reworked so far:** spaces, webhooks (`WebHook` answers `hasSecret`, never the secret). The other models keep their shapes until their module is reworked.

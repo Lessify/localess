@@ -32,7 +32,7 @@ export class WebHookService {
     return this.http.post<WebHook>(this.base(spaceId), this.body(entity)).pipe(map(it => it.id));
   }
 
-  /** Headers and secret are only replaced when sent. */
+  /** Headers and secret are only replaced when sent; `secret: null` removes it. */
   update(spaceId: string, id: string, entity: WebHookUpdate): Observable<void> {
     return this.http.put<void>(`${this.base(spaceId)}/${id}`, this.body(entity));
   }
@@ -52,10 +52,12 @@ export class WebHookService {
     );
   }
 
-  private body(entity: WebHookCreate | WebHookUpdate): WebHookCreate {
-    const body: WebHookCreate = { name: entity.name, url: entity.url, events: entity.events };
+  /** Empty headers and secret are left out (kept on update); a `null` secret (update only) removes it. */
+  private body(entity: WebHookCreate | WebHookUpdate): WebHookUpdate {
+    const body: WebHookUpdate = { name: entity.name, url: entity.url, events: entity.events };
     if (entity.headers) body.headers = entity.headers;
     if (entity.secret) body.secret = entity.secret;
+    else if (entity.secret === null) body.secret = null;
     return body;
   }
 }

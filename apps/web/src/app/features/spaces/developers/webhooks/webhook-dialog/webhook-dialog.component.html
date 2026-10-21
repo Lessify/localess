@@ -49,7 +49,7 @@
   </div>
 
   <div hlmField>
-    <label hlmFieldLabel for="secret">Secret (Optional)</label>
+    <label hlmFieldLabel for="secret">{{ hasSecret ? 'New Secret (Optional)' : 'Secret (Optional)' }}</label>
     <input
       hlmInput
       id="secret"
@@ -61,8 +61,20 @@
       data-bwignore="true"
       data-form-type="other"
       class="w-full" />
-    <hlm-field-description>Used to sign webhook payloads.</hlm-field-description>
+    <hlm-field-description>
+      @if (hasSecret) {
+        Used to sign webhook payloads. A secret is set: leave empty to keep it.
+      } @else {
+        Used to sign webhook payloads.
+      }
+    </hlm-field-description>
   </div>
+  @if (hasSecret) {
+    <div hlmField class="flex-row items-center gap-3">
+      <hlm-checkbox inputId="removeSecret" formControlName="removeSecret" />
+      <label hlmFieldLabel for="removeSecret">Remove the secret (payloads are no longer signed)</label>
+    </div>
+  }
 </form>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>

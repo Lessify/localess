@@ -53,7 +53,7 @@ const isV1 = (file: File) => /\.(cdn|management)\.controller\.ts$/.test(file.nam
 const isFeatureCode = (file: File) => file.name.startsWith('modules/');
 
 /** Modules reworked to every rule so far (return types, counts); one more each time a module is reworked. */
-const REWORKED = ['modules/spaces/'];
+const REWORKED = ['modules/spaces/', 'modules/webhooks/'];
 const isReworked = (file: File) => REWORKED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/');
 
 describe('server rules: imports between layers', () => {

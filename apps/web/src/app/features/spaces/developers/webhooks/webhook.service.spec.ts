@@ -71,6 +71,22 @@ describe('WebHookService', () => {
     await done;
   });
 
+  it('update() sends secret: null to remove the secret, and leaves an empty one out', async () => {
+    const service = setup();
+    const entity = { name: 'Hook', url: 'https://example.com', events: [WebHookEvent.CONTENT_CHANGED] };
+    const removed = firstValueFrom(service.update('space-1', 'w1', { ...entity, secret: null }));
+    const remove = http.expectOne({ method: 'PUT', url: `${base}/w1` });
+    expect(remove.request.body).toEqual({ ...entity, secret: null });
+    remove.flush({});
+    await removed;
+
+    const kept = firstValueFrom(service.update('space-1', 'w1', { ...entity, secret: '' }));
+    const keep = http.expectOne({ method: 'PUT', url: `${base}/w1` });
+    expect(keep.request.body).toEqual(entity);
+    keep.flush({});
+    await kept;
+  });
+
   it('updateStatus() patches enabled', async () => {
     const service = setup();
     const done = firstValueFrom(service.updateStatus('space-1', 'w1', false));
