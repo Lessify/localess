@@ -1,3 +1,4 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -105,6 +106,11 @@ interface SideMenuItem {
   isOpen?: WritableSignal<boolean>;
 }
 
+/** A window narrower than this collapses the sidebar to its icons. */
+const SIDEBAR_COLLAPSE_QUERY = '(max-width: 1023.98px)';
+/** Set while the sidebar is collapsed because the window is narrow (not by the user). */
+const SIDEBAR_AUTO_COLLAPSED_KEY = 'll-sidebar-auto-collapsed';
+
 @Component({
   selector: 'll-features',
   templateUrl: './features.component.html',
@@ -179,6 +185,9 @@ export class FeaturesComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly hlmDialog = inject(HlmDialogService);
   public readonly sidebarService = inject(HlmSidebarService);
+  private readonly breakpoints = inject(BreakpointObserver);
+  /** Whether the window is narrow (`SIDEBAR_COLLAPSE_QUERY`). */
+  private readonly narrowWindow = signal(false);
   public readonly spaceStore = inject(SpaceStore);
   public readonly userStore = inject(UserStore);
   public readonly localeSettingsStore = inject(LocalSettingsStore);
@@ -315,6 +324,27 @@ export class FeaturesComponent implements OnInit {
   breadcrumbs = signal<BreadcrumbItem[]>([]);
 
   constructor() {
+    // Below 1024px the sidebar collapses to its icons, leaving the page room; a wider window opens it again, unless
+    // the user had collapsed it themselves. Who collapsed it is kept in localStorage: Spartan's cookie keeps only
+    // "closed", so after a reload in a narrow window the app could not tell. (Spartan's mobile overlay starts at 768px.)
+    this.breakpoints
+      .observe(SIDEBAR_COLLAPSE_QUERY)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ matches }) => {
+        this.narrowWindow.set(matches);
+        if (matches && this.sidebarService.open()) {
+          this.sidebarService.setOpen(false);
+          localStorage.setItem(SIDEBAR_AUTO_COLLAPSED_KEY, 'true');
+        } else if (!matches && localStorage.getItem(SIDEBAR_AUTO_COLLAPSED_KEY)) {
+          localStorage.removeItem(SIDEBAR_AUTO_COLLAPSED_KEY);
+          if (!this.sidebarService.open()) this.sidebarService.setOpen(true);
+        }
+      });
+    // Opened by the user in a narrow window: theirs from now on, not to be restored or collapsed for them.
+    effect(() => {
+      if (this.sidebarService.open() && this.narrowWindow()) localStorage.removeItem(SIDEBAR_AUTO_COLLAPSED_KEY);
+    });
+
     const reposService = this.reposService;
 
     reposService

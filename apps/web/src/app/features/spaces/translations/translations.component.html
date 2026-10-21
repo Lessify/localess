@@ -1,5 +1,5 @@
 @if (selectedSpace(); as space) {
-  <div class="flex items-center justify-end gap-2 p-2">
+  <div class="flex shrink-0 items-center justify-end gap-2 p-2">
     <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.translationLayout()">
       <button
         hlmToggleGroupItem
@@ -106,14 +106,17 @@
       <hlm-progress-indicator />
     </hlm-progress>
   } @else {
-    <div class="mx-auto mt-3 px-2">
+    <!-- The columns follow the width the page has (a container query), so the sidebar's state counts too. -->
+    <div class="@container flex min-h-0 flex-1 flex-col px-2 pt-3 pb-2">
       <ll-translation-filter
         [availableLocales]="availableLocales()"
         [defaultLocaleId]="selectedSpace()?.defaultLocale?.id"
         [allLabels]="allLabels()"
         (localeChange)="currentLocale.set($event)"
         (filterChange)="filterCriteria.set($event)" />
-      <div class="grid grid-cols-4 gap-2">
+      <!-- The rest of the window, whatever the toolbar and filter take. Narrow: the list above the editor, half each.
+           Medium: the list beside the editor. Wide: list, editor (2 columns), info. -->
+      <div class="grid min-h-0 flex-1 grid-cols-1 grid-rows-2 gap-2 @xl:grid-cols-[minmax(14rem,1fr)_2fr] @xl:grid-rows-1 @4xl:grid-cols-4">
         <ll-translation-list
           [spaceId]="spaceId()"
           [availableLocales]="availableLocales()"

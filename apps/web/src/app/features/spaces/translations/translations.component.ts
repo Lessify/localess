@@ -59,6 +59,8 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   templateUrl: './translations.component.html',
   styleUrls: ['./translations.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // The window below the app header (h-12): the columns take what the toolbar and filter leave.
+  host: { class: 'flex h-[calc(100svh-3rem)] flex-col' },
   imports: [
     CommonModule,
     HasRolePipe,

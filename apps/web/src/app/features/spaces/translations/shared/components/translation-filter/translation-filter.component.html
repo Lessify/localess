@@ -1,7 +1,8 @@
 <form [formGroup]="filterForm">
   <fieldset hlmFieldSet>
-    <div hlmFieldGroup class="mb-3 grid grid-cols-4 gap-2">
-      <div hlmField>
+    <!-- A toolbar row: what doesn't fit moves to the next line. -->
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <div class="w-56 shrink-0">
         <label class="sr-only" for="translation-filter-locale">Locale</label>
         <hlm-select formControlName="locale" [itemToString]="localeIdToString">
           <hlm-select-trigger class="w-full" buttonId="translation-filter-locale">
@@ -23,7 +24,7 @@
           </hlm-select-content>
         </hlm-select>
       </div>
-      <div hlmInputGroup [attr.data-search-pending]="searchPending() || null">
+      <div hlmInputGroup class="max-w-md min-w-64 flex-1" [attr.data-search-pending]="searchPending() || null">
         <input hlmInputGroupInput placeholder="Search..." formControlName="search" type="search" (keydown.enter)="applySearch($event)" />
         <div hlmInputGroupAddon>
           <ng-icon hlm size="sm" name="lucideSearch" />
@@ -43,7 +44,7 @@
           </button>
         </div>
       </div>
-      <div hlmField class="col-span-2 flex w-fit flex-row">
+      <div class="flex flex-wrap items-center gap-2">
         <hlm-popover sideOffset="5">
           <div hlmButtonGroup>
             <button class="justify-between" hlmPopoverTrigger hlmBtn variant="outline">
