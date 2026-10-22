@@ -27,8 +27,16 @@
 </hlm-dialog-header>
 <!-- The middle grid row: the table scrolls here, so the footer stays reachable. -->
 <div class="min-h-0 overflow-x-hidden overflow-y-auto">
+  <ll-filter-toolbar class="mb-3 block px-1" [filters]="filters" (filterChange)="contentList.onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table
+      ll-table
+      [dataSource]="dataSource"
+      llTableSort
+      llTableSortActive="name"
+      llTableSortDirection="asc"
+      [llTableSortDisableClear]="true"
+      (sortChange)="contentList.onSortChange($event)">
       <!-- Checkbox Column -->
       <ng-container llColumnDef="select">
         <th llHeaderCell *llHeaderCellDef>#</th>
@@ -55,16 +63,16 @@
         </td>
       </ng-container>
       <ng-container llColumnDef="name">
-        <th llHeaderCell *llHeaderCellDef>Name</th>
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
         <td llCell *llCellDef="let element">
           <div>
             <div class="line-clamp-1">{{ element.name }}</div>
-            <div class="text-muted-foreground line-clamp-1">#{{ element.slug }}</div>
+            <div class="text-muted-foreground line-clamp-1">{{ contentList.deep() ? element.fullSlug : '#' + element.slug }}</div>
           </div>
         </td>
       </ng-container>
       <ng-container llColumnDef="schema">
-        <th llHeaderCell *llHeaderCellDef>Schema</th>
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="schema">Schema</th>
         <td llCell *llCellDef="let element">
           @if (element.kind === 'DOCUMENT') {
             @if (schemasMapByName().get(element.schema); as schema) {
@@ -76,7 +84,7 @@
         </td>
       </ng-container>
       <ng-container llColumnDef="updatedAt">
-        <th llHeaderCell *llHeaderCellDef>Updated At</th>
+        <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
         <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
           {{ element.updatedAt | date: 'mediumDate' }}
         </td>
@@ -85,11 +93,11 @@
       <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
       <tr ll-row *llRowDef="let row; columns: displayedColumns" class="cursor-pointer" (click)="onRowSelect(row)"></tr>
       <tr *llNoDataRow>
-        <td [attr.colspan]="displayedColumns.length">No content yet.</td>
+        <td [attr.colspan]="displayedColumns.length">{{ contentList.filtering() ? 'No contents match.' : 'No content yet.' }}</td>
       </tr>
     </table>
   </div>
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="contentList.list.page" [(pageSize)]="contentList.list.size" />
 </div>
 <hlm-dialog-footer>
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()"

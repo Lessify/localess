@@ -1,23 +1,22 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
+  effect,
   inject,
   Injector,
   input,
   signal,
-  viewChild,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
-import { SchemaService } from '@core/services/schema.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
 import { SpaceStore } from '@core/stores/space.store';
@@ -63,9 +62,9 @@ import {
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { sortContent } from '@shared/models/content.model';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { sortSchema } from '@shared/models/schema.model';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
 import { HasRolePipe } from '@shared/pipes/has-role.pipe';
@@ -76,8 +75,8 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { combineLatest } from 'rxjs';
-import { filter, switchMap, take, tap } from 'rxjs/operators';
+import { combineLatest, EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddDocumentDialogComponent, AddDocumentDialogContext } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogContext } from './add-folder-dialog';
@@ -85,6 +84,7 @@ import { EditDialogComponent, EditDialogContext } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
 import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
+import { CONTENT_LIST_FILTERS, ContentList } from './shared/content-list';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({
@@ -98,6 +98,7 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
     ClipboardModule,
     LlTableImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     HlmButtonImports,
     HlmIconImports,
     HlmDropdownMenuImports,
@@ -128,10 +129,9 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
     }),
   ],
 })
-export class ContentsComponent implements AfterViewInit {
+export class ContentsComponent {
   protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly router = inject(Router);
-  private readonly schemasService = inject(SchemaService);
   private readonly contentService = inject(ContentService);
   private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly taskService = inject(TaskService);
@@ -141,21 +141,29 @@ export class ContentsComponent implements AfterViewInit {
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   // Input
   spaceId = input.required<string>();
 
   spaceStore = inject(SpaceStore);
 
   isLoading = signal(true);
+  /** The folder's page shown: paged, sorted and searched on the server (`GET …/contents`, without the documents' data). */
+  readonly contentList = new ContentList();
+  readonly filters = CONTENT_LIST_FILTERS;
+  readonly total = signal(0);
   private readonly contents = signal<Content[]>([]);
   readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
   displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
-  schemas: Schema[] = [];
-  schemasMapByName: Map<string, Schema> = new Map<string, Schema>();
+  /** The ROOT schemas a document can be created with, from `SpaceStore` (live). */
+  readonly schemas = computed(() =>
+    this.spaceStore
+      .schemas()
+      .filter(it => it.type === SchemaType.ROOT)
+      .sort(sortSchema),
+  );
+  /** Every schema by name: a document's schema column. */
+  readonly schemasMapByName = computed(() => new Map<string, Schema>(this.spaceStore.schemas().map(it => [it.name, it])));
 
   /** Every folder of the space, live: breadcrumbs and paths are built from it. */
   private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.contentService.findAllFolders(spaceId))), {
@@ -172,38 +180,44 @@ export class ContentsComponent implements AfterViewInit {
 
   private destroyRef = inject(DestroyRef);
 
+  /**
+   * The folder shown (`SpaceStore.contentFolderId`, `undefined` until the store has it) sets the list's folder; the
+   * list's query, again whenever it changes (and live), its page. A failed load is told and ends only that request.
+   */
   constructor() {
-    toObservable(this.spaceStore.contentFolderId)
+    effect(() => {
+      const folderId = this.spaceStore.contentFolderId();
+      if (folderId !== undefined) untracked(() => this.contentList.setFolder(folderId));
+    });
+    combineLatest([
+      toObservable(this.spaceStore.contentFolderId).pipe(filter(it => it !== undefined)),
+      toObservable(this.contentList.list.params),
+    ])
       .pipe(
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(() =>
-          combineLatest([
-            this.schemasService.findAll(this.spaceId(), SchemaType.ROOT),
-            this.contentService.findAll(this.spaceId(), this.folderId),
-          ]),
+        switchMap(([, params]) =>
+          this.contentService.findPage(this.spaceId(), params).pipe(
+            catchError(() => {
+              this.notificationService.error('Contents can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: ([schemas, contents]) => {
-          this.schemas = schemas.sort(sortSchema);
-          this.schemasMapByName = new Map(this.schemas.map(it => [it.name, it]));
-          this.contents.set(contents.sort(sortContent));
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.contents.set(page.items);
+        this.total.set(page.total);
+        this.contentList.list.onLoaded(page);
+        this.isLoading.set(false);
       });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
   }
 
   openAddDocumentDialog(): void {
     this.dialog
       .open<ContentDocumentCreate, AddDocumentDialogContext>(AddDocumentDialogComponent, {
         context: {
-          schemas: this.schemas,
+          schemas: this.schemas(),
           reservedNames: this.contents().map(it => it.name),
           reservedSlugs: this.contents().map(it => it.slug),
         },
@@ -447,7 +461,7 @@ export class ContentsComponent implements AfterViewInit {
   onRowSelect(element: Content): void {
     this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
-      if (this.schemasMapByName.has(element.schema)) {
+      if (this.schemasMapByName().has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
       } else {
         this.notificationService.error(`Content Schema can not be found.`);

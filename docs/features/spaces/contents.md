@@ -57,8 +57,17 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 
 **Key behaviour:**
 
-- Loads schemas from `SchemaService` (needed for the Add Document dialog's schema picker)
-- Loads the children of the current folder (`SpaceStore.contentFolderId`, `null` at the root) from `GET /api/app/spaces/:s/contents?parentId=` (paged on the server, without the documents' data; read page by page for now, see [Pagination](../../server/pagination.md#contents-a-folders-page-or-everything-under-it); a live query, refetched on `contents` change events)
+- Schemas from `SpaceStore.schemas()` (the ROOT ones for the Add Document dialog, every one for the Schema column)
+- One page of the current folder (`SpaceStore.contentFolderId`, `null` at the root), paged, sorted and searched on the
+  server: `GET /api/app/spaces/:s/contents` (`ContentService.findPage`, live; without the documents' data; see
+  [Pagination](../../server/pagination.md#contents-a-folders-page-or-everything-under-it)). The query is a
+  `ContentList` (`shared/content-list.ts`: a `PagedList` with the folder, the search and the scope), the same the
+  References picker uses, so both behave alike: folders first, by name unless sorted by a column header; the toolbar's
+  search (the name or the slug, on Enter) and **Scope** (*This folder* / *Including subfolders*, `deep=true`: everything
+  under the folder, the whole space at the root; rows then show their path instead of `#slug`). Opening a folder keeps
+  the search and the scope; Reset clears both
+- The Add, Edit dialogs check names and slugs against the page shown only; the server refuses a slug taken in the
+  folder (409, its message in the toast)
 - Loads every folder of the space once (`GET …/contents/folders`, live) into a map `id → folder`: the breadcrumbs and paths are built from it (`shared/content-folders.ts`)
 - `onRowSelect(item)` — opens a folder (`SpaceStore.changeContentFolder(id)`) or navigates to the document editor
 - `navigateToFolder(id)` — breadcrumb navigation (`null`: the root)
@@ -413,7 +422,7 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 | `ImportDialogComponent`       | Upload content file → creates a Task    |
 | `MoveDialogComponent`         | Pick destination folder                 |
 | `ConfirmationDialogComponent` | Delete / unpublish confirmation         |
-| `ReferencesSelectDialogComponent` | Pick content documents for `REFERENCE`/`REFERENCES` fields (`shared/references-select-dialog/`) |
+| `ReferencesSelectDialogComponent` | Pick content documents for `REFERENCE`/`REFERENCES` fields (`shared/references-select-dialog/`): the same paged list, toolbar (search, scope) and sort as the Contents table; the selection is kept across pages and folders |
 | `AssetsSelectDialogComponent` | Pick assets for `ASSET`/`ASSETS` fields (`shared/assets-select-dialog/`) |
 
 ## Services Used

@@ -32,9 +32,8 @@ export class ContentService {
   }
 
   /**
-   * Every page of the list (`GET …/contents` is paged, without the documents' data), live. For now: the table and the
-   * pickers page in the browser, and the Link field and the References fields read every document; they move to the
-   * paged list and to a light list in `SpaceStore`.
+   * Every page of the list (`GET …/contents` is paged, without the documents' data), live. For now the Link field and the
+   * References fields read every document; they move to a light list in `SpaceStore`.
    */
   private list<T extends Content>(spaceId: string, params: HttpParams): Observable<T[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () => this.everyPage<T>(spaceId, params));
@@ -61,9 +60,14 @@ export class ContentService {
     );
   }
 
-  /** Children of folder `parentId` (the root when absent), folders first then by name. */
-  findAll(spaceId: string, parentId?: string): Observable<Content[]> {
-    return this.list(spaceId, parentId ? new HttpParams().set('parentId', parentId) : new HttpParams());
+  /**
+   * One page of a folder (the root without `parentId`), or with `deep` of everything under it; folders first, without
+   * the documents' data. Live: a change in the space reads the page again.
+   */
+  findPage(spaceId: string, params: HttpParams): Observable<Page<Content>> {
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
+      this.http.get<Page<Content>>(this.base(spaceId), { params }),
+    );
   }
 
   /** Every folder of the space, live: the editor's folder map (breadcrumbs, paths, move targets). */

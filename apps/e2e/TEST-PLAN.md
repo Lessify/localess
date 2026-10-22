@@ -214,6 +214,7 @@ receives). Specs in `tests/contents/`.
 | Scenario | How | Status |
 |---|---|---|
 | **Folders** three levels deep; the breadcrumb back to each level | UI + API | ✅ `contents/tree` |
+| **Search** in the folder (name or slug); **Scope: Including subfolders**: every match under it, each row with its path; back to the folder | UI | ✅ `contents/tree` |
 | A document in the open folder; only Root schemas offered; slug from the name | UI + API | ✅ `contents/tree` @smoke |
 | Slugs: taken in the folder refused (dialog and 409), fine in another; invalid refused, Normalize | UI + API | ✅ `contents/tree` |
 | Rename a folder's and a document's slug: the new CDN paths, the old ones 404 | UI + API + CDN | ✅ `contents/tree` |
@@ -258,7 +259,7 @@ receives). Specs in `tests/contents/`.
 | Scenario | How | Status |
 |---|---|---|
 | Paging a folder of 1,000 documents: 50 pages, next, last; 100 per page keeps the last page open (`Page 10 of 10`) | UI | ✅ `contents/template-large` |
-| Sorting a folder of 1,000 documents by name, both ways | UI | ✅ `contents/template-large` |
+| Sorting a folder of 1,000 documents by name, both ways (by name ascending to start; sorted on the server) | UI | ✅ `contents/template-large` |
 | Three levels deep: a month holds its 16 posts; the breadcrumb leads back | UI | ✅ `contents/template-large` |
 | Publish, then unpublish a folder of 192 documents (`Blog/2024`): the published `/links` lists them, then none, and its 12 month folders throughout; drafts stay. Publish 2.2–2.7 s, unpublish 1.2–1.5 s | UI + CDN | ✅ `contents/template-large` |
 | `/links` with 2,067 entries; `kind` and `parentSlug` + `excludeChildren` filters | CDN | ✅ `contents/template-large` |

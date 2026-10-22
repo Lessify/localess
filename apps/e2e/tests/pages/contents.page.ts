@@ -23,6 +23,26 @@ export class ContentsPage {
       .filter({ has: this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}\\s*#`) }) });
   }
 
+  /** A row in "Including subfolders": the name, then the item's path (rows come from several folders). */
+  rowAt(name: string, fullSlug: string): Locator {
+    return this.page.getByRole('row').filter({
+      has: this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}\\s*${escapeRegExp(fullSlug)}\\s*$`) }),
+    });
+  }
+
+  /** Searches the name or the slug (on Enter); an emptied box shows the folder again by itself. */
+  async search(text: string): Promise<void> {
+    const box = this.page.getByPlaceholder('Search...');
+    await box.fill(text);
+    if (text) await box.press('Enter');
+  }
+
+  /** The scope of the list: the folder's children, or everything under it. */
+  async scope(scope: 'This folder' | 'Including subfolders'): Promise<void> {
+    await this.page.getByRole('button', { name: /^Scope|This folder|Including subfolders/ }).click();
+    await this.page.getByRole('option', { name: scope, exact: true }).click();
+  }
+
   /** The content rows (each has an Actions menu; the header and the "No content yet." row don't). */
   get rows(): Locator {
     return this.page.getByRole('row').filter({ has: this.page.getByRole('button', { name: 'Actions', exact: true }) });

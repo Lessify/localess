@@ -1,11 +1,10 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Content, ContentDocument, ContentFolder, ContentKind, Schema, SchemaType, Token, TokenType } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
-import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
@@ -36,8 +35,7 @@ describe('ContentsComponent', () => {
   });
 
   function setup(contents: Content[] = [], schemas: Schema[] = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema]) {
-    const findAllSchemas = vi.fn().mockReturnValue(of(schemas));
-    const findAllContents = vi.fn().mockReturnValue(of(contents));
+    const findPage = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
     const createDocument = vi.fn().mockReturnValue(of(undefined));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
@@ -67,11 +65,10 @@ describe('ContentsComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll: findAllSchemas } },
         {
           provide: ContentService,
           useValue: {
-            findAll: findAllContents,
+            findPage,
             findAllFolders,
             createDocument,
             createFolder,
@@ -88,7 +85,7 @@ describe('ContentsComponent', () => {
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
-        { provide: SpaceStore, useValue: { contentFolderId, changeContentFolder } },
+        { provide: SpaceStore, useValue: { contentFolderId, changeContentFolder, schemas: signal(schemas) } },
       ],
     });
     const fixture = TestBed.createComponent(ContentsComponent);
@@ -96,8 +93,7 @@ describe('ContentsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findAllSchemas,
-      findAllContents,
+      findPage,
       createDocument,
       createFolder,
       update,
@@ -119,15 +115,54 @@ describe('ContentsComponent', () => {
     };
   }
 
-  it('loads schemas and sorted contents on init', () => {
+  /** The query of the last page read. */
+  const lastQuery = (findPage: ReturnType<typeof setup>['findPage']) => (findPage.mock.calls.at(-1)?.[1] as HttpParams).toString();
+
+  it("loads the root's first page in the server's order, and the ROOT schemas from the store", () => {
     const b = doc({ id: 'b', name: 'B' });
     const a = doc({ id: 'a', name: 'A' });
-    const { component, findAllSchemas, findAllContents } = setup([b, a]);
+    const { component, findPage } = setup(
+      [b, a],
+      [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema, { id: 'n1', name: 'n1', type: SchemaType.NODE } as Schema],
+    );
 
-    expect(findAllSchemas).toHaveBeenCalledWith('space-1', SchemaType.ROOT);
-    expect(findAllContents).toHaveBeenCalledWith('space-1', undefined);
-    expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['a', 'b']);
+    expect(findPage.mock.calls.at(-1)?.[0]).toBe('space-1');
+    expect(lastQuery(findPage)).toBe('page=0&size=20');
+    expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['b', 'a']);
+    expect(component.total()).toBe(2);
+    expect(component.schemas().map(it => it.name)).toEqual(['s1']);
     expect(component.isLoading()).toBe(false);
+  });
+
+  it('sends the search and the scope, and a sort, from the first page', () => {
+    const { component, findPage } = setup();
+    component.contentList.list.page.set(2);
+    TestBed.tick();
+
+    component.contentList.onFilterChange({ search: ' blog ', scope: 'deep' });
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=0&size=20&search=blog&deep=true');
+    expect(component.contentList.deep()).toBe(true);
+
+    component.contentList.onSortChange({ active: 'updatedAt', direction: 'desc' });
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=updatedAt&direction=desc&search=blog&deep=true');
+
+    component.contentList.onFilterChange({ search: '', scope: 'folder' });
+    TestBed.tick();
+    expect(component.contentList.deep()).toBe(false);
+  });
+
+  it('tells a failed load, and loads again on the next change', () => {
+    const { component, findPage, error } = setup();
+    findPage.mockReturnValueOnce(throwError(() => new Error('boom')));
+    component.contentList.onFilterChange({ search: 'x', scope: '' });
+    TestBed.tick();
+    expect(error).toHaveBeenCalledWith('Contents can not be loaded.');
+
+    component.contentList.onFilterChange({ search: 'y', scope: '' });
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=0&size=20&search=y');
   });
 
   describe('openAddDocumentDialog', () => {
@@ -401,11 +436,12 @@ describe('ContentsComponent', () => {
     expect(changeContentFolder).toHaveBeenLastCalledWith(null);
   });
 
-  it('lists the children of the folder shown', () => {
-    const { contentFolderId, findAllContents } = setup();
+  it('lists the children of the folder shown, keeping the search and the scope', () => {
+    const { component, contentFolderId, findPage } = setup();
+    component.contentList.onFilterChange({ search: 'blog', scope: 'deep' });
     contentFolderId.set('f2');
     TestBed.tick();
-    expect(findAllContents).toHaveBeenLastCalledWith('space-1', 'f2');
+    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f2&search=blog&deep=true');
   });
 
   describe('API links', () => {

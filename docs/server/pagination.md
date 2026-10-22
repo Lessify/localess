@@ -123,9 +123,9 @@ answers the full document for the editor).
 - `kind` (`FOLDER` / `DOCUMENT`), `search` (the name or the slug, anywhere, case-insensitive, wildcards literal).
 - `ids=a,b`: those contents wherever they are (the folder and `deep` not applied).
 
-The web reads every page for now (`ContentService.findAll`, `findAllDocuments`, `findByIds`): the Contents table and
-the References picker move to the paged list, the Link and References fields to a light list in `SpaceStore` (`GET
-…/contents/names`). Tests: `apps/server/test/contents-paging.test.ts`.
+The Contents table and the References picker read one page (`ContentService.findPage` with a `ContentList`, the folder,
+search and scope state they share). For now the Link and References fields still read every page (`findAllDocuments`,
+`findByIds`); they move to a light list in `SpaceStore` (`GET …/contents/names`). Tests: `apps/server/test/contents-paging.test.ts`.
 
 ## Not paged (and why)
 

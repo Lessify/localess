@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
@@ -31,22 +31,19 @@ describe('ContentService', () => {
   /** A page of the list as the server answers it. */
   const page = (items: unknown[], total = items.length, index = 0) => ({ items, page: index, size: 100, total });
 
-  it('findAll() lists the children of a folder, the root by default', async () => {
+  it('findPage() reads one page with the query as given', async () => {
     const service = setup();
-    const root = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?page=0&size=100`).flush(page([{ id: 'c1' }]));
-    expect(await root).toEqual([{ id: 'c1' }]);
-
-    const nested = firstValueFrom(service.findAll('space-1', 'f1'));
-    http.expectOne(`${BASE}?parentId=f1&page=0&size=100`).flush(page([]));
-    expect(await nested).toEqual([]);
+    const params = new HttpParams().set('page', 1).set('size', 20).set('parentId', 'f1').set('deep', 'true').set('search', 'blog');
+    const result = firstValueFrom(service.findPage('space-1', params));
+    http.expectOne(`${BASE}?page=1&size=20&parentId=f1&deep=true&search=blog`).flush(page([{ id: 'c1' }], 21, 1));
+    expect(await result).toEqual(page([{ id: 'c1' }], 21, 1));
   });
 
-  it('findAll() reads every page, 100 at a time', async () => {
+  it('findAllDocuments() reads every page, 100 at a time', async () => {
     const service = setup();
-    const all = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?page=0&size=100`).flush(page([{ id: 'a' }], 101));
-    http.expectOne(`${BASE}?page=1&size=100`).flush(page([{ id: 'b' }], 101, 1));
+    const all = firstValueFrom(service.findAllDocuments('space-1'));
+    http.expectOne(`${BASE}?kind=DOCUMENT&deep=true&page=0&size=100`).flush(page([{ id: 'a' }], 101));
+    http.expectOne(`${BASE}?kind=DOCUMENT&deep=true&page=1&size=100`).flush(page([{ id: 'b' }], 101, 1));
     expect(await all).toEqual([{ id: 'a' }, { id: 'b' }]);
   });
 
@@ -63,20 +60,21 @@ describe('ContentService', () => {
     subscription.unsubscribe();
   });
 
-  it('findAll() refetches when a content of the space changes, ignoring other entities', async () => {
+  it('findPage() reads the page again when a content of the space changes, ignoring other entities', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: Content[][] = [];
-    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}?page=0&size=100`).flush(page([]));
+    const params = new HttpParams().set('page', 0).set('size', 20);
+    const subscription = service.findPage('space-1', params).subscribe(it => results.push(it.items));
+    http.expectOne(`${BASE}?page=0&size=20`).flush(page([]));
 
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}?page=0&size=100`);
+    http.expectNone(`${BASE}?page=0&size=20`);
 
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'c1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}?page=0&size=100`).flush(page([{ id: 'c1' } as Content]));
+    http.expectOne(`${BASE}?page=0&size=20`).flush(page([{ id: 'c1' } as Content]));
     expect(results).toEqual([[], [{ id: 'c1' }]]);
     subscription.unsubscribe();
   });
@@ -90,13 +88,6 @@ describe('ContentService', () => {
     const documents = firstValueFrom(service.countAll('space-1', ContentKind.DOCUMENT));
     http.expectOne(`${BASE}/count?kind=DOCUMENT`).flush({ count: 3 });
     expect(await documents).toBe(3);
-  });
-
-  it('findAllDocuments() lists every document of the space', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findAllDocuments('space-1'));
-    http.expectOne(`${BASE}?kind=DOCUMENT&deep=true&page=0&size=100`).flush(page([{ id: 'd1' }]));
-    expect(await result).toEqual([{ id: 'd1' }]);
   });
 
   it('findAll*ByName() search the whole space, one page of at most `max`, by kind when given', async () => {

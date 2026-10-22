@@ -64,12 +64,16 @@ test.describe('Contents → 2,000 documents', () => {
     await contents.goto(space.id);
     await contents.openFolder('Archive');
 
-    await name.click();
+    // Pre-check: by name, ascending, unless sorted otherwise (sorted on the server).
     await expect(name).toHaveAttribute('aria-sort', 'ascending');
     await expect.poll(async () => (await docNames(contents.rows))[0]).toBe(docName(1));
+
     await name.click();
     await expect(name).toHaveAttribute('aria-sort', 'descending');
     await expect.poll(async () => (await docNames(contents.rows))[0]).toBe(docName(1000));
+    await name.click();
+    await expect(name).toHaveAttribute('aria-sort', 'ascending');
+    await expect.poll(async () => (await docNames(contents.rows))[0]).toBe(docName(1));
   });
 
   test('a month three levels deep holds its 16 posts; the breadcrumb leads back', async ({ page, space }) => {

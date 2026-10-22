@@ -37,6 +37,41 @@ test.describe('Contents → folders and documents', () => {
     await expect(contents.rows).toHaveCount(1);
   });
 
+  test('searches the folder, or with "Including subfolders" everything under it, showing where each row is', async ({
+    page,
+    api,
+    space,
+  }) => {
+    const schema = await pageSchema(api, space);
+    const blog = await api.createFolder(space.id, { name: 'Blog', slug: 'blog' });
+    const year = await api.createFolder(space.id, { name: '2024', slug: '2024', parentId: blog.id });
+    await api.createDocument(space.id, { name: 'Hello', slug: 'hello', schema: schema.name, parentId: blog.id });
+    await api.createDocument(space.id, { name: 'Hello again', slug: 'hello-again', schema: schema.name, parentId: year.id });
+    await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: schema.name });
+    const contents = new ContentsPage(page);
+
+    // Pre-check: the root holds Blog and Home.
+    await contents.goto(space.id);
+    await expect(contents.rows).toHaveCount(2);
+
+    // Action → post-check: a search in the root finds nothing below it.
+    await contents.search('hello');
+    await expect(page.getByText('No contents match.')).toBeVisible();
+
+    // Action → post-check: including subfolders, every match under the root, each with its path.
+    await contents.scope('Including subfolders');
+    await expect(contents.rows).toHaveCount(2);
+    await expect(contents.rowAt('Hello', 'blog/hello')).toBeVisible();
+    await expect(contents.rowAt('Hello again', 'blog/2024/hello-again')).toBeVisible();
+
+    // Action → post-check: back to the root's own rows.
+    await contents.scope('This folder');
+    await expect(page.getByText('No contents match.')).toBeVisible();
+    await contents.search('');
+    await expect(contents.rows).toHaveCount(2);
+    await expect(contents.row('Home')).toBeVisible();
+  });
+
   test('creates a document in the open folder; only Root schemas are offered @smoke', async ({ page, api, space }) => {
     const schema = await pageSchema(api, space);
     await api.createSchema(space.id, { name: `Node${schema.name}`, type: 'NODE', displayName: 'A Node' });
