@@ -28,9 +28,9 @@ test.describe('Assets → move', () => {
     await assets.openFolder('Images');
     await expect(assets.row('hero.png')).toBeVisible();
 
-    // Action 2: back to the root; Images itself is not offered (the file is there).
+    // Action 2: back to the root; Images is marked as where the file is.
     const form = await assets.openMove('hero.png');
-    await expect(await assets.openMoveOptions(form)).toHaveText(['Root | ~']);
+    await expect(assets.moveTarget('Images')).toContainText('(current)');
     await assets.moveTo(form, 'Root');
 
     // Post-check: gone from Images, at the root (also after a reload), same id and bytes.
@@ -53,11 +53,13 @@ test.describe('Assets → move', () => {
     const file = await api.uploadAsset(space.id, pngFile('wide.png'), banners.id);
     const assets = new AssetsPage(page);
 
-    // Pre-check: the options for Images leave out where it is (the root), itself and Banners under it.
+    // Pre-check: the tree for Images marks where it is (the root) and leaves out itself and Banners under it.
     await assets.goto(space.id);
     const form = await assets.openMove('Images');
-    await expect(await assets.openMoveOptions(form)).toHaveText(['Archive | Archive']);
-    await page.keyboard.press('Escape');
+    await expect(assets.moveTarget('Root')).toContainText('(current)');
+    await expect(assets.moveTarget('Archive')).toBeVisible();
+    await expect(assets.moveTarget('Images')).toHaveCount(0);
+    await expect(assets.moveTarget('Banners')).toHaveCount(0);
     await cancel(form);
     expect((await assetsIn(api, space.id)).map(listedName).sort()).toEqual(['Archive', 'Images']);
 

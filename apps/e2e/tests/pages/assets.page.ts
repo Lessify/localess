@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 import type { FilePayload } from '../support/files';
 import { escapeRegExp } from '../support/text';
-import { choose, dialog, rowMenu } from './dialogs';
+import { dialog, rowMenu } from './dialogs';
 import { expectToast } from './notifications';
 
 /** Space → Assets (`/features/spaces/:spaceId/assets`), list layout (the default). */
@@ -139,24 +139,18 @@ export class AssetsPage {
     return dialog(this.page, 'Move');
   }
 
-  /** The Move dialog's folder field (a combobox that searches the folders). */
-  folderField(form: Locator): Locator {
-    return form.getByRole('combobox', { name: 'Folder', exact: true });
+  /** A folder of the Move dialog's tree, by name (`Root` for the root); its row reads `(current)` where the item is. */
+  moveTarget(folder: string): Locator {
+    return this.page.getByRole('treeitem').filter({
+      has: this.page.locator(':scope > [data-slot="tree-item-row"]', {
+        hasText: new RegExp(`^\\s*${escapeRegExp(folder)}(\\s*\\(current\\))?\\s*$`),
+      }),
+    });
   }
 
-  /**
-   * Opens the folder list of the Move dialog and returns its options, each `name | path` (`Root | ~` for the root).
-   * The folders load after the dialog opens: check them with a retrying `expect(...).toHaveText([...])`.
-   */
-  async openMoveOptions(form: Locator): Promise<Locator> {
-    await this.folderField(form).click();
-    return this.page.getByRole('option');
-  }
-
-  /** Picks the target folder in the open Move dialog by its name (`Root` for the root) and moves. */
+  /** Picks the target folder in the open Move dialog's tree (the path to where the item is opens by itself) and moves. */
   async moveTo(form: Locator, folder: string): Promise<void> {
-    await choose(this.page, this.folderField(form), new RegExp(`^\\s*${escapeRegExp(folder)}\\s*\\|`));
-    await expect(this.folderField(form)).toHaveValue(new RegExp(`^${escapeRegExp(folder)} \\|`));
+    await this.moveTarget(folder).locator(':scope > [data-slot="tree-item-row"]').click();
     await form.getByRole('button', { name: 'Move' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'Asset has been moved.');

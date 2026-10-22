@@ -309,7 +309,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Delete a file a content uses: the warning names it; the content stays | UI + API | ✅ `assets/delete` |
 | Cancel keeps the file | UI + CDN | ✅ `assets/delete` |
 | Move a file into a folder and back (same id, URL works); move a folder with its subtree | UI + API + CDN | ✅ `assets/move` |
-| Move: the dialog leaves out where the item is, the folder itself and what is under it; the API refuses a cycle (400) | UI + API | ✅ `assets/move` |
+| Move: the dialog's folder tree marks where the item is and leaves out the folder itself and what is under it; the API refuses a cycle (400) | UI + API | ✅ `assets/move` |
+| A narrow window (400 px): the table keeps the name and Actions, the toolbar its buttons, the grid two cards a row; the picker its Upload and Add, an Asset field its Delete | UI | ✅ `assets/narrow` |
 | Moving onto a name the folder has gives two | UI + API | ✅ `assets/move` (roadmap N2) |
 | **Search** the folder, or with *Including subfolders* everything under it, each row and card showing where it is; back to the folder | UI | ✅ `assets/search` |
 | The picker: search and scope, the field's file type kept, the selection kept across folders | UI | ✅ `assets/search` |

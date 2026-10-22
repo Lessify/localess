@@ -1,4 +1,4 @@
-<div class="flex items-center justify-end gap-2 p-2">
+<div class="flex flex-wrap items-center justify-end gap-2 p-2">
   @if (fileUploadQueue().length > 0) {
     <span hlmBadge class="h-6">
       <hlm-spinner />
@@ -136,7 +136,8 @@
               }
             </td>
           </ng-container>
-          <ng-container llColumnDef="preview">
+          <!-- Optional columns leave a narrow table first, so the name and the actions always fit. -->
+          <ng-container llColumnDef="preview" llColumnDefClass="hidden @lg/table:table-cell">
             <th llHeaderCell *llHeaderCellDef>Preview</th>
             <td llCell *llCellDef="let element">
               @if (element.kind === 'FILE' && filePreview(element.type)) {
@@ -171,7 +172,7 @@
               </div>
             </td>
           </ng-container>
-          <ng-container llColumnDef="size">
+          <ng-container llColumnDef="size" llColumnDefClass="hidden @lg/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="size">File Size</th>
             <td llCell *llCellDef="let element">
               @if (element.size) {
@@ -181,7 +182,7 @@
               }
             </td>
           </ng-container>
-          <ng-container llColumnDef="type">
+          <ng-container llColumnDef="type" llColumnDefClass="hidden @md/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="type">Type</th>
             <td llCell *llCellDef="let element">
               @if (element.kind === 'FILE') {
@@ -195,13 +196,13 @@
               }
             </td>
           </ng-container>
-          <ng-container llColumnDef="createdAt">
+          <ng-container llColumnDef="createdAt" llColumnDefClass="hidden @md/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
             <td llCell *llCellDef="let element" [hlmTooltip]="element.createdAt | date: 'medium'">
               {{ element.createdAt | date: 'mediumDate' }}
             </td>
           </ng-container>
-          <ng-container llColumnDef="updatedAt">
+          <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @md/table:table-cell">
             <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
             <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
               {{ element.updatedAt | date: 'mediumDate' }}
@@ -277,7 +278,7 @@
         </table>
       </div>
     } @else {
-      <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 pb-2" role="list" aria-label="Asset cards">
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 pb-2" role="list" aria-label="Asset cards">
         @for (item of dataSource.renderedData(); track item.id) {
           <ll-asset-card
             role="listitem"
