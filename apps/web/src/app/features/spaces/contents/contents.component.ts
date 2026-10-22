@@ -306,7 +306,7 @@ export class ContentsComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.contentService.delete(this.spaceId(), element)),
+        switchMap(() => this.contentService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
@@ -355,7 +355,7 @@ export class ContentsComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.contentService.cloneDocument(this.spaceId(), element)),
+        switchMap(() => this.contentService.clone(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {

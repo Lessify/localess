@@ -22,7 +22,7 @@ describe('ExportDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: ContentService, useValue: { findAllByName } },
+        { provide: ContentService, useValue: { search: findAllByName } },
       ],
     });
     const fixture = TestBed.createComponent(ExportDialogComponent);

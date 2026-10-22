@@ -340,7 +340,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     }
 
     if (this.contentErrors.length === 0) {
-      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData).subscribe({
+      this.contentService.updateData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.previewComponent()?.sendEvent({ type: 'save', documentId: this.contentId() });

@@ -71,31 +71,20 @@ describe('ContentService', () => {
     subscription.unsubscribe();
   });
 
-  it('countAll() reads the count, filtered by kind when given', async () => {
+  it('search() searches the whole space, one page of at most `max`, by kind when given', async () => {
     const service = setup();
-    const all = firstValueFrom(service.countAll('space-1'));
-    http.expectOne(`${BASE}/count`).flush({ count: 7 });
-    expect(await all).toBe(7);
-
-    const documents = firstValueFrom(service.countAll('space-1', ContentKind.DOCUMENT));
-    http.expectOne(`${BASE}/count?kind=DOCUMENT`).flush({ count: 3 });
-    expect(await documents).toBe(3);
-  });
-
-  it('findAll*ByName() search the whole space, one page of at most `max`, by kind when given', async () => {
-    const service = setup();
-    const any = firstValueFrom(service.findAllByName('space-1', 'Ho'));
+    const any = firstValueFrom(service.search('space-1', 'Ho'));
     http.expectOne(`${BASE}?search=Ho&deep=true&size=20`).flush(page([{ id: 'h' }]));
     expect(await any).toEqual([{ id: 'h' }]);
 
-    const documents = firstValueFrom(service.findAllDocumentsByName('space-1', 'Ho', 5));
+    const documents = firstValueFrom(service.search('space-1', 'Ho', 5, ContentKind.DOCUMENT));
     http.expectOne(`${BASE}?search=Ho&deep=true&size=5&kind=DOCUMENT`).flush(page([]));
     await documents;
   });
 
-  it('findDocumentById() reads one document, with its data', async () => {
+  it('findOne() reads one document, with its data', async () => {
     const service = setup();
-    const document = firstValueFrom(service.findDocumentById('space-1', 'd1'));
+    const document = firstValueFrom(service.findOne('space-1', 'd1'));
     http.expectOne(`${BASE}/d1`).flush({ id: 'd1', data: { _id: 'x' } });
     expect(await document).toEqual({ id: 'd1', data: { _id: 'x' } });
   });
@@ -139,28 +128,28 @@ describe('ContentService', () => {
     await toFolder;
   });
 
-  it('updateDocumentData() puts the normalized data only (the server works out what it points to)', async () => {
+  it('updateData() puts the normalized data only (the server works out what it points to)', async () => {
     const service = setup();
     // A legacy block keyed by `schema`: normalizeContent stores it as `_schema`.
     const data = { _id: 'root', schema: 'page', title: 'Hi' };
-    const done = firstValueFrom(service.updateDocumentData('space-1', 'd1', data as never));
+    const done = firstValueFrom(service.updateData('space-1', 'd1', data as never));
     const request = http.expectOne({ method: 'PUT', url: `${BASE}/d1/data` });
     expect(request.request.body).toEqual({ data: { _id: 'root', _schema: 'page', title: 'Hi' } });
     request.flush({});
     await done;
   });
 
-  it('cloneDocument() clones on the server and returns the copy', async () => {
+  it('clone() clones on the server and returns the copy', async () => {
     const service = setup();
-    const result = firstValueFrom(service.cloneDocument('space-1', { id: 'd1' } as ContentDocument));
+    const result = firstValueFrom(service.clone('space-1', 'd1'));
     const request = http.expectOne({ method: 'POST', url: `${BASE}/d1/clone` });
     request.flush({ id: 'd2' });
     expect((await result).id).toBe('d2');
   });
 
-  it('delete() deletes the content', async () => {
+  it('remove() deletes the content', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', { id: 'c1' } as Content));
+    const done = firstValueFrom(service.remove('space-1', 'c1'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/c1` }).flush(null);
     await done;
   });

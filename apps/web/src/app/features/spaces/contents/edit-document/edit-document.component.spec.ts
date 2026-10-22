@@ -90,7 +90,7 @@ describe('EditDocumentComponent', () => {
     TestBed.overrideComponent(EditDocumentComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: ContentService, useValue: { publish, unpublish, updateDocumentData } },
+        { provide: ContentService, useValue: { publish, unpublish, updateData: updateDocumentData } },
         { provide: TranslateService, useValue: { translateBatch } },
         { provide: SpaceTokenService, useValue: { firstValue } },
         { provide: HlmDialogService, useValue: { open } },

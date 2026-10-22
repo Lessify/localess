@@ -74,9 +74,9 @@ describe('ContentsComponent', () => {
             createDocument,
             createFolder,
             update,
-            delete: deleteContent,
+            remove: deleteContent,
             move,
-            cloneDocument,
+            clone: cloneDocument,
             publish,
             unpublish,
           },
@@ -270,7 +270,7 @@ describe('ContentsComponent', () => {
         expect.anything(),
         expect.objectContaining({ context: expect.objectContaining({ title: 'Delete Folder' }) }),
       );
-      expect(deleteContent).toHaveBeenCalledWith('space-1', element);
+      expect(deleteContent).toHaveBeenCalledWith('space-1', element.id);
       expect(success).toHaveBeenCalledWith("Folder 'Folder' has been deleted.");
     });
 
@@ -281,7 +281,7 @@ describe('ContentsComponent', () => {
 
       component.openDeleteDialog(element);
 
-      expect(deleteContent).toHaveBeenCalledWith('space-1', element);
+      expect(deleteContent).toHaveBeenCalledWith('space-1', element.id);
       expect(success).toHaveBeenCalledWith("Document 'Page' has been deleted.");
     });
 
@@ -327,7 +327,7 @@ describe('ContentsComponent', () => {
 
       component.openCloneDialog(element);
 
-      expect(cloneDocument).toHaveBeenCalledWith('space-1', element);
+      expect(cloneDocument).toHaveBeenCalledWith('space-1', element.id);
       expect(success).toHaveBeenCalledWith("Document 'Page' has been cloned.");
     });
 
