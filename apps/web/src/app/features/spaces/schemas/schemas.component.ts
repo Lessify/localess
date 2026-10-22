@@ -5,7 +5,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   inject,
   Injector,
   input,
@@ -14,12 +13,12 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -110,6 +109,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
+  private readonly spaceStore = inject(SpaceStore);
 
   sort = viewChild.required(TableSort);
   paginator = viewChild.required(Paginator);
@@ -121,16 +121,18 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   protected readonly schemaTypeDescription = (type: SchemaType) => schemaTypeDescriptions[type];
 
   displayedColumns: string[] = ['type', 'name', 'description', 'labels', /*'createdAt',*/ 'updatedAt', 'actions'];
-  schemas = signal<Schema[]>([]);
+  /**
+   * Every schema of the space, from `SpaceStore` (live): the editors need them all anyway, so the list is not paged on
+   * the server; search, label filter, sort and paging run here (docs/server/pagination.md#not-paged-and-why).
+   */
+  readonly schemas = computed(() => [...this.spaceStore.schemas()].sort(sortSchema));
   readonly dataSource = new TableDataSource<Schema>(this.schemas, this.injector);
   /** Names (shown as IDs) already taken; content and fields refer to schemas by name. */
   schemaNames = computed(() => this.schemas().map(it => it.name));
   schemasInUse = computed(() => this.inUseSchema(this.schemas()));
 
-  private destroyRef = inject(DestroyRef);
-
   // Loading
-  isLoading = signal(true);
+  readonly isLoading = computed(() => !this.spaceStore.schemasLoaded());
 
   //Labels
   readonly labelOptions: Signal<FilterOption[]> = computed(() => {
@@ -153,7 +155,6 @@ export class SchemasComponent implements OnInit, AfterViewInit {
       searchFields: schema => [schema.name, schema.displayName, schema.description],
       filterFields: [{ key: 'labels', accessor: schema => schema.labels }],
     });
-    this.loadData(this.spaceId());
   }
 
   onFilterChange(value: FilterToolbarValue): void {
@@ -164,18 +165,6 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort();
     this.dataSource.paginator = this.paginator();
-  }
-
-  loadData(spaceId: string): void {
-    this.schemaService
-      .findAll(spaceId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: schemas => {
-          this.schemas.set(schemas.sort(sortSchema));
-          this.isLoading.set(false);
-        },
-      });
   }
 
   openAddDialog(): void {

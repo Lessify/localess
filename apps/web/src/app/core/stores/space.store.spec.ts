@@ -228,6 +228,7 @@ describe('SpaceStore', () => {
 
       expect(store.documents()).toEqual([{ id: 'doc' }]);
       expect(store.schemas()).toEqual([{ id: 'schema' }]);
+      expect(store.schemasLoaded()).toBe(true);
     });
 
     it('never listens to a persisted space that no longer exists (new install, deleted space)', () => {
@@ -297,6 +298,8 @@ describe('SpaceStore', () => {
       expect(schemas.subjects.get('b')?.observed).toBe(true);
       expect(store.documents()).toEqual([]);
       expect(store.schemas()).toEqual([]);
+      // Not loaded yet for the new space: the Schemas page shows its loading bar, not "no schemas".
+      expect(store.schemasLoaded()).toBe(false);
     });
 
     it('keeps the listeners and data when re-selecting the current space', () => {

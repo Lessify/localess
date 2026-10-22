@@ -67,7 +67,8 @@ Holds the sidebar's list of spaces, and the selected space with what its screens
   environment: SpaceEnvironment | undefined,
   contentFolderId: string | null, // content folder shown (null: root); breadcrumbs come from the live folder map
   assetFolderId: string | null,   // asset folder shown (null: root); breadcrumbs come from the live folder map
-  schemas: Schema[],         // schemas for the selected space
+  schemas: Schema[],         // schemas for the selected space (every one: the editors and the Schemas page read them)
+  schemasLoaded: boolean,    // whether schemas arrived for the selected space (false again on a space change)
   documents: ContentDocument[] // documents for the selected space
 }
 

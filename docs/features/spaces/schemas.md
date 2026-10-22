@@ -38,12 +38,12 @@ apps/web/src/app/features/spaces/schemas/
 
 Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), filterable by **labels** (multi-select) and free-text search via an `<ll-filter-toolbar>` (see [Filter Toolbar](../../components/filter-toolbar.md)) — no page-owned `FormGroup` or hand-written predicate anymore.
 
-**Injected services:** `SchemaService`, `TaskService`, `HlmDialogService`, `NotificationService`, `Router`
+**Injected services:** `SchemaService`, `TaskService`, `HlmDialogService`, `NotificationService`, `Router`, `SpaceStore`
 
 **Key behaviour:**
-- `loadData()` — fetches all schemas for the space
+- `schemas` — every schema of the space from `SpaceStore.schemas()` (live; the store loads them for the editors anyway), sorted; `isLoading` until the store has them (`schemasLoaded`). Not paged on the server: see [Pagination](../../server/pagination.md#not-paged-and-why)
 - `labelOptions` / `filters` — computed `FilterOption[]`/`FilterDef[]` fed to `<ll-filter-toolbar [filters]="filters()">`
-- `onFilterChange(value)` — receives the toolbar's debounced `FilterToolbarValue`, updates `selectedLabels` (used to highlight matched label badges in the table) and `dataSource.filter`
+- `onFilterChange(value)` — receives the toolbar's `FilterToolbarValue` (search on Enter or the Search button), updates `selectedLabels` (used to highlight matched label badges in the table) and `dataSource.filter`
 - `dataSource.filterPredicate` — set once in `ngOnInit` via `FilterPredicateUtils.create()` (search across id/displayName/description + array-overlap on `labels`)
 - `onRowSelect(schema)` — navigates to `edit-comp` or `edit-enum` based on schema type
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)

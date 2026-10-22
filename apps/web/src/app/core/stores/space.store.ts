@@ -50,6 +50,8 @@ export type SpaceState = {
   /** The selected space's environments, every one in its order, with its URL (`GET /spaces/:spaceId/environments/names`). */
   environments: IdNameUrl[];
   schemas: Schema[];
+  /** Whether `schemas` arrived for the selected space (an empty list is then "no schemas", not "loading"). */
+  schemasLoaded: boolean;
   documents: ContentDocument[];
 };
 
@@ -64,6 +66,7 @@ const initialState: SpaceState = {
   currentSpace: undefined,
   environments: [],
   schemas: [],
+  schemasLoaded: false,
   documents: [],
 };
 
@@ -158,7 +161,16 @@ export const SpaceStore = signalStore(
       _syncSpaceData: rxMethod<string | undefined>(
         pipe(
           distinctUntilChanged(),
-          tap(() => patchState(state, { currentSpace: undefined, environments: [], environment: undefined, schemas: [], documents: [] })),
+          tap(() =>
+            patchState(state, {
+              currentSpace: undefined,
+              environments: [],
+              environment: undefined,
+              schemas: [],
+              schemasLoaded: false,
+              documents: [],
+            }),
+          ),
           switchMap(spaceId =>
             spaceId
               ? merge(
@@ -193,7 +205,7 @@ export const SpaceStore = signalStore(
                         () => schemaService.findAll(spaceId),
                         'schemaService.findAll listener failed',
                         'Lost connection to schema updates. Retrying…',
-                      ).pipe(map(schemas => ({ schemas })))
+                      ).pipe(map(schemas => ({ schemas, schemasLoaded: true })))
                     : EMPTY,
                 )
               : EMPTY,

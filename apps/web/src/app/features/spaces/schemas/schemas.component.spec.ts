@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
@@ -6,6 +7,7 @@ import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@localess/
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -21,7 +23,6 @@ describe('SchemasComponent', () => {
   });
 
   function setup(schemas: Schema[] = []) {
-    const findAll = vi.fn().mockReturnValue(of(schemas));
     const create = vi.fn().mockReturnValue(of(undefined));
     const updateName = vi.fn().mockReturnValue(of(undefined));
     const usage = vi.fn().mockReturnValue(of({ fields: [], contents: { count: 0, first: [] } }));
@@ -38,7 +39,8 @@ describe('SchemasComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll, create, updateName, usage, delete: deleteSchema } },
+        { provide: SchemaService, useValue: { create, updateName, usage, delete: deleteSchema } },
+        { provide: SpaceStore, useValue: { schemas: signal(schemas), schemasLoaded: signal(true) } },
         { provide: TaskService, useValue: { createSchemaImportTask, createSchemaExportTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
@@ -50,7 +52,6 @@ describe('SchemasComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findAll,
       create,
       updateName,
       usage,
@@ -72,12 +73,11 @@ describe('SchemasComponent', () => {
     return new HttpErrorResponse({ status: 409, error: { message } });
   }
 
-  it('loads and sorts schemas on init', () => {
+  it("shows the space's schemas from SpaceStore, sorted, without a request of its own", () => {
     const b = schema({ id: 'b', name: 'b', displayName: 'B' });
     const a = schema({ id: 'a', name: 'a', displayName: 'A' });
-    const { component, findAll } = setup([b, a]);
+    const { component } = setup([b, a]);
 
-    expect(findAll).toHaveBeenCalledWith('space-1');
     expect(component.schemas().map(s => s.id)).toEqual(['a', 'b']);
     expect(component.isLoading()).toBe(false);
   });

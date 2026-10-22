@@ -112,7 +112,11 @@ The Tasks list is the reference; each step names the file.
 
 ## Not paged (and why)
 
-- Schemas: bounded per space and needed whole by the editors.
+- Schemas: bounded per space (tens to a few hundred, not thousands like translation keys) and needed whole: the
+  content editor renders any document's form and its nested blocks, the schema editors offer the other schemas, and
+  cross references (what uses a schema) are worked out over all of them. `SpaceStore` holds them live
+  (`GET …/schemas`, every schema); the Schemas page reads the store (no request of its own) and searches, filters,
+  sorts and pages in the browser (`TableDataSource`, see [Table](../components/table.md)).
 - Folder lists for breadcrumbs and move targets (`…/folders`): the editor's folder map.
 - `SpaceStore` reads every space (100 a page): paging Spaces buys consistency and a faster admin table, not
   scalability, until the switcher searches the server.
