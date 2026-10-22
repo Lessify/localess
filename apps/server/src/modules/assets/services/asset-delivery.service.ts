@@ -128,7 +128,7 @@ export class AssetDeliveryService {
   /** `GET /assets/:id/original` and `/download`: the stored bytes, untouched. */
   async findStored(spaceId: string, assetId: string): Promise<StoredAsset | MissingAsset> {
     const key = originalKey(spaceId, assetId);
-    const [object, asset] = await Promise.all([this.storage.stat(key), this.assetRepository.findById(spaceId, assetId)]);
+    const [object, asset] = await Promise.all([this.storage.stat(key), this.assetRepository.findOne(spaceId, assetId)]);
     if (!object || !asset) return { kind: 'missing', rowExists: asset !== undefined };
     return {
       kind: 'found',
@@ -156,7 +156,7 @@ export class AssetDeliveryService {
   ): Promise<MissingAsset | { kind: 'canonical'; query: AssetTransformQuery } | { kind: 'plan'; plan: TransformPlan }> {
     const { quality, fit, thumbnail } = query;
     const key = originalKey(spaceId, assetId);
-    const [object, asset] = await Promise.all([this.storage.stat(key), this.assetRepository.findById(spaceId, assetId)]);
+    const [object, asset] = await Promise.all([this.storage.stat(key), this.assetRepository.findOne(spaceId, assetId)]);
     if (!object || !asset) return { kind: 'missing', rowExists: asset !== undefined };
     const assetType = asset.type ?? '';
     const extension = asset.extension ?? '';

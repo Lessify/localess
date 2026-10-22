@@ -60,6 +60,7 @@ const REWORKED = [
   'modules/translations/',
   'modules/schemas/',
   'modules/contents/',
+  'modules/assets/',
 ];
 const isReworked = (file: File) => REWORKED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/');
 

@@ -109,7 +109,8 @@ describe('app API: assets', () => {
   });
 
   describe('uploads', () => {
-    let photo: Record<string, unknown> & { id: string; md5: string };
+    let photo: Record<string, unknown> & { id: string };
+    let photoBytes: Buffer;
 
     it('stores the file and records size, md5, oriented dimensions and the embedded caption', async () => {
       // Stored 400x300 with EXIF orientation 6 (rotate 90°): it displays as 300x400 portrait.
@@ -117,6 +118,7 @@ describe('app API: assets', () => {
         .withMetadata({ orientation: 6 })
         .withExif({ IFD0: { ImageDescription: 'Sunset over the bay' } })
         .toBuffer();
+      photoBytes = bytes;
       const response = await upload({ parentId: nested.id }, { filename: 'Sunset.Final.JPG', type: 'image/jpeg', bytes });
       expect(response.statusCode, response.body).toBe(201);
       photo = response.json();
@@ -126,19 +128,19 @@ describe('app API: assets', () => {
         extension: '.JPG',
         type: 'image/jpeg',
         size: bytes.length,
-        md5: createHash('md5').update(bytes).digest('base64'),
         parentId: nested.id,
         alt: 'Sunset over the bay',
         metadata: { type: 'image', format: 'jpg', width: 300, height: 400, orientation: 'portrait' },
       });
-      // The response is the stored asset: there is no in-progress state.
+      // The response is the stored asset: there is no in-progress state. The md5 stays on the server (ETags).
       expect(photo).not.toHaveProperty('inProgress');
+      expect(photo).not.toHaveProperty('md5');
     });
 
     it('is served by the public API straight away, with an ETag built from the stored md5', async () => {
       const response = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo['id']}/original` });
       expect(response.statusCode).toBe(200);
-      expect(response.headers.etag).toBe(`"${photo['md5']}-orig"`);
+      expect(response.headers.etag).toBe(`"${createHash('md5').update(photoBytes).digest('base64')}-orig"`);
     });
 
     it('records the frame count of animations and keeps explicit name, alt and source', async () => {

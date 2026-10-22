@@ -1,5 +1,5 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, inArray, isNull, like, or, SQL, sql } from 'drizzle-orm';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { and, asc, desc, eq, ilike, inArray, isNull, like, or, SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -9,8 +9,8 @@ import { EventService } from '../../../infra/events/event.service.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { escapeLike } from '../../../shared/utils/paging.js';
+import { assetErrors } from '../utils/asset-errors.js';
 
 export interface AssetQuery {
   /** `null`: the root's children; absent: any parent. */
@@ -43,22 +43,20 @@ interface WriteResult<T> {
   changed: { id: string; op: 'created' | 'updated' | 'deleted' }[];
 }
 
-export type MoveResult = { asset: AssetEntity } | { noParent: true } | { intoItself: true };
-
 /**
  * The `assets` rows of a space. The tree is linked by `parent_id`: the foreign key keeps every child with its parent
  * (a delete cascades to the subtree, whose stored files are queued first), so a move changes one row. Every write, in
- * one transaction: the space checked (404 when gone), the space's assets lock (first, so the writes of a space run one
- * at a time and never deadlock on row locks), the change and an `assets` change event per changed row. The parent is
- * checked to be a folder of the space in the write's transaction. Writes on an asset id the space does not have answer
- * `undefined` and change nothing.
+ * one transaction: the space's assets lock (first, so the writes of a space run one at a time and never deadlock on row
+ * locks), the change and an `assets` change event per changed row. The service checks the space, the asset and the
+ * parent first; a write checks the parent again under the lock and throws the service's message (`assetErrors`) when
+ * another write changed it since. A write on an asset that went meanwhile changes nothing: the service's read after it
+ * answers 404.
  */
 @Injectable()
 export class AssetRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,
-    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
   findAll(spaceId: string, query: AssetQuery): Promise<AssetEntity[]> {
@@ -73,42 +71,37 @@ export class AssetRepository {
       const ids = query.ids.filter(isUuid);
       conditions.push(ids.length ? inArray(assets.id, ids) : sql`false`);
     }
-    const select = this.db
-      .select()
-      .from(assets)
-      .where(and(...conditions))
-      .orderBy(desc(assets.kind), asc(assets.name));
-    return query.limit ? select.limit(query.limit) : select;
+    return this.db.query.assets.findMany({
+      where: and(...conditions),
+      orderBy: [desc(assets.kind), asc(assets.name)],
+      ...(query.limit ? { limit: query.limit } : {}),
+    });
   }
 
-  async count(spaceId: string, kind?: 'FOLDER' | 'FILE'): Promise<number> {
-    const [{ value }] = await this.db
-      .select({ value: count() })
-      .from(assets)
-      .where(kind ? and(eq(assets.spaceId, spaceId), eq(assets.kind, kind)) : eq(assets.spaceId, spaceId));
-    return Number(value);
+  count(spaceId: string, kind?: 'FOLDER' | 'FILE'): Promise<number> {
+    return this.db.$count(assets, kind ? and(eq(assets.spaceId, spaceId), eq(assets.kind, kind)) : eq(assets.spaceId, spaceId));
   }
 
-  findById(spaceId: string, id: string): Promise<AssetEntity | undefined> {
+  findOne(spaceId: string, id: string): Promise<AssetEntity | undefined> {
     return this.find(this.db, spaceId, id);
   }
 
   /** The UUID of the asset imported from Firebase with the Firestore id `legacyId`. */
   async findIdByLegacyId(spaceId: string, legacyId: string): Promise<string | undefined> {
-    const [row] = await this.db
-      .select({ id: assets.id })
-      .from(assets)
-      .where(and(eq(assets.spaceId, spaceId), eq(assets.legacyId, legacyId)));
+    const row = await this.db.query.assets.findFirst({
+      columns: { id: true },
+      where: and(eq(assets.spaceId, spaceId), eq(assets.legacyId, legacyId)),
+    });
     return row?.id;
   }
 
   /** Every folder of the space, by name: the editor's folder map. */
   findFolders(spaceId: string): Promise<Pick<AssetEntity, 'id' | 'parentId' | 'name'>[]> {
-    return this.db
-      .select({ id: assets.id, parentId: assets.parentId, name: assets.name })
-      .from(assets)
-      .where(and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FOLDER')))
-      .orderBy(asc(assets.name));
+    return this.db.query.assets.findMany({
+      columns: { id: true, parentId: true, name: true },
+      where: and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FOLDER')),
+      orderBy: asc(assets.name),
+    });
   }
 
   /** Whether `parentId` is null (the root) or a folder of the space. */
@@ -118,13 +111,15 @@ export class AssetRepository {
     return row?.kind === 'FOLDER';
   }
 
-  /** `undefined` when `parentId` is not a folder of the space. */
-  createFolder(spaceId: string, parentId: string | null, name: string, tx?: Transaction): Promise<AssetEntity | undefined> {
-    return this.write(spaceId, tx, async t => {
-      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) return undefined;
-      const [row] = await t.insert(assets).values({ id: newUuid(), spaceId, kind: 'FOLDER', name, parentId }).returning();
-      return { result: row, changed: [{ id: row.id, op: 'created' }] };
+  /** The new folder's id. The parent is locked (shared): a delete or move of it waits for the insert. */
+  async createFolder(spaceId: string, parentId: string | null, name: string, tx?: Transaction): Promise<string> {
+    const id = newUuid();
+    await this.write(spaceId, tx, async t => {
+      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) throw new BadRequestException(assetErrors.noFolder);
+      await t.insert(assets).values({ id, spaceId, kind: 'FOLDER', name, parentId });
+      return { result: undefined, changed: [{ id, op: 'created' }] };
     });
+    return id;
   }
 
   /** Before an upload stores a new asset's file: queued for deletion in an hour unless its row is created. */
@@ -138,56 +133,56 @@ export class AssetRepository {
   }
 
   /**
-   * The row of a file already in storage, releasing its guard. `undefined` when its folder is gone since the upload
-   * checked it (the file is then the caller's to remove).
+   * The row of a file already in storage, releasing its guard. Throws when its folder went since the upload checked it
+   * (the file is then the caller's to remove).
    */
-  createFile(spaceId: string, values: NewAssetFile, tx?: Transaction): Promise<AssetEntity | undefined> {
-    return this.write(spaceId, tx, async t => {
-      if (values.parentId && !(await this.lockFolder(t, spaceId, values.parentId))) return undefined;
-      const [row] = await t
-        .insert(assets)
-        .values({ ...values, spaceId, kind: 'FILE' })
-        .returning();
+  async createFile(spaceId: string, values: NewAssetFile, tx?: Transaction): Promise<string> {
+    await this.write(spaceId, tx, async t => {
+      if (values.parentId && !(await this.lockFolder(t, spaceId, values.parentId))) throw new BadRequestException(assetErrors.noFolder);
+      await t.insert(assets).values({ ...values, spaceId, kind: 'FILE' });
       await releaseUploadGuards(t, spaceId, [values.id]);
-      return { result: row, changed: [{ id: values.id, op: 'created' }] };
+      return { result: undefined, changed: [{ id: values.id, op: 'created' }] };
     });
+    return values.id;
   }
 
   /** Name for folders; name and alt for files (empty alt removes it). */
-  update(spaceId: string, id: string, values: { name?: string; alt?: string }, tx?: Transaction): Promise<AssetEntity | undefined> {
+  update(spaceId: string, id: string, values: { name?: string; alt?: string }, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
-      if (current.kind !== 'FILE' && values.alt !== undefined) throw new BadRequestException('Only files have alt text');
-      const [row] = await t
+      if (current.kind !== 'FILE' && values.alt !== undefined) throw new BadRequestException(assetErrors.altOnFolder);
+      await t
         .update(assets)
         .set({
           name: values.name ?? current.name,
           ...(current.kind === 'FILE' && values.alt !== undefined ? { alt: values.alt || null } : {}),
         })
-        .where(this.byId(spaceId, id))
-        .returning();
-      return { result: row, changed: [{ id, op: 'updated' }] };
+        .where(this.byId(spaceId, id));
+      return { result: undefined, changed: [{ id, op: 'updated' }] };
     });
   }
 
-  /** A file or a folder, with everything under it: one row. A folder is not moved under itself (`intoItself`). */
-  move(spaceId: string, id: string, parentId: string | null, tx?: Transaction): Promise<MoveResult | undefined> {
-    return this.write<MoveResult>(spaceId, tx, async t => {
+  /** A file or a folder, with everything under it: one row. A folder is not moved under itself. */
+  move(spaceId: string, id: string, parentId: string | null, tx?: Transaction): Promise<void> {
+    return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
-      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) return { result: { noParent: true as const }, changed: [] };
+      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) throw new BadRequestException(assetErrors.noFolder);
       if (current.kind === 'FOLDER' && (await isAssetUnderOrSelf(t, spaceId, id, parentId))) {
-        return { result: { intoItself: true as const }, changed: [] };
+        throw new BadRequestException(assetErrors.intoItself);
       }
-      const [row] = await t.update(assets).set({ parentId }).where(this.byId(spaceId, id)).returning();
-      return { result: { asset: row }, changed: [{ id, op: 'updated' }] };
+      await t.update(assets).set({ parentId }).where(this.byId(spaceId, id));
+      return { result: undefined, changed: [{ id, op: 'updated' }] };
     });
   }
 
-  /** Deletes a file, or a folder with every row under it, queueing their stored files for deletion. Answers the deleted rows. */
-  delete(spaceId: string, id: string, tx?: Transaction): Promise<{ id: string; kind: string }[] | undefined> {
-    return this.write(spaceId, tx, async t => {
+  /**
+   * Deletes a file, or a folder with every row under it, queueing their stored files for deletion. Answers the deleted
+   * rows; none when the asset went meanwhile.
+   */
+  async delete(spaceId: string, id: string, tx?: Transaction): Promise<{ id: string; kind: string }[]> {
+    const deleted = await this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
       // The subtree before the rows go (the foreign key cascades): its files are queued, its rows are the events.
@@ -201,25 +196,19 @@ export class AssetRepository {
       );
       return { result: rows, changed: rows.map(it => ({ id: it.id, op: 'deleted' as const })) };
     });
+    return deleted ?? [];
   }
 
   /**
-   * Runs `work` in the write's transaction (or the caller's), with the space checked first; then queues the change
-   * events. When `work` finds no asset it answers `undefined`.
+   * Runs `work` in the write's transaction (or the caller's) after the space's assets lock; then queues the change
+   * events. When `work` finds no asset it answers `undefined` and nothing changes.
    */
-  private write<T>(spaceId: string, tx: Transaction | undefined, work: (tx: Transaction) => Promise<WriteResult<T>>): Promise<T>;
-  private write<T>(
-    spaceId: string,
-    tx: Transaction | undefined,
-    work: (tx: Transaction) => Promise<WriteResult<T> | undefined>,
-  ): Promise<T | undefined>;
   private write<T>(
     spaceId: string,
     tx: Transaction | undefined,
     work: (tx: Transaction) => Promise<WriteResult<T> | undefined>,
   ): Promise<T | undefined> {
     return transaction(this.db, tx, async t => {
-      if (!(await this.spaceLookupRepository.exists(spaceId, t))) throw new NotFoundException('Space not found');
       // First, before any row lock: the writes of a space take it in the same order, so they never deadlock.
       await t.execute(sql`select pg_advisory_xact_lock(hashtext('assets'), hashtext(${spaceId}))`);
       const outcome = await work(t);
@@ -247,16 +236,13 @@ export class AssetRepository {
       assetIds.map(id => sql`${id}`),
       sql`, `,
     );
-    const [{ value }] = await this.db
-      .select({ value: count() })
-      .from(contents)
-      .where(
-        and(
-          eq(contents.spaceId, spaceId),
-          sql`exists (select 1 from jsonb_path_query(${contents.data}, 'lax $.** ? (@.kind == "ASSET").uri') as ref(uri) where ref.uri #>> '{}' in (${ids}))`,
-        ),
-      );
-    return Number(value);
+    return this.db.$count(
+      contents,
+      and(
+        eq(contents.spaceId, spaceId),
+        sql`exists (select 1 from jsonb_path_query(${contents.data}, 'lax $.** ? (@.kind == "ASSET").uri') as ref(uri) where ref.uri #>> '{}' in (${ids}))`,
+      ),
+    );
   }
 
   /** Locks folder `id` (shared: not deleted or moved meanwhile); `false` when the space has no such folder. */
@@ -266,10 +252,9 @@ export class AssetRepository {
     return row?.kind === 'FOLDER';
   }
 
-  private async find(executor: Pick<Database, 'select'>, spaceId: string, id: string): Promise<AssetEntity | undefined> {
+  private async find(executor: Database | Transaction, spaceId: string, id: string): Promise<AssetEntity | undefined> {
     if (!isUuid(id)) return undefined;
-    const [row] = await executor.select().from(assets).where(this.byId(spaceId, id));
-    return row;
+    return executor.query.assets.findFirst({ where: this.byId(spaceId, id) });
   }
 
   private byId(spaceId: string, id: string) {
