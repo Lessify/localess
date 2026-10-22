@@ -1,36 +1,43 @@
 <hlm-dialog-header>
   <h2 hlmDialogTitle>Move</h2>
 </hlm-dialog-header>
-<form [formGroup]="form" class="flex flex-col gap-4">
-  <div hlmField>
-    <label hlmFieldLabel for="folder">Folder</label>
-    <hlm-combobox
-      id="folder"
-      [(search)]="search"
-      [filter]="noOpFilter"
-      [value]="selected()"
-      (valueChange)="choose($event)"
-      [itemToString]="displayItem">
-      <hlm-combobox-input placeholder="Search folders..." showClear />
-      <hlm-combobox-content *hlmComboboxPortal>
-        <hlm-combobox-empty>No results found.</hlm-combobox-empty>
-        <div hlmComboboxList>
-          @for (target of options(); track target.id) {
-            <hlm-combobox-item [value]="target">
-              <ng-icon hlm size="sm" [name]="target.id === null ? 'lucideHouse' : 'lucideFolder'" />
-              {{ target.name }}
-              <span class="text-muted-foreground text-xs">| {{ target.path || '~' }}</span>
-            </hlm-combobox-item>
-          }
-        </div>
-      </hlm-combobox-content>
-    </hlm-combobox>
-    @if (form.controls['target'].errors; as errors) {
-      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+<div class="flex flex-col gap-3">
+  <!-- Every folder is here already (SpaceStore), so the filter applies as you type. -->
+  <div hlmInputGroup>
+    <input
+      hlmInputGroupInput
+      type="search"
+      placeholder="Filter folders..."
+      aria-label="Filter folders"
+      [value]="search()"
+      (input)="onSearch($event)" />
+    <div hlmInputGroupAddon>
+      <ng-icon name="lucideSearch" />
+    </div>
+  </div>
+  <div class="max-h-[50vh] min-h-40 overflow-y-auto rounded-md border p-2" role="region" aria-label="Folders">
+    <ll-tree
+      [nodes]="nodes()"
+      [selectGroups]="true"
+      [expandedKeys]="shownExpandedKeys()"
+      (expandedKeysChange)="onExpandedKeysChange($event)"
+      [selectedKey]="selectedKey()"
+      (selectedKeyChange)="selectedKey.set($event)"
+      [guides]="true">
+      <ng-template llTreeNodeDef let-node>
+        <ng-icon hlm size="sm" [name]="node.id === null ? 'lucideHouse' : 'lucideFolder'" />
+        <span class="truncate" [title]="node.path || '~'">{{ node.name }}</span>
+        @if (node.current) {
+          <span class="text-muted-foreground text-xs">(current)</span>
+        }
+      </ng-template>
+    </ll-tree>
+    @if (search().trim() && nodes()[0].children === undefined) {
+      <p class="text-muted-foreground px-2 py-1 text-sm">No folders match.</p>
     }
   </div>
-</form>
+</div>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
-  <button hlmBtn [disabled]="!form.valid" (click)="save()">Move</button>
+  <button hlmBtn [disabled]="!canMove()" (click)="save()">Move</button>
 </hlm-dialog-footer>

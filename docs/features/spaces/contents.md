@@ -77,7 +77,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
 - `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:contentId/publish`), which writes one published `content_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
 - `openUnpublishDialog()` — removes the published snapshot (`POST …/:contentId/unpublish` deletes the published `content_snapshots` rows)
-- `openMoveDialog()` — moves a document or folder (`PATCH …/:contentId { parentId }`, `null`: the root); the dialog lists the root and every folder from `SpaceStore.contentFolders()`, without where the item is and, for a folder, without itself and everything under it
+- `openMoveDialog()` — moves a document or folder (`PATCH …/:contentId { parentId }`, `null`: the root). The dialog (`move-dialog/`) shows a tree (`ll-tree` with `selectGroups`): Root, with every folder of `SpaceStore.contentFolders()` under it by name; the path to where the item is opens, and that folder is marked *(current)*, Move staying disabled until another one is chosen; a folder with folders under it is a target like any other (a click selects and opens it); a moved folder and everything under it are left out. The filter box (as you type: every folder is already there) keeps a match's parents, with every branch open
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
 - `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export

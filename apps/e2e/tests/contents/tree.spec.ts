@@ -210,10 +210,8 @@ test.describe('Contents → folders and documents', () => {
     // A folder is not offered as a target inside itself; the server refuses it too.
     await contents.rootFolder.click();
     const form = await contents.openMove('News');
-    await form.getByRole('combobox').click();
     await expect(contents.moveTarget('Blog')).toBeVisible();
     await expect(contents.moveTarget('News')).toHaveCount(0);
-    await page.keyboard.press('Escape');
     await cancel(form);
     const before = await contentById(api, space.id, news.id);
     const self = await request.patch(`/api/app/spaces/${space.id}/contents/${news.id}`, {
@@ -224,6 +222,38 @@ test.describe('Contents → folders and documents', () => {
     const after = await contentById(api, space.id, news.id);
     expect(after.parentId).toBe(before.parentId);
     expect(after.fullSlug).toBe('news');
+  });
+
+  test('moves into a folder that has folders of its own, picked in the tree; where the item is can not be picked', async ({
+    page,
+    api,
+    space,
+  }) => {
+    const schema = await pageSchema(api, space);
+    const blog = await api.createFolder(space.id, { name: 'Blog', slug: 'blog' });
+    await api.createFolder(space.id, { name: '2024', slug: '2024', parentId: blog.id });
+    await api.createDocument(space.id, { name: 'Home', slug: 'home', schema: schema.name });
+    const contents = new ContentsPage(page);
+    await contents.goto(space.id);
+
+    // Pre-check: the item is at the root, which the tree marks; Move waits for another place.
+    const form = await contents.openMove('Home');
+    await expect(contents.moveTarget('Root')).toContainText('(current)');
+    const move = form.getByRole('button', { name: 'Move' });
+    await expect(move).toBeDisabled();
+    await expect(contents.moveTarget('2024')).toHaveCount(0);
+
+    // Action: a folder with folders under it selects (and opens) like any other.
+    await contents.moveTarget('Blog').locator(':scope > [data-slot="tree-item-row"]').click();
+    await expect(contents.moveTarget('Blog')).toHaveAttribute('aria-selected', 'true');
+    await expect(contents.moveTarget('2024')).toBeVisible();
+    await move.click();
+
+    // Post-check
+    await expectToast(page, 'Content has been moved.');
+    await expect(contents.row('Home')).toHaveCount(0);
+    await contents.openFolder('Blog');
+    await expect(contents.row('Home')).toBeVisible();
   });
 
   test('clones a document: a copy with a suffix, its data, never published', async ({ page, api, space, request }) => {

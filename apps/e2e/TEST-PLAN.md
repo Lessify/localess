@@ -219,6 +219,7 @@ receives). Specs in `tests/contents/`.
 | Slugs: taken in the folder refused (dialog and 409), fine in another; invalid refused, Normalize | UI + API | ✅ `contents/tree` |
 | Rename a folder's and a document's slug: the new CDN paths, the old ones 404 | UI + API + CDN | ✅ `contents/tree` |
 | Move a document, and a folder with its contents; a folder into itself refused | UI + API | ✅ `contents/tree` |
+| Move: picked in the folder tree; a folder with folders under it is a target; where the item is marked (current), Move disabled until another | UI + API | ✅ `contents/tree` |
 | Clone: a suffixed copy with the data, never published | UI + API + CDN | ✅ `contents/tree` |
 | Delete a document, a folder with everything in it (CDN 404); cancel | UI + API + CDN | ✅ `contents/tree` |
 | Delete a folder three levels deep with a document at every level: gone from the list, the API, the CDN (published and draft) and both `/links` lists; the sibling tree stays | UI + API + CDN | ✅ `contents/tree` |

@@ -99,15 +99,19 @@ export class ContentsPage {
     return dialog(this.page, 'Move');
   }
 
-  /** An option of the Move dialog's folder list, by the folder name ("Root", or a folder's; options read `name | path`). */
+  /** A folder of the Move dialog's tree, by its name ("Root", or a folder's): its own row, not those nested under it. */
   moveTarget(folder: string): Locator {
-    return this.page.getByRole('option', { name: new RegExp(`^\\s*${escapeRegExp(folder)}\\s*\\|`) });
+    return this.page.getByRole('treeitem').filter({
+      has: this.page.locator(':scope > [data-slot="tree-item-row"]', {
+        hasText: new RegExp(`^\\s*${escapeRegExp(folder)}(\\s*\\(current\\))?\\s*$`),
+      }),
+    });
   }
 
+  /** Moves `name` into `folder`, a folder shown in the tree (the path to where the item is opens by itself). */
   async move(name: string, folder: string): Promise<void> {
     const form = await this.openMove(name);
-    await form.getByRole('combobox').click();
-    await this.moveTarget(folder).click();
+    await this.moveTarget(folder).locator(':scope > [data-slot="tree-item-row"]').click();
     await form.getByRole('button', { name: 'Move' }).click();
     await expect(form).toBeHidden();
     await expectToast(this.page, 'Content has been moved.');
