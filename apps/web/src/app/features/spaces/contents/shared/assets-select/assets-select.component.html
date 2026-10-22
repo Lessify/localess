@@ -23,7 +23,7 @@
     }
     <hlm-field-separator />
     <div hlmItemGroup role="list" class="gap-2" cdkDropList [cdkDropListDisabled]="locked()" (cdkDropListDropped)="assetDropDrop($event)">
-      @for (asset of assets(); track asset.id; let idx = $index) {
+      @for (asset of assets(); track asset.id) {
         <div
           hlmItem
           variant="outline"
@@ -65,7 +65,7 @@
               size="icon"
               variant="outline"
               [disabled]="locked()"
-              (click)="deleteAsset(idx)"
+              (click)="deleteAsset(asset.id)"
               hlmTooltip="Delete"
               aria-label="Delete">
               <ng-icon hlm size="sm" name="lucideTrash" />

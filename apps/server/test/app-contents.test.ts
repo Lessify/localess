@@ -193,11 +193,13 @@ describe('app API: contents', () => {
       await editor.delete(`${base}/${other.id}`);
     });
 
-    it('lists every folder and document of the space, light, for the editor (names)', async () => {
-      const response = await reader.get(`${base}/names`);
-      expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual([
-        { id: blog.id, kind: 'FOLDER', name: 'Blog', slug: 'blog', updatedAt: expect.any(String) },
+    it('lists every folder, and every document, of the space, light, for the editor', async () => {
+      const folders = await reader.get(`${base}/folders`);
+      expect(folders.statusCode).toBe(200);
+      expect(folders.json()).toEqual([{ id: blog.id, kind: 'FOLDER', name: 'Blog', slug: 'blog' }]);
+      const documents = await reader.get(`${base}/documents`);
+      expect(documents.statusCode).toBe(200);
+      expect(documents.json()).toEqual([
         { id: post.id, kind: 'DOCUMENT', parentId: blog.id, name: 'Post', slug: 'post', updatedAt: expect.any(String) },
       ]);
     });

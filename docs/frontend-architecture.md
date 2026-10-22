@@ -126,7 +126,7 @@ if one feature uses it, it lives in that feature.
   names (`findAll` for a page or a list, `findAllNames`, `findOne`, `findTemplates`, `findOverview`, `create`, `update`,
   `remove`, `move`, `setDefaultLocale`), so a call reads the same on both sides. Done for these four services and
   `SchemaService` (`findAll`, `findOne`, `findUsage`, `create`, `update`, `rename`, `remove`) and `ContentService`
-  (`findPage`, `findAllNames`, `findOne`, `search`, `createDocument` / `createFolder`, `update`, `move`, `updateData`,
+  (`findPage`, `findAllFolders`, `findAllDocuments`, `findOne`, `search`, `createDocument` / `createFolder`, `update`, `move`, `updateData`,
   `clone`, `remove`, `publish`, `unpublish`) so far; the others (assets, tasks, tokens, translations) still use
   `findPage` / `findById` / `delete`.
 - **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))

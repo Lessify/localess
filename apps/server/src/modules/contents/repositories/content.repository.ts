@@ -25,8 +25,10 @@ import { buildDocumentStorage } from '../utils/content-extract.js';
 
 export type { ContentWithPath };
 
-/** A row of the light list of every content (`findAllNames`). */
-export type ContentNameRow = Pick<ContentEntity, 'id' | 'kind' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>;
+/** A row of the light list of every folder (`findFolders`). */
+export type ContentFolderRow = Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug'>;
+/** A row of the light list of every document (`findDocuments`). */
+export type ContentDocumentRow = Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>;
 
 /** A row of the content list: everything but the document's data and the ids it points to (read only by the editor). */
 export type ContentListRow = Omit<ContentEntity, 'data' | 'assets' | 'links' | 'references'> & { parentSlug: string; fullSlug: string };
@@ -106,12 +108,21 @@ export class ContentRepository {
     return this.db.$count(contents, this.where(spaceId, query));
   }
 
-  /** Every folder and document of the space, folders first then by name: only what the light list holds. */
-  findAllNames(spaceId: string): Promise<ContentNameRow[]> {
+  /** Every folder of the space, by name: only what the light list holds. */
+  findFolders(spaceId: string): Promise<ContentFolderRow[]> {
     return this.db.query.contents.findMany({
-      columns: { id: true, kind: true, parentId: true, name: true, slug: true, publishedAt: true, updatedAt: true },
-      where: eq(contents.spaceId, spaceId),
-      orderBy: [desc(contents.kind), asc(sql`lower(${contents.name})`), asc(contents.id)],
+      columns: { id: true, parentId: true, name: true, slug: true },
+      where: and(eq(contents.spaceId, spaceId), eq(contents.kind, 'FOLDER')),
+      orderBy: [asc(sql`lower(${contents.name})`), asc(contents.id)],
+    });
+  }
+
+  /** Every document of the space, by name: only what the light list holds (no data). */
+  findDocuments(spaceId: string): Promise<ContentDocumentRow[]> {
+    return this.db.query.contents.findMany({
+      columns: { id: true, parentId: true, name: true, slug: true, publishedAt: true, updatedAt: true },
+      where: and(eq(contents.spaceId, spaceId), eq(contents.kind, 'DOCUMENT')),
+      orderBy: [asc(sql`lower(${contents.name})`), asc(contents.id)],
     });
   }
 

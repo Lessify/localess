@@ -201,6 +201,34 @@ test.describe('Contents → form: choices and relations', () => {
     for (const name of ['hero.png', 'one.png', 'two.png']) await expect(contents.pickedAsset(name)).toBeVisible();
   });
 
+  test('Asset and Assets fields show a renamed file at once, without a reload (live from the store)', async ({ page, api, space }) => {
+    const hero = await api.uploadAsset(space.id, pngFile('hero.png'));
+    const one = await api.uploadAsset(space.id, pngFile('one.png'));
+    const schema = await pageSchema(api, space, [
+      { name: 'image', kind: 'ASSET', displayName: 'Image' },
+      { name: 'gallery', kind: 'ASSETS', displayName: 'Gallery' },
+    ]);
+    const doc = await api.createDocument(space.id, { name: 'Gallery', slug: 'gallery', schema: schema.name });
+    await api.send('put', `/api/app/spaces/${space.id}/contents/${doc.id}/data`, {
+      data: { _id: doc.id, _schema: schema.name, image: { kind: 'ASSET', uri: hero.id }, gallery: [{ kind: 'ASSET', uri: one.id }] },
+    });
+    const contents = new ContentsPage(page);
+
+    // Pre-check
+    await contents.gotoDocument(space.id, doc.id);
+    await expect(contents.pickedAsset('hero.png')).toBeVisible();
+    await expect(contents.pickedAsset('one.png')).toBeVisible();
+
+    // Action: renamed elsewhere (another tab, another editor).
+    await api.send('patch', `/api/app/spaces/${space.id}/assets/${hero.id}`, { name: 'banner' });
+    await api.send('patch', `/api/app/spaces/${space.id}/assets/${one.id}`, { name: 'first' });
+
+    // Post-check: the open editor shows the new names.
+    await expect(contents.pickedAsset('banner.png')).toBeVisible();
+    await expect(contents.pickedAsset('first.png')).toBeVisible();
+    await expect(contents.pickedAsset('hero.png')).toHaveCount(0);
+  });
+
   // The file type set in the schema editor (stored as `fileType`) and the one templates and older schemas carry
   // (`fileTypes`) both narrow the picker; editing such a schema keeps its filter.
   test('an Asset field with a file type offers only those files in the picker', async ({ page, api, space }) => {

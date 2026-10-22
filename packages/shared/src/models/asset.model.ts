@@ -44,6 +44,20 @@ export interface AssetFolderSummary {
   name: string;
 }
 
+/**
+ * A file in the light list of every file of a space (`GET …/assets/files`), which `SpaceStore` holds once an editor
+ * shows an Asset or Assets field: what the field shows (name, extension, thumbnail, size, dimensions, duration).
+ */
+export interface AssetFileSummary {
+  id: string;
+  parentId?: string;
+  name: string;
+  extension: string;
+  type: string;
+  size: number;
+  metadata?: { width?: number; height?: number; duration?: number };
+}
+
 export interface AssetFolder extends AssetBase {
   kind: AssetKind.FOLDER;
 }

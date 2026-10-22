@@ -1,15 +1,16 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetFolderSummary, AssetKind } from '@localess/shared';
+import { Asset, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -115,11 +116,9 @@ export class AssetsSelectDialogComponent implements OnInit {
 
   fileUploadQueue = signal<File[]>([]);
 
-  /** Every folder of the space: the breadcrumbs are built from it. */
-  private readonly folders = toSignal(this.assetService.findAllFolders(this.context.spaceId), {
-    initialValue: [] as AssetFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  private readonly spaceStore = inject(SpaceStore);
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs and the paths are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.assetFolders().map(it => [it.id, it])));
   /** The folder shown; `null`: the root. */
   readonly folderId = signal<string | null>(null);
   /** The folders from the root down to the one shown. */

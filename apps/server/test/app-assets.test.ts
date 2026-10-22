@@ -208,14 +208,25 @@ describe('app API: assets', () => {
       expect((await contentReader.post(`${base}/folders`, { name: 'x' })).statusCode).toBe(403);
     });
 
-    it('`?ids=` matches asset UUIDs only (400 for anything else), not the Firestore id an asset was imported with', async () => {
+    it('answers the UUID and, for an asset imported from Firebase, its Firestore id', async () => {
       const [first] = (await contentReader.get(`${base}?kind=FILE`)).json().items;
       expect(first.id).toMatch(UUID_V7);
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, first.id));
-      expect((await contentReader.get(`${base}?ids=FirestoreAsset000001`)).statusCode).toBe(400);
-      expect((await contentReader.get(`${base}?ids=${first.id}`)).json().items[0]).toMatchObject({
-        id: first.id,
-        legacyId: 'FirestoreAsset000001',
+      expect((await contentReader.get(`${base}/${first.id}`)).json()).toMatchObject({ id: first.id, legacyId: 'FirestoreAsset000001' });
+    });
+
+    it('lists every file of the space, light, with what an Asset field shows', async () => {
+      const files = (await contentReader.get(`${base}/files`)).json<(Record<string, unknown> & { name: string; extension: string })[]>();
+      expect(files.map(it => `${it.name}${it.extension}`)).toEqual(['Spinner.gif', 'Sunset.Final.JPG', 'terms.pdf']);
+      const sunset = files.find(it => it.name === 'Sunset.Final')!;
+      expect(sunset).toEqual({
+        id: expect.any(String),
+        parentId: expect.any(String),
+        name: 'Sunset.Final',
+        extension: '.JPG',
+        type: 'image/jpeg',
+        size: expect.any(Number),
+        metadata: { width: 300, height: 400 },
       });
     });
   });

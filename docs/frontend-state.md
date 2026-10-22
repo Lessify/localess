@@ -69,8 +69,14 @@ Holds the sidebar's list of spaces, and the selected space with what its screens
   assetFolderId: string | null,   // asset folder shown (null: root); breadcrumbs come from the live folder map
   schemas: Schema[],         // schemas for the selected space (every one: the editors and the Schemas page read them)
   schemasLoaded: boolean,    // whether schemas arrived for the selected space (false again on a space change)
-  contentSummaries: ContentSummary[], // every folder and document of the selected space, light (GET …/contents/names)
-  contentsLoaded: boolean      // whether contentSummaries arrived for the selected space
+  contentFolderSummaries: ContentFolderSummary[],     // every content folder, light (GET …/contents/folders)
+  contentDocumentSummaries: ContentDocumentSummary[], // every document, light, no data (GET …/contents/documents)
+  contentFoldersLoaded: boolean, contentDocumentsLoaded: boolean,
+  assetFolders: AssetFolderSummary[], // every asset folder, light (GET …/assets/folders)
+  assetFoldersLoaded: boolean,
+  assetFiles: AssetFileSummary[],     // every file, light (GET …/assets/files), only once asked (loadAssetFiles())
+  assetFilesWanted: boolean,          // an editor showed an Asset field; false again on a space change
+  assetFilesLoaded: boolean
 }
 
 // Key computed
@@ -79,6 +85,9 @@ locales:       computed(() => selectedSpace()?.spaceLocales.map(it => it.locale)
 defaultLocale: computed(() => selectedSpace()?.defaultLocale)
 // `spaces`: SpaceService.findAllNames(), again on each `spaces` event; the space guard reads the same list
 hasNoSpaces:   computed(() => loaded() && spaces().length === 0)  // gated on loaded so it is not true before the first response
+contents / contentFolders / contentDocuments / contentById  // the content light lists with their paths (withFullSlugs)
+contentsLoaded: computed(() => contentFoldersLoaded() && contentDocumentsLoaded())
+assetFileById: computed(() => new Map(assetFiles().map(it => [it.id, it])))  // the Asset and Assets fields read it
 ```
 
 Key methods:

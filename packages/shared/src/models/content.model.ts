@@ -34,18 +34,33 @@ export interface ContentFolder extends ContentBase {
 }
 
 /**
- * A folder or document in the light list of every content of a space (`GET …/contents/names`), which `SpaceStore` holds:
- * breadcrumbs, the Move dialog, the Link and References fields. No data; the path is worked out from the folder chain.
+ * A folder in the light list of every folder of a space (`GET …/contents/folders`), which `SpaceStore` holds:
+ * breadcrumbs, the Move dialog, the documents' paths. The path is worked out from the folder chain.
  */
-export interface ContentSummary {
+export interface ContentFolderSummary {
   id: string;
-  kind: ContentKind;
+  kind: ContentKind.FOLDER;
+  parentId?: string;
+  name: string;
+  slug: string;
+}
+
+/**
+ * A document in the light list of every document of a space (`GET …/contents/documents`), which `SpaceStore` holds:
+ * the Link and References fields, the names and slugs a folder has. No data.
+ */
+export interface ContentDocumentSummary {
+  id: string;
+  kind: ContentKind.DOCUMENT;
   parentId?: string;
   name: string;
   slug: string;
   publishedAt?: Timestamp;
   updatedAt: Timestamp;
 }
+
+/** A folder or a document of the light lists. */
+export type ContentSummary = ContentFolderSummary | ContentDocumentSummary;
 
 /** What the content list sorts by (folders always first): the name by default. */
 export const CONTENT_SORT_FIELDS = ['name', 'schema', 'publishedAt', 'createdAt', 'updatedAt'] as const;

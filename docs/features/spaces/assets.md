@@ -29,7 +29,7 @@ apps/web/src/app/features/spaces/assets/
 
 ## AssetsComponent
 
-File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Every folder of the space is loaded once (`GET …/assets/folders`, live) into a map `id → folder`; the breadcrumbs are built from it (`@core/utils/folder-tree`). Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`.
+File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Every folder of the space comes from `SpaceStore.assetFolders()` (`GET …/assets/folders`, live) as a map `id → folder`; the breadcrumbs are built from it (`@core/utils/folder-tree`). Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`.
 
 **Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 

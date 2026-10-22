@@ -26,7 +26,8 @@ describe('app API: contents check their space and ids', () => {
   /** Every route of a space's contents, for `spaceBase` and `id`. */
   const routes = (spaceBase: string, id: string) => [
     () => admin.get(spaceBase),
-    () => admin.get(`${spaceBase}/names`),
+    () => admin.get(`${spaceBase}/folders`),
+    () => admin.get(`${spaceBase}/documents`),
     () => admin.get(`${spaceBase}/count`),
     () => admin.get(`${spaceBase}/${id}`),
     () => admin.post(spaceBase, { kind: 'FOLDER', name: 'Blog', slug: 'blog' }),

@@ -12,7 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -25,7 +25,7 @@ import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetFile, AssetFolder, AssetFolderSummary, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -187,11 +187,8 @@ export class AssetsComponent implements OnInit {
   fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
 
-  /** Every folder of the space, live: the breadcrumbs are built from it. */
-  private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.assetService.findAllFolders(spaceId))), {
-    initialValue: [] as AssetFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs and the paths are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.assetFolders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.assetFolderId()));
   /** Where each asset is (`~/Images`), for a list from several folders (`deep`); `undefined` otherwise. */

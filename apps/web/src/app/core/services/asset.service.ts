@@ -6,6 +6,7 @@ import { multipartForm } from '@core/utils/multipart';
 import {
   Asset,
   AssetFile,
+  AssetFileSummary,
   AssetFileType,
   AssetFolder,
   AssetFolderCreate,
@@ -87,20 +88,18 @@ export class AssetService {
     return this.search(spaceId, name, max);
   }
 
-  findById(spaceId: string, id: string): Observable<Asset> {
-    return liveQueryWith(this.events, { spaceId, entities: ['assets'], id }, () => this.http.get<Asset>(`${this.base(spaceId)}/${id}`));
-  }
-
-  findByIds(spaceId: string, ids: string[]): Observable<Asset[]> {
-    if (ids.length === 0) return of([]);
-    return this.list(spaceId, new HttpParams().set('ids', ids.join(',')));
-  }
-
   findAllFilesByName(spaceId: string, name: string, max = 20): Observable<AssetFile[]> {
     return this.search(spaceId, name, max, AssetKind.FILE);
   }
 
-  /** Every folder of the space, live: the editor's folder map (breadcrumbs, move targets). */
+  /** Every file of the space, light, live: `SpaceStore` holds it for the Asset and Assets fields. */
+  findAllFiles(spaceId: string): Observable<AssetFileSummary[]> {
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
+      this.http.get<AssetFileSummary[]>(`${this.base(spaceId)}/files`),
+    );
+  }
+
+  /** Every folder of the space, live: `SpaceStore` holds it (breadcrumbs, paths, move targets). */
   findAllFolders(spaceId: string): Observable<AssetFolderSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
       this.http.get<AssetFolderSummary[]>(`${this.base(spaceId)}/folders`),

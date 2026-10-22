@@ -57,9 +57,13 @@ describe('ContentsComponent', () => {
     const contentFolderId = signal<string | null>(null);
     // What SpaceStore holds: two folders and the contents given.
     const known = withFullSlugs([
-      { id: 'f1', kind: ContentKind.FOLDER, name: 'Blog', slug: 'blog', updatedAt: '' },
-      { id: 'f2', kind: ContentKind.FOLDER, name: '2026', slug: '2026', parentId: 'f1', updatedAt: '' },
-      ...contents.map(it => ({ id: it.id, kind: it.kind, parentId: it.parentId, name: it.name, slug: it.slug, updatedAt: '' })),
+      { id: 'f1', kind: ContentKind.FOLDER, name: 'Blog', slug: 'blog' },
+      { id: 'f2', kind: ContentKind.FOLDER, name: '2026', slug: '2026', parentId: 'f1' },
+      ...contents.map(it =>
+        it.kind === ContentKind.FOLDER
+          ? { id: it.id, kind: ContentKind.FOLDER as const, parentId: it.parentId, name: it.name, slug: it.slug }
+          : { id: it.id, kind: ContentKind.DOCUMENT as const, parentId: it.parentId, name: it.name, slug: it.slug, updatedAt: '' },
+      ),
     ]);
 
     TestBed.overrideComponent(ContentsComponent, {

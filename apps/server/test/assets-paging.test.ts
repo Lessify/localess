@@ -7,7 +7,7 @@ type Page = { items: Row[]; page: number; size: number; total: number };
 
 /**
  * `GET …/assets`: one page, folders first, then by the sort; a folder's children (the root by default) or, with
- * `deep`, everything under it; kind, file type (folders stay), search (the name), ids.
+ * `deep`, everything under it; kind, file type (folders stay), search (the name).
  *
  * The tree:  Images/ (Photos/ (Sunset.jpg), logo.png), Docs/ (terms.pdf), readme.txt, clip.mp4, "50% off.png"
  */
@@ -130,11 +130,6 @@ describe('app API: assets paging', () => {
     expect(await names(`search=logo&parentId=${ids['Images']}`)).toEqual(['logo']);
   });
 
-  it('ids: those assets wherever they are, nothing for an empty list', async () => {
-    expect(await names(`ids=${ids['Sunset']},${ids['terms']},${ids['Docs']}`)).toEqual(['Docs', 'Sunset', 'terms']);
-    expect(await list('ids=')).toMatchObject({ total: 0, items: [] });
-  });
-
   it('refuses a query it can not read (400)', async () => {
     for (const query of [
       'sort=extension',
@@ -146,7 +141,6 @@ describe('app API: assets paging', () => {
       'parentId=',
       'deep=yes',
       'fileType=image',
-      'ids=not-a-uuid',
     ]) {
       expect((await admin.get(`${base}?${query}`)).statusCode, query).toBe(400);
     }

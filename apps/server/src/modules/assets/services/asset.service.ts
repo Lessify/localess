@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 
-import type { Asset, AssetFolderSummary, AssetPageable, Page } from '@localess/shared';
+import type { Asset, AssetFileSummary, AssetFolderSummary, AssetPageable, Page } from '@localess/shared';
 import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
@@ -9,7 +9,7 @@ import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
-import { toAsset, toAssetFolderSummary } from '../../../shared/transformers/asset.transformer.js';
+import { toAsset, toAssetFileSummary, toAssetFolderSummary } from '../../../shared/transformers/asset.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { AssetRepository } from '../repositories/asset.repository.js';
 import { assetErrors } from '../utils/asset-errors.js';
@@ -72,6 +72,12 @@ export class AssetService {
   async findFolders(spaceId: string): Promise<AssetFolderSummary[]> {
     await this.requireSpace(spaceId);
     return (await this.assetRepository.findFolders(spaceId)).map(toAssetFolderSummary);
+  }
+
+  /** Every file of the space, light: the editor's Asset and Assets fields show theirs from it. */
+  async findFiles(spaceId: string): Promise<AssetFileSummary[]> {
+    await this.requireSpace(spaceId);
+    return (await this.assetRepository.findFiles(spaceId)).map(toAssetFileSummary);
   }
 
   async createFolder(spaceId: string, parentId: string | null, name: string): Promise<Asset> {

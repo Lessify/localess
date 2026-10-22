@@ -68,7 +68,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
   the search and the scope; Reset clears both
 - The Add and Edit dialogs check names and slugs against every item of the folder (`SpaceStore.contents()`); the
   server refuses a slug taken meanwhile (409, its message in the toast)
-- The breadcrumbs from `SpaceStore.contentFolders()` (every folder of the space, live, from `GET …/contents/names`), keyed by id
+- The breadcrumbs from `SpaceStore.contentFolders()` (every folder of the space, live, from `GET …/contents/folders`), keyed by id
 - Narrow windows: the table's Schema (below `@md/table`) and Updated At (below `@lg/table`) columns step aside, the References picker's too; the document editor's title and toolbar wrap onto two lines, so Save and Publish stay on screen
 - `onRowSelect(item)` — opens a folder (`SpaceStore.changeContentFolder(id)`) or navigates to the document editor
 - `navigateToFolder(id)` — breadcrumb navigation (`null`: the root)

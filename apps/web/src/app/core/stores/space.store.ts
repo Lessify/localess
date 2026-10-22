@@ -1,12 +1,26 @@
 import { computed, inject } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { AssetService } from '@core/services/asset.service';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
 import { SpaceEnvironmentService } from '@core/services/space-environment.service';
-import { withFullSlugs } from '@core/utils/content-summaries';
-import { ANY_ROLE, ContentKind, ContentSummary, hasRole, IdName, IdNameUrl, Locale, Schema, Space } from '@localess/shared';
+import { ContentDocumentWithPath, ContentFolderWithPath, withFullSlugs } from '@core/utils/content-summaries';
+import {
+  ANY_ROLE,
+  AssetFileSummary,
+  AssetFolderSummary,
+  ContentDocumentSummary,
+  ContentFolderSummary,
+  ContentKind,
+  hasRole,
+  IdName,
+  IdNameUrl,
+  Locale,
+  Schema,
+  Space,
+} from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -53,10 +67,23 @@ export type SpaceState = {
   schemas: Schema[];
   /** Whether `schemas` arrived for the selected space (an empty list is then "no schemas", not "loading"). */
   schemasLoaded: boolean;
-  /** Every folder and document of the selected space, light (`GET …/contents/names`). */
-  contentSummaries: ContentSummary[];
-  /** Whether `contentSummaries` arrived for the selected space. */
-  contentsLoaded: boolean;
+  /** Every content folder of the selected space, light (`GET …/contents/folders`). */
+  contentFolderSummaries: ContentFolderSummary[];
+  /** Every document of the selected space, light (`GET …/contents/documents`). */
+  contentDocumentSummaries: ContentDocumentSummary[];
+  /** Whether the content folders and documents arrived for the selected space. */
+  contentFoldersLoaded: boolean;
+  contentDocumentsLoaded: boolean;
+  /** Every asset folder of the selected space, light (`GET …/assets/folders`): breadcrumbs, paths, move targets. */
+  assetFolders: AssetFolderSummary[];
+  assetFoldersLoaded: boolean;
+  /**
+   * Every file of the selected space, light (`GET …/assets/files`): what the Asset and Assets fields show. Read only once
+   * an editor asks for it (`loadAssetFiles()`, `assetFilesWanted`): the Assets page never needs it.
+   */
+  assetFiles: AssetFileSummary[];
+  assetFilesWanted: boolean;
+  assetFilesLoaded: boolean;
 };
 
 const initialState: SpaceState = {
@@ -71,8 +98,15 @@ const initialState: SpaceState = {
   environments: [],
   schemas: [],
   schemasLoaded: false,
-  contentSummaries: [],
-  contentsLoaded: false,
+  contentFolderSummaries: [],
+  contentDocumentSummaries: [],
+  contentFoldersLoaded: false,
+  contentDocumentsLoaded: false,
+  assetFolders: [],
+  assetFoldersLoaded: false,
+  assetFiles: [],
+  assetFilesWanted: false,
+  assetFilesLoaded: false,
 };
 
 /** The remembered environment of the space (by id: names may repeat), else its first; none when it has none. */
@@ -142,6 +176,7 @@ export const SpaceStore = signalStore(
     const spaceService = inject(SpaceService);
     const spaceEnvironmentService = inject(SpaceEnvironmentService);
     const contentService = inject(ContentService);
+    const assetService = inject(AssetService);
     const schemaService = inject(SchemaService);
     const notificationService = inject(NotificationService);
     const userStore = inject(UserStore);
@@ -154,12 +189,8 @@ export const SpaceStore = signalStore(
 
     return {
       /**
-       * Keeps `schemas` and the contents on the given space. switchMap closes the previous space's
-       * listeners, and the data is dropped first so nothing renders the new space against the old
-       * one's. `undefined` (no space, or signed out) stops listening altogether.
-       */
-      /**
-       * Keeps the selected space, its environments, `schemas` and the contents on the given space. switchMap closes the
+       * Keeps the selected space, its environments, `schemas`, the content folders and documents and the asset folders
+       * on the given space. switchMap closes the
        * previous space's listeners, and its data is dropped first so nothing renders the new space against the old
        * one's. `undefined` (no space, or signed out) stops listening altogether.
        */
@@ -173,8 +204,13 @@ export const SpaceStore = signalStore(
               environment: undefined,
               schemas: [],
               schemasLoaded: false,
-              contentSummaries: [],
-              contentsLoaded: false,
+              contentFolderSummaries: [],
+              contentDocumentSummaries: [],
+              contentFoldersLoaded: false,
+              contentDocumentsLoaded: false,
+              assetFolders: [],
+              assetFoldersLoaded: false,
+              assetFilesWanted: false,
             }),
           ),
           switchMap(spaceId =>
@@ -201,10 +237,24 @@ export const SpaceStore = signalStore(
                   ),
                   canRead()
                     ? listen(
-                        () => contentService.findAllNames(spaceId),
-                        'contentService.findAllNames listener failed',
+                        () => contentService.findAllFolders(spaceId),
+                        'contentService.findAllFolders listener failed',
                         'Lost connection to content updates. Retrying…',
-                      ).pipe(map(contentSummaries => ({ contentSummaries, contentsLoaded: true })))
+                      ).pipe(map(contentFolderSummaries => ({ contentFolderSummaries, contentFoldersLoaded: true })))
+                    : EMPTY,
+                  canRead()
+                    ? listen(
+                        () => contentService.findAllDocuments(spaceId),
+                        'contentService.findAllDocuments listener failed',
+                        'Lost connection to content updates. Retrying…',
+                      ).pipe(map(contentDocumentSummaries => ({ contentDocumentSummaries, contentDocumentsLoaded: true })))
+                    : EMPTY,
+                  canRead()
+                    ? listen(
+                        () => assetService.findAllFolders(spaceId),
+                        'assetService.findAllFolders listener failed',
+                        'Lost connection to asset updates. Retrying…',
+                      ).pipe(map(assetFolders => ({ assetFolders, assetFoldersLoaded: true })))
                     : EMPTY,
                   canRead()
                     ? listen(
@@ -219,6 +269,30 @@ export const SpaceStore = signalStore(
           tap(patch => patchState(state, patch)),
         ),
       ),
+      /**
+       * Keeps every file of the given space, once an editor asked for them (`loadAssetFiles()`); `undefined` (not asked,
+       * no space, or signed out) drops them and stops listening.
+       */
+      _syncAssetFiles: rxMethod<string | undefined>(
+        pipe(
+          distinctUntilChanged(),
+          tap(() => patchState(state, { assetFiles: [], assetFilesLoaded: false })),
+          switchMap(spaceId =>
+            spaceId
+              ? listen(
+                  () => assetService.findAllFiles(spaceId),
+                  'assetService.findAllFiles listener failed',
+                  'Lost connection to asset updates. Retrying…',
+                ).pipe(map(assetFiles => ({ assetFiles, assetFilesLoaded: true })))
+              : EMPTY,
+          ),
+          tap(patch => patchState(state, patch)),
+        ),
+      ),
+      /** The Asset and Assets fields show their files from `assetFiles`: read them (live) for the selected space. */
+      loadAssetFiles: (): void => {
+        if (!state.assetFilesWanted()) patchState(state, { assetFilesWanted: true });
+      },
       load: rxMethod<void>(
         pipe(
           // The server leaves out a space being imported from Firebase, or whose import failed: it cannot be opened
@@ -288,7 +362,7 @@ export const SpaceStore = signalStore(
       return space && space.id === state.selectedSpaceId() ? space : undefined;
     });
     /** Every folder and document of the selected space, light, with its path (worked out from the folder chain). */
-    const contents = computed(() => withFullSlugs(state.contentSummaries()));
+    const contents = computed(() => withFullSlugs([...state.contentFolderSummaries(), ...state.contentDocumentSummaries()]));
     return {
       spaces: computed(() => state.spaces()),
       contentFolderId: computed(() => state.contentFolderId()),
@@ -300,11 +374,15 @@ export const SpaceStore = signalStore(
       defaultLocale: computed((): Locale | undefined => selectedSpace()?.defaultLocale),
       contents,
       /** Every folder of the selected space, with its path: breadcrumbs and move targets. */
-      contentFolders: computed(() => contents().filter(it => it.kind === ContentKind.FOLDER)),
+      contentFolders: computed(() => contents().filter((it): it is ContentFolderWithPath => it.kind === ContentKind.FOLDER)),
       /** Every document of the selected space, with its path: the Link field's choices. */
-      contentDocuments: computed(() => contents().filter(it => it.kind === ContentKind.DOCUMENT)),
+      contentDocuments: computed(() => contents().filter((it): it is ContentDocumentWithPath => it.kind === ContentKind.DOCUMENT)),
       /** Every folder and document by id: the References fields show their documents from it. */
       contentById: computed(() => new Map(contents().map(it => [it.id, it]))),
+      /** Whether the content folders and documents arrived for the selected space. */
+      contentsLoaded: computed(() => state.contentFoldersLoaded() && state.contentDocumentsLoaded()),
+      /** Every file by id, once asked for (`loadAssetFiles()`): the Asset and Assets fields show theirs from it. */
+      assetFileById: computed(() => new Map(state.assetFiles().map(it => [it.id, it]))),
       /**
        * This account has no spaces, and we know that for a fact rather than by not having asked.
        *
@@ -324,13 +402,13 @@ export const SpaceStore = signalStore(
       // install), which would answer 404 and show "Lost connection" toasts until the list arrives.
       // `loaded` too: `isAuthenticated` comes from localStorage at first, before the role and
       // permissions that decide which lists may be read are known.
-      store._syncSpaceData(
-        computed(() => {
-          const spaceId = store.selectedSpaceId();
-          const listed = spaceId !== undefined && store.spaces().some(space => space.id === spaceId);
-          return userStore.loaded() && userStore.isAuthenticated() && listed ? spaceId : undefined;
-        }),
-      );
+      const syncedSpaceId = computed(() => {
+        const spaceId = store.selectedSpaceId();
+        const listed = spaceId !== undefined && store.spaces().some(space => space.id === spaceId);
+        return userStore.loaded() && userStore.isAuthenticated() && listed ? spaceId : undefined;
+      });
+      store._syncSpaceData(syncedSpaceId);
+      store._syncAssetFiles(computed(() => (store.assetFilesWanted() ? syncedSpaceId() : undefined)));
     },
     onDestroy: store => {
       console.log('onDestroy', store);

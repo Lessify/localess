@@ -1,9 +1,11 @@
-import { ContentKind, ContentSummary } from '@localess/shared';
+import { ContentDocumentSummary, ContentFolderSummary, ContentKind, ContentSummary } from '@localess/shared';
 
 import { folderPath } from './folder-tree';
 
 /** A folder or document of the light list, with its path: its folders' slugs and its own, joined by '/'. */
-export type ContentSummaryWithPath = ContentSummary & { fullSlug: string };
+export type ContentFolderWithPath = ContentFolderSummary & { fullSlug: string };
+export type ContentDocumentWithPath = ContentDocumentSummary & { fullSlug: string };
+export type ContentSummaryWithPath = ContentFolderWithPath | ContentDocumentWithPath;
 
 /** Every item of the light list with its path, worked out from the folder chain (the server sends no paths in it). */
 export function withFullSlugs(items: ContentSummary[]): ContentSummaryWithPath[] {
@@ -17,7 +19,7 @@ export function withFullSlugs(items: ContentSummary[]): ContentSummaryWithPath[]
     }
     return path;
   };
-  return items.map(it => {
+  return items.map((it): ContentSummaryWithPath => {
     const parent = it.parentId ? parentPath(it.parentId) : '';
     return { ...it, fullSlug: parent ? `${parent}/${it.slug}` : it.slug };
   });

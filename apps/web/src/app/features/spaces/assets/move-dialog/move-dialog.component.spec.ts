@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Asset, AssetFolderSummary } from '@localess/shared';
-import { AssetService } from '@core/services/asset.service';
-import { of } from 'rxjs';
+import { signal } from '@angular/core';
+import { SpaceStore } from '@core/stores/space.store';
 import { vi } from 'vitest';
 
 import { MoveDialogContext } from './move-dialog.model';
@@ -20,25 +20,23 @@ const FOLDERS: AssetFolderSummary[] = [
 describe('MoveDialogComponent', () => {
   function setup(asset: Partial<Asset>) {
     const close = vi.fn();
-    const findAllFolders = vi.fn().mockReturnValue(of(FOLDERS));
     const context: MoveDialogContext = { spaceId: 'space-1', asset: { id: 'a1', kind: 'FILE', ...asset } as Asset };
     TestBed.overrideComponent(MoveDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: AssetService, useValue: { findAllFolders } },
+        { provide: SpaceStore, useValue: { assetFolders: signal(FOLDERS) } },
       ],
     });
     const fixture = TestBed.createComponent(MoveDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findAllFolders };
+    return { component: fixture.componentInstance, close };
   }
   const paths = (component: MoveDialogComponent) => component.options().map(it => it.path);
 
   it('starts with nothing chosen, from the folders of the space', () => {
-    const { component, findAllFolders } = setup({ parentId: 'news' });
-    expect(findAllFolders).toHaveBeenCalledWith('space-1');
+    const { component } = setup({ parentId: 'news' });
     expect(component.selected()).toBeNull();
     expect(component.form.invalid).toBe(true);
   });

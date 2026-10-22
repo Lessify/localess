@@ -10,10 +10,11 @@ import {
   ContentDataUpdate,
   ContentDocument,
   ContentDocumentCreate,
+  ContentDocumentSummary,
   ContentFolder,
   ContentFolderCreate,
+  ContentFolderSummary,
   ContentKind,
-  ContentSummary,
   ContentUpdate,
   Page,
 } from '@localess/shared';
@@ -40,13 +41,17 @@ export class ContentService {
     );
   }
 
-  /**
-   * Every folder and document of the space, light (no data, no paths), live: `SpaceStore` holds it for the breadcrumbs,
-   * the Move dialog, the Link and References fields.
-   */
-  findAllNames(spaceId: string): Observable<ContentSummary[]> {
+  /** Every folder of the space, light (no paths), live: `SpaceStore` holds it for the breadcrumbs, the Move dialog, the paths. */
+  findAllFolders(spaceId: string): Observable<ContentFolderSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
-      this.http.get<ContentSummary[]>(`${this.base(spaceId)}/names`),
+      this.http.get<ContentFolderSummary[]>(`${this.base(spaceId)}/folders`),
+    );
+  }
+
+  /** Every document of the space, light (no data, no paths), live: `SpaceStore` holds it for the Link and References fields. */
+  findAllDocuments(spaceId: string): Observable<ContentDocumentSummary[]> {
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
+      this.http.get<ContentDocumentSummary[]>(`${this.base(spaceId)}/documents`),
     );
   }
 

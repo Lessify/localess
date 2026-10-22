@@ -5,7 +5,7 @@ import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
-import { ContentSummaryWithPath } from '@core/utils/content-summaries';
+import { ContentDocumentWithPath } from '@core/utils/content-summaries';
 import { ContentDocument, ContentKind, SchemaFieldKind, SchemaFieldReferences, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
@@ -69,7 +69,7 @@ export class ReferencesSelectComponent implements OnInit {
   readonly contents = computed(() =>
     this.ids()
       .map(id => this.spaceStore.contentById().get(id))
-      .filter((it): it is ContentSummaryWithPath => it?.kind === ContentKind.DOCUMENT),
+      .filter((it): it is ContentDocumentWithPath => it?.kind === ContentKind.DOCUMENT),
   );
   // Settings
   settingsStore = inject(LocalSettingsStore);

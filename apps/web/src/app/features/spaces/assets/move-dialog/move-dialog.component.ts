@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AssetService } from '@core/services/asset.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { folderPath, subtreeIds } from '@core/utils/folder-tree';
-import { AssetFolderSummary, AssetKind } from '@localess/shared';
+import { AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideHouse } from '@ng-icons/lucide';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
@@ -26,7 +25,6 @@ import { MoveDialogContext, MoveDialogResult, MoveTarget } from './move-dialog.m
 })
 export class MoveDialogComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly assetService = inject(AssetService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<MoveDialogResult>>(BrnDialogRef);
 
@@ -39,10 +37,8 @@ export class MoveDialogComponent {
   readonly search = signal('');
   readonly selected = signal<MoveTarget | null>(null);
 
-  /** Every folder of the space, from the editor's folder map endpoint. */
-  private readonly folders = toSignal(this.assetService.findAllFolders(this.context.spaceId), {
-    initialValue: [] as AssetFolderSummary[],
-  });
+  /** Every folder of the space, from `SpaceStore` (live). */
+  private readonly folders = inject(SpaceStore).assetFolders;
 
   /**
    * The root and every folder, by path, matching the search; without where the item already is, and for a folder

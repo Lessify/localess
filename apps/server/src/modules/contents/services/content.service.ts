@@ -1,11 +1,19 @@
-import { type Content, type ContentData, type ContentPageable, type ContentSummary, type Page, WebhookEvent } from '@localess/shared';
+import {
+  type Content,
+  type ContentData,
+  type ContentDocumentSummary,
+  type ContentFolderSummary,
+  type ContentPageable,
+  type Page,
+  WebhookEvent,
+} from '@localess/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
-import { toContent, toContentSummary } from '../../../shared/transformers/content.transformer.js';
+import { toContent, toContentDocumentSummary, toContentFolderSummary } from '../../../shared/transformers/content.transformer.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { ContentRepository, type ContentWithPath, type NewContent } from '../repositories/content.repository.js';
 import { contentErrors } from '../utils/content-errors.js';
@@ -49,13 +57,16 @@ export class ContentService {
     return toContent(await this.requireContent(spaceId, contentId));
   }
 
-  /**
-   * Every folder and document of the space, light (no data): the editor's breadcrumbs, move targets, Link and
-   * References fields work from it.
-   */
-  async findAllNames(spaceId: string): Promise<ContentSummary[]> {
+  /** Every folder of the space, light: the editor's breadcrumbs, move targets and the documents' paths. */
+  async findFolders(spaceId: string): Promise<ContentFolderSummary[]> {
     await this.requireSpace(spaceId);
-    return (await this.contentRepository.findAllNames(spaceId)).map(toContentSummary);
+    return (await this.contentRepository.findFolders(spaceId)).map(toContentFolderSummary);
+  }
+
+  /** Every document of the space, light (no data): the Link and References fields, the names a folder has. */
+  async findDocuments(spaceId: string): Promise<ContentDocumentSummary[]> {
+    await this.requireSpace(spaceId);
+    return (await this.contentRepository.findDocuments(spaceId)).map(toContentDocumentSummary);
   }
 
   /**

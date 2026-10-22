@@ -6,6 +6,8 @@ import { BrnDialogRef } from '@spartan-ng/brain/dialog';
 import { Asset, AssetFile, AssetFileType, AssetFolder, AssetKind } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { AssetService } from '@core/services/asset.service';
+import { SpaceStore } from '@core/stores/space.store';
+import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { type Mock, vi } from 'vitest';
 
@@ -43,11 +45,15 @@ describe('AssetsSelectDialogComponent', () => {
           useValue: {
             findPage,
             createFile,
-            findAllFolders: () =>
-              of([
-                { id: 'a', name: 'A' },
-                { id: 'b', name: 'B', parentId: 'a' },
-              ]),
+          },
+        },
+        {
+          provide: SpaceStore,
+          useValue: {
+            assetFolders: signal([
+              { id: 'a', name: 'A' },
+              { id: 'b', name: 'B', parentId: 'a' },
+            ]),
           },
         },
         { provide: NotificationService, useValue: { error } },
@@ -189,10 +195,10 @@ describe('AssetsSelectDialogComponent', () => {
           provide: AssetService,
           useValue: {
             findPage: vi.fn().mockReturnValue(of({ items: [asset], page: 0, size: 20, total: 1 })),
-            findAllFolders: () => of([]),
             createFile: vi.fn(),
           },
         },
+        { provide: SpaceStore, useValue: { assetFolders: signal([]) } },
         { provide: NotificationService, useValue: { error: vi.fn() } },
         provideHttpClient(),
         provideHttpClientTesting(),

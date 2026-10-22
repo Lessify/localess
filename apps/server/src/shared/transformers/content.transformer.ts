@@ -1,4 +1,11 @@
-import { type AssetMetadata, type Content, ContentKind, type ContentMetadata, type ContentSummary } from '@localess/shared';
+import {
+  type AssetMetadata,
+  type Content,
+  type ContentDocumentSummary,
+  type ContentFolderSummary,
+  ContentKind,
+  type ContentMetadata,
+} from '@localess/shared';
 
 import { present } from '../../infra/database/without-nulls.js';
 import type { AssetEntity } from '../entities/asset.entity.js';
@@ -39,16 +46,22 @@ export function toContent(
   };
 }
 
-/** A folder or document of the light list of every content (`GET …/contents/names`). */
-export function toContentSummary(
-  entity: Pick<ContentEntity, 'id' | 'kind' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>,
-): ContentSummary {
+/** A folder of the light list of every folder (`GET …/contents/folders`). */
+export function toContentFolderSummary(entity: Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug'>): ContentFolderSummary {
+  return { id: entity.id, kind: ContentKind.FOLDER, ...present({ parentId: entity.parentId }), name: entity.name, slug: entity.slug };
+}
+
+/** A document of the light list of every document (`GET …/contents/documents`). */
+export function toContentDocumentSummary(
+  entity: Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>,
+): ContentDocumentSummary {
   return {
     id: entity.id,
-    kind: entity.kind === 'FOLDER' ? ContentKind.FOLDER : ContentKind.DOCUMENT,
+    kind: ContentKind.DOCUMENT,
+    ...present({ parentId: entity.parentId }),
     name: entity.name,
     slug: entity.slug,
-    ...present({ parentId: entity.parentId, publishedAt: entity.publishedAt?.toISOString() }),
+    ...present({ publishedAt: entity.publishedAt?.toISOString() }),
     updatedAt: entity.updatedAt.toISOString(),
   };
 }

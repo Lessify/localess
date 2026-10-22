@@ -39,6 +39,7 @@ describe('app API: assets check their space and ids', () => {
   const routes = (spaceBase: string, id: string) => [
     () => admin.get(spaceBase),
     () => admin.get(`${spaceBase}/folders`),
+    () => admin.get(`${spaceBase}/files`),
     () => admin.get(`${spaceBase}/count`),
     () => admin.get(`${spaceBase}/${id}`),
     () => admin.get(`${spaceBase}/${id}/usage`),

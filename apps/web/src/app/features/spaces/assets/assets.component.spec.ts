@@ -45,12 +45,10 @@ describe('AssetsComponent', () => {
     const open = vi.fn();
     const changeAssetFolder = vi.fn();
     const assetFolderId = signal<string | null>(folderId);
-    const findAllFolders = vi.fn().mockReturnValue(
-      of([
-        { id: 'f1', name: 'Images' },
-        { id: 'f2', name: '2026', parentId: 'f1' },
-      ]),
-    );
+    const assetFolders = signal([
+      { id: 'f1', name: 'Images' },
+      { id: 'f2', name: '2026', parentId: 'f1' },
+    ]);
 
     TestBed.overrideComponent(AssetsComponent, { set: { template: '<ll-paginator [length]="0" />' } });
     TestBed.configureTestingModule({
@@ -59,7 +57,6 @@ describe('AssetsComponent', () => {
           provide: AssetService,
           useValue: {
             findPage,
-            findAllFolders,
             createFile,
             importFile,
             createFolder,
@@ -74,7 +71,7 @@ describe('AssetsComponent', () => {
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: UnsplashPluginService, useValue: { enabled: () => false } },
-        { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder } },
+        { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder, assetFolders } },
       ],
     });
     const fixture = TestBed.createComponent(AssetsComponent);
@@ -99,7 +96,6 @@ describe('AssetsComponent', () => {
       open,
       changeAssetFolder,
       assetFolderId,
-      findAllFolders,
     };
   }
 
@@ -381,8 +377,7 @@ describe('AssetsComponent', () => {
 
   describe('breadcrumbs', () => {
     it('are built from the folder map, and navigate by folder id', () => {
-      const { component, changeAssetFolder, findAllFolders } = setup('f2');
-      expect(findAllFolders).toHaveBeenCalledWith('space-1');
+      const { component, changeAssetFolder } = setup('f2');
       expect(component.trail().map(it => it.name)).toEqual(['Images', '2026']);
 
       component.navigateToFolder('f1');

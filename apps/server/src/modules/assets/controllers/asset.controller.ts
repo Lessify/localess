@@ -3,6 +3,7 @@ import {
   ANY_ROLE,
   type Asset,
   type AssetCountQuery,
+  type AssetFileSummary,
   type AssetFolderCreate,
   type AssetFolderSummary,
   type AssetMove,
@@ -50,7 +51,7 @@ export class AssetController {
 
   /**
    * One page, folders first: `?page=&size=&sort=&direction=` (Pageable), `?parentId=` (absent: the root), `?deep=true`,
-   * `?kind=`, `?fileType=` (folders stay listed), `?search=` (the name), `?ids=a,b`.
+   * `?kind=`, `?fileType=` (folders stay listed), `?search=` (the name).
    */
   @Get()
   @RequireRole(ANY_ROLE)
@@ -63,6 +64,13 @@ export class AssetController {
   @RequireRole(ANY_ROLE)
   findFolders(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<AssetFolderSummary[]> {
     return this.assetService.findFolders(spaceId);
+  }
+
+  /** Every file of the space, light (`AssetFileSummary`), for the editor's Asset and Assets fields. */
+  @Get('files')
+  @RequireRole(ANY_ROLE)
+  findFiles(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<AssetFileSummary[]> {
+    return this.assetService.findFiles(spaceId);
   }
 
   @Get('count')

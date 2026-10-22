@@ -121,20 +121,17 @@ describe('AssetService', () => {
     await files;
   });
 
-  it('findById() reads one asset', async () => {
+  it('findAllFiles() reads every file of the space, light, live', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 'a1'));
-    http.expectOne(`${BASE}/a1`).flush({ id: 'a1' });
-    expect(await result).toEqual({ id: 'a1' });
-  });
-
-  it('findByIds() lists the given ids, without a request when there are none', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findByIds('space-1', ['a', 'b']));
-    http.expectOne(`${BASE}?ids=a,b&${EVERY}`).flush(page([{ id: 'a' }]));
-    expect(await result).toEqual([{ id: 'a' }]);
-
-    expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);
+    const results: unknown[][] = [];
+    const subscription = service.findAllFiles('space-1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}/files`).flush([{ id: 'a1', name: 'logo' }]);
+    events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}/files`).flush([{ id: 'a1', name: 'brand' }]);
+    expect(results).toEqual([[{ id: 'a1', name: 'logo' }], [{ id: 'a1', name: 'brand' }]]);
+    subscription.unsubscribe();
   });
 
   it('createFile() uploads the file as multipart with the parent folder first', async () => {

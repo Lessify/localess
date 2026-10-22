@@ -1,6 +1,6 @@
 import { ASSET_FILE_TYPE_MIME, type AssetPageable } from '@localess/shared';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, ilike, inArray, isNull, like, or, SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, isNull, like, or, SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -67,7 +67,7 @@ export class AssetRepository {
     });
   }
 
-  /** How many assets match the query's folder, kind, file type, search and ids. */
+  /** How many assets match the query's folder, kind, file type and search. */
   findAllCount(spaceId: string, query: AssetPageable): Promise<number> {
     return this.db.$count(assets, this.where(spaceId, query));
   }
@@ -95,6 +95,15 @@ export class AssetRepository {
       columns: { id: true, parentId: true, name: true },
       where: and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FOLDER')),
       orderBy: asc(assets.name),
+    });
+  }
+
+  /** Every file of the space, by name: only what the light list holds (what an Asset field shows). */
+  findFiles(spaceId: string): Promise<Pick<AssetEntity, 'id' | 'parentId' | 'name' | 'extension' | 'type' | 'size' | 'metadata'>[]> {
+    return this.db.query.assets.findMany({
+      columns: { id: true, parentId: true, name: true, extension: true, type: true, size: true, metadata: true },
+      where: and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FILE')),
+      orderBy: [asc(sql`lower(${assets.name})`), asc(assets.id)],
     });
   }
 
@@ -253,14 +262,12 @@ export class AssetRepository {
 
   /**
    * The query's filters: the folder's children (the root without `parentId`), or with `deep` everything under it (under
-   * the root: the whole space), or with `ids` those assets wherever they are; then the kind, the file type (folders
-   * stay, to browse) and the search (the name, anywhere, case-insensitive).
+   * the root: the whole space); then the kind, the file type (folders stay, to browse) and the search (the name,
+   * anywhere, case-insensitive).
    */
   private where(spaceId: string, query: AssetPageable): SQL | undefined {
     const conditions: SQL[] = [eq(assets.spaceId, spaceId)];
-    if (query.ids) {
-      conditions.push(query.ids.length ? inArray(assets.id, query.ids) : sql`false`);
-    } else if (!query.deep) {
+    if (!query.deep) {
       conditions.push(query.parentId ? eq(assets.parentId, query.parentId) : isNull(assets.parentId));
     } else if (query.parentId) {
       // A subquery in the condition: everything below the folder, at any depth.

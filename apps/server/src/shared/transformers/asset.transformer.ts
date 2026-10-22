@@ -1,4 +1,4 @@
-import { type Asset, type AssetFolderSummary, AssetKind } from '@localess/shared';
+import { type Asset, type AssetFileSummary, type AssetFolderSummary, AssetKind } from '@localess/shared';
 
 import { present } from '../../infra/database/without-nulls.js';
 import type { AssetEntity } from '../entities/asset.entity.js';
@@ -33,4 +33,22 @@ export function toAsset(entity: AssetEntity): Asset {
 /** A folder of the light list of every folder (`GET …/assets/folders`). */
 export function toAssetFolderSummary(entity: Pick<AssetEntity, 'id' | 'parentId' | 'name'>): AssetFolderSummary {
   return { id: entity.id, ...present({ parentId: entity.parentId }), name: entity.name };
+}
+
+/** A file of the light list of every file (`GET …/assets/files`): what an Asset field shows. */
+export function toAssetFileSummary(
+  entity: Pick<AssetEntity, 'id' | 'parentId' | 'name' | 'extension' | 'type' | 'size' | 'metadata'>,
+): AssetFileSummary {
+  const metadata = entity.metadata ?? {};
+  const number = (key: string): number | undefined => (typeof metadata[key] === 'number' ? metadata[key] : undefined);
+  const dimensions = present({ width: number('width'), height: number('height'), duration: number('duration') });
+  return {
+    id: entity.id,
+    ...present({ parentId: entity.parentId }),
+    name: entity.name,
+    extension: entity.extension ?? '',
+    type: entity.type ?? '',
+    size: entity.size ?? 0,
+    ...(Object.keys(dimensions).length ? { metadata: dimensions } : {}),
+  };
 }

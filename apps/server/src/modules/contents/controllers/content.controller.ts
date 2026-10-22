@@ -5,8 +5,9 @@ import {
   type ContentCountQuery,
   type ContentCreate,
   type ContentDataUpdate,
+  type ContentDocumentSummary,
+  type ContentFolderSummary,
   type ContentPageable,
-  type ContentSummary,
   type ContentUpdate,
   type Page,
 } from '@localess/shared';
@@ -35,11 +36,18 @@ export class ContentController {
     return this.contentService.findAll(spaceId, query);
   }
 
-  /** Every folder and document of the space, light (`ContentSummary`, no data), for the editor's store. */
-  @Get('names')
+  /** Every folder of the space, light (`ContentFolderSummary`), for the editor's store. */
+  @Get('folders')
   @RequireRole(ANY_ROLE)
-  findAllNames(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<ContentSummary[]> {
-    return this.contentService.findAllNames(spaceId);
+  findFolders(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<ContentFolderSummary[]> {
+    return this.contentService.findFolders(spaceId);
+  }
+
+  /** Every document of the space, light (`ContentDocumentSummary`, no data), for the editor's store. */
+  @Get('documents')
+  @RequireRole(ANY_ROLE)
+  findDocuments(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<ContentDocumentSummary[]> {
+    return this.contentService.findDocuments(spaceId);
   }
 
   @Get('count')

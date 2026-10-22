@@ -123,9 +123,8 @@ answers the full document for the editor).
 - `kind` (`FOLDER` / `DOCUMENT`), `search` (the name or the slug, anywhere, case-insensitive, wildcards literal).
 
 The Contents table and the References picker read one page (`ContentService.findPage` with a `FolderList`, the folder,
-search and scope state they share). The breadcrumbs, the Move dialog, the Link and References fields read the light list
-of every folder and document instead: `GET …/contents/names` (`ContentSummary[]`: id, kind, parentId, name, slug,
-publishedAt, updatedAt; no data, no paths), held live by `SpaceStore`. Tests: `apps/server/test/contents-paging.test.ts`.
+search and scope state they share). The breadcrumbs, the Move dialog, the Link and References fields read the light lists
+instead, held live by `SpaceStore` (see "Not paged" below). Tests: `apps/server/test/contents-paging.test.ts`.
 
 ## Assets: a folder's page, or everything under it
 
@@ -137,11 +136,10 @@ publishedAt, updatedAt; no data, no paths), held live by `SpaceStore`. Tests: `a
   under the root, the whole space.
 - `kind` (`FOLDER` / `FILE`), `fileType` (an Asset field's `AssetFileType`: files of that media type, through
   `ASSET_FILE_TYPE_MIME`; folders stay listed, to browse; `ANY` filters nothing), `search` (the name, anywhere,
-  case-insensitive, wildcards literal), `ids` (those assets wherever they are; until the Asset fields read the light
-  list of files).
+  case-insensitive, wildcards literal).
 
-For now the web `AssetService` reads every page of it: the Assets table, grid and picker move to the paged list next.
-Tests: `apps/server/test/assets-paging.test.ts`.
+The Assets page (list and grid) and the asset picker read one page (`AssetService.findPage` with a `FolderList`, as
+Contents). Tests: `apps/server/test/assets-paging.test.ts`.
 
 ## Not paged (and why)
 
@@ -150,6 +148,16 @@ Tests: `apps/server/test/assets-paging.test.ts`.
   cross references (what uses a schema) are worked out over all of them. `SpaceStore` holds them live
   (`GET …/schemas`, every schema); the Schemas page reads the store (no request of its own) and searches, filters,
   sorts and pages in the browser (`TableDataSource`, see [Table](../components/table.md)).
-- Folder lists for breadcrumbs and move targets (`…/folders`): the editor's folder map.
+- The light lists `SpaceStore` holds live, every row of the space with only what the screens need (no data, no paths;
+  paths are worked out from the folder chain):
+  - `GET …/contents/folders` (`ContentFolderSummary`: id, kind, parentId, name, slug) and `GET …/contents/documents`
+    (`ContentDocumentSummary`: id, kind, parentId, name, slug, publishedAt, updatedAt), read on entering a space:
+    breadcrumbs, the Move tree, the Link / Reference / References fields, the names and slugs a folder has.
+  - `GET …/assets/folders` (`AssetFolderSummary`: id, parentId, name), read on entering a space: breadcrumbs and paths
+    of the Assets page and the picker, the Move dialog.
+  - `GET …/assets/files` (`AssetFileSummary`: id, parentId, name, extension, type, size, width / height / duration),
+    read only once an editor shows an Asset or Assets field (`SpaceStore.loadAssetFiles()`): what those fields show.
+  Each is read again on every change event of its entity; patching from the event instead is a roadmap item
+  ([content-store-patch](../roadmap/content-store-patch.md)).
 - `SpaceStore` reads every space (100 a page): paging Spaces buys consistency and a faster admin table, not
   scalability, until the switcher searches the server.

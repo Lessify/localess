@@ -1,4 +1,4 @@
-# Contents in `SpaceStore`: patch from change events (TODO)
+# Contents and assets in `SpaceStore`: patch from change events (TODO)
 
 > Status: TODO, for when spaces grow past a few thousand contents. Related: [Contents](../features/spaces/contents.md) ·
 > [Frontend state](../frontend-state.md) · [Pagination](../server/pagination.md) ·
@@ -6,11 +6,16 @@
 
 ## Today
 
-`SpaceStore` holds a light list of every folder and document of the selected space (`GET …/contents/names`,
-`ContentSummary`: `id`, `kind`, `parentId`, `name`, `slug`, `publishedAt`, `updatedAt`; paths worked out from the folder
-chain, `core/utils/content-summaries.ts`). It feeds the breadcrumbs, the Move
-dialog's folder tree, the Link field picker and the References / Reference fields. It is a live query: every
-`contents` change event (a save, publish, move or delete, by anyone) fetches the whole list again.
+`SpaceStore` holds light lists of every folder and document of the selected space (`GET …/contents/folders`,
+`ContentFolderSummary`; `GET …/contents/documents`, `ContentDocumentSummary`: `id`, `kind`, `parentId`, `name`, `slug`,
+`publishedAt`, `updatedAt`; paths worked out from the folder chain, `core/utils/content-summaries.ts`). They feed the
+breadcrumbs, the Move dialog's folder tree, the Link field picker and the References / Reference fields. They are live
+queries: every `contents` change event (a save, publish, move or delete, by anyone) fetches both lists again.
+
+It holds the asset folders the same way (`GET …/assets/folders`), and, once an editor shows an Asset or Assets field,
+every file (`GET …/assets/files`, `AssetFileSummary`: name, extension, type, size, dimensions, duration): every `assets`
+change event fetches them again. Media libraries tend to outgrow documents (tens of thousands of images is common), so
+the files list is likely the first to need the patch below.
 
 At the sizes we target that is cheap: about 150 bytes an item, about 300 KB (about 50 KB gzipped) for the 2,000
 documents and 67 folders of the "Contents (large)" template.

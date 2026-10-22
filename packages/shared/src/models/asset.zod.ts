@@ -44,7 +44,7 @@ const zAssetName = z.string().trim().min(1).max(500);
 /**
  * `GET …/assets`: one page, folders first, then by name unless sorted otherwise. `?parentId=` (absent: the root),
  * `?deep=true` (everything under it), `?kind=`, `?fileType=` (files of that type; folders stay listed), `?search=` (the
- * name, anywhere), `?ids=a,b` (those assets wherever they are).
+ * name, anywhere).
  */
 export const zAssetPageable = zPageable(ASSET_SORT_FIELDS, 'name').extend({
   // The folder; absent: the root.
@@ -57,12 +57,6 @@ export const zAssetPageable = zPageable(ASSET_SORT_FIELDS, 'name').extend({
   kind: z.enum(['FOLDER', 'FILE']).optional(),
   fileType: z.enum(AssetFileType).optional(),
   search: zSearch,
-  // Until the Asset fields read the light list of files: the assets they show, wherever they are.
-  ids: z
-    .string()
-    .transform(it => (it ? it.split(',') : []))
-    .pipe(z.array(z.uuid()).max(100))
-    .optional(),
 });
 export type AssetPageable = z.infer<typeof zAssetPageable>;
 

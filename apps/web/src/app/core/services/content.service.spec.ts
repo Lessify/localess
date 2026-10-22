@@ -39,17 +39,24 @@ describe('ContentService', () => {
     expect(await result).toEqual(page([{ id: 'c1' }], 21, 1));
   });
 
-  it('findAllNames() reads every folder and document of the space, light, live', async () => {
+  it('findAllFolders() and findAllDocuments() read every folder, every document, of the space, light, live', async () => {
     vi.useFakeTimers();
     const service = setup();
-    const results: unknown[][] = [];
-    const subscription = service.findAllNames('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}/names`).flush([{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }]);
+    const folders: unknown[][] = [];
+    const documents: unknown[][] = [];
+    const subscriptions = [
+      service.findAllFolders('space-1').subscribe(it => folders.push(it)),
+      service.findAllDocuments('space-1').subscribe(it => documents.push(it)),
+    ];
+    http.expectOne(`${BASE}/folders`).flush([{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }]);
+    http.expectOne(`${BASE}/documents`).flush([]);
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'f2', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}/names`).flush([]);
-    expect(results).toEqual([[{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }], []]);
-    subscription.unsubscribe();
+    http.expectOne(`${BASE}/folders`).flush([]);
+    http.expectOne(`${BASE}/documents`).flush([{ id: 'd1', kind: 'DOCUMENT', name: 'Home', slug: 'home', updatedAt: '' }]);
+    expect(folders).toEqual([[{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }], []]);
+    expect(documents).toEqual([[], [{ id: 'd1', kind: 'DOCUMENT', name: 'Home', slug: 'home', updatedAt: '' }]]);
+    subscriptions.forEach(it => it.unsubscribe());
   });
 
   it('findPage() reads the page again when a content of the space changes, ignoring other entities', async () => {
