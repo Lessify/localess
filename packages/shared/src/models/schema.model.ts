@@ -227,11 +227,7 @@ export type SchemaComponentExport = Omit<SchemaComponent, 'id' | 'name' | 'creat
 
 export type SchemaEnumExport = Omit<SchemaEnum, 'id' | 'name' | 'createdAt' | 'updatedAt'> & { /** The name. */ id: string };
 
-// App API requests: schema.zod.ts (SchemaCreate, SchemaUpdate, SchemaRename); the editors send these shapes of SchemaUpdate.
-
-export type SchemaComponentUpdate = Omit<SchemaComponent, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
-
-export type SchemaEnumUpdate = Omit<SchemaEnum, 'id' | 'name' | 'type' | 'createdAt' | 'updatedAt'>;
+// App API requests: schema.zod.ts (SchemaCreate, SchemaUpdate, SchemaRename).
 
 /**
  * App API `GET …/schemas/:id/usage`: what uses a schema by name. A schema in use can be neither renamed nor deleted.

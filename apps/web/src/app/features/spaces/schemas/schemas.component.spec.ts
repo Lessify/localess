@@ -24,8 +24,8 @@ describe('SchemasComponent', () => {
 
   function setup(schemas: Schema[] = []) {
     const create = vi.fn().mockReturnValue(of(undefined));
-    const updateName = vi.fn().mockReturnValue(of(undefined));
-    const usage = vi.fn().mockReturnValue(of({ fields: [], contents: { count: 0, first: [] } }));
+    const rename = vi.fn().mockReturnValue(of(undefined));
+    const findUsage = vi.fn().mockReturnValue(of({ fields: [], contents: { count: 0, first: [] } }));
     const deleteSchema = vi.fn().mockReturnValue(of(undefined));
     const createSchemaImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const createSchemaExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
@@ -39,7 +39,7 @@ describe('SchemasComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { create, updateName, usage, delete: deleteSchema } },
+        { provide: SchemaService, useValue: { create, rename, findUsage, remove: deleteSchema } },
         { provide: SpaceStore, useValue: { schemas: signal(schemas), schemasLoaded: signal(true) } },
         { provide: TaskService, useValue: { createSchemaImportTask, createSchemaExportTask } },
         { provide: NotificationService, useValue: { success, error } },
@@ -53,8 +53,8 @@ describe('SchemasComponent', () => {
     return {
       component: fixture.componentInstance,
       create,
-      updateName,
-      usage,
+      rename,
+      findUsage,
       deleteSchema,
       createSchemaImportTask,
       createSchemaExportTask,
@@ -121,7 +121,7 @@ describe('SchemasComponent', () => {
   });
 
   it('openEditIdDialog() prevents default, updates the id, and notifies success', () => {
-    const { component, open, updateName, success } = setup();
+    const { component, open, rename, success } = setup();
     const event = fakeEvent();
     open.mockReturnValue({ closed$: of('new-id') });
     const element = schema({ id: 's1' });
@@ -130,29 +130,29 @@ describe('SchemasComponent', () => {
 
     expect(event.preventDefault).toHaveBeenCalled();
     expect(event.stopImmediatePropagation).toHaveBeenCalled();
-    expect(updateName).toHaveBeenCalledWith('space-1', element, 'new-id');
+    expect(rename).toHaveBeenCalledWith('space-1', element.id, 'new-id');
     expect(success).toHaveBeenCalledWith('Schema ID has been updated.');
   });
 
   it('openEditIdDialog() passes what uses the schema to the dialog, and opens it without when that fails', () => {
-    const { component, open, usage } = setup();
+    const { component, open, findUsage } = setup();
     const inUse = { fields: [{ schema: 'page', field: 'items' }], contents: { count: 0, first: [] } };
-    usage.mockReturnValue(of(inUse));
+    findUsage.mockReturnValue(of(inUse));
     open.mockReturnValue({ closed$: of(undefined) });
 
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1', name: 'card' }));
-    expect(usage).toHaveBeenCalledWith('space-1', 's1');
+    expect(findUsage).toHaveBeenCalledWith('space-1', 's1');
     expect(open.mock.calls[0][1].context).toMatchObject({ name: 'card', usage: inUse });
 
-    usage.mockReturnValue(throwError(() => new Error('boom')));
+    findUsage.mockReturnValue(throwError(() => new Error('boom')));
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1', name: 'card' }));
     expect(open.mock.calls[1][1].context.usage).toBeUndefined();
   });
 
   it("openEditIdDialog() shows the server's reason when it refuses the rename", () => {
-    const { component, open, updateName, error } = setup();
+    const { component, open, rename, error } = setup();
     open.mockReturnValue({ closed$: of('tile') });
-    updateName.mockReturnValue(throwError(() => conflict("Schema 'card' is in use: referenced by 'page' field 'items'")));
+    rename.mockReturnValue(throwError(() => conflict("Schema 'card' is in use: referenced by 'page' field 'items'")));
 
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1', name: 'card' }));
 
@@ -162,8 +162,8 @@ describe('SchemasComponent', () => {
   });
 
   it('openDeleteDialog() lists what uses the schema and offers no delete while it is in use', () => {
-    const { component, open, usage, deleteSchema } = setup();
-    usage.mockReturnValue(of({ fields: [], contents: { count: 1, first: [{ name: 'Home', fullSlug: 'home' }] } }));
+    const { component, open, findUsage, deleteSchema } = setup();
+    findUsage.mockReturnValue(of({ fields: [], contents: { count: 1, first: [{ name: 'Home', fullSlug: 'home' }] } }));
     open.mockReturnValue({ closed$: of(undefined) });
 
     component.openDeleteDialog(fakeEvent(), schema({ id: 's1', name: 'page' }));
@@ -192,8 +192,8 @@ describe('SchemasComponent', () => {
   });
 
   it('openEditIdDialog() notifies an error on failure', () => {
-    const { component, open, updateName, error } = setup();
-    updateName.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, open, rename, error } = setup();
+    rename.mockReturnValue(throwError(() => new Error('boom')));
     open.mockReturnValue({ closed$: of('new-id') });
 
     component.openEditIdDialog(fakeEvent(), schema({ id: 's1' }));

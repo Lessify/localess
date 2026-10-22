@@ -1,9 +1,11 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Schema, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { BehaviorSubject, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -32,16 +34,10 @@ describe('EditEnumComponent', () => {
     vi.useRealTimers();
   });
 
-  function setup(
-    entity: Schema,
-    allSchemas: Schema[] = [],
-    isActionSave = false,
-    allSchemas$?: Observable<Schema[]>,
-    entity$?: Observable<Schema>,
-  ) {
-    const findAll = vi.fn().mockReturnValue(allSchemas$ ?? of(allSchemas));
-    const findById = vi.fn().mockReturnValue(entity$ ?? of(entity));
-    const updateEnum = vi.fn().mockReturnValue(of(undefined));
+  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false, entity$?: Observable<Schema>) {
+    const schemas = signal(allSchemas);
+    const findOne = vi.fn().mockReturnValue(entity$ ?? of(entity));
+    const update = vi.fn().mockReturnValue(of(entity));
     const success = vi.fn();
     const error = vi.fn();
     const navigate = vi.fn();
@@ -49,7 +45,8 @@ describe('EditEnumComponent', () => {
     TestBed.overrideComponent(EditEnumComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll, findById, updateEnum } },
+        { provide: SchemaService, useValue: { findOne, update } },
+        { provide: SpaceStore, useValue: { schemas, schemasLoaded: signal(true) } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(isActionSave) } },
         { provide: Router, useValue: { navigate } },
@@ -59,14 +56,14 @@ describe('EditEnumComponent', () => {
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.componentRef.setInput('schemaId', 'enum1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, updateEnum, findById, success, error, navigate };
+    return { component: fixture.componentInstance, update, findOne, schemas, success, error, navigate };
   }
 
   it('ignores a live answer older than the version just saved (a refetch that started before Save)', () => {
     const v1 = enumSchema({ updatedAt: '2026-01-01T10:00:00.000Z' });
     const live = new BehaviorSubject<Schema>(v1);
-    const { component, findById } = setup(v1, [], false, undefined, live);
-    findById.mockReturnValue(NEVER);
+    const { component, findOne } = setup(v1, [], false, live);
+    findOne.mockReturnValue(NEVER);
     component.addLabel(labelInput('sizes'));
 
     component.save();
@@ -81,10 +78,10 @@ describe('EditEnumComponent', () => {
         {
           provide: SchemaService,
           useValue: {
-            findAll: vi.fn().mockReturnValue(of([])),
-            findById: vi.fn().mockReturnValue(of(enumSchema({ id: '01a1-uuid', name: 'Color', displayName: 'Color' }))),
+            findOne: vi.fn().mockReturnValue(of(enumSchema({ id: '01a1-uuid', name: 'Color', displayName: 'Color' }))),
           },
         },
+        { provide: SpaceStore, useValue: { schemas: signal([]), schemasLoaded: signal(true) } },
         { provide: NotificationService, useValue: { success: vi.fn(), error: vi.fn() } },
         { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(false) } },
         { provide: Router, useValue: { navigate: vi.fn() } },
@@ -143,12 +140,12 @@ describe('EditEnumComponent', () => {
   });
 
   it('keeps unsaved values when another schema of the space changes (live)', () => {
-    const all = new BehaviorSubject<Schema[]>([]);
-    const { component } = setup(enumSchema(), [], false, all);
+    const { component, schemas } = setup(enumSchema());
     component.newFieldName.setValue('BLUE');
     component.addValueForm();
 
-    all.next([enumSchema({ id: 'other', name: 'other' })]);
+    schemas.set([enumSchema({ id: 'other', name: 'other' })]);
+    TestBed.tick();
 
     expect(component.values.length).toBe(1);
   });
@@ -244,36 +241,34 @@ describe('EditEnumComponent', () => {
   });
 
   it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {
-    const { component, updateEnum } = setup(enumSchema(), [], true);
+    const { component, update } = setup(enumSchema(), [], true);
     const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
 
     component.captureKeyboard(event);
 
     expect(event.preventDefault).toHaveBeenCalled();
-    expect(updateEnum).toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
   });
 
   it('captureKeyboard() does nothing for other key combinations', () => {
-    const { component, updateEnum } = setup(enumSchema(), [], false);
+    const { component, update } = setup(enumSchema(), [], false);
     const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
 
     component.captureKeyboard(event);
 
     expect(event.preventDefault).not.toHaveBeenCalled();
-    expect(updateEnum).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('save() updates the enum and notifies success, resetting the loading flag after a delay', async () => {
     vi.useFakeTimers();
-    const { component, updateEnum, success } = setup(enumSchema());
+    const { component, update, success } = setup(enumSchema());
 
     component.save();
 
-    expect(updateEnum).toHaveBeenCalledWith('space-1', 'enum1', component.form.value);
+    expect(update).toHaveBeenCalledWith('space-1', 'enum1', component.form.value);
     // The server refuses an unknown field (a strict body): only the schema's settings are sent.
-    expect(Object.keys(updateEnum.mock.calls[0][2]).every(key => ['displayName', 'description', 'labels', 'values'].includes(key))).toBe(
-      true,
-    );
+    expect(Object.keys(update.mock.calls[0][2]).every(key => ['displayName', 'description', 'labels', 'values'].includes(key))).toBe(true);
     expect(success).toHaveBeenCalledWith('Schema has been updated.');
     expect(component.isSaveLoading()).toBe(true);
 
@@ -283,39 +278,41 @@ describe('EditEnumComponent', () => {
   });
 
   it('save() keeps edits made while the request is in flight: still dirty, not reloaded over', () => {
-    const { component, updateEnum, findById } = setup(enumSchema());
-    const answer = new Subject<void>();
-    updateEnum.mockReturnValue(answer);
+    const { component, update, findOne } = setup(enumSchema());
+    const answer = new Subject<Schema>();
+    update.mockReturnValue(answer);
     component.form.controls['displayName'].setValue('Sent');
     component.form.markAsDirty();
-    findById.mockClear();
+    findOne.mockClear();
 
     component.save();
     component.form.controls['displayName'].setValue('Typed while saving');
-    answer.next();
+    answer.next(enumSchema({ displayName: 'Sent' }));
     answer.complete();
 
-    expect(updateEnum.mock.calls[0][2]).toMatchObject({ displayName: 'Sent' });
+    expect(update.mock.calls[0][2]).toMatchObject({ displayName: 'Sent' });
     expect(component.form.controls['displayName'].value).toBe('Typed while saving');
     expect(component.form.dirty).toBe(true);
-    expect(findById).not.toHaveBeenCalled();
+    expect(findOne).not.toHaveBeenCalled();
   });
 
-  it('save() marks the form saved and reloads the stored schema when nothing changed while saving', () => {
-    const { component, findById } = setup(enumSchema());
+  it('save() marks the form saved and shows the schema the server answered, without reading it again', () => {
+    const { component, update, findOne } = setup(enumSchema());
+    update.mockReturnValue(of(enumSchema({ displayName: 'Stored' })));
     component.form.controls['displayName'].setValue('Sent');
     component.form.markAsDirty();
-    findById.mockClear();
+    findOne.mockClear();
 
     component.save();
 
     expect(component.form.dirty).toBe(false);
-    expect(findById).toHaveBeenCalledTimes(1);
+    expect(component.form.controls['displayName'].value).toBe('Stored');
+    expect(findOne).not.toHaveBeenCalled();
   });
 
   it('save() notifies an error on failure', () => {
-    const { component, updateEnum, error } = setup(enumSchema());
-    updateEnum.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, update, error } = setup(enumSchema());
+    update.mockReturnValue(throwError(() => new Error('boom')));
 
     component.save();
 

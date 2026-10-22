@@ -1,10 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Schema, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { BehaviorSubject, filter, NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -33,16 +35,10 @@ describe('EditCompComponent', () => {
     vi.useRealTimers();
   });
 
-  function setup(
-    entity: Schema,
-    allSchemas: Schema[] = [],
-    isActionSave = false,
-    allSchemas$?: Observable<Schema[]>,
-    entity$?: Observable<Schema>,
-  ) {
-    const findAll = vi.fn().mockReturnValue(allSchemas$ ?? of(allSchemas));
-    const findById = vi.fn().mockReturnValue(entity$ ?? of(entity));
-    const updateComponent = vi.fn().mockReturnValue(of(undefined));
+  function setup(entity: Schema, allSchemas: Schema[] = [], isActionSave = false, entity$?: Observable<Schema>) {
+    const schemas = signal(allSchemas);
+    const findOne = vi.fn().mockReturnValue(entity$ ?? of(entity));
+    const update = vi.fn().mockReturnValue(of(entity));
     const success = vi.fn();
     const error = vi.fn();
     const navigate = vi.fn();
@@ -50,7 +46,8 @@ describe('EditCompComponent', () => {
     TestBed.overrideComponent(EditCompComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SchemaService, useValue: { findAll, findById, updateComponent } },
+        { provide: SchemaService, useValue: { findOne, update } },
+        { provide: SpaceStore, useValue: { schemas, schemasLoaded: signal(true) } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: PlatformService, useValue: { isActionSave: vi.fn().mockReturnValue(isActionSave) } },
         { provide: Router, useValue: { navigate } },
@@ -60,7 +57,7 @@ describe('EditCompComponent', () => {
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.componentRef.setInput('schemaId', 'root1');
     fixture.detectChanges();
-    return { component: fixture.componentInstance, updateComponent, findById, success, error, navigate };
+    return { component: fixture.componentInstance, update, findOne, schemas, success, error, navigate };
   }
 
   it('loads the schema and populates the form on init', () => {
@@ -79,69 +76,55 @@ describe('EditCompComponent', () => {
   });
 
   it('keeps unsaved edits when another schema of the space changes (live), but takes the new schema list', () => {
-    const all = new BehaviorSubject<Schema[]>([]);
-    const { component } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }), [], false, all);
+    const { component, schemas } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
     component.addField();
 
     const other = rootSchema({ id: 'other', name: 'other' });
-    all.next([other]);
+    schemas.set([other]);
+    TestBed.tick();
 
     expect(component.fields.length).toBe(2);
     expect(component.isFormDirty).toBe(true);
     expect(component.schemas).toEqual([other]);
   });
 
-  it('save() marks the form saved and reloads the stored schema', () => {
-    const { component, findById } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
+  it('save() marks the form saved and shows the schema the server answered, without reading it again', () => {
+    const { component, findOne } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
     component.addField();
-    findById.mockClear();
+    findOne.mockClear();
 
     component.save();
 
-    expect(findById).toHaveBeenCalledTimes(1);
+    expect(findOne).not.toHaveBeenCalled();
     expect(component.isFormDirty).toBe(false);
     expect(component.fields.length).toBe(1);
   });
 
-  it('save() does not reload over edits made before the reload answers', () => {
-    const { component, findById } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
-    const reload = new BehaviorSubject<Schema | undefined>(undefined);
-    findById.mockReturnValue(reload.pipe(filter((it): it is Schema => it !== undefined)));
-    component.addField();
-
-    component.save();
-    component.addField();
-    reload.next(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
-
-    expect(component.fields.length).toBe(3);
-    expect(component.isFormDirty).toBe(true);
-  });
-
   it('save() keeps edits made while the request is in flight: still dirty, not reloaded over', () => {
-    const { component, updateComponent, findById } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
-    const answer = new Subject<void>();
-    updateComponent.mockReturnValue(answer);
+    const { component, update, findOne } = setup(rootSchema({ fields: [{ name: 'title', kind: SchemaFieldKind.TEXT }] }));
+    const answer = new Subject<Schema>();
+    update.mockReturnValue(answer);
     component.form.controls['displayName'].setValue('Sent');
     component.form.markAsDirty();
-    findById.mockClear();
+    findOne.mockClear();
 
     component.save();
     component.form.controls['displayName'].setValue('Typed while saving');
-    answer.next();
+    answer.next(rootSchema({ displayName: 'Sent' }));
     answer.complete();
 
-    expect(updateComponent.mock.calls[0][2]).toMatchObject({ displayName: 'Sent' });
+    expect(update.mock.calls[0][2]).toMatchObject({ displayName: 'Sent' });
     expect(component.form.controls['displayName'].value).toBe('Typed while saving');
     expect(component.isFormDirty).toBe(true);
-    expect(findById).not.toHaveBeenCalled();
+    expect(findOne).not.toHaveBeenCalled();
   });
 
   it('ignores a live answer older than the version just saved (a refetch that started before Save)', () => {
     const v1 = rootSchema({ updatedAt: '2026-01-01T10:00:00.000Z' });
     const live = new BehaviorSubject<Schema>(v1);
-    const { component, findById } = setup(v1, [], false, undefined, live);
+    const { component, findOne } = setup(v1, [], false, live);
     // The reload after Save has not answered yet.
-    findById.mockReturnValue(NEVER);
+    findOne.mockReturnValue(NEVER);
     component.addLabel(labelInput('marketing'));
 
     component.save();
@@ -240,9 +223,9 @@ describe('EditCompComponent', () => {
   });
 
   it("save() shows the server's reason when it refuses the fields", () => {
-    const { component, updateComponent, error } = setup(rootSchema());
+    const { component, update, error } = setup(rootSchema());
     const message = "Schema 'root1' is not valid: field 'title' is defined more than once";
-    updateComponent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));
+    update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));
 
     component.save();
 
@@ -250,9 +233,9 @@ describe('EditCompComponent', () => {
   });
 
   it('save() shows the first issue when the server refuses the body (a validation list)', () => {
-    const { component, updateComponent, error } = setup(rootSchema());
+    const { component, update, error } = setup(rootSchema());
     const message = ['fields.0.name: Invalid string: must match pattern', 'fields.1.kind: Invalid option'];
-    updateComponent.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));
+    update.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } })));
 
     component.save();
 
@@ -321,37 +304,35 @@ describe('EditCompComponent', () => {
   });
 
   it('captureKeyboard() saves and prevents default on Ctrl/Cmd+S', () => {
-    const { component, updateComponent } = setup(rootSchema(), [], true);
+    const { component, update } = setup(rootSchema(), [], true);
     const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
 
     component.captureKeyboard(event);
 
     expect(event.preventDefault).toHaveBeenCalled();
-    expect(updateComponent).toHaveBeenCalled();
+    expect(update).toHaveBeenCalled();
   });
 
   it('captureKeyboard() does nothing for other key combinations', () => {
-    const { component, updateComponent } = setup(rootSchema(), [], false);
+    const { component, update } = setup(rootSchema(), [], false);
     const event = { preventDefault: vi.fn() } as unknown as KeyboardEvent;
 
     component.captureKeyboard(event);
 
     expect(event.preventDefault).not.toHaveBeenCalled();
-    expect(updateComponent).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('save() updates the component and notifies success, resetting the loading flag after a delay', async () => {
     vi.useFakeTimers();
-    const { component, updateComponent, success } = setup(rootSchema());
+    const { component, update, success } = setup(rootSchema());
 
     component.save();
 
-    expect(updateComponent).toHaveBeenCalledWith('space-1', 'root1', component.form.value);
+    expect(update).toHaveBeenCalledWith('space-1', 'root1', component.form.value);
     // The server refuses an unknown field (a strict body): only the schema's settings are sent.
     expect(
-      Object.keys(updateComponent.mock.calls[0][2]).every(key =>
-        ['displayName', 'description', 'previewField', 'labels', 'fields'].includes(key),
-      ),
+      Object.keys(update.mock.calls[0][2]).every(key => ['displayName', 'description', 'previewField', 'labels', 'fields'].includes(key)),
     ).toBe(true);
     expect(success).toHaveBeenCalledWith('Schema has been updated.');
     expect(component.isSaveLoading()).toBe(true);
@@ -362,8 +343,8 @@ describe('EditCompComponent', () => {
   });
 
   it('save() notifies an error on failure', () => {
-    const { component, updateComponent, error } = setup(rootSchema());
-    updateComponent.mockReturnValue(throwError(() => new Error('boom')));
+    const { component, update, error } = setup(rootSchema());
+    update.mockReturnValue(throwError(() => new Error('boom')));
 
     component.save();
 

@@ -55,6 +55,8 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 
 Full field editor for `ROOT` and `NODE` schemas. Fields can be added, reordered, and configured. Protected by `isFormDirtyGuard`. Field names are unique (the new-field and name inputs refuse a taken one); the Preview Field select offers the fields of a previewable kind (`SCHEMA_PREVIEW_FIELD_KINDS`), and removing that field clears it; block pickers list NODE schemas, option sources ENUM schemas. The server checks the same rules on save (see [Schemas](../../roadmap/database-structure.md#schemas)) and a refusal (400/409) shows its reason in the error toast.
 
+Both editors read their schema live (`SchemaService.findOne`) and the space's other schemas from `SpaceStore.schemas()` (what a block picker or an option source offers); a change elsewhere keeps unsaved edits. Save sends `SchemaUpdate` built from the form (only the settings: the server refuses other keys) and shows the schema the server answers, unless the form changed while it saved.
+
 Supported field kinds:
 `TEXT`, `TEXTAREA`, `RICH_TEXT`, `MARKDOWN`, `NUMBER`, `COLOR`, `DATE`, `DATETIME`, `BOOLEAN`, `OPTION`, `OPTIONS`, `SCHEMA` (embed node), `SCHEMAS` (array of nodes), `LINK`, `REFERENCE`, `REFERENCES`, `ASSET`, `ASSETS`
 
@@ -76,7 +78,7 @@ Editor for `ENUM` schemas. Each entry has a `name` (display) and `value` (stored
 
 | Service | Purpose |
 |---------|---------|
-| `SchemaService` | CRUD for schemas |
+| `SchemaService` | `findAll` (every schema, for `SpaceStore`), `findOne` (live), `findUsage`, `create`, `update` (a component's or an enum's settings: `SchemaUpdate`), `rename`, `remove` |
 | `TaskService` | Create import/export tasks |
 | `NotificationService` | Snackbar feedback |
 

@@ -1,8 +1,8 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -11,6 +11,7 @@ import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { SpaceStore } from '@core/stores/space.store';
 import { serverReason } from '@core/utils/api-error';
 import { formValueKey } from '@core/utils/form-value';
 import {
@@ -18,10 +19,10 @@ import {
   AssetFileType,
   Schema,
   SCHEMA_PREVIEW_FIELD_KINDS,
-  SchemaComponentUpdate,
   SchemaField,
   SchemaFieldKind,
   SchemaType,
+  SchemaUpdate,
 } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -72,7 +73,7 @@ import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { combineLatest, take } from 'rxjs';
+import { combineLatest, filter } from 'rxjs';
 
 import { EditFieldComponent } from '../shared/edit-field/edit-field.component';
 import { SchemaValidator } from '../shared/schema.validator';
@@ -147,6 +148,11 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
+  private readonly spaceStore = inject(SpaceStore);
+  /** The space's schemas (live, from `SpaceStore`), once they arrived: the ones a field may offer. */
+  private readonly spaceSchemas$ = toObservable(
+    computed(() => (this.spaceStore.schemasLoaded() ? this.spaceStore.schemas() : undefined)),
+  ).pipe(filter(it => it !== undefined));
   private readonly notificationService = inject(NotificationService);
 
   readonly PREVIEW_TYPES = SCHEMA_PREVIEW_FIELD_KINDS;
@@ -186,7 +192,7 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   loadData(spaceId: string, entityId: string): void {
-    combineLatest([this.schemaService.findAll(spaceId), this.schemaService.findById(spaceId, entityId)])
+    combineLatest([this.spaceSchemas$, this.schemaService.findOne(spaceId, entityId)])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
@@ -445,27 +451,34 @@ export class EditCompComponent implements OnInit, DirtyFormGuardComponent {
     }
   }
 
+  /** What Save sends: the component's settings from the form, and only those (the server refuses other keys). */
+  private body(): SchemaUpdate {
+    const value = this.form.value;
+    return {
+      displayName: value['displayName'],
+      description: value['description'],
+      previewField: value['previewField'],
+      labels: value['labels'],
+      fields: value['fields'],
+    };
+  }
+
   save(): void {
     //console.group('save')
     this.isSaveLoading.set(true);
 
     const sent = formValueKey(this.form.value);
-    this.schemaService.updateComponent(this.spaceId(), this.schemaId(), this.form.value as SchemaComponentUpdate).subscribe({
-      next: () => {
+    this.schemaService.update(this.spaceId(), this.schemaId(), this.body()).subscribe({
+      next: schema => {
         this.savedOver = this.entity?.updatedAt;
         this.notificationService.success('Schema has been updated.');
         // Edits made while the request was in flight were not sent: they stay unsaved (dirty, the leave guard warns)
         // and are not reloaded over; the next Save sends them.
         if (formValueKey(this.form.value) !== sent) return;
         // Saved: live updates may reload the form again; it shows what was stored.
+        // The answer is the schema as stored.
         this.form.markAsPristine();
-        this.schemaService
-          .findById(this.spaceId(), this.schemaId())
-          .pipe(take(1))
-          .subscribe(schema => {
-            // Not over edits made since Save.
-            if (!this.form.dirty && !this.isStale(schema)) this.applySchema(schema);
-          });
+        if (!this.isStale(schema)) this.applySchema(schema);
       },
       error: (err: unknown) => {
         // A refusal (400 broken field rules or a validation list, 409) carries the server's reason.

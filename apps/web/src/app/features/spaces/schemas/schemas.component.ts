@@ -195,7 +195,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     event.preventDefault();
     event.stopImmediatePropagation();
     this.schemaService
-      .usage(this.spaceId(), element.id)
+      .findUsage(this.spaceId(), element.id)
       .pipe(
         // Without the usage, the rename is still offered.
         catchError(() => of(undefined)),
@@ -212,7 +212,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
             .closed$.pipe(take(1)),
         ),
         filter(it => it !== undefined),
-        switchMap(it => this.schemaService.updateName(this.spaceId(), element, it!)),
+        switchMap(it => this.schemaService.rename(this.spaceId(), element.id, it!)),
       )
       .subscribe({
         next: () => {
@@ -238,7 +238,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
     event.preventDefault();
     event.stopImmediatePropagation();
     this.schemaService
-      .usage(this.spaceId(), element.id)
+      .findUsage(this.spaceId(), element.id)
       .pipe(
         // Without the usage, the delete is still offered; the server refuses it if the schema is in use.
         map(usage => describeSchemaUsage(usage)),
@@ -262,7 +262,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
             .closed$.pipe(take(1)),
         ),
         filter(it => it || false),
-        switchMap(() => this.schemaService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.schemaService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {
