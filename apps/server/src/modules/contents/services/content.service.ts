@@ -1,12 +1,13 @@
 import { type Content, type ContentData, type ContentFolderSummary, WebhookEvent } from '@localess/shared';
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
-import { toContent } from '../../../shared/transformers/content.transformer.js';
-import { toDto } from '../../../shared/transformers/dto.transformer.js';
-import { type ContentQuery, ContentRepository, type ContentWithPath } from '../repositories/content.repository.js';
+import { toContent, toContentFolderSummary } from '../../../shared/transformers/content.transformer.js';
+import { type ContentQuery, ContentRepository, type ContentWithPath, type NewContent } from '../repositories/content.repository.js';
+import { contentErrors } from '../utils/content-errors.js';
 import { randomSuffix } from '../utils/slug.utils.js';
 
 function found<T>(result: T | undefined): T {
@@ -15,9 +16,10 @@ function found<T>(result: T | undefined): T {
 }
 
 /**
- * Content tree of a space, linked by `parent_id` (the repository, in the write's transaction): a rename or move
- * changes one row, a delete takes the subtree. The service words the repository's refusals (400/409) and fires the
- * webhooks as before, only after the commit, so receivers never see (or fetch) uncommitted state.
+ * Content tree of a space, linked by `parent_id`: a rename or move changes one row, a delete takes the subtree. Every
+ * route checks the space first, then the content; a write checks what it can from what it read, writes (the repository
+ * checks the tree's rules again under the contents lock, with the same messages) and reads the content again. Webhooks
+ * fire as before, only after the commit, so receivers never see (or fetch) uncommitted state.
  */
 @Injectable()
 export class ContentService {
@@ -34,7 +36,7 @@ export class ContentService {
 
   async count(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
     await this.requireSpace(spaceId);
-    return this.contentRepository.count(spaceId, kind);
+    return this.contentRepository.findAllCount(spaceId, kind);
   }
 
   async findOne(spaceId: string, contentId: string): Promise<Content> {
@@ -44,36 +46,22 @@ export class ContentService {
   /** Every folder of the space: the editor builds its breadcrumbs, paths and move targets from them. */
   async findFolders(spaceId: string): Promise<ContentFolderSummary[]> {
     await this.requireSpace(spaceId);
-    return (await this.contentRepository.findFolders(spaceId)).map(it => toDto(it) as unknown as ContentFolderSummary);
+    return (await this.contentRepository.findFolders(spaceId)).map(toContentFolderSummary);
   }
 
   /**
    * The parent must be a folder of the space (absent: the root), the slug free among its siblings, and a document's
-   * schema a ROOT schema of the space.
+   * schema a ROOT schema of the space (the repository checks them under the contents lock).
    */
-  async create(
-    spaceId: string,
-    input: {
-      kind: 'FOLDER' | 'DOCUMENT';
-      parentId?: string | null;
-      name: string;
-      slug: string;
-      schema?: string;
-      data?: ContentData;
-    },
-  ): Promise<Content> {
+  async create(spaceId: string, input: NewContent): Promise<Content> {
     await this.requireSpace(spaceId);
-    const result = await this.contentRepository.create(spaceId, input);
-    if ('noSchema' in result) throw new BadRequestException(`No ROOT schema '${input.schema}' in the space`);
-    if ('noParent' in result) throw new BadRequestException('No such folder');
-    if ('taken' in result) throw new ConflictException(`'${result.taken}' is already used`);
-    return toContent(result.content);
+    return toContent(await this.findContent(spaceId, await this.contentRepository.create(spaceId, input)));
   }
 
   /** A copy next to the original with a random suffix, never published. */
   async clone(spaceId: string, contentId: string): Promise<Content> {
     const source = await this.requireContent(spaceId, contentId);
-    if (source.kind !== 'DOCUMENT') throw new BadRequestException('Only documents can be cloned');
+    if (source.kind !== 'DOCUMENT') throw new BadRequestException(contentErrors.cloneNotDocument);
     const suffix = randomSuffix();
     return this.create(spaceId, {
       kind: 'DOCUMENT',
@@ -87,21 +75,22 @@ export class ContentService {
 
   /** Rename and/or move (`parentId` null: the root). A folder is not moved under itself. */
   async update(spaceId: string, contentId: string, input: { name?: string; slug?: string; parentId?: string | null }): Promise<Content> {
-    await this.requireContent(spaceId, contentId);
-    const result = found(await this.contentRepository.update(spaceId, contentId, input));
-    if ('noParent' in result) throw new BadRequestException('No such folder');
-    if ('taken' in result) throw new ConflictException(`'${result.taken}' is already used`);
-    if ('intoItself' in result) throw new BadRequestException('A folder cannot be moved into itself');
+    const current = await this.requireContent(spaceId, contentId);
+    await this.contentRepository.update(spaceId, contentId, input);
+    const content = await this.findContent(spaceId, contentId);
     // As before: a document edit that keeps its path is a `content.changed`; a move is not.
-    if (!result.moved && result.content.kind === 'DOCUMENT') this.changed(spaceId, result.content);
-    return toContent(result.content);
+    const moved =
+      (input.parentId !== undefined && input.parentId !== current.parentId) || (input.slug !== undefined && input.slug !== current.slug);
+    if (!moved && content.kind === 'DOCUMENT') this.changed(spaceId, content);
+    return toContent(content);
   }
 
   /** Saves the editor's data, with the ids it points to worked out here (`contentRefs`), not taken from the client. */
   async updateData(spaceId: string, contentId: string, data: ContentData): Promise<Content> {
-    await this.requireContent(spaceId, contentId);
-    const content = found(await this.contentRepository.updateData(spaceId, contentId, { data, ...contentRefs(data) }));
-    if ('notDocument' in content) throw new BadRequestException('Only documents have data');
+    const current = await this.requireContent(spaceId, contentId);
+    if (current.kind !== 'DOCUMENT') throw new BadRequestException(contentErrors.notDocument);
+    await this.contentRepository.updateData(spaceId, contentId, { data, ...contentRefs(data) });
+    const content = await this.findContent(spaceId, contentId);
     this.changed(spaceId, content);
     return toContent(content);
   }
@@ -109,37 +98,48 @@ export class ContentService {
   /** Deletes the item and, for a folder, everything under it. Published snapshots cascade. */
   async remove(spaceId: string, contentId: string): Promise<void> {
     await this.requireContent(spaceId, contentId);
-    const deleted = found(await this.contentRepository.delete(spaceId, contentId));
-    // The delete trigger fired `content.changed` once per deleted item.
-    for (const it of deleted) this.changed(spaceId, it);
+    // A `content.changed` per deleted item.
+    for (const it of await this.contentRepository.delete(spaceId, contentId)) this.changed(spaceId, it);
   }
 
   /**
-   * Publish a document (one snapshot per space locale), or every document under a folder that changed
-   * since it was last published. `updatedAt` is left alone so "changed since publish" keeps working.
+   * Publish a document (one snapshot per space locale), or every document under a folder that changed since it was
+   * last published. `updatedAt` is left alone so "changed since publish" keeps working.
    */
   async publish(spaceId: string, contentId: string): Promise<void> {
-    await this.requireContent(spaceId, contentId);
-    const target = found(await this.contentRepository.publish(spaceId, contentId));
+    const space = await this.requireSpace(spaceId);
+    const target = await this.findContent(spaceId, contentId);
+    await this.contentRepository.publish(
+      spaceId,
+      contentId,
+      space.spaceLocales.map(it => it.localeId),
+    );
     this.webhookDispatcher.dispatch(spaceId, WebhookEvent.CONTENT_PUBLISHED, { id: contentId, fullSlug: target.fullSlug });
   }
 
   /** Stops serving a document (or every published document under a folder). */
   async unpublish(spaceId: string, contentId: string): Promise<void> {
-    await this.requireContent(spaceId, contentId);
-    const target = found(await this.contentRepository.unpublish(spaceId, contentId));
+    const target = await this.requireContent(spaceId, contentId);
+    await this.contentRepository.unpublish(spaceId, contentId);
     this.webhookDispatcher.dispatch(spaceId, WebhookEvent.CONTENT_UNPUBLISHED, { id: contentId, fullSlug: target.fullSlug });
   }
 
-  /** 404 "Space not found" when the space is not there: every App API route checks it first. */
-  private async requireSpace(spaceId: string): Promise<void> {
-    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
+  /** The space with its locales; 404 "Space not found" when it is not there: every App API route checks it first. */
+  private async requireSpace(spaceId: string): Promise<SpaceWithLocales> {
+    const space = await this.spaceLookupRepository.findOne(spaceId);
+    if (!space) throw new NotFoundException('Space not found');
+    return space;
   }
 
   /** The space first, then its content (404 "Content not found", also for a content of another space). */
   private async requireContent(spaceId: string, contentId: string): Promise<ContentWithPath> {
     await this.requireSpace(spaceId);
-    return found(await this.contentRepository.findById(spaceId, contentId));
+    return this.findContent(spaceId, contentId);
+  }
+
+  /** The content as stored (404 when it went meanwhile). */
+  private async findContent(spaceId: string, contentId: string): Promise<ContentWithPath> {
+    return found(await this.contentRepository.findOne(spaceId, contentId));
   }
 
   private changed(spaceId: string, content: Pick<ContentWithPath, 'id' | 'fullSlug'>): void {

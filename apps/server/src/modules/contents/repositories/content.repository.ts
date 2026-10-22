@@ -1,6 +1,6 @@
 import type { ContentData } from '@localess/shared';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, asc, count, desc, eq, ilike, inArray, isNotNull, isNull, SQL, sql } from 'drizzle-orm';
+import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -9,7 +9,6 @@ import { isUniqueViolation, type Transaction, transaction } from '../../../infra
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLinks, lockContents } from '../../../shared/data-rules/content-snapshots.js';
 import type { ContentEntity } from '../../../shared/entities/content.entity.js';
-import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import {
   type ContentWithPath,
   type Executor,
@@ -19,8 +18,8 @@ import {
   subtree,
   withPaths,
 } from '../../../shared/queries/content-tree.query.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
+import { contentErrors } from '../utils/content-errors.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 import { startsWith } from '../utils/slug.utils.js';
 
@@ -47,16 +46,13 @@ export interface NewContent {
 }
 
 export type ContentMove = { name?: string; slug?: string; parentId?: string | null };
-export type ContentDataUpdate = {
+/** A document's data with the ids it points to (worked out by the service). */
+export type ContentDataValues = {
   data: ContentData;
   assets: string[];
   links: string[];
   references: string[];
 };
-
-/** `taken`: the path a sibling already has. */
-export type CreateResult = { content: ContentWithPath } | { noSchema: true } | { noParent: true } | { taken: string };
-export type UpdateResult = { content: ContentWithPath; moved: boolean } | { noParent: true } | { taken: string } | { intoItself: true };
 
 interface WriteResult<T> {
   result: T;
@@ -71,21 +67,22 @@ const TAKEN = Symbol('taken');
  * The `contents` rows of a space and their published snapshots (`content_snapshots`). The tree is linked by
  * `parent_id`: the foreign key keeps every child with its parent (a delete cascades to the subtree), the unique
  * `(parent, slug)` keeps siblings apart, and paths are computed (content-tree.query.ts), so a rename or move changes one
- * row. Every write, in one transaction: the space checked (404 when gone), the contents lock (first, so the writes of a
- * space run one at a time and never deadlock on row locks), the change, the drafts of the changed documents and the
- * `/links` lists dropped (content-snapshots.ts) and a `contents` change event per changed row. Rules the database does
- * not hold (the parent is a folder, a folder is not moved under itself) are checked in the write's transaction and
- * answered as results (`noParent`, `taken`, `intoItself`, …) for the service to word. Writes on a content id the space
- * does not have answer `undefined` and change nothing.
+ * row. Every write, in one transaction: the contents lock (first, so the writes of a space run one at a time and never
+ * deadlock on row locks), the change, the drafts of the changed documents and the `/links` lists dropped
+ * (content-snapshots.ts) and a `contents` change event per changed row. The service has checked the space and the
+ * content; the rules that must hold at the write (a document's schema is a ROOT schema, the parent is a folder, the slug
+ * is free among its siblings, a folder is not moved under itself) are checked again under the lock and refused with the
+ * service's messages (`contentErrors`: 400, 409). Writes answer nothing (`create` the new id, `delete` what it deleted);
+ * on a content id the space does not have (deleted meanwhile) they change nothing.
  */
 @Injectable()
 export class ContentRepository {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly eventService: EventService,
-    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
+  /** Folders first, then by name. */
   async findAll(spaceId: string, query: ContentQuery): Promise<ContentWithPath[]> {
     const conditions: SQL[] = [eq(contents.spaceId, spaceId)];
     if (query.parentId === null) conditions.push(isNull(contents.parentId));
@@ -96,33 +93,28 @@ export class ContentRepository {
       const ids = query.ids.filter(isUuid);
       conditions.push(ids.length ? inArray(contents.id, ids) : sql`false`);
     }
-    const select = this.db
-      .select()
-      .from(contents)
-      .where(and(...conditions))
-      .orderBy(desc(contents.kind), asc(contents.name));
-    const rows = await (query.limit ? select.limit(query.limit) : select);
+    const rows = await this.db.query.contents.findMany({
+      where: and(...conditions),
+      orderBy: [desc(contents.kind), asc(contents.name)],
+      limit: query.limit,
+    });
     return withPaths(rows, await folderPaths(this.db, spaceId));
   }
 
   /** Every folder of the space, by name: the editor's folder map. */
   findFolders(spaceId: string): Promise<Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug'>[]> {
-    return this.db
-      .select({ id: contents.id, parentId: contents.parentId, name: contents.name, slug: contents.slug })
-      .from(contents)
-      .where(and(eq(contents.spaceId, spaceId), eq(contents.kind, 'FOLDER')))
-      .orderBy(asc(contents.name));
+    return this.db.query.contents.findMany({
+      columns: { id: true, parentId: true, name: true, slug: true },
+      where: and(eq(contents.spaceId, spaceId), eq(contents.kind, 'FOLDER')),
+      orderBy: [asc(contents.name)],
+    });
   }
 
-  async count(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
-    const [{ value }] = await this.db
-      .select({ value: count() })
-      .from(contents)
-      .where(kind ? and(eq(contents.spaceId, spaceId), eq(contents.kind, kind)) : eq(contents.spaceId, spaceId));
-    return Number(value);
+  findAllCount(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
+    return this.db.$count(contents, kind ? and(eq(contents.spaceId, spaceId), eq(contents.kind, kind)) : eq(contents.spaceId, spaceId));
   }
 
-  async findById(spaceId: string, id: string): Promise<ContentWithPath | undefined> {
+  async findOne(spaceId: string, id: string): Promise<ContentWithPath | undefined> {
     const row = await this.find(this.db, spaceId, id);
     return row ? this.withPath(this.db, spaceId, row) : undefined;
   }
@@ -132,37 +124,35 @@ export class ContentRepository {
    * or delete of it waits and then sees the new document, or runs first and this finds none. The parent folder is
    * locked the same way, so a delete of it waits for the insert (and then takes the new child with it).
    */
-  create(spaceId: string, values: NewContent, tx?: Transaction): Promise<CreateResult> {
-    return this.write<CreateResult>(spaceId, tx, async t => {
+  async create(spaceId: string, values: NewContent, tx?: Transaction): Promise<string> {
+    const id = newUuid();
+    await this.write(spaceId, tx, async t => {
       if (values.kind === 'DOCUMENT') {
         const [schema] = await t
           .select({ type: schemas.type })
           .from(schemas)
           .where(and(eq(schemas.spaceId, spaceId), eq(schemas.name, values.schema ?? '')))
           .for('share');
-        if (schema?.type !== 'ROOT') return { result: { noSchema: true as const }, changed: [] };
+        if (schema?.type !== 'ROOT') throw new BadRequestException(contentErrors.noSchema(values.schema));
       }
       const parentId = values.parentId ?? null;
-      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) return { result: { noParent: true as const }, changed: [] };
+      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) throw new BadRequestException(contentErrors.noParent);
       const inserted = await this.unlessTaken(t, sp =>
-        sp
-          .insert(contents)
-          .values({
-            id: newUuid(),
-            spaceId,
-            parentId,
-            kind: values.kind,
-            name: values.name,
-            slug: values.slug,
-            schema: values.kind === 'DOCUMENT' ? values.schema : null,
-            data: values.kind === 'DOCUMENT' ? (values.data ?? null) : null,
-          })
-          .returning(),
+        sp.insert(contents).values({
+          id,
+          spaceId,
+          parentId,
+          kind: values.kind,
+          name: values.name,
+          slug: values.slug,
+          schema: values.kind === 'DOCUMENT' ? values.schema : null,
+          data: values.kind === 'DOCUMENT' ? (values.data ?? null) : null,
+        }),
       );
-      if (inserted === TAKEN) return { result: { taken: await this.pathAt(t, spaceId, parentId, values.slug) }, changed: [] };
-      const content = await this.withPath(t, spaceId, inserted[0]);
-      return { result: { content }, changed: [{ id: content.id, op: 'created' }] };
+      if (inserted === TAKEN) throw new ConflictException(contentErrors.taken(await this.pathAt(t, spaceId, parentId, values.slug)));
+      return { result: undefined, changed: [{ id, op: 'created' }] };
     });
+    return id;
   }
 
   /**
@@ -170,78 +160,75 @@ export class ContentRepository {
    * itself; the contents lock every write takes first means two crossing moves can not both pass. `moved`: the path changed; then the drafts
    * of everything under it go too.
    */
-  update(spaceId: string, id: string, values: ContentMove, tx?: Transaction): Promise<UpdateResult | undefined> {
-    return this.write<UpdateResult>(spaceId, tx, async t => {
+  update(spaceId: string, id: string, values: ContentMove, tx?: Transaction): Promise<void> {
+    return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
       const slug = values.slug ?? current.slug;
       const parentId = values.parentId !== undefined ? values.parentId : current.parentId;
       const parentChanged = parentId !== current.parentId;
-      if (parentChanged && parentId && !(await this.lockFolder(t, spaceId, parentId))) {
-        return { result: { noParent: true as const }, changed: [] };
-      }
+      if (parentChanged && parentId && !(await this.lockFolder(t, spaceId, parentId)))
+        throw new BadRequestException(contentErrors.noParent);
       if (parentChanged && current.kind === 'FOLDER' && (await isUnderOrSelf(t, spaceId, id, parentId))) {
-        return { result: { intoItself: true as const }, changed: [] };
+        throw new BadRequestException(contentErrors.intoItself);
       }
       const updated = await this.unlessTaken(t, sp =>
         sp
           .update(contents)
           .set({ name: values.name ?? current.name, slug, parentId })
-          .where(this.byId(spaceId, id))
-          .returning(),
+          .where(this.byId(spaceId, id)),
       );
-      if (updated === TAKEN) return { result: { taken: await this.pathAt(t, spaceId, parentId, slug) }, changed: [] };
+      if (updated === TAKEN) throw new ConflictException(contentErrors.taken(await this.pathAt(t, spaceId, parentId, slug)));
       const moved = parentChanged || slug !== current.slug;
       const changed: { id: string; op: 'updated' }[] = [{ id, op: 'updated' }];
       if (moved && current.kind === 'FOLDER') {
         const under = await subtree(t, spaceId, id);
         changed.push(...under.filter(it => it.id !== id).map(it => ({ id: it.id, op: 'updated' as const })));
       }
-      return { result: { content: await this.withPath(t, spaceId, updated[0]), moved }, changed };
+      return { result: undefined, changed };
     });
   }
 
   /** Saves the editor's data and the ids it references (assets, links, references). */
-  updateData(
-    spaceId: string,
-    id: string,
-    values: ContentDataUpdate,
-    tx?: Transaction,
-  ): Promise<ContentWithPath | { notDocument: true } | undefined> {
-    return this.write<ContentWithPath | { notDocument: true }>(spaceId, tx, async t => {
+  updateData(spaceId: string, id: string, values: ContentDataValues, tx?: Transaction): Promise<void> {
+    return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
-      if (current.kind !== 'DOCUMENT') return { result: { notDocument: true as const }, changed: [] };
-      const [row] = await t.update(contents).set(values).where(this.byId(spaceId, id)).returning();
-      return { result: await this.withPath(t, spaceId, row), changed: [{ id, op: 'updated' }] };
+      if (current.kind !== 'DOCUMENT') throw new BadRequestException(contentErrors.notDocument);
+      await t.update(contents).set(values).where(this.byId(spaceId, id));
+      return { result: undefined, changed: [{ id, op: 'updated' }] };
     });
   }
 
-  /** Deletes the item and everything under it (the foreign key cascades); answers what was deleted. Their snapshots cascade. */
-  delete(spaceId: string, id: string, tx?: Transaction): Promise<{ id: string; fullSlug: string }[] | undefined> {
-    return this.write(spaceId, tx, async t => {
+  /**
+   * Deletes the item and everything under it (the foreign key cascades; their snapshots too). Answers what it deleted,
+   * worked out under the lock: the service sends a webhook for each (gone meanwhile: nothing).
+   */
+  async delete(spaceId: string, id: string, tx?: Transaction): Promise<{ id: string; fullSlug: string }[]> {
+    const deleted = await this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
       // The paths, for the events and webhooks, before the rows go.
       await this.lockFolder(t, spaceId, id, 'update');
       const ids = (await subtree(t, spaceId, id)).map(it => it.id);
-      const rows = await t
-        .select({ id: contents.id, parentId: contents.parentId, slug: contents.slug })
-        .from(contents)
-        .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, ids)));
-      const deleted = withPaths(rows, await folderPaths(t, spaceId)).map(it => ({ id: it.id, fullSlug: it.fullSlug }));
+      const rows = await t.query.contents.findMany({
+        columns: { id: true, parentId: true, slug: true },
+        where: and(eq(contents.spaceId, spaceId), inArray(contents.id, ids)),
+      });
+      const gone = withPaths(rows, await folderPaths(t, spaceId)).map(it => ({ id: it.id, fullSlug: it.fullSlug }));
       await t.delete(contents).where(this.byId(spaceId, id));
-      return { result: deleted, changed: deleted.map(it => ({ id: it.id, op: 'deleted' as const })) };
+      return { result: gone, changed: gone.map(it => ({ id: it.id, op: 'deleted' as const })) };
     });
+    return deleted ?? [];
   }
 
   /**
    * Publish a document (one snapshot per space locale, all with the publish time as `built_at`, their `cv`), or every
    * document under a folder that changed since it was last published. `updatedAt` is left alone so "changed since
-   * publish" keeps working. Answers the published item.
+   * publish" keeps working. `localeIds`: the space's locales, a snapshot each.
    */
-  publish(spaceId: string, id: string, tx?: Transaction): Promise<ContentWithPath | undefined> {
-    return this.write(spaceId, tx, async (t, space) => {
+  publish(spaceId: string, id: string, localeIds: string[], tx?: Transaction): Promise<void> {
+    return this.write(spaceId, tx, async t => {
       const target = await this.find(t, spaceId, id);
       if (!target) return undefined;
       const folders = await folderPaths(t, spaceId);
@@ -249,9 +236,8 @@ export class ContentRepository {
         target.kind === 'DOCUMENT'
           ? [target]
           : (await this.documentsUnder(t, spaceId, id)).filter(doc => !(doc.publishedAt && doc.publishedAt > doc.updatedAt));
-      const schemaById = schemasByName(await t.select().from(schemas).where(eq(schemas.spaceId, spaceId)));
+      const schemaById = schemasByName(await t.query.schemas.findMany({ where: eq(schemas.spaceId, spaceId) }));
       const publishedAt = new Date();
-      const localeIds = space.spaceLocales.map(it => it.localeId);
       for (const document of withPaths(documents, folders)) {
         for (const locale of localeIds) {
           const data = buildDocumentStorage(document, schemaById, locale, publishedAt.toISOString());
@@ -268,16 +254,12 @@ export class ContentRepository {
           .set({ publishedAt, ...keepUpdatedAt(contents) })
           .where(this.byId(spaceId, document.id));
       }
-      return {
-        result: { ...target, ...pathOf(target, folders) },
-        changed: documents.map(it => ({ id: it.id, op: 'updated' as const })),
-        drafts: false,
-      };
+      return { result: undefined, changed: documents.map(it => ({ id: it.id, op: 'updated' as const })), drafts: false };
     });
   }
 
-  /** Stops serving a document (or every published document under a folder). Answers the unpublished item. */
-  unpublish(spaceId: string, id: string, tx?: Transaction): Promise<ContentWithPath | undefined> {
+  /** Stops serving a document (or every published document under a folder). */
+  unpublish(spaceId: string, id: string, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       const target = await this.find(t, spaceId, id);
       if (!target) return undefined;
@@ -301,40 +283,24 @@ export class ContentRepository {
           ),
         );
       }
-      return {
-        result: await this.withPath(t, spaceId, target),
-        changed: unpublished.map(it => ({ id: it.id, op: 'updated' as const })),
-        drafts: false,
-      };
+      return { result: undefined, changed: unpublished.map(it => ({ id: it.id, op: 'updated' as const })), drafts: false };
     });
   }
 
   /**
-   * Runs `work` in the write's transaction (or the caller's), with the space checked first; then drops the snapshots
-   * the change makes stale and queues the change events. When `work` finds no content it answers `undefined`.
+   * Runs `work` in the write's transaction (or the caller's), after the contents lock; then drops the snapshots the
+   * change makes stale and queues the change events. `work` answers `undefined` when it found no content.
    */
   private write<T>(
     spaceId: string,
     tx: Transaction | undefined,
-    work: (tx: Transaction, space: SpaceWithLocales) => Promise<WriteResult<T>>,
-  ): Promise<T>;
-  private write<T>(
-    spaceId: string,
-    tx: Transaction | undefined,
-    work: (tx: Transaction, space: SpaceWithLocales) => Promise<WriteResult<T> | undefined>,
-  ): Promise<T | undefined>;
-  private write<T>(
-    spaceId: string,
-    tx: Transaction | undefined,
-    work: (tx: Transaction, space: SpaceWithLocales) => Promise<WriteResult<T> | undefined>,
+    work: (tx: Transaction) => Promise<WriteResult<T> | undefined>,
   ): Promise<T | undefined> {
     return transaction(this.db, tx, async t => {
-      const space = await this.spaceLookupRepository.findOne(spaceId, t);
-      if (!space) throw new NotFoundException('Space not found');
       // First, before any row lock: every write of the space takes the contents lock in the same order, so two writes
       // never wait on each other's row locks (a deadlock), and each one's checks see the previous one committed.
       await lockContents(t, spaceId);
-      const outcome = await work(t, space);
+      const outcome = await work(t);
       if (!outcome) return undefined;
       if (outcome.changed.length) {
         if (outcome.drafts !== false) {
@@ -350,6 +316,7 @@ export class ContentRepository {
 
   /** Locks folder `id` (shared: it may not be deleted or moved meanwhile); `false` when the space has no such folder. */
   private async lockFolder(t: Transaction, spaceId: string, id: string, strength: 'share' | 'update' = 'share'): Promise<boolean> {
+    // A lock (`.for(…)`): the relational API has none.
     const [row] = await t.select({ kind: contents.kind }).from(contents).where(this.byId(spaceId, id)).for(strength);
     return row?.kind === 'FOLDER';
   }
@@ -358,10 +325,7 @@ export class ContentRepository {
   private async documentsUnder(t: Transaction, spaceId: string, id: string): Promise<ContentEntity[]> {
     const ids = (await subtree(t, spaceId, id)).filter(it => it.kind === 'DOCUMENT').map(it => it.id);
     if (!ids.length) return [];
-    return t
-      .select()
-      .from(contents)
-      .where(and(eq(contents.spaceId, spaceId), inArray(contents.id, ids)));
+    return t.query.contents.findMany({ where: and(eq(contents.spaceId, spaceId), inArray(contents.id, ids)) });
   }
 
   /** Runs a write in a savepoint; `TAKEN` when a sibling has the slug (the transaction stays usable). */
@@ -383,9 +347,8 @@ export class ContentRepository {
     return { ...row, ...pathOf(row, await folderPaths(executor, spaceId)) };
   }
 
-  private async find(executor: Pick<Database, 'select'>, spaceId: string, id: string): Promise<ContentEntity | undefined> {
-    const [row] = await executor.select().from(contents).where(this.byId(spaceId, id));
-    return row;
+  private find(executor: Database | Transaction, spaceId: string, id: string): Promise<ContentEntity | undefined> {
+    return executor.query.contents.findFirst({ where: this.byId(spaceId, id) });
   }
 
   private byId(spaceId: string, id: string) {

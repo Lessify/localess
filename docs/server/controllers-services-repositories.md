@@ -88,8 +88,8 @@ repositories call it.
   answer it; count with `select({ total: count() })` or check existence with `findFirst({ columns: { id: true } })`;
   read rows with `select().from()` (or a join) a relational query expresses.
 
-Reworked so far: the Spaces, Webhooks, Users, Translations and Schemas modules (`REWORKED` in `apps/server/test/architecture.test.ts`). The others still read
-with `findPage` (rows and total together), count with `select({ … count() })` (assets, contents,
+Reworked so far: the Spaces, Webhooks, Users, Translations, Schemas and Contents modules (`REWORKED` in `apps/server/test/architecture.test.ts`). The others still read
+with `findPage` (rows and total together), count with `select({ … count() })` (assets,
 tasks) and some writes answer rows; each module moves to these shapes when it is reworked, and
 joins `REWORKED` then.
 
