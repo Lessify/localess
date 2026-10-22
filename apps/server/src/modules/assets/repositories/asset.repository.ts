@@ -149,33 +149,30 @@ export class AssetRepository {
     return values.id;
   }
 
-  /** Name for folders; name and alt for files (empty alt removes it). */
-  update(spaceId: string, id: string, values: { name?: string; alt?: string }, tx?: Transaction): Promise<void> {
+  /**
+   * Name for folders; name and alt for files (empty alt removes it); `parentId` moves it (null: the root), a folder with
+   * everything under it: one row. The target is locked (shared) and a folder is not moved under itself.
+   */
+  update(spaceId: string, id: string, values: { name?: string; alt?: string; parentId?: string | null }, tx?: Transaction): Promise<void> {
     return this.write(spaceId, tx, async t => {
       const current = await this.find(t, spaceId, id);
       if (!current) return undefined;
       if (current.kind !== 'FILE' && values.alt !== undefined) throw new BadRequestException(assetErrors.altOnFolder);
+      const { parentId } = values;
+      if (parentId !== undefined) {
+        if (parentId && !(await this.lockFolder(t, spaceId, parentId))) throw new BadRequestException(assetErrors.noFolder);
+        if (current.kind === 'FOLDER' && (await isAssetUnderOrSelf(t, spaceId, id, parentId))) {
+          throw new BadRequestException(assetErrors.intoItself);
+        }
+      }
       await t
         .update(assets)
         .set({
           name: values.name ?? current.name,
           ...(current.kind === 'FILE' && values.alt !== undefined ? { alt: values.alt || null } : {}),
+          ...(parentId !== undefined ? { parentId } : {}),
         })
         .where(this.byId(spaceId, id));
-      return { result: undefined, changed: [{ id, op: 'updated' }] };
-    });
-  }
-
-  /** A file or a folder, with everything under it: one row. A folder is not moved under itself. */
-  move(spaceId: string, id: string, parentId: string | null, tx?: Transaction): Promise<void> {
-    return this.write(spaceId, tx, async t => {
-      const current = await this.find(t, spaceId, id);
-      if (!current) return undefined;
-      if (parentId && !(await this.lockFolder(t, spaceId, parentId))) throw new BadRequestException(assetErrors.noFolder);
-      if (current.kind === 'FOLDER' && (await isAssetUnderOrSelf(t, spaceId, id, parentId))) {
-        throw new BadRequestException(assetErrors.intoItself);
-      }
-      await t.update(assets).set({ parentId }).where(this.byId(spaceId, id));
       return { result: undefined, changed: [{ id, op: 'updated' }] };
     });
   }

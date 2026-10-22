@@ -1,15 +1,14 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Asset, AssetFileType, AssetKind } from '@localess/shared';
+import { Asset, Page } from '@localess/shared';
 import { AssetService } from './asset.service';
 
 const BASE = '/api/app/spaces/space-1/assets';
-const EVERY = 'page=0&size=100';
 
 /** One page of the list, the last one unless `total` says otherwise. */
 const page = <T>(items: T[], total = items.length, at = 0) => ({ items, page: at, size: 100, total });
@@ -38,23 +37,23 @@ describe('AssetService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() lists the children of a folder, the root by default', async () => {
+  it('findPage() reads one page of the query, and again when an asset of the space changes, ignoring other entities', async () => {
+    vi.useFakeTimers();
     const service = setup();
-    const root = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?${EVERY}`).flush(page([{ id: 'a1' }]));
-    expect(await root).toEqual([{ id: 'a1' }]);
+    const results: Page<Asset>[] = [];
+    const params = new HttpParams().set('page', 1).set('size', 20).set('parentId', 'f1');
+    const subscription = service.findPage('space-1', params).subscribe(it => results.push(it));
+    http.expectOne(`${BASE}?page=1&size=20&parentId=f1`).flush(page([], 21, 1));
 
-    const nested = firstValueFrom(service.findAll('space-1', 'f2'));
-    http.expectOne(`${BASE}?parentId=f2&${EVERY}`).flush(page([]));
-    expect(await nested).toEqual([]);
-  });
+    events.next({ spaceId: 'space-1', entity: 'contents', id: 'c', op: 'updated' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectNone(`${BASE}?page=1&size=20&parentId=f1`);
 
-  it('findAll() reads every page of the list', async () => {
-    const service = setup();
-    const all = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?${EVERY}`).flush(page([{ id: 'a1' }], 101));
-    http.expectOne(`${BASE}?page=1&size=100`).flush(page([{ id: 'a2' }], 101, 1));
-    expect(await all).toEqual([{ id: 'a1' }, { id: 'a2' }]);
+    events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'created' });
+    await vi.advanceTimersByTimeAsync(200);
+    http.expectOne(`${BASE}?page=1&size=20&parentId=f1`).flush(page([{ id: 'a1' } as Asset], 22, 1));
+    expect(results.map(it => it.total)).toEqual([21, 22]);
+    subscription.unsubscribe();
   });
 
   it('findAllFolders() reads every folder of the space, live', async () => {
@@ -70,55 +69,11 @@ describe('AssetService', () => {
     subscription.unsubscribe();
   });
 
-  it('findAll() narrows files by file type, except for ANY', async () => {
+  it('search() reads one page of `max` assets whose name has the text, across the space', async () => {
     const service = setup();
-    const images = firstValueFrom(service.findAll('space-1', '', AssetFileType.IMAGE));
-    http.expectOne(`${BASE}?fileType=IMAGE&${EVERY}`).flush(page([]));
-    await images;
-
-    const any = firstValueFrom(service.findAll('space-1', '', AssetFileType.ANY));
-    http.expectOne(`${BASE}?${EVERY}`).flush(page([]));
-    await any;
-  });
-
-  it('findAll() refetches when an asset of the space changes, ignoring other entities', async () => {
-    vi.useFakeTimers();
-    const service = setup();
-    const results: Asset[][] = [];
-    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}?${EVERY}`).flush(page([]));
-
-    events.next({ spaceId: 'space-1', entity: 'contents', id: 'c', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}?${EVERY}`);
-
-    events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}?${EVERY}`).flush(page([{ id: 'a1' } as Asset]));
-    expect(results).toEqual([[], [{ id: 'a1' }]]);
-    subscription.unsubscribe();
-  });
-
-  it('countAll() reads the count, filtered by kind when given', async () => {
-    const service = setup();
-    const all = firstValueFrom(service.countAll('space-1'));
-    http.expectOne(`${BASE}/count`).flush({ count: 4 });
-    expect(await all).toBe(4);
-
-    const files = firstValueFrom(service.countAll('space-1', AssetKind.FILE));
-    http.expectOne(`${BASE}/count?kind=FILE`).flush({ count: 2 });
-    expect(await files).toBe(2);
-  });
-
-  it('find*ByName() search the names across the space: one page of `max`, with the kind', async () => {
-    const service = setup();
-    const any = firstValueFrom(service.findAllByName('space-1', 'lo'));
-    http.expectOne(`${BASE}?search=lo&deep=true&size=20`).flush(page([{ id: 'a1' }]));
-    expect(await any).toEqual([{ id: 'a1' }]);
-
-    const files = firstValueFrom(service.findAllFilesByName('space-1', 'lo', 5));
-    http.expectOne(`${BASE}?search=lo&deep=true&size=5&kind=FILE`).flush(page([]));
-    await files;
+    const found = firstValueFrom(service.search('space-1', 'lo', 5));
+    http.expectOne(`${BASE}?search=lo&deep=true&size=5`).flush(page([{ id: 'a1' }]));
+    expect(await found).toEqual([{ id: 'a1' }]);
   });
 
   it('findAllFiles() reads every file of the space, light, live', async () => {
@@ -171,46 +126,40 @@ describe('AssetService', () => {
     expect((await result).id).toBe('f2');
   });
 
-  it('usage() reads how many contents use an asset', async () => {
+  it('findUsage() reads how many contents use an asset', async () => {
     const service = setup();
-    const result = firstValueFrom(service.usage('space-1', 'a1'));
+    const result = firstValueFrom(service.findUsage('space-1', 'a1'));
     http.expectOne({ method: 'GET', url: `${BASE}/a1/usage` }).flush({ contents: 3 });
     expect(await result).toEqual({ contents: 3 });
   });
 
-  it('updateFolder() and updateFile() patch the editable fields, an empty alt removing it', async () => {
+  it('update() patches what it is given and answers the asset as stored', async () => {
     const service = setup();
-    const folder = firstValueFrom(service.updateFolder('space-1', 'f1', { name: 'Pics' }));
-    const folderRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/f1` });
-    expect(folderRequest.request.body).toEqual({ name: 'Pics' });
-    folderRequest.flush({});
-    await folder;
-
-    const file = firstValueFrom(service.updateFile('space-1', 'a1', { name: 'logo', alt: undefined }));
-    const fileRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/a1` });
-    expect(fileRequest.request.body).toEqual({ name: 'logo', alt: '' });
-    fileRequest.flush({});
-    await file;
+    const result = firstValueFrom(service.update('space-1', 'a1', { name: 'logo', alt: '' }));
+    const request = http.expectOne({ method: 'PATCH', url: `${BASE}/a1` });
+    expect(request.request.body).toEqual({ name: 'logo', alt: '' });
+    request.flush({ id: 'a1', name: 'logo' });
+    expect(await result).toEqual({ id: 'a1', name: 'logo' });
   });
 
-  it('move() puts the new parent folder, null for the root', async () => {
+  it('move() patches the new parent folder, null for the root (as contents)', async () => {
     const service = setup();
     const toRoot = firstValueFrom(service.move('space-1', 'a1', null));
-    const request = http.expectOne({ method: 'PUT', url: `${BASE}/a1/parent` });
+    const request = http.expectOne({ method: 'PATCH', url: `${BASE}/a1` });
     expect(request.request.body).toEqual({ parentId: null });
-    request.flush({});
+    request.flush({ id: 'a1' });
     await toRoot;
 
     const toFolder = firstValueFrom(service.move('space-1', 'a1', 'f1'));
-    const folderRequest = http.expectOne({ method: 'PUT', url: `${BASE}/a1/parent` });
+    const folderRequest = http.expectOne({ method: 'PATCH', url: `${BASE}/a1` });
     expect(folderRequest.request.body).toEqual({ parentId: 'f1' });
-    folderRequest.flush({});
-    await toFolder;
+    folderRequest.flush({ id: 'a1', parentId: 'f1' });
+    expect((await toFolder).parentId).toBe('f1');
   });
 
-  it('delete() deletes the asset', async () => {
+  it('remove() deletes the asset', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', 'a1'));
+    const done = firstValueFrom(service.remove('space-1', 'a1'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/a1` }).flush(null);
     await done;
   });

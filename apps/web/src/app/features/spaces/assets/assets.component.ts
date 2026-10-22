@@ -384,7 +384,7 @@ export class AssetsComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFolder(this.spaceId(), element.id, it)),
+        switchMap(it => this.assetService.update(this.spaceId(), element.id, { name: it.name })),
       )
       .subscribe({
         next: () => {
@@ -407,7 +407,7 @@ export class AssetsComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.assetService.updateFile(this.spaceId(), element.id, it)),
+        switchMap(it => this.assetService.update(this.spaceId(), element.id, { name: it.name, alt: it.alt || '' })),
       )
       .subscribe({
         next: () => {
@@ -431,7 +431,7 @@ export class AssetsComponent implements OnInit {
       content = `Are you sure about deleting Asset with name: ${element.name}.`;
     }
     this.assetService
-      .usage(this.spaceId(), element.id)
+      .findUsage(this.spaceId(), element.id)
       .pipe(
         // Without the count, the delete is still offered.
         catchError(() => of({ contents: 0 })),
@@ -450,7 +450,7 @@ export class AssetsComponent implements OnInit {
             .closed$.pipe(take(1)),
         ),
         filter(it => it || false),
-        switchMap(() => this.assetService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.assetService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {

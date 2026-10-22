@@ -126,7 +126,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   |---|---|---|
   | Create (`POST`, method `create`) | `<Entity>Create` | `SpaceCreate`, `SpaceLocaleCreate`, `TaskCreate` |
   | Update (`PATCH`, or `PUT` replacing it, method `update`) | `<Entity>Update` | `SpaceUpdate`, `SpaceEnvironmentUpdate`, `MeUpdate` |
-  | An action (any other write) | `<Entity><Action>` | `SpaceLocaleMove`, `SpaceDefaultLocaleUpdate`, `SchemaRename`, `AssetMove`, `UserStatusUpdate`, `TaskImportCreate`, `AuthLogin` |
+  | An action (any other write) | `<Entity><Action>` | `SpaceLocaleMove`, `SpaceDefaultLocaleUpdate`, `SchemaRename`, `UserStatusUpdate`, `TaskImportCreate`, `AuthLogin` |
   | A list | `<Entity>Pageable` | `SpacePageable` |
 
 - **Why:** one definition for the server's validation and the web's body: a field added on one side is a compile

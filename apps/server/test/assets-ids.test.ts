@@ -46,7 +46,7 @@ describe('app API: assets check their space and ids', () => {
     () => admin.post(`${spaceBase}/folders`, { name: 'Videos' }),
     () => upload(spaceBase),
     () => admin.patch(`${spaceBase}/${id}`, { name: 'Pictures' }),
-    () => admin.put(`${spaceBase}/${id}/parent`, { parentId: null }),
+    () => admin.patch(`${spaceBase}/${id}`, { parentId: null }),
     () => admin.delete(`${spaceBase}/${id}`),
   ];
 
@@ -66,7 +66,7 @@ describe('app API: assets check their space and ids', () => {
       await admin.get(`${base}/not-a-uuid`),
       await admin.get(`${base}/not-a-uuid/usage`),
       await admin.patch(`${base}/not-a-uuid`, { name: 'Pictures' }),
-      await admin.put(`${base}/not-a-uuid/parent`, { parentId: null }),
+      await admin.patch(`${base}/not-a-uuid`, { parentId: null }),
       await admin.delete(`${base}/not-a-uuid`),
     ]) {
       expect(response.statusCode).toBe(404);
@@ -78,7 +78,7 @@ describe('app API: assets check their space and ids', () => {
       await admin.get(`${otherBase}/${folderId}`),
       await admin.get(`${otherBase}/${folderId}/usage`),
       await admin.patch(`${otherBase}/${folderId}`, { name: 'Pictures' }),
-      await admin.put(`${otherBase}/${folderId}/parent`, { parentId: null }),
+      await admin.patch(`${otherBase}/${folderId}`, { parentId: null }),
       await admin.delete(`${otherBase}/${folderId}`),
     ]) {
       expect(response.statusCode).toBe(404);
@@ -91,8 +91,7 @@ describe('app API: assets check their space and ids', () => {
   it('refuses an unknown field on every body, in the upload fields and a count of an unknown kind, and changes nothing', async () => {
     for (const [call, field] of [
       [() => admin.post(`${base}/folders`, { name: 'Videos', kind: 'FOLDER' }), 'kind'],
-      [() => admin.patch(`${base}/${folderId}`, { name: 'Pictures', parentId: null }), 'parentId'],
-      [() => admin.put(`${base}/${folderId}/parent`, { parentId: null, name: 'Pictures' }), 'name'],
+      [() => admin.patch(`${base}/${folderId}`, { name: 'Pictures', slug: 'pictures' }), 'slug'],
       [() => upload(base, { parentId: folderId, folder: 'Images' }), 'folder'],
       [() => admin.get(`${base}/count?kind=DOCUMENT`), 'kind'],
     ] as const) {

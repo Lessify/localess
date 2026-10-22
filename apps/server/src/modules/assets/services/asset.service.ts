@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 
-import type { Asset, AssetFileSummary, AssetFolderSummary, AssetPageable, Page } from '@localess/shared';
+import type { Asset, AssetFileSummary, AssetFolderSummary, AssetPageable, AssetUpdate, Page } from '@localess/shared';
 import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
@@ -143,10 +143,15 @@ export class AssetService {
     }
   }
 
-  /** Name for folders; name and alt for files (empty alt removes it). */
-  async update(spaceId: string, assetId: string, input: { name?: string; alt?: string }): Promise<Asset> {
+  /**
+   * Name for folders; name and alt for files (empty alt removes it); and/or a move into folder `parentId` (null: the
+   * root), a folder with everything under it. One write: the target and "not into itself" are checked again under the
+   * assets lock.
+   */
+  async update(spaceId: string, assetId: string, input: AssetUpdate): Promise<Asset> {
     const current = await this.requireAsset(spaceId, assetId);
     if (current.kind !== 'FILE' && input.alt !== undefined) throw new BadRequestException(assetErrors.altOnFolder);
+    if (input.parentId !== undefined) await this.requireFolder(spaceId, input.parentId);
     await this.assetRepository.update(spaceId, assetId, input);
     return this.findAsset(spaceId, assetId);
   }
@@ -159,15 +164,6 @@ export class AssetService {
     await this.requireAsset(spaceId, assetId);
     const files = found(await this.assetRepository.findFileIdsWithin(spaceId, assetId));
     return { contents: await this.assetRepository.countContentsUsing(spaceId, files) };
-  }
-
-  /** A file or a folder (with everything under it) into folder `parentId`; null: the root. */
-  async move(spaceId: string, assetId: string, parentId: string | null): Promise<Asset> {
-    await this.requireAsset(spaceId, assetId);
-    await this.requireFolder(spaceId, parentId);
-    // Into itself or under itself: checked under the assets lock (a recursive query, run once).
-    await this.assetRepository.move(spaceId, assetId, parentId);
-    return this.findAsset(spaceId, assetId);
   }
 
   /**

@@ -16,18 +16,18 @@ describe('ExportDialogComponent', () => {
 
   function setup(context: ExportDialogContext, results: Asset[] = []) {
     const close = vi.fn();
-    const findAllByName = vi.fn().mockReturnValue(of(results));
+    const search = vi.fn().mockReturnValue(of(results));
     TestBed.overrideComponent(ExportDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: AssetService, useValue: { findAllByName } },
+        { provide: AssetService, useValue: { search } },
       ],
     });
     const fixture = TestBed.createComponent(ExportDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findAllByName };
+    return { component: fixture.componentInstance, close, search };
   }
 
   it('starts with no path selected', () => {
@@ -40,13 +40,13 @@ describe('ExportDialogComponent', () => {
   it('searches assets for the given space after the debounce window', async () => {
     vi.useFakeTimers();
     const asset = { id: 'a1', kind: AssetKind.FOLDER, name: 'Images' } as Asset;
-    const { component, findAllByName } = setup({ spaceId: 'space-1' }, [asset]);
-    findAllByName.mockClear();
+    const { component, search } = setup({ spaceId: 'space-1' }, [asset]);
+    search.mockClear();
 
     component.search.set('img');
     await vi.advanceTimersByTimeAsync(500);
 
-    expect(findAllByName).toHaveBeenCalledWith('space-1', 'img', 5);
+    expect(search).toHaveBeenCalledWith('space-1', 'img', 5);
     expect(component.filteredAssets()).toEqual([asset]);
   });
 

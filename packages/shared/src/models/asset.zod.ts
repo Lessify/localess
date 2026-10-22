@@ -68,13 +68,13 @@ export type AssetCountQuery = z.infer<typeof zAssetCountQuery>;
 export const zAssetFolderCreate = z.strictObject({ parentId: zParentId, name: zAssetName });
 export type AssetFolderCreate = z.infer<typeof zAssetFolderCreate>;
 
-/** `PATCH …/assets/:assetId`. */
-export const zAssetUpdate = z.strictObject({ name: zAssetName.optional(), alt: z.string().max(2000).optional() });
+/** `PATCH …/assets/:assetId`: rename (name; alt for a file) and/or move (`parentId`; null is the root), as contents. */
+export const zAssetUpdate = z.strictObject({
+  name: zAssetName.optional(),
+  alt: z.string().max(2000).optional(),
+  parentId: z.uuid().nullable().optional(),
+});
 export type AssetUpdate = z.infer<typeof zAssetUpdate>;
-
-/** `PUT …/assets/:assetId/parent`. */
-export const zAssetMove = z.strictObject({ parentId: z.uuid().nullable() });
-export type AssetMove = z.infer<typeof zAssetMove>;
 
 /** `POST …/assets/files`: the multipart fields before the `file` part; an unknown field is refused. */
 export const zAssetUpload = z.strictObject({

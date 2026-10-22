@@ -42,7 +42,7 @@ export class ExportDialogComponent {
     toObservable(this.search).pipe(
       startWith(''),
       debounceTime(500),
-      switchMap(it => this.assetService.findAllByName(this.context.spaceId, it, 5)),
+      switchMap(it => this.assetService.search(this.context.spaceId, it, 5)),
     ),
     { initialValue: [] as Asset[] },
   );

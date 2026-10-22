@@ -240,21 +240,21 @@ describe('app API: assets', () => {
 
     it('moves files and folders: one row, whatever is under it', async () => {
       const [file] = (await editor.get(`${base}?search=terms&deep=true`)).json().items;
-      expect((await editor.put(`${base}/${file.id}/parent`, { parentId: photos.id })).json().parentId).toBe(photos.id);
-      expect((await editor.put(`${base}/${file.id}/parent`, { parentId: newUuid() })).statusCode).toBe(400);
+      expect((await editor.patch(`${base}/${file.id}`, { parentId: photos.id })).json().parentId).toBe(photos.id);
+      expect((await editor.patch(`${base}/${file.id}`, { parentId: newUuid() })).statusCode).toBe(400);
       // A folder moves with everything under it: the photo stays in it.
-      const moved = await editor.put(`${base}/${nested.id}/parent`, { parentId: null });
+      const moved = await editor.patch(`${base}/${nested.id}`, { parentId: null });
       expect(moved.statusCode).toBe(200);
       expect(moved.json()).not.toHaveProperty('parentId');
       expect((await editor.get(`${base}?parentId=${nested.id}`)).json().items.map((a: { name: string }) => a.name)).toEqual([
         'Sunset.Final',
       ]);
-      await editor.put(`${base}/${nested.id}/parent`, { parentId: photos.id });
+      await editor.patch(`${base}/${nested.id}`, { parentId: photos.id });
     });
 
     it('refuses moving a folder into itself or under itself', async () => {
       for (const parentId of [photos.id, nested.id]) {
-        const response = await editor.put(`${base}/${photos.id}/parent`, { parentId });
+        const response = await editor.patch(`${base}/${photos.id}`, { parentId });
         expect(response.statusCode).toBe(400);
         expect(response.json().message).toBe('A folder cannot be moved into itself');
       }

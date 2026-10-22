@@ -32,10 +32,9 @@ describe('AssetsComponent', () => {
     const createFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const importFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
-    const updateFolder = vi.fn().mockReturnValue(of(undefined));
-    const updateFile = vi.fn().mockReturnValue(of(undefined));
-    const deleteAsset = vi.fn().mockReturnValue(of(undefined));
-    const usage = vi.fn().mockReturnValue(of({ contents: 0 }));
+    const update = vi.fn().mockReturnValue(of({}));
+    const remove = vi.fn().mockReturnValue(of(undefined));
+    const findUsage = vi.fn().mockReturnValue(of({ contents: 0 }));
     const move = vi.fn().mockReturnValue(of(undefined));
     const createAssetImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const createAssetExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
@@ -60,11 +59,10 @@ describe('AssetsComponent', () => {
             createFile,
             importFile,
             createFolder,
-            updateFolder,
-            updateFile,
-            delete: deleteAsset,
+            update,
+            remove,
             move,
-            usage,
+            findUsage,
           },
         },
         { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
@@ -83,10 +81,9 @@ describe('AssetsComponent', () => {
       createFile,
       importFile,
       createFolder,
-      updateFolder,
-      updateFile,
-      deleteAsset,
-      usage,
+      update,
+      remove,
+      findUsage,
       move,
       createAssetImportTask,
       createAssetExportTask,
@@ -267,69 +264,69 @@ describe('AssetsComponent', () => {
 
   describe('openEditDialog', () => {
     it('routes files to openEditFileDialog', () => {
-      const { component, open, updateFile, success } = setup();
+      const { component, open, update, success } = setup();
       open.mockReturnValue({ closed$: of({ name: 'renamed' }) });
 
       component.openEditDialog(file({ id: 'a1' }));
 
-      expect(updateFile).toHaveBeenCalledWith('space-1', 'a1', { name: 'renamed' });
+      expect(update).toHaveBeenCalledWith('space-1', 'a1', { name: 'renamed', alt: '' });
       expect(success).toHaveBeenCalledWith('File has been updated.');
     });
 
     it('routes folders to openEditFolderDialog', () => {
-      const { component, open, updateFolder, success } = setup();
+      const { component, open, update, success } = setup();
       open.mockReturnValue({ closed$: of({ name: 'renamed' }) });
 
       component.openEditDialog(folder({ id: 'f1' }));
 
-      expect(updateFolder).toHaveBeenCalledWith('space-1', 'f1', { name: 'renamed' });
+      expect(update).toHaveBeenCalledWith('space-1', 'f1', { name: 'renamed' });
       expect(success).toHaveBeenCalledWith('Folder has been updated.');
     });
   });
 
   describe('openDeleteDialog', () => {
     it('deletes and notifies success when confirmed', () => {
-      const { component, open, deleteAsset, success } = setup();
+      const { component, open, remove, success } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.openDeleteDialog(file({ id: 'a1', name: 'photo' }));
 
-      expect(deleteAsset).toHaveBeenCalledWith('space-1', 'a1');
+      expect(remove).toHaveBeenCalledWith('space-1', 'a1');
       expect(success).toHaveBeenCalledWith("Asset 'photo' has been deleted.");
     });
 
     const dialogContent = (open: ReturnType<typeof vi.fn>) => (open.mock.calls[0][1] as { context: { content: string } }).context.content;
 
     it('warns how many contents use the asset before deleting', () => {
-      const { component, open, usage } = setup();
-      usage.mockReturnValue(of({ contents: 2 }));
+      const { component, open, findUsage } = setup();
+      findUsage.mockReturnValue(of({ contents: 2 }));
       open.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(file({ id: 'a1', name: 'photo' }));
 
-      expect(usage).toHaveBeenCalledWith('space-1', 'a1');
+      expect(findUsage).toHaveBeenCalledWith('space-1', 'a1');
       expect(dialogContent(open)).toContain('It is used by 2 contents, which will show it as missing.');
     });
 
     it('says nothing about use when no content uses it, or when the count cannot be loaded', () => {
-      const { component, open, usage } = setup();
+      const { component, open, findUsage } = setup();
       open.mockReturnValue({ closed$: of(undefined) });
       component.openDeleteDialog(file({ id: 'a1' }));
       expect(dialogContent(open)).not.toContain('used by');
 
       open.mockClear();
-      usage.mockReturnValue(throwError(() => new Error('offline')));
+      findUsage.mockReturnValue(throwError(() => new Error('offline')));
       component.openDeleteDialog(file({ id: 'a1' }));
       expect(dialogContent(open)).not.toContain('used by');
     });
 
     it('does not delete when cancelled', () => {
-      const { component, open, deleteAsset } = setup();
+      const { component, open, remove } = setup();
       open.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(file({ id: 'a1' }));
 
-      expect(deleteAsset).not.toHaveBeenCalled();
+      expect(remove).not.toHaveBeenCalled();
     });
   });
 

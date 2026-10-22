@@ -84,9 +84,7 @@ test.describe('Assets → move', () => {
     const banners = await api.createAssetFolder(space.id, 'Banners', images.id);
     for (const parentId of [images.id, banners.id]) {
       // AppApi.send fails on anything but success, with the status in its message.
-      await expect(api.send('put', `/api/app/spaces/${space.id}/assets/${images.id}/parent`, { parentId })).rejects.toThrow(
-        /\/parent: 400 /,
-      );
+      await expect(api.send('patch', `/api/app/spaces/${space.id}/assets/${images.id}`, { parentId })).rejects.toThrow(/: 400 /);
     }
     expect((await assetNamed(api, space.id, 'Images'))?.parentId).toBeUndefined();
     expect(await assetNamed(api, space.id, 'Banners', images.id)).toMatchObject({ id: banners.id });

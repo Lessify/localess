@@ -127,7 +127,9 @@ if one feature uses it, it lives in that feature.
   `remove`, `move`, `setDefaultLocale`), so a call reads the same on both sides. Done for these four services and
   `SchemaService` (`findAll`, `findOne`, `findUsage`, `create`, `update`, `rename`, `remove`) and `ContentService`
   (`findPage`, `findAllFolders`, `findAllDocuments`, `findOne`, `search`, `createDocument` / `createFolder`, `update`, `move`, `updateData`,
-  `clone`, `remove`, `publish`, `unpublish`) so far; the others (assets, tasks, tokens, translations) still use
+  `clone`, `remove`, `publish`, `unpublish`) and `AssetService` (`findPage`, `findAllFolders`, `findAllFiles`, `search`,
+  `findUsage`, `createFolder`, `createFile`, `importFile`, `update`, `move`, `remove`) so far; the others (tasks, tokens,
+  translations) still use
   `findPage` / `findById` / `delete`.
 - **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))
 - **`guards/`** — `roleGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard

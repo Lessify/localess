@@ -6,13 +6,12 @@ import {
   type AssetFileSummary,
   type AssetFolderCreate,
   type AssetFolderSummary,
-  type AssetMove,
   type AssetPageable,
   type AssetUpdate,
   CONTENT_WRITERS,
   type Page,
 } from '@localess/shared';
-import { zAssetCountQuery, zAssetFolderCreate, zAssetMove, zAssetPageable, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
+import { zAssetCountQuery, zAssetFolderCreate, zAssetPageable, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
 import {
   BadRequestException,
   Body,
@@ -24,7 +23,6 @@ import {
   Patch,
   PayloadTooLargeException,
   Post,
-  Put,
   Query,
   Req,
 } from '@nestjs/common';
@@ -137,6 +135,7 @@ export class AssetController {
     }
   }
 
+  /** Rename (name; alt for a file) and/or move (`parentId`; null is the root, with everything under a folder). */
   @Patch(':assetId')
   @RequireRole(CONTENT_WRITERS)
   update(
@@ -145,16 +144,6 @@ export class AssetController {
     @Body({ schema: zAssetUpdate }) body: AssetUpdate,
   ): Promise<Asset> {
     return this.assetService.update(spaceId, assetId, body);
-  }
-
-  @Put(':assetId/parent')
-  @RequireRole(CONTENT_WRITERS)
-  move(
-    @Param('spaceId', UuidParamPipe) spaceId: string,
-    @Param('assetId', UuidParamPipe) assetId: string,
-    @Body({ schema: zAssetMove }) body: AssetMove,
-  ): Promise<Asset> {
-    return this.assetService.move(spaceId, assetId, body.parentId);
   }
 
   @Delete(':assetId')

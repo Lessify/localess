@@ -7,19 +7,15 @@ import {
   Asset,
   AssetFile,
   AssetFileSummary,
-  AssetFileType,
   AssetFolder,
   AssetFolderCreate,
   AssetFolderSummary,
-  AssetKind,
-  AssetMove,
   AssetUpdate,
   AssetUpload,
   Page,
-  PAGE_SIZE_MAX,
 } from '@localess/shared';
-import { AssetFileImport, AssetFileUpdateForm, AssetFolderCreateForm, AssetFolderUpdateForm } from '@shared/models/asset.model';
-import { Observable, of } from 'rxjs';
+import { AssetFileImport, AssetFolderCreateForm } from '@shared/models/asset.model';
+import { Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
 /** Asset library of a space (`/api/app/spaces/:spaceId/assets`); reads are live. */
@@ -40,56 +36,11 @@ export class AssetService {
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.http.get<Page<Asset>>(this.base(spaceId), { params }));
   }
 
-  /**
-   * Every page of the list (`GET …/assets` is paged), live. For now: the Assets page and the picker page in the browser,
-   * and the Asset fields read their files by id; they move to the paged list and to a light list in `SpaceStore`.
-   */
-  private list<T extends Asset>(spaceId: string, params: HttpParams): Observable<T[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.everyPage<T>(spaceId, params));
-  }
-
-  private everyPage<T extends Asset>(spaceId: string, params: HttpParams, page = 0): Observable<T[]> {
-    return this.http
-      .get<Page<T>>(this.base(spaceId), { params: params.set('page', page).set('size', PAGE_SIZE_MAX) })
-      .pipe(
-        switchMap(answer =>
-          (page + 1) * answer.size >= answer.total
-            ? of(answer.items)
-            : this.everyPage<T>(spaceId, params, page + 1).pipe(map(rest => [...answer.items, ...rest])),
-        ),
-      );
-  }
-
-  /** The first `max` assets whose name contains `search`, anywhere in the space, live. */
-  private search<T extends Asset>(spaceId: string, search: string, max: number, kind?: AssetKind): Observable<T[]> {
-    let params = new HttpParams().set('search', search).set('deep', true).set('size', max);
-    if (kind) params = params.set('kind', kind);
+  /** Every folder of the space, live: `SpaceStore` holds it (breadcrumbs, paths, move targets). */
+  findAllFolders(spaceId: string): Observable<AssetFolderSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
-      this.http.get<Page<T>>(this.base(spaceId), { params }).pipe(map(it => it.items)),
+      this.http.get<AssetFolderSummary[]>(`${this.base(spaceId)}/folders`),
     );
-  }
-
-  /** Children of folder `parentId` (the root when absent), folders first then by name; files narrowed by `fileType`. */
-  findAll(spaceId: string, parentId?: string, fileType?: AssetFileType): Observable<Asset[]> {
-    let params = new HttpParams();
-    if (parentId) params = params.set('parentId', parentId);
-    if (fileType && fileType !== AssetFileType.ANY) params = params.set('fileType', fileType);
-    return this.list(spaceId, params);
-  }
-
-  countAll(spaceId: string, kind?: AssetKind): Observable<number> {
-    const params = kind ? new HttpParams().set('kind', kind) : undefined;
-    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
-      this.http.get<{ count: number }>(`${this.base(spaceId)}/count`, { params }),
-    ).pipe(map(it => it.count));
-  }
-
-  findAllByName(spaceId: string, name: string, max = 20): Observable<Asset[]> {
-    return this.search(spaceId, name, max);
-  }
-
-  findAllFilesByName(spaceId: string, name: string, max = 20): Observable<AssetFile[]> {
-    return this.search(spaceId, name, max, AssetKind.FILE);
   }
 
   /** Every file of the space, light, live: `SpaceStore` holds it for the Asset and Assets fields. */
@@ -99,15 +50,31 @@ export class AssetService {
     );
   }
 
-  /** Every folder of the space, live: `SpaceStore` holds it (breadcrumbs, paths, move targets). */
-  findAllFolders(spaceId: string): Observable<AssetFolderSummary[]> {
+  /** The first `max` assets whose name contains `search`, anywhere in the space, live. */
+  search(spaceId: string, search: string, max = 20): Observable<Asset[]> {
+    const params = new HttpParams().set('search', search).set('deep', true).set('size', max);
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
-      this.http.get<AssetFolderSummary[]>(`${this.base(spaceId)}/folders`),
+      this.http.get<Page<Asset>>(this.base(spaceId), { params }).pipe(map(it => it.items)),
     );
   }
 
-  /** Downloads `entity.url` in the browser and uploads it as a new file. */
+  /** How many contents use the asset (a folder: any file under it). */
+  findUsage(spaceId: string, assetId: string): Observable<{ contents: number }> {
+    return this.http.get<{ contents: number }>(`${this.base(spaceId)}/${assetId}/usage`);
+  }
+
   /** `parentId` absent: the root. */
+  createFolder(spaceId: string, parentId: string | undefined, entity: AssetFolderCreateForm): Observable<AssetFolder> {
+    return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentId, name: entity.name } satisfies AssetFolderCreate);
+  }
+
+  /** Name and extension are taken from the file name server-side. */
+  createFile(spaceId: string, parentId: string | undefined, entity: File): Observable<AssetFile> {
+    const fields: AssetUpload = { parentId: parentId ?? '' };
+    return this.upload(spaceId, multipartForm(fields, entity));
+  }
+
+  /** Downloads `entity.url` in the browser and uploads it as a new file; `parentId` absent: the root. */
   importFile(spaceId: string, parentId: string | undefined, entity: AssetFileImport): Observable<AssetFile> {
     return this.http.get(entity.url, { responseType: 'blob' }).pipe(
       switchMap(blob => {
@@ -124,40 +91,21 @@ export class AssetService {
     );
   }
 
-  /** Name and extension are taken from the file name server-side. */
-  createFile(spaceId: string, parentId: string | undefined, entity: File): Observable<AssetFile> {
-    const fields: AssetUpload = { parentId: parentId ?? '' };
-    return this.upload(spaceId, multipartForm(fields, entity));
-  }
-
   private upload(spaceId: string, form: FormData): Observable<AssetFile> {
     return this.http.post<AssetFile>(`${this.base(spaceId)}/files`, form);
   }
 
-  /** `parentId` absent: the root. */
-  createFolder(spaceId: string, parentId: string | undefined, entity: AssetFolderCreateForm): Observable<AssetFolder> {
-    return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentId, name: entity.name } satisfies AssetFolderCreate);
+  /** Name (and alt for a file: empty removes it) and/or the folder (`parentId`); answers the asset as stored. */
+  update(spaceId: string, assetId: string, entity: AssetUpdate): Observable<Asset> {
+    return this.http.patch<Asset>(`${this.base(spaceId)}/${assetId}`, entity);
   }
 
-  updateFolder(spaceId: string, id: string, entity: AssetFolderUpdateForm): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name } satisfies AssetUpdate);
+  /** Into folder `parentId`; `null`: the root. A folder moves with everything under it. */
+  move(spaceId: string, assetId: string, parentId: string | null): Observable<Asset> {
+    return this.update(spaceId, assetId, { parentId });
   }
 
-  updateFile(spaceId: string, id: string, entity: AssetFileUpdateForm): Observable<void> {
-    return this.http.patch<void>(`${this.base(spaceId)}/${id}`, { name: entity.name, alt: entity.alt || '' } satisfies AssetUpdate);
-  }
-
-  /** Into folder `parentId`; `null`: the root. */
-  move(spaceId: string, id: string, parentId: string | null): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/${id}/parent`, { parentId } satisfies AssetMove);
-  }
-
-  /** How many contents use the asset (a folder: any file under it). */
-  usage(spaceId: string, id: string): Observable<{ contents: number }> {
-    return this.http.get<{ contents: number }>(`${this.base(spaceId)}/${id}/usage`);
-  }
-
-  delete(spaceId: string, id: string): Observable<void> {
-    return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
+  remove(spaceId: string, assetId: string): Observable<void> {
+    return this.http.delete<void>(`${this.base(spaceId)}/${assetId}`);
   }
 }
