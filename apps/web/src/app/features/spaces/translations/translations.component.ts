@@ -1,5 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
@@ -149,6 +161,20 @@ export class TranslationsComponent implements OnInit {
   /** The selected translation's id: the detail panel reads it again whenever it changes. */
   private readonly selectedId = signal<string | undefined>(undefined);
   private readonly selectedId$ = toObservable(this.selectedId);
+  /** The first key the list or tree shows: selected whenever nothing is (at the start, after a delete). */
+  private readonly firstShown = signal<Translation | undefined>(undefined);
+  /** The key that was selected and is gone (deleted): not selected again while the list still shows it. */
+  private readonly missingId = signal<string | undefined>(undefined);
+  /** The selected key doesn't match the filter: it stays in the editor, which says so. */
+  readonly selectedOutsideFilter = signal(false);
+
+  constructor() {
+    effect(() => {
+      const first = this.firstShown();
+      if (this.selectedId() !== undefined || !first || first.id === this.missingId()) return;
+      untracked(() => this.selectTranslation(first));
+    });
+  }
 
   ngOnInit(): void {
     this.translationService
@@ -160,20 +186,27 @@ export class TranslationsComponent implements OnInit {
     this.selectedId$
       .pipe(
         switchMap(id =>
-          id === undefined ? of(undefined) : this.translationService.findOne(this.spaceId(), id).pipe(catchError(() => of(undefined))),
+          id === undefined
+            ? of({ id, translation: undefined })
+            : this.translationService.findOne(this.spaceId(), id).pipe(
+                map(translation => ({ id, translation })),
+                catchError(() => of({ id, translation: undefined })),
+              ),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(translation => {
+      .subscribe(({ id, translation }) => {
         this.selectedTranslation.set(translation);
-        if (!translation) this.selectedId.set(undefined);
+        if (translation || id === undefined) return;
+        this.missingId.set(id);
+        this.selectedId.set(undefined);
       });
     this.isLoading.set(false);
   }
 
-  /** The list or tree loaded: its first key is selected when nothing is. */
-  onFirstTranslation(translation: Translation): void {
-    if (this.selectedId() === undefined) this.selectTranslation(translation);
+  /** The first key the list or tree shows changed: it is selected when nothing is. */
+  onFirstTranslation(translation: Translation | undefined): void {
+    this.firstShown.set(translation);
   }
 
   publish(): void {

@@ -2,6 +2,14 @@
 <div class="h-full min-h-0 overflow-hidden border @4xl:col-span-2">
   @if (translation(); as translation) {
     <div class="flex h-full flex-col">
+      @if (outsideFilter()) {
+        <p
+          class="border-b border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-900 dark:text-amber-200"
+          role="status"
+          data-testid="outside-filter">
+          Not in the current filter: this key stays here until you select another.
+        </p>
+      }
       <div class="p-2">
         <fieldset hlmFieldSet>
           <!-- Two groups, source → and target with Translate: on a narrow editor the second moves under the first. -->

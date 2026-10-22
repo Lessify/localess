@@ -9,7 +9,8 @@ import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
-import { TranslationListComponent } from './translation-list.component';
+import { TranslationTreeRow } from '../../models/translation-tree';
+import { firstShownKey, TranslationListComponent } from './translation-list.component';
 
 const en: Locale = { id: 'en', name: 'English' };
 const de: Locale = { id: 'de', name: 'German' };
@@ -114,7 +115,7 @@ describe('TranslationListComponent', () => {
     vi.useRealTimers();
   });
 
-  it('emits the first key read, and the selection by key', async () => {
+  it('emits the selection', async () => {
     const first = translation('home.title');
     const { component } = await setup([first]);
     const selectSpy = vi.fn();
@@ -123,7 +124,56 @@ describe('TranslationListComponent', () => {
     component.onListSelect(first);
 
     expect(selectSpy).toHaveBeenCalledWith(first);
-    expect(component.selectedKey()).toBe('home.title');
+  });
+
+  it('emits the first key shown, again when it changes', async () => {
+    const items = keys(3);
+    const { component, fixture, events } = await setup(items);
+    const firstSpy = vi.fn();
+    component.firstTranslation.subscribe(firstSpy);
+    // Subscribed after the first load: the next change shows.
+    items.shift();
+    vi.useFakeTimers();
+    events.next({ spaceId: 'space-1', entity: 'translations', id: 'x', op: 'deleted' });
+    await vi.advanceTimersByTimeAsync(300);
+    vi.useRealTimers();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(firstSpy).toHaveBeenLastCalledWith(items[0]);
+  });
+
+  describe('selected key and the filter', () => {
+    async function outside(items: Translation[], filter: boolean) {
+      const ctx = await setup(items);
+      const outsideSpy = vi.fn();
+      ctx.component.selectedOutsideFilter.subscribe(outsideSpy);
+      if (filter) ctx.fixture.componentRef.setInput('filterCriteria', { locale: 'en', search: 'home', labels: [], states: [] });
+      ctx.fixture.componentRef.setInput('selectedKey', 'about.title');
+      ctx.fixture.detectChanges();
+      await ctx.fixture.whenStable();
+      return { ...ctx, outsideSpy };
+    }
+
+    it('asks the server for the key with the filter, one row', async () => {
+      const { findPage, outsideSpy } = await outside([], true);
+
+      expect(findPage.mock.calls.at(-1)?.[1].toString()).toBe('page=0&size=1&locale=en&search=home&key=about.title');
+      expect(outsideSpy).toHaveBeenLastCalledWith(true);
+    });
+
+    it('is not outside when the server finds it', async () => {
+      const { outsideSpy } = await outside([translation('about.title')], true);
+
+      expect(outsideSpy).toHaveBeenLastCalledWith(false);
+    });
+
+    it('asks nothing when no filter narrows the keys', async () => {
+      const { findPage, outsideSpy } = await outside([], false);
+
+      expect(findPage.mock.calls.some(it => it[1].has('key'))).toBe(false);
+      expect(outsideSpy).toHaveBeenLastCalledWith(false);
+    });
   });
 
   it('identifies the translation status over the available locales', async () => {
@@ -132,5 +182,30 @@ describe('TranslationListComponent', () => {
     expect(component.identifyTranslationStatus(translation('a', {}))).toBe(TranslationStatus.UNTRANSLATED);
     expect(component.identifyTranslationStatus(translation('a', { en: 'Hi' }))).toBe(TranslationStatus.PARTIALLY_TRANSLATED);
     expect(component.identifyTranslationStatus(translation('a', { en: 'Hi', de: 'Hallo' }))).toBe(TranslationStatus.TRANSLATED);
+  });
+});
+
+describe('firstShownKey', () => {
+  const node = (key: string, extra: Partial<TranslationTreeRow> = {}): TranslationTreeRow => ({
+    key,
+    name: key,
+    kind: 'node',
+    count: 1,
+    ...extra,
+  });
+
+  it('skips the keys of a closed group', () => {
+    const rows = [node('about', { children: [node('about.title', { translation: translation('about.title') })] }), node('home')];
+
+    expect(firstShownKey(rows, new Set())).toBeUndefined();
+  });
+
+  it('finds the first key in an open group, or a group that is a key itself', () => {
+    const title = translation('about.title');
+    const rows = [node('about', { children: [node('about.title', { translation: title })] })];
+    const both = translation('home');
+
+    expect(firstShownKey(rows, new Set(['about']))).toBe(title);
+    expect(firstShownKey([node('home', { translation: both, children: [] }), ...rows], new Set(['about']))).toBe(both);
   });
 });

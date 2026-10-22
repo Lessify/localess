@@ -126,6 +126,41 @@ test.describe('Translations → tree view', () => {
     await expect(translations.treeNode('about')).toHaveAttribute('aria-selected', 'true');
   });
 
+  test('opened in the tree, the first key it shows is selected, not one in a closed group', async ({ page, space }) => {
+    const translations = new TranslationsPage(page);
+    await translations.goto(space.id);
+    await translations.useLayout('Tree');
+
+    // Action: a fresh start in the tree (the list selected its own first key).
+    await page.reload();
+
+    // Post-check: "footer" is a key at the top level; "home" and "nav" are closed groups.
+    await expect(translations.detail('Key')).toContainText('footer');
+    await expect(translations.treeNode('footer')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('a selected key outside the search stays open, marked as such', async ({ page, space }) => {
+    const translations = new TranslationsPage(page);
+    await translations.goto(space.id);
+    await translations.useLayout('Tree');
+    await translations.treeRow('nav').click();
+    await translations.treeRow('about').click();
+
+    // Pre-check
+    await expect(translations.detail('Key')).toContainText('nav.about');
+    await expect(page.getByTestId('outside-filter')).toBeHidden();
+
+    // Action
+    await translations.search('home.');
+
+    // Post-check: still nav.about, with the note; selecting a key of the result removes it.
+    await expect(page.getByTestId('outside-filter')).toBeVisible();
+    await expect(translations.detail('Key')).toContainText('nav.about');
+    await translations.treeRow('title').click();
+    await expect(translations.detail('Key')).toContainText('home.title');
+    await expect(page.getByTestId('outside-filter')).toBeHidden();
+  });
+
   test('the search filters the tree', async ({ page, space }) => {
     const translations = new TranslationsPage(page);
     await translations.goto(space.id);

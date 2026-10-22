@@ -107,6 +107,8 @@ export class TranslationDetailComponent {
   readonly isKeyTaken = input.required<(key: string) => Observable<boolean>>();
   readonly selectedLabels = input<string[]>([]);
   readonly isLocaleUpdateLoading = input(false);
+  /** The key doesn't match the list's filter: it stays here, with a note saying so. */
+  readonly outsideFilter = input(false);
 
   // Outputs
   readonly save = output<{ translation: Translation; locale: Locale; value: string }>();

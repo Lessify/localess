@@ -129,6 +129,24 @@ describe('TranslationsComponent', () => {
     expect(component.selectedTranslation()).toBeUndefined();
   });
 
+  it('after a delete, selects the first key shown, but not the deleted one while it is still shown', () => {
+    const { component, findOne } = setup();
+    findOne.mockImplementation((_spaceId: string, id: string) =>
+      id === 't1' ? throwError(() => new HttpErrorResponse({ status: 404 })) : of(translation({ id })),
+    );
+    component.onFirstTranslation(translation({ id: 't1' }));
+    TestBed.tick();
+
+    expect(findOne).toHaveBeenCalledExactlyOnceWith('space-1', 't1');
+    expect(component.selectedTranslation()).toBeUndefined();
+
+    // The list read again without it.
+    component.onFirstTranslation(translation({ id: 't2' }));
+    TestBed.tick();
+
+    expect(component.selectedTranslation()).toEqual(translation({ id: 't2' }));
+  });
+
   it('asks the server whether a key is taken (the add and rename dialogs)', () => {
     const { component, isKeyTaken } = setup();
 

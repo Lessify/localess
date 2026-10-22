@@ -25,7 +25,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { debounceTime, filter, switchMap } from 'rxjs/operators';
 
 import { identifyTranslationStatus } from '../../models/translation.model';
-import { TranslationPages } from '../../models/translation-pages';
+import { filterHttpParams, TranslationPages } from '../../models/translation-pages';
 import { isLocaleStatus, isTranslationStatus, LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
 import { isFiltering, TranslationFilterParams, TranslationTree, TranslationTreeRow } from '../../models/translation-tree';
 import { TranslationFilterCriteria } from '../translation-filter/translation-filter.component';
@@ -83,13 +83,17 @@ export class TranslationListComponent {
   readonly currentLocale = input('');
   readonly filterCriteria = input<TranslationFilterCriteria | undefined>(undefined);
   readonly selectedId = input<string | undefined>(undefined);
+  /** The selected translation's key: the tree highlights it (the tree tracks nodes by key, the page by id). */
+  readonly selectedKey = input<string | undefined>(undefined);
   readonly isLocaleUpdateLoading = input(false);
   readonly translationUpdateId = input<string | undefined>(undefined);
 
   // Outputs
   readonly translationSelect = output<Translation>();
-  /** The first key shown after a load (the page selects it when nothing is selected yet). */
-  readonly firstTranslation = output<Translation>();
+  /** The first key the view shows, again whenever it changes (the page selects it when nothing is selected). */
+  readonly firstTranslation = output<Translation | undefined>();
+  /** Whether the selected key is outside the filter (the editor says so). */
+  readonly selectedOutsideFilter = output<boolean>();
 
   /** The filter both views send. */
   readonly filterParams = computed<TranslationFilterParams>(() => {
@@ -130,8 +134,12 @@ export class TranslationListComponent {
   /** The levels whose "Load more" row is on screen: their next nodes load while it is. */
   private readonly treeMoreInView = signal<ReadonlySet<string>>(new Set<string>());
 
-  /** The tree's key of the selected translation (the tree tracks nodes by key, the page by id). */
-  readonly selectedKey = signal<string | undefined>(undefined);
+  /** The first key shown: the list's first row, or the tree's first key at its top level or in an open group. */
+  private readonly firstShown = computed(() =>
+    this.settingsStore.translationLayout() === 'tree' ? firstShownKey(this.tree.rows(), this.tree.expandedKeys()) : this.pages.items()[0],
+  );
+  /** Bumped after a change: whether the selected key still matches the filter is asked again. */
+  private readonly matchCheck = signal(0);
 
   constructor() {
     // A new space, filter or layout: the shown view from its start.
@@ -140,6 +148,27 @@ export class TranslationListComponent {
       const params = this.filterParams();
       const layout = this.settingsStore.translationLayout();
       untracked(() => void (layout === 'tree' ? this.loadTree(spaceId, params) : this.loadList(spaceId, params)));
+    });
+    effect(() => {
+      const first = this.firstShown();
+      untracked(() => this.firstTranslation.emit(first));
+    });
+    // The selected key and the filter: one key asked of the server (`?key=` and the filter, one row), unless no filter
+    // narrows the keys. (The loaded rows can't answer: right after a new filter they are still the old filter's.)
+    effect(onCleanup => {
+      const key = this.selectedKey();
+      const params = this.filterParams();
+      const spaceId = this.spaceId();
+      this.matchCheck();
+      if (!key || !isFiltering(params)) {
+        untracked(() => this.selectedOutsideFilter.emit(false));
+        return;
+      }
+      const subscription = this.translationService.findPage(spaceId, filterHttpParams({ ...params, key }, 0, 1)).subscribe({
+        next: page => this.selectedOutsideFilter.emit(page.total === 0),
+        error: () => this.selectedOutsideFilter.emit(false),
+      });
+      onCleanup(() => subscription.unsubscribe());
     });
     // The end of the list (or a level of the tree) on screen: its next keys. Runs again when a read ends, so a
     // marker still showing after a short page loads the next one too.
@@ -173,6 +202,7 @@ export class TranslationListComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
+        this.matchCheck.update(it => it + 1);
         const refresh = this.settingsStore.translationLayout() === 'tree' ? this.tree.refresh() : this.pages.refresh();
         void refresh.catch(() => this.notificationService.error('Translations can not be loaded.'));
       });
@@ -205,14 +235,10 @@ export class TranslationListComponent {
       this.loadMoreTree(row.parent ?? '');
       return;
     }
-    if (row.translation) {
-      this.selectedKey.set(row.translation.key);
-      this.translationSelect.emit(row.translation);
-    }
+    if (row.translation) this.translationSelect.emit(row.translation);
   }
 
   onListSelect(translation: Translation): void {
-    this.selectedKey.set(translation.key);
     this.translationSelect.emit(translation);
   }
 
@@ -226,8 +252,6 @@ export class TranslationListComponent {
     this.listViewport()?.scrollToIndex(0);
     try {
       await this.pages.load(spaceId, params);
-      const first = this.pages.items()[0];
-      if (first) this.firstTranslation.emit(first);
     } catch {
       this.notificationService.error('Translations can not be loaded.');
     }
@@ -252,8 +276,6 @@ export class TranslationListComponent {
     this.treeMoreInView.set(new Set<string>());
     try {
       await this.tree.load(spaceId, params);
-      const first = firstKey(this.tree.rows());
-      if (first) this.firstTranslation.emit(first);
     } catch {
       this.notificationService.error('Translations can not be loaded.');
     }
@@ -273,11 +295,11 @@ function shownMoreRows(rows: readonly TranslationTreeRow[], expanded: ReadonlySe
   return shown;
 }
 
-/** The first translation of the tree, in the order shown. */
-function firstKey(rows: readonly TranslationTreeRow[]): Translation | undefined {
+/** The first translation the tree shows, in its order: at the top level or in an open group (a closed one hides its keys). */
+export function firstShownKey(rows: readonly TranslationTreeRow[], expanded: ReadonlySet<string>): Translation | undefined {
   for (const row of rows) {
     if (row.translation) return row.translation;
-    const below = row.children && firstKey(row.children);
+    const below = row.children && expanded.has(row.key) ? firstShownKey(row.children, expanded) : undefined;
     if (below) return below;
   }
   return undefined;

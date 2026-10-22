@@ -83,11 +83,16 @@ export class TranslationPages {
   }
 
   private read(page: number): Promise<Page<Translation>> {
-    let params = new HttpParams().set('page', page).set('size', LIST_PAGE_SIZE);
-    for (const [name, value] of Object.entries(this.filter)) {
-      if (Array.isArray(value)) for (const it of value) params = params.append(name, it);
-      else if (value) params = params.set(name, value);
-    }
-    return firstValueFrom(this.translationService.findPage(this.spaceId, params));
+    return firstValueFrom(this.translationService.findPage(this.spaceId, filterHttpParams(this.filter, page, LIST_PAGE_SIZE)));
   }
+}
+
+/** A page of `GET …/translations` with the filter: a list's `status=A&status=B`, a value once, an empty one left out. */
+export function filterHttpParams(filter: TranslationFilterParams, page: number, size: number): HttpParams {
+  let params = new HttpParams().set('page', page).set('size', size);
+  for (const [name, value] of Object.entries(filter)) {
+    if (Array.isArray(value)) for (const it of value) params = params.append(name, it);
+    else if (value) params = params.set(name, value);
+  }
+  return params;
 }
