@@ -61,16 +61,16 @@ describe('app API: the contents template (contents_fields)', () => {
 
     // Files: a Media folder with the three, stored, the images with their dimensions.
     const base = `/api/app/spaces/${space.id}/assets`;
-    const root = (await admin.get(`${base}?parentId=`)).json();
+    const root = (await admin.get(base)).json().items;
     expect(root.map((it: { name: string }) => it.name)).toEqual(['Media']);
-    const files = (await admin.get(`${base}?parentId=${root[0].id}`)).json<
-      {
+    const files = (await admin.get(`${base}?parentId=${root[0].id}`)).json<{
+      items: {
         id: string;
         name: string;
         extension: string;
         metadata?: Record<string, unknown>;
-      }[]
-    >();
+      }[];
+    }>().items;
     expect(files.map(it => `${it.name}${it.extension}`).sort()).toEqual(['blue.jpg', 'readme.txt', 'red.png']);
     // Read as an upload's would be (exiftool, then sharp): the PNG and the JPEG path both.
     expect(files.find(it => it.name === 'red')?.metadata).toEqual({

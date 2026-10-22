@@ -15,12 +15,12 @@ export interface AssetDto {
 
 /** The assets directly in a folder (no `parentId`: the root). */
 export function assetsIn(api: AppApi, spaceId: string, parentId?: string): Promise<AssetDto[]> {
-  return api.get(`/api/app/spaces/${spaceId}/assets?parentId=${parentId ?? ''}`);
+  return api.everyPageOf(`/api/app/spaces/${spaceId}/assets${parentId ? `?parentId=${parentId}` : ''}`);
 }
 
 /** Every asset of the space, in any folder. */
 export function allAssets(api: AppApi, spaceId: string): Promise<AssetDto[]> {
-  return api.get(`/api/app/spaces/${spaceId}/assets`);
+  return api.everyPageOf(`/api/app/spaces/${spaceId}/assets?deep=true`);
 }
 
 /** The name the app lists: `hero.png` for a file (name and extension), `Images` for a folder. */

@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 
-import type { Asset, AssetFolderSummary } from '@localess/shared';
+import type { Asset, AssetFolderSummary, AssetPageable, Page } from '@localess/shared';
 import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
@@ -10,7 +10,8 @@ import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toAsset, toAssetFolderSummary } from '../../../shared/transformers/asset.transformer.js';
-import { type AssetQuery, AssetRepository } from '../repositories/asset.repository.js';
+import { toPage } from '../../../shared/utils/paging.js';
+import { AssetRepository } from '../repositories/asset.repository.js';
 import { assetErrors } from '../utils/asset-errors.js';
 import { splitFilename } from '../utils/split-filename.js';
 import { assetPrefix, originalKey } from '../utils/storage-keys.js';
@@ -48,9 +49,14 @@ export class AssetService {
     private readonly storageSweeperService: StorageSweeperService,
   ) {}
 
-  async findAll(spaceId: string, query: AssetQuery): Promise<Asset[]> {
+  /** One page of the list, folders first. */
+  async findAll(spaceId: string, query: AssetPageable): Promise<Page<Asset>> {
     await this.requireSpace(spaceId);
-    return (await this.assetRepository.findAll(spaceId, query)).map(toAsset);
+    const [rows, total] = await Promise.all([
+      this.assetRepository.findAll(spaceId, query),
+      this.assetRepository.findAllCount(spaceId, query),
+    ]);
+    return toPage(rows, total, query, toAsset);
   }
 
   async count(spaceId: string, kind?: 'FOLDER' | 'FILE'): Promise<number> {

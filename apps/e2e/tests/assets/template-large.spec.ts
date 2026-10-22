@@ -138,8 +138,8 @@ test.describe('Assets → a folder of 1,000 files', () => {
     await contents.save();
 
     // Post-check: the API.
-    // `?name=` is a name prefix: `file-0001` … `file-0099`, which hold the two picked.
-    const firstFiles = await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/assets?name=file-00`);
+    // `?search=` matches anywhere in the name: `file-0001` … `file-0099`, which hold the two picked.
+    const firstFiles = await api.everyPageOf<{ id: string; name: string }>(`/api/app/spaces/${space.id}/assets?search=file-00&deep=true`);
     const id = (name: string) => firstFiles.find(it => it.name === name)!.id;
     const data = (await contentById(api, space.id, gallery)).data as { images?: { uri: string }[] };
     expect(data.images?.map(it => it.uri)).toEqual([id('file-0010'), id('file-0020')]);
@@ -161,6 +161,6 @@ test.describe('Assets → a folder of 1,000 files', () => {
     await page.reload();
     await assets.openFolder('Bulk');
     await expect(page.getByText('1001 total items')).toBeVisible();
-    expect((await api.get<unknown[]>(`/api/app/spaces/${space.id}/assets?name=file-0000`)).length).toBe(1);
+    expect((await api.get<{ total: number }>(`/api/app/spaces/${space.id}/assets?search=file-0000&deep=true`)).total).toBe(1);
   });
 });

@@ -23,7 +23,9 @@ test.describe('Limits', () => {
       id: string;
     };
     const files = async () =>
-      ((await (await page.request.get(`/api/app/spaces/${space.id}/assets`)).json()) as { name: string }[]).map(it => it.name);
+      ((await (await page.request.get(`/api/app/spaces/${space.id}/assets`)).json()) as { items: { name: string }[] }).items.map(
+        it => it.name,
+      );
     const assets = new AssetsPage(page);
 
     try {

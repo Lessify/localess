@@ -46,20 +46,15 @@ describe('app API: the large assets template (assets_large)', () => {
     const space = response.json();
 
     const base = `/api/app/spaces/${space.id}/assets`;
-    const root = (await admin.get(`${base}?parentId=`)).json<{ id: string; name: string }[]>();
+    const root = (await admin.get(base)).json<{ items: { id: string; name: string }[] }>().items;
     expect(root.map(it => it.name)).toEqual(['Bulk', 'Empty', 'Nested']);
-    const bulk = (await admin.get(`${base}?parentId=${root[0].id}`)).json<
-      {
-        name: string;
-        type: string;
-        size: number;
-        metadata?: Record<string, unknown>;
-      }[]
-    >();
-    expect(bulk).toHaveLength(1_000);
-    expect(bulk.filter(it => it.type === 'image/png')).toHaveLength(100);
-    expect(bulk.find(it => it.name === 'file-0010')?.metadata).toMatchObject({ width: 16, height: 16 });
-    expect(bulk.find(it => it.name === 'file-0999')).toMatchObject({ type: 'text/plain', size: 999 });
+    const bulk = `${base}?parentId=${root[0].id}`;
+    type Files = { total: number; items: { name: string; type: string; size: number; metadata?: Record<string, unknown> }[] };
+    const files = async (query: string) => (await admin.get(`${bulk}&${query}`)).json<Files>();
+    expect((await files('kind=FILE')).total).toBe(1_000);
+    expect((await files('kind=FILE&fileType=IMAGE')).total).toBe(100);
+    expect((await files('search=file-0010')).items[0]?.metadata).toMatchObject({ width: 16, height: 16 });
+    expect((await files('search=file-0999')).items[0]).toMatchObject({ type: 'text/plain', size: 999 });
     expect(await storedAssetDirs(t, space.id)).toHaveLength(1_002);
     expect(await orphansOf(t, space.id)).toEqual([]);
   });

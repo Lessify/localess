@@ -34,7 +34,7 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 **Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
-- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetFolderId)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
+- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetFolderId)` and `switchMap`s to `AssetService.findAll()` for the current level (`GET …/assets?parentId=`, paged on the server, folders first; the service reads every page for now, see [Pagination](../../server/pagination.md#assets-a-folders-page-or-everything-under-it)), so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
 - `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is opened (`SpaceStore.changeAssetFolder(id)`); a breadcrumb calls `navigateToFolder(id)` (`null`: the root)
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself

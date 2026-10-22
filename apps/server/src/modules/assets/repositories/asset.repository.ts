@@ -1,3 +1,4 @@
+import { ASSET_FILE_TYPE_MIME, type AssetPageable } from '@localess/shared';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, asc, desc, eq, ilike, inArray, isNull, like, or, SQL, sql } from 'drizzle-orm';
 
@@ -9,20 +10,8 @@ import { EventService } from '../../../infra/events/event.service.js';
 import { guardUpload, releaseUploadGuards, scheduleAssetFilesDeletion } from '../../../shared/data-rules/storage-deletions.js';
 import type { AssetEntity } from '../../../shared/entities/asset.entity.js';
 import { assetSubtree, isAssetUnderOrSelf } from '../../../shared/queries/asset-tree.query.js';
-import { escapeLike } from '../../../shared/utils/paging.js';
+import { containsPattern, escapeLike, offsetOf } from '../../../shared/utils/paging.js';
 import { assetErrors } from '../utils/asset-errors.js';
-
-export interface AssetQuery {
-  /** `null`: the root's children; absent: any parent. */
-  parentId?: string | null;
-  kind?: 'FOLDER' | 'FILE';
-  /** Case-insensitive name prefix. */
-  name?: string;
-  /** MIME prefix, e.g. `image` or `video`. */
-  fileType?: string;
-  ids?: string[];
-  limit?: number;
-}
 
 /** A stored file's row: the id its storage key was written under, and what was read from the upload. */
 export interface NewAssetFile {
@@ -59,23 +48,28 @@ export class AssetRepository {
     private readonly eventService: EventService,
   ) {}
 
-  findAll(spaceId: string, query: AssetQuery): Promise<AssetEntity[]> {
-    const conditions: SQL[] = [eq(assets.spaceId, spaceId)];
-    if (query.parentId === null) conditions.push(isNull(assets.parentId));
-    else if (query.parentId !== undefined) conditions.push(eq(assets.parentId, query.parentId));
-    if (query.kind) conditions.push(eq(assets.kind, query.kind));
-    if (query.name) conditions.push(ilike(assets.name, `${escapeLike(query.name)}%`));
-    // Folders stay visible while browsing by file type.
-    if (query.fileType) conditions.push(or(eq(assets.kind, 'FOLDER'), like(assets.type, `${escapeLike(query.fileType)}%`)) as SQL);
-    if (query.ids) {
-      const ids = query.ids.filter(isUuid);
-      conditions.push(ids.length ? inArray(assets.id, ids) : sql`false`);
-    }
+  /** One page: folders first, then the sort (the name case-insensitive by default), then the id. */
+  findAll(spaceId: string, query: AssetPageable): Promise<AssetEntity[]> {
+    const order = query.direction === 'desc' ? desc : asc;
+    const column = {
+      name: sql`lower(${assets.name})`,
+      size: assets.size,
+      type: assets.type,
+      createdAt: assets.createdAt,
+      updatedAt: assets.updatedAt,
+    }[query.sort];
     return this.db.query.assets.findMany({
-      where: and(...conditions),
-      orderBy: [desc(assets.kind), asc(assets.name)],
-      ...(query.limit ? { limit: query.limit } : {}),
+      where: this.where(spaceId, query),
+      // Folders have no size nor type: by name among themselves.
+      orderBy: [desc(assets.kind), order(column), asc(sql`lower(${assets.name})`), asc(assets.id)],
+      limit: query.size,
+      offset: offsetOf(query),
     });
+  }
+
+  /** How many assets match the query's folder, kind, file type, search and ids. */
+  findAllCount(spaceId: string, query: AssetPageable): Promise<number> {
+    return this.db.$count(assets, this.where(spaceId, query));
   }
 
   count(spaceId: string, kind?: 'FOLDER' | 'FILE'): Promise<number> {
@@ -255,6 +249,34 @@ export class AssetRepository {
   private async find(executor: Database | Transaction, spaceId: string, id: string): Promise<AssetEntity | undefined> {
     if (!isUuid(id)) return undefined;
     return executor.query.assets.findFirst({ where: this.byId(spaceId, id) });
+  }
+
+  /**
+   * The query's filters: the folder's children (the root without `parentId`), or with `deep` everything under it (under
+   * the root: the whole space), or with `ids` those assets wherever they are; then the kind, the file type (folders
+   * stay, to browse) and the search (the name, anywhere, case-insensitive).
+   */
+  private where(spaceId: string, query: AssetPageable): SQL | undefined {
+    const conditions: SQL[] = [eq(assets.spaceId, spaceId)];
+    if (query.ids) {
+      conditions.push(query.ids.length ? inArray(assets.id, query.ids) : sql`false`);
+    } else if (!query.deep) {
+      conditions.push(query.parentId ? eq(assets.parentId, query.parentId) : isNull(assets.parentId));
+    } else if (query.parentId) {
+      // A subquery in the condition: everything below the folder, at any depth.
+      conditions.push(sql`${assets.id} in (
+        with recursive down(id) as (
+          select id from ${assets} where space_id = ${spaceId} and parent_id = ${query.parentId}
+          union
+          select a.id from down d join ${assets} a on a.space_id = ${spaceId} and a.parent_id = d.id
+        )
+        select id from down)`);
+    }
+    if (query.kind) conditions.push(eq(assets.kind, query.kind));
+    const mime = query.fileType && ASSET_FILE_TYPE_MIME[query.fileType];
+    if (mime) conditions.push(or(eq(assets.kind, 'FOLDER'), like(assets.type, `${escapeLike(mime)}%`)) as SQL);
+    if (query.search) conditions.push(ilike(assets.name, containsPattern(query.search)));
+    return and(...conditions);
   }
 
   private byId(spaceId: string, id: string) {

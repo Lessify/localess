@@ -1,3 +1,4 @@
+import { AssetFileType } from './schema.model.js';
 import type { Timestamp } from './timestamp.js';
 
 export type Asset = AssetFile | AssetFolder;
@@ -6,6 +7,19 @@ export enum AssetKind {
   FOLDER = 'FOLDER',
   FILE = 'FILE',
 }
+
+/** What the asset list sorts by (folders always first): the name by default. */
+export const ASSET_SORT_FIELDS = ['name', 'size', 'type', 'createdAt', 'updatedAt'] as const;
+export type AssetSortField = (typeof ASSET_SORT_FIELDS)[number];
+
+/** The media type prefix of each file type an Asset field accepts; `ANY` has none. */
+export const ASSET_FILE_TYPE_MIME: Partial<Record<AssetFileType, string>> = {
+  [AssetFileType.AUDIO]: 'audio/',
+  [AssetFileType.TEXT]: 'text/',
+  [AssetFileType.IMAGE]: 'image/',
+  [AssetFileType.VIDEO]: 'video/',
+  [AssetFileType.APPLICATION]: 'application/',
+};
 
 export interface AssetBase {
   id: string;

@@ -84,7 +84,7 @@ describe('app API: assets check their space and ids', () => {
       expect(response.json().message).toBe('Asset not found');
     }
     expect((await admin.get(`${base}/${folderId}`)).json()).toMatchObject({ name: 'Images' });
-    expect((await admin.get(otherBase)).json()).toEqual([]);
+    expect((await admin.get(otherBase)).json()).toMatchObject({ items: [], total: 0 });
   });
 
   it('refuses an unknown field on every body, in the upload fields and a count of an unknown kind, and changes nothing', async () => {
@@ -99,6 +99,6 @@ describe('app API: assets check their space and ids', () => {
       expect(response.statusCode, field).toBe(400);
       expect(response.body, field).toContain(field);
     }
-    expect((await admin.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Images']);
+    expect((await admin.get(base)).json().items.map((it: { name: string }) => it.name)).toEqual(['Images']);
   });
 });

@@ -9,6 +9,10 @@ import { Asset, AssetFileType, AssetKind } from '@localess/shared';
 import { AssetService } from './asset.service';
 
 const BASE = '/api/app/spaces/space-1/assets';
+const EVERY = 'page=0&size=100';
+
+/** One page of the list, the last one unless `total` says otherwise. */
+const page = <T>(items: T[], total = items.length, at = 0) => ({ items, page: at, size: 100, total });
 
 describe('AssetService', () => {
   let http: HttpTestingController;
@@ -37,12 +41,20 @@ describe('AssetService', () => {
   it('findAll() lists the children of a folder, the root by default', async () => {
     const service = setup();
     const root = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'a1' }]);
+    http.expectOne(`${BASE}?${EVERY}`).flush(page([{ id: 'a1' }]));
     expect(await root).toEqual([{ id: 'a1' }]);
 
     const nested = firstValueFrom(service.findAll('space-1', 'f2'));
-    http.expectOne(`${BASE}?parentId=f2`).flush([]);
+    http.expectOne(`${BASE}?parentId=f2&${EVERY}`).flush(page([]));
     expect(await nested).toEqual([]);
+  });
+
+  it('findAll() reads every page of the list', async () => {
+    const service = setup();
+    const all = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(`${BASE}?${EVERY}`).flush(page([{ id: 'a1' }], 101));
+    http.expectOne(`${BASE}?page=1&size=100`).flush(page([{ id: 'a2' }], 101, 1));
+    expect(await all).toEqual([{ id: 'a1' }, { id: 'a2' }]);
   });
 
   it('findAllFolders() reads every folder of the space, live', async () => {
@@ -58,14 +70,14 @@ describe('AssetService', () => {
     subscription.unsubscribe();
   });
 
-  it('findAll() narrows files by MIME prefix, except for ANY', async () => {
+  it('findAll() narrows files by file type, except for ANY', async () => {
     const service = setup();
     const images = firstValueFrom(service.findAll('space-1', '', AssetFileType.IMAGE));
-    http.expectOne(`${BASE}?parentId=&fileType=image/`).flush([]);
+    http.expectOne(`${BASE}?fileType=IMAGE&${EVERY}`).flush(page([]));
     await images;
 
     const any = firstValueFrom(service.findAll('space-1', '', AssetFileType.ANY));
-    http.expectOne(`${BASE}?parentId=`).flush([]);
+    http.expectOne(`${BASE}?${EVERY}`).flush(page([]));
     await any;
   });
 
@@ -74,15 +86,15 @@ describe('AssetService', () => {
     const service = setup();
     const results: Asset[][] = [];
     const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}?parentId=`).flush([]);
+    http.expectOne(`${BASE}?${EVERY}`).flush(page([]));
 
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'c', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}?parentId=`);
+    http.expectNone(`${BASE}?${EVERY}`);
 
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'a1' } as Asset]);
+    http.expectOne(`${BASE}?${EVERY}`).flush(page([{ id: 'a1' } as Asset]));
     expect(results).toEqual([[], [{ id: 'a1' }]]);
     subscription.unsubscribe();
   });
@@ -98,14 +110,14 @@ describe('AssetService', () => {
     expect(await files).toBe(2);
   });
 
-  it('find*ByName() search by name prefix with kind and limit', async () => {
+  it('find*ByName() search the names across the space: one page of `max`, with the kind', async () => {
     const service = setup();
     const any = firstValueFrom(service.findAllByName('space-1', 'lo'));
-    http.expectOne(`${BASE}?name=lo&limit=20`).flush([]);
-    await any;
+    http.expectOne(`${BASE}?search=lo&deep=true&size=20`).flush(page([{ id: 'a1' }]));
+    expect(await any).toEqual([{ id: 'a1' }]);
 
     const files = firstValueFrom(service.findAllFilesByName('space-1', 'lo', 5));
-    http.expectOne(`${BASE}?name=lo&kind=FILE&limit=5`).flush([]);
+    http.expectOne(`${BASE}?search=lo&deep=true&size=5&kind=FILE`).flush(page([]));
     await files;
   });
 
@@ -119,7 +131,7 @@ describe('AssetService', () => {
   it('findByIds() lists the given ids, without a request when there are none', async () => {
     const service = setup();
     const result = firstValueFrom(service.findByIds('space-1', ['a', 'b']));
-    http.expectOne(`${BASE}?ids=a,b`).flush([{ id: 'a' }]);
+    http.expectOne(`${BASE}?ids=a,b&${EVERY}`).flush(page([{ id: 'a' }]));
     expect(await result).toEqual([{ id: 'a' }]);
 
     expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);

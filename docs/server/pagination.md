@@ -127,6 +127,22 @@ search and scope state they share). The breadcrumbs, the Move dialog, the Link a
 of every folder and document instead: `GET …/contents/names` (`ContentSummary[]`: id, kind, parentId, name, slug,
 publishedAt, updatedAt; no data, no paths), held live by `SpaceStore`. Tests: `apps/server/test/contents-paging.test.ts`.
 
+## Assets: a folder's page, or everything under it
+
+`GET /api/app/spaces/:spaceId/assets` (`zAssetPageable`, `AssetPageable`): one page of `Asset`.
+
+- **Folders always first**, then by `sort` (`name`, case-insensitive, the default; `size`, `type`, `createdAt`,
+  `updatedAt`), then the name, then the id. Folders have no size nor type: by name among themselves whatever the sort.
+- `parentId`: the folder; **absent: the root**. `deep=true`: everything under it at any depth (a recursive subquery);
+  under the root, the whole space.
+- `kind` (`FOLDER` / `FILE`), `fileType` (an Asset field's `AssetFileType`: files of that media type, through
+  `ASSET_FILE_TYPE_MIME`; folders stay listed, to browse; `ANY` filters nothing), `search` (the name, anywhere,
+  case-insensitive, wildcards literal), `ids` (those assets wherever they are; until the Asset fields read the light
+  list of files).
+
+For now the web `AssetService` reads every page of it: the Assets table, grid and picker move to the paged list next.
+Tests: `apps/server/test/assets-paging.test.ts`.
+
 ## Not paged (and why)
 
 - Schemas: bounded per space (tens to a few hundred, not thousands like translation keys) and needed whole: the

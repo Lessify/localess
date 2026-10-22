@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-import { AssetKind } from './asset.model.js';
+import { ASSET_SORT_FIELDS, AssetKind } from './asset.model.js';
+import { zPageable, zSearch } from './page.zod.js';
+import { AssetFileType } from './schema.model.js';
 
 export const assetBaseSchema = z.object({
   id: z.string(),
@@ -39,20 +41,30 @@ export const zAssetExportArraySchema = z.array(assetSchema);
 const zParentId = z.uuid().nullable().optional();
 const zAssetName = z.string().trim().min(1).max(500);
 
-/** `GET …/assets`: `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
-export const zAssetListQuery = z.object({
-  // '': the root's children; absent: any parent.
-  parentId: z.union([z.uuid(), z.literal('')]).optional(),
+/**
+ * `GET …/assets`: one page, folders first, then by name unless sorted otherwise. `?parentId=` (absent: the root),
+ * `?deep=true` (everything under it), `?kind=`, `?fileType=` (files of that type; folders stay listed), `?search=` (the
+ * name, anywhere), `?ids=a,b` (those assets wherever they are).
+ */
+export const zAssetPageable = zPageable(ASSET_SORT_FIELDS, 'name').extend({
+  // The folder; absent: the root.
+  parentId: z.uuid().optional(),
+  // true: everything under the folder at any depth (under the root: the whole space); else its children only.
+  deep: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(it => it === 'true'),
   kind: z.enum(['FOLDER', 'FILE']).optional(),
-  name: z.string().max(500).optional(),
-  fileType: z.string().max(100).optional(),
+  fileType: z.enum(AssetFileType).optional(),
+  search: zSearch,
+  // Until the Asset fields read the light list of files: the assets they show, wherever they are.
   ids: z
     .string()
     .transform(it => (it ? it.split(',') : []))
+    .pipe(z.array(z.uuid()).max(100))
     .optional(),
-  limit: z.coerce.number().int().min(1).max(1000).optional(),
 });
-export type AssetListQuery = z.infer<typeof zAssetListQuery>;
+export type AssetPageable = z.infer<typeof zAssetPageable>;
 
 /** `GET …/assets/count?kind=`: every asset, or one kind. */
 export const zAssetCountQuery = z.object({ kind: z.enum(['FOLDER', 'FILE']).optional() });

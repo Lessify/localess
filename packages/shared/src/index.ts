@@ -23,7 +23,7 @@ export * from './roles.js';
 
 // The types of the App API requests, inferred from their schemas in '@localess/shared/zod' (one definition for the
 // server's validation and the web's bodies). Type-only, so the web app never loads zod.
-export type { AssetCountQuery, AssetFolderCreate, AssetListQuery, AssetMove, AssetUpdate, AssetUpload } from './models/asset.zod.js';
+export type { AssetCountQuery, AssetFolderCreate, AssetMove, AssetPageable, AssetUpdate, AssetUpload } from './models/asset.zod.js';
 export type { AuthLogin, PasswordResetConfirm, PasswordResetRequest } from './models/auth.zod.js';
 export type {
   ContentCountQuery,

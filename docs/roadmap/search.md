@@ -11,10 +11,12 @@ Translations has its own filter. None of that scales to thousands of documents o
 
 ## What exists on the server
 
-The App API lists (`GET /api/app/spaces/:spaceId/contents`, `…/assets`) take `?name=`: a **name prefix**,
-case-insensitive (`file-00` matches `file-0001` … `file-0099`). Used by the Export dialogs' autocomplete (hidden behind
-the import/export flag) and by e2e tests to look up ids. It stays as it is: one field, a prefix, exact and predictable,
-and it can use an index.
+`?name=` (a name prefix) is gone. The App API lists (`GET /api/app/spaces/:spaceId/contents`, `…/assets`) are paged on
+the server and take `?search=`: a case-insensitive contains, wildcards literal, on the name and the slug for contents,
+on the name for assets; within the folder, or with `?deep=true` everything under it (see
+[Pagination](../server/pagination.md)). The Contents table and the References picker show it with a scope (This folder
+/ Including subfolders); the Assets page and the assets picker next. What stays open below is ranking, accents, more
+fields and the index.
 
 ## Decided
 

@@ -5,12 +5,13 @@ import {
   type AssetCountQuery,
   type AssetFolderCreate,
   type AssetFolderSummary,
-  type AssetListQuery,
   type AssetMove,
+  type AssetPageable,
   type AssetUpdate,
   CONTENT_WRITERS,
+  type Page,
 } from '@localess/shared';
-import { zAssetCountQuery, zAssetFolderCreate, zAssetListQuery, zAssetMove, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
+import { zAssetCountQuery, zAssetFolderCreate, zAssetMove, zAssetPageable, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
 import {
   BadRequestException,
   Body,
@@ -47,12 +48,14 @@ function fieldValues(file: MultipartFile): Record<string, string> {
 export class AssetController {
   constructor(private readonly assetService: AssetService) {}
 
-  /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
+  /**
+   * One page, folders first: `?page=&size=&sort=&direction=` (Pageable), `?parentId=` (absent: the root), `?deep=true`,
+   * `?kind=`, `?fileType=` (folders stay listed), `?search=` (the name), `?ids=a,b`.
+   */
   @Get()
   @RequireRole(ANY_ROLE)
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery): Promise<Asset[]> {
-    const { parentId, ...rest } = query;
-    return this.assetService.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zAssetPageable }) query: AssetPageable): Promise<Page<Asset>> {
+    return this.assetService.findAll(spaceId, query);
   }
 
   /** Every folder of the space (`{ id, parentId, name }`), for the editor's breadcrumbs and move targets. */

@@ -14,19 +14,12 @@ import {
   AssetMove,
   AssetUpdate,
   AssetUpload,
+  Page,
+  PAGE_SIZE_MAX,
 } from '@localess/shared';
 import { AssetFileImport, AssetFileUpdateForm, AssetFolderCreateForm, AssetFolderUpdateForm } from '@shared/models/asset.model';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
-
-/** MIME type prefixes the server filters files by (folders are always kept). */
-const MIME_PREFIX: Partial<Record<AssetFileType, string>> = {
-  [AssetFileType.AUDIO]: 'audio/',
-  [AssetFileType.TEXT]: 'text/',
-  [AssetFileType.IMAGE]: 'image/',
-  [AssetFileType.VIDEO]: 'video/',
-  [AssetFileType.APPLICATION]: 'application/',
-};
 
 /** Asset library of a space (`/api/app/spaces/:spaceId/assets`); reads are live. */
 @Injectable({ providedIn: 'root' })
@@ -38,21 +31,40 @@ export class AssetService {
     return `/api/app/spaces/${spaceId}/assets`;
   }
 
+  /**
+   * Every page of the list (`GET …/assets` is paged), live. For now: the Assets page and the picker page in the browser,
+   * and the Asset fields read their files by id; they move to the paged list and to a light list in `SpaceStore`.
+   */
   private list<T extends Asset>(spaceId: string, params: HttpParams): Observable<T[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.http.get<T[]>(this.base(spaceId), { params }));
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.everyPage<T>(spaceId, params));
   }
 
-  private byName(name: string, max: number, kind?: AssetKind): HttpParams {
-    let params = new HttpParams().set('name', name);
+  private everyPage<T extends Asset>(spaceId: string, params: HttpParams, page = 0): Observable<T[]> {
+    return this.http
+      .get<Page<T>>(this.base(spaceId), { params: params.set('page', page).set('size', PAGE_SIZE_MAX) })
+      .pipe(
+        switchMap(answer =>
+          (page + 1) * answer.size >= answer.total
+            ? of(answer.items)
+            : this.everyPage<T>(spaceId, params, page + 1).pipe(map(rest => [...answer.items, ...rest])),
+        ),
+      );
+  }
+
+  /** The first `max` assets whose name contains `search`, anywhere in the space, live. */
+  private search<T extends Asset>(spaceId: string, search: string, max: number, kind?: AssetKind): Observable<T[]> {
+    let params = new HttpParams().set('search', search).set('deep', true).set('size', max);
     if (kind) params = params.set('kind', kind);
-    return params.set('limit', max);
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
+      this.http.get<Page<T>>(this.base(spaceId), { params }).pipe(map(it => it.items)),
+    );
   }
 
   /** Children of folder `parentId` (the root when absent), folders first then by name; files narrowed by `fileType`. */
   findAll(spaceId: string, parentId?: string, fileType?: AssetFileType): Observable<Asset[]> {
-    let params = new HttpParams().set('parentId', parentId ?? '');
-    const prefix = fileType && MIME_PREFIX[fileType];
-    if (prefix) params = params.set('fileType', prefix);
+    let params = new HttpParams();
+    if (parentId) params = params.set('parentId', parentId);
+    if (fileType && fileType !== AssetFileType.ANY) params = params.set('fileType', fileType);
     return this.list(spaceId, params);
   }
 
@@ -64,7 +76,7 @@ export class AssetService {
   }
 
   findAllByName(spaceId: string, name: string, max = 20): Observable<Asset[]> {
-    return this.list(spaceId, this.byName(name, max));
+    return this.search(spaceId, name, max);
   }
 
   findById(spaceId: string, id: string): Observable<Asset> {
@@ -77,7 +89,7 @@ export class AssetService {
   }
 
   findAllFilesByName(spaceId: string, name: string, max = 20): Observable<AssetFile[]> {
-    return this.list(spaceId, this.byName(name, max, AssetKind.FILE));
+    return this.search(spaceId, name, max, AssetKind.FILE);
   }
 
   /** Every folder of the space, live: the editor's folder map (breadcrumbs, move targets). */

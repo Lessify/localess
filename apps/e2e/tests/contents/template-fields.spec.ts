@@ -18,7 +18,7 @@ async function contentIds(api: AppApi, spaceId: string): Promise<Record<string, 
 
 /** The id of the template's `Media` asset folder. */
 async function mediaId(api: AppApi, spaceId: string): Promise<string> {
-  const root = await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${spaceId}/assets?parentId=`);
+  const root = await api.everyPageOf<{ id: string; name: string }>(`/api/app/spaces/${spaceId}/assets`);
   return root.find(it => it.name === 'Media')!.id;
 }
 
@@ -103,7 +103,7 @@ test.describe('Contents → a prepared space with every field kind', () => {
     const data = (await contentById(api, space.id, id)).data as Data;
     expect(data).toMatchObject({ text_i18n_de: 'Geändert', number_i18n_de: 99, option_i18n_de: 'blue' });
     expect(data['link_i18n_de']).toMatchObject({ kind: 'LINK', type: 'content', uri: ids['Gamma'] });
-    const files = await api.get<{ id: string; name: string }[]>(
+    const files = await api.everyPageOf<{ id: string; name: string }>(
       `/api/app/spaces/${space.id}/assets?parentId=${await mediaId(api, space.id)}`,
     );
     const fileId = (name: string) => files.find(it => it.name === name)!.id;

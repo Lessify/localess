@@ -194,24 +194,26 @@ describe('app API: assets', () => {
   });
 
   describe('browsing', () => {
-    it('lists a folder (folders first), filters by MIME prefix, name prefix and ids, and counts', async () => {
-      const root = (await contentReader.get(`${base}?parentId=`)).json();
+    it('lists a folder (folders first), filters by file type and searches the space, and counts', async () => {
+      const root = (await contentReader.get(base)).json().items;
       expect(root.map((a: { name: string }) => a.name)).toEqual(['Photos', 'Spinner', 'terms']);
-      expect((await contentReader.get(`${base}?parentId=&fileType=image`)).json().map((a: { name: string }) => a.name)).toEqual([
+      expect((await contentReader.get(`${base}?fileType=IMAGE`)).json().items.map((a: { name: string }) => a.name)).toEqual([
         'Photos',
         'Spinner',
       ]);
-      expect((await contentReader.get(`${base}?name=sun`)).json().map((a: { name: string }) => a.name)).toEqual(['Sunset.Final']);
+      expect((await contentReader.get(`${base}?search=sun&deep=true`)).json().items.map((a: { name: string }) => a.name)).toEqual([
+        'Sunset.Final',
+      ]);
       expect((await contentReader.get(`${base}/count?kind=FILE`)).json()).toEqual({ count: 3 });
       expect((await contentReader.post(`${base}/folders`, { name: 'x' })).statusCode).toBe(403);
     });
 
-    it('`?ids=` matches asset UUIDs exactly, not the Firestore id an asset was imported with', async () => {
-      const [first] = (await contentReader.get(`${base}?parentId=&kind=FILE`)).json();
+    it('`?ids=` matches asset UUIDs only (400 for anything else), not the Firestore id an asset was imported with', async () => {
+      const [first] = (await contentReader.get(`${base}?kind=FILE`)).json().items;
       expect(first.id).toMatch(UUID_V7);
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, first.id));
-      expect((await contentReader.get(`${base}?ids=FirestoreAsset000001`)).json()).toEqual([]);
-      expect((await contentReader.get(`${base}?ids=${first.id}`)).json()[0]).toMatchObject({
+      expect((await contentReader.get(`${base}?ids=FirestoreAsset000001`)).statusCode).toBe(400);
+      expect((await contentReader.get(`${base}?ids=${first.id}`)).json().items[0]).toMatchObject({
         id: first.id,
         legacyId: 'FirestoreAsset000001',
       });
@@ -220,20 +222,22 @@ describe('app API: assets', () => {
 
   describe('editing', () => {
     it('renames and sets or clears alt text', async () => {
-      const [file] = (await editor.get(`${base}?name=spinner`)).json();
+      const [file] = (await editor.get(`${base}?search=spinner&deep=true`)).json().items;
       expect((await editor.patch(`${base}/${file.id}`, { name: 'Loader', alt: '' })).json()).toMatchObject({ name: 'Loader' });
       expect((await editor.get(`${base}/${file.id}`)).json()).not.toHaveProperty('alt');
     });
 
     it('moves files and folders: one row, whatever is under it', async () => {
-      const [file] = (await editor.get(`${base}?name=terms`)).json();
+      const [file] = (await editor.get(`${base}?search=terms&deep=true`)).json().items;
       expect((await editor.put(`${base}/${file.id}/parent`, { parentId: photos.id })).json().parentId).toBe(photos.id);
       expect((await editor.put(`${base}/${file.id}/parent`, { parentId: newUuid() })).statusCode).toBe(400);
       // A folder moves with everything under it: the photo stays in it.
       const moved = await editor.put(`${base}/${nested.id}/parent`, { parentId: null });
       expect(moved.statusCode).toBe(200);
       expect(moved.json()).not.toHaveProperty('parentId');
-      expect((await editor.get(`${base}?parentId=${nested.id}`)).json().map((a: { name: string }) => a.name)).toEqual(['Sunset.Final']);
+      expect((await editor.get(`${base}?parentId=${nested.id}`)).json().items.map((a: { name: string }) => a.name)).toEqual([
+        'Sunset.Final',
+      ]);
       await editor.put(`${base}/${nested.id}/parent`, { parentId: photos.id });
     });
 
@@ -246,7 +250,7 @@ describe('app API: assets', () => {
     });
 
     it('refuses a file as the parent', async () => {
-      const [file] = (await editor.get(`${base}?name=terms`)).json();
+      const [file] = (await editor.get(`${base}?search=terms&deep=true`)).json().items;
       const response = await editor.post(`${base}/folders`, { parentId: file.id, name: 'X' });
       expect(response.statusCode).toBe(400);
       expect(response.json().message).toBe('No such folder');
@@ -297,7 +301,7 @@ describe('app API: assets', () => {
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(204);
       // Their files are queued in the delete and swept right after the commit.
       await t.app.get(StorageSweeperService).whenIdle();
-      expect((await editor.get(`${base}?parentId=`)).json().map((a: { name: string }) => a.name)).toEqual(['Loader']);
+      expect((await editor.get(base)).json().items.map((a: { name: string }) => a.name)).toEqual(['Loader']);
       // The photo (nested two levels down) and the moved PDF are gone from storage too.
       expect(await storedFiles()).toHaveLength(1);
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(404);
