@@ -1,6 +1,6 @@
-import type { ContentData } from '@localess/shared';
+import type { ContentData, ContentPageable } from '@localess/shared';
 import { BadRequestException, ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { isUuid, newUuid } from '../../../infra/database/id.js';
@@ -19,21 +19,14 @@ import {
   withPaths,
 } from '../../../shared/queries/content-tree.query.js';
 import { schemasByName } from '../../../shared/transformers/schema.transformer.js';
+import { containsPattern, offsetOf } from '../../../shared/utils/paging.js';
 import { contentErrors } from '../utils/content-errors.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
-import { startsWith } from '../utils/slug.utils.js';
 
 export type { ContentWithPath };
 
-export interface ContentQuery {
-  /** `null`: the root's children; absent: any parent. */
-  parentId?: string | null;
-  kind?: 'FOLDER' | 'DOCUMENT';
-  /** Case-insensitive name prefix. */
-  name?: string;
-  ids?: string[];
-  limit?: number;
-}
+/** A row of the content list: everything but the document's data and the ids it points to (read only by the editor). */
+export type ContentListRow = Omit<ContentEntity, 'data' | 'assets' | 'links' | 'references'> & { parentSlug: string; fullSlug: string };
 
 export interface NewContent {
   kind: 'FOLDER' | 'DOCUMENT';
@@ -82,23 +75,32 @@ export class ContentRepository {
     private readonly eventService: EventService,
   ) {}
 
-  /** Folders first, then by name. */
-  async findAll(spaceId: string, query: ContentQuery): Promise<ContentWithPath[]> {
-    const conditions: SQL[] = [eq(contents.spaceId, spaceId)];
-    if (query.parentId === null) conditions.push(isNull(contents.parentId));
-    else if (query.parentId !== undefined) conditions.push(eq(contents.parentId, query.parentId));
-    if (query.kind) conditions.push(eq(contents.kind, query.kind));
-    if (query.name) conditions.push(ilike(contents.name, startsWith(query.name)));
-    if (query.ids) {
-      const ids = query.ids.filter(isUuid);
-      conditions.push(ids.length ? inArray(contents.id, ids) : sql`false`);
-    }
+  /**
+   * One page: folders first, then by the query's sort (`name` case-insensitive, the default), then the id so equal
+   * values page stably. Without the document's data and the ids it points to.
+   */
+  async findAll(spaceId: string, query: ContentPageable): Promise<ContentListRow[]> {
+    const order = query.direction === 'desc' ? desc : asc;
+    const column = {
+      name: sql`lower(${contents.name})`,
+      schema: contents.schema,
+      publishedAt: contents.publishedAt,
+      createdAt: contents.createdAt,
+      updatedAt: contents.updatedAt,
+    }[query.sort];
     const rows = await this.db.query.contents.findMany({
-      where: and(...conditions),
-      orderBy: [desc(contents.kind), asc(contents.name)],
-      limit: query.limit,
+      columns: { data: false, assets: false, links: false, references: false },
+      where: this.where(spaceId, query),
+      orderBy: [desc(contents.kind), order(column), asc(contents.id)],
+      limit: query.size,
+      offset: offsetOf(query),
     });
     return withPaths(rows, await folderPaths(this.db, spaceId));
+  }
+
+  /** How many contents match the query's folder, kind and search. */
+  findAllCount(spaceId: string, query: ContentPageable): Promise<number> {
+    return this.db.$count(contents, this.where(spaceId, query));
   }
 
   /** Every folder of the space, by name: the editor's folder map. */
@@ -110,7 +112,8 @@ export class ContentRepository {
     });
   }
 
-  findAllCount(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
+  /** Every content of the space, or every one of `kind`. */
+  count(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
     return this.db.$count(contents, kind ? and(eq(contents.spaceId, spaceId), eq(contents.kind, kind)) : eq(contents.spaceId, spaceId));
   }
 
@@ -349,6 +352,36 @@ export class ContentRepository {
 
   private find(executor: Database | Transaction, spaceId: string, id: string): Promise<ContentEntity | undefined> {
     return executor.query.contents.findFirst({ where: this.byId(spaceId, id) });
+  }
+
+  /**
+   * The query's filters: given `ids`, those contents wherever they are; else the folder's children (the root without
+   * `parentId`), or with `deep` everything under it (under the root: the whole space). Then the kind and the search (the
+   * name or the slug, anywhere, case-insensitive).
+   */
+  private where(spaceId: string, query: ContentPageable): SQL | undefined {
+    const conditions: SQL[] = [eq(contents.spaceId, spaceId)];
+    if (query.ids) {
+      const ids = query.ids.filter(isUuid);
+      conditions.push(ids.length ? inArray(contents.id, ids) : sql`false`);
+    } else if (!query.deep) {
+      conditions.push(query.parentId ? eq(contents.parentId, query.parentId) : isNull(contents.parentId));
+    } else if (query.parentId) {
+      // A subquery in the condition: everything below the folder, at any depth.
+      conditions.push(sql`${contents.id} in (
+        with recursive down(id) as (
+          select id from ${contents} where space_id = ${spaceId} and parent_id = ${query.parentId}
+          union
+          select c.id from down d join ${contents} c on c.space_id = ${spaceId} and c.parent_id = d.id
+        )
+        select id from down)`);
+    }
+    if (query.kind) conditions.push(eq(contents.kind, query.kind));
+    if (query.search) {
+      const pattern = containsPattern(query.search);
+      conditions.push(or(ilike(contents.name, pattern), ilike(contents.slug, pattern)) as SQL);
+    }
+    return and(...conditions);
   }
 
   private byId(spaceId: string, id: string) {

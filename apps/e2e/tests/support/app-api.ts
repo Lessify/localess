@@ -179,7 +179,7 @@ export class AppApi {
   private async everyPage<T>(path: string): Promise<T[]> {
     const items: T[] = [];
     for (let page = 0; ; page++) {
-      const answer = await this.get<Page<T>>(`${path}?page=${page}&size=100`);
+      const answer = await this.get<Page<T>>(`${path}${path.includes('?') ? '&' : '?'}page=${page}&size=100`);
       items.push(...answer.items);
       if ((page + 1) * answer.size >= answer.total) return items;
     }

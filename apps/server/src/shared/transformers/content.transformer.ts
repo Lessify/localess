@@ -7,9 +7,13 @@ import type { ContentWithPath } from '../queries/content-tree.query.js';
 
 /**
  * A `contents` row with its computed paths as the App API's model: a folder, or a document with its schema, data,
- * references and publish time; `null` columns left out, `spaceId` dropped, timestamps as ISO strings.
+ * references and publish time; `null` columns left out, and the data and references when not read (the list), `spaceId`
+ * dropped, timestamps as ISO strings.
  */
-export function toContent(entity: ContentWithPath): Content {
+export function toContent(
+  entity: Omit<ContentWithPath, 'data' | 'assets' | 'links' | 'references'> &
+    Partial<Pick<ContentWithPath, 'data' | 'assets' | 'links' | 'references'>>,
+): Content {
   const base = {
     id: entity.id,
     name: entity.name,

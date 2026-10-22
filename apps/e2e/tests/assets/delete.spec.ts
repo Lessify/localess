@@ -125,7 +125,7 @@ test.describe('Assets → delete', () => {
     await page.reload();
     await expect(assets.emptyFolder).toBeVisible();
     expect(await assetNamed(api, space.id, 'used.png')).toBeUndefined();
-    const contents = await api.get<{ id: string }[]>(`/api/app/spaces/${space.id}/contents?kind=DOCUMENT`);
+    const contents = await api.everyPageOf<{ id: string }>(`/api/app/spaces/${space.id}/contents?kind=DOCUMENT&deep=true`);
     expect(contents.map(it => it.id)).toEqual([doc.id]);
   });
 

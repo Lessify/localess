@@ -24,11 +24,11 @@ export async function pageSchema(
 
 /** The contents directly in a folder (no `parentId`: the root). */
 export function contentsIn(api: AppApi, spaceId: string, parentId?: string): Promise<ContentRow[]> {
-  return api.get(`/api/app/spaces/${spaceId}/contents?parentId=${parentId ?? ''}`);
+  return api.everyPageOf(`/api/app/spaces/${spaceId}/contents${parentId ? `?parentId=${parentId}` : ''}`);
 }
 
 export async function contentNamed(api: AppApi, spaceId: string, name: string): Promise<ContentRow | undefined> {
-  const all = await api.get<ContentRow[]>(`/api/app/spaces/${spaceId}/contents`);
+  const all = await api.everyPageOf<ContentRow>(`/api/app/spaces/${spaceId}/contents?deep=true`);
   return all.find(it => it.name === name);
 }
 

@@ -93,7 +93,9 @@ describe('app API: the contents template (contents_fields)', () => {
     expect((await storedAssetDirs(t, space.id)).sort()).toEqual(files.map(it => it.id).sort());
 
     // Contents: the tree, all drafts.
-    const all = (await admin.get(`/api/app/spaces/${space.id}/contents`)).json<{ id: string; name: string; publishedAt?: string }[]>();
+    const all = (await admin.get(`/api/app/spaces/${space.id}/contents?deep=true&size=100`)).json<{
+      items: { id: string; name: string; publishedAt?: string }[];
+    }>().items;
     expect(all.map(it => it.name).sort()).toEqual(
       ['All fields (plain)', 'All fields (translated)', 'Alpha', 'Beta', 'Fields', 'Gamma', 'Nested page', 'Targets'].sort(),
     );

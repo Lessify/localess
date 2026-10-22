@@ -28,15 +28,26 @@ describe('ContentService', () => {
     vi.useRealTimers();
   });
 
+  /** A page of the list as the server answers it. */
+  const page = (items: unknown[], total = items.length, index = 0) => ({ items, page: index, size: 100, total });
+
   it('findAll() lists the children of a folder, the root by default', async () => {
     const service = setup();
     const root = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'c1' }]);
+    http.expectOne(`${BASE}?page=0&size=100`).flush(page([{ id: 'c1' }]));
     expect(await root).toEqual([{ id: 'c1' }]);
 
     const nested = firstValueFrom(service.findAll('space-1', 'f1'));
-    http.expectOne(`${BASE}?parentId=f1`).flush([]);
+    http.expectOne(`${BASE}?parentId=f1&page=0&size=100`).flush(page([]));
     expect(await nested).toEqual([]);
+  });
+
+  it('findAll() reads every page, 100 at a time', async () => {
+    const service = setup();
+    const all = firstValueFrom(service.findAll('space-1'));
+    http.expectOne(`${BASE}?page=0&size=100`).flush(page([{ id: 'a' }], 101));
+    http.expectOne(`${BASE}?page=1&size=100`).flush(page([{ id: 'b' }], 101, 1));
+    expect(await all).toEqual([{ id: 'a' }, { id: 'b' }]);
   });
 
   it('findAllFolders() reads every folder of the space, live', async () => {
@@ -57,15 +68,15 @@ describe('ContentService', () => {
     const service = setup();
     const results: Content[][] = [];
     const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}?parentId=`).flush([]);
+    http.expectOne(`${BASE}?page=0&size=100`).flush(page([]));
 
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}?parentId=`);
+    http.expectNone(`${BASE}?page=0&size=100`);
 
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'c1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}?parentId=`).flush([{ id: 'c1' } as Content]);
+    http.expectOne(`${BASE}?page=0&size=100`).flush(page([{ id: 'c1' } as Content]));
     expect(results).toEqual([[], [{ id: 'c1' }]]);
     subscription.unsubscribe();
   });
@@ -81,21 +92,21 @@ describe('ContentService', () => {
     expect(await documents).toBe(3);
   });
 
-  it('findAllDocuments() lists documents only', async () => {
+  it('findAllDocuments() lists every document of the space', async () => {
     const service = setup();
     const result = firstValueFrom(service.findAllDocuments('space-1'));
-    http.expectOne(`${BASE}?kind=DOCUMENT`).flush([{ id: 'd1' }]);
+    http.expectOne(`${BASE}?kind=DOCUMENT&deep=true&page=0&size=100`).flush(page([{ id: 'd1' }]));
     expect(await result).toEqual([{ id: 'd1' }]);
   });
 
-  it('findAll*ByName() search by name prefix with kind and limit', async () => {
+  it('findAll*ByName() search the whole space, one page of at most `max`, by kind when given', async () => {
     const service = setup();
     const any = firstValueFrom(service.findAllByName('space-1', 'Ho'));
-    http.expectOne(`${BASE}?name=Ho&limit=20`).flush([]);
-    await any;
+    http.expectOne(`${BASE}?search=Ho&deep=true&size=20`).flush(page([{ id: 'h' }]));
+    expect(await any).toEqual([{ id: 'h' }]);
 
     const documents = firstValueFrom(service.findAllDocumentsByName('space-1', 'Ho', 5));
-    http.expectOne(`${BASE}?name=Ho&kind=DOCUMENT&limit=5`).flush([]);
+    http.expectOne(`${BASE}?search=Ho&deep=true&size=5&kind=DOCUMENT`).flush(page([]));
     await documents;
   });
 
@@ -113,7 +124,7 @@ describe('ContentService', () => {
   it('findByIds() lists the given ids, without a request when there are none', async () => {
     const service = setup();
     const result = firstValueFrom(service.findByIds('space-1', ['a', 'b']));
-    http.expectOne(`${BASE}?ids=a,b`).flush([{ id: 'a' }, { id: 'b' }]);
+    http.expectOne(`${BASE}?ids=a,b&page=0&size=100`).flush(page([{ id: 'a' }, { id: 'b' }]));
     expect(await result).toEqual([{ id: 'a' }, { id: 'b' }]);
 
     expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);

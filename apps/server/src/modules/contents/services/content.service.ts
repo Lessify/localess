@@ -1,4 +1,4 @@
-import { type Content, type ContentData, type ContentFolderSummary, WebhookEvent } from '@localess/shared';
+import { type Content, type ContentData, type ContentFolderSummary, type ContentPageable, type Page, WebhookEvent } from '@localess/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { contentRefs } from '../../../shared/data-rules/content-refs.js';
@@ -6,7 +6,8 @@ import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js'
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toContent, toContentFolderSummary } from '../../../shared/transformers/content.transformer.js';
-import { type ContentQuery, ContentRepository, type ContentWithPath, type NewContent } from '../repositories/content.repository.js';
+import { toPage } from '../../../shared/utils/paging.js';
+import { ContentRepository, type ContentWithPath, type NewContent } from '../repositories/content.repository.js';
 import { contentErrors } from '../utils/content-errors.js';
 import { randomSuffix } from '../utils/slug.utils.js';
 
@@ -29,14 +30,19 @@ export class ContentService {
     private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
-  async findAll(spaceId: string, query: ContentQuery): Promise<Content[]> {
+  /** One page of a folder (or everything under it), without the documents' data. */
+  async findAll(spaceId: string, query: ContentPageable): Promise<Page<Content>> {
     await this.requireSpace(spaceId);
-    return (await this.contentRepository.findAll(spaceId, query)).map(toContent);
+    const [rows, total] = await Promise.all([
+      this.contentRepository.findAll(spaceId, query),
+      this.contentRepository.findAllCount(spaceId, query),
+    ]);
+    return toPage(rows, total, query, toContent);
   }
 
   async count(spaceId: string, kind?: 'FOLDER' | 'DOCUMENT'): Promise<number> {
     await this.requireSpace(spaceId);
-    return this.contentRepository.findAllCount(spaceId, kind);
+    return this.contentRepository.count(spaceId, kind);
   }
 
   async findOne(spaceId: string, contentId: string): Promise<Content> {

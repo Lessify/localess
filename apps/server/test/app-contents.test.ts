@@ -208,19 +208,19 @@ describe('app API: contents', () => {
       await t.db.delete(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'hero')));
     });
 
-    it('lists by parent (folders first, then by name), by name prefix, by ids, and counts', async () => {
+    it('lists by parent (folders first, then by name), by search, by ids, and counts', async () => {
       await create({ kind: 'DOCUMENT', name: 'About', slug: 'about', schema: 'page' });
-      expect((await reader.get(`${base}?parentId=`)).json().map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
-      expect((await reader.get(`${base}?name=ab`)).json().map((c: { name: string }) => c.name)).toEqual(['About']);
-      expect((await reader.get(`${base}?ids=${post.id},missing`)).json().map((c: { id: string }) => c.id)).toEqual([post.id]);
-      expect((await reader.get(`${base}?kind=DOCUMENT&limit=1`)).json()).toHaveLength(1);
+      expect((await reader.get(base)).json().items.map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
+      expect((await reader.get(`${base}?search=ab`)).json().items.map((c: { name: string }) => c.name)).toEqual(['About']);
+      expect((await reader.get(`${base}?ids=${post.id},missing`)).json().items.map((c: { id: string }) => c.id)).toEqual([post.id]);
+      expect((await reader.get(`${base}?kind=DOCUMENT&deep=true&size=1`)).json()).toMatchObject({ total: 2, items: [expect.anything()] });
       expect((await reader.get(`${base}/count?kind=DOCUMENT`)).json()).toEqual({ count: 2 });
       expect((await reader.get(`${base}/missing`)).statusCode).toBe(404);
     });
 
     it('gives documents UUIDv7 ids; `?ids=` matches ids exactly', async () => {
       expect(post.id).toMatch(UUID_V7);
-      expect((await reader.get(`${base}?ids=not-a-uuid,${post.id}`)).json().map((c: { id: string }) => c.id)).toEqual([post.id]);
+      expect((await reader.get(`${base}?ids=not-a-uuid,${post.id}`)).json().items.map((c: { id: string }) => c.id)).toEqual([post.id]);
     });
   });
 
@@ -317,9 +317,9 @@ describe('app API: contents', () => {
       expect(await item(deep.id)).toMatchObject({ parentSlug: 'news', fullSlug: 'news/2026' });
       expect(await item(nested.id)).toMatchObject({ parentSlug: 'news/2026', fullSlug: 'news/2026/deep' });
       expect(
-        (await reader.get(`${base}?parentId=`))
+        (await reader.get(base))
           .json()
-          .map((c: { fullSlug: string }) => c.fullSlug)
+          .items.map((c: { fullSlug: string }) => c.fullSlug)
           .sort(),
       ).toEqual(['about', 'blog-archive', 'news']);
       // A move is not a content.changed, as before.

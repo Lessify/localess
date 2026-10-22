@@ -12,7 +12,7 @@ type Data = Record<string, unknown>;
 
 /** The space's contents by name. */
 async function contentIds(api: AppApi, spaceId: string): Promise<Record<string, string>> {
-  const all = await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${spaceId}/contents`);
+  const all = await api.everyPageOf<{ id: string; name: string }>(`/api/app/spaces/${spaceId}/contents?deep=true`);
   return Object.fromEntries(all.map(it => [it.name, it.id]));
 }
 

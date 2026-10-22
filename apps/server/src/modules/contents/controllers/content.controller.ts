@@ -6,10 +6,11 @@ import {
   type ContentCreate,
   type ContentDataUpdate,
   type ContentFolderSummary,
-  type ContentListQuery,
+  type ContentPageable,
   type ContentUpdate,
+  type Page,
 } from '@localess/shared';
-import { zContentCountQuery, zContentCreate, zContentDataUpdate, zContentListQuery, zContentUpdate } from '@localess/shared/zod';
+import { zContentCountQuery, zContentCreate, zContentDataUpdate, zContentPageable, zContentUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
@@ -21,15 +22,17 @@ import { ContentService } from '../services/content.service.js';
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
-  /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
+  /**
+   * One page, folders first, without the documents' data: `?page=&size=&sort=&direction=` (Pageable), `?parentId=`
+   * (absent: the root), `?deep=true`, `?kind=`, `?search=` (name or slug), `?ids=a,b`.
+   */
   @Get()
   @RequireRole(ANY_ROLE)
   findAll(
     @Param('spaceId', UuidParamPipe) spaceId: string,
-    @Query({ schema: zContentListQuery }) query: ContentListQuery,
-  ): Promise<Content[]> {
-    const { parentId, ...rest } = query;
-    return this.contentService.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
+    @Query({ schema: zContentPageable }) query: ContentPageable,
+  ): Promise<Page<Content>> {
+    return this.contentService.findAll(spaceId, query);
   }
 
   /** Every folder of the space (`{ id, parentId, name, slug }`), for the editor's breadcrumbs and move targets. */

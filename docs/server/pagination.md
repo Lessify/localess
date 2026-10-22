@@ -110,6 +110,23 @@ The Tasks list is the reference; each step names the file.
   a filter of at most `TREE_EXPAND_ALL_MAX` (200) matches it reads them all and shows the tree fully open; more stay
   collapsed with their counts. Clearing the filter restores what was open while browsing.
 
+## Contents: a folder's page, or everything under it
+
+`GET /api/app/spaces/:spaceId/contents` (`zContentPageable`, `ContentPageable`): one page of `Content`, **without the
+documents' `data`, `assets`, `links` and `references`** (the repository doesn't read them; `GET …/contents/:contentId`
+answers the full document for the editor).
+
+- **Folders always first**, then by `sort` (`name`, case-insensitive, the default; `schema`, `publishedAt`,
+  `createdAt`, `updatedAt`), then the id.
+- `parentId`: the folder; **absent: the root**. `deep=true`: everything under it at any depth (a recursive subquery);
+  under the root, the whole space.
+- `kind` (`FOLDER` / `DOCUMENT`), `search` (the name or the slug, anywhere, case-insensitive, wildcards literal).
+- `ids=a,b`: those contents wherever they are (the folder and `deep` not applied).
+
+The web reads every page for now (`ContentService.findAll`, `findAllDocuments`, `findByIds`): the Contents table and
+the References picker move to the paged list, the Link and References fields to a light list in `SpaceStore` (`GET
+…/contents/names`). Tests: `apps/server/test/contents-paging.test.ts`.
+
 ## Not paged (and why)
 
 - Schemas: bounded per space (tens to a few hundred, not thousands like translation keys) and needed whole: the

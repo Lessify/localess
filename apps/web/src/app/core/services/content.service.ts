@@ -15,9 +15,11 @@ import {
   ContentFolderSummary,
   ContentKind,
   ContentUpdate,
+  Page,
+  PAGE_SIZE_MAX,
 } from '@localess/shared';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 /** Contents of a space (`/api/app/spaces/:spaceId/contents`); reads are live. */
 @Injectable({ providedIn: 'root' })
@@ -29,19 +31,39 @@ export class ContentService {
     return `/api/app/spaces/${spaceId}/contents`;
   }
 
+  /**
+   * Every page of the list (`GET …/contents` is paged, without the documents' data), live. For now: the table and the
+   * pickers page in the browser, and the Link field and the References fields read every document; they move to the
+   * paged list and to a light list in `SpaceStore`.
+   */
   private list<T extends Content>(spaceId: string, params: HttpParams): Observable<T[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () => this.http.get<T[]>(this.base(spaceId), { params }));
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () => this.everyPage<T>(spaceId, params));
   }
 
-  private byName(name: string, max: number, kind?: ContentKind): HttpParams {
-    let params = new HttpParams().set('name', name);
+  private everyPage<T extends Content>(spaceId: string, params: HttpParams, page = 0): Observable<T[]> {
+    return this.http
+      .get<Page<T>>(this.base(spaceId), { params: params.set('page', page).set('size', PAGE_SIZE_MAX) })
+      .pipe(
+        switchMap(answer =>
+          (page + 1) * answer.size >= answer.total
+            ? of(answer.items)
+            : this.everyPage<T>(spaceId, params, page + 1).pipe(map(rest => [...answer.items, ...rest])),
+        ),
+      );
+  }
+
+  /** The first `max` contents whose name or slug contains `search`, anywhere in the space. */
+  private search<T extends Content>(spaceId: string, search: string, max: number, kind?: ContentKind): Observable<T[]> {
+    let params = new HttpParams().set('search', search).set('deep', true).set('size', max);
     if (kind) params = params.set('kind', kind);
-    return params.set('limit', max);
+    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
+      this.http.get<Page<T>>(this.base(spaceId), { params }).pipe(map(it => it.items)),
+    );
   }
 
   /** Children of folder `parentId` (the root when absent), folders first then by name. */
   findAll(spaceId: string, parentId?: string): Observable<Content[]> {
-    return this.list(spaceId, new HttpParams().set('parentId', parentId ?? ''));
+    return this.list(spaceId, parentId ? new HttpParams().set('parentId', parentId) : new HttpParams());
   }
 
   /** Every folder of the space, live: the editor's folder map (breadcrumbs, paths, move targets). */
@@ -58,16 +80,17 @@ export class ContentService {
     ).pipe(map(it => it.count));
   }
 
+  /** Every document of the space, without its data. */
   findAllDocuments(spaceId: string): Observable<ContentDocument[]> {
-    return this.list(spaceId, new HttpParams().set('kind', ContentKind.DOCUMENT));
+    return this.list(spaceId, new HttpParams().set('kind', ContentKind.DOCUMENT).set('deep', true));
   }
 
   findAllByName(spaceId: string, name: string, max = 20): Observable<Content[]> {
-    return this.list(spaceId, this.byName(name, max));
+    return this.search(spaceId, name, max);
   }
 
   findAllDocumentsByName(spaceId: string, name: string, max = 20): Observable<ContentDocument[]> {
-    return this.list(spaceId, this.byName(name, max, ContentKind.DOCUMENT));
+    return this.search(spaceId, name, max, ContentKind.DOCUMENT);
   }
 
   findById(spaceId: string, id: string): Observable<Content> {

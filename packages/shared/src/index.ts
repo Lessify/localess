@@ -31,7 +31,7 @@ export type {
   ContentDataUpdate,
   ContentDocumentCreate,
   ContentFolderCreate,
-  ContentListQuery,
+  ContentPageable,
   ContentUpdate,
 } from './models/content.zod.js';
 export type { FirebaseImportConnection, FirebaseImportStart } from './models/firebase-import.zod.js';

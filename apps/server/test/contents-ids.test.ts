@@ -77,7 +77,7 @@ describe('app API: contents check their space and ids', () => {
     }
     expect((await admin.get(`${base}/${documentId}`)).json()).toMatchObject({ name: 'Home', slug: 'home' });
     expect((await admin.get(`${base}/${documentId}`)).json().publishedAt).toBeUndefined();
-    expect((await admin.get(otherBase)).json()).toEqual([]);
+    expect((await admin.get(otherBase)).json()).toMatchObject({ items: [], total: 0 });
   });
 
   it('refuses an unknown field on every body and a count of an unknown kind, and changes nothing', async () => {
@@ -93,7 +93,7 @@ describe('app API: contents check their space and ids', () => {
       expect(response.body, field).toContain(field);
     }
     expect((await admin.get(`${base}/${documentId}`)).json()).toMatchObject({ name: 'Home', slug: 'home' });
-    expect((await admin.get(base)).json().map((it: { name: string }) => it.name)).toEqual(['Home']);
+    expect((await admin.get(base)).json().items.map((it: { name: string }) => it.name)).toEqual(['Home']);
   });
 
   it('still takes the reference lists an older editor tab sends with the data (ignored)', async () => {

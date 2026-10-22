@@ -117,7 +117,7 @@ test.describe('Assets → a folder of 1,000 files', () => {
   });
 
   test('the picker filters 1,000 files: images only, or all', async ({ page, api, space }) => {
-    const all = await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/contents`);
+    const all = await api.everyPageOf<{ id: string; name: string }>(`/api/app/spaces/${space.id}/contents?deep=true`);
     const gallery = all.find(it => it.name === 'Gallery')!.id;
     const contents = new ContentsPage(page);
     await contents.gotoDocument(space.id, gallery);

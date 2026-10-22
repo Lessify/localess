@@ -134,7 +134,7 @@ test.describe('Contents → 2,000 documents', () => {
 
   test('picks a document from the last page of a 1,000-document folder', async ({ page, api, space, request }) => {
     const ids = Object.fromEntries(
-      (await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/contents?name=`)).map(it => [it.name, it.id]),
+      (await api.everyPageOf<{ id: string; name: string }>(`/api/app/spaces/${space.id}/contents?deep=true`)).map(it => [it.name, it.id]),
     );
     const contents = new ContentsPage(page);
     await contents.gotoDocument(space.id, ids['Page 01']);
@@ -167,7 +167,7 @@ test.describe('Contents → 2,000 documents', () => {
 
   test('the Link field finds one document among 2,000 by typing', async ({ page, api, space }) => {
     const ids = Object.fromEntries(
-      (await api.get<{ id: string; name: string }[]>(`/api/app/spaces/${space.id}/contents?name=`)).map(it => [it.name, it.id]),
+      (await api.everyPageOf<{ id: string; name: string }>(`/api/app/spaces/${space.id}/contents?deep=true`)).map(it => [it.name, it.id]),
     );
     const contents = new ContentsPage(page);
     const link = contents.blockField('Link');

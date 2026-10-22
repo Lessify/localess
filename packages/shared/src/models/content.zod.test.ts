@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { zContentCountQuery, zContentCreate, zContentData, zContentDataUpdate, zContentUpdate } from './content.zod.js';
+import { zContentCountQuery, zContentCreate, zContentData, zContentDataUpdate, zContentPageable, zContentUpdate } from './content.zod.js';
 
 const root = { _id: 'r1', _schema: 'page' };
 const link = { kind: 'LINK', type: 'url', target: '_self', uri: 'https://example.com' };
@@ -80,5 +80,28 @@ describe('App API content requests', () => {
     expect(zContentCountQuery.safeParse({ kind: 'FILE' }).success).toBe(false);
     expect(zContentCountQuery.safeParse({}).success).toBe(true);
     expect(zContentCountQuery.safeParse({ kind: 'DOCUMENT' }).success).toBe(true);
+  });
+});
+
+describe('zContentPageable', () => {
+  it('defaults to the root, by name, 20 a page, not deep', () => {
+    expect(zContentPageable.parse({})).toEqual({ page: 0, size: 20, sort: 'name', direction: 'asc', deep: false });
+  });
+
+  it('reads the folder, deep, kind, search and ids', () => {
+    const parentId = '01a15f8b-3ab2-77ea-8f61-f65129e56392';
+    expect(zContentPageable.parse({ parentId, deep: 'true', kind: 'DOCUMENT', search: ' blog ', ids: 'a,b' })).toMatchObject({
+      parentId,
+      deep: true,
+      kind: 'DOCUMENT',
+      search: 'blog',
+      ids: ['a', 'b'],
+    });
+  });
+
+  it('refuses a folder that is not a UUID, an unknown sort, kind or deep', () => {
+    for (const query of [{ parentId: '' }, { parentId: 'blog' }, { sort: 'slug' }, { kind: 'FILE' }, { deep: 'yes' }]) {
+      expect(zContentPageable.safeParse(query).success, JSON.stringify(query)).toBe(false);
+    }
   });
 });

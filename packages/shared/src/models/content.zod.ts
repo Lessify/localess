@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-import { type ContentData, ContentKind, type ContentRichText, type ContentValue } from './content.model.js';
+import { CONTENT_SORT_FIELDS, type ContentData, ContentKind, type ContentRichText, type ContentValue } from './content.model.js';
+import { zPageable, zSearch } from './page.zod.js';
 
 export const contentDataSchema = z.object({
   _id: z.string(),
@@ -84,19 +85,29 @@ const zParentId = z.uuid().nullable().optional();
 const zContentName = z.string().trim().min(1).max(500);
 const zIds = z.array(z.string().max(128)).max(10_000);
 
-/** `GET …/contents`: `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?ids=a,b`, `?limit=`. */
-export const zContentListQuery = z.object({
-  // '': the root's children; absent: any parent.
-  parentId: z.union([z.uuid(), z.literal('')]).optional(),
+/**
+ * `GET …/contents`: one page, folders first, then by name unless sorted otherwise. `?parentId=` (absent: the root),
+ * `?deep=true` (everything under it), `?kind=`, `?search=` (the name or the slug, anywhere), `?ids=a,b` (those contents
+ * wherever they are: the folder and `deep` are then not applied).
+ */
+export const zContentPageable = zPageable(CONTENT_SORT_FIELDS, 'name').extend({
+  // The folder; absent: the root.
+  parentId: z.uuid().optional(),
+  // true: everything under the folder at any depth (under the root: the whole space); else its children only.
+  deep: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform(it => it === 'true'),
   kind: z.enum(['FOLDER', 'DOCUMENT']).optional(),
-  name: z.string().max(500).optional(),
+  // The name or the slug.
+  search: zSearch,
+  // Several ids (`ids=a,b`), wherever they are: the documents a References field points to.
   ids: z
     .string()
     .transform(it => (it ? it.split(',') : []))
     .optional(),
-  limit: z.coerce.number().int().min(1).max(1000).optional(),
 });
-export type ContentListQuery = z.infer<typeof zContentListQuery>;
+export type ContentPageable = z.infer<typeof zContentPageable>;
 
 /** `GET …/contents/count?kind=`: every content, or one kind. */
 export const zContentCountQuery = z.object({ kind: z.enum(['FOLDER', 'DOCUMENT']).optional() });

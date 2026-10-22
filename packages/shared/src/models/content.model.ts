@@ -41,6 +41,10 @@ export interface ContentFolderSummary {
   slug: string;
 }
 
+/** What the content list sorts by (folders always first): the name by default. */
+export const CONTENT_SORT_FIELDS = ['name', 'schema', 'publishedAt', 'createdAt', 'updatedAt'] as const;
+export type ContentSortField = (typeof CONTENT_SORT_FIELDS)[number];
+
 export enum ContentKind {
   FOLDER = 'FOLDER',
   DOCUMENT = 'DOCUMENT',

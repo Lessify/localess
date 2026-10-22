@@ -58,7 +58,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 **Key behaviour:**
 
 - Loads schemas from `SchemaService` (needed for the Add Document dialog's schema picker)
-- Loads the children of the current folder (`SpaceStore.contentFolderId`, `null` at the root) from `GET /api/app/spaces/:s/contents?parentId=` (a live query, refetched on `contents` change events)
+- Loads the children of the current folder (`SpaceStore.contentFolderId`, `null` at the root) from `GET /api/app/spaces/:s/contents?parentId=` (paged on the server, without the documents' data; read page by page for now, see [Pagination](../../server/pagination.md#contents-a-folders-page-or-everything-under-it); a live query, refetched on `contents` change events)
 - Loads every folder of the space once (`GET …/contents/folders`, live) into a map `id → folder`: the breadcrumbs and paths are built from it (`shared/content-folders.ts`)
 - `onRowSelect(item)` — opens a folder (`SpaceStore.changeContentFolder(id)`) or navigates to the document editor
 - `navigateToFolder(id)` — breadcrumb navigation (`null`: the root)

@@ -245,7 +245,7 @@ test.describe('Contents → folders and documents', () => {
     await page.reload();
     await expect(contents.row('Keep')).toBeVisible();
     await expect(contents.rows).toHaveCount(1);
-    expect((await api.get<unknown[]>(`/api/app/spaces/${space.id}/contents`)).length).toBe(1);
+    expect(await api.everyPageOf(`/api/app/spaces/${space.id}/contents?deep=true`)).toHaveLength(1);
     expect((await cdn.get({ id: single.id })).status).toBe(404);
     expect((await cdn.get({ id: inside.id })).status).toBe(404);
     expect((await cdn.get({ id: keep.id })).status).toBe(200);
@@ -291,7 +291,7 @@ test.describe('Contents → folders and documents', () => {
     await page.reload();
     await expect(contents.row('About')).toBeVisible();
     await expect(contents.rows).toHaveCount(1);
-    const left = (await api.get<{ id: string }[]>(`/api/app/spaces/${space.id}/contents`)).map(it => it.id);
+    const left = (await api.everyPageOf<{ id: string }>(`/api/app/spaces/${space.id}/contents?deep=true`)).map(it => it.id);
     expect(left.sort()).toEqual([about.id, team.id].sort());
     for (const it of docs) {
       expect((await cdn.get({ id: it.id })).status).toBe(404);
