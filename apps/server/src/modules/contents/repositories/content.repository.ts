@@ -384,7 +384,6 @@ export class ContentRepository {
   }
 
   private async find(executor: Pick<Database, 'select'>, spaceId: string, id: string): Promise<ContentEntity | undefined> {
-    if (!isUuid(id)) return undefined;
     const [row] = await executor.select().from(contents).where(this.byId(spaceId, id));
     return row;
   }

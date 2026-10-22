@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { zContentData } from './content.zod.js';
+import { zContentCountQuery, zContentCreate, zContentData, zContentDataUpdate, zContentUpdate } from './content.zod.js';
 
 const root = { _id: 'r1', _schema: 'page' };
 const link = { kind: 'LINK', type: 'url', target: '_self', uri: 'https://example.com' };
@@ -62,5 +62,23 @@ describe('zContentData', () => {
   it('accepts rich text nodes with a type at every level', () => {
     expect(valid({ ...root, body: { type: 'doc' } })).toBe(true);
     expect(valid({ ...root, body: { type: 'doc', content: [{ text: 'no type' }] } })).toBe(false);
+  });
+});
+
+describe('App API content requests', () => {
+  it('refuse an unknown field (strict bodies), keeping the reference lists an older editor sends', () => {
+    expect(zContentCreate.safeParse({ kind: 'FOLDER', name: 'Blog', slug: 'blog', schema: 'page' }).success).toBe(false);
+    expect(zContentCreate.safeParse({ kind: 'DOCUMENT', name: 'Home', slug: 'home', schema: 'page', data: {} }).success).toBe(false);
+    expect(zContentUpdate.safeParse({ name: 'Home', parentSlug: '' }).success).toBe(false);
+    expect(zContentDataUpdate.safeParse({ data: root, schema: 'page' }).success).toBe(false);
+    expect(zContentCreate.safeParse({ kind: 'DOCUMENT', name: 'Home', slug: 'home', schema: 'page' }).success).toBe(true);
+    expect(zContentUpdate.safeParse({ parentId: null }).success).toBe(true);
+    expect(zContentDataUpdate.safeParse({ data: root, assets: [], links: [], references: [] }).success).toBe(true);
+  });
+
+  it('count only the kinds there are', () => {
+    expect(zContentCountQuery.safeParse({ kind: 'FILE' }).success).toBe(false);
+    expect(zContentCountQuery.safeParse({}).success).toBe(true);
+    expect(zContentCountQuery.safeParse({ kind: 'DOCUMENT' }).success).toBe(true);
   });
 });

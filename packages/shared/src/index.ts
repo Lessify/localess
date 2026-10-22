@@ -26,6 +26,7 @@ export * from './roles.js';
 export type { AssetFolderCreate, AssetListQuery, AssetMove, AssetUpdate, AssetUpload } from './models/asset.zod.js';
 export type { AuthLogin, PasswordResetConfirm, PasswordResetRequest } from './models/auth.zod.js';
 export type {
+  ContentCountQuery,
   ContentCreate,
   ContentDataUpdate,
   ContentDocumentCreate,

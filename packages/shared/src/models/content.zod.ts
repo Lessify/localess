@@ -98,10 +98,14 @@ export const zContentListQuery = z.object({
 });
 export type ContentListQuery = z.infer<typeof zContentListQuery>;
 
+/** `GET …/contents/count?kind=`: every content, or one kind. */
+export const zContentCountQuery = z.object({ kind: z.enum(['FOLDER', 'DOCUMENT']).optional() });
+export type ContentCountQuery = z.infer<typeof zContentCountQuery>;
+
 /** `POST …/contents`: a document or a folder. */
 export const zContentCreate = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('DOCUMENT'), parentId: zParentId, name: zContentName, slug: zSlug, schema: z.string().min(1).max(128) }),
-  z.object({ kind: z.literal('FOLDER'), parentId: zParentId, name: zContentName, slug: zSlug }),
+  z.strictObject({ kind: z.literal('DOCUMENT'), parentId: zParentId, name: zContentName, slug: zSlug, schema: z.string().min(1).max(128) }),
+  z.strictObject({ kind: z.literal('FOLDER'), parentId: zParentId, name: zContentName, slug: zSlug }),
 ]);
 export type ContentCreate = z.infer<typeof zContentCreate>;
 /** What the Add Document dialog asks for (the kind and the folder come from where it was opened). */
@@ -109,16 +113,16 @@ export type ContentDocumentCreate = Omit<Extract<ContentCreate, { kind: 'DOCUMEN
 /** What the Add Folder dialog asks for. */
 export type ContentFolderCreate = Omit<Extract<ContentCreate, { kind: 'FOLDER' }>, 'kind' | 'parentId'>;
 
-/** `PATCH …/contents/:id`: rename and/or move. */
-export const zContentUpdate = z.object({ name: zContentName.optional(), slug: zSlug.optional(), parentId: zParentId });
+/** `PATCH …/contents/:contentId`: rename and/or move. */
+export const zContentUpdate = z.strictObject({ name: zContentName.optional(), slug: zSlug.optional(), parentId: zParentId });
 export type ContentUpdate = z.infer<typeof zContentUpdate>;
 
 /**
- * `PUT …/contents/:id/data`. Blocks of known values (`zContentData`): `_id`, `_schema`, and each value one of the
+ * `PUT …/contents/:contentId/data`. Blocks of known values (`zContentData`): `_id`, `_schema`, and each value one of the
  * shapes the editor stores. `assets`, `links`, `references`: still accepted from clients that send them (an editor tab
  * open across a deploy), and ignored: the server works them out from the data.
  */
-export const zContentDataUpdate = z.object({
+export const zContentDataUpdate = z.strictObject({
   data: zContentData,
   assets: zIds.optional(),
   links: zIds.optional(),

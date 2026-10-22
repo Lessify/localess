@@ -66,9 +66,9 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - `openAddFolderDialog()` — creates `ContentFolder` with `kind: FOLDER`
 - `openEditDialog(element)` — edit document/folder name and slug. Slugs are unique among siblings (a clash, even with a write that commits at the same moment, is a 409 "'x' is already used"); a folder rename changes one row, the paths under it follow (they are computed)
 - `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
-- `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:id/publish`), which writes one published `content_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
-- `openUnpublishDialog()` — removes the published snapshot (`POST …/:id/unpublish` deletes the published `content_snapshots` rows)
-- `openMoveDialog()` — moves a document or folder (`PATCH …/:id { parentId }`, `null`: the root); the dialog lists the root and every folder from the folder map, without where the item is and, for a folder, without itself and everything under it
+- `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:contentId/publish`), which writes one published `content_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
+- `openUnpublishDialog()` — removes the published snapshot (`POST …/:contentId/unpublish` deletes the published `content_snapshots` rows)
+- `openMoveDialog()` — moves a document or folder (`PATCH …/:contentId { parentId }`, `null`: the root); the dialog lists the root and every folder from the folder map, without where the item is and, for a folder, without itself and everything under it
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
 - `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export
