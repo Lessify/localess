@@ -1,24 +1,13 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { breadcrumbs } from '@core/utils/folder-tree';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
+import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetFolderSummary, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -36,8 +25,9 @@ import {
   lucideUpload,
 } from '@ng-icons/lucide';
 import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } from '@shared/models/asset.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HasRolePipe } from '@shared/pipes/has-role.pipe';
@@ -71,6 +61,7 @@ import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-se
     CommonModule,
     HlmDialogImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     HasRolePipe,
     LlTableImports,
     TimeDurationPipe,
@@ -102,7 +93,7 @@ import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-se
     }),
   ],
 })
-export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
+export class AssetsSelectDialogComponent implements OnInit {
   private readonly assetService = inject(AssetService);
   private readonly notificationService = inject(NotificationService);
   readonly fe = inject(FormErrorHandlerService);
@@ -112,12 +103,14 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   /** Required: scopes the browser to a space, and `multiple` decides the selection mode. */
   readonly context = injectBrnDialogContext<AssetsSelectDialogContext>();
 
-  sort = viewChild(TableSort);
-  paginator = viewChild.required(Paginator);
-
+  /** The same paged query as the Assets page (folder, search, scope, sort, page), files of the field's type. */
+  readonly assetList = new FolderList(20, { fileType: this.context.fileType });
+  readonly filters = FOLDER_LIST_FILTERS;
+  readonly total = signal(0);
   private readonly assets = signal<Asset[]>([]);
   readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
+  /** Kept by id across pages, folders and searches: files can be picked from several folders. */
   selection = new SelectionModel<Asset>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
 
   fileUploadQueue = signal<File[]>([]);
@@ -131,7 +124,11 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   readonly folderId = signal<string | null>(null);
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.folderId()));
-  private readonly folderId$ = toObservable(this.folderId);
+  /** Where each asset is (`~/Images`), for a list from several folders (`deep`); `undefined` otherwise. */
+  readonly location = computed(() => {
+    const folders = this.folderMap();
+    return this.assetList.deep() ? (asset: Asset) => assetLocation(folders, asset.parentId) : () => undefined;
+  });
 
   // Subscriptions
   private fileUploadQueue$ = new Subject<File>();
@@ -141,28 +138,27 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
 
+  /** The query's page, again whenever it changes (and live). A failed load is told and ends only that request. */
   constructor() {
-    // `sort` is only present in list layout — re-bind whenever the table (and its
-    // llTableSort directive) is created/destroyed by the list/grid toggle.
-    effect(() => {
-      this.dataSource.sort = this.sort() ?? null;
-    });
-
-    this.folderId$
+    toObservable(this.assetList.list.params)
       .pipe(
-        switchMap(folderId => this.assetService.findAll(this.context.spaceId, folderId ?? undefined, this.context.fileType)),
+        switchMap(params =>
+          this.assetService.findPage(this.context.spaceId, params).pipe(
+            catchError(() => {
+              this.notificationService.error('Assets can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: assets => {
-          this.assets.set(assets);
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.assets.set(page.items);
+        this.total.set(page.total);
+        this.assetList.list.onLoaded(page);
+        this.isLoading.set(false);
       });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator();
   }
 
   ngOnInit(): void {
@@ -195,6 +191,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
     if (folderId === this.folderId()) return;
     this.isLoading.set(true);
     this.folderId.set(folderId);
+    this.assetList.setFolder(folderId);
   }
 
   onAssetSelect(element: Asset): void {
@@ -202,8 +199,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
       this.selection.toggle(element);
       return;
     } else if (element.kind === AssetKind.FOLDER) {
-      this.isLoading.set(true);
-      this.folderId.set(element.id);
+      this.navigateToFolder(element.id);
     }
   }
 

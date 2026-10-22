@@ -1,7 +1,7 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
@@ -9,7 +9,7 @@ import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 import { AssetsComponent } from './assets.component';
 
@@ -28,7 +28,7 @@ describe('AssetsComponent', () => {
   });
 
   function setup(folderId: string | null = null) {
-    const findAll = vi.fn().mockReturnValue(of([]));
+    const findPage = vi.fn().mockReturnValue(of({ items: [], page: 0, size: 20, total: 0 }));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const importFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
@@ -58,7 +58,7 @@ describe('AssetsComponent', () => {
         {
           provide: AssetService,
           useValue: {
-            findAll,
+            findPage,
             findAllFolders,
             createFile,
             importFile,
@@ -82,7 +82,7 @@ describe('AssetsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findAll,
+      findPage,
       createFile,
       importFile,
       createFolder,
@@ -103,17 +103,46 @@ describe('AssetsComponent', () => {
     };
   }
 
-  it('loads root assets on init', () => {
-    const { component, findAll } = setup();
+  /** The query of the last page read. */
+  const lastQuery = (findPage: Mock) => (findPage.mock.calls.at(-1)![1] as HttpParams).toString();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', undefined);
+  it('loads the root page on init', () => {
+    const { component, findPage } = setup();
+
+    expect(findPage).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
+    expect(lastQuery(findPage)).toBe('page=0&size=20');
     expect(component.isLoading()).toBe(false);
   });
 
-  it('loads assets under the current folder', () => {
-    const { findAll } = setup('f2');
+  it('loads the page of the current folder', () => {
+    const { findPage } = setup('f2');
 
-    expect(findAll).toHaveBeenCalledWith('space-1', 'f2');
+    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f2');
+  });
+
+  it('pages, sorts, searches and widens the scope on the server, from the first page again', () => {
+    const { component, findPage } = setup('f2');
+    component.assetList.list.page.set(2);
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=2&size=20&parentId=f2');
+
+    component.assetList.onSortChange({ active: 'size', direction: 'desc' });
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=size&direction=desc&parentId=f2');
+
+    component.assetList.onFilterChange({ search: ' logo ', scope: 'deep' });
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=size&direction=desc&parentId=f2&search=logo&deep=true');
+  });
+
+  it('shows where each asset is only for a list from several folders', () => {
+    const { component } = setup('f1');
+    const photo = { id: 'a1', kind: AssetKind.FILE, name: 'photo', parentId: 'f2' } as Asset;
+    expect(component.location()(photo)).toBeUndefined();
+
+    component.assetList.onFilterChange({ search: '', scope: 'deep' });
+    expect(component.location()(photo)).toBe('~/Images/2026');
+    expect(component.location()({ ...photo, parentId: undefined })).toBe('~');
   });
 
   describe('onFileUpload', () => {

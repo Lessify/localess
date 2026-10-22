@@ -269,6 +269,8 @@ export interface SchemaFieldInput {
   source?: string;
   /** SCHEMA / SCHEMAS: allowed node schema names. */
   schemas?: string[];
+  /** ASSET / ASSETS: the file type the picker offers (`IMAGE`, `VIDEO`, …). */
+  fileType?: string;
   minLength?: number;
   maxLength?: number;
   minValue?: number;

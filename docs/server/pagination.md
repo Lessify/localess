@@ -122,7 +122,7 @@ answers the full document for the editor).
   under the root, the whole space.
 - `kind` (`FOLDER` / `DOCUMENT`), `search` (the name or the slug, anywhere, case-insensitive, wildcards literal).
 
-The Contents table and the References picker read one page (`ContentService.findPage` with a `ContentList`, the folder,
+The Contents table and the References picker read one page (`ContentService.findPage` with a `FolderList`, the folder,
 search and scope state they share). The breadcrumbs, the Move dialog, the Link and References fields read the light list
 of every folder and document instead: `GET …/contents/names` (`ContentSummary[]`: id, kind, parentId, name, slug,
 publishedAt, updatedAt; no data, no paths), held live by `SpaceStore`. Tests: `apps/server/test/contents-paging.test.ts`.

@@ -43,7 +43,7 @@
   <nav hlmBreadcrumb class="px-6 py-2">
     <ol hlmBreadcrumbList>
       <li hlmBreadcrumbItem>
-        <button hlmBreadcrumbButton (click)="navigateToFolder(null)">
+        <button hlmBreadcrumbButton aria-label="Root folder" (click)="navigateToFolder(null)">
           <ng-icon hlm size="sm" name="lucideFolderRoot" />
         </button>
       </li>
@@ -59,12 +59,20 @@
       }
     </ol>
   </nav>
+  <ll-filter-toolbar class="block px-1" [filters]="filters" (filterChange)="assetList.onFilterChange($event)" />
 </hlm-dialog-header>
 <!-- The middle grid row: the table scrolls here, so the footer stays reachable. -->
 <div class="min-h-0 overflow-x-hidden overflow-y-auto">
   @if (settingsStore.assetDialogLayout() === 'list') {
     <div llTableContainer>
-      <table ll-table [dataSource]="dataSource" llTableSort>
+      <table
+        ll-table
+        [dataSource]="dataSource"
+        llTableSort
+        llTableSortActive="name"
+        llTableSortDirection="asc"
+        [llTableSortDisableClear]="true"
+        (sortChange)="assetList.onSortChange($event)">
         <!-- Checkbox Column -->
         <ng-container llColumnDef="select">
           <th llHeaderCell *llHeaderCellDef>#</th>
@@ -106,10 +114,13 @@
           </td>
         </ng-container>
         <ng-container llColumnDef="name">
-          <th llHeaderCell *llHeaderCellDef>Name</th>
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="name">Name</th>
           <td llCell *llCellDef="let element">
             <div>
               <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+              @if (location()(element); as path) {
+                <div class="text-muted-foreground line-clamp-1 break-all">{{ path }}</div>
+              }
               @if (element.metadata; as metadata) {
                 @if (metadata.width && metadata.height) {
                   <div> W{{ metadata.width }} x H{{ metadata.height }} </div>
@@ -122,7 +133,7 @@
           </td>
         </ng-container>
         <ng-container llColumnDef="size">
-          <th llHeaderCell *llHeaderCellDef>File Size</th>
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="size">File Size</th>
           <td llCell *llCellDef="let element">
             @if (element.size) {
               {{ element.size | formatFileSize }}
@@ -132,7 +143,7 @@
           </td>
         </ng-container>
         <ng-container llColumnDef="type">
-          <th llHeaderCell *llHeaderCellDef>Type</th>
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="type">Type</th>
           <td llCell *llCellDef="let element">
             @if (element.kind === 'FILE') {
               @if (element.type) {
@@ -146,7 +157,7 @@
           </td>
         </ng-container>
         <ng-container llColumnDef="updatedAt">
-          <th llHeaderCell *llHeaderCellDef>Updated At</th>
+          <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
           <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
             {{ element.updatedAt | date: 'mediumDate' }}
           </td>
@@ -154,12 +165,22 @@
 
         <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></tr>
+        @if (!isLoading()) {
+          <tr *llNoDataRow>
+            <td [attr.colspan]="displayedColumns.length">{{ assetList.filtering() ? 'No assets match.' : 'No assets here yet.' }}</td>
+          </tr>
+        }
       </table>
     </div>
   } @else {
     <div class="grid grid-cols-[repeat(auto-fill,minmax(192px,1fr))] gap-4 py-2">
       @for (item of dataSource.renderedData(); track item.id) {
-        <ll-asset-card [item]="item" [spaceId]="context.spaceId" [showFooter]="item.kind === 'FILE'" (assetSelect)="onAssetSelect($event)">
+        <ll-asset-card
+          [item]="item"
+          [spaceId]="context.spaceId"
+          [path]="location()(item)"
+          [showFooter]="item.kind === 'FILE'"
+          (assetSelect)="onAssetSelect($event)">
           @if (item.kind === 'FILE') {
             <hlm-checkbox [checked]="selection.isSelected(item)" (checkedChange)="selection.toggle(item)" />
           }
@@ -167,7 +188,7 @@
       }
     </div>
   }
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
 </div>
 <hlm-dialog-footer>
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">

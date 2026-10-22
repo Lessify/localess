@@ -34,7 +34,14 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 **Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
-- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetFolderId)` and `switchMap`s to `AssetService.findAll()` for the current level (`GET …/assets?parentId=`, paged on the server, folders first; the service reads every page for now, see [Pagination](../../server/pagination.md#assets-a-folders-page-or-everything-under-it)), so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
+- One page of the current folder (`SpaceStore.assetFolderId`, `null` at the root), paged, sorted and searched on the
+  server (`AssetService.findPage()`, `GET …/assets`, live: it refetches on `assets` change events), in both layouts.
+  Its query is a `FolderList` (`@core/utils/folder-list.ts`), the same the Contents table and both pickers use: folders
+  first, by name unless sorted by a column header (the grid follows the list's sort); the toolbar's search (the name, on
+  Enter) and **Scope** (*This folder* / *Including subfolders*, `deep=true`: everything under the folder). A list from
+  several folders shows where each asset is under its name (`~/Images/2026`, `assetLocation()` from the folder map), on
+  rows and cards alike. A new folder, search, scope or sort starts again from page 1; "No assets match." when a search
+  or the scope finds nothing. See [Pagination](../../server/pagination.md#assets-a-folders-page-or-everything-under-it)
 - `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is opened (`SpaceStore.changeAssetFolder(id)`); a breadcrumb calls `navigateToFolder(id)` (`null`: the root)
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
@@ -42,7 +49,7 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 - Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentId`/`name`/`extension`/`alt`/`source` fields must precede the file; any other field is refused with `400`). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset DTO: the file is already stored (there is no in-progress state; the `in_progress` column is gone). Every uploaded file has a name, a `type` (`application/octet-stream` when the browser sends none) and an `extension` (`''` when its name has none; a sent `extension` must start with a dot); a file with no name is refused with `400`. Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
 - The queue uploads one item at a time, in order (`enqueue()`, also used by URL and Unsplash imports). A failed item gets its own notification (`uploadErrorMessage()` in `@core/utils/upload-error`: a `413` from the server or a reverse proxy reads "the file is too large") and the queue moves on; the "Uploading … (n)" count drops on success and failure alike. The asset picker in the content editor (`assets-select-dialog`) behaves the same
 - `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
-- `openAddFolderDialog()` — creates a new folder (`POST …/assets/folders` takes `parentId` and `name` only: file fields are refused with `400`, and a folder takes no alt text)
+- `openAddFolderDialog()` — creates a new folder (`POST …/assets/folders` takes `parentId` and `name` only: file fields are refused with `400`, and a folder takes no alt text). A name the folder already has is accepted here and in the Edit dialogs: the folder's list is paged, so the dialogs can't know every name ([asset names, N2](../../roadmap/asset-names.md))
 - `openEditDialog(asset)` — dispatches to `openEditFileDialog()` or `openEditFolderDialog()` by `kind`
 - `openEditFileDialog(asset)` — edit metadata: display name, alt text
 - `openEditFolderDialog(asset)` — rename folder

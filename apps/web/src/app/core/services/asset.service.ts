@@ -32,6 +32,14 @@ export class AssetService {
   }
 
   /**
+   * One page of the list (`GET …/assets`, folders first), live: the folder (`parentId`, absent: the root), `deep`,
+   * `fileType`, `search`, the sort and the page come from a `FolderList`.
+   */
+  findPage(spaceId: string, params: HttpParams): Observable<Page<Asset>> {
+    return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.http.get<Page<Asset>>(this.base(spaceId), { params }));
+  }
+
+  /**
    * Every page of the list (`GET …/assets` is paged), live. For now: the Assets page and the picker page in the browser,
    * and the Asset fields read their files by id; they move to the paged list and to a light list in `SpaceStore`.
    */

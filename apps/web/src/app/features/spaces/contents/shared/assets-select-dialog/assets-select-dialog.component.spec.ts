@@ -1,13 +1,13 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFileType, AssetFolder, AssetKind } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { AssetService } from '@core/services/asset.service';
 import { of, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 import { AssetsSelectDialogContext } from './assets-select-dialog.model';
 import { AssetsSelectDialogComponent } from './assets-select-dialog.component';
@@ -27,7 +27,7 @@ describe('AssetsSelectDialogComponent', () => {
 
   function setup(context: AssetsSelectDialogContext, assets: Asset[] = []) {
     const close = vi.fn();
-    const findAll = vi.fn().mockReturnValue(of(assets));
+    const findPage = vi.fn().mockReturnValue(of({ items: assets, page: 0, size: 20, total: assets.length }));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new' }));
     const error = vi.fn();
 
@@ -41,7 +41,7 @@ describe('AssetsSelectDialogComponent', () => {
         {
           provide: AssetService,
           useValue: {
-            findAll,
+            findPage,
             createFile,
             findAllFolders: () =>
               of([
@@ -55,15 +55,20 @@ describe('AssetsSelectDialogComponent', () => {
     });
     const fixture = TestBed.createComponent(AssetsSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findAll, createFile, error };
+    return { component: fixture.componentInstance, close, findPage, createFile, error };
   }
 
-  it('loads root assets on init', () => {
-    const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
-    const { component, findAll } = setup({ spaceId: 'space-1' }, assets);
+  /** The query of the last page read. */
+  const lastQuery = (findPage: Mock) => (findPage.mock.calls.at(-1)![1] as HttpParams).toString();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', undefined, undefined);
+  it('loads the root page on init, files of the field type', () => {
+    const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
+    const { component, findPage } = setup({ spaceId: 'space-1', fileType: AssetFileType.IMAGE }, assets);
+
+    expect(findPage).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
+    expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE');
     expect(component.dataSource.filteredData()).toEqual(assets);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
@@ -77,13 +82,27 @@ describe('AssetsSelectDialogComponent', () => {
   });
 
   it('onAssetSelect() navigates into folders', () => {
-    const { component, findAll } = setup({ spaceId: 'space-1' });
-    findAll.mockClear();
+    const { component, findPage } = setup({ spaceId: 'space-1' });
 
     component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
     TestBed.tick();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', 'f1', undefined);
+    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
+  });
+
+  it('keeps the field type through a search, and the selection across folders', () => {
+    const { component, findPage } = setup({ spaceId: 'space-1', multiple: true, fileType: AssetFileType.IMAGE });
+    const first = file({ id: 'a1' });
+    component.onAssetSelect(first);
+
+    component.onAssetSelect(folder({ id: 'a', name: 'A' }));
+    component.assetList.onFilterChange({ search: 'sun', scope: 'deep' });
+    TestBed.tick();
+    expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE&parentId=a&search=sun&deep=true');
+
+    component.onAssetSelect(file({ id: 'a2', parentId: 'b' }));
+    expect(component.selection.selected.map(it => it.id)).toEqual(['a1', 'a2']);
+    expect(component.location()(file({ parentId: 'b' }))).toBe('~/A/B');
   });
 
   it('builds the breadcrumbs from the folder map, and goes back by folder id', () => {
@@ -168,7 +187,11 @@ describe('AssetsSelectDialogComponent', () => {
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
         {
           provide: AssetService,
-          useValue: { findAll: vi.fn().mockReturnValue(of([asset])), findAllFolders: () => of([]), createFile: vi.fn() },
+          useValue: {
+            findPage: vi.fn().mockReturnValue(of({ items: [asset], page: 0, size: 20, total: 1 })),
+            findAllFolders: () => of([]),
+            createFile: vi.fn(),
+          },
         },
         { provide: NotificationService, useValue: { error: vi.fn() } },
         provideHttpClient(),

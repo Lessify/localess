@@ -45,6 +45,9 @@
       {{ asset.name }}{{ asset.kind === 'FILE' ? asset.extension : '' }}
     </h3>
     <div hlmCardDescription>
+      @if (path(); as path) {
+        <p class="line-clamp-1 break-all" [title]="path">{{ path }}</p>
+      }
       @if (asset.kind === 'FILE') {
         @if (asset.size; as size) {
           <p>{{ size | formatFileSize }}</p>

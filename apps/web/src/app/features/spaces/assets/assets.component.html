@@ -111,10 +111,18 @@
       }
     </ol>
   </nav>
+  <ll-filter-toolbar class="mb-3 block" [filters]="filters" (filterChange)="assetList.onFilterChange($event)" />
   <div llFileDragDrop role="region" aria-label="Assets" (filesChanges)="filesUpload($event)">
     @if (settingsStore.assetLayout() === 'list') {
       <div llTableContainer>
-        <table ll-table [dataSource]="dataSource" llTableSort>
+        <table
+          ll-table
+          [dataSource]="dataSource"
+          llTableSort
+          llTableSortActive="name"
+          llTableSortDirection="asc"
+          [llTableSortDisableClear]="true"
+          (sortChange)="assetList.onSortChange($event)">
           <ng-container llColumnDef="icon">
             <th llHeaderCell *llHeaderCellDef>Icon</th>
             <td llCell *llCellDef="let element">
@@ -148,6 +156,10 @@
             <td llCell *llCellDef="let element">
               <div>
                 <div class="break-all">{{ element.name }}{{ element.extension }}</div>
+                <!-- Everything under the folder: rows from several folders, so each shows where it is. -->
+                @if (location()(element); as path) {
+                  <div class="text-muted-foreground line-clamp-1 break-all">{{ path }}</div>
+                }
                 @if (element.metadata; as metadata) {
                   @if (metadata.width && metadata.height) {
                     <div> W{{ metadata.width }} x H{{ metadata.height }}</div>
@@ -249,12 +261,16 @@
           @if (!isLoading()) {
             <tr *llNoDataRow>
               <td [attr.colspan]="displayedColumns.length" class="text-center align-middle">
-                <br />
-                <br />
-                Drag and Drop a file here or use the "Upload Assets" button
-                <br />
-                <br />
-                <br />
+                @if (assetList.filtering()) {
+                  No assets match.
+                } @else {
+                  <br />
+                  <br />
+                  Drag and Drop a file here or use the "Upload Assets" button
+                  <br />
+                  <br />
+                  <br />
+                }
               </td>
             </tr>
           }
@@ -268,6 +284,7 @@
             [attr.aria-label]="item.kind === 'FILE' ? item.name + item.extension : item.name"
             [item]="item"
             [spaceId]="spaceId()"
+            [path]="location()(item)"
             [zoomCursor]="true"
             (assetSelect)="onAssetSelect($event)">
             @if (item.kind === 'FILE') {
@@ -295,5 +312,5 @@
       </div>
     }
   </div>
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
 </div>

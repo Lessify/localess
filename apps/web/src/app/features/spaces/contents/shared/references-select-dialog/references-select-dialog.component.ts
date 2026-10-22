@@ -6,6 +6,7 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { breadcrumbs } from '@core/utils/folder-tree';
 import { Content, ContentDocument, ContentKind, Schema } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -24,7 +25,6 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
-import { CONTENT_LIST_FILTERS, ContentList } from '../content-list';
 import { DocumentStatusComponent } from '../document-status/document-status.component';
 import { ReferencesSelectDialogContext, ReferencesSelectDialogResult } from './references-select-dialog.model';
 
@@ -71,8 +71,8 @@ export class ReferencesSelectDialogComponent {
   /** Every schema by name, from `SpaceStore` (live): a document's schema column. */
   readonly schemasMapByName = computed(() => new Map<string, Schema>(this.spaceStore.schemas().map(it => [it.name, it])));
   /** The same paged query as the Contents table: folder, search, scope, sort, page. */
-  readonly contentList = new ContentList();
-  readonly filters = CONTENT_LIST_FILTERS;
+  readonly contentList = new FolderList();
+  readonly filters = FOLDER_LIST_FILTERS;
   readonly total = signal(0);
   contents = signal<Content[]>([]);
   readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);

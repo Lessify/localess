@@ -56,6 +56,8 @@ export class AssetCardComponent {
   readonly spaceId = input.required<string>();
   readonly zoomCursor = input(false);
   readonly showFooter = input(true);
+  /** Where the asset is ('~/Images/Photos'), shown under its name: lists from several folders set it. */
+  readonly path = input<string>();
 
   // Outputs
   readonly assetSelect = output<Asset>();

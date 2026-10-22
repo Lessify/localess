@@ -36,6 +36,26 @@ export class AssetsPage {
     return this.page.getByText('0 total items');
   }
 
+  /** A row of a list from several folders: the name, then where the asset is (`~/Images`), then its size if any. */
+  rowAt(name: string, location: string): Locator {
+    return this.rows.filter({
+      has: this.page.getByRole('cell').filter({ hasText: new RegExp(`^\\s*${escapeRegExp(name)}\\s*${escapeRegExp(location)}(\\s|$)`) }),
+    });
+  }
+
+  /** Searches the names (on Enter); an emptied box shows the folder again by itself. */
+  async search(text: string): Promise<void> {
+    const box = this.page.getByPlaceholder('Search...');
+    await box.fill(text);
+    if (text) await box.press('Enter');
+  }
+
+  /** The scope of the list: the folder's children, or everything under it. */
+  async scope(scope: 'This folder' | 'Including subfolders'): Promise<void> {
+    await this.page.getByRole('button', { name: /^Scope|This folder|Including subfolders/ }).click();
+    await this.page.getByRole('option', { name: scope, exact: true }).click();
+  }
+
   // --- Folders and breadcrumb ----------------------------------------------------------------------------------------
 
   /** The breadcrumb of the open folder (the header has a breadcrumb of its own). */

@@ -1,5 +1,5 @@
 import { AssetsPage } from '../pages/assets.page';
-import { cancel, expectRefused } from '../pages/dialogs';
+import { cancel } from '../pages/dialogs';
 import { assetNamed, assetsIn, listedName } from '../support/assets';
 import { pngFile, textFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
@@ -83,7 +83,7 @@ test.describe('Assets → rename', () => {
     await expect(assets.row('inside.png')).toBeVisible();
   });
 
-  test('refuses a name another asset in the folder has; cancelling keeps the name', async ({ page, api, space }) => {
+  test('accepts a name another asset in the folder has; cancelling keeps the name', async ({ page, api, space }) => {
     await api.uploadAsset(space.id, pngFile('logo.png'));
     await api.uploadAsset(space.id, pngFile('photo.jpg'));
     await api.createAssetFolder(space.id, 'Images');
@@ -92,22 +92,18 @@ test.describe('Assets → rename', () => {
     // Pre-check
     await assets.goto(space.id);
     await expect(assets.rows).toHaveCount(3);
-    const before = await assetsIn(api, space.id);
-    expect(before.map(listedName).sort()).toEqual(['Images', 'logo.png', 'photo.jpg']);
 
-    // Action → post-check: a file's name (another extension) and a folder's name, both refused.
+    // Action → post-check: cancel keeps the name.
     const form = await assets.openEdit('logo.png', 'File');
-    const name = form.getByLabel('Name', { exact: true });
-    for (const taken of ['photo', 'Images']) {
-      await name.fill(taken);
-      await test.step(taken, () => expectRefused(form, name, 'The value is already reserved.'));
-    }
-
-    // Cancel: unchanged.
-    await name.fill('not-saved');
+    await form.getByLabel('Name', { exact: true }).fill('not-saved');
     await cancel(form);
     await expect(assets.row('logo.png')).toBeVisible();
-    expect(await assetsIn(api, space.id)).toEqual(before);
+
+    // Action → post-check: a file's name (another extension) and a folder's name are accepted (duplicates are allowed:
+    // the folder's list is paged, docs/roadmap/asset-names.md).
+    await assets.rename('logo.png', 'File', 'photo');
+    await assets.rename('Images', 'Folder', 'photo');
+    expect((await assetsIn(api, space.id)).map(listedName).sort()).toEqual(['photo', 'photo.jpg', 'photo.png']);
   });
 
   test('roadmap check: a file with a short name can only be edited by renaming it', async ({ page, api, space }) => {

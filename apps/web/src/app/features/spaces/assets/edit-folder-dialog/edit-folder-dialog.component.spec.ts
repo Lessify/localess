@@ -24,18 +24,18 @@ describe('EditFolderDialogComponent', () => {
 
   it('patches the form with the folder name on init', () => {
     const asset = { name: 'Images' } as AssetFolder;
-    const { component } = setup({ asset, reservedNames: ['Videos'] });
+    const { component } = setup({ asset });
 
     expect(component.form.value).toEqual({ name: 'Images' });
     expect(component.form.valid).toBe(true);
   });
 
-  it('rejects renaming to a reserved name', () => {
+  it('accepts a name another asset of the folder has (duplicates are allowed)', () => {
     const asset = { name: 'Images' } as AssetFolder;
-    const { component } = setup({ asset, reservedNames: ['Images', 'Videos'] });
+    const { component } = setup({ asset });
 
     component.form.controls['name'].setValue('Videos');
 
-    expect(component.form.controls['name'].errors).toEqual({ reservedName: true });
+    expect(component.form.valid).toBe(true);
   });
 });

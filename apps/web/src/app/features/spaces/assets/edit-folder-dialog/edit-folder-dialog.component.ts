@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { provideIcons } from '@ng-icons/core';
 import { lucideSave } from '@ng-icons/lucide';
-import { CommonValidator } from '@shared/validators/common.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -27,11 +26,12 @@ export class EditFolderDialogComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<EditFolderDialogResult>>(BrnDialogRef);
 
-  /** Required: the caller always passes the folder and its sibling names. */
+  /** Required: the caller always passes the folder. */
   private readonly context = injectBrnDialogContext<EditFolderDialogContext>();
 
   form: FormGroup = this.fb.group({
-    name: this.fb.control('', [...AssetValidator.NAME, CommonValidator.reservedName(this.context.reservedNames)]),
+    // A name the folder already has is allowed (docs/roadmap/asset-names.md): the folder's list is paged.
+    name: this.fb.control('', AssetValidator.NAME),
   });
 
   ngOnInit(): void {

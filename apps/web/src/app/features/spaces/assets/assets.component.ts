@@ -1,6 +1,5 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -11,7 +10,7 @@ import {
   input,
   OnInit,
   signal,
-  viewChild,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
@@ -22,7 +21,8 @@ import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
-import { breadcrumbs } from '@core/utils/folder-tree';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
+import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetFile, AssetFolder, AssetFolderSummary, AssetKind } from '@localess/shared';
@@ -61,10 +61,11 @@ import {
   ConfirmationDialogResult,
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW, DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
@@ -89,11 +90,10 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY, of, Subject } from 'rxjs';
+import { combineLatest, EMPTY, of, Subject } from 'rxjs';
 import { catchError, concatMap, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
-import { AddFolderDialogContext } from './add-folder-dialog/add-folder-dialog.model';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogContext } from './edit-file-dialog/edit-file-dialog.model';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
@@ -119,6 +119,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     FileDragAndDropDirective,
     LlTableImports,
     LlPaginatorImports,
+    LlFilterToolbarImports,
     TimeDurationPipe,
     FormatFileSizePipe,
     NgOptimizedImage,
@@ -161,7 +162,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     }),
   ],
 })
-export class AssetsComponent implements OnInit, AfterViewInit {
+export class AssetsComponent implements OnInit {
   protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
@@ -170,15 +171,16 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   private readonly injector = inject(Injector);
   readonly unsplashPluginService = inject(UnsplashPluginService);
 
-  sort = viewChild(TableSort);
-  paginator = viewChild.required(Paginator);
-
   // Input
   spaceId = input.required<string>();
 
   spaceStore = inject(SpaceStore);
 
   private destroyRef = inject(DestroyRef);
+  /** The folder's page shown, in both layouts: paged, sorted and searched on the server (`GET …/assets`). */
+  readonly assetList = new FolderList();
+  readonly filters = FOLDER_LIST_FILTERS;
+  readonly total = signal(0);
   private readonly assets = signal<Asset[]>([]);
   readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
   displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
@@ -192,6 +194,11 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.assetFolderId()));
+  /** Where each asset is (`~/Images`), for a list from several folders (`deep`); `undefined` otherwise. */
+  readonly location = computed(() => {
+    const folders = this.folderMap();
+    return this.assetList.deep() ? (asset: Asset) => assetLocation(folders, asset.parentId) : () => undefined;
+  });
 
   /** The folder shown; `undefined`: the root. */
   private get folderId(): string | undefined {
@@ -206,24 +213,36 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
 
+  /**
+   * The folder shown (`SpaceStore.assetFolderId`, `undefined` until the store has it) sets the list's folder; the list's
+   * query, again whenever it changes (and live), its page. A failed load is told and ends only that request.
+   */
   constructor() {
-    // `sort` is only present in list layout — re-bind whenever the table (and its
-    // llTableSort directive) is created/destroyed by the list/grid toggle.
     effect(() => {
-      this.dataSource.sort = this.sort() ?? null;
+      const folderId = this.spaceStore.assetFolderId();
+      if (folderId !== undefined) untracked(() => this.assetList.setFolder(folderId));
     });
-
-    toObservable(this.spaceStore.assetFolderId)
+    combineLatest([
+      toObservable(this.spaceStore.assetFolderId).pipe(filter(it => it !== undefined)),
+      toObservable(this.assetList.list.params),
+    ])
       .pipe(
-        filter(it => it !== undefined), // Skip initial data
-        switchMap(() => this.assetService.findAll(this.spaceId(), this.folderId)),
+        switchMap(([, params]) =>
+          this.assetService.findPage(this.spaceId(), params).pipe(
+            catchError(() => {
+              this.notificationService.error('Assets can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe({
-        next: assets => {
-          this.assets.set(assets);
-          this.isLoading.set(false);
-        },
+      .subscribe(page => {
+        this.assets.set(page.items);
+        this.total.set(page.total);
+        this.assetList.list.onLoaded(page);
+        this.isLoading.set(false);
       });
   }
 
@@ -253,10 +272,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
   private enqueue(item: File | AssetFileImport): void {
     this.fileUploadQueue.update(items => [...items, item]);
     this.fileUploadQueue$.next(item);
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator();
   }
 
   onFileUpload(event: Event): void {
@@ -335,10 +350,7 @@ export class AssetsComponent implements OnInit, AfterViewInit {
 
   openAddFolderDialog(): void {
     this.dialog
-      .open<AssetFolderCreateForm, AddFolderDialogContext>(AddFolderDialogComponent, {
-        context: {
-          reservedNames: this.assets().map(it => it.name),
-        },
+      .open<AssetFolderCreateForm>(AddFolderDialogComponent, {
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -368,7 +380,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
     this.dialog
       .open<AssetFolderUpdateForm, EditFolderDialogContext>(EditFolderDialogComponent, {
         context: {
-          reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFolder,
         },
         contentClass: DIALOG_WIDTH_SM,
@@ -392,7 +403,6 @@ export class AssetsComponent implements OnInit, AfterViewInit {
     this.dialog
       .open<AssetFileUpdateForm, EditFileDialogContext>(EditFileDialogComponent, {
         context: {
-          reservedNames: this.assets().map(it => it.name),
           asset: ObjectUtils.clone(element) as AssetFile,
         },
         contentClass: DIALOG_WIDTH_SM,

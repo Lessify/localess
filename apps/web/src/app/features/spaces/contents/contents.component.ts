@@ -21,6 +21,7 @@ import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import {
@@ -83,7 +84,6 @@ import { EditDialogComponent, EditDialogContext } from './edit-dialog';
 import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
 import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
-import { CONTENT_LIST_FILTERS, ContentList } from './shared/content-list';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
 @Component({
@@ -147,8 +147,8 @@ export class ContentsComponent {
 
   isLoading = signal(true);
   /** The folder's page shown: paged, sorted and searched on the server (`GET …/contents`, without the documents' data). */
-  readonly contentList = new ContentList();
-  readonly filters = CONTENT_LIST_FILTERS;
+  readonly contentList = new FolderList();
+  readonly filters = FOLDER_LIST_FILTERS;
   readonly total = signal(0);
   private readonly contents = signal<Content[]>([]);
   readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);

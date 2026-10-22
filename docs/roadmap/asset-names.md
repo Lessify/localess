@@ -21,22 +21,20 @@ Save stays disabled until the file is renamed, even to change only its alt text.
 - Test: `assets/rename.spec.ts` › "roadmap check: a file with a short name can only be edited by renaming it".
 - Options: validate the name only when it changes (keep the uploaded name as is), or apply the same rule on upload.
 
-## N2. Duplicate names: upload allows them, the dialogs refuse more than duplicates
+## N2. Duplicate names: allowed everywhere (upload, Move, the dialogs)
 
 - Uploading `logo.png` into a folder that has `logo.png` gives two `logo.png`
   (`assets/upload.spec.ts` › "a name that exists in the folder can be uploaded again").
 - Moving a file or folder into a folder that has the same name is allowed too: the Move dialog checks nothing and
   the server neither, so moving `hero.png` into a folder with `hero.png` gives two (`assets/move.spec.ts` ›
   "roadmap check: moving into a folder with the same name gives two").
-- Creating a folder, or renaming a file or folder, is refused when any asset in the folder has that name, compared
-  without the extension: `logo.png` can't be renamed to `photo` while `photo.jpg` exists, and a folder can't be named
-  like a file (`assets/rename.spec.ts` › "refuses a name another asset in the folder has", `assets/folders.spec.ts` ›
-  "refuses a name the folder already has"). The check is client-side only (`reservedNames` from the folder's list in
-  `assets.component.ts`); the server accepts all of these.
+- Creating a folder, or renaming a file or folder, to a name the folder has is allowed too (done 2026-10-22, with the
+  paged Assets list): the dialogs' client-side `reservedNames` check is gone (`assets/rename.spec.ts` › "accepts a name
+  another asset in the folder has", `assets/folders.spec.ts` › "accepts a name the folder already has").
 - **Decided for now (2026-10-19, the user, with [pagination round 2](../superpowers/specs/2026-10-19-pagination-round-2-design.md)):
   duplicates are allowed everywhere.** Once the folder list is paged, the dialogs only hold one page, so their
   `reservedNames` check is dropped: Create Folder, Edit File and Edit Folder accept a name the folder has, as upload and
-  Move do. The two e2e tests above that pin the refusal change to pin the duplicate being accepted.
+  Move do. The two e2e tests above pin the duplicate being accepted.
 - **Later: a duplicate check**, on the server so it holds whatever the folder size, in every place at once (upload,
   Move, the dialogs). Decide one rule for all three places, e.g. unique per folder by name **and** extension for files and by name for
   folders, enforced by the server (a unique index, 409) and mirrored in the dialogs and on upload (rename or refuse).

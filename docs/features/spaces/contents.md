@@ -61,7 +61,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - One page of the current folder (`SpaceStore.contentFolderId`, `null` at the root), paged, sorted and searched on the
   server: `GET /api/app/spaces/:s/contents` (`ContentService.findPage`, live; without the documents' data; see
   [Pagination](../../server/pagination.md#contents-a-folders-page-or-everything-under-it)). The query is a
-  `ContentList` (`shared/content-list.ts`: a `PagedList` with the folder, the search and the scope), the same the
+  `FolderList` (`@core/utils/folder-list.ts`: a `PagedList` with the folder, the search and the scope, shared with Assets), the same the
   References picker uses, so both behave alike: folders first, by name unless sorted by a column header; the toolbar's
   search (the name or the slug, on Enter) and **Scope** (*This folder* / *Including subfolders*, `deep=true`: everything
   under the folder, the whole space at the root; rows then show their path instead of `#slug`). Opening a folder keeps
@@ -424,7 +424,7 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 | `MoveDialogComponent`         | Pick destination folder                 |
 | `ConfirmationDialogComponent` | Delete / unpublish confirmation         |
 | `ReferencesSelectDialogComponent` | Pick content documents for `REFERENCE`/`REFERENCES` fields (`shared/references-select-dialog/`): the same paged list, toolbar (search, scope) and sort as the Contents table; the selection is kept across pages and folders |
-| `AssetsSelectDialogComponent` | Pick assets for `ASSET`/`ASSETS` fields (`shared/assets-select-dialog/`) |
+| `AssetsSelectDialogComponent` | Pick assets for `ASSET`/`ASSETS` fields (`shared/assets-select-dialog/`): the same paged list, toolbar (search, scope) and sort as the Assets page, files of the field's type (folders stay to browse); the selection is kept across pages and folders; uploads into the open folder |
 
 ## Services Used
 

@@ -63,8 +63,7 @@ test.describe('Assets → a folder of 1,000 files', () => {
     await assets.goto(space.id);
     await assets.openFolder('Bulk');
 
-    // Name: ascending, then descending.
-    await header('Name').click();
+    // Name: ascending by default (sorted on the server), then descending.
     await expect(header('Name')).toHaveAttribute('aria-sort', 'ascending');
     await expect.poll(async () => (await names(assets.rows))[0]).toBe(bulkListed(1));
     await header('Name').click();
@@ -155,7 +154,6 @@ test.describe('Assets → a folder of 1,000 files', () => {
 
     // Post-check: 1,001 files, first by name, also after a reload.
     await expect(page.getByText('1001 total items')).toBeVisible();
-    await assets.area.getByRole('columnheader', { name: 'Name', exact: true }).click();
     await expect.poll(async () => (await names(assets.rows))[0]).toBe('file-0000.txt');
     // A reload opens the root again.
     await page.reload();

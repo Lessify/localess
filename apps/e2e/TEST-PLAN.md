@@ -295,12 +295,12 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Upload into the open folder only | UI + API | ✅ `assets/upload` |
 | Upload a name the folder has: both kept | UI + API | ✅ `assets/upload` (roadmap N2) |
 | **Create folder**, a folder inside it, the breadcrumb back | UI + API | ✅ `assets/folders` @smoke |
-| A name the folder has (folder or file) refused; another folder may have it | UI + API | ✅ `assets/folders` (roadmap N2) |
+| A name the folder has (folder or file) accepted: duplicates are allowed (the list is paged) | UI + API | ✅ `assets/folders` (roadmap N2) |
 | Under 3 characters, spaces around refused; cancel creates nothing | UI + API | ✅ `assets/folders` |
 | **Rename** a file: extension kept, same id, the download uses the new name | UI + API + CDN | ✅ `assets/rename` @smoke |
 | Alt text of an image | UI + API | ✅ `assets/rename` |
 | Rename a folder; its files stay inside | UI + API | ✅ `assets/rename` |
-| A name another asset in the folder has refused (also another extension, or a folder); cancel keeps the name | UI + API | ✅ `assets/rename` (roadmap N2) |
+| A name another asset in the folder has accepted (another extension, a folder's); cancel keeps the name | UI + API | ✅ `assets/rename` (roadmap N2) |
 | A short file name blocks Edit; Edit Folder stops at 100 characters | UI | ✅ `assets/rename` (roadmap N1, N3) |
 | **Delete** a file: gone from the list, the API, the CDN (404) | UI + API + CDN | ✅ `assets/delete` @smoke |
 | Delete a folder with a subfolder and files: all gone, the file outside stays | UI + API + CDN | ✅ `assets/delete` |
@@ -311,6 +311,8 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Move a file into a folder and back (same id, URL works); move a folder with its subtree | UI + API + CDN | ✅ `assets/move` |
 | Move: the dialog leaves out where the item is, the folder itself and what is under it; the API refuses a cycle (400) | UI + API | ✅ `assets/move` |
 | Moving onto a name the folder has gives two | UI + API | ✅ `assets/move` (roadmap N2) |
+| **Search** the folder, or with *Including subfolders* everything under it, each row and card showing where it is; back to the folder | UI | ✅ `assets/search` |
+| The picker: search and scope, the field's file type kept, the selection kept across folders | UI | ✅ `assets/search` |
 | Grid layout: a card per item with its actions, remembered after a reload; a folder card opens it | UI | ✅ `assets/views` |
 | Image preview from a row or a card (name, size, dimensions); other files open none | UI | ✅ `assets/views` |
 | Too large an upload (413): the reason in a toast, nothing stored | UI on the `limits` server (`LOCALESS_UPLOAD_MAX_MB=1`), API | ✅ `limits/limits` |
