@@ -397,7 +397,7 @@ regression test.
 | The webhook detail page threw NG0951 and never paginated its logs | The paginator query is optional and wired when it appears |
 | Translation labels: the label rules were applied to the list, not each label: a single label made Save disabled (no message), while duplicates, labels with spaces and 1-character labels were accepted | Each label is checked when it is entered, with the reason shown; the list only keeps the server's limit (Add and Edit dialogs) |
 | Tree view of translations never showed the selected key (and never the saving spinner): it was given the translation's id, the nodes are keyed by key | The list passes the selected key |
-| Schema editors: unsaved changes were wiped whenever anyone saved any other schema of the space (the live schema list reloaded the form) | The form reloads only without unsaved changes; Save reloads it once, and not over edits made since |
+| Schema editors: unsaved changes were wiped whenever anyone saved any other schema of the space (the live schema list reloaded the form) | The form reloads only without unsaved changes; Save shows the schema the server answered, and not over edits made since |
 | Content editor: the chosen locale jumped back to the default whenever any space changed (the live space list) | The chosen locale is kept while the space has it |
 | Edit Field: a Schema / Schemas field could allow no schema at all: the picker selected nothing (its value started as `undefined`) | The allowed schemas start as an empty list |
 | Enum editor: an existing value name was not refused (the taken names were replaced, not emptied, on load), and deleting a value freed another value's name | Emptied in place; the deleted value's own name is freed |
