@@ -1,14 +1,15 @@
-<div class="flex items-center justify-between gap-2 p-2">
-  <div class="flex items-center gap-2">
+<!-- The title and the toolbar wrap onto two lines on a narrow screen, so Save and Publish stay reachable. -->
+<div class="flex flex-wrap items-center justify-between gap-2 p-2">
+  <div class="flex min-w-0 flex-[1_1_12rem] items-center gap-2">
     <button hlmBtn size="icon" variant="ghost" (click)="back()" hlmTooltip="Back to Contents" aria-label="Back to Contents">
       <ng-icon hlm size="sm" name="lucideArrowLeft" />
     </button>
-    <div>
-      <div class="line-clamp-1 text-lg">{{ document().name }}</div>
-      <div class="text-muted-foreground line-clamp-1">#{{ document().slug }}</div>
+    <div class="min-w-0" [title]="document().name">
+      <div class="truncate text-lg">{{ document().name }}</div>
+      <div class="text-muted-foreground truncate">#{{ document().slug }}</div>
     </div>
   </div>
-  <div class="flex items-center gap-2">
+  <div class="flex flex-wrap items-center justify-end gap-2">
     <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.editorEnabled()">
       <button
         hlmToggleGroupItem

@@ -105,7 +105,8 @@
           </div>
         </td>
       </ng-container>
-      <ng-container llColumnDef="schema">
+      <!-- Optional columns leave a narrow table first, so the name and the actions always fit. -->
+      <ng-container llColumnDef="schema" llColumnDefClass="hidden @md/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="schema">Schema</th>
         <td llCell *llCellDef="let element">
           @if (element.kind === 'DOCUMENT') {
@@ -129,7 +130,7 @@
           {{ element.createdAt | date: 'mediumDate' }}
         </td>
       </ng-container>
-      <ng-container llColumnDef="updatedAt">
+      <ng-container llColumnDef="updatedAt" llColumnDefClass="hidden @lg/table:table-cell">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="updatedAt">Updated At</th>
         <td llCell *llCellDef="let element" [hlmTooltip]="element.updatedAt | date: 'medium'">
           {{ element.updatedAt | date: 'mediumDate' }}

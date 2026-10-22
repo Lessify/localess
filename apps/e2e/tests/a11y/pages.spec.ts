@@ -180,7 +180,13 @@ test.describe('Accessibility of dialogs', () => {
     {
       name: 'Add Translation',
       open: (page, id) =>
-        gotoThen(page, `/features/spaces/${id}/translations`, () => new TranslationsPage(page).openAdd({ key: 'new.key', value: 'New' })),
+        gotoThen(page, `/features/spaces/${id}/translations`, async () => {
+          const form = await new TranslationsPage(page).openAdd({ key: 'new.key', value: 'New' });
+          // The key is checked on the server (taken?): Save turns from disabled to enabled when it answers, fading its
+          // colour; scanned before that, a half-faded Save failed the contrast check now and then.
+          await expect(form.getByRole('button', { name: 'Save' })).toBeEnabled();
+          return form;
+        }),
     },
     {
       name: 'Add Document',
