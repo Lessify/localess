@@ -87,8 +87,7 @@ const zIds = z.array(z.string().max(128)).max(10_000);
 
 /**
  * `GET …/contents`: one page, folders first, then by name unless sorted otherwise. `?parentId=` (absent: the root),
- * `?deep=true` (everything under it), `?kind=`, `?search=` (the name or the slug, anywhere), `?ids=a,b` (those contents
- * wherever they are: the folder and `deep` are then not applied).
+ * `?deep=true` (everything under it), `?kind=`, `?search=` (the name or the slug, anywhere).
  */
 export const zContentPageable = zPageable(CONTENT_SORT_FIELDS, 'name').extend({
   // The folder; absent: the root.
@@ -101,11 +100,6 @@ export const zContentPageable = zPageable(CONTENT_SORT_FIELDS, 'name').extend({
   kind: z.enum(['FOLDER', 'DOCUMENT']).optional(),
   // The name or the slug.
   search: zSearch,
-  // Several ids (`ids=a,b`), wherever they are: the documents a References field points to.
-  ids: z
-    .string()
-    .transform(it => (it ? it.split(',') : []))
-    .optional(),
 });
 export type ContentPageable = z.infer<typeof zContentPageable>;
 

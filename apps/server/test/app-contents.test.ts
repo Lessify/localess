@@ -193,10 +193,13 @@ describe('app API: contents', () => {
       await editor.delete(`${base}/${other.id}`);
     });
 
-    it('lists every folder of the space for the editor', async () => {
-      const response = await reader.get(`${base}/folders`);
+    it('lists every folder and document of the space, light, for the editor (names)', async () => {
+      const response = await reader.get(`${base}/names`);
       expect(response.statusCode).toBe(200);
-      expect(response.json()).toEqual([{ id: blog.id, name: 'Blog', slug: 'blog' }]);
+      expect(response.json()).toEqual([
+        { id: blog.id, kind: 'FOLDER', name: 'Blog', slug: 'blog', updatedAt: expect.any(String) },
+        { id: post.id, kind: 'DOCUMENT', parentId: blog.id, name: 'Post', slug: 'post', updatedAt: expect.any(String) },
+      ]);
     });
 
     it('creates a document only for a ROOT schema of the space', async () => {
@@ -208,19 +211,17 @@ describe('app API: contents', () => {
       await t.db.delete(schemas).where(and(eq(schemas.spaceId, S1), eq(schemas.name, 'hero')));
     });
 
-    it('lists by parent (folders first, then by name), by search, by ids, and counts', async () => {
+    it('lists by parent (folders first, then by name), by search, and counts', async () => {
       await create({ kind: 'DOCUMENT', name: 'About', slug: 'about', schema: 'page' });
       expect((await reader.get(base)).json().items.map((c: { name: string }) => c.name)).toEqual(['Blog', 'About']);
       expect((await reader.get(`${base}?search=ab`)).json().items.map((c: { name: string }) => c.name)).toEqual(['About']);
-      expect((await reader.get(`${base}?ids=${post.id},missing`)).json().items.map((c: { id: string }) => c.id)).toEqual([post.id]);
       expect((await reader.get(`${base}?kind=DOCUMENT&deep=true&size=1`)).json()).toMatchObject({ total: 2, items: [expect.anything()] });
       expect((await reader.get(`${base}/count?kind=DOCUMENT`)).json()).toEqual({ count: 2 });
       expect((await reader.get(`${base}/missing`)).statusCode).toBe(404);
     });
 
-    it('gives documents UUIDv7 ids; `?ids=` matches ids exactly', async () => {
+    it('gives documents UUIDv7 ids', async () => {
       expect(post.id).toMatch(UUID_V7);
-      expect((await reader.get(`${base}?ids=not-a-uuid,${post.id}`)).json().items.map((c: { id: string }) => c.id)).toEqual([post.id]);
     });
   });
 

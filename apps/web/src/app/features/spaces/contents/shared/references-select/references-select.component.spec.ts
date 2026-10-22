@@ -1,8 +1,9 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
 import { ContentDocument, ContentKind, SchemaFieldKind, SchemaFieldReferences, Space } from '@localess/shared';
-import { ContentService } from '@core/services/content.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -13,15 +14,16 @@ function doc(id: string, name: string): ContentDocument {
 }
 
 describe('ReferencesSelectComponent', () => {
-  function setup(uris: string[] = [], results: ContentDocument[] = []) {
-    const findByIds = vi.fn().mockReturnValue(of(results));
+  /** `known`: the contents `SpaceStore` holds. */
+  function setup(uris: string[] = [], known: ContentDocument[] = []) {
+    const contentById = signal(new Map(known.map(it => [it.id, it])));
     const open = vi.fn();
 
     TestBed.overrideComponent(ReferencesSelectComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: HlmDialogService, useValue: { open } },
-        { provide: ContentService, useValue: { findByIds } },
+        { provide: SpaceStore, useValue: { contentById } },
       ],
     });
     const fb = TestBed.inject(FormBuilder);
@@ -31,22 +33,32 @@ describe('ReferencesSelectComponent', () => {
     fixture.componentRef.setInput('component', {} as unknown as SchemaFieldReferences);
     fixture.componentRef.setInput('space', { id: 'space-1' } as Space);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findByIds, open, form };
+    return { component: fixture.componentInstance, contentById, open, form };
   }
 
-  it('does not load anything when there are no uris', () => {
-    const { findByIds } = setup([]);
+  it('shows nothing without uris', () => {
+    const { component } = setup([], [doc('c1', 'First')]);
 
-    expect(findByIds).not.toHaveBeenCalled();
+    expect(component.contents()).toEqual([]);
   });
 
-  it('loads documents preserving the original uri order', () => {
+  it("shows the documents from SpaceStore in the form's order, live", () => {
     const c1 = doc('c1', 'First');
     const c2 = doc('c2', 'Second');
-    const { component, findByIds } = setup(['c2', 'c1'], [c1, c2]);
+    const { component, contentById } = setup(['c2', 'c1'], [c1, c2]);
 
-    expect(findByIds).toHaveBeenCalledWith('space-1', ['c2', 'c1']);
     expect(component.contents()).toEqual([c2, c1]);
+    contentById.set(new Map([...contentById()].map(([id, it]) => [id, { ...it, name: `${it.name}!` }])));
+    expect(component.contents().map(it => it.name)).toEqual(['Second!', 'First!']);
+  });
+
+  it('leaves out a document gone from the space, and still deletes the right one by id', () => {
+    const { component, form } = setup(['gone', 'c2'], [doc('c2', 'B')]);
+
+    expect(component.contents().map(it => it.id)).toEqual(['c2']);
+    component.deleteReference('c2');
+    expect(form.length).toBe(1);
+    expect(form.at(0).value.uri).toBe('gone');
   });
 
   it('ignores non-document content in the resolved results', () => {
@@ -57,8 +69,8 @@ describe('ReferencesSelectComponent', () => {
   });
 
   it('openReferenceSelectDialog() appends selected documents and rebuilds the form', () => {
-    const { component, open, form } = setup([]);
     const selected = [doc('c1', 'New')];
+    const { component, open, form } = setup([], selected);
     open.mockReturnValue({ closed$: of(selected) });
 
     component.openReferenceSelectDialog();
@@ -68,12 +80,12 @@ describe('ReferencesSelectComponent', () => {
     expect(form.at(0).value).toEqual({ uri: 'c1', kind: SchemaFieldKind.REFERENCE });
   });
 
-  it('deleteReference() removes the document at the given index', () => {
+  it('deleteReference() removes the document by id', () => {
     const emitted: string[][] = [];
     const { component, form } = setup(['c1', 'c2'], [doc('c1', 'A'), doc('c2', 'B')]);
     component.referencesChange.subscribe(v => emitted.push(v));
 
-    component.deleteReference(0);
+    component.deleteReference('c1');
 
     expect(component.contents().map(c => c.id)).toEqual(['c2']);
     expect(form.length).toBe(1);

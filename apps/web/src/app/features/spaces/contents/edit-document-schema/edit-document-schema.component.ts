@@ -21,12 +21,12 @@ import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.
 import { NotificationService } from '@core/services/notification.service';
 import { TranslateService } from '@core/services/translate.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { ContentSummaryWithPath } from '@core/utils/content-summaries';
 import { translateErrorMessage } from '@core/utils/translate-error';
 import {
   CONTENT_DEFAULT_LOCALE,
   ContentAsset,
   ContentData,
-  ContentDocument,
   ContentLink,
   ContentReference,
   ContentValue,
@@ -154,7 +154,7 @@ export class EditDocumentSchemaComponent {
   private destroyRef = inject(DestroyRef);
 
   // Inputs
-  readonly documents = input<ContentDocument[]>([]);
+  readonly documents = input<ContentSummaryWithPath[]>([]);
   readonly space = input<Space>();
   readonly data = input<ContentData>({ _id: '', _schema: '' });
   schemas = input.required<Schema[]>();

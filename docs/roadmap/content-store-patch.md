@@ -4,10 +4,11 @@
 > [Frontend state](../frontend-state.md) · [Pagination](../server/pagination.md) ·
 > [Contents (large) template](contents-large-template.md)
 
-## Today (planned in the Contents rework)
+## Today
 
-`SpaceStore` holds a light list of every folder and document of the selected space (`id`, `kind`, `parentId`, `name`,
-`slug`, `publishedAt`, `updatedAt`; paths worked out from the folder chain). It feeds the breadcrumbs, the Move
+`SpaceStore` holds a light list of every folder and document of the selected space (`GET …/contents/names`,
+`ContentSummary`: `id`, `kind`, `parentId`, `name`, `slug`, `publishedAt`, `updatedAt`; paths worked out from the folder
+chain, `core/utils/content-summaries.ts`). It feeds the breadcrumbs, the Move
 dialog's folder tree, the Link field picker and the References / Reference fields. It is a live query: every
 `contents` change event (a save, publish, move or delete, by anyone) fetches the whole list again.
 

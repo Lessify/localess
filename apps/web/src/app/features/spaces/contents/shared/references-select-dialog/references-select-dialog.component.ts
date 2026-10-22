@@ -1,13 +1,13 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { breadcrumbs } from '@core/utils/folder-tree';
-import { Content, ContentDocument, ContentFolderSummary, ContentKind, Schema } from '@localess/shared';
+import { Content, ContentDocument, ContentKind, Schema } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideFolder, lucideFolderRoot } from '@ng-icons/lucide';
 import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
@@ -78,11 +78,8 @@ export class ReferencesSelectDialogComponent {
   readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
   displayedColumns: string[] = ['select', 'status', 'name', 'schema', 'updatedAt'];
   selection = new SelectionModel<ContentDocument>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
-  /** Every folder of the space: the breadcrumbs are built from it. */
-  private readonly folders = toSignal(this.contentService.findAllFolders(this.context.spaceId), {
-    initialValue: [] as ContentFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.contentFolders().map(it => [it.id, it])));
   /** The folder shown; `null`: the root. */
   readonly folderId = signal<string | null>(null);
   /** The folders from the root down to the one shown. */

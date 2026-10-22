@@ -69,7 +69,8 @@ Holds the sidebar's list of spaces, and the selected space with what its screens
   assetFolderId: string | null,   // asset folder shown (null: root); breadcrumbs come from the live folder map
   schemas: Schema[],         // schemas for the selected space (every one: the editors and the Schemas page read them)
   schemasLoaded: boolean,    // whether schemas arrived for the selected space (false again on a space change)
-  documents: ContentDocument[] // documents for the selected space
+  contentSummaries: ContentSummary[], // every folder and document of the selected space, light (GET …/contents/names)
+  contentsLoaded: boolean      // whether contentSummaries arrived for the selected space
 }
 
 // Key computed
@@ -86,13 +87,14 @@ Key methods:
 - `changeSpace(space: IdName)` — switch active workspace (a listed one, else the first), reset paths; the environment resolves once the space's environments arrive (the remembered one by id, else the first)
 - `changeContentPath(path)` / `changeAssetPath(path)` — update breadcrumb navigation
 - `changeEnvironment(env)` — switch preview environment (persisted per space)
-- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the live queries of the selected space (`findById`, `findEnvironments`) and its `schemas`/`documents` (HTTP fetch + refetch on the space's SSE change events): on every id change it clears the space, its environments, `schemas` and `documents`, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
+- Contents (computed from `contentSummaries`, each with its `fullSlug` worked out from the folder chain, `core/utils/content-summaries.ts`): `contents`, `contentFolders` (breadcrumbs, the Move dialog), `contentDocuments` (the Link field), `contentById` (the References / Reference fields show their documents from it, live). Read again on every `contents` change event; when spaces grow, patch it from the event instead ([roadmap](roadmap/content-store-patch.md))
+- `_syncSpaceData(spaceId)` — private `rxMethod`, fed from `onInit` with `selectedSpaceId` (or `undefined` while signed out). Owns the live queries of the selected space (`findById`, `findEnvironments`) and its `schemas` and contents (`GET …/contents/names`; HTTP fetch + refetch on the space's SSE change events): on every id change it clears the space, its environments, `schemas` and contents, then `switchMap`s to the new space's queries, closing the old ones (and, with the last subscriber, that space's `EventSource`). Each query retries with exponential backoff (1s → 30s cap) and an error toast. Gated on `UserStore.isAuthenticated` because this root store outlives the signed-in shell
 
 **The URL selects the space, not the store.** Every space route lives under a componentless `spaces/:spaceId` parent in `features-routing.module.ts`, guarded by `spaceSelectionGuard` (`apps/web/src/app/core/guards/space-selection.guard.ts`). The guard waits for `loaded$` (a `withProps` observable of `loaded`, created once so guards don't leave an effect behind per navigation), then:
 - `:spaceId` is in `spaces` → `changeSpace()` if it differs from the stored selection, allow.
 - otherwise (deleted, mistyped, another install) → warning toast, redirect to the stored space's dashboard, or the first space if that one is gone too (never back to an id that would fail again), or `/features/welcome` when there are none.
 
-This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. Selecting the space is all it takes: the store then moves its own documents/schemas live queries to it (see `_syncSpaceData`).
+This is what makes shared links work: the persisted `selectedSpaceId` is only a default for when the URL names no space. Don't call `changeSpace()` before navigating — navigate and let the guard select, so an unsaved-changes `canDeactivate` can still cancel the switch. Selecting the space is all it takes: the store then moves its own contents/schemas live queries to it (see `_syncSpaceData`).
 
 **Space Environments** — a Space can have multiple environments (e.g. staging, production URLs). The selected environment is persisted per space in `selectedEnvironmentBySpaceId`, **by id** (names may repeat); a stored id that no longer matches (or a name stored by an older version) falls back to the first environment.
 

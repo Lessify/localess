@@ -3,7 +3,7 @@ import { BadRequestException, ConflictException, Inject, Injectable } from '@nes
 import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or, SQL, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { contents, contentSnapshots, keepUpdatedAt, schemas } from '../../../infra/database/schema.js';
 import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
@@ -24,6 +24,9 @@ import { contentErrors } from '../utils/content-errors.js';
 import { buildDocumentStorage } from '../utils/content-extract.js';
 
 export type { ContentWithPath };
+
+/** A row of the light list of every content (`findAllNames`). */
+export type ContentNameRow = Pick<ContentEntity, 'id' | 'kind' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>;
 
 /** A row of the content list: everything but the document's data and the ids it points to (read only by the editor). */
 export type ContentListRow = Omit<ContentEntity, 'data' | 'assets' | 'links' | 'references'> & { parentSlug: string; fullSlug: string };
@@ -103,12 +106,12 @@ export class ContentRepository {
     return this.db.$count(contents, this.where(spaceId, query));
   }
 
-  /** Every folder of the space, by name: the editor's folder map. */
-  findFolders(spaceId: string): Promise<Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug'>[]> {
+  /** Every folder and document of the space, folders first then by name: only what the light list holds. */
+  findAllNames(spaceId: string): Promise<ContentNameRow[]> {
     return this.db.query.contents.findMany({
-      columns: { id: true, parentId: true, name: true, slug: true },
-      where: and(eq(contents.spaceId, spaceId), eq(contents.kind, 'FOLDER')),
-      orderBy: [asc(contents.name)],
+      columns: { id: true, kind: true, parentId: true, name: true, slug: true, publishedAt: true, updatedAt: true },
+      where: eq(contents.spaceId, spaceId),
+      orderBy: [desc(contents.kind), asc(sql`lower(${contents.name})`), asc(contents.id)],
     });
   }
 
@@ -355,16 +358,12 @@ export class ContentRepository {
   }
 
   /**
-   * The query's filters: given `ids`, those contents wherever they are; else the folder's children (the root without
-   * `parentId`), or with `deep` everything under it (under the root: the whole space). Then the kind and the search (the
-   * name or the slug, anywhere, case-insensitive).
+   * The query's filters: the folder's children (the root without `parentId`), or with `deep` everything under it (under
+   * the root: the whole space); then the kind and the search (the name or the slug, anywhere, case-insensitive).
    */
   private where(spaceId: string, query: ContentPageable): SQL | undefined {
     const conditions: SQL[] = [eq(contents.spaceId, spaceId)];
-    if (query.ids) {
-      const ids = query.ids.filter(isUuid);
-      conditions.push(ids.length ? inArray(contents.id, ids) : sql`false`);
-    } else if (!query.deep) {
+    if (!query.deep) {
       conditions.push(query.parentId ? eq(contents.parentId, query.parentId) : isNull(contents.parentId));
     } else if (query.parentId) {
       // A subquery in the condition: everything below the folder, at any depth.

@@ -66,9 +66,9 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
   search (the name or the slug, on Enter) and **Scope** (*This folder* / *Including subfolders*, `deep=true`: everything
   under the folder, the whole space at the root; rows then show their path instead of `#slug`). Opening a folder keeps
   the search and the scope; Reset clears both
-- The Add, Edit dialogs check names and slugs against the page shown only; the server refuses a slug taken in the
-  folder (409, its message in the toast)
-- Loads every folder of the space once (`GET …/contents/folders`, live) into a map `id → folder`: the breadcrumbs and paths are built from it (`shared/content-folders.ts`)
+- The Add and Edit dialogs check names and slugs against every item of the folder (`SpaceStore.contents()`); the
+  server refuses a slug taken meanwhile (409, its message in the toast)
+- The breadcrumbs from `SpaceStore.contentFolders()` (every folder of the space, live, from `GET …/contents/names`), keyed by id
 - `onRowSelect(item)` — opens a folder (`SpaceStore.changeContentFolder(id)`) or navigates to the document editor
 - `navigateToFolder(id)` — breadcrumb navigation (`null`: the root)
 - `openAddDocumentDialog()` — pick schema → creates `ContentDocument` with `kind: DOCUMENT`
@@ -77,7 +77,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - `openDeleteDialog(element)` — confirmation → deletes the document, or the folder with all its sub-folders and documents
 - `openPublishDialog()` — publishes the selected document (`POST /api/app/spaces/:s/contents/:contentId/publish`), which writes one published `content_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
 - `openUnpublishDialog()` — removes the published snapshot (`POST …/:contentId/unpublish` deletes the published `content_snapshots` rows)
-- `openMoveDialog()` — moves a document or folder (`PATCH …/:contentId { parentId }`, `null`: the root); the dialog lists the root and every folder from the folder map, without where the item is and, for a folder, without itself and everything under it
+- `openMoveDialog()` — moves a document or folder (`PATCH …/:contentId { parentId }`, `null`: the root); the dialog lists the root and every folder from `SpaceStore.contentFolders()`, without where the item is and, for a folder, without itself and everything under it
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
 - `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export

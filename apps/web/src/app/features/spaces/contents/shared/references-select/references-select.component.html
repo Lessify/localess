@@ -24,7 +24,7 @@
       cdkDropList
       [cdkDropListDisabled]="locked()"
       (cdkDropListDropped)="referenceDropDrop($event)">
-      @for (content of contents(); track content.id; let index = $index) {
+      @for (content of contents(); track content.id) {
         <div hlmItem variant="outline" role="listitem" cdkDrag cdkDragPreviewContainer="parent">
           <div hlmItemMedia>
             <ll-document-status [updatedAt]="content.updatedAt" [publishedAt]="content.publishedAt" />
@@ -41,7 +41,7 @@
               size="icon"
               variant="outline"
               [disabled]="locked()"
-              (click)="deleteReference(index)"
+              (click)="deleteReference(content.id)"
               hlmTooltip="Delete"
               aria-label="Delete">
               <ng-icon hlm size="sm" name="lucideTrash" />

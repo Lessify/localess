@@ -12,6 +12,8 @@ import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { withFullSlugs } from '@core/utils/content-summaries';
+
 import { ContentsComponent } from './contents.component';
 
 function doc(overrides: Partial<ContentDocument> = {}): ContentDocument {
@@ -53,12 +55,12 @@ describe('ContentsComponent', () => {
     const open = vi.fn();
     const changeContentFolder = vi.fn();
     const contentFolderId = signal<string | null>(null);
-    const findAllFolders = vi.fn().mockReturnValue(
-      of([
-        { id: 'f1', name: 'Blog', slug: 'blog' },
-        { id: 'f2', name: '2026', slug: '2026', parentId: 'f1' },
-      ]),
-    );
+    // What SpaceStore holds: two folders and the contents given.
+    const known = withFullSlugs([
+      { id: 'f1', kind: ContentKind.FOLDER, name: 'Blog', slug: 'blog', updatedAt: '' },
+      { id: 'f2', kind: ContentKind.FOLDER, name: '2026', slug: '2026', parentId: 'f1', updatedAt: '' },
+      ...contents.map(it => ({ id: it.id, kind: it.kind, parentId: it.parentId, name: it.name, slug: it.slug, updatedAt: '' })),
+    ]);
 
     TestBed.overrideComponent(ContentsComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -69,7 +71,6 @@ describe('ContentsComponent', () => {
           provide: ContentService,
           useValue: {
             findPage,
-            findAllFolders,
             createDocument,
             createFolder,
             update,
@@ -85,7 +86,16 @@ describe('ContentsComponent', () => {
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
-        { provide: SpaceStore, useValue: { contentFolderId, changeContentFolder, schemas: signal(schemas) } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            contentFolderId,
+            changeContentFolder,
+            schemas: signal(schemas),
+            contents: signal(known),
+            contentFolders: signal(known.filter(it => it.kind === ContentKind.FOLDER)),
+          },
+        },
       ],
     });
     const fixture = TestBed.createComponent(ContentsComponent);
@@ -111,7 +121,6 @@ describe('ContentsComponent', () => {
       open,
       changeContentFolder,
       contentFolderId,
-      findAllFolders,
     };
   }
 
@@ -175,7 +184,8 @@ describe('ContentsComponent', () => {
 
       expect(open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ context: expect.objectContaining({ reservedNames: ['Page'], reservedSlugs: ['page'] }) }),
+        // Every item in the folder (from SpaceStore), not only the page shown: the Blog folder at the root too.
+        expect.objectContaining({ context: expect.objectContaining({ reservedNames: ['Blog', 'Page'], reservedSlugs: ['blog', 'page'] }) }),
       );
       expect(createDocument).toHaveBeenCalledWith('space-1', undefined, model);
       expect(success).toHaveBeenCalledWith('Document has been created.');
@@ -423,8 +433,7 @@ describe('ContentsComponent', () => {
   });
 
   it('builds the breadcrumbs from the folder map, and navigates by folder id', () => {
-    const { component, changeContentFolder, contentFolderId, findAllFolders } = setup();
-    expect(findAllFolders).toHaveBeenCalledWith('space-1');
+    const { component, changeContentFolder, contentFolderId } = setup();
     expect(component.trail()).toEqual([]);
 
     contentFolderId.set('f2');

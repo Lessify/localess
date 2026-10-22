@@ -11,7 +11,8 @@ tests them:
 
 - the Contents page and the references picker load one folder at a time and page and sort it in the browser (20 per
   page; no search);
-- the Link field's document list loads **every document of the space** (`spaceStore.documents()`) and renders them all
+- the Link field's document list loads **every document of the space** (since the Contents rework: the light list
+  `SpaceStore.contentDocuments()`, no data) and renders them all
   at once (no virtual scroll);
 - publishing a folder publishes everything under it in one transaction under the space's contents lock;
 - the CDN `/links` index is one snapshot of every folder and document, filtered in memory.

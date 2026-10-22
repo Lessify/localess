@@ -1,4 +1,4 @@
-import { type AssetMetadata, type Content, type ContentFolderSummary, ContentKind, type ContentMetadata } from '@localess/shared';
+import { type AssetMetadata, type Content, ContentKind, type ContentMetadata, type ContentSummary } from '@localess/shared';
 
 import { present } from '../../infra/database/without-nulls.js';
 import type { AssetEntity } from '../entities/asset.entity.js';
@@ -39,9 +39,18 @@ export function toContent(
   };
 }
 
-/** A folder of the editor's folder map. */
-export function toContentFolderSummary(entity: Pick<ContentEntity, 'id' | 'parentId' | 'name' | 'slug'>): ContentFolderSummary {
-  return { id: entity.id, name: entity.name, slug: entity.slug, ...present({ parentId: entity.parentId }) };
+/** A folder or document of the light list of every content (`GET …/contents/names`). */
+export function toContentSummary(
+  entity: Pick<ContentEntity, 'id' | 'kind' | 'parentId' | 'name' | 'slug' | 'publishedAt' | 'updatedAt'>,
+): ContentSummary {
+  return {
+    id: entity.id,
+    kind: entity.kind === 'FOLDER' ? ContentKind.FOLDER : ContentKind.DOCUMENT,
+    name: entity.name,
+    slug: entity.slug,
+    ...present({ parentId: entity.parentId, publishedAt: entity.publishedAt?.toISOString() }),
+    updatedAt: entity.updatedAt.toISOString(),
+  };
 }
 
 /** A content item as a link on the public API (`GET /links`, `resolveLink`). */

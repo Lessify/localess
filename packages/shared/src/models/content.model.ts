@@ -33,12 +33,18 @@ export interface ContentFolder extends ContentBase {
   kind: ContentKind.FOLDER;
 }
 
-/** A folder as the editor's folder map holds it (`GET …/contents/folders`). */
-export interface ContentFolderSummary {
+/**
+ * A folder or document in the light list of every content of a space (`GET …/contents/names`), which `SpaceStore` holds:
+ * breadcrumbs, the Move dialog, the Link and References fields. No data; the path is worked out from the folder chain.
+ */
+export interface ContentSummary {
   id: string;
+  kind: ContentKind;
   parentId?: string;
   name: string;
   slug: string;
+  publishedAt?: Timestamp;
+  updatedAt: Timestamp;
 }
 
 /** What the content list sorts by (folders always first): the name by default. */

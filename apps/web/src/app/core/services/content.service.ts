@@ -12,14 +12,13 @@ import {
   ContentDocumentCreate,
   ContentFolder,
   ContentFolderCreate,
-  ContentFolderSummary,
   ContentKind,
+  ContentSummary,
   ContentUpdate,
   Page,
-  PAGE_SIZE_MAX,
 } from '@localess/shared';
-import { Observable, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 /** Contents of a space (`/api/app/spaces/:spaceId/contents`); reads are live. */
 @Injectable({ providedIn: 'root' })
@@ -29,26 +28,6 @@ export class ContentService {
 
   private base(spaceId: string): string {
     return `/api/app/spaces/${spaceId}/contents`;
-  }
-
-  /**
-   * Every page of the list (`GET …/contents` is paged, without the documents' data), live. For now the Link field and the
-   * References fields read every document; they move to a light list in `SpaceStore`.
-   */
-  private list<T extends Content>(spaceId: string, params: HttpParams): Observable<T[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () => this.everyPage<T>(spaceId, params));
-  }
-
-  private everyPage<T extends Content>(spaceId: string, params: HttpParams, page = 0): Observable<T[]> {
-    return this.http
-      .get<Page<T>>(this.base(spaceId), { params: params.set('page', page).set('size', PAGE_SIZE_MAX) })
-      .pipe(
-        switchMap(answer =>
-          (page + 1) * answer.size >= answer.total
-            ? of(answer.items)
-            : this.everyPage<T>(spaceId, params, page + 1).pipe(map(rest => [...answer.items, ...rest])),
-        ),
-      );
   }
 
   /** The first `max` contents whose name or slug contains `search`, anywhere in the space. */
@@ -70,10 +49,13 @@ export class ContentService {
     );
   }
 
-  /** Every folder of the space, live: the editor's folder map (breadcrumbs, paths, move targets). */
-  findAllFolders(spaceId: string): Observable<ContentFolderSummary[]> {
+  /**
+   * Every folder and document of the space, light (no data, no paths), live: `SpaceStore` holds it for the breadcrumbs,
+   * the Move dialog, the Link and References fields.
+   */
+  findAllNames(spaceId: string): Observable<ContentSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
-      this.http.get<ContentFolderSummary[]>(`${this.base(spaceId)}/folders`),
+      this.http.get<ContentSummary[]>(`${this.base(spaceId)}/names`),
     );
   }
 
@@ -84,11 +66,6 @@ export class ContentService {
     ).pipe(map(it => it.count));
   }
 
-  /** Every document of the space, without its data. */
-  findAllDocuments(spaceId: string): Observable<ContentDocument[]> {
-    return this.list(spaceId, new HttpParams().set('kind', ContentKind.DOCUMENT).set('deep', true));
-  }
-
   findAllByName(spaceId: string, name: string, max = 20): Observable<Content[]> {
     return this.search(spaceId, name, max);
   }
@@ -97,19 +74,10 @@ export class ContentService {
     return this.search(spaceId, name, max, ContentKind.DOCUMENT);
   }
 
-  findById(spaceId: string, id: string): Observable<Content> {
-    return liveQueryWith(this.events, { spaceId, entities: ['contents'], id }, () => this.http.get<Content>(`${this.base(spaceId)}/${id}`));
-  }
-
   findDocumentById(spaceId: string, id: string): Observable<ContentDocument> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'], id }, () =>
       this.http.get<ContentDocument>(`${this.base(spaceId)}/${id}`),
     );
-  }
-
-  findByIds(spaceId: string, ids: string[]): Observable<Content[]> {
-    if (ids.length === 0) return of([]);
-    return this.list(spaceId, new HttpParams().set('ids', ids.join(',')));
   }
 
   /** `parentId` absent: the root. */

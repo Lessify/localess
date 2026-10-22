@@ -51,7 +51,7 @@ describe('SpaceStore', () => {
     /** The selected space's environments, by space id. */
     environments?: Record<string, IdNameUrl[]>;
     findOne?: (spaceId: string) => Observable<Space>;
-    findAllDocuments?: (spaceId: string) => Observable<unknown>;
+    findAllNames?: (spaceId: string) => Observable<unknown>;
     findAllSchemas?: (spaceId: string) => Observable<unknown>;
     notifyError?: ReturnType<typeof vi.fn>;
     isAuthenticated?: ReturnType<typeof signal<boolean>>;
@@ -72,7 +72,7 @@ describe('SpaceStore', () => {
           },
         },
         { provide: SpaceEnvironmentService, useValue: { findAllNames: (id: string) => of(listeners.environments?.[id] ?? []) } },
-        { provide: ContentService, useValue: { findAllDocuments: listeners.findAllDocuments ?? (() => NEVER) } },
+        { provide: ContentService, useValue: { findAllNames: listeners.findAllNames ?? (() => NEVER) } },
         { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
         { provide: NotificationService, useValue: { error: listeners.notifyError ?? vi.fn() } },
         {
@@ -221,25 +221,43 @@ describe('SpaceStore', () => {
 
     it("loads the selected space's documents and schemas", () => {
       const store = createStore([space('a')], {
-        findAllDocuments: () => of([{ id: 'doc' }]),
+        findAllNames: () => of([{ id: 'doc' }]),
         findAllSchemas: () => of([{ id: 'schema' }]),
       });
       TestBed.tick();
 
-      expect(store.documents()).toEqual([{ id: 'doc' }]);
+      expect(store.contents()).toEqual([{ id: 'doc' }]);
       expect(store.schemas()).toEqual([{ id: 'schema' }]);
       expect(store.schemasLoaded()).toBe(true);
     });
 
-    it('never listens to a persisted space that no longer exists (new install, deleted space)', () => {
-      localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'missing', selectedEnvironmentBySpaceId: {} }));
-      const findAllDocuments = vi.fn().mockReturnValue(of([]));
-      const findAllSchemas = vi.fn().mockReturnValue(of([]));
-      const notifyError = vi.fn();
-      createStore([space('a')], { findAllDocuments, findAllSchemas, notifyError });
+    it('holds every folder and document with its path, and the folders, documents and ids worked out from them', () => {
+      const store = createStore([space('a')], {
+        findAllNames: () =>
+          of([
+            { id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', updatedAt: '' },
+            { id: 'y24', kind: 'FOLDER', parentId: 'blog', name: '2024', slug: '2024', updatedAt: '' },
+            { id: 'post', kind: 'DOCUMENT', parentId: 'y24', name: 'Post', slug: 'post', updatedAt: '' },
+            { id: 'home', kind: 'DOCUMENT', name: 'Home', slug: 'home', updatedAt: '' },
+          ]),
+      });
       TestBed.tick();
 
-      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(store.contentsLoaded()).toBe(true);
+      expect(store.contentFolders().map(it => it.fullSlug)).toEqual(['blog', 'blog/2024']);
+      expect(store.contentDocuments().map(it => it.fullSlug)).toEqual(['blog/2024/post', 'home']);
+      expect(store.contentById().get('post')?.name).toBe('Post');
+    });
+
+    it('never listens to a persisted space that no longer exists (new install, deleted space)', () => {
+      localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'missing', selectedEnvironmentBySpaceId: {} }));
+      const findAllNames = vi.fn().mockReturnValue(of([]));
+      const findAllSchemas = vi.fn().mockReturnValue(of([]));
+      const notifyError = vi.fn();
+      createStore([space('a')], { findAllNames, findAllSchemas, notifyError });
+      TestBed.tick();
+
+      expect(findAllNames.mock.calls).toEqual([['a']]);
       expect(findAllSchemas.mock.calls).toEqual([['a']]);
       expect(notifyError).not.toHaveBeenCalled();
     });
@@ -247,34 +265,34 @@ describe('SpaceStore', () => {
     it('waits for the space list before listening to the persisted space', () => {
       localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: {} }));
       const spaces = new Subject<IdName[]>();
-      const findAllDocuments = vi.fn().mockReturnValue(NEVER);
-      configure(() => spaces, { findAllDocuments });
+      const findAllNames = vi.fn().mockReturnValue(NEVER);
+      configure(() => spaces, { findAllNames });
       TestBed.tick();
 
-      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findAllNames).not.toHaveBeenCalled();
 
       spaces.next([space('a')]);
       TestBed.tick();
 
-      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(findAllNames.mock.calls).toEqual([['a']]);
     });
 
     it('listens to documents and schemas for every role, a viewer included (as the server)', () => {
-      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
-      const store = createStore([space('a')], { findAllDocuments, findAllSchemas: () => of([{ id: 'schema' }]), role: 'VIEWER' });
+      const findAllNames = vi.fn(() => of([{ id: 'doc' }]));
+      const store = createStore([space('a')], { findAllNames, findAllSchemas: () => of([{ id: 'schema' }]), role: 'VIEWER' });
       TestBed.tick();
 
-      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(findAllNames.mock.calls).toEqual([['a']]);
       expect(store.schemas()).toEqual([{ id: 'schema' }]);
     });
 
     it('listens to nothing for a user without a role (as the server)', () => {
-      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const findAllNames = vi.fn(() => of([{ id: 'doc' }]));
       const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
-      createStore([space('a')], { findAllDocuments, findAllSchemas, role: null });
+      createStore([space('a')], { findAllNames, findAllSchemas, role: null });
       TestBed.tick();
 
-      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findAllNames).not.toHaveBeenCalled();
       expect(findAllSchemas).not.toHaveBeenCalled();
     });
 
@@ -282,7 +300,7 @@ describe('SpaceStore', () => {
       const documents = subjectsBySpace();
       const schemas = subjectsBySpace();
       const store = createStore([space('a'), space('b')], {
-        findAllDocuments: documents.listen,
+        findAllNames: documents.listen,
         findAllSchemas: schemas.listen,
       });
       TestBed.tick();
@@ -296,28 +314,28 @@ describe('SpaceStore', () => {
       expect(schemas.subjects.get('a')?.observed).toBe(false);
       expect(documents.subjects.get('b')?.observed).toBe(true);
       expect(schemas.subjects.get('b')?.observed).toBe(true);
-      expect(store.documents()).toEqual([]);
+      expect(store.contents()).toEqual([]);
       expect(store.schemas()).toEqual([]);
       // Not loaded yet for the new space: the Schemas page shows its loading bar, not "no schemas".
       expect(store.schemasLoaded()).toBe(false);
     });
 
     it('keeps the listeners and data when re-selecting the current space', () => {
-      const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
-      const store = createStore([space('a'), space('b')], { findAllDocuments });
+      const findAllNames = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
+      const store = createStore([space('a'), space('b')], { findAllNames });
       TestBed.tick();
 
       store.changeSpace(space('a'));
       TestBed.tick();
 
-      expect(findAllDocuments).toHaveBeenCalledTimes(1);
-      expect(store.documents()).toEqual([{ id: 'doc' }]);
+      expect(findAllNames).toHaveBeenCalledTimes(1);
+      expect(store.contents()).toEqual([{ id: 'doc' }]);
     });
 
     it('stops listening and drops the data on sign-out', () => {
       const documents = subjectsBySpace();
       const isAuthenticated = signal(true);
-      const store = createStore([space('a')], { findAllDocuments: documents.listen, isAuthenticated });
+      const store = createStore([space('a')], { findAllNames: documents.listen, isAuthenticated });
       TestBed.tick();
       documents.subjects.get('a')?.next([{ id: 'doc' }]);
 
@@ -325,27 +343,27 @@ describe('SpaceStore', () => {
       TestBed.tick();
 
       expect(documents.subjects.get('a')?.observed).toBe(false);
-      expect(store.documents()).toEqual([]);
+      expect(store.contents()).toEqual([]);
     });
 
     it('notifies the user and recovers documents after the listener errors once', async () => {
       vi.useFakeTimers();
       let call = 0;
-      const findAllDocuments = vi.fn().mockImplementation((): Observable<unknown> => {
+      const findAllNames = vi.fn().mockImplementation((): Observable<unknown> => {
         call++;
         return call === 1 ? throwError(() => new Error('boom')) : of([{ id: 'doc' }]);
       });
       const notifyError = vi.fn();
-      const store = createStore([space('a')], { findAllDocuments, notifyError });
+      const store = createStore([space('a')], { findAllNames, notifyError });
       TestBed.tick();
 
       expect(notifyError).toHaveBeenCalledWith('Lost connection to content updates. Retrying…');
-      expect(store.documents()).toEqual([]);
+      expect(store.contents()).toEqual([]);
 
       await vi.advanceTimersByTimeAsync(1000);
 
-      expect(store.documents()).toEqual([{ id: 'doc' }]);
-      expect(findAllDocuments).toHaveBeenCalledTimes(2);
+      expect(store.contents()).toEqual([{ id: 'doc' }]);
+      expect(findAllNames).toHaveBeenCalledTimes(2);
     });
 
     it('notifies the user and recovers schemas after the listener errors once', async () => {
@@ -369,13 +387,13 @@ describe('SpaceStore', () => {
     });
 
     it('does not notify or retry when the listeners succeed on the first try', () => {
-      const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
+      const findAllNames = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
       const notifyError = vi.fn();
-      createStore([space('a')], { findAllDocuments, notifyError });
+      createStore([space('a')], { findAllNames, notifyError });
       TestBed.tick();
 
       expect(notifyError).not.toHaveBeenCalled();
-      expect(findAllDocuments).toHaveBeenCalledTimes(1);
+      expect(findAllNames).toHaveBeenCalledTimes(1);
     });
   });
 

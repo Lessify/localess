@@ -178,7 +178,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   spaceId = input.required<string>();
   contentId = input.required<string>();
   document = input.required<ContentDocument>();
-  documents = computed(() => this.spaceStore.documents());
+  /** Every document of the space with its path, from `SpaceStore` (live): the Link field's choices. */
+  documents = computed(() => this.spaceStore.contentDocuments());
   schemas = computed(() => this.spaceStore.schemas());
   // Computed out of inputs
   rootSchema = computed(() => this.schemas().find(it => it.name === this.document().schema));

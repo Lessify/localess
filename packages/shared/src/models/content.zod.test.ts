@@ -88,14 +88,17 @@ describe('zContentPageable', () => {
     expect(zContentPageable.parse({})).toEqual({ page: 0, size: 20, sort: 'name', direction: 'asc', deep: false });
   });
 
-  it('reads the folder, deep, kind, search and ids', () => {
+  it('reads the folder, deep, kind and search', () => {
     const parentId = '01a15f8b-3ab2-77ea-8f61-f65129e56392';
-    expect(zContentPageable.parse({ parentId, deep: 'true', kind: 'DOCUMENT', search: ' blog ', ids: 'a,b' })).toMatchObject({
+    expect(zContentPageable.parse({ parentId, deep: 'true', kind: 'DOCUMENT', search: ' blog ' })).toEqual({
+      page: 0,
+      size: 20,
+      sort: 'name',
+      direction: 'asc',
       parentId,
       deep: true,
       kind: 'DOCUMENT',
       search: 'blog',
-      ids: ['a', 'b'],
     });
   });
 

@@ -113,9 +113,14 @@ describe('app API: contents paging', () => {
     expect(await names(`search=gamma&parentId=${ids['Blog']}&deep=true`)).toEqual(['Gamma']);
   });
 
-  it('given ids, those contents wherever they are (the folder and deep not applied)', async () => {
-    expect(await names(`ids=${ids['Gamma']},${ids['Home']},not-a-uuid`)).toEqual(['Gamma', 'Home']);
-    expect(await names(`ids=${ids['Cart']}&parentId=${ids['Blog']}`)).toEqual(['Cart']);
+  it('names: every folder and document of the space, light (no data), folders first, with what the store needs', async () => {
+    const all = (await admin.get(`${base}/names`)).json<Record<string, unknown>[]>();
+    expect(all).toHaveLength(10);
+    expect(all.map(it => it['name']).slice(0, 3)).toEqual(['2024', 'Blog', 'Shop']);
+    const home = all.find(it => it['name'] === 'Home')!;
+    expect(Object.keys(home).sort()).toEqual(['id', 'kind', 'name', 'slug', 'updatedAt']);
+    const gamma = all.find(it => it['name'] === 'Gamma')!;
+    expect(gamma).toMatchObject({ kind: 'DOCUMENT', parentId: ids['2024'], slug: 'gamma' });
   });
 
   it('never answers the documents data nor the ids it points to (the editor reads one document)', async () => {

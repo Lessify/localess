@@ -121,11 +121,11 @@ answers the full document for the editor).
 - `parentId`: the folder; **absent: the root**. `deep=true`: everything under it at any depth (a recursive subquery);
   under the root, the whole space.
 - `kind` (`FOLDER` / `DOCUMENT`), `search` (the name or the slug, anywhere, case-insensitive, wildcards literal).
-- `ids=a,b`: those contents wherever they are (the folder and `deep` not applied).
 
 The Contents table and the References picker read one page (`ContentService.findPage` with a `ContentList`, the folder,
-search and scope state they share). For now the Link and References fields still read every page (`findAllDocuments`,
-`findByIds`); they move to a light list in `SpaceStore` (`GET …/contents/names`). Tests: `apps/server/test/contents-paging.test.ts`.
+search and scope state they share). The breadcrumbs, the Move dialog, the Link and References fields read the light list
+of every folder and document instead: `GET …/contents/names` (`ContentSummary[]`: id, kind, parentId, name, slug,
+publishedAt, updatedAt; no data, no paths), held live by `SpaceStore`. Tests: `apps/server/test/contents-paging.test.ts`.
 
 ## Not paged (and why)
 

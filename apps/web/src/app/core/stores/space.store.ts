@@ -5,7 +5,8 @@ import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { SpaceService } from '@core/services/space.service';
 import { SpaceEnvironmentService } from '@core/services/space-environment.service';
-import { ANY_ROLE, ContentDocument, hasRole, IdName, IdNameUrl, Locale, Schema, Space } from '@localess/shared';
+import { withFullSlugs } from '@core/utils/content-summaries';
+import { ANY_ROLE, ContentKind, ContentSummary, hasRole, IdName, IdNameUrl, Locale, Schema, Space } from '@localess/shared';
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withHooks, withMethods, withProps, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -52,7 +53,10 @@ export type SpaceState = {
   schemas: Schema[];
   /** Whether `schemas` arrived for the selected space (an empty list is then "no schemas", not "loading"). */
   schemasLoaded: boolean;
-  documents: ContentDocument[];
+  /** Every folder and document of the selected space, light (`GET …/contents/names`). */
+  contentSummaries: ContentSummary[];
+  /** Whether `contentSummaries` arrived for the selected space. */
+  contentsLoaded: boolean;
 };
 
 const initialState: SpaceState = {
@@ -67,7 +71,8 @@ const initialState: SpaceState = {
   environments: [],
   schemas: [],
   schemasLoaded: false,
-  documents: [],
+  contentSummaries: [],
+  contentsLoaded: false,
 };
 
 /** The remembered environment of the space (by id: names may repeat), else its first; none when it has none. */
@@ -149,12 +154,12 @@ export const SpaceStore = signalStore(
 
     return {
       /**
-       * Keeps `schemas` and `documents` on the given space. switchMap closes the previous space's
+       * Keeps `schemas` and the contents on the given space. switchMap closes the previous space's
        * listeners, and the data is dropped first so nothing renders the new space against the old
        * one's. `undefined` (no space, or signed out) stops listening altogether.
        */
       /**
-       * Keeps the selected space, its environments, `schemas` and `documents` on the given space. switchMap closes the
+       * Keeps the selected space, its environments, `schemas` and the contents on the given space. switchMap closes the
        * previous space's listeners, and its data is dropped first so nothing renders the new space against the old
        * one's. `undefined` (no space, or signed out) stops listening altogether.
        */
@@ -168,7 +173,8 @@ export const SpaceStore = signalStore(
               environment: undefined,
               schemas: [],
               schemasLoaded: false,
-              documents: [],
+              contentSummaries: [],
+              contentsLoaded: false,
             }),
           ),
           switchMap(spaceId =>
@@ -195,10 +201,10 @@ export const SpaceStore = signalStore(
                   ),
                   canRead()
                     ? listen(
-                        () => contentService.findAllDocuments(spaceId),
-                        'findAllDocuments listener failed',
+                        () => contentService.findAllNames(spaceId),
+                        'contentService.findAllNames listener failed',
                         'Lost connection to content updates. Retrying…',
-                      ).pipe(map(documents => ({ documents })))
+                      ).pipe(map(contentSummaries => ({ contentSummaries, contentsLoaded: true })))
                     : EMPTY,
                   canRead()
                     ? listen(
@@ -281,6 +287,8 @@ export const SpaceStore = signalStore(
       const space = state.currentSpace();
       return space && space.id === state.selectedSpaceId() ? space : undefined;
     });
+    /** Every folder and document of the selected space, light, with its path (worked out from the folder chain). */
+    const contents = computed(() => withFullSlugs(state.contentSummaries()));
     return {
       spaces: computed(() => state.spaces()),
       contentFolderId: computed(() => state.contentFolderId()),
@@ -290,7 +298,13 @@ export const SpaceStore = signalStore(
       /** The selected space's locales, in its order: the one place the web reads them from `spaceLocales`. */
       locales: computed((): Locale[] => (selectedSpace()?.spaceLocales ?? []).flatMap(it => (it.locale ? [it.locale] : []))),
       defaultLocale: computed((): Locale | undefined => selectedSpace()?.defaultLocale),
-      documents: computed(() => state.documents()),
+      contents,
+      /** Every folder of the selected space, with its path: breadcrumbs and move targets. */
+      contentFolders: computed(() => contents().filter(it => it.kind === ContentKind.FOLDER)),
+      /** Every document of the selected space, with its path: the Link field's choices. */
+      contentDocuments: computed(() => contents().filter(it => it.kind === ContentKind.DOCUMENT)),
+      /** Every folder and document by id: the References fields show their documents from it. */
+      contentById: computed(() => new Map(contents().map(it => [it.id, it]))),
       /**
        * This account has no spaces, and we know that for a fact rather than by not having asked.
        *

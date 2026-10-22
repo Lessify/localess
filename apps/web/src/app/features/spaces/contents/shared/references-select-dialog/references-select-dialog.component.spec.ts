@@ -30,17 +30,21 @@ describe('ReferencesSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: context },
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: SpaceStore, useValue: { schemas: signal(schemas) } },
+        {
+          provide: SpaceStore,
+          useValue: {
+            schemas: signal(schemas),
+            contentFolders: signal([
+              { id: 'a', kind: ContentKind.FOLDER, name: 'A', slug: 'a', fullSlug: 'a', updatedAt: '' },
+              { id: 'b', kind: ContentKind.FOLDER, name: 'B', slug: 'b', parentId: 'a', fullSlug: 'a/b', updatedAt: '' },
+            ]),
+          },
+        },
         { provide: NotificationService, useValue: { error } },
         {
           provide: ContentService,
           useValue: {
             findPage,
-            findAllFolders: () =>
-              of([
-                { id: 'a', name: 'A', slug: 'a' },
-                { id: 'b', name: 'B', slug: 'b', parentId: 'a' },
-              ]),
           },
         },
       ],

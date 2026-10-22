@@ -39,24 +39,16 @@ describe('ContentService', () => {
     expect(await result).toEqual(page([{ id: 'c1' }], 21, 1));
   });
 
-  it('findAllDocuments() reads every page, 100 at a time', async () => {
-    const service = setup();
-    const all = firstValueFrom(service.findAllDocuments('space-1'));
-    http.expectOne(`${BASE}?kind=DOCUMENT&deep=true&page=0&size=100`).flush(page([{ id: 'a' }], 101));
-    http.expectOne(`${BASE}?kind=DOCUMENT&deep=true&page=1&size=100`).flush(page([{ id: 'b' }], 101, 1));
-    expect(await all).toEqual([{ id: 'a' }, { id: 'b' }]);
-  });
-
-  it('findAllFolders() reads every folder of the space, live', async () => {
+  it('findAllNames() reads every folder and document of the space, light, live', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: unknown[][] = [];
-    const subscription = service.findAllFolders('space-1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}/folders`).flush([{ id: 'f1', name: 'Blog', slug: 'blog' }]);
+    const subscription = service.findAllNames('space-1').subscribe(it => results.push(it));
+    http.expectOne(`${BASE}/names`).flush([{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }]);
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'f2', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}/folders`).flush([]);
-    expect(results).toEqual([[{ id: 'f1', name: 'Blog', slug: 'blog' }], []]);
+    http.expectOne(`${BASE}/names`).flush([]);
+    expect(results).toEqual([[{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }], []]);
     subscription.unsubscribe();
   });
 
@@ -101,24 +93,11 @@ describe('ContentService', () => {
     await documents;
   });
 
-  it('findById() and findDocumentById() read one content', async () => {
+  it('findDocumentById() reads one document, with its data', async () => {
     const service = setup();
-    const content = firstValueFrom(service.findById('space-1', 'c1'));
-    http.expectOne(`${BASE}/c1`).flush({ id: 'c1' });
-    expect(await content).toEqual({ id: 'c1' });
-
     const document = firstValueFrom(service.findDocumentById('space-1', 'd1'));
     http.expectOne(`${BASE}/d1`).flush({ id: 'd1', data: { _id: 'x' } });
     expect(await document).toEqual({ id: 'd1', data: { _id: 'x' } });
-  });
-
-  it('findByIds() lists the given ids, without a request when there are none', async () => {
-    const service = setup();
-    const result = firstValueFrom(service.findByIds('space-1', ['a', 'b']));
-    http.expectOne(`${BASE}?ids=a,b&page=0&size=100`).flush(page([{ id: 'a' }, { id: 'b' }]));
-    expect(await result).toEqual([{ id: 'a' }, { id: 'b' }]);
-
-    expect(await firstValueFrom(service.findByIds('space-1', []))).toEqual([]);
   });
 
   it('createDocument() and createFolder() post the new content and return it', async () => {

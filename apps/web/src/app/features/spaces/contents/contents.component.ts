@@ -12,7 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
@@ -28,7 +28,6 @@ import {
   ContentDocument,
   ContentDocumentCreate,
   ContentFolderCreate,
-  ContentFolderSummary,
   ContentKind,
   ContentUpdate,
   Schema,
@@ -165,11 +164,8 @@ export class ContentsComponent {
   /** Every schema by name: a document's schema column. */
   readonly schemasMapByName = computed(() => new Map<string, Schema>(this.spaceStore.schemas().map(it => [it.name, it])));
 
-  /** Every folder of the space, live: breadcrumbs and paths are built from it. */
-  private readonly folders = toSignal(toObservable(this.spaceId).pipe(switchMap(spaceId => this.contentService.findAllFolders(spaceId))), {
-    initialValue: [] as ContentFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.contentFolders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.spaceStore.contentFolderId()));
 
@@ -218,8 +214,7 @@ export class ContentsComponent {
       .open<ContentDocumentCreate, AddDocumentDialogContext>(AddDocumentDialogComponent, {
         context: {
           schemas: this.schemas(),
-          reservedNames: this.contents().map(it => it.name),
-          reservedSlugs: this.contents().map(it => it.slug),
+          ...this.reservedIn(this.spaceStore.contentFolderId() ?? undefined),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -241,10 +236,7 @@ export class ContentsComponent {
   openAddFolderDialog(): void {
     this.dialog
       .open<ContentFolderCreate, AddFolderDialogContext>(AddFolderDialogComponent, {
-        context: {
-          reservedNames: this.contents().map(it => it.name),
-          reservedSlugs: this.contents().map(it => it.slug),
-        },
+        context: this.reservedIn(this.spaceStore.contentFolderId() ?? undefined),
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -267,8 +259,7 @@ export class ContentsComponent {
       .open<ContentUpdate, EditDialogContext>(EditDialogComponent, {
         context: {
           content: ObjectUtils.clone(element),
-          reservedNames: this.contents().map(it => it.name),
-          reservedSlugs: this.contents().map(it => it.slug),
+          ...this.reservedIn(element.parentId),
         },
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -472,6 +463,12 @@ export class ContentsComponent {
     if (element.kind === ContentKind.FOLDER) {
       this.spaceStore.changeContentFolder(element.id);
     }
+  }
+
+  /** The names and slugs taken in a folder (`undefined`: the root), from `SpaceStore`'s list of every content. */
+  private reservedIn(parentId: string | undefined): { reservedNames: string[]; reservedSlugs: string[] } {
+    const siblings = this.spaceStore.contents().filter(it => it.parentId === parentId);
+    return { reservedNames: siblings.map(it => it.name), reservedSlugs: siblings.map(it => it.slug) };
   }
 
   /** A breadcrumb: a folder, or `null` for the root. */
