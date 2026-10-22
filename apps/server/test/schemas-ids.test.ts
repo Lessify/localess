@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newUuid } from '../src/infra/database/id.js';
 import { api, createTestApp, TestApp, userWithAccess } from './test-app.js';
 
-/** Every schema route checks its space first, then the schema; ids that aren't UUIDs are 404s. */
+/** Every schema route (and the OpenAPI document) checks its space first, then the schema; ids that aren't UUIDs are 404s. */
 describe('app API: schemas check their space and ids', () => {
   let t: TestApp;
   let admin: ReturnType<typeof api>;
@@ -31,6 +31,8 @@ describe('app API: schemas check their space and ids', () => {
     () => admin.put(`${spaceBase}/${id}`, { description: 'x' }),
     () => admin.put(`${spaceBase}/${id}/name`, { name: 'renamed' }),
     () => admin.delete(`${spaceBase}/${id}`),
+    // The space's OpenAPI document, from its schemas.
+    () => admin.post(spaceBase.replace(/schemas$/, 'open-api')),
   ];
 
   it('answers "Space not found" on every route of an unknown space, the list included', async () => {

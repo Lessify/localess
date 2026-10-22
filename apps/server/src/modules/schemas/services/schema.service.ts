@@ -1,4 +1,4 @@
-import { type Schema, type SchemaExport, type SchemaField, SchemaType, type SchemaUsage } from '@localess/shared';
+import { isSchemaInUse, type Schema, type SchemaExport, type SchemaField, SchemaType, type SchemaUsage } from '@localess/shared';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { SchemaEntity } from '../../../shared/entities/schema.entity.js';
@@ -6,29 +6,11 @@ import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup
 import { schemasByName, toSchema } from '../../../shared/transformers/schema.transformer.js';
 import { checkSchemaFields, docSchemaToExport, planSchemaPush, type SchemaPushPlan } from '../../../shared/utils/schema.utils.js';
 import { type NewSchema, type SchemaColumns, SchemaRepository } from '../repositories/schema.repository.js';
-
-/** "Schema 'card' is in use: referenced by 'page' field 'items'; used by 6 contents: Home (home), … and 1 more". */
-function inUseMessage(name: string, usage: SchemaUsage): string {
-  const parts: string[] = [];
-  if (usage.fields.length) parts.push(`referenced by ${usage.fields.map(it => `'${it.schema}' field '${it.field}'`).join(', ')}`);
-  const { count, first } = usage.contents;
-  if (count) {
-    const more = count > first.length ? ` and ${count - first.length} more` : '';
-    parts.push(
-      `used by ${count} ${count === 1 ? 'content' : 'contents'}: ${first.map(it => `${it.name} (${it.fullSlug})`).join(', ')}${more}`,
-    );
-  }
-  return `Schema '${name}' is in use: ${parts.join('; ')}`;
-}
+import { inUseMessage, lostMessage } from '../utils/schema-conflicts.js';
 
 /** The push's refusal for schemas that contents use as their document schema. */
 function contentErrors(counts: Map<string, number>): string[] {
   return [...counts].map(([name, value]) => `Cannot delete schema '${name}': used by ${value} ${value === 1 ? 'content' : 'contents'}`);
-}
-
-/** For schemas a write refers to that went since the service checked them. */
-function lostMessage(lost: string[]): string {
-  return `${lost.length === 1 ? 'Schema' : 'Schemas'} ${lost.map(it => `'${it}'`).join(', ')} ${lost.length === 1 ? 'was' : 'were'} renamed or deleted meanwhile`;
 }
 
 /** Refuses (400) the schemas whose fields break a rule across fields, saying which. */
@@ -50,9 +32,9 @@ function found(entity: SchemaEntity | undefined): Schema {
 }
 
 /**
- * Schemas of a space. Routes use the UUID `id`; `name` is what content and fields refer to, unique per space.
- * Every write bumps the content version: drafts are rendered through schemas (the repository does it in the write's
- * transaction).
+ * Schemas of a space. Routes use the UUID `id`; `name` is what content and fields refer to, unique per space. Every
+ * route checks the space first, then the schema; a write checks its rules, writes and reads the schema again (the
+ * repository checks them again under the row's lock).
  */
 @Injectable()
 export class SchemaService {
@@ -72,12 +54,12 @@ export class SchemaService {
 
   /** What uses the schema by name: while anything does, it can be neither renamed nor deleted. */
   async findUsage(spaceId: string, schemaId: string): Promise<SchemaUsage> {
-    return this.schemaRepository.usage(spaceId, (await this.requireSchema(spaceId, schemaId)).name);
+    return this.schemaRepository.findUsage(spaceId, (await this.requireSchema(spaceId, schemaId)).name);
   }
 
   async create(spaceId: string, input: NewSchema): Promise<Schema> {
     await this.requireSpace(spaceId);
-    return toSchema(await this.schemaRepository.create(spaceId, input));
+    return this.findSchema(spaceId, await this.schemaRepository.create(spaceId, input));
   }
 
   /**
@@ -98,30 +80,24 @@ export class SchemaService {
       values: (!component && input.values) || null,
     };
     requireValidFields([{ name, type, ...values }], await this.types(spaceId));
-    const outcome = await this.schemaRepository.update(spaceId, schemaId, values);
-    if (!outcome) throw new NotFoundException('Schema not found');
-    if (outcome.lost) throw new ConflictException(lostMessage(outcome.lost));
-    return toSchema(outcome.schema!);
+    await this.schemaRepository.update(spaceId, schemaId, values);
+    return this.findSchema(spaceId, schemaId);
   }
 
   /**
    * Changes the name; the id stays. Refused (409, saying where) while the schema is in use: the fields of other schemas
-   * and the contents refer to it by name, and are not rewritten. The repository checks and writes under the row's lock.
+   * and the contents refer to it by name, and are not rewritten. The repository checks again under the row's lock.
    */
   async rename(spaceId: string, schemaId: string, name: string): Promise<Schema> {
-    const current = await this.requireSchema(spaceId, schemaId);
-    const outcome = await this.schemaRepository.rename(spaceId, schemaId, name);
-    if (!outcome) throw new NotFoundException('Schema not found');
-    if (outcome.inUse) throw new ConflictException(inUseMessage(current.name, outcome.inUse));
-    return toSchema(outcome.schema!);
+    await this.requireUnused(spaceId, schemaId);
+    await this.schemaRepository.rename(spaceId, schemaId, name);
+    return this.findSchema(spaceId, schemaId);
   }
 
   /** Refused (409, saying where) while the schema is in use, as a rename. */
   async remove(spaceId: string, schemaId: string): Promise<void> {
-    const current = await this.requireSchema(spaceId, schemaId);
-    const outcome = await this.schemaRepository.delete(spaceId, schemaId);
-    if (!outcome) throw new NotFoundException('Schema not found');
-    if (outcome.inUse) throw new ConflictException(inUseMessage(current.name, outcome.inUse));
+    await this.requireUnused(spaceId, schemaId);
+    await this.schemaRepository.delete(spaceId, schemaId);
   }
 
   // The public API (developers and the CLI) addresses schemas by name; `undefined` when the space is not there.
@@ -160,7 +136,20 @@ export class SchemaService {
   /** The space first, then its schema (404 "Schema not found", also for a schema of another space). */
   private async requireSchema(spaceId: string, schemaId: string): Promise<Schema> {
     await this.requireSpace(spaceId);
-    return found(await this.schemaRepository.findById(spaceId, schemaId));
+    return this.findSchema(spaceId, schemaId);
+  }
+
+  /** The schema, unless anything uses it by name (409, saying where). */
+  private async requireUnused(spaceId: string, schemaId: string): Promise<Schema> {
+    const schema = await this.requireSchema(spaceId, schemaId);
+    const usage = await this.schemaRepository.findUsage(spaceId, schema.name);
+    if (isSchemaInUse(usage)) throw new ConflictException(inUseMessage(schema.name, usage));
+    return schema;
+  }
+
+  /** The schema as written (404 when it went meanwhile). */
+  private async findSchema(spaceId: string, schemaId: string): Promise<Schema> {
+    return found(await this.schemaRepository.findOne(spaceId, schemaId));
   }
 
   /** Every schema of the space by name, with its type. */

@@ -249,9 +249,9 @@ describe('app API: schemas', () => {
     const repository = t.app.get(SchemaRepository);
     const gone = await repository.create(S1, { name: 'gone', type: 'NODE' });
     const stale = { fields: [{ name: 'hero', kind: SchemaFieldKind.SCHEMA, schemas: ['gone'] }] as SchemaField[] };
-    await repository.delete(S1, gone.id);
-    // As if the service checked while `gone` still existed.
-    expect(await repository.update(S1, ids['page'], stale)).toEqual({ lost: ['gone'] });
+    await repository.delete(S1, gone);
+    // As if the service checked while `gone` still existed: the same check again under the lock, a 409.
+    await expect(repository.update(S1, ids['page'], stale)).rejects.toThrow("Schema 'gone' was renamed or deleted meanwhile");
     expect((await editor.get(`${base}/${ids['page']}`)).json().fields).toEqual([{ name: 'title', kind: 'TEXT', translatable: true }]);
   });
 
