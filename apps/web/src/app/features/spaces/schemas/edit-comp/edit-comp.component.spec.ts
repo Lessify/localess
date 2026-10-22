@@ -347,6 +347,12 @@ describe('EditCompComponent', () => {
     component.save();
 
     expect(updateComponent).toHaveBeenCalledWith('space-1', 'root1', component.form.value);
+    // The server refuses an unknown field (a strict body): only the schema's settings are sent.
+    expect(
+      Object.keys(updateComponent.mock.calls[0][2]).every(key =>
+        ['displayName', 'description', 'previewField', 'labels', 'fields'].includes(key),
+      ),
+    ).toBe(true);
     expect(success).toHaveBeenCalledWith('Schema has been updated.');
     expect(component.isSaveLoading()).toBe(true);
 

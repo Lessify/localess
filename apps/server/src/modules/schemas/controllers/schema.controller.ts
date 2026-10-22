@@ -1,4 +1,13 @@
-import { ANY_ROLE, DEVELOPERS, type SchemaCreate, type SchemaRename, SchemaType, type SchemaUpdate } from '@localess/shared';
+import {
+  ANY_ROLE,
+  DEVELOPERS,
+  type Schema,
+  type SchemaCreate,
+  type SchemaRename,
+  SchemaType,
+  type SchemaUpdate,
+  type SchemaUsage,
+} from '@localess/shared';
 import { zSchemaCreate, zSchemaRename, zSchemaTypeFilter, zSchemaUpdate } from '@localess/shared/zod';
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 
@@ -6,51 +15,62 @@ import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { SchemaService } from '../services/schema.service.js';
 
-/** Schemas (was direct `spaces/{s}/schemas` access from the SPA). `:id` is the UUID; references use `name`. */
+/** Schemas of a space. `:schemaId` is the UUID; content and fields refer to a schema by `name`. */
 @Controller('api/app/spaces/:spaceId/schemas')
 export class SchemaController {
   constructor(private readonly schemaService: SchemaService) {}
 
   @Get()
   @RequireRole(ANY_ROLE)
-  findAll(@Param('spaceId') spaceId: string, @Query('type', { schema: zSchemaTypeFilter }) type?: SchemaType) {
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query('type', { schema: zSchemaTypeFilter }) type?: SchemaType,
+  ): Promise<Schema[]> {
     return this.schemaService.findAll(spaceId, type);
   }
 
-  @Get(':id')
+  @Get(':schemaId')
   @RequireRole(ANY_ROLE)
-  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.schemaService.findOne(spaceId, id);
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('schemaId', UuidParamPipe) schemaId: string): Promise<Schema> {
+    return this.schemaService.findOne(spaceId, schemaId);
   }
 
-  @Get(':id/usage')
+  @Get(':schemaId/usage')
   @RequireRole(ANY_ROLE)
-  findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.schemaService.findUsage(spaceId, id);
+  findUsage(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('schemaId', UuidParamPipe) schemaId: string): Promise<SchemaUsage> {
+    return this.schemaService.findUsage(spaceId, schemaId);
   }
 
   @Post()
   @RequireRole(DEVELOPERS)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zSchemaCreate }) body: SchemaCreate) {
+  create(@Param('spaceId', UuidParamPipe) spaceId: string, @Body({ schema: zSchemaCreate }) body: SchemaCreate): Promise<Schema> {
     return this.schemaService.create(spaceId, body);
   }
 
-  @Put(':id')
+  @Put(':schemaId')
   @RequireRole(DEVELOPERS)
-  update(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zSchemaUpdate }) body: SchemaUpdate) {
-    return this.schemaService.update(spaceId, id, body);
+  update(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('schemaId', UuidParamPipe) schemaId: string,
+    @Body({ schema: zSchemaUpdate }) body: SchemaUpdate,
+  ): Promise<Schema> {
+    return this.schemaService.update(spaceId, schemaId, body);
   }
 
-  @Put(':id/name')
+  @Put(':schemaId/name')
   @RequireRole(DEVELOPERS)
-  rename(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zSchemaRename }) body: SchemaRename) {
-    return this.schemaService.rename(spaceId, id, body.name);
+  rename(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('schemaId', UuidParamPipe) schemaId: string,
+    @Body({ schema: zSchemaRename }) body: SchemaRename,
+  ): Promise<Schema> {
+    return this.schemaService.rename(spaceId, schemaId, body.name);
   }
 
-  @Delete(':id')
+  @Delete(':schemaId')
   @HttpCode(204)
   @RequireRole(DEVELOPERS)
-  remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    return this.schemaService.remove(spaceId, id);
+  remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('schemaId', UuidParamPipe) schemaId: string): Promise<void> {
+    return this.schemaService.remove(spaceId, schemaId);
   }
 }

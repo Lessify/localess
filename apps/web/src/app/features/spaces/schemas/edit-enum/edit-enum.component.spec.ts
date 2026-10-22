@@ -270,6 +270,10 @@ describe('EditEnumComponent', () => {
     component.save();
 
     expect(updateEnum).toHaveBeenCalledWith('space-1', 'enum1', component.form.value);
+    // The server refuses an unknown field (a strict body): only the schema's settings are sent.
+    expect(Object.keys(updateEnum.mock.calls[0][2]).every(key => ['displayName', 'description', 'labels', 'values'].includes(key))).toBe(
+      true,
+    );
     expect(success).toHaveBeenCalledWith('Schema has been updated.');
     expect(component.isSaveLoading()).toBe(true);
 

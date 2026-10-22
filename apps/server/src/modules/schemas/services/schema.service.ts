@@ -62,19 +62,21 @@ export class SchemaService {
   ) {}
 
   async findAll(spaceId: string, type?: SchemaType): Promise<Schema[]> {
+    await this.requireSpace(spaceId);
     return (await this.schemaRepository.findAll(spaceId, type)).map(toSchema);
   }
 
-  async findOne(spaceId: string, id: string): Promise<Schema> {
-    return found(await this.schemaRepository.findById(spaceId, id));
+  async findOne(spaceId: string, schemaId: string): Promise<Schema> {
+    return this.requireSchema(spaceId, schemaId);
   }
 
   /** What uses the schema by name: while anything does, it can be neither renamed nor deleted. */
-  async findUsage(spaceId: string, id: string): Promise<SchemaUsage> {
-    return this.schemaRepository.usage(spaceId, found(await this.schemaRepository.findById(spaceId, id)).name);
+  async findUsage(spaceId: string, schemaId: string): Promise<SchemaUsage> {
+    return this.schemaRepository.usage(spaceId, (await this.requireSchema(spaceId, schemaId)).name);
   }
 
   async create(spaceId: string, input: NewSchema): Promise<Schema> {
+    await this.requireSpace(spaceId);
     return toSchema(await this.schemaRepository.create(spaceId, input));
   }
 
@@ -84,8 +86,8 @@ export class SchemaService {
    * must keep the rules across fields (400, saying which); the schemas they refer to stay locked until the write
    * commits.
    */
-  async update(spaceId: string, id: string, input: Omit<SchemaColumns, 'type'>): Promise<Schema> {
-    const { name, type } = found(await this.schemaRepository.findById(spaceId, id));
+  async update(spaceId: string, schemaId: string, input: Omit<SchemaColumns, 'type'>): Promise<Schema> {
+    const { name, type } = await this.requireSchema(spaceId, schemaId);
     const component = type !== SchemaType.ENUM;
     const values = {
       displayName: input.displayName || null,
@@ -96,7 +98,7 @@ export class SchemaService {
       values: (!component && input.values) || null,
     };
     requireValidFields([{ name, type, ...values }], await this.types(spaceId));
-    const outcome = await this.schemaRepository.update(spaceId, id, values);
+    const outcome = await this.schemaRepository.update(spaceId, schemaId, values);
     if (!outcome) throw new NotFoundException('Schema not found');
     if (outcome.lost) throw new ConflictException(lostMessage(outcome.lost));
     return toSchema(outcome.schema!);
@@ -106,18 +108,18 @@ export class SchemaService {
    * Changes the name; the id stays. Refused (409, saying where) while the schema is in use: the fields of other schemas
    * and the contents refer to it by name, and are not rewritten. The repository checks and writes under the row's lock.
    */
-  async rename(spaceId: string, id: string, name: string): Promise<Schema> {
-    const current = found(await this.schemaRepository.findById(spaceId, id));
-    const outcome = await this.schemaRepository.rename(spaceId, id, name);
+  async rename(spaceId: string, schemaId: string, name: string): Promise<Schema> {
+    const current = await this.requireSchema(spaceId, schemaId);
+    const outcome = await this.schemaRepository.rename(spaceId, schemaId, name);
     if (!outcome) throw new NotFoundException('Schema not found');
     if (outcome.inUse) throw new ConflictException(inUseMessage(current.name, outcome.inUse));
     return toSchema(outcome.schema!);
   }
 
   /** Refused (409, saying where) while the schema is in use, as a rename. */
-  async remove(spaceId: string, id: string): Promise<void> {
-    const current = found(await this.schemaRepository.findById(spaceId, id));
-    const outcome = await this.schemaRepository.delete(spaceId, id);
+  async remove(spaceId: string, schemaId: string): Promise<void> {
+    const current = await this.requireSchema(spaceId, schemaId);
+    const outcome = await this.schemaRepository.delete(spaceId, schemaId);
     if (!outcome) throw new NotFoundException('Schema not found');
     if (outcome.inUse) throw new ConflictException(inUseMessage(current.name, outcome.inUse));
   }
@@ -148,6 +150,17 @@ export class SchemaService {
   async applyPush(spaceId: string, plan: SchemaPushPlan): Promise<string[]> {
     const { usedByContents, lost } = await this.schemaRepository.applyPushPlan(spaceId, plan);
     return [...contentErrors(usedByContents), ...(lost.length ? [lostMessage(lost)] : [])];
+  }
+
+  /** 404 "Space not found" when the space is not there: every App API route checks it first. */
+  private async requireSpace(spaceId: string): Promise<void> {
+    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
+  }
+
+  /** The space first, then its schema (404 "Schema not found", also for a schema of another space). */
+  private async requireSchema(spaceId: string, schemaId: string): Promise<Schema> {
+    await this.requireSpace(spaceId);
+    return found(await this.schemaRepository.findById(spaceId, schemaId));
   }
 
   /** Every schema of the space by name, with its type. */

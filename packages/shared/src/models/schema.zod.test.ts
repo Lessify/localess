@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { zSchemaExportArraySchema, zSchemaPushSchema } from './schema.zod.js';
+import { zSchemaCreate, zSchemaExportArraySchema, zSchemaPushSchema, zSchemaRename, zSchemaUpdate } from './schema.zod.js';
 
 const valid = [
   {
@@ -89,5 +89,15 @@ describe('zSchemaPushSchema', () => {
     expect(zSchemaExportArraySchema.safeParse([{ id: 'Page', type: 'ROOT', fields: [{ name: 'hero', kind: 'SCHEMA' }] }]).success).toBe(
       true,
     );
+  });
+});
+
+describe('App API schema requests', () => {
+  it('refuse an unknown field (strict bodies), keeping the nested field shapes as before', () => {
+    expect(zSchemaCreate.safeParse({ name: 'card', type: 'NODE', label: ['a'] }).success).toBe(false);
+    expect(zSchemaUpdate.safeParse({ previewFeild: 'title' }).success).toBe(false);
+    expect(zSchemaRename.safeParse({ name: 'card', id: 'x' }).success).toBe(false);
+    expect(zSchemaCreate.safeParse({ name: 'card', type: 'NODE', displayName: 'Card' }).success).toBe(true);
+    expect(zSchemaUpdate.safeParse({ fields: [{ name: 'title', kind: 'TEXT', displayName: 'Title' }], labels: ['ui'] }).success).toBe(true);
   });
 });

@@ -39,8 +39,8 @@ repositories call it.
     `{ statusCode, error, message: ["path: issue", …] }` (the web shows `message[0]`).
   - An id in the path, `:spaceId` included: `@Param('spaceId', UuidParamPipe)`, which answers 404 (not 400) for a
     malformed one. The service then checks that the row exists (404); a repository does not check an id's format.
-    Done in the Spaces module; the others still lean on `isUuid` in their repositories (and in
-    `SpaceLookupRepository`) until they are reworked. The v1 controllers answer their own error body, not the pipe's.
+    Done in the Spaces, Users, Webhooks, Translations and Schemas modules; the others still lean on `isUuid` in their
+    repositories (and in `SpaceLookupRepository`) until they are reworked. The v1 controllers answer their own error body, not the pipe's.
   - Roles: `@RequireRole(CONTENT_WRITERS)` (a list of `@localess/shared` `roles.ts`, or one role) on each method or the controller,
     the same the UI checks.
   - Multipart fields and the v1 Management API's own error bodies are parsed with `zX.safeParse` in the handler.

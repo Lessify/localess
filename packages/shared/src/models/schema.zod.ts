@@ -226,15 +226,15 @@ export const zSchemaTypeFilter = z.enum(SchemaType).optional();
 export type SchemaTypeFilter = z.infer<typeof zSchemaTypeFilter>;
 
 /** `POST /api/app/spaces/:spaceId/schemas`. */
-export const zSchemaCreate = z.object({
+export const zSchemaCreate = z.strictObject({
   name: zSchemaName,
   type: z.enum(SchemaType),
   displayName: z.string().max(200).optional(),
 });
 export type SchemaCreate = z.infer<typeof zSchemaCreate>;
 
-/** `PUT …/schemas/:id`: a component's or an enum's settings. */
-export const zSchemaUpdate = z.object({
+/** `PUT …/schemas/:schemaId`: a component's or an enum's settings. */
+export const zSchemaUpdate = z.strictObject({
   displayName: z.string().max(200).optional(),
   description: z.string().max(2000).optional(),
   labels: zLabels.optional(),
@@ -245,6 +245,6 @@ export const zSchemaUpdate = z.object({
 });
 export type SchemaUpdate = z.infer<typeof zSchemaUpdate>;
 
-/** `PUT …/schemas/:id/name`. */
-export const zSchemaRename = z.object({ name: zSchemaName });
+/** `PUT …/schemas/:schemaId/name`. */
+export const zSchemaRename = z.strictObject({ name: zSchemaName });
 export type SchemaRename = z.infer<typeof zSchemaRename>;

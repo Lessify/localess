@@ -3,7 +3,7 @@ import { ConflictException, Inject, Injectable, NotFoundException } from '@nestj
 import { and, asc, count, eq, inArray, ne, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import { contents, schemas } from '../../../infra/database/schema.js';
 import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
@@ -62,7 +62,6 @@ export class SchemaRepository {
   }
 
   async findById(spaceId: string, id: string): Promise<SchemaEntity | undefined> {
-    if (!isUuid(id)) return undefined;
     const [row] = await this.db.select().from(schemas).where(this.byId(spaceId, id));
     return row;
   }
