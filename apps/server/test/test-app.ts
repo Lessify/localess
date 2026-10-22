@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -138,6 +139,22 @@ export async function userWithAccess(t: TestApp, email: string, access: { role: 
 }
 
 /** JSON request as the SPA sends it (cookie + X-Requested-With). */
+/** A multipart body with the fields first, then the file — the order the endpoint expects. */
+export function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
+  const boundary = `----localess${randomBytes(8).toString('hex')}`;
+  const parts: Buffer[] = [];
+  for (const [name, value] of Object.entries(fields)) {
+    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
+  }
+  parts.push(
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.filename}"\r\nContent-Type: ${file.type}\r\n\r\n`,
+    ),
+  );
+  parts.push(file.bytes, Buffer.from(`\r\n--${boundary}--\r\n`));
+  return { payload: Buffer.concat(parts), contentType: `multipart/form-data; boundary=${boundary}` };
+}
+
 export function api(t: TestApp, cookie: string) {
   const call = (method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', url: string, payload?: unknown) =>
     t.request({ method, url, headers: { ...XHR, cookie }, ...(payload !== undefined ? { payload: payload as object } : {}) });

@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -11,23 +11,7 @@ import { newUuid } from '../src/infra/database/id.js';
 import { assets, contents } from '../src/infra/database/schema.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { S1, UUID_V7 } from './ids.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
-
-/** A multipart body with the fields first, then the file — the order the endpoint expects. */
-function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
-  const boundary = `----localess${randomBytes(8).toString('hex')}`;
-  const parts: Buffer[] = [];
-  for (const [name, value] of Object.entries(fields)) {
-    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
-  }
-  parts.push(
-    Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.filename}"\r\nContent-Type: ${file.type}\r\n\r\n`,
-    ),
-  );
-  parts.push(file.bytes, Buffer.from(`\r\n--${boundary}--\r\n`));
-  return { payload: Buffer.concat(parts), contentType: `multipart/form-data; boundary=${boundary}` };
-}
+import { api, createTestApp, insertSpace, multipart, TestApp, userWithAccess, XHR } from './test-app.js';
 
 const jpeg = (width: number, height: number) => sharp({ create: { width, height, channels: 3, background: '#88aa44' } }).jpeg();
 

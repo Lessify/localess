@@ -1,6 +1,16 @@
 import type { MultipartFile } from '@fastify/multipart';
-import { ANY_ROLE, type AssetFolderCreate, type AssetListQuery, type AssetMove, type AssetUpdate, CONTENT_WRITERS } from '@localess/shared';
-import { zAssetFolderCreate, zAssetListQuery, zAssetMove, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
+import {
+  ANY_ROLE,
+  type Asset,
+  type AssetCountQuery,
+  type AssetFolderCreate,
+  type AssetFolderSummary,
+  type AssetListQuery,
+  type AssetMove,
+  type AssetUpdate,
+  CONTENT_WRITERS,
+} from '@localess/shared';
+import { zAssetCountQuery, zAssetFolderCreate, zAssetListQuery, zAssetMove, zAssetUpdate, zAssetUpload } from '@localess/shared/zod';
 import {
   BadRequestException,
   Body,
@@ -32,7 +42,7 @@ function fieldValues(file: MultipartFile): Record<string, string> {
   return values;
 }
 
-/** Asset library (was direct Firestore access plus browser uploads to Cloud Storage). */
+/** Asset library (was direct Firestore access plus browser uploads to Cloud Storage). `:assetId` is the UUID. */
 @Controller('api/app/spaces/:spaceId/assets')
 export class AssetController {
   constructor(private readonly assetService: AssetService) {}
@@ -40,7 +50,7 @@ export class AssetController {
   /** `?parentId=` ('' for root), `?kind=`, `?name=` (prefix), `?fileType=image`, `?ids=a,b`, `?limit=`. */
   @Get()
   @RequireRole(ANY_ROLE)
-  async findAll(@Param('spaceId') spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery) {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zAssetListQuery }) query: AssetListQuery): Promise<Asset[]> {
     const { parentId, ...rest } = query;
     return this.assetService.findAll(spaceId, { ...rest, parentId: parentId === '' ? null : parentId });
   }
@@ -48,32 +58,41 @@ export class AssetController {
   /** Every folder of the space (`{ id, parentId, name }`), for the editor's breadcrumbs and move targets. */
   @Get('folders')
   @RequireRole(ANY_ROLE)
-  async findFolders(@Param('spaceId') spaceId: string) {
+  findFolders(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<AssetFolderSummary[]> {
     return this.assetService.findFolders(spaceId);
   }
 
   @Get('count')
   @RequireRole(ANY_ROLE)
-  async count(@Param('spaceId') spaceId: string, @Query('kind') kind?: 'FOLDER' | 'FILE') {
-    return { count: await this.assetService.count(spaceId, kind === 'FOLDER' || kind === 'FILE' ? kind : undefined) };
+  async count(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zAssetCountQuery }) query: AssetCountQuery,
+  ): Promise<{ count: number }> {
+    return { count: await this.assetService.count(spaceId, query.kind) };
   }
 
-  @Get(':id')
+  @Get(':assetId')
   @RequireRole(ANY_ROLE)
-  async findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.assetService.findOne(spaceId, id);
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('assetId', UuidParamPipe) assetId: string): Promise<Asset> {
+    return this.assetService.findOne(spaceId, assetId);
   }
 
   /** How many contents use it (a folder: any file under it), for the warning before a delete. */
-  @Get(':id/usage')
+  @Get(':assetId/usage')
   @RequireRole(ANY_ROLE)
-  findUsage(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
-    return this.assetService.findUsage(spaceId, id);
+  findUsage(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+  ): Promise<{ contents: number }> {
+    return this.assetService.findUsage(spaceId, assetId);
   }
 
   @Post('folders')
   @RequireRole(CONTENT_WRITERS)
-  async createFolder(@Param('spaceId') spaceId: string, @Body({ schema: zAssetFolderCreate }) body: AssetFolderCreate) {
+  createFolder(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zAssetFolderCreate }) body: AssetFolderCreate,
+  ): Promise<Asset> {
     return this.assetService.createFolder(spaceId, body.parentId ?? null, body.name);
   }
 
@@ -83,7 +102,7 @@ export class AssetController {
    */
   @Post('files')
   @RequireRole(CONTENT_WRITERS)
-  async upload(@Param('spaceId') spaceId: string, @Req() request: FastifyRequest) {
+  async upload(@Param('spaceId', UuidParamPipe) spaceId: string, @Req() request: FastifyRequest): Promise<Asset> {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
@@ -107,26 +126,30 @@ export class AssetController {
     }
   }
 
-  @Patch(':id')
+  @Patch(':assetId')
   @RequireRole(CONTENT_WRITERS)
-  async update(
-    @Param('spaceId') spaceId: string,
-    @Param('id', UuidParamPipe) id: string,
+  update(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
     @Body({ schema: zAssetUpdate }) body: AssetUpdate,
-  ) {
-    return this.assetService.update(spaceId, id, body);
+  ): Promise<Asset> {
+    return this.assetService.update(spaceId, assetId, body);
   }
 
-  @Put(':id/parent')
+  @Put(':assetId/parent')
   @RequireRole(CONTENT_WRITERS)
-  async move(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Body({ schema: zAssetMove }) body: AssetMove) {
-    return this.assetService.move(spaceId, id, body.parentId);
+  move(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+    @Body({ schema: zAssetMove }) body: AssetMove,
+  ): Promise<Asset> {
+    return this.assetService.move(spaceId, assetId, body.parentId);
   }
 
-  @Delete(':id')
+  @Delete(':assetId')
   @HttpCode(204)
   @RequireRole(CONTENT_WRITERS)
-  async remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<void> {
-    await this.assetService.remove(spaceId, id);
+  remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('assetId', UuidParamPipe) assetId: string): Promise<void> {
+    return this.assetService.remove(spaceId, assetId);
   }
 }

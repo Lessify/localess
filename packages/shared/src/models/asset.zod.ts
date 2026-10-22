@@ -54,20 +54,24 @@ export const zAssetListQuery = z.object({
 });
 export type AssetListQuery = z.infer<typeof zAssetListQuery>;
 
+/** `GET …/assets/count?kind=`: every asset, or one kind. */
+export const zAssetCountQuery = z.object({ kind: z.enum(['FOLDER', 'FILE']).optional() });
+export type AssetCountQuery = z.infer<typeof zAssetCountQuery>;
+
 /** `POST …/assets/folders`. A folder is a name in a place: file fields are refused, not ignored. */
-export const zAssetFolderCreate = z.object({ parentId: zParentId, name: zAssetName }).strict();
+export const zAssetFolderCreate = z.strictObject({ parentId: zParentId, name: zAssetName });
 export type AssetFolderCreate = z.infer<typeof zAssetFolderCreate>;
 
-/** `PATCH …/assets/:id`. */
-export const zAssetUpdate = z.object({ name: zAssetName.optional(), alt: z.string().max(2000).optional() });
+/** `PATCH …/assets/:assetId`. */
+export const zAssetUpdate = z.strictObject({ name: zAssetName.optional(), alt: z.string().max(2000).optional() });
 export type AssetUpdate = z.infer<typeof zAssetUpdate>;
 
-/** `PUT …/assets/:id/parent`. */
-export const zAssetMove = z.object({ parentId: z.uuid().nullable() });
+/** `PUT …/assets/:assetId/parent`. */
+export const zAssetMove = z.strictObject({ parentId: z.uuid().nullable() });
 export type AssetMove = z.infer<typeof zAssetMove>;
 
-/** `POST …/assets/files`: the multipart fields before the `file` part. */
-export const zAssetUpload = z.object({
+/** `POST …/assets/files`: the multipart fields before the `file` part; an unknown field is refused. */
+export const zAssetUpload = z.strictObject({
   // A multipart field: absent or '' for the root.
   parentId: z.union([z.uuid(), z.literal('')]).optional(),
   name: zAssetName.optional(),
