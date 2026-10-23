@@ -1,4 +1,10 @@
-import { FIREBASE_IMPORT_STAGES, type FirebaseImport, type FirebaseSourceSpace } from '@localess/shared';
+import {
+  FIREBASE_IMPORT_STAGES,
+  type FirebaseImport,
+  type FirebaseImportConnection,
+  type FirebaseImportStart,
+  type FirebaseSourceSpace,
+} from '@localess/shared';
 import {
   BadGatewayException,
   BadRequestException,
@@ -12,7 +18,7 @@ import {
 } from '@nestjs/common';
 
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
-import { isUuid, newUuid } from '../../../infra/database/id.js';
+import { newUuid } from '../../../infra/database/id.js';
 import type { FirebaseImportEntity } from '../../../shared/entities/firebase-import.entity.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
 import { toFirebaseImport } from '../../../shared/transformers/firebase-import.transformer.js';
@@ -56,15 +62,14 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
 
   /** Stops a running import: failed at the stage it reached; the half-imported space is deleted like any failed one. */
   async cancel(id: string, user: UserEntity): Promise<FirebaseImport> {
-    const run = isUuid(id) ? await this.firebaseImportRepository.findById(id) : undefined;
-    if (!run) throw new NotFoundException('Import not found');
-    const cancelled = run.status === 'RUNNING' ? await this.failAtCurrentStage(run, `Cancelled by ${user.email}`) : undefined;
+    const run = await this.requireRun(id);
+    const cancelled = run.status === 'RUNNING' && (await this.failAtCurrentStage(run, `Cancelled by ${user.email}`));
     if (!cancelled) throw new ConflictException('The import is not running');
-    return toFirebaseImport(cancelled);
+    return this.findOne(id);
   }
 
-  /** `undefined` when the run ended meanwhile. */
-  private failAtCurrentStage(run: FirebaseImportEntity, message: string): Promise<FirebaseImportEntity | undefined> {
+  /** False when the run ended meanwhile. */
+  private failAtCurrentStage(run: FirebaseImportEntity, message: string): Promise<boolean> {
     const current = run.stages.find(it => it.status === 'RUNNING') ?? run.stages.find(it => it.status === 'PENDING') ?? run.stages[0];
     const stages = run.stages.map(it => (it.stage === current.stage ? { ...it, status: 'FAILED' as const, error: message } : it));
     return this.firebaseImportRepository.fail(run.id, stages);
@@ -79,10 +84,10 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     }
   }
 
-  async findSourceSpaces(origin: string, token: string): Promise<FirebaseSourceSpace[]> {
+  async findSourceSpaces(connection: FirebaseImportConnection): Promise<FirebaseSourceSpace[]> {
     let remote: Awaited<ReturnType<FirebaseClient['spaces']>>;
     try {
-      remote = await this.client(origin, token).spaces();
+      remote = await this.client(connection.origin, connection.token).spaces();
     } catch (error) {
       if (error instanceof FirebaseConnectionError) throw new BadGatewayException(error.message);
       throw error;
@@ -99,8 +104,10 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
     });
   }
 
-  async start(origin: string, token: string, sourceSpaceId: string, user: UserEntity): Promise<FirebaseImport> {
-    const client = this.client(origin, token);
+  /** `spaceId`: the Firebase space to import. */
+  async start(input: FirebaseImportStart, user: UserEntity): Promise<FirebaseImport> {
+    const sourceSpaceId = input.spaceId;
+    const client = this.client(input.origin, input.token);
     const [existing] = await this.importedAs([sourceSpaceId]);
     if (existing) throw new ConflictException(`This space is already imported as '${existing.name}'`);
     let source: { id: string; name: string } | undefined;
@@ -128,8 +135,9 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   }
 
   /** The local spaces imported from these Firebase spaces (finished or failed; a deleted space takes its run along). */
-  private importedAs(sourceSpaceIds: string[]): Promise<{ id: string; name: string; legacyId: string }[]> {
-    return this.firebaseImportRepository.findImportedAs(sourceSpaceIds);
+  private async importedAs(sourceSpaceIds: string[]): Promise<{ id: string; name: string; legacyId: string }[]> {
+    const runs = await this.firebaseImportRepository.findAllImported(sourceSpaceIds);
+    return runs.flatMap(run => (run.space ? [{ id: run.space.id, name: run.space.name, legacyId: run.sourceSpaceId }] : []));
   }
 
   async findAll(): Promise<FirebaseImport[]> {
@@ -137,8 +145,12 @@ export class FirebaseImportService implements OnApplicationBootstrap, OnApplicat
   }
 
   async findOne(id: string): Promise<FirebaseImport> {
-    const row = isUuid(id) ? await this.firebaseImportRepository.findById(id) : undefined;
-    if (!row) throw new NotFoundException('Import not found');
-    return toFirebaseImport(row);
+    return toFirebaseImport(await this.requireRun(id));
+  }
+
+  private async requireRun(id: string): Promise<FirebaseImportEntity> {
+    const run = await this.firebaseImportRepository.findOne(id);
+    if (!run) throw new NotFoundException('Import not found');
+    return run;
   }
 }

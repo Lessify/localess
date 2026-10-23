@@ -69,9 +69,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   Private helpers and inline callbacks may leave it to inference.
 - **Why:** what a method answers is read from its signature, not worked out from its body.
 - **Example:** `modules/spaces/` (every file).
-- **Scope:** checked in the modules reworked so far (spaces, webhooks, users, translations, schemas, contents, assets,
-  plugins, tasks); each module joins the check when it is reworked
-  (`REWORKED` in `apps/server/test/architecture.test.ts`).
+- **Scope:** checked in every module (`modules/`, `apps/server/test/architecture.test.ts`), a new one included.
 
 ## Repository methods
 
@@ -122,8 +120,8 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 - **Rule, unknown fields:** a body schema is `z.strictObject` (an unknown field is a 400 that names it, not a field
   dropped in silence); a query schema is `z.object` (a link may carry parameters of its own: a cache-buster, a
   tracking tag). A field kept for clients of an older build is listed in the schema, as `content.zod.ts` does with
-  `assets` / `links` / `references`, never let through by loose parsing. Done in `space.zod.ts`; the other modules
-  follow when reworked.
+  `assets` / `links` / `references`, never let through by loose parsing. Every App API body; the files an import
+  reads (`zTranslationFileEntry`) and the v1 Management API (`zTranslationPush`) keep their own.
 - **Rule, by what the route does** (the entity is the controller's, a sub-entity included):
 
   | Route | Model | Example |

@@ -1,4 +1,4 @@
-import type { FirebaseImportConnection, FirebaseImportStart } from '@localess/shared';
+import type { FirebaseImport, FirebaseImportConnection, FirebaseImportStart, FirebaseSourceSpace } from '@localess/shared';
 import { ADMINS } from '@localess/shared';
 import { zFirebaseImportConnection, zFirebaseImportStart } from '@localess/shared/zod';
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
@@ -15,31 +15,32 @@ import { FirebaseImportService } from '../services/firebase-import.service.js';
 export class FirebaseImportController {
   constructor(private readonly firebaseImportService: FirebaseImportService) {}
 
+  /** A `POST`: the token travels in the body, never in a URL. */
   @Post('spaces')
   @HttpCode(200)
-  findSourceSpaces(@Body({ schema: zFirebaseImportConnection }) body: FirebaseImportConnection) {
-    return this.firebaseImportService.findSourceSpaces(body.origin, body.token);
+  findSourceSpaces(@Body({ schema: zFirebaseImportConnection }) body: FirebaseImportConnection): Promise<FirebaseSourceSpace[]> {
+    return this.firebaseImportService.findSourceSpaces(body);
   }
 
   @Post()
   @HttpCode(202)
-  start(@Body({ schema: zFirebaseImportStart }) body: FirebaseImportStart, @CurrentUser() user: UserEntity) {
-    return this.firebaseImportService.start(body.origin, body.token, body.spaceId, user);
+  start(@Body({ schema: zFirebaseImportStart }) body: FirebaseImportStart, @CurrentUser() user: UserEntity): Promise<FirebaseImport> {
+    return this.firebaseImportService.start(body, user);
   }
 
   @Get()
-  findAll() {
+  findAll(): Promise<FirebaseImport[]> {
     return this.firebaseImportService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', UuidParamPipe) id: string) {
+  findOne(@Param('id', UuidParamPipe) id: string): Promise<FirebaseImport> {
     return this.firebaseImportService.findOne(id);
   }
 
   @Post(':id/cancel')
   @HttpCode(200)
-  cancel(@Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity) {
+  cancel(@Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity): Promise<FirebaseImport> {
     return this.firebaseImportService.cancel(id, user);
   }
 }

@@ -1,11 +1,15 @@
 import type { FirebaseImportStage } from '@localess/shared';
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, inArray, lt } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, lt } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { firebaseImports, spaces } from '../../../infra/database/schema.js';
+import { firebaseImports } from '../../../infra/database/schema.js';
 import { isUniqueViolation, type Transaction, transaction } from '../../../infra/database/transaction.js';
-import type { FirebaseImportEntity, FirebaseImportInsertEntity } from '../../../shared/entities/firebase-import.entity.js';
+import type {
+  FirebaseImportEntity,
+  FirebaseImportInsertEntity,
+  FirebaseImportSelect,
+} from '../../../shared/entities/firebase-import.entity.js';
 import { RunAbandoned } from '../utils/firebase-import.utils.js';
 
 /** What a run's progress save may set besides its stages. */
@@ -21,29 +25,29 @@ export class FirebaseImportRepository {
 
   /** Newest first. */
   findAll(): Promise<FirebaseImportEntity[]> {
-    return this.db.select().from(firebaseImports).orderBy(desc(firebaseImports.startedAt));
+    return this.db.query.firebaseImports.findMany({ orderBy: desc(firebaseImports.startedAt) });
   }
 
-  async findById(id: string): Promise<FirebaseImportEntity | undefined> {
-    const [row] = await this.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
-    return row;
+  findOne(id: string): Promise<FirebaseImportEntity | undefined> {
+    return this.db.query.firebaseImports.findFirst({ where: eq(firebaseImports.id, id) });
   }
 
   /** RUNNING runs whose heartbeat is older than `before`. */
   findStale(before: Date): Promise<FirebaseImportEntity[]> {
-    return this.db
-      .select()
-      .from(firebaseImports)
-      .where(and(eq(firebaseImports.status, 'RUNNING'), lt(firebaseImports.heartbeatAt, before)));
+    return this.db.query.firebaseImports.findMany({
+      where: and(eq(firebaseImports.status, 'RUNNING'), lt(firebaseImports.heartbeatAt, before)),
+    });
   }
 
-  /** The local spaces imported from these Firebase spaces (finished or failed; a deleted space takes its run along). */
-  findImportedAs(sourceSpaceIds: string[]): Promise<{ id: string; name: string; legacyId: string }[]> {
-    return this.db
-      .select({ id: spaces.id, name: spaces.name, legacyId: firebaseImports.sourceSpaceId })
-      .from(firebaseImports)
-      .innerJoin(spaces, eq(spaces.id, firebaseImports.spaceId))
-      .where(inArray(firebaseImports.sourceSpaceId, sourceSpaceIds));
+  /**
+   * The runs that imported these Firebase spaces, with the local `space` (finished or failed; a deleted space takes its
+   * run along).
+   */
+  findAllImported(sourceSpaceIds: string[]): Promise<FirebaseImportSelect[]> {
+    return this.db.query.firebaseImports.findMany({
+      where: and(inArray(firebaseImports.sourceSpaceId, sourceSpaceIds), isNotNull(firebaseImports.spaceId)),
+      with: { space: true },
+    });
   }
 
   /** A new RUNNING run; a conflict while another one runs. */
@@ -79,17 +83,17 @@ export class FirebaseImportRepository {
   }
 
   /**
-   * Fails a running run (cut off by a stopped instance, or cancelled); its runner stops at its next save. `undefined`
-   * when it ended meanwhile.
+   * Fails a running run (cut off by a stopped instance, or cancelled); its runner stops at its next save. False when it
+   * ended meanwhile.
    */
-  fail(id: string, stages: FirebaseImportStage[], tx?: Transaction): Promise<FirebaseImportEntity | undefined> {
+  fail(id: string, stages: FirebaseImportStage[], tx?: Transaction): Promise<boolean> {
     return transaction(this.db, tx, async t => {
-      const [run] = await t
+      const failed = await t
         .update(firebaseImports)
         .set({ status: 'FAILED', stages, finishedAt: new Date() })
         .where(and(eq(firebaseImports.id, id), eq(firebaseImports.status, 'RUNNING')))
-        .returning();
-      return run;
+        .returning({ id: firebaseImports.id });
+      return failed.length > 0;
     });
   }
 

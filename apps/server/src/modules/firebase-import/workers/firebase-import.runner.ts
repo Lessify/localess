@@ -36,7 +36,7 @@ export class FirebaseImportRunner {
   ) {}
 
   async execute(runId: string, client: FirebaseClient, sourceSpaceId: string): Promise<void> {
-    const run = await this.firebaseImportRepository.findById(runId);
+    const run = await this.firebaseImportRepository.findOne(runId);
     if (!run || run.status !== 'RUNNING') return;
     const stages: FirebaseImportStage[] = run.stages.map(it => ({ ...it }));
     let current: FirebaseImportStageName = 'space';

@@ -53,19 +53,8 @@ function breaks(check: (file: File) => string[], only: (file: File) => boolean):
 const isV1 = (file: File) => /\.(cdn|management)\.controller\.ts$/.test(file.name);
 const isFeatureCode = (file: File) => file.name.startsWith('modules/');
 
-/** Modules reworked to every rule so far (return types, counts); one more each time a module is reworked. */
-const REWORKED = [
-  'modules/spaces/',
-  'modules/webhooks/',
-  'modules/users/',
-  'modules/translations/',
-  'modules/schemas/',
-  'modules/contents/',
-  'modules/assets/',
-  'modules/plugins/',
-  'modules/tasks/',
-];
-const isReworked = (file: File) => REWORKED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/');
+/** Every feature module follows every rule (return types, counts); the space templates are data, not code. */
+const isModuleCode = (file: File) => isFeatureCode(file) && !file.name.includes('/templates/');
 
 describe('server rules: imports between layers', () => {
   it('a controller imports neither zod nor a repository', () => {
@@ -135,7 +124,7 @@ describe('server rules: injected dependencies', () => {
 });
 
 describe('server rules: return types', () => {
-  it('every public method and exported function declares its return type (in the modules reworked so far)', () => {
+  it('every public method and exported function of a module declares its return type', () => {
     expect(
       breaks(
         file => {
@@ -162,7 +151,7 @@ describe('server rules: return types', () => {
           }
           return missing.map(name => `${name} has no declared return type`);
         },
-        file => isReworked(file),
+        file => isModuleCode(file),
       ),
     ).toEqual([]);
   });
@@ -192,7 +181,7 @@ describe('server rules: access', () => {
 });
 
 describe('server rules: queries', () => {
-  it('a count or an existence check is `$count`, not a select of `count()` (in the modules reworked so far)', () => {
+  it('a count or an existence check in a module is `$count`, not a select of `count()`', () => {
     expect(
       breaks(
         file =>
@@ -205,7 +194,7 @@ describe('server rules: queries', () => {
             })
             .filter(name => name === 'count')
             .map(() => 'imports count() from drizzle-orm: use this.db.$count(table, where)'),
-        file => isReworked(file),
+        file => isModuleCode(file),
       ),
     ).toEqual([]);
   });

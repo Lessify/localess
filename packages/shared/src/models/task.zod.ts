@@ -15,16 +15,16 @@ export type TaskPageable = z.infer<typeof zTaskPageable>;
 
 /** `POST …/tasks`: exports and metadata regeneration, `{ kind, path? | locale? }`. */
 export const zTaskCreate = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal(TaskKind.ASSET_EXPORT), path: z.string().max(4000).optional() }),
-  z.object({ kind: z.literal(TaskKind.CONTENT_EXPORT), path: z.string().max(4000).optional() }),
-  z.object({ kind: z.literal(TaskKind.SCHEMA_EXPORT) }),
-  z.object({ kind: z.literal(TaskKind.TRANSLATION_EXPORT), locale: z.string().max(64).optional() }),
-  z.object({ kind: z.literal(TaskKind.ASSET_REGEN_METADATA) }),
+  z.strictObject({ kind: z.literal(TaskKind.ASSET_EXPORT), path: z.string().max(4000).optional() }),
+  z.strictObject({ kind: z.literal(TaskKind.CONTENT_EXPORT), path: z.string().max(4000).optional() }),
+  z.strictObject({ kind: z.literal(TaskKind.SCHEMA_EXPORT) }),
+  z.strictObject({ kind: z.literal(TaskKind.TRANSLATION_EXPORT), locale: z.string().max(64).optional() }),
+  z.strictObject({ kind: z.literal(TaskKind.ASSET_REGEN_METADATA) }),
 ]);
 export type TaskCreate = z.infer<typeof zTaskCreate>;
 
 /** `POST …/tasks/import`: the multipart fields before the `file` part. */
-export const zTaskImportCreate = z.object({
+export const zTaskImportCreate = z.strictObject({
   kind: z.enum([TaskKind.ASSET_IMPORT, TaskKind.CONTENT_IMPORT, TaskKind.SCHEMA_IMPORT, TaskKind.TRANSLATION_IMPORT]),
   /** Translation import of one locale from a flat JSON file. */
   locale: z.string().max(64).optional(),

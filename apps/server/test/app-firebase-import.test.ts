@@ -63,6 +63,8 @@ describe('app API: import from Firebase', () => {
     expect(wrong.json().message).toMatch(/token was refused/);
     expect((await admin.post(`${base}/spaces`, { origin: 'http://127.0.0.1:1', token: 'x' })).statusCode).toBe(502);
     expect((await admin.post(`${base}/spaces`, { origin: 'ftp://cms.example.com', token: 'x' })).statusCode).toBe(400);
+    expect((await admin.post(`${base}/spaces`, { ...connection(), extra: true })).statusCode).toBe(400);
+    expect((await admin.post(base, { ...connection(), spaceId: 'fbA', extra: true })).statusCode).toBe(400);
   });
 
   it('lists the spaces, imports one, then marks it imported', async () => {

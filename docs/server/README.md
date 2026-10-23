@@ -28,10 +28,9 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 - **Imports:** a controller imports neither `zod` nor a repository; a repository imports no service.
 - **Access:** every route declares who may call it: `@Public`, a token (`@CdnToken`, `@ManagementToken`), `@RequireRole` or
   `@SignedIn` (on the method or its controller); the guard refuses a session route that declares none.
-- **Return types:** every public method and exported function declares one, in the modules reworked so far
-  (`REWORKED`: spaces, webhooks, users, translations, schemas, contents, assets, plugins, tasks).
-- **Queries:** a count or an existence check is `$count` (no `count()` imported from `drizzle-orm`), in the modules
-  reworked so far. Relational reads over `select` are reviewed, not checked.
+- **Return types:** every public method and exported function of a module (`modules/`) declares one.
+- **Queries:** a count or an existence check is `$count` (no `count()` imported from `drizzle-orm`), in every
+  module. Relational reads over `select` are reviewed, not checked.
 - **Names:** singular file names whose class matches the file; injected services and repositories named after their
   class (`spaceRepository`); controller, service and repository method names
   (with the listed exceptions).

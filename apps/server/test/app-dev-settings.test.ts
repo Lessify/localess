@@ -432,6 +432,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect(response.json()).not.toHaveProperty('lockedBy');
       expect((await exporter.post(base, { kind: 'SCHEMA_EXPORT' })).statusCode).toBe(403);
       expect((await nobody.post(base, { kind: 'CONTENT_EXPORT' })).statusCode).toBe(403);
+      expect((await exporter.post(base, { kind: 'CONTENT_EXPORT', extra: true })).statusCode).toBe(400);
     });
 
     it('keeps metadata regeneration admin-only', async () => {

@@ -2,7 +2,7 @@ import type { FirebaseImportStage } from '@localess/shared';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
-import { locales, spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
+import { spaceEnvironments, spaceLocales, spaces } from '../../../infra/database/schema.js';
 import { type Transaction, transaction } from '../../../infra/database/transaction.js';
 import { EventService } from '../../../infra/events/event.service.js';
 import { dropContentDrafts, dropContentLinks } from '../../../shared/data-rules/content-snapshots.js';
@@ -24,7 +24,7 @@ export class SpaceImportRepository {
 
   /** The ids of the `locales` table, the locales a space may have. */
   async findLocaleIds(): Promise<Set<string>> {
-    return new Set((await this.db.select({ id: locales.id }).from(locales)).map(it => it.id));
+    return new Set((await this.db.query.locales.findMany({ columns: { id: true } })).map(it => it.id));
   }
 
   /**

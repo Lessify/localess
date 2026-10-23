@@ -39,8 +39,8 @@ repositories call it.
     `{ statusCode, error, message: ["path: issue", …] }` (the web shows `message[0]`).
   - An id in the path, `:spaceId` included: `@Param('spaceId', UuidParamPipe)`, which answers 404 (not 400) for a
     malformed one. The service then checks that the row exists (404); a repository does not check an id's format.
-    Done in the Spaces, Users, Webhooks, Translations, Schemas, Contents, Assets and Tasks (App API) modules; the others still lean on `isUuid` in their
-    repositories (and in `SpaceLookupRepository`) until they are reworked. The v1 controllers answer their own error body, not the pipe's.
+    Every App API controller does this. `isUuid` stays only for ids that do not come through the pipe: a body field
+    (`AssetRepository`, a `parentId`) and the spaces the v1 routes look up (`SpaceLookupRepository`). The v1 controllers answer their own error body, not the pipe's.
   - Roles: `@RequireRole(CONTENT_WRITERS)` (a list of `@localess/shared` `roles.ts`, or one role) on each method or the controller,
     the same the UI checks.
   - Multipart fields and the v1 Management API's own error bodies are parsed with `zX.safeParse` in the handler.
@@ -68,7 +68,7 @@ repositories call it.
     shape and says what it reads (`findAllNames(): Pick<SpaceEntity, 'id' | 'name'>[]`).
   - **Counts and existence are `$count`:** `this.db.$count(table, where)` for `findAllCount` (the same `where` as
     `findAll`), `(await this.db.$count(table, where)) > 0` for `exists` / `is<What>`. One `count(*)`, no row read, no
-    destructuring. Checked by the architecture test in the modules reworked so far.
+    destructuring. Checked by the architecture test in every module.
   - **Reads are relational queries:** `this.db.query.spaces.findMany` / `findFirst` with `where`, `orderBy`, `columns`
     for a narrow read (`findAllNames`: `columns: { id: true, name: true }`), `with` for the relations of
     `infra/database/relations.ts` (a related row's fields through `with`, not a join), `findFirst` with
@@ -88,9 +88,8 @@ repositories call it.
   answer it; count with `select({ total: count() })` or check existence with `findFirst({ columns: { id: true } })`;
   read rows with `select().from()` (or a join) a relational query expresses.
 
-Reworked so far: the Spaces, Webhooks, Users, Translations, Schemas, Contents, Assets, Plugins and Tasks modules
-(`REWORKED` in `apps/server/test/architecture.test.ts`). The one left, Firebase import, moves to these shapes when it
-is reworked, and joins `REWORKED` then.
+Every module in `modules/` follows these shapes; the architecture test (`apps/server/test/architecture.test.ts`) checks
+every file there, a new module included.
 
 **Reading a space from another module:** `SpaceLookupRepository` (`shared/repositories/space-lookup.repository.ts`,
 injected as `spaceLookupRepository`): `exists(spaceId, tx?)` and `findOne(spaceId, tx?)` answering a

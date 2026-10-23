@@ -50,20 +50,12 @@ export class ContentImportRepository {
 
   /** A page of the space's contents by id, after `after` (keyset paging). */
   findReferencesPage(spaceId: string, after: string | undefined, limit: number): Promise<ContentReferences[]> {
-    return this.db
-      .select({
-        id: contents.id,
-        parentId: contents.parentId,
-        slug: contents.slug,
-        data: contents.data,
-        assets: contents.assets,
-        links: contents.links,
-        references: contents.references,
-      })
-      .from(contents)
-      .where(after ? and(eq(contents.spaceId, spaceId), gt(contents.id, after)) : eq(contents.spaceId, spaceId))
-      .orderBy(asc(contents.id))
-      .limit(limit);
+    return this.db.query.contents.findMany({
+      columns: { id: true, parentId: true, slug: true, data: true, assets: true, links: true, references: true },
+      where: after ? and(eq(contents.spaceId, spaceId), gt(contents.id, after)) : eq(contents.spaceId, spaceId),
+      orderBy: asc(contents.id),
+      limit,
+    });
   }
 
   /** Writes rewritten references; `updated_at` stays the one Firebase had. */
