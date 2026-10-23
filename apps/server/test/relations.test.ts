@@ -33,7 +33,7 @@ describe('database relations', () => {
       { id: folder, spaceId: S1, kind: 'FOLDER', name: 'Blog', slug: 'blog' },
       { id: document, spaceId: S1, kind: 'DOCUMENT', name: 'Post', slug: 'post', parentId: folder, schema: 'page' },
     ]);
-    await t.db.insert(tasks).values({ id: task, spaceId: S1, kind: 'CONTENT_EXPORT', status: 'FINISHED' });
+    await t.db.insert(tasks).values({ id: task, spaceId: S1, kind: 'SCHEMA_EXPORT', status: 'FINISHED' });
     await t.db.insert(taskLogs).values({ id: newUuid(), taskId: task, level: 'INFO', message: 'done' });
   });
 

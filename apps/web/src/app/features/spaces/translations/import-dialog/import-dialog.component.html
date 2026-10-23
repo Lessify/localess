@@ -2,21 +2,24 @@
   <h2 hlmDialogTitle>Translations Import</h2>
 </hlm-dialog-header>
 <form [formGroup]="form" class="flex flex-col gap-4">
-  <div hlmField>
-    <label hlmFieldLabel for="kind">Type</label>
-    <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
-      <hlm-select-trigger class="w-full">
-        <hlm-select-value />
-      </hlm-select-trigger>
-      <hlm-select-content *hlmSelectPortal>
-        @for (kind of exportKinds; track kind.key) {
-          <hlm-select-item [value]="kind.key">{{ kind.value }}</hlm-select-item>
-        }
-      </hlm-select-content>
-    </hlm-select>
+  <p class="text-muted-foreground text-sm">
+    A Localess file adds and updates every key it holds. A key-value JSON fills one locale. Keys the space doesn't have are added; nothing
+    is deleted.
+  </p>
+  <div class="flex flex-col gap-2">
+    <button hlmBtn type="button" variant="outline" (click)="fileInput.click()">
+      <ng-icon hlm size="sm" name="lucideUpload" />
+      Upload File
+    </button>
+    @if (fileName) {
+      <p class="text-muted-foreground text-sm">{{ fileName }}</p>
+    }
+    @if (fileWrong) {
+      <p class="text-destructive text-sm">Expected a Localess file (*.localess.zip, *.llt.zip) or a key-value JSON (*.json).</p>
+    }
   </div>
 
-  @if (form.value.kind === 'FLAT') {
+  @if (isJson()) {
     <div hlmField>
       <label hlmFieldLabel for="locale">Locale</label>
       <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
@@ -38,21 +41,9 @@
           }
         </hlm-select-content>
       </hlm-select>
+      <hlm-field-description>The locale the file's values go into.</hlm-field-description>
     </div>
   }
-
-  <div class="flex flex-col gap-2">
-    <button hlmBtn type="button" variant="outline" (click)="fileInput.click()">
-      <ng-icon hlm size="sm" name="lucideUpload" />
-      Upload File
-    </button>
-    @if (fileName) {
-      <p class="text-muted-foreground text-sm">{{ fileName }}</p>
-    }
-    @if (fileWrong) {
-      <p class="text-destructive text-sm">The selected file does not comply with import extension (*{{ fileAccept }}).</p>
-    }
-  </div>
 </form>
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>

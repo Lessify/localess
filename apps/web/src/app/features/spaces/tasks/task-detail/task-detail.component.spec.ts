@@ -10,7 +10,16 @@ import { TaskDetailComponent } from './task-detail.component';
 
 describe('TaskDetailComponent', () => {
   function setup() {
-    const findOne = vi.fn().mockReturnValue(of({ id: 't1', kind: 'TRANSLATION_IMPORT', status: 'ERROR', message: 'boom' }));
+    const findOne = vi.fn().mockReturnValue(
+      of({
+        id: 't1',
+        kind: 'TRANSLATION_IMPORT',
+        status: 'ERROR',
+        startedAt: '2026-10-24T10:00:40.000Z',
+        finishedAt: '2026-10-24T10:02:50.000Z',
+        createdAt: '2026-10-24T10:00:00.000Z',
+      }),
+    );
     const findLogs = vi.fn().mockReturnValue(
       of([
         { id: 'l1', level: TaskLogLevel.INFO, message: 'started' },
@@ -36,9 +45,16 @@ describe('TaskDetailComponent', () => {
 
     expect(findOne).toHaveBeenCalledWith('space1', 't1');
     expect(findLogs).toHaveBeenCalledWith('space1', 't1');
-    expect(component.task()?.message).toBe('boom');
+    expect(component.task()?.kind).toBe('TRANSLATION_IMPORT');
     expect(component.isLoading()).toBe(false);
     expect(component.isLogsLoading()).toBe(false);
+  });
+
+  it('tells how long it waited and ran, and offers no download for a failed task', () => {
+    const { component } = setup();
+
+    expect(component.durations()).toEqual({ waited: '40 s', ran: '2 min 10 s' });
+    expect(component.canDownload()).toBe(false);
   });
 
   it('toggleLogExpanded adds and removes a log id from the expanded set', () => {

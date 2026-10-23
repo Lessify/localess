@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { Content, ContentDocument, ContentFolder, ContentKind, Schema, SchemaType, Token, TokenType } from '@localess/shared';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
-import { TaskService } from '@core/services/task.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
@@ -53,8 +52,6 @@ describe('ContentsComponent', () => {
     const cloneDocument = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const unpublish = vi.fn().mockReturnValue(of(undefined));
-    const createContentImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createContentExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
     const firstValue = vi.fn().mockReturnValue(of('token1'));
     const navigate = vi.fn();
     const success = vi.fn();
@@ -92,7 +89,6 @@ describe('ContentsComponent', () => {
             unpublish,
           },
         },
-        { provide: TaskService, useValue: { createContentImportTask, createContentExportTask } },
         { provide: SpaceTokenService, useValue: { firstValue } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
@@ -123,8 +119,6 @@ describe('ContentsComponent', () => {
       cloneDocument,
       publish,
       unpublish,
-      createContentImportTask,
-      createContentExportTask,
       firstValue,
       navigate,
       success,
@@ -519,29 +513,6 @@ describe('ContentsComponent', () => {
       component.openLinksV1InNewTab();
 
       expect(error).toHaveBeenCalledWith('Tokens could not be loaded');
-    });
-  });
-
-  describe('openImportDialog / openExportDialog', () => {
-    it('creates an import task and notifies success', () => {
-      const { component, open, createContentImportTask, success } = setup();
-      const file = new File(['data'], 'contents.zip');
-      open.mockReturnValue({ closed$: of({ file }) });
-
-      component.openImportDialog();
-
-      expect(createContentImportTask).toHaveBeenCalledWith('space-1', file);
-      expect(success).toHaveBeenCalledWith('Content Import Task has been created.', expect.anything());
-    });
-
-    it('creates an export task and notifies success', () => {
-      const { component, open, createContentExportTask, success } = setup();
-      open.mockReturnValue({ closed$: of({ path: 'c1' }) });
-
-      component.openExportDialog();
-
-      expect(createContentExportTask).toHaveBeenCalledWith('space-1', 'c1');
-      expect(success).toHaveBeenCalledWith('Content Export Task has been created.', expect.anything());
     });
   });
 

@@ -3,7 +3,6 @@ import {
   CONTENT_WRITERS,
   DEVELOPERS,
   type Page,
-  type TranslateLocaleResult,
   type Translation,
   type TranslationCreate,
   type TranslationLocaleUpdate,
@@ -11,7 +10,6 @@ import {
   type TranslationNodePageable,
   type TranslationPageable,
   type TranslationRename,
-  type TranslationTranslateLocale,
   type TranslationUpdate,
   TRANSLATORS,
 } from '@localess/shared';
@@ -21,12 +19,13 @@ import {
   zTranslationNodePageable,
   zTranslationPageable,
   zTranslationRename,
-  zTranslationTranslateLocale,
   zTranslationUpdate,
 } from '@localess/shared/zod';
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Query, Res } from '@nestjs/common';
+import type { FastifyReply } from 'fastify';
 
 import { RequireRole } from '../../../auth/decorators.js';
+import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { TranslationService } from '../services/translation.service.js';
 
@@ -63,6 +62,19 @@ export class TranslationController {
   @RequireRole(ANY_ROLE)
   findLabels(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<string[]> {
     return this.translationService.findLabels(spaceId);
+  }
+
+  /** One locale's draft values as a `{ key: value }` JSON download (no task: it is read-only and small). */
+  @Get('export/:locale')
+  @RequireRole(CONTENT_WRITERS)
+  async exportLocale(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('locale') locale: string,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<Record<string, string>> {
+    const { filename, values } = await this.translationService.exportLocale(spaceId, locale);
+    void reply.header('content-disposition', buildContentDisposition(filename, true)).header('cache-control', 'private, no-store');
+    return values;
   }
 
   @Get(':translationId')
@@ -136,15 +148,5 @@ export class TranslationController {
   @RequireRole(CONTENT_WRITERS)
   async publish(@Param('spaceId', UuidParamPipe) spaceId: string): Promise<void> {
     await this.translationService.publish(spaceId);
-  }
-
-  @Post('translate-locale')
-  @HttpCode(200)
-  @RequireRole(TRANSLATORS)
-  translateLocale(
-    @Param('spaceId', UuidParamPipe) spaceId: string,
-    @Body({ schema: zTranslationTranslateLocale }) body: TranslationTranslateLocale,
-  ): Promise<TranslateLocaleResult> {
-    return this.translationService.translateLocale(spaceId, body);
   }
 }

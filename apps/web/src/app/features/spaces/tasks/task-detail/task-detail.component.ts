@@ -3,6 +3,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   Injector,
@@ -16,12 +17,13 @@ import { RouterLink } from '@angular/router';
 import { TaskService } from '@core/services/task.service';
 import { TaskLogService } from '@core/services/task-log.service';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { Task, TaskLog, TaskLogLevel } from '@localess/shared';
+import { isTaskExport, Task, TaskLog, TaskLogLevel, TaskStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideChevronRight, lucideDownload } from '@ng-icons/lucide';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
+import { formatTaskParams, TASK_KIND_LABELS, taskDurations } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -30,20 +32,8 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { saveAs } from 'file-saver-es';
 
-const TASK_KIND_LABELS: Record<string, string> = {
-  ASSET_EXPORT: 'Asset Export',
-  ASSET_IMPORT: 'Asset Import',
-  ASSET_REGEN_METADATA: 'Asset Regeneration Metadata',
-  CONTENT_EXPORT: 'Content Export',
-  CONTENT_IMPORT: 'Content Import',
-  SCHEMA_EXPORT: 'Schema Export',
-  SCHEMA_IMPORT: 'Schema Import',
-  TRANSLATION_EXPORT: 'Translation Export',
-  TRANSLATION_IMPORT: 'Translation Import',
-};
-
 const TASK_STATUS_LABELS: Record<string, string> = {
-  INITIATED: 'Initiated',
+  QUEUED: 'Queued',
   IN_PROGRESS: 'In Progress',
   ERROR: 'Error',
   FINISHED: 'Finished',
@@ -97,6 +87,25 @@ export class TaskDetailComponent implements OnInit, AfterViewInit {
   expandedLogs = signal<Set<string>>(new Set());
 
   readonly taskKindLabels = TASK_KIND_LABELS;
+  /** How long it waited in the queue and ran. */
+  readonly durations = computed(() => {
+    const task = this.task();
+    return task ? taskDurations(task) : {};
+  });
+  /** An export's file once it finished; an import's upload whatever its status. */
+  readonly canDownload = computed(() => {
+    const task = this.task();
+    return !!task?.file && (!isTaskExport(task) || task.status === TaskStatus.FINISHED);
+  });
+  readonly downloadLabel = computed(() => {
+    const task = this.task();
+    return task && isTaskExport(task) ? 'Download export' : 'Download uploaded file';
+  });
+  /** Its input, as text: "Locale de (key-value JSON)", "en → de (overwrite)". */
+  readonly paramsText = computed(() => {
+    const task = this.task();
+    return formatTaskParams(task && 'params' in task ? task.params : undefined);
+  });
   readonly taskStatusLabels = TASK_STATUS_LABELS;
   protected readonly TaskLogLevel = TaskLogLevel;
 

@@ -1,7 +1,6 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
@@ -56,6 +55,7 @@ import { ImagePreviewDialogComponent } from '@shared/components/image-preview-di
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
+import { openTaskProgressDialog } from '@shared/components/task-progress-dialog';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
@@ -80,17 +80,13 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, of, Subject } from 'rxjs';
-import { catchError, concatMap, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, concatMap, filter, finalize, map, switchMap, take } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
 import { EditFileDialogContext } from './edit-file-dialog/edit-file-dialog.model';
 import { EditFolderDialogComponent } from './edit-folder-dialog/edit-folder-dialog.component';
 import { EditFolderDialogContext } from './edit-folder-dialog/edit-folder-dialog.model';
-import { ExportDialogComponent } from './export-dialog/export-dialog.component';
-import { ExportDialogContext, ExportDialogResult } from './export-dialog/export-dialog.model';
-import { ImportDialogComponent } from './import-dialog/import-dialog.component';
-import { ImportDialogResult } from './import-dialog/import-dialog.model';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
 
 @Component({
@@ -152,7 +148,6 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
   ],
 })
 export class AssetsComponent implements OnInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(HlmDialogService);
@@ -476,63 +471,6 @@ export class AssetsComponent implements OnInit {
     return isPreviewableFileType(type);
   }
 
-  openImportDialog() {
-    this.dialog
-      .open<ImportDialogResult>(ImportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        tap(console.log),
-        switchMap(it => this.taskService.createAssetImportTask(this.spaceId(), it!.file)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Assets Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Assets Import Task can not be created.');
-        },
-      });
-  }
-
-  openExportDialog() {
-    this.dialog
-      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
-        context: {
-          spaceId: this.spaceId(),
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        switchMap(it => this.taskService.createAssetExportTask(this.spaceId(), it?.path)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Assets Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Assets Export Task can not be created.');
-        },
-      });
-  }
-
   openRegenerateMetadataDialog(): void {
     this.dialog
       .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
@@ -545,22 +483,11 @@ export class AssetsComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.taskService.createAssetRegenerateMetadataTask(this.spaceId())),
+        switchMap(() => this.taskService.createAssetRegenerateMetadata(this.spaceId())),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Assets Regenerate Metadata Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error(`Assets Regenerate Metadata Task can not be created.`);
-        },
+        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Regenerate Metadata' }),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Metadata can not be regenerated.')),
       });
   }
 

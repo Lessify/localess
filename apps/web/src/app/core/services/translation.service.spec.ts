@@ -124,12 +124,8 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('translateLocale() posts source, target and overwrite (default false)', async () => {
+  it('exportLocaleUrl() is the key-value download of one locale (no request: saveAs opens it)', () => {
     const service = setup();
-    const done = firstValueFrom(service.translateLocale('space-1', 'en', 'de'));
-    const request = http.expectOne({ method: 'POST', url: `${BASE}/translate-locale` });
-    expect(request.request.body).toEqual({ sourceLocaleId: 'en', targetLocaleId: 'de', overwrite: false });
-    request.flush({});
-    await done;
+    expect(service.exportLocaleUrl('space-1', 'de')).toBe(`${BASE}/export/de`);
   });
 });

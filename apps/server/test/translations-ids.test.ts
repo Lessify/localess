@@ -31,7 +31,6 @@ describe('app API: translations check their space and ids', () => {
     () => admin.put(`${spaceBase}/${id}/locales/en`, { value: 'Hi' }),
     () => admin.put(`${spaceBase}/${id}/key`, { key: 'renamed' }),
     () => admin.post(`${spaceBase}/publish`),
-    () => admin.post(`${spaceBase}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'en' }),
     () => admin.delete(`${spaceBase}/${id}`),
     () => admin.delete(spaceBase),
   ];
@@ -78,7 +77,6 @@ describe('app API: translations check their space and ids', () => {
       [() => admin.patch(`${base}/${translationId}`, { label: ['a'] }), 'label'],
       [() => admin.put(`${base}/${translationId}/locales/en`, { value: 'Hi', locale: 'en' }), 'locale'],
       [() => admin.put(`${base}/${translationId}/key`, { key: 'renamed', id: 'x' }), 'id'],
-      [() => admin.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'en', overWrite: true }), 'overWrite'],
       [() => admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'Hi', html: true }), 'html'],
       [
         () => admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', items: [{ id: 'a', content: 'Hi', path: 'x' }] }),

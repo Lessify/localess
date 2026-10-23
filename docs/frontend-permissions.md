@@ -24,8 +24,8 @@ no access yet (the user can sign in and sees "Please contact your administrator"
 |---|---|---|
 | `ADMIN` | runs the installation | Invites and manages users, creates and deletes spaces (Admin → Spaces, the Firebase import), regenerates asset metadata, and does everything a developer does in every space |
 | `DEVELOPER` | builds the site that reads Localess | Everything an editor does, plus schemas (edit, import, export), Space Settings (general, locales, environments, API tokens), webhooks, Open API, and deleting all translations |
-| `EDITOR` | writes and publishes content | Contents, assets and translations (create, edit, delete, publish), translation keys (add, rename, labels), import and export tasks, Unsplash |
-| `TRANSLATOR` | translates | Edits translation values, Translate Locale, machine translation; reads contents, assets and schemas. Can't add, rename or delete keys, nor publish |
+| `EDITOR` | writes and publishes content | Contents, assets and translations (create, edit, delete, publish), translation keys (add, rename, labels), translations import and export, Unsplash |
+| `TRANSLATOR` | translates | Edits translation values, Translate Locale (a task: sees its own kind on the Tasks page), machine translation; reads contents, assets and schemas. Can't add, rename or delete keys, nor publish |
 | `VIEWER` | reviews, follows along | Reads contents, assets, translations and schemas; changes nothing |
 
 Permissions are global: a role applies to every space. The role is read from the `users` row on **every request** (the
@@ -42,8 +42,8 @@ in implicitly:
 | List | Roles | Guards |
 |---|---|---|
 | `ANY_ROLE` | all five | a space and what is in it: reading contents, assets, schemas, translations; the Dashboard |
-| `TRANSLATORS` | Admin, Developer, Editor, Translator | translation values, Translate Locale, machine translation |
-| `CONTENT_WRITERS` | Admin, Developer, Editor | contents, assets, translation keys (add, rename, labels, delete), publishing, import/export tasks, Unsplash |
+| `TRANSLATORS` | Admin, Developer, Editor, Translator | translation values, Translate Locale, machine translation, the Tasks page (each role sees the kinds it may start) |
+| `CONTENT_WRITERS` | Admin, Developer, Editor | contents, assets, translation keys (add, rename, labels, delete), publishing, translations import/export, Unsplash |
 | `DEVELOPERS` | Admin, Developer | schemas (write, import/export), Space Settings, tokens, webhooks, Open API, delete all translations |
 | `ADMINS` | Admin | users, Admin → Spaces (list, create, delete), the Firebase import, regenerating asset metadata |
 
@@ -67,8 +67,9 @@ current role:
 
 On a method `@RequireRole` replaces the controller's. No session → `401`; a role outside the list → `403`. Checks that
 depend on the body live in the service: creating or deleting a task needs the roles its `kind` names
-(`modules/tasks/utils/task-roles.ts`: schema tasks `DEVELOPERS`, metadata regeneration `ADMINS`, the rest
-`CONTENT_WRITERS`). The change stream (`/api/app/events`) sends each entity's events to the roles that may read it
+(`modules/tasks/utils/task-roles.ts`: schema tasks `DEVELOPERS`, metadata regeneration `ADMINS`, Translate Locale
+`TRANSLATORS`, translation import and export `CONTENT_WRITERS`). The same map decides what a user reads: the task list
+answers only the kinds the user may start, and another kind's task, logs or file answer 404. The change stream (`/api/app/events`) sends each entity's events to the roles that may read it
 (`shared/http/event-access.ts`). CSRF: every non-GET request authenticated by the session cookie must carry
 `X-Requested-With` (added by the Angular `apiInterceptor`).
 
@@ -84,7 +85,7 @@ depend on the body live in the service: creating or deleting a task needs the ro
 
 The guard waits until `UserStore.loaded()` (the `GET /api/auth/me` check has answered), so a deep link opened in a new
 tab is decided on the real role; a role outside the list is redirected to `/features`. Every section has its guard:
-Translations, Contents, Assets, Schemas (`ANY_ROLE`), Tasks (`CONTENT_WRITERS`), Developers and Settings
+Translations, Contents, Assets, Schemas (`ANY_ROLE`), Tasks (`TRANSLATORS`), Developers and Settings
 (`DEVELOPERS`), Admin → Users and Admin → Spaces (`ADMINS`).
 
 ---

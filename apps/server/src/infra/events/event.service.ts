@@ -1,3 +1,4 @@
+import type { TaskProgress } from '@localess/shared';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { SQL, sql } from 'drizzle-orm';
 import pg from 'pg';
@@ -18,7 +19,11 @@ export interface ChangeEvent {
   /** Table-like name: 'spaces', 'contents', 'schemas', 'translations', 'assets', 'tasks', 'tokens', 'webhooks', 'users', … */
   entity: string;
   id?: string;
-  op: 'created' | 'updated' | 'deleted';
+  /** `progress`: a running task's live state (`progress`), not a change of its row: nothing to read again. */
+  op: 'created' | 'updated' | 'deleted' | 'progress';
+  /** A task's kind (`tasks` and `task_logs` events): who may hear about it depends on it. */
+  kind?: string;
+  progress?: TaskProgress;
 }
 
 /** The Drizzle database or one of its transactions. */

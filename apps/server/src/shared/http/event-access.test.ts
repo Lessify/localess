@@ -22,8 +22,6 @@ describe('canReceive', () => {
       ['schemas', ['VIEWER'], []],
       ['assets', ['VIEWER'], []],
       ['translations', ['VIEWER'], []],
-      ['tasks', ['EDITOR', 'DEVELOPER'], ['TRANSLATOR', 'VIEWER']],
-      ['task_logs', ['EDITOR'], ['TRANSLATOR', 'VIEWER']],
       ['tokens', ['DEVELOPER'], ['EDITOR']],
       ['webhooks', ['DEVELOPER'], ['EDITOR']],
       ['webhook_logs', ['DEVELOPER'], ['EDITOR']],
@@ -31,6 +29,21 @@ describe('canReceive', () => {
     for (const [entity, allowed, denied] of cases) {
       for (const role of allowed) expect(canReceive(as(role), event(entity)), `${entity} for ${role}`).toBe(true);
       for (const role of denied) expect(canReceive(as(role), event(entity)), `${entity} for ${role}`).toBe(false);
+    }
+  });
+
+  it("gives a task's events (and its logs' and progress) to the roles that may start its kind", () => {
+    const task = (entity: string, kind?: string): ChangeEvent => ({ spaceId: S, entity, id: 't', op: 'progress', kind });
+    for (const entity of ['tasks', 'task_logs']) {
+      expect(canReceive(as('DEVELOPER'), task(entity, 'SCHEMA_IMPORT'))).toBe(true);
+      expect(canReceive(as('EDITOR'), task(entity, 'SCHEMA_IMPORT'))).toBe(false);
+      expect(canReceive(as('TRANSLATOR'), task(entity, 'SCHEMA_IMPORT'))).toBe(false);
+      expect(canReceive(as('TRANSLATOR'), task(entity, 'TRANSLATION_TRANSLATE'))).toBe(true);
+      expect(canReceive(as('EDITOR'), task(entity, 'TRANSLATION_EXPORT'))).toBe(true);
+      expect(canReceive(as('VIEWER'), task(entity, 'TRANSLATION_TRANSLATE'))).toBe(false);
+      // Without its kind: admins only.
+      expect(canReceive(as('DEVELOPER'), task(entity))).toBe(false);
+      expect(canReceive(as('ADMIN'), task(entity))).toBe(true);
     }
   });
 

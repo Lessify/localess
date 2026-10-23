@@ -53,7 +53,7 @@
           </hlm-dropdown-menu-group>
           <hlm-dropdown-menu-separator />
         }
-        @if (importExportEnabled && ('CONTENT_WRITERS' | hasRole | async)) {
+        @if ('CONTENT_WRITERS' | hasRole | async) {
           <hlm-dropdown-menu-group>
             @if ('CONTENT_WRITERS' | hasRole | async) {
               <button hlmDropdownMenuItem (click)="openImportDialog(spaceStore.locales())">

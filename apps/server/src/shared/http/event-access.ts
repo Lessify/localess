@@ -1,4 +1,4 @@
-import { ADMINS, ANY_ROLE, CONTENT_WRITERS, DEVELOPERS, hasRole, type UserRole } from '@localess/shared';
+import { ADMINS, ANY_ROLE, DEVELOPERS, hasRole, TASK_KIND_ROLES, type TaskKind, type UserRole } from '@localess/shared';
 
 import type { ChangeEvent } from '../../infra/events/event.service.js';
 
@@ -12,8 +12,6 @@ const READ_ROLES: Record<string, readonly UserRole[]> = {
   schemas: ANY_ROLE,
   assets: ANY_ROLE,
   translations: ANY_ROLE,
-  tasks: CONTENT_WRITERS,
-  task_logs: CONTENT_WRITERS,
   tokens: DEVELOPERS,
   webhooks: DEVELOPERS,
   webhook_logs: DEVELOPERS,
@@ -25,5 +23,10 @@ export function canReceive(user: { id: string; role?: UserRole | null }, event: 
   if (!hasRole(user, ANY_ROLE)) return false;
   // Everyone hears about their own account, so a changed role reaches their UI.
   if (event.entity === 'users' && event.id === user.id) return true;
+  // A task's events (its row, its logs, its progress): the roles that may start its kind, as its reads; no kind: admins.
+  if (event.entity === 'tasks' || event.entity === 'task_logs') {
+    const roles = event.kind ? TASK_KIND_ROLES[event.kind as TaskKind] : undefined;
+    return hasRole(user, roles ?? ADMINS);
+  }
   return hasRole(user, READ_ROLES[event.entity] ?? ADMINS);
 }

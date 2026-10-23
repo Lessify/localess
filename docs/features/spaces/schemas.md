@@ -2,8 +2,6 @@
 
 > Parent: [Spaces Overview](overview.md) · Related: [Contents](contents.md) · [Concepts — Schema](../../concepts.md) · [Filter Toolbar](../../components/filter-toolbar.md) · [Table](../../components/table.md)
 
-> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
-
 ## Purpose
 
 Define and manage content type schemas that structure `ContentDocument` data. Schemas consist of typed fields and can be composed — a `ROOT` schema embeds `NODE` schemas. `ENUM` schemas define fixed option sets used in dropdown fields.
@@ -49,7 +47,7 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)
 - `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID: changes the schema's `name` (shown as its ID), addressed by its UUID `id`. Before opening the dialog it reads `GET …/schemas/:schemaId/usage` (`{ fields, contents }`, see [Schemas](../../roadmap/database-structure.md#schemas)); while the schema is in use the dialog lists where (`describeSchemaUsage`, `shared/schema-usage.ts`) and Save stays disabled. A failed read opens the dialog without it; the server refuses a rename of a schema in use with a 409, whose message the error toast shows
 - `openDeleteDialog(event, schema)` — same `MouseEvent` handling; reads the usage first: in use → a `ConfirmationDialog` with `confirmable: false` (only Close) listing where; unused → the usual destructive confirmation. A 409 from the server shows its message in the error toast
-- `openExportDialog()` / `openImportDialog()` — creates Tasks
+- `openExportDialog()` / `openImportDialog()` — developers only: create a `SCHEMA_EXPORT` / `SCHEMA_IMPORT` task, followed in the progress dialog ([Tasks](tasks.md)). The file is a `.localess.zip` of every schema by name, without database ids (relations between schemas are names, so they hold in any space); the import adds missing schemas and updates the others, checking the whole set first (all or nothing), and still reads an old `.lls.zip`
 
 ## EditCompComponent (routed)
 
@@ -70,8 +68,8 @@ Editor for `ENUM` schemas. Each entry has a `name` (display) and `value` (stored
 |--------|---------|
 | `AddDialogComponent` | Pick type (ROOT / NODE / ENUM), enter ID and display name |
 | `EditIdDialogComponent` | Rename schema ID |
-| `ExportDialogComponent` | Export schema definitions to file |
-| `ImportDialogComponent` | Import schemas → creates a Task |
+| `ExportDialogComponent` | Confirm the export of every schema |
+| `ImportDialogComponent` | Pick a `.localess.zip` / `.lls.zip` → an import task |
 | `ConfirmationDialogComponent` | Delete confirmation |
 
 ## Services Used
@@ -79,7 +77,7 @@ Editor for `ENUM` schemas. Each entry has a `name` (display) and `value` (stored
 | Service | Purpose |
 |---------|---------|
 | `SchemaService` | `findAll` (every schema, for `SpaceStore`), `findOne` (live), `findUsage`, `create`, `update` (a component's or an enum's settings: `SchemaUpdate`), `rename`, `remove` |
-| `TaskService` | Create import/export tasks |
+| `TaskService` | Create the export and import tasks |
 | `NotificationService` | Snackbar feedback |
 
 ## Schemas as Code

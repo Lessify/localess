@@ -158,7 +158,7 @@ stub provider, so translated values are exact (`Hello : en -> de`). Specs in `te
 | "Translate Locale" fills only missing values; nothing left; with overwrite replaces all | UI + API | ✅ `translations/translate` |
 | **List view**: key and value per row, opening a key, 120 keys in the virtual list, live updates | UI + API | ✅ `translations/views` |
 | **Tree view**: groups by dots, expand / collapse, selection shown, the first key shown is selected (not one in a closed group), a selected key outside the search stays open with a note, search filters the tree, layout kept after reload | UI | ✅ `translations/views` |
-| Import / export | Hidden behind `FEATURE_FLAGS.importExport` | ➖ until enabled |
+| Import / export | Translations and Schemas (tasks, the progress dialog), one locale as key-value JSON | ⬜ planned |
 
 **At scale** (`translations/large-space`): a prepared space from the test template "Translations (large)": English,
 German, French, 10,000 generated keys, nothing published (`support/large-translations.ts`).
@@ -351,7 +351,7 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | Webhooks: the list a page at a time (22 webhooks), the Status filter and the URL search on the server | UI + API | ✅ `developers/webhooks` |
 | Webhooks: a webhook's logs a page at a time (25 deliveries), the Status filter and the id search on the server | UI + receiver | ✅ `developers/webhooks` |
 | Webhooks: content events carry id and full slug | API + receiver | ✅ `contents/delivery` |
-| Tasks page | Hidden behind `FEATURE_FLAGS.importExport` | ➖ until enabled |
+| Tasks page | Each role sees the kinds it may start; progress, result, download | ⬜ planned |
 
 ### 11. CDN and Management APIs
 

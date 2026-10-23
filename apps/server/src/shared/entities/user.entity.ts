@@ -1,6 +1,7 @@
 import type { users } from '../../infra/database/schema.js';
 import type { PasswordResetTokenSelect } from './password-reset-token.entity.js';
 import type { SessionSelect } from './session.entity.js';
+import type { TaskSelect } from './task.entity.js';
 import type { UserCredentialSelect } from './user-credential.entity.js';
 import type { UserIdentitySelect } from './user-identity.entity.js';
 
@@ -15,4 +16,5 @@ export type UserSelect = UserEntity & {
   identities?: UserIdentitySelect[] | null;
   sessions?: SessionSelect[] | null;
   passwordResetTokens?: PasswordResetTokenSelect[] | null;
+  tasks?: TaskSelect[] | null;
 };

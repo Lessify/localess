@@ -59,12 +59,6 @@ export interface TranslationNode {
   children: number;
 }
 
-/** `POST …/translations/translate-locale`: keys written, and keys the provider failed on (left unchanged). */
-export interface TranslateLocaleResult {
-  translated: number;
-  failed: number;
-}
-
 export interface TranslationUpdateResponse {
   message: string;
   /** Translation keys the request's `type` wrote (or, on a dry run, would write). */

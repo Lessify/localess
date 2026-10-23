@@ -16,9 +16,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { AppConfigService } from '@core/api/app-config.service';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AuthApiService } from '@core/services/auth-api.service';
 import { NotificationService } from '@core/services/notification.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { VersionService } from '@core/services/version.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
@@ -264,16 +264,7 @@ export class FeaturesComponent implements OnInit {
         },
         { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', role: 'ANY_ROLE' },
         { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', role: 'ANY_ROLE' },
-        ...(FEATURE_FLAGS.importExport
-          ? [
-              {
-                link: `spaces/${selectedSpaceId}/tasks`,
-                label: 'Tasks',
-                icon: 'lucideFileCheck',
-                role: 'CONTENT_WRITERS' as const,
-              },
-            ]
-          : []),
+        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', role: 'TRANSLATORS' },
         {
           link: '',
           label: 'Developers',
@@ -324,6 +315,8 @@ export class FeaturesComponent implements OnInit {
   breadcrumbs = signal<BreadcrumbItem[]>([]);
 
   constructor() {
+    // A task the user started tells its end wherever they are.
+    inject(TaskNotifierService).start();
     // Below 1024px the sidebar collapses to its icons, leaving the page room; a wider window opens it again, unless
     // the user had collapsed it themselves. Who collapsed it is kept in localStorage: Spartan's cookie keeps only
     // "closed", so after a reload in a narrow window the app could not tell. (Spartan's mobile overlay starts at 768px.)

@@ -4,13 +4,11 @@ import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import {
   Page,
-  TranslateLocaleResult,
   Translation,
   TranslationCreate,
   TranslationLocaleUpdate,
   TranslationNode,
   TranslationRename,
-  TranslationTranslateLocale,
   TranslationUpdate,
 } from '@localess/shared';
 import { Observable } from 'rxjs';
@@ -101,12 +99,11 @@ export class TranslationService {
     return this.http.delete<void>(this.base(spaceId));
   }
 
-  /** Keys written, and keys the provider failed on (left unchanged). */
-  translateLocale(spaceId: string, sourceLocaleId: string, targetLocaleId: string, overwrite = false): Observable<TranslateLocaleResult> {
-    return this.http.post<TranslateLocaleResult>(`${this.base(spaceId)}/translate-locale`, {
-      sourceLocaleId,
-      targetLocaleId,
-      overwrite,
-    } satisfies TranslationTranslateLocale);
+  /**
+   * The URL of `TranslationController.exportLocale` (one locale's draft values as key-value JSON), not a request:
+   * same-origin and cookie-authenticated, so it is handed straight to `saveAs`.
+   */
+  exportLocaleUrl(spaceId: string, locale: string): string {
+    return `${this.base(spaceId)}/export/${encodeURIComponent(locale)}`;
   }
 }

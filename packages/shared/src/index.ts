@@ -8,6 +8,7 @@ export * from './models/content.model.js';
 export * from './models/firebase-import.model.js';
 export * from './models/id-name.model.js';
 export * from './models/locale.model.js';
+export * from './models/localess-file.model.js';
 export * from './models/open-api.model.js';
 export * from './models/page.model.js';
 export * from './models/schema.model.js';
@@ -61,7 +62,6 @@ export type {
   TranslationPageable,
   TranslationPush,
   TranslationRename,
-  TranslationTranslateLocale,
   TranslationUpdate,
 } from './models/translation.zod.js';
 export type { UnsplashSearch } from './models/unsplash.zod.js';

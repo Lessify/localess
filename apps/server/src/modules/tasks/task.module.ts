@@ -13,6 +13,7 @@ import { SchemaTransferService } from './services/schema-transfer.service.js';
 import { TaskService } from './services/task.service.js';
 import { TaskLogService } from './services/task-log.service.js';
 import { TranslationTransferService } from './services/translation-transfer.service.js';
+import { TranslationTranslateService } from './services/translation-translate.service.js';
 import { TaskRunner } from './workers/task-runner.service.js';
 import { TaskWorker } from './workers/task-worker.service.js';
 
@@ -30,6 +31,7 @@ import { TaskWorker } from './workers/task-worker.service.js';
     AssetTransferService,
     SchemaTransferService,
     TranslationTransferService,
+    TranslationTranslateService,
     TaskRunner,
     TaskWorker,
     TaskRepository,

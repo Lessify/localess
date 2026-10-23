@@ -2,7 +2,7 @@
 
 > Parent: [Spaces Overview](overview.md) · Related: [Tasks](tasks.md) · [Concepts — Asset](../../concepts.md) · [CDN & Caching](../../cdn-caching.md)
 
-> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+> **Import and Export** of assets are removed: assets move with the full export ([Space export and backups](../../roadmap/space-export-backup.md), [why](../../roadmap/import-export.md#why-contents-and-assets-are-not-here)).
 
 ## Purpose
 
@@ -22,8 +22,6 @@ apps/web/src/app/features/spaces/assets/
   add-folder-dialog/
   edit-file-dialog/                  ← edit file metadata (name, alt text)
   edit-folder-dialog/
-  export-dialog/
-  import-dialog/
   move-dialog/
 ```
 
@@ -56,8 +54,7 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 - `openEditFolderDialog(asset)` — rename folder
 - `openDeleteDialog(asset)` — delete file or folder (with cascade for folders, done by the server: the rows go in the transaction, which queues their stored files and renditions in `storage_deletions`; the storage sweeper deletes them right after the commit and retries if storage fails — see [Storage deletions](../../roadmap/database-structure.md#storage-deletions)). Before asking, it reads `GET …/assets/:assetId/usage` (`{ contents }`: how many contents' draft data holds `{ kind: 'ASSET', uri }` for the file, or any file under the folder) and, when some do, says "It is used by N contents, which will show it as missing." Deleting stays allowed; a failed count just leaves the warning out
 - `openMoveDialog(asset)` — moves a file or a folder (with everything under it) into another folder (`AssetService.move()`: `PATCH /api/app/spaces/:s/assets/:assetId { parentId }`, `null`: the root; the same route renames, as for contents): one row on the server. The dialog is a folder tree (`ll-tree` with `selectGroups`, as the Contents Move dialog): the root and every folder from `SpaceStore.assetFolders()`, the path to where the asset is open and marked "(current)" (not a target); for a folder, itself and everything under it are left out (400 "A folder cannot be moved into itself" on the server). The filter matches a folder's name or path and keeps its parents
-- `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
-- `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
+- `openRegenerateMetadataDialog()` — admins only: confirms, then creates an `ASSET_REGEN_METADATA` Task (`TaskService.createAssetRegenerateMetadata()`) that reads every file's metadata again, followed in the progress dialog ([Tasks](tasks.md))
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
 - `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
 
@@ -324,8 +321,6 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | `AddFolderDialogComponent` | Create new folder |
 | `EditFileDialogComponent` | Edit name and alt text |
 | `EditFolderDialogComponent` | Rename folder |
-| `ExportDialogComponent` | Export assets to archive |
-| `ImportDialogComponent` | Upload asset archive → creates a Task |
 | `MoveDialogComponent` | Move a file or folder to another folder |
 | `UnsplashAssetsSelectDialogComponent`* | Browse and import from Unsplash |
 | `ImagePreviewDialogComponent`* | Full-size image preview |
@@ -338,7 +333,7 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | Service | Purpose |
 |---------|---------|
 | `AssetService` | `/api/app/spaces/:s/assets`: live reads, folder create, multipart file upload, rename/edit, move, delete |
-| `TaskService` | Create import/export tasks |
+| `TaskService` | Create the Regenerate Metadata task |
 | `UnsplashService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
 | `NotificationService` | Snackbar feedback |
 | `SpaceStore` | Current space + `assetFolderId` (the folder shown) |

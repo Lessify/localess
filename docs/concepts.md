@@ -179,7 +179,7 @@ The CDN endpoint (`/api/v1/spaces/:spaceId/assets/:assetId`) supports:
 
 ## Task
 
-A **Task** is a background job (import, export, asset metadata regeneration). The `tasks` table is the queue: the server's `TaskWorker` claims the oldest `INITIATED` task and runs it (see [Tasks](features/spaces/tasks.md)).
+A **Task** is a background job (import, export, asset metadata regeneration). The `tasks` table is the queue: the server's `TaskWorker` claims the oldest `QUEUED` task and runs it (see [Tasks](features/spaces/tasks.md)).
 
 ```
 Postgres: tasks (id), task_logs (task_id)

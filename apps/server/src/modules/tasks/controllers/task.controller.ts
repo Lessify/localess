@@ -1,6 +1,6 @@
 import type { MultipartFile } from '@fastify/multipart';
 import type { Page, Task, TaskCreate, TaskPageable } from '@localess/shared';
-import { CONTENT_WRITERS } from '@localess/shared';
+import { TRANSLATORS } from '@localess/shared';
 import { zTaskCreate, zTaskImportCreate, zTaskPageable } from '@localess/shared/zod';
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -29,26 +29,35 @@ export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
   @Get()
-  @RequireRole(CONTENT_WRITERS)
-  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable): Promise<Page<Task>> {
-    return this.taskService.findAll(spaceId, query);
+  @RequireRole(TRANSLATORS)
+  findAll(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zTaskPageable }) query: TaskPageable,
+    @CurrentUser() user: UserEntity,
+  ): Promise<Page<Task>> {
+    return this.taskService.findAll(spaceId, query, user);
   }
 
   @Get(':id')
-  @RequireRole(CONTENT_WRITERS)
-  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<Task> {
-    return this.taskService.findOne(spaceId, id);
+  @RequireRole(TRANSLATORS)
+  findOne(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('id', UuidParamPipe) id: string,
+    @CurrentUser() user: UserEntity,
+  ): Promise<Task> {
+    return this.taskService.findOne(spaceId, id, user);
   }
 
   /** The task's file (export result or uploaded import), as an attachment. */
   @Get(':id/download')
-  @RequireRole(CONTENT_WRITERS)
+  @RequireRole(TRANSLATORS)
   async download(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('id', UuidParamPipe) id: string,
+    @CurrentUser() user: UserEntity,
     @Res() reply: FastifyReply,
   ): Promise<void> {
-    const { filename, size, stream } = await this.taskService.download(spaceId, id);
+    const { filename, size, stream } = await this.taskService.download(spaceId, id, user);
     void reply
       .header('content-disposition', buildContentDisposition(filename, true))
       .header('content-length', size)
@@ -59,7 +68,7 @@ export class TaskController {
 
   /** Exports and metadata regeneration: `{ kind, path? | locale? }`. */
   @Post()
-  @RequireRole(CONTENT_WRITERS)
+  @RequireRole(TRANSLATORS)
   create(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Body({ schema: zTaskCreate }) body: TaskCreate,
@@ -73,7 +82,7 @@ export class TaskController {
    * **before** the `file` part. The file is stored as the task's original.
    */
   @Post('import')
-  @RequireRole(CONTENT_WRITERS)
+  @RequireRole(TRANSLATORS)
   async createImport(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Req() request: FastifyRequest,
@@ -93,13 +102,13 @@ export class TaskController {
       file.file.resume();
       throw error;
     }
-    return this.taskService.createImport(spaceId, { ...fields.data, filename: file.filename, stream: file.file });
+    return this.taskService.createImport(spaceId, { ...fields.data, filename: file.filename, stream: file.file }, user);
   }
 
   /** Logs cascade; the task's files go too. */
   @Delete(':id')
   @HttpCode(204)
-  @RequireRole(CONTENT_WRITERS)
+  @RequireRole(TRANSLATORS)
   remove(
     @Param('spaceId', UuidParamPipe) spaceId: string,
     @Param('id', UuidParamPipe) id: string,

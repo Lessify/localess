@@ -1,6 +1,5 @@
 import {
   type Page,
-  type TranslateLocaleResult,
   type Translation,
   type TranslationCreate,
   type TranslationLocaleUpdate,
@@ -8,7 +7,6 @@ import {
   type TranslationNodePageable,
   type TranslationPageable,
   type TranslationRename,
-  type TranslationTranslateLocale,
   type TranslationUpdate,
   WebhookEvent,
 } from '@localess/shared';
@@ -18,10 +16,10 @@ import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js'
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { WebhookDispatcher } from '../../../shared/services/webhook-dispatcher.service.js';
 import { toTranslation, translationsByKey } from '../../../shared/transformers/translation.transformer.js';
+import { toFileName } from '../../../shared/utils/file-name.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { TranslationRepository } from '../repositories/translation.repository.js';
 import { TranslationSnapshotRepository } from '../repositories/translation-snapshot.repository.js';
-import { TranslateService } from './translate.service.js';
 
 /** Values are written only for the space's locales (removing one is allowed for any locale). */
 function requireSpaceLocales(space: SpaceWithLocales, localeIds: string[]): void {
@@ -41,8 +39,22 @@ export class TranslationService {
     private readonly translationSnapshotRepository: TranslationSnapshotRepository,
     private readonly spaceLookupRepository: SpaceLookupRepository,
     private readonly webhookDispatcher: WebhookDispatcher,
-    private readonly translateService: TranslateService,
   ) {}
+
+  /**
+   * One locale's draft values as `{ key: value }` (keys in byte order, those without a value left out), for a download
+   * named after the space.
+   */
+  async exportLocale(spaceId: string, locale: string): Promise<{ filename: string; values: Record<string, string> }> {
+    const space = await this.requireSpace(spaceId);
+    if (!space.spaceLocales.some(it => it.localeId === locale))
+      throw new BadRequestException(`Locale ${locale} is not in the space locales.`);
+    const values: Record<string, string> = {};
+    for (const row of await this.translationRepository.findAllInByteOrder(spaceId)) {
+      if (row.locales[locale]) values[row.key] = row.locales[locale];
+    }
+    return { filename: `${toFileName(space.name)}-${locale}.json`, values };
+  }
 
   /** One page of the list, filtered; by key unless sorted otherwise. */
   async findAll(spaceId: string, query: TranslationPageable): Promise<Page<Translation>> {
@@ -141,34 +153,6 @@ export class TranslationService {
     await this.requireSpace(spaceId);
     await this.translationSnapshotRepository.publish(spaceId);
     this.webhookDispatcher.dispatch(spaceId, WebhookEvent.TRANSLATION_PUBLISHED);
-  }
-
-  /**
-   * Machine-translates every key that has a source value (and no target value, unless `overwrite`).
-   * Returns how many keys were written; keys the provider failed on are left untouched.
-   */
-  async translateLocale(spaceId: string, input: TranslationTranslateLocale): Promise<TranslateLocaleResult> {
-    const { sourceLocaleId: sourceLocale, targetLocaleId: targetLocale } = input;
-    const overwrite = input.overwrite === true;
-    // The space first (404), then the locales (400), then whether machine translation is configured (412).
-    requireSpaceLocales(await this.requireSpace(spaceId), [sourceLocale, targetLocale]);
-    this.translateService.requireProvider();
-    const candidates = (await this.translationRepository.findAll(spaceId)).filter(
-      row => row.locales[sourceLocale] && (overwrite || !row.locales[targetLocale]),
-    );
-    if (!candidates.length) return { translated: 0, failed: 0 };
-    const result = await this.translateService.translateItems(
-      candidates.map(row => ({ id: row.id, content: row.locales[sourceLocale] })),
-      sourceLocale,
-      targetLocale,
-    );
-    const written = result.items.filter(it => it.content);
-    if (written.length) {
-      const values = written.map(it => ({ id: it.id, value: it.content }));
-      await this.translationRepository.updateLocaleValues(spaceId, targetLocale, values);
-      this.changed(spaceId, undefined);
-    }
-    return { translated: written.length, failed: result.failed.length };
   }
 
   /** After a committed write: `translation.changed`. */

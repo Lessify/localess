@@ -43,9 +43,7 @@ describe('AssetsComponent', () => {
     const remove = vi.fn().mockReturnValue(of(undefined));
     const findUsage = vi.fn().mockReturnValue(of({ contents: 0 }));
     const move = vi.fn().mockReturnValue(of(undefined));
-    const createAssetImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createAssetExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createAssetRegenerateMetadataTask = vi.fn().mockReturnValue(of({ id: 't1' }));
+    const createAssetRegenerateMetadata = vi.fn().mockReturnValue(of({ id: 't1' }));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
@@ -72,7 +70,7 @@ describe('AssetsComponent', () => {
             findUsage,
           },
         },
-        { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
+        { provide: TaskService, useValue: { createAssetRegenerateMetadata } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: UnsplashService, useValue: { enabled: () => false } },
@@ -92,9 +90,7 @@ describe('AssetsComponent', () => {
       remove,
       findUsage,
       move,
-      createAssetImportTask,
-      createAssetExportTask,
-      createAssetRegenerateMetadataTask,
+      createAssetRegenerateMetadata,
       success,
       error,
       open,
@@ -448,35 +444,14 @@ describe('AssetsComponent', () => {
   });
 
   describe('task dialogs', () => {
-    it('openImportDialog() creates an import task and notifies success', () => {
-      const { component, open, createAssetImportTask, success } = setup();
-      const uploadedFile = new File(['data'], 'assets.zip');
-      open.mockReturnValue({ closed$: of({ file: uploadedFile }) });
-
-      component.openImportDialog();
-
-      expect(createAssetImportTask).toHaveBeenCalledWith('space-1', uploadedFile);
-      expect(success).toHaveBeenCalledWith('Assets Import Task has been created.', expect.anything());
-    });
-
-    it('openExportDialog() creates an export task and notifies success', () => {
-      const { component, open, createAssetExportTask, success } = setup();
-      open.mockReturnValue({ closed$: of({ path: 'images' }) });
-
-      component.openExportDialog();
-
-      expect(createAssetExportTask).toHaveBeenCalledWith('space-1', 'images');
-      expect(success).toHaveBeenCalledWith('Assets Export Task has been created.', expect.anything());
-    });
-
-    it('openRegenerateMetadataDialog() creates the task when confirmed', () => {
-      const { component, open, createAssetRegenerateMetadataTask, success } = setup();
+    it('openRegenerateMetadataDialog() creates the task when confirmed, and follows it', () => {
+      const { component, open, createAssetRegenerateMetadata } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.openRegenerateMetadataDialog();
 
-      expect(createAssetRegenerateMetadataTask).toHaveBeenCalledWith('space-1');
-      expect(success).toHaveBeenCalledWith('Assets Regenerate Metadata Task has been created.', expect.anything());
+      expect(createAssetRegenerateMetadata).toHaveBeenCalledWith('space-1');
+      expect(open.mock.calls[1][1].context).toEqual({ spaceId: 'space-1', task: { id: 't1' }, title: 'Regenerate Metadata' });
     });
   });
 

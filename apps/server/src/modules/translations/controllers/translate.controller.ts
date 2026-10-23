@@ -3,7 +3,7 @@ import { zTranslateData } from '@localess/shared/zod';
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
-import { TranslateService } from '../services/translate.service.js';
+import { TranslateService } from '../../../shared/services/translate.service.js';
 
 /**
  * Machine translation for the editors: one string, or a batch of items. Whether it is configured is `GET /api/config`

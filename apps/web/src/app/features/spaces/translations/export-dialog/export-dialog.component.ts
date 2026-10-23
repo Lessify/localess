@@ -37,14 +37,18 @@ export class ExportDialogComponent {
   readonly context = injectBrnDialogContext<ExportDialogContext>();
 
   exportKinds: KeyValue<string, string>[] = [
-    { key: 'FULL', value: 'FULL' },
-    { key: 'FLAT', value: 'FLAT JSON' },
+    { key: 'FULL', value: 'All translations (Localess file)' },
+    { key: 'LOCALE', value: 'One locale (key-value JSON)' },
   ];
 
-  form: FormGroup = this.fb.group({
-    kind: this.fb.control('FULL', [Validators.required]),
-    locale: this.fb.control(undefined),
-  });
+  form: FormGroup = this.fb.group(
+    {
+      kind: this.fb.control('FULL', [Validators.required]),
+      locale: this.fb.control(null),
+    },
+    // One locale needs it chosen.
+    { validators: group => (group.value.kind === 'LOCALE' && !group.value.locale ? { locale: true } : null) },
+  );
 
   protected readonly kindItemToString = (value: string): string => {
     return this.exportKinds.find(k => k.key === value)?.value ?? value;
@@ -55,6 +59,7 @@ export class ExportDialogComponent {
   };
 
   save(): void {
-    this.dialogRef.close(this.form.value as ExportDialogResult);
+    const { kind, locale } = this.form.value as { kind: string; locale: string | null };
+    this.dialogRef.close(kind === 'LOCALE' && locale ? { kind: 'LOCALE', locale } : { kind: 'FULL' });
   }
 }

@@ -9,11 +9,12 @@ import {
   type SchemaEnumValue,
   type SchemaField,
   SchemaType,
+  type TaskFile,
   TaskKind,
   TaskLogLevel,
+  type TaskParams,
   TaskStatus,
   TokenType,
-  TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
   WebhookErrorType,
   WebhookEvent,
@@ -464,25 +465,31 @@ export const tasks = pgTable(
     spaceId: spaceId(),
     kind: text('kind', { enum: values(TaskKind) }).notNull(),
     status: text('status', { enum: values(TaskStatus) }).notNull(),
-    message: text('message'),
-    trace: text('trace'),
-    path: text('path'),
-    locale: text('locale'),
-    // Translation import format
-    type: text('type', { enum: values(TRANSLATION_IMPORT_FORMATS) }),
-    file: jsonb('file').$type<{ name: string; size: number }>(),
+    // The kind's input (a translation import's format and locale, translate locale's locales); null for the others.
+    params: jsonb('params').$type<TaskParams>(),
+    // The upload of an import, or what an export produced; stored at spaces/{space}/tasks/{id}/{name}.
+    file: jsonb('file').$type<TaskFile>(),
+    // Who started it; kept as null when that user is deleted.
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    // The instance running it, and its heartbeat (refreshed every minute; 5 minutes without one: interrupted).
     lockedBy: text('locked_by'),
-    lockedAt: timestamp('locked_at', { withTimezone: true }),
+    heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }),
+    // When an instance picked it up, and when it ended.
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
     ...timestamps,
   },
   t => [
     index('tasks_space_idx').on(t.spaceId, t.createdAt.desc()),
     index('tasks_queue_idx')
       .on(t.createdAt)
-      .where(sql`${t.status} = 'INITIATED'`),
+      .where(sql`${t.status} = 'QUEUED'`),
     oneOf('tasks_kind_check', t.kind, values(TaskKind)),
     oneOf('tasks_status_check', t.status, values(TaskStatus)),
-    oneOf('tasks_type_check', t.type, TRANSLATION_IMPORT_FORMATS),
+    // One running task per space (the worker's claim skips such spaces; this stops two instances racing).
+    uniqueIndex('tasks_running_space_idx')
+      .on(t.spaceId)
+      .where(sql`${t.status} = 'IN_PROGRESS'`),
   ],
 );
 

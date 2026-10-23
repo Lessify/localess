@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
-import { schemas, taskLogs, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
+import { schemas, taskLogs, tasks, tokens, webhookLogs, webhooks } from '../src/infra/database/schema.js';
 import { EventService } from '../src/infra/events/event.service.js';
 import { WebhookLogCleanupService } from '../src/modules/webhooks/services/webhook-log-cleanup.service.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
@@ -426,13 +426,14 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
     const base = `/api/app/spaces/${S1}/tasks`;
 
     it('creates exports for the role the kind names', async () => {
-      const response = await exporter.post(base, { kind: 'CONTENT_EXPORT', path: 'blog' });
+      const response = await exporter.post(base, { kind: 'TRANSLATION_EXPORT' });
       expect(response.statusCode).toBe(201);
-      expect(response.json()).toMatchObject({ kind: 'CONTENT_EXPORT', status: 'INITIATED', path: 'blog' });
+      expect(response.json()).toMatchObject({ kind: 'TRANSLATION_EXPORT' });
       expect(response.json()).not.toHaveProperty('lockedBy');
       expect((await exporter.post(base, { kind: 'SCHEMA_EXPORT' })).statusCode).toBe(403);
-      expect((await nobody.post(base, { kind: 'CONTENT_EXPORT' })).statusCode).toBe(403);
-      expect((await exporter.post(base, { kind: 'CONTENT_EXPORT', extra: true })).statusCode).toBe(400);
+      expect((await nobody.post(base, { kind: 'TRANSLATION_EXPORT' })).statusCode).toBe(403);
+      expect((await exporter.post(base, { kind: 'CONTENT_EXPORT', path: 'blog' })).statusCode).toBe(400);
+      expect((await exporter.post(base, { kind: 'TRANSLATION_EXPORT', extra: true })).statusCode).toBe(400);
     });
 
     it('keeps metadata regeneration admin-only', async () => {
@@ -442,7 +443,10 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
     it('stores an import upload as the task file, downloadable with the session', async () => {
       const zip = Buffer.from('PK\u0003\u0004 fake zip');
-      const body = multipart({ kind: 'CONTENT_IMPORT' }, { filename: 'content.llc.zip', bytes: zip });
+      const body = multipart(
+        { kind: 'TRANSLATION_IMPORT', type: 'translation-full' },
+        { filename: 'translations.localess.zip', bytes: zip },
+      );
       const response = await t.request({
         method: 'POST',
         url: `${base}/import`,
@@ -451,7 +455,7 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       });
       expect(response.statusCode, response.body).toBe(201);
       const task = response.json();
-      expect(task).toMatchObject({ kind: 'CONTENT_IMPORT', status: 'INITIATED', file: { name: 'content.llc.zip', size: zip.length } });
+      expect(task).toMatchObject({ kind: 'TRANSLATION_IMPORT', file: { name: 'translations.localess.zip', size: zip.length } });
 
       const download = await exporter.get(`${base}/${task.id}/download`);
       expect(download.statusCode).toBe(200);
@@ -473,7 +477,10 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
 
     it('lists newest first, with logs in order', async () => {
       const list = (await exporter.get(base)).json().items;
-      expect(list.map((it: { kind: string }) => it.kind)).toEqual(['CONTENT_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT']);
+      // An editor reads the kinds it may start: not the admins' metadata regeneration.
+      expect(list.map((it: { kind: string }) => it.kind)).toEqual(['TRANSLATION_IMPORT', 'TRANSLATION_EXPORT']);
+      const all = (await admin.get(base)).json().items;
+      expect(all.map((it: { kind: string }) => it.kind)).toEqual(['TRANSLATION_IMPORT', 'ASSET_REGEN_METADATA', 'TRANSLATION_EXPORT']);
       await t.db.insert(taskLogs).values([
         { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'first' },
         { id: newUuid(), taskId: list[0].id, level: 'INFO', message: 'second' },
@@ -485,23 +492,28 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect(list[0].id).toMatch(UUID_V7);
       for (const log of (await exporter.get(`${base}/${list[0].id}/logs`)).json()) expect(log.id).toMatch(UUID_V7);
       expect((await exporter.get(`${base}/not-a-uuid/logs`)).statusCode).toBe(404);
-      expect((await exporter.get(`${base}/${list[2].id}/download`)).statusCode).toBe(404);
+      expect((await admin.get(`${base}/${all[1].id}/download`)).statusCode).toBe(404);
+      expect((await exporter.get(`${base}/${all[1].id}`)).statusCode).toBe(404);
     });
 
     it('answers 404 for a malformed or unknown space, and for the logs of an unknown task', async () => {
       const unknown = `/api/app/spaces/${newUuid()}/tasks`;
       expect((await exporter.get('/api/app/spaces/not-a-uuid/tasks')).statusCode).toBe(404);
       expect((await exporter.get(unknown)).statusCode).toBe(404);
-      expect((await exporter.post(unknown, { kind: 'CONTENT_EXPORT' })).statusCode).toBe(404);
+      expect((await exporter.post(unknown, { kind: 'TRANSLATION_EXPORT' })).statusCode).toBe(404);
       expect((await exporter.get(`${unknown}/${newUuid()}/logs`)).statusCode).toBe(404);
       expect((await exporter.get(`${base}/${newUuid()}/logs`)).statusCode).toBe(404);
     });
 
     it('deletes with the role the kind names, removing logs and files', async () => {
-      const list = (await exporter.get(base)).json().items;
-      const imported = list.find((it: { kind: string }) => it.kind === 'CONTENT_IMPORT');
+      const list = (await admin.get(base)).json().items;
+      const imported = list.find((it: { kind: string }) => it.kind === 'TRANSLATION_IMPORT');
       const regen = list.find((it: { kind: string }) => it.kind === 'ASSET_REGEN_METADATA');
-      expect((await exporter.delete(`${base}/${regen.id}`)).statusCode).toBe(403);
+      // Another kind is not there for an editor.
+      expect((await exporter.delete(`${base}/${regen.id}`)).statusCode).toBe(404);
+      // Queued: refused until it ends (the worker is off here, so it ends by hand).
+      expect((await exporter.delete(`${base}/${imported.id}`)).statusCode).toBe(409);
+      await t.db.update(tasks).set({ status: 'ERROR' }).where(eq(tasks.id, imported.id));
       expect((await exporter.delete(`${base}/${imported.id}`)).statusCode).toBe(204);
       expect(await t.db.select().from(taskLogs)).toEqual([]);
       expect(await readdir(join(t.storageDir, `spaces/${S1}/tasks`))).toEqual([]);

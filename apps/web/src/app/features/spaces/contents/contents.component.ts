@@ -2,11 +2,9 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input } from '@angular/core';
 import { Router } from '@angular/router';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
-import { TaskService } from '@core/services/task.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
@@ -64,13 +62,11 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take, tap } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 import { AddDocumentDialogComponent, AddDocumentDialogContext } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogContext } from './add-folder-dialog';
 import { EditDialogComponent, EditDialogContext } from './edit-dialog';
-import { ExportDialogComponent, ExportDialogContext, ExportDialogResult } from './export-dialog';
-import { ImportDialogComponent, ImportDialogResult } from './import-dialog';
 import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move-dialog';
 import { DocumentStatusComponent } from './shared/document-status/document-status.component';
 
@@ -117,11 +113,9 @@ import { DocumentStatusComponent } from './shared/document-status/document-statu
   ],
 })
 export class ContentsComponent {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly router = inject(Router);
   private readonly contentService = inject(ContentService);
   private readonly spaceTokenService = inject(SpaceTokenService);
-  private readonly taskService = inject(TaskService);
   private readonly dialog = inject(HlmDialogService);
 
   private readonly hlmDialog = inject(HlmDialogService);
@@ -456,63 +450,6 @@ export class ContentsComponent {
       },
       error: () => this.notificationService.error('Tokens could not be loaded'),
     });
-  }
-
-  openImportDialog() {
-    this.dialog
-      .open<ImportDialogResult>(ImportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        tap(console.log),
-        switchMap(it => this.taskService.createContentImportTask(this.spaceId(), it!.file)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Content Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Content Import Task can not be created.');
-        },
-      });
-  }
-
-  openExportDialog() {
-    this.dialog
-      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
-        context: {
-          spaceId: this.spaceId(),
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
-      .closed$.pipe(
-        take(1),
-        filter(it => it !== undefined),
-        switchMap(it => this.taskService.createContentExportTask(this.spaceId(), it?.path)),
-      )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Content Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Content Export Task can not be created.');
-        },
-      });
   }
 
   copiedSlug() {

@@ -14,11 +14,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
 import { SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -48,6 +48,7 @@ import {
 } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { openTaskProgressDialog } from '@shared/components/task-progress-dialog';
 import { schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
 import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -102,7 +103,6 @@ import { describeSchemaUsage } from './shared/schema-usage';
   ],
 })
 export class SchemasComponent implements OnInit, AfterViewInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);
@@ -277,54 +277,29 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   openImportDialog() {
     this.dialog
-      .open<ImportDialogResult>(ImportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ImportDialogResult>(ImportDialogComponent, { contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.taskService.createSchemaImportTask(this.spaceId(), it!.file)),
+        switchMap(it => this.taskService.createSchemaImport(this.spaceId(), it.file)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Schema Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Schema Import Task can not be created.');
-        },
+        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Schemas Import' }),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Schemas can not be imported.')),
       });
   }
 
   openExportDialog() {
     this.dialog
-      .open<ExportDialogResult>(ExportDialogComponent, {
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ExportDialogResult>(ExportDialogComponent, { contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(() => this.taskService.createSchemaExportTask(this.spaceId())),
+        switchMap(() => this.taskService.createSchemaExport(this.spaceId())),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Schema Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Schema Export Task can not be created.');
-        },
+        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Schemas Export' }),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Schemas can not be exported.')),
       });
   }
 

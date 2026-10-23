@@ -34,58 +34,53 @@ describe('ImportDialogComponent', () => {
     return { target: input } as unknown as Event;
   }
 
-  it('starts with a FULL import and .llt.zip accept filter', () => {
+  it('asks for the file only, and accepts a Localess file, an old one or a key-value JSON', () => {
     const { component } = setup({ locales });
 
-    expect(component.form.value.kind).toBe('FULL');
-    expect(component.fileAccept).toBe('.llt.zip');
+    expect(component.fileAccept).toBe('.localess.zip,.llt.zip,.json');
+    expect(component.isJson()).toBe(false);
+    expect(component.form.valid).toBe(false);
   });
 
-  it('switches the accept filter and resets the file state when the kind changes to FLAT', () => {
-    const { component } = setup({ locales });
-    component.fileName = 'export.llt.zip';
+  it('a Localess file needs no locale', async () => {
+    const { component, close } = setup({ locales });
 
-    component.form.controls['kind'].setValue('FLAT');
+    await component.onFileChange(fileChangeEvent(new File(['PK'], 'site-translations.localess.zip')));
 
-    expect(component.fileAccept).toBe('.json');
-    expect(component.fileName).toBe('');
+    expect(component.isJson()).toBe(false);
     expect(component.fileWrong).toBe(false);
+    expect(component.form.valid).toBe(true);
+    component.save();
+    expect(close).toHaveBeenCalledWith({ file: expect.any(File) });
   });
 
-  it('switches back to .llt.zip when the kind returns to FULL', () => {
-    const { component } = setup({ locales });
-    component.form.controls['kind'].setValue('FLAT');
+  it('a key-value JSON asks for its locale, preselected from the file name', async () => {
+    const { component, close } = setup({ locales });
 
-    component.form.controls['kind'].setValue('FULL');
+    await component.onFileChange(fileChangeEvent(new File(['{}'], 'de.json')));
 
-    expect(component.fileAccept).toBe('.llt.zip');
+    expect(component.isJson()).toBe(true);
+    expect(component.form.value.locale).toBe('de');
+    component.save();
+    expect(close).toHaveBeenCalledWith({ file: expect.any(File), locale: 'de' });
   });
 
-  it('accepts a file matching the current accept filter', async () => {
+  it('a key-value JSON whose name is no locale of the space needs one chosen', async () => {
     const { component } = setup({ locales });
-    const file = new File(['data'], 'export.llt.zip');
 
-    await component.onFileChange(fileChangeEvent(file));
+    await component.onFileChange(fileChangeEvent(new File(['{}'], 'messages.json')));
 
-    expect(component.fileName).toBe('export.llt.zip');
-    expect(component.fileWrong).toBe(false);
-    expect(component.form.value.file).toBe(file);
+    expect(component.form.value.locale).toBeNull();
+    expect(component.form.valid).toBe(false);
   });
 
-  it('flags a file that does not match the current accept filter', async () => {
+  it('flags a file of another type', async () => {
     const { component } = setup({ locales });
-    const file = new File(['data'], 'export.zip');
 
-    await component.onFileChange(fileChangeEvent(file));
+    await component.onFileChange(fileChangeEvent(new File(['x'], 'notes.txt')));
 
     expect(component.fileWrong).toBe(true);
-  });
-
-  it('kindItemToString() shows the friendly kind label, or falls back to the raw value', () => {
-    const { component } = setup({ locales });
-
-    expect(component['kindItemToString']('FLAT')).toBe('FLAT JSON');
-    expect(component['kindItemToString']('unknown')).toBe('unknown');
+    expect(component.form.valid).toBe(false);
   });
 
   it('localeItemToString() shows the locale name, or falls back to the raw value', () => {

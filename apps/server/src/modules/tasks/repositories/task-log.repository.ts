@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 
 import { DATABASE, type Database } from '../../../infra/database/database.module.js';
 import { newUuid } from '../../../infra/database/id.js';
@@ -23,7 +23,7 @@ export class TaskLogRepository {
   }
 
   create(
-    task: Pick<TaskEntity, 'spaceId' | 'id'>,
+    task: Pick<TaskEntity, 'spaceId' | 'id' | 'kind'>,
     level: 'INFO' | 'WARN' | 'ERROR',
     message: string,
     trace?: string,
@@ -31,7 +31,29 @@ export class TaskLogRepository {
   ): Promise<void> {
     return transaction(this.db, tx, async t => {
       await t.insert(taskLogs).values({ id: newUuid(), taskId: task.id, level, message, trace });
-      await this.eventService.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created' }, t);
+      await this.eventService.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created', kind: task.kind }, t);
+    });
+  }
+
+  /** Several lines at once (a refused import's problems), in one insert and one event; in the order given. */
+  createMany(
+    task: Pick<TaskEntity, 'spaceId' | 'id' | 'kind'>,
+    lines: { level: 'INFO' | 'WARN' | 'ERROR'; message: string; trace?: string }[],
+    tx?: Transaction,
+  ): Promise<void> {
+    return transaction(this.db, tx, async t => {
+      if (!lines.length) return;
+      // On the database's clock, as every other line (`now()`), one microsecond apart: they read back in the order given,
+      // and a line written after them sorts after them.
+      await t.insert(taskLogs).values(
+        lines.map((line, index) => ({
+          id: newUuid(),
+          taskId: task.id,
+          ...line,
+          createdAt: sql`now() + ${index} * interval '1 microsecond'`,
+        })),
+      );
+      await this.eventService.publish({ spaceId: task.spaceId, entity: 'task_logs', id: task.id, op: 'created', kind: task.kind }, t);
     });
   }
 }

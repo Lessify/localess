@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { TaskProgress } from '@localess/shared';
 import { Observable, share } from 'rxjs';
 
 /** A server change event (see apps/server/src/events). `entity: '*'` means "anything may have changed". */
@@ -6,7 +7,11 @@ export interface ChangeEvent {
   spaceId: string | null;
   entity: string;
   id?: string;
-  op: 'created' | 'updated' | 'deleted';
+  /** `progress`: a running task's live state, not a change of its row (nothing to read again). */
+  op: 'created' | 'updated' | 'deleted' | 'progress';
+  /** A task's kind (`tasks` and `task_logs` events). */
+  kind?: string;
+  progress?: TaskProgress;
 }
 
 /** Emitted after the stream reconnects: events sent while disconnected are lost, so everything refetches. */

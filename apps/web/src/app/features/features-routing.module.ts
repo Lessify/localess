@@ -1,9 +1,8 @@
-import { inject, NgModule } from '@angular/core';
-import { Router, RouterModule, Routes } from '@angular/router';
-import { FEATURE_FLAGS } from '@core/feature-flags';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 import { roleGuard } from '@core/guards/role.guard';
 import { spaceSelectionGuard } from '@core/guards/space-selection.guard';
-import { ADMINS, ANY_ROLE, CONTENT_WRITERS, DEVELOPERS } from '@localess/shared';
+import { ADMINS, ANY_ROLE, DEVELOPERS, TRANSLATORS } from '@localess/shared';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 
 import { FeaturesComponent } from './features.component';
@@ -103,10 +102,8 @@ const routes: Routes = [
           {
             path: 'tasks',
             title: 'Tasks',
-            // Hidden with Import/Export (FEATURE_FLAGS): an old link lands on the start page instead.
-            canMatch: [() => FEATURE_FLAGS.importExport || inject(Router).parseUrl('/features')],
             loadChildren: () => import('./spaces/tasks/tasks.module').then(m => m.TasksModule),
-            canActivate: [roleGuard(CONTENT_WRITERS)],
+            canActivate: [roleGuard(TRANSLATORS)],
             data: {
               breadcrumb: {
                 label: 'Tasks',

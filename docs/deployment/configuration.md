@@ -144,6 +144,7 @@ With none set, machine translation is off. The Translate actions stay visible; u
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `LOCALESS_TASK_WORKER` | `true` | Run export/import/metadata tasks on this instance. Set `false` on API-only replicas |
+| `LOCALESS_TASK_CONCURRENCY` | `1` | Tasks one instance runs at once (1–16); imports hold their file's entries in memory, raise it only with the RAM. A space never runs two tasks at once |
 | `LOCALESS_WEBHOOK_LOG_DAYS` | `30` | Days a webhook delivery log is kept; older ones are deleted every hour |
 | `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks call loopback/private addresses. Local development only — it disables SSRF protection |
 | `LOCALESS_TEST_TEMPLATES` | `false` | Offer the test-only space templates (large generated data) — for development and e2e only; `pnpm dev` turns it on (`apps/server/dev.env`) |

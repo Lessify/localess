@@ -77,6 +77,7 @@ is read with its own query); infrastructure modules (database, storage, events) 
 | `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker |
 | `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks reach private/loopback addresses (local development only) |
 | `LOCALESS_TASK_WORKER` | `true` | Run export/import tasks on this instance |
+| `LOCALESS_TASK_CONCURRENCY` | `1` | Tasks one instance runs at once (a space never runs two) |
 | `LOCALESS_STATIC_DIR` | `../web/dist/browser` (i.e. `apps/web/dist/browser`) | Angular build to serve; empty → API only |
 | `LOCALESS_LOG_LEVEL` | `log` | `fatal`…`verbose`; `debug` includes the embedded Postgres log |
 | `LOCALESS_PUBLIC_URL` | request origin | Public origin for OAuth callbacks and reset links |
@@ -138,11 +139,11 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`?type=`; `:schemaId` = UUID), `GET …/:schemaId/usage`, `PUT …/:schemaId/name` (rename); every route checks the space first |
 | Contents | `/api/app/spaces/:s/contents` list (paged: folders first; `?parentId=` (absent: root), `?deep=`, `?kind=`, `?search=`; no `data`), `GET …/folders` and `GET …/documents` (every folder, every document, light, for `SpaceStore`), `GET …/count?kind=`, get/create, `PATCH …/:contentId` (rename/move), `PUT …/:contentId/data`, `POST …/:contentId/clone`, `POST …/:contentId/publish`, `POST …/:contentId/unpublish`, `DELETE` (`:contentId` = UUID); every route checks the space first |
-| Translations | `/api/app/spaces/:s/translations` CRUD (`GET` paged and filtered), `GET …/nodes` (one level of the key tree), `GET …/labels`, `PUT …/:translationId/locales/:localeId`, `PUT …/:translationId/key` (rename; `:translationId` = UUID), `POST …/publish`, `POST …/translate-locale`, `DELETE` (all); every route checks the space first |
+| Translations | `/api/app/spaces/:s/translations` CRUD (`GET` paged and filtered), `GET …/nodes` (one level of the key tree), `GET …/labels`, `PUT …/:translationId/locales/:localeId`, `PUT …/:translationId/key` (rename; `:translationId` = UUID), `POST …/publish`, `GET …/export/:locale` (one locale as a key-value JSON download), `DELETE` (all; Translate locale is a task: `TRANSLATION_TRANSLATE`); every route checks the space first |
 | Machine translation | `POST /api/app/translate` (`content` or `items`); whether it is configured: `GET /api/config` (`translate.enabled`) |
 | Assets | `/api/app/spaces/:s/assets` list (paged: folders first; `?parentId=` (absent: root), `?deep=`, `?kind=`, `?fileType=`, `?search=`), `GET …/folders` and `GET …/files` (every folder, every file, light, for `SpaceStore`), `count?kind=`/get, `GET …/:assetId/usage`, `POST …/folders`, `POST …/files` (multipart, fields before file; an unknown field is a 400), `PATCH …/:assetId` (rename and/or move: `parentId`, null is the root, as contents), `DELETE …/:assetId`. Every route checks the space first (404 "Space not found"), then the asset (404 "Asset not found"); ids that aren't UUIDs are 404s |
 | Tokens / webhooks | `/api/app/spaces/:s/tokens` (+ `POST …/:id/regenerate`), `/api/app/spaces/:s/webhooks` (+ `PATCH …/:id/status`, `GET …/:id/logs`) |
-| Tasks | `/api/app/spaces/:s/tasks` list/get/`logs`/`download`, `POST` (exports), `POST …/import` (multipart), `DELETE` |
+| Tasks | `/api/app/spaces/:s/tasks` list/get/`logs`/`download` (each role reads the kinds it may start), `POST` (exports, Translate Locale), `POST …/import` (multipart), `DELETE` |
 | Misc | `POST /api/app/spaces/:s/open-api`, `GET /api/app/plugins/unsplash/{search,random}` |
 
 Writes are transactional; change events and the space's cache version are part of the same
@@ -150,15 +151,17 @@ transaction, and webhooks are sent only after it commits.
 
 ## Background tasks
 
-`src/modules/tasks/`: exports and imports (assets, contents, schemas, translations) and asset metadata
-regeneration, with the same archive layouts and file names as the Firebase era, so old exports import.
-The `tasks` row is the queue: `TaskWorker` claims the oldest INITIATED task with
-`FOR UPDATE SKIP LOCKED` (safe with several instances), is woken by `tasks` change events and polls
-every 30 s, and runs one task at a time. Exports stream the zip into storage; imports read only the
-expected entries from the stored zip, each size-capped, never extracting to disk. A task still
-IN_PROGRESS after an hour was interrupted and is marked ERROR (not re-run: imports may be half applied).
-`workers/` holds `TaskWorker` (the queue loop) and `TaskRunner` (dispatch by kind); each kind's job is a
-`services/*-transfer.service.ts` with its own `repositories/*-transfer.repository.ts`.
+`src/modules/tasks/`: Translations and Schemas export and import (`.localess.zip`: a manifest and JSON Lines,
+streamed both ways; old `.llt.zip` / `.lls.zip` still import; a key-value JSON into one locale), Translate Locale, and
+asset metadata regeneration ([docs/features/spaces/tasks.md](../../docs/features/spaces/tasks.md)). The `tasks` row is
+the queue: `TaskWorker` claims the oldest QUEUED task of a space with no task in progress (`FOR UPDATE SKIP LOCKED`,
+and a partial unique index stops two instances racing), is woken by `tasks` change events and polls every 30 s, and
+runs `LOCALESS_TASK_CONCURRENCY` tasks at once (default 1). Jobs publish their progress as change events (at
+most once a second, never stored) and log what they did and why they failed; imports check every line, then write in one transaction (all or nothing). A busy instance refreshes its tasks' locks
+every minute; a task IN_PROGRESS without a refresh for 5 minutes was interrupted and is marked ERROR (not re-run). A
+queued or running task can't be deleted (409). `workers/` holds `TaskWorker` (the queue slots) and
+`TaskRunner` (dispatch by kind); each kind's job is a service (`*-transfer.service.ts`,
+`translation-translate.service.ts`) with its own repository.
 
 ## Migrating from a Firebase install
 

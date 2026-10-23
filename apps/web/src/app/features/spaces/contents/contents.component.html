@@ -22,21 +22,6 @@
   </button>
   <ng-template #extraMenu>
     <hlm-dropdown-menu>
-      @if (importExportEnabled) {
-        @if ('CONTENT_WRITERS' | hasRole | async) {
-          <button hlmDropdownMenuItem (click)="openImportDialog()">
-            <ng-icon hlm size="sm" name="lucideUploadCloud" />
-            Import
-          </button>
-        }
-        @if ('CONTENT_WRITERS' | hasRole | async) {
-          <button hlmDropdownMenuItem (click)="openExportDialog()">
-            <ng-icon hlm size="sm" name="lucideCloudDownload" />
-            Export
-          </button>
-        }
-        <hlm-dropdown-menu-separator />
-      }
       <button hlmDropdownMenuItem (click)="openLinksV1InNewTab()">
         <ng-icon hlm size="sm" name="lucideLink" />
         Links

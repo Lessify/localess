@@ -27,8 +27,8 @@ describe('SchemasComponent', () => {
     const rename = vi.fn().mockReturnValue(of(undefined));
     const findUsage = vi.fn().mockReturnValue(of({ fields: [], contents: { count: 0, first: [] } }));
     const deleteSchema = vi.fn().mockReturnValue(of(undefined));
-    const createSchemaImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createSchemaExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
+    const createSchemaImport = vi.fn().mockReturnValue(of({ id: 't1' }));
+    const createSchemaExport = vi.fn().mockReturnValue(of({ id: 't1' }));
     const navigate = vi.fn();
     const success = vi.fn();
     const error = vi.fn();
@@ -41,7 +41,7 @@ describe('SchemasComponent', () => {
       providers: [
         { provide: SchemaService, useValue: { create, rename, findUsage, remove: deleteSchema } },
         { provide: SpaceStore, useValue: { schemas: signal(schemas), schemasLoaded: signal(true) } },
-        { provide: TaskService, useValue: { createSchemaImportTask, createSchemaExportTask } },
+        { provide: TaskService, useValue: { createSchemaImport, createSchemaExport } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: Router, useValue: { navigate } },
@@ -56,8 +56,8 @@ describe('SchemasComponent', () => {
       rename,
       findUsage,
       deleteSchema,
-      createSchemaImportTask,
-      createSchemaExportTask,
+      createSchemaImport,
+      createSchemaExport,
       navigate,
       success,
       error,
@@ -238,25 +238,25 @@ describe('SchemasComponent', () => {
     expect(deleteSchema).not.toHaveBeenCalled();
   });
 
-  it('openImportDialog() creates the import task and notifies success', () => {
-    const { component, open, createSchemaImportTask, success } = setup();
-    const file = new File(['data'], 'schemas.zip');
+  it('openImportDialog() creates the import task and follows it', () => {
+    const { component, open, createSchemaImport } = setup();
+    const file = new File(['data'], 'schemas.localess.zip');
     open.mockReturnValue({ closed$: of({ file }) });
 
     component.openImportDialog();
 
-    expect(createSchemaImportTask).toHaveBeenCalledWith('space-1', file);
-    expect(success).toHaveBeenCalledWith('Schema Import Task has been created.', expect.anything());
+    expect(createSchemaImport).toHaveBeenCalledWith('space-1', file);
+    expect(open.mock.calls[1][1].context).toEqual({ spaceId: 'space-1', task: { id: 't1' }, title: 'Schemas Import' });
   });
 
-  it('openExportDialog() creates the export task and notifies success', () => {
-    const { component, open, createSchemaExportTask, success } = setup();
+  it('openExportDialog() creates the export task and follows it', () => {
+    const { component, open, createSchemaExport } = setup();
     open.mockReturnValue({ closed$: of({}) });
 
     component.openExportDialog();
 
-    expect(createSchemaExportTask).toHaveBeenCalledWith('space-1');
-    expect(success).toHaveBeenCalledWith('Schema Export Task has been created.', expect.anything());
+    expect(createSchemaExport).toHaveBeenCalledWith('space-1');
+    expect(open.mock.calls[1][1].context).toMatchObject({ title: 'Schemas Export' });
   });
 
   describe('inUseSchema', () => {

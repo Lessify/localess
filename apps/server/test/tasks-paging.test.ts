@@ -18,19 +18,18 @@ describe('app API: tasks, one page at a time', () => {
     admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
     for (const id of [SPACE_A, SPACE_B]) await insertSpace(t.db, { id, name: id, locales: [{ id: 'en', name: 'English' }] });
     // 25 finished or failed tasks (none for the worker to pick up), two per minute (created at ties), three kinds; a
-    // file name and a message to search; one task in space B.
-    const kinds = ['CONTENT_EXPORT', 'ASSET_EXPORT', 'SCHEMA_IMPORT'] as const;
+    // file names to search; one task in space B.
+    const kinds = ['TRANSLATION_EXPORT', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT'] as const;
     const rows = Array.from({ length: 25 }, (_, i) => ({
       id: newUuid(),
       spaceId: SPACE_A,
       kind: kinds[i % 3],
       status: i % 4 === 0 ? ('ERROR' as const) : ('FINISHED' as const),
-      file: i === 7 ? { name: 'Blog-Backup.zip', size: 10 } : null,
-      message: i === 12 ? 'The backup failed' : null,
+      file: i === 7 ? { name: 'Blog-Backup.zip', size: 10 } : i === 12 ? { name: 'the-backup-failed.json', size: 2 } : null,
       createdAt: new Date(Date.UTC(2026, 0, 1, 0, Math.floor(i / 2))),
     }));
     await t.db.insert(tasks).values(rows);
-    await t.db.insert(tasks).values({ id: newUuid(), spaceId: SPACE_B, kind: 'CONTENT_EXPORT', status: 'FINISHED' });
+    await t.db.insert(tasks).values({ id: newUuid(), spaceId: SPACE_B, kind: 'TRANSLATION_EXPORT', status: 'FINISHED' });
     newestFirst = [...rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime() || (a.id < b.id ? 1 : -1)).map(it => it.id);
   });
 
@@ -62,7 +61,7 @@ describe('app API: tasks, one page at a time', () => {
     }
   });
 
-  it('searches the id, the file name and the message, case-insensitive, anywhere in them', async () => {
+  it('searches the id and the file name, case-insensitive, anywhere in them', async () => {
     expect((await list('?search=backup')).total).toBe(2);
     expect((await list('?search=blog-BACKUP')).total).toBe(1);
     const id = newestFirst[5];
@@ -71,12 +70,14 @@ describe('app API: tasks, one page at a time', () => {
   });
 
   it('filters by one kind or status, or several (the parameter repeated)', async () => {
-    expect((await list('?kind=ASSET_EXPORT')).total).toBe(8);
-    expect((await list('?kind=ASSET_EXPORT&kind=SCHEMA_IMPORT')).total).toBe(16);
+    expect((await list('?kind=SCHEMA_EXPORT')).total).toBe(8);
+    expect((await list('?kind=SCHEMA_EXPORT&kind=SCHEMA_IMPORT')).total).toBe(16);
     expect((await list('?status=ERROR')).total).toBe(7);
-    expect((await list('?status=ERROR&status=FINISHED&kind=CONTENT_EXPORT')).items.every(it => it.kind === 'CONTENT_EXPORT')).toBe(true);
-    expect((await list('?status=ERROR&kind=CONTENT_EXPORT')).items.map(it => [it.kind, it.status])).toEqual(
-      Array.from({ length: 3 }, () => ['CONTENT_EXPORT', 'ERROR']),
+    expect((await list('?status=ERROR&status=FINISHED&kind=TRANSLATION_EXPORT')).items.every(it => it.kind === 'TRANSLATION_EXPORT')).toBe(
+      true,
+    );
+    expect((await list('?status=ERROR&kind=TRANSLATION_EXPORT')).items.map(it => [it.kind, it.status])).toEqual(
+      Array.from({ length: 3 }, () => ['TRANSLATION_EXPORT', 'ERROR']),
     );
   });
 

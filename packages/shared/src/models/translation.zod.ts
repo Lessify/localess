@@ -68,15 +68,6 @@ export type TranslationLocaleUpdate = z.infer<typeof zTranslationLocaleUpdate>;
 export const zTranslationRename = z.strictObject({ key: zTranslationKey });
 export type TranslationRename = z.infer<typeof zTranslationRename>;
 
-/** `POST …/translations/translate-locale`: machine-translate one locale into another. */
-export const zTranslationTranslateLocale = z.strictObject({
-  sourceLocaleId: z.string().min(1),
-  targetLocaleId: z.string().min(1),
-  /** Replace target values that already exist instead of filling only the empty ones. */
-  overwrite: z.boolean().optional(),
-});
-export type TranslationTranslateLocale = z.infer<typeof zTranslationTranslateLocale>;
-
 /**
  * What both views of the Translations page filter by, the same on the list and the tree: `search` (the key, or the value
  * in `locale`; case-insensitive contains), `key` (this key in any letter case: the add and rename dialogs' check), `label` (repeated:

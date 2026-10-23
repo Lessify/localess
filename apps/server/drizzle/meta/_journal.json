@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1792526745798,
+      "when": 1792781513351,
       "tag": "0000_init",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1792526746579,
+      "when": 1792781514198,
       "tag": "0001_locales",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1792603768216,
-      "tag": "0002_translations_key_bytes",
       "breakpoints": true
     }
   ]

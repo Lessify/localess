@@ -121,10 +121,9 @@ stage keeps a single pass over the Firebase pages:
 
 ### Export and import tasks
 
-Hidden behind `FEATURE_FLAGS.importExport` and redesigned later, once these decisions are stable
-([Import / Export](import-export.md)). Until then `CONTENT_EXPORT` and `CONTENT_IMPORT` (and in phase 2 `ASSET_EXPORT`
-and `ASSET_IMPORT`) end at once as `ERROR` ("Content import and export are being redesigned"), writing nothing; their
-tests go with them and come back with the redesign.
+Removed (2026-10-23): contents and assets move with the full export, not per module ([Import / Export](import-export.md),
+[Space export and backups](space-export-backup.md)). `CONTENT_EXPORT`, `CONTENT_IMPORT`, `ASSET_EXPORT` and
+`ASSET_IMPORT` can no longer be created; old rows still read.
 
 ### Tests
 

@@ -35,6 +35,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   identities: many(userIdentities),
   sessions: many(sessions),
   passwordResetTokens: many(passwordResetTokens),
+  tasks: many(tasks),
 }));
 
 export const userCredentialsRelations = relations(userCredentials, ({ one }) => ({
@@ -129,6 +130,7 @@ export const translationSnapshotsRelations = relations(translationSnapshots, ({ 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
   space: one(spaces, { fields: [tasks.spaceId], references: [spaces.id] }),
   logs: many(taskLogs),
+  createdBy: one(users, { fields: [tasks.createdById], references: [users.id] }),
 }));
 
 export const taskLogsRelations = relations(taskLogs, ({ one }) => ({

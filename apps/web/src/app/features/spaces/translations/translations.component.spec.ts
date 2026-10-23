@@ -30,6 +30,9 @@ function translation(overrides: Partial<Translation> = {}): Translation {
   return { id: 't1', key: overrides.id ?? 't1', locales: { en: 'Hello' }, ...overrides } as Translation;
 }
 
+const saveAs = vi.hoisted(() => vi.fn());
+vi.mock('file-saver-es', () => ({ saveAs }));
+
 describe('TranslationsComponent', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -46,9 +49,10 @@ describe('TranslationsComponent', () => {
     const create = vi.fn().mockReturnValue(of(undefined));
     const publish = vi.fn().mockReturnValue(of(undefined));
     const updateLocale = vi.fn().mockReturnValue(of(undefined));
-    const translateLocale = vi.fn().mockReturnValue(of({ translated: 12, failed: 0 }));
-    const createTranslationImportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
-    const createTranslationExportTask = vi.fn().mockReturnValue(of({ id: 'task1' }));
+    const exportLocaleUrl = vi.fn((spaceId: string, locale: string) => `/api/app/spaces/${spaceId}/translations/export/${locale}`);
+    const createTranslationImport = vi.fn().mockReturnValue(of({ id: 'task1' }));
+    const createTranslationExport = vi.fn().mockReturnValue(of({ id: 'task1' }));
+    const createTranslationTranslate = vi.fn().mockReturnValue(of({ id: 'task1' }));
     const translate = vi.fn().mockReturnValue(of('translated'));
     const firstValue = vi.fn().mockReturnValue(of('token1'));
     const success = vi.fn();
@@ -60,9 +64,9 @@ describe('TranslationsComponent', () => {
       providers: [
         {
           provide: TranslationService,
-          useValue: { findLabels, findOne, isKeyTaken, create, publish, updateLocale, translateLocale },
+          useValue: { findLabels, findOne, isKeyTaken, create, publish, updateLocale, exportLocaleUrl },
         },
-        { provide: TaskService, useValue: { createTranslationImportTask, createTranslationExportTask } },
+        { provide: TaskService, useValue: { createTranslationImport, createTranslationExport, createTranslationTranslate } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
@@ -88,9 +92,10 @@ describe('TranslationsComponent', () => {
       create,
       publish,
       updateLocale,
-      translateLocale,
-      createTranslationImportTask,
-      createTranslationExportTask,
+      exportLocaleUrl,
+      createTranslationImport,
+      createTranslationExport,
+      createTranslationTranslate,
       translate,
       firstValue,
       success,
@@ -267,83 +272,79 @@ describe('TranslationsComponent', () => {
     });
   });
 
+  /** The progress dialog opened for a created task (the second dialog.open call). */
+  const progressContext = (open: ReturnType<typeof vi.fn>) => open.mock.calls[1]?.[1]?.context;
+
   describe('openImportDialog', () => {
-    it('creates a FLAT import task with the chosen locale', () => {
-      const { component, open, createTranslationImportTask, success } = setup();
+    it('imports a key-value JSON into its locale, and follows the task', () => {
+      const { component, open, createTranslationImport } = setup();
       const file = new File(['data'], 'de.json');
-      open.mockReturnValue({ closed$: of({ kind: 'FLAT', locale: 'de', file }) });
+      open.mockReturnValue({ closed$: of({ locale: 'de', file }) });
 
       component.openImportDialog([en, de]);
 
-      expect(createTranslationImportTask).toHaveBeenCalledWith('space-1', file, 'de');
-      expect(success).toHaveBeenCalledWith('Translation Import Task has been created.', expect.anything());
+      expect(createTranslationImport).toHaveBeenCalledWith('space-1', file, 'de');
+      expect(progressContext(open)).toEqual({ spaceId: 'space-1', task: { id: 'task1' }, title: 'Translations Import' });
     });
 
-    it('creates a FULL import task without a locale', () => {
-      const { component, open, createTranslationImportTask } = setup();
-      const file = new File(['data'], 'export.llt.zip');
-      open.mockReturnValue({ closed$: of({ kind: 'FULL', file }) });
+    it('imports a Localess file without a locale', () => {
+      const { component, open, createTranslationImport } = setup();
+      const file = new File(['data'], 'site-translations.localess.zip');
+      open.mockReturnValue({ closed$: of({ file }) });
 
       component.openImportDialog([en, de]);
 
-      expect(createTranslationImportTask).toHaveBeenCalledWith('space-1', file);
+      expect(createTranslationImport).toHaveBeenCalledWith('space-1', file, undefined);
     });
 
-    it('notifies an error on failure', () => {
-      const { component, open, createTranslationImportTask, error } = setup();
-      createTranslationImportTask.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue({ closed$: of({ kind: 'FULL', file: new File([], 'a.zip') }) });
+    it("tells the server's reason when the import can not be created", () => {
+      const { component, open, createTranslationImport, error } = setup();
+      createTranslationImport.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, error: { message: 'Expected a .json file' } })),
+      );
+      open.mockReturnValue({ closed$: of({ file: new File([], 'a.zip'), locale: 'de' }) });
 
       component.openImportDialog([en, de]);
 
-      expect(error).toHaveBeenCalledWith('Translation Import Task can not be created.');
+      expect(error).toHaveBeenCalledWith('Translations can not be imported: Expected a .json file');
     });
   });
 
   describe('openExportDialog', () => {
-    it('creates a FLAT export task with the chosen locale', () => {
-      const { component, open, createTranslationExportTask, success } = setup();
-      open.mockReturnValue({ closed$: of({ kind: 'FLAT', locale: 'de' }) });
+    it('downloads one locale at once, without a task', () => {
+      const { component, open, createTranslationExport } = setup();
+      open.mockReturnValue({ closed$: of({ kind: 'LOCALE', locale: 'de' }) });
 
       component.openExportDialog([en, de]);
 
-      expect(createTranslationExportTask).toHaveBeenCalledWith('space-1', 'de');
-      expect(success).toHaveBeenCalledWith('Translation Export Task has been created.', expect.anything());
+      expect(saveAs).toHaveBeenCalledWith('/api/app/spaces/space-1/translations/export/de', 'de.json');
+      expect(createTranslationExport).not.toHaveBeenCalled();
     });
 
-    it('creates a FULL export task without a locale', () => {
-      const { component, open, createTranslationExportTask } = setup();
+    it('exports all translations as a task, and follows it', () => {
+      const { component, open, createTranslationExport } = setup();
       open.mockReturnValue({ closed$: of({ kind: 'FULL' }) });
 
       component.openExportDialog([en, de]);
 
-      expect(createTranslationExportTask).toHaveBeenCalledWith('space-1');
+      expect(createTranslationExport).toHaveBeenCalledWith('space-1');
+      expect(progressContext(open)).toMatchObject({ title: 'Translations Export' });
     });
   });
 
   describe('openTranslateLocaleDialog', () => {
     function run(result: unknown) {
-      const { component, open, translateLocale, success, error } = setup();
-      translateLocale.mockReturnValue(result);
+      const { component, open, createTranslationTranslate, error } = setup();
+      createTranslationTranslate.mockReturnValue(result);
       open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de', overwrite: true }) });
       component.openTranslateLocaleDialog([en, de]);
-      return { translateLocale, success, error };
+      return { createTranslationTranslate, error, open };
     }
 
-    it('translates the locale and reports how many keys were written', () => {
-      const { translateLocale, success } = run(of({ translated: 12, failed: 0 }));
-      expect(translateLocale).toHaveBeenCalledWith('space-1', 'en', 'de', true);
-      expect(success).toHaveBeenCalledWith('Translated 12 keys.');
-    });
-
-    it('reports keys the provider failed on', () => {
-      const { error } = run(of({ translated: 10, failed: 2 }));
-      expect(error).toHaveBeenCalledWith('Translated 10 keys; 2 failed and were left unchanged.');
-    });
-
-    it('says when there was nothing to translate', () => {
-      const { success } = run(of({ translated: 0, failed: 0 }));
-      expect(success).toHaveBeenCalledWith('Nothing to translate.');
+    it('starts a translate-locale task and follows it', () => {
+      const { createTranslationTranslate, open } = run(of({ id: 'task1' }));
+      expect(createTranslationTranslate).toHaveBeenCalledWith('space-1', { sourceLocale: 'en', targetLocale: 'de', overwrite: true });
+      expect(progressContext(open)).toMatchObject({ title: 'Locale Translation' });
     });
 
     it('explains that translation is not configured on a 412', () => {

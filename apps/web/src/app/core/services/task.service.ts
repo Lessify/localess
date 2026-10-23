@@ -3,8 +3,8 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { multipartForm } from '@core/utils/multipart';
-import { Page, Task, TaskCreate, TaskImportCreate, TaskKind } from '@localess/shared';
-import { Observable, of } from 'rxjs';
+import { Page, Task, TaskCreate, TaskImportCreate, TaskKind, TaskProgress, TranslationTranslateParams } from '@localess/shared';
+import { filter, map, Observable, of } from 'rxjs';
 
 /**
  * Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`, the server's `TaskController`); reads are live.
@@ -28,51 +28,61 @@ export class TaskService {
     return liveQueryWith(this.events, { spaceId, entities: ['tasks'], id }, () => this.http.get<Task>(`${this.base(spaceId)}/${id}`));
   }
 
-  /** An export (or the asset metadata regeneration); the `create<Kind>Task` methods below fill the body. */
+  /** A task without an upload; the `create<Kind>` methods below fill the body. */
   create(spaceId: string, body: TaskCreate): Observable<Task> {
     return this.http.post<Task>(this.base(spaceId), body);
   }
 
-  /** An import: the fields and the file, multipart; the `create<Kind>ImportTask` methods below fill the fields. */
+  /** An import: the fields and the file, multipart; the `create<Kind>Import` methods below fill the fields. */
   createImport(spaceId: string, fields: TaskImportCreate, file: File): Observable<Task> {
     return this.http.post<Task>(`${this.base(spaceId)}/import`, multipartForm(fields, file));
   }
 
-  createAssetExportTask(spaceId: string, path?: string): Observable<Task> {
-    return this.create(spaceId, path ? { kind: TaskKind.ASSET_EXPORT, path } : { kind: TaskKind.ASSET_EXPORT });
-  }
-
-  createAssetImportTask(spaceId: string, file: File): Observable<Task> {
-    return this.createImport(spaceId, { kind: TaskKind.ASSET_IMPORT }, file);
-  }
-
-  createAssetRegenerateMetadataTask(spaceId: string): Observable<Task> {
+  createAssetRegenerateMetadata(spaceId: string): Observable<Task> {
     return this.create(spaceId, { kind: TaskKind.ASSET_REGEN_METADATA });
   }
 
-  createContentExportTask(spaceId: string, path?: string): Observable<Task> {
-    return this.create(spaceId, path ? { kind: TaskKind.CONTENT_EXPORT, path } : { kind: TaskKind.CONTENT_EXPORT });
-  }
-
-  createContentImportTask(spaceId: string, file: File): Observable<Task> {
-    return this.createImport(spaceId, { kind: TaskKind.CONTENT_IMPORT }, file);
-  }
-
-  createSchemaExportTask(spaceId: string): Observable<Task> {
+  createSchemaExport(spaceId: string): Observable<Task> {
     return this.create(spaceId, { kind: TaskKind.SCHEMA_EXPORT });
   }
 
-  createSchemaImportTask(spaceId: string, file: File): Observable<Task> {
+  /** A `.localess.zip` (or an old `.lls.zip`). */
+  createSchemaImport(spaceId: string, file: File): Observable<Task> {
     return this.createImport(spaceId, { kind: TaskKind.SCHEMA_IMPORT }, file);
   }
 
-  createTranslationExportTask(spaceId: string, locale?: string): Observable<Task> {
-    return this.create(spaceId, locale ? { kind: TaskKind.TRANSLATION_EXPORT, locale } : { kind: TaskKind.TRANSLATION_EXPORT });
+  /** Every key as a `.localess.zip` (one locale as key-value JSON is a direct download: `TranslationService`). */
+  createTranslationExport(spaceId: string): Observable<Task> {
+    return this.create(spaceId, { kind: TaskKind.TRANSLATION_EXPORT });
   }
 
-  /** With a locale the file is a flat JSON of that locale; otherwise a full export. */
-  createTranslationImportTask(spaceId: string, file: File, locale?: string): Observable<Task> {
-    return this.createImport(spaceId, { kind: TaskKind.TRANSLATION_IMPORT, locale: locale || undefined }, file);
+  /** With a locale the file is a key-value JSON of that locale; otherwise a `.localess.zip` (or an old `.llt.zip`). */
+  createTranslationImport(spaceId: string, file: File, locale?: string): Observable<Task> {
+    const fields: TaskImportCreate = locale
+      ? { kind: TaskKind.TRANSLATION_IMPORT, type: 'translation-json-flat', locale }
+      : { kind: TaskKind.TRANSLATION_IMPORT, type: 'translation-full' };
+    return this.createImport(spaceId, fields, file);
+  }
+
+  /** Machine-translates a locale into another, as a task. */
+  createTranslationTranslate(spaceId: string, params: Omit<TranslationTranslateParams, 'type'>): Observable<Task> {
+    return this.create(spaceId, { kind: TaskKind.TRANSLATION_TRANSLATE, params: { type: 'translation-translate', ...params } });
+  }
+
+  /** One task's progress, live, from the space's change events (published by the worker, never stored). */
+  progress(spaceId: string, id: string): Observable<TaskProgress> {
+    return this.spaceProgress(spaceId).pipe(
+      filter(it => it.id === id),
+      map(it => it.progress),
+    );
+  }
+
+  /** The progress of every running task of the space, as the worker publishes it. */
+  spaceProgress(spaceId: string): Observable<{ id: string; progress: TaskProgress }> {
+    return this.events.changes(spaceId).pipe(
+      filter(event => event.entity === 'tasks' && event.op === 'progress' && !!event.id && !!event.progress),
+      map(event => ({ id: event.id!, progress: event.progress! })),
+    );
   }
 
   /**

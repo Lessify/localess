@@ -1,6 +1,6 @@
 {
-  "id": "8feeb1ab-217e-4b37-9fc1-6a8c657a7ce9",
-  "prevId": "280a2d41-45f6-4134-8c5b-3b19a2429b9e",
+  "id": "e84f2017-117a-4f4c-b8ac-8d96aa462176",
+  "prevId": "63a0e3e2-7421-4d6c-9008-009f18a934a6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1366,33 +1366,9 @@
           "primaryKey": false,
           "notNull": true
         },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "trace": {
-          "name": "trace",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "path": {
-          "name": "path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "locale": {
-          "name": "locale",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "type": {
-          "name": "type",
-          "type": "text",
+        "params": {
+          "name": "params",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -1402,14 +1378,32 @@
           "primaryKey": false,
           "notNull": false
         },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "locked_by": {
           "name": "locked_by",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "locked_at": {
-          "name": "locked_at",
+        "heartbeat_at": {
+          "name": "heartbeat_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finished_at": {
+          "name": "finished_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
@@ -1464,7 +1458,23 @@
           "isUnique": false,
           "with": {},
           "method": "btree",
-          "where": "\"tasks\".\"status\" = 'INITIATED'",
+          "where": "\"tasks\".\"status\" = 'QUEUED'",
+          "concurrently": false
+        },
+        "tasks_running_space_idx": {
+          "name": "tasks_running_space_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "where": "\"tasks\".\"status\" = 'IN_PROGRESS'",
           "concurrently": false
         }
       },
@@ -1477,6 +1487,15 @@
           "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
+        },
+        "tasks_created_by_id_users_id_fk": {
+          "name": "tasks_created_by_id_users_id_fk",
+          "tableFrom": "tasks",
+          "columnsFrom": ["created_by_id"],
+          "tableTo": "users",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1485,15 +1504,11 @@
       "checkConstraints": {
         "tasks_kind_check": {
           "name": "tasks_kind_check",
-          "value": "\"tasks\".\"kind\" in ('ASSET_EXPORT', 'ASSET_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT')"
+          "value": "\"tasks\".\"kind\" in ('ASSET_REGEN_METADATA', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'TRANSLATION_TRANSLATE')"
         },
         "tasks_status_check": {
           "name": "tasks_status_check",
-          "value": "\"tasks\".\"status\" in ('INITIATED', 'IN_PROGRESS', 'ERROR', 'FINISHED')"
-        },
-        "tasks_type_check": {
-          "name": "tasks_type_check",
-          "value": "\"tasks\".\"type\" in ('full', 'flat-json', 'nested-json')"
+          "value": "\"tasks\".\"status\" in ('QUEUED', 'IN_PROGRESS', 'ERROR', 'FINISHED')"
         }
       },
       "isRLSEnabled": false
@@ -1761,6 +1776,27 @@
             }
           ],
           "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "translations_key_bytes_idx": {
+          "name": "translations_key_bytes_idx",
+          "columns": [
+            {
+              "expression": "space_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "\"key\" COLLATE \"C\"",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "with": {},
           "method": "btree",
           "concurrently": false

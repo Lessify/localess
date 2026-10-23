@@ -3,12 +3,12 @@
 > Parent: [Spaces Overview](overview.md) · Related: [Schemas](schemas.md) · [Publish Flow](../../publish-flow.md) · [Tasks](tasks.md) ·
 > [Concepts — Content](../../concepts.md)
 
-> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+> **Import and Export** of contents are removed: contents move with the full export ([Space export and backups](../../roadmap/space-export-backup.md), [why](../../roadmap/import-export.md#why-contents-and-assets-are-not-here)).
 
 ## Purpose
 
 Manage structured content documents organised in a folder/document hierarchy. Supports creating, editing (via schema-driven editor),
-publishing, unpublishing, moving, cloning, and importing/exporting content documents.
+publishing, unpublishing, moving and cloning content documents.
 
 ## Routes
 
@@ -29,8 +29,6 @@ apps/web/src/app/features/spaces/contents/
   add-folder-dialog/                     ← create folder
   edit-dialog/                           ← edit document/folder metadata
   edit-document-schema/                  ← schema field editor sub-component
-  export-dialog/
-  import-dialog/
   move-dialog/
   shared/
     document-status/                     ← published/draft/unpublished badge
@@ -52,7 +50,7 @@ apps/web/src/app/features/spaces/contents/
 File-system-like browser that shows a breadcrumb path and lists folders/documents at the current path level. Driven by
 `SpaceStore.contentPath`.
 
-**Injected services:** `ContentService`, `SchemaService`, `SpaceTokenService`, `TaskService`, `HlmDialogService` (injected twice, as `dialog` and
+**Injected services:** `ContentService`, `SchemaService`, `SpaceTokenService`, `HlmDialogService` (injected twice, as `dialog` and
 `hlmDialog`), `Router`, `Injector`, `SpaceStore`, `NotificationService`
 
 **Key behaviour:**
@@ -81,7 +79,6 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 - `openMoveDialog()` — moves a document or folder (`PATCH …/:contentId { parentId }`, `null`: the root). The dialog (`move-dialog/`) shows a tree (`ll-tree` with `selectGroups`): Root, with every folder of `SpaceStore.contentFolders()` under it by name; the path to where the item is opens, and that folder is marked *(current)*, Move staying disabled until another one is chosen; a folder with folders under it is a target like any other (a click selects and opens it); a moved folder and everything under it are left out. The filter box (as you type: every folder is already there) keeps a match's parents, with every branch open
 - `openCloneDialog()` — deep clones a document
 - `openLinksV1InNewTab()` — opens the CDN API URL for the document in a browser tab
-- `openImportDialog()` / `openExportDialog()` — create Tasks for background import/export
 - `copiedSlug()` / `copiedFullSlug()` — success snackbar after copying the slug / full slug to the clipboard
 
 ## EditDocumentComponent (routed)
@@ -340,9 +337,9 @@ Three things worth knowing:
   measured **365 ms** to load, and would require the extension list to be
   duplicated across both npm projects, where a mismatch silently drops nodes rather than erroring.
 
-`TranslationService.translateLocale` (`apps/server/src/modules/translations/services/translation.service.ts`) is the server-side translate-locale for
-translation keys. It is a different feature that shares the name; it uses the configured provider and the same `translateItems` batching,
-and writes the results in one transaction.
+Translate Locale for translation keys is a different feature that shares the name: a task (`TRANSLATION_TRANSLATE`,
+`apps/server/src/modules/tasks/services/translation-translate.service.ts`) using the same provider and `translateItems` batching,
+writing its values in one transaction at the end.
 
 ### Styling
 
@@ -419,8 +416,6 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 | `AddDocumentDialogComponent`  | Pick a Schema type, enter slug and name |
 | `AddFolderDialogComponent`    | Enter folder name and slug              |
 | `EditDialogComponent`         | Edit document/folder name and slug      |
-| `ExportDialogComponent`       | Choose documents/folders to export      |
-| `ImportDialogComponent`       | Upload content file → creates a Task    |
 | `MoveDialogComponent`         | Pick destination folder                 |
 | `ConfirmationDialogComponent` | Delete / unpublish confirmation         |
 | `ReferencesSelectDialogComponent` | Pick content documents for `REFERENCE`/`REFERENCES` fields (`shared/references-select-dialog/`): the same paged list, toolbar (search, scope) and sort as the Contents table; the selection is kept across pages and folders |
@@ -433,6 +428,5 @@ renders identically, and flagging it would disable WYSIWYG for most documents.
 | `ContentService`      | CRUD, publish, unpublish, move, clone via `/api/app/spaces/:s/contents` (reads are live) |
 | `SchemaService`       | Load schemas for picker + editor field rendering       |
 | `SpaceTokenService`   | API token for CDN preview links                        |
-| `TaskService`         | Create import/export tasks                             |
 | `NotificationService` | Snackbar feedback                                      |
 | `SpaceStore`          | Current space, `contentPath` for breadcrumb navigation |

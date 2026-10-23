@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Injector, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, Injector, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
+import { UserStore } from '@core/stores/user.store';
 import { PagedList } from '@core/utils/paged-list';
 import { pagedResource } from '@core/utils/paged-resource';
-import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@localess/shared';
+import { isTaskExport, Task, TaskKind, taskKindsFor, TaskProgress, TaskStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -24,8 +25,8 @@ import {
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
+import { formatTaskParams, formatTaskProgress, TASK_KIND_LABELS, taskDurations } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
-import { TimeBetweenPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
@@ -36,20 +37,8 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { saveAs } from 'file-saver-es';
 import { filter, switchMap, take } from 'rxjs/operators';
 
-const TASK_KIND_LABELS: Record<TaskKind, string> = {
-  [TaskKind.ASSET_EXPORT]: 'Asset Export',
-  [TaskKind.ASSET_IMPORT]: 'Asset Import',
-  [TaskKind.ASSET_REGEN_METADATA]: 'Asset Regeneration Metadata',
-  [TaskKind.CONTENT_EXPORT]: 'Content Export',
-  [TaskKind.CONTENT_IMPORT]: 'Content Import',
-  [TaskKind.SCHEMA_EXPORT]: 'Schema Export',
-  [TaskKind.SCHEMA_IMPORT]: 'Schema Import',
-  [TaskKind.TRANSLATION_EXPORT]: 'Translation Export',
-  [TaskKind.TRANSLATION_IMPORT]: 'Translation Import',
-};
-
 const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  [TaskStatus.INITIATED]: 'Initiated',
+  [TaskStatus.QUEUED]: 'Queued',
   [TaskStatus.IN_PROGRESS]: 'In Progress',
   [TaskStatus.ERROR]: 'Error',
   [TaskStatus.FINISHED]: 'Finished',
@@ -66,7 +55,6 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
     LlFilterToolbarImports,
     FormatFileSizePipe,
     CommonModule,
-    TimeBetweenPipe,
     HlmProgressImports,
     HlmButtonImports,
     HlmTooltipImports,
@@ -91,11 +79,12 @@ export class TasksComponent {
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
   private readonly router = inject(Router);
+  private readonly userStore = inject(UserStore);
 
   // Input
   spaceId = input.required<string>();
 
-  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'actions'];
+  displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdBy', 'createdAt', 'actions'];
 
   /** The query: paged and filtered on the server, newest first unless sorted otherwise. */
   readonly list = new PagedList(20);
@@ -112,7 +101,8 @@ export class TasksComponent {
       key: 'kind',
       label: 'Kind',
       mode: 'multiple',
-      options: Object.values(TaskKind).map(kind => ({ value: kind, label: TASK_KIND_LABELS[kind] })),
+      // The kinds the user's role may start: the only ones the server lists for them.
+      options: taskKindsFor({ role: this.userStore.role() }).map(kind => ({ value: kind, label: TASK_KIND_LABELS[kind] })),
     },
     {
       key: 'status',
@@ -135,7 +125,43 @@ export class TasksComponent {
     this.router.navigate(['features', 'spaces', this.spaceId(), 'tasks', task.id]);
   }
 
-  onDownload(element: TaskExport | TaskImport): void {
+  readonly kindLabel = (kind: TaskKind): string => TASK_KIND_LABELS[kind];
+  readonly durations = taskDurations;
+
+  /** The running tasks' progress, by id, from the space's progress events (never stored). */
+  private readonly progress = signal<Record<string, TaskProgress>>({});
+
+  constructor() {
+    effect(onCleanup => {
+      const subscription = this.taskService
+        .spaceProgress(this.spaceId())
+        .subscribe(({ id, progress }) => this.progress.update(all => ({ ...all, [id]: progress })));
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
+
+  /** "Writing 3 / 10" for a running task with progress; nothing otherwise. */
+  progressText(task: Task): string | undefined {
+    const progress = this.progress()[task.id];
+    return task.status === TaskStatus.IN_PROGRESS && progress ? formatTaskProgress(progress) : undefined;
+  }
+
+  /** What the file is: an export's result, or an import's upload. */
+  downloadLabel(task: Task): string {
+    return isTaskExport(task) ? 'Download export' : 'Download uploaded file';
+  }
+
+  /** An export's file once it finished; an import's upload whatever its status. */
+  canDownload(task: Task): boolean {
+    return !!task.file && (!isTaskExport(task) || task.status === TaskStatus.FINISHED);
+  }
+
+  /** A task's input, as text: "Locale de (key-value JSON)", "en → de (overwrite)". */
+  paramsText(task: Task): string | undefined {
+    return formatTaskParams('params' in task ? task.params : undefined);
+  }
+
+  onDownload(element: Task): void {
     this.taskService.downloadUrl(this.spaceId(), element.id).subscribe({
       next: url => {
         saveAs(url, element.file?.name || 'unknown');

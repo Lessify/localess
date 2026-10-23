@@ -10,16 +10,23 @@ import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 import { TaskRepository } from '../repositories/task.repository.js';
 import { TaskLogService } from '../services/task-log.service.js';
 import type { TaskOutcome } from '../utils/task.utils.js';
+import { TaskProgressReporter } from '../utils/task-progress.js';
 import { TaskRunner } from './task-runner.service.js';
 
 const POLL_INTERVAL_MS = 30_000;
-/** A task still IN_PROGRESS after this long was interrupted (crash, deploy); nothing runs this long. */
-export const STALE_AFTER_MS = 60 * 60_000;
+/** How often a busy instance refreshes its running tasks' locks. */
+const HEARTBEAT_MS = 60_000;
+/**
+ * A task IN_PROGRESS whose lock was not refreshed for this long was interrupted (its instance crashed or stopped): a
+ * live instance beats every minute, so its space is freed within minutes, not held for an hour.
+ */
+export const STALE_AFTER_MS = 5 * 60_000;
 
 /**
  * Runs export/import tasks (was the `task-oncreate` Firestore trigger). A task row is the queue item:
  * claimed atomically with `FOR UPDATE SKIP LOCKED`, so with several instances each task runs exactly
- * once. Woken by `tasks` change events, with a poll as fallback. One task at a time per instance.
+ * once. Woken by `tasks` change events, with a poll as fallback. Up to `LOCALESS_TASK_CONCURRENCY` tasks at once per
+ * instance (one slot each), never two of one space (the claim skips a space with a task in progress).
  */
 @Injectable()
 export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -27,7 +34,10 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
   readonly workerId = `${hostname()}-${process.pid}-${randomBytes(3).toString('hex')}`;
   private subscription?: Subscription;
   private timer?: NodeJS.Timeout;
-  private draining?: Promise<void>;
+  private heartbeat?: NodeJS.Timeout;
+  /** The busy slots: each claims and runs tasks until the queue has nothing for it. */
+  private readonly slots = new Set<Promise<void>>();
+  /** Set by `wake()`: a slot that found nothing looks once more before it stops. */
   private wakeAgain = false;
   private stopped = false;
 
@@ -51,6 +61,10 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
       this.wake();
     }, POLL_INTERVAL_MS);
     this.timer.unref();
+    this.heartbeat = setInterval(() => {
+      if (this.slots.size) void this.taskRepository.heartbeat(this.workerId).catch(error => this.logger.error(error));
+    }, HEARTBEAT_MS);
+    this.heartbeat.unref();
     this.wake();
   }
 
@@ -58,39 +72,37 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
     this.stopped = true;
     this.subscription?.unsubscribe();
     if (this.timer) clearInterval(this.timer);
-    await this.draining;
+    if (this.heartbeat) clearInterval(this.heartbeat);
+    await Promise.all(this.slots);
   }
 
   /** Resolves once the queue is empty (tests). */
   async whenIdle(): Promise<void> {
-    while (this.draining) await this.draining;
+    while (this.slots.size) await Promise.all(this.slots);
   }
 
-  /** Starts draining the queue, or asks the running drain to look again when it's done. */
+  /** Fills the free slots; busy ones look again before they stop. */
   wake(): void {
     if (this.stopped) return;
-    if (this.draining) {
-      this.wakeAgain = true;
-      return;
+    this.wakeAgain = true;
+    while (this.slots.size < this.config.taskConcurrency) {
+      const slot: Promise<void> = this.drain()
+        .catch(error => this.logger.error(`Task queue failed: ${error}`))
+        .finally(() => this.slots.delete(slot));
+      this.slots.add(slot);
     }
-    this.draining = this.drain()
-      .catch(error => this.logger.error(`Task queue failed: ${error}`))
-      .finally(() => {
-        this.draining = undefined;
-        if (this.wakeAgain && !this.stopped) {
-          this.wakeAgain = false;
-          this.wake();
-        }
-      });
   }
 
   private async drain(): Promise<void> {
-    for (let task = await this.claim(); task && !this.stopped; task = await this.claim()) {
-      await this.process(task);
+    while (!this.stopped) {
+      this.wakeAgain = false;
+      const task = await this.claim();
+      if (task) await this.process(task);
+      else if (!this.wakeAgain) return;
     }
   }
 
-  /** Takes the oldest INITIATED task no one else holds, marking it IN_PROGRESS for this worker. */
+  /** Takes the oldest QUEUED task no one else holds, marking it IN_PROGRESS for this worker. */
   claim(): Promise<TaskEntity | undefined> {
     return this.taskRepository.claim(this.workerId);
   }
@@ -99,11 +111,22 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
     let outcome: TaskOutcome;
     await this.taskLogService.log(task, 'INFO', `Starting ${task.kind} processing`);
     try {
-      outcome = await this.taskRunner.run(task);
+      // Live state, not a column: published for the open dialogs and lists, at most once a second.
+      const progress = new TaskProgressReporter(value =>
+        this.eventService.publish({
+          spaceId: task.spaceId,
+          entity: 'tasks',
+          id: task.id,
+          op: 'progress',
+          kind: task.kind,
+          progress: value,
+        }),
+      );
+      outcome = await this.taskRunner.run(task, progress);
       if (outcome.status === 'FINISHED') await this.taskLogService.log(task, 'INFO', 'Task finished successfully');
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      outcome = { status: 'ERROR', message: err.message, trace: err.stack };
+      outcome = { status: 'ERROR' };
       await this.taskLogService.log(task, 'ERROR', err.message, err.stack);
     }
     // The row may have been deleted meanwhile; then there is nothing to report.
@@ -115,10 +138,10 @@ export class TaskWorker implements OnApplicationBootstrap, OnApplicationShutdown
    * applied, and running it again is the user's call.
    */
   async failStale(): Promise<void> {
-    const stale = await this.taskRepository.failStale(
-      new Date(Date.now() - STALE_AFTER_MS),
-      'The task was interrupted (the server stopped while it ran). Run it again.',
-    );
-    for (const task of stale) this.logger.warn(`Task ${task.id} was interrupted and marked as failed`);
+    const stale = await this.taskRepository.failStale(new Date(Date.now() - STALE_AFTER_MS));
+    for (const task of stale) {
+      this.logger.warn(`Task ${task.id} was interrupted and marked as failed`);
+      await this.taskLogService.log(task, 'ERROR', 'Interrupted: the server running it stopped');
+    }
   }
 }

@@ -52,15 +52,16 @@ describe('TaskService', () => {
     expect((await done).id).toBe('new-task');
   }
 
-  it('export creators post the kind with optional path or locale', async () => {
+  it('creators post the kind, and translate locale its params', async () => {
     const service = setup();
-    await expectExport(service.createAssetExportTask('space-1'), { kind: 'ASSET_EXPORT' });
-    await expectExport(service.createAssetExportTask('space-1', '/a'), { kind: 'ASSET_EXPORT', path: '/a' });
-    await expectExport(service.createContentExportTask('space-1', '/c'), { kind: 'CONTENT_EXPORT', path: '/c' });
-    await expectExport(service.createSchemaExportTask('space-1'), { kind: 'SCHEMA_EXPORT' });
-    await expectExport(service.createTranslationExportTask('space-1'), { kind: 'TRANSLATION_EXPORT' });
-    await expectExport(service.createTranslationExportTask('space-1', 'de'), { kind: 'TRANSLATION_EXPORT', locale: 'de' });
-    await expectExport(service.createAssetRegenerateMetadataTask('space-1'), { kind: 'ASSET_REGEN_METADATA' });
+    await expectExport(service.createSchemaExport('space-1'), { kind: 'SCHEMA_EXPORT' });
+    await expectExport(service.createTranslationExport('space-1'), { kind: 'TRANSLATION_EXPORT' });
+    await expectExport(service.createAssetRegenerateMetadata('space-1'), { kind: 'ASSET_REGEN_METADATA' });
+    const params = { sourceLocale: 'en', targetLocale: 'de', overwrite: false };
+    await expectExport(service.createTranslationTranslate('space-1', params), {
+      kind: 'TRANSLATION_TRANSLATE',
+      params: { type: 'translation-translate', ...params },
+    });
   });
 
   async function expectImport(call: Observable<Task>, fields: [string, string][]) {
@@ -79,14 +80,27 @@ describe('TaskService', () => {
   it('import creators post multipart with the fields before the file', async () => {
     const service = setup();
     const file = new File(['{}'], 'data.json', { type: 'application/json' });
-    await expectImport(service.createAssetImportTask('space-1', file), [['kind', 'ASSET_IMPORT']]);
-    await expectImport(service.createContentImportTask('space-1', file), [['kind', 'CONTENT_IMPORT']]);
-    await expectImport(service.createSchemaImportTask('space-1', file), [['kind', 'SCHEMA_IMPORT']]);
-    await expectImport(service.createTranslationImportTask('space-1', file), [['kind', 'TRANSLATION_IMPORT']]);
-    await expectImport(service.createTranslationImportTask('space-1', file, 'de'), [
+    await expectImport(service.createSchemaImport('space-1', file), [['kind', 'SCHEMA_IMPORT']]);
+    await expectImport(service.createTranslationImport('space-1', file), [
       ['kind', 'TRANSLATION_IMPORT'],
+      ['type', 'translation-full'],
+    ]);
+    await expectImport(service.createTranslationImport('space-1', file, 'de'), [
+      ['kind', 'TRANSLATION_IMPORT'],
+      ['type', 'translation-json-flat'],
       ['locale', 'de'],
     ]);
+  });
+
+  it("progress() follows one task's progress events, nothing else", () => {
+    const service = setup();
+    const seen: unknown[] = [];
+    const subscription = service.progress('space-1', 't1').subscribe(it => seen.push(it));
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't2', op: 'progress', progress: { step: 'Writing', done: 9 } });
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'updated' });
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'progress', progress: { step: 'Writing', done: 3, total: 10 } });
+    expect(seen).toEqual([{ step: 'Writing', done: 3, total: 10 }]);
+    subscription.unsubscribe();
   });
 
   it('downloadUrl() resolves to the same-origin download endpoint', async () => {

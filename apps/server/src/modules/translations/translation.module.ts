@@ -7,7 +7,6 @@ import { TranslationController } from './controllers/translation.controller.js';
 import { TranslationManagementController } from './controllers/translation.management.controller.js';
 import { TranslationRepository } from './repositories/translation.repository.js';
 import { TranslationSnapshotRepository } from './repositories/translation-snapshot.repository.js';
-import { TranslateService } from './services/translate.service.js';
 import { TranslationService } from './services/translation.service.js';
 import { TranslationDeliveryService } from './services/translation-delivery.service.js';
 
@@ -15,6 +14,6 @@ import { TranslationDeliveryService } from './services/translation-delivery.serv
 @Module({
   imports: [ApiTokenModule],
   controllers: [TranslationController, TranslateController, TranslationCdnController, TranslationManagementController],
-  providers: [TranslationService, TranslateService, TranslationDeliveryService, TranslationRepository, TranslationSnapshotRepository],
+  providers: [TranslationService, TranslationDeliveryService, TranslationRepository, TranslationSnapshotRepository],
 })
 export class TranslationModule {}

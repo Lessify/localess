@@ -13,7 +13,6 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
@@ -21,6 +20,7 @@ import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
+import { apiErrorMessage } from '@core/utils/api-error';
 import { translateErrorMessage } from '@core/utils/translate-error';
 import { CONTENT_DEFAULT_LOCALE, Locale, TokenType, Translation, TranslationCreate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -39,6 +39,7 @@ import {
 } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
+import { openTaskProgressDialog } from '@shared/components/task-progress-dialog';
 import {
   TranslateLocaleDialogComponent,
   TranslateLocaleDialogContext,
@@ -54,7 +55,8 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY, forkJoin, of } from 'rxjs';
+import { saveAs } from 'file-saver-es';
+import { forkJoin, of } from 'rxjs';
 import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
 import { AddDialogComponent, AddDialogContext, AddDialogResult } from './add-dialog';
@@ -105,7 +107,6 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   ],
 })
 export class TranslationsComponent implements OnInit {
-  protected readonly importExportEnabled = FEATURE_FLAGS.importExport;
   private readonly translationService = inject(TranslationService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
@@ -303,104 +304,58 @@ export class TranslationsComponent implements OnInit {
 
   openImportDialog(locales: Locale[]): void {
     this.dialog
-      .open<ImportDialogResult, ImportDialogContext>(ImportDialogComponent, {
-        context: {
-          locales: locales,
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ImportDialogResult, ImportDialogContext>(ImportDialogComponent, { context: { locales }, contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => {
-          if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationImportTask(this.spaceId(), it.file, it.locale);
-          } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationImportTask(this.spaceId(), it.file);
-          }
-          return EMPTY;
-        }),
+        switchMap(it => this.taskService.createTranslationImport(this.spaceId(), it.file, it.locale)),
       )
       .subscribe({
-        next: () => {
-          this.notificationService.success('Translation Import Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: () => {
-          this.notificationService.error('Translation Import Task can not be created.');
-        },
+        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Translations Import' }),
+        error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Translations can not be imported.')),
       });
   }
 
+  /** All translations: a task that ends in a download. One locale: downloaded at once. */
   openExportDialog(locales: Locale[]): void {
     this.dialog
-      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, {
-        context: {
-          locales: locales,
-        },
-        contentClass: DIALOG_WIDTH_SM,
-      })
+      .open<ExportDialogResult, ExportDialogContext>(ExportDialogComponent, { context: { locales }, contentClass: DIALOG_WIDTH_SM })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => {
-          console.log(it);
-          if (it?.kind === 'FLAT') {
-            return this.taskService.createTranslationExportTask(this.spaceId(), it.locale);
-          } else if (it?.kind === 'FULL') {
-            return this.taskService.createTranslationExportTask(this.spaceId());
-          }
-          return EMPTY;
-        }),
       )
-      .subscribe({
-        next: () => {
-          this.notificationService.success('Translation Export Task has been created.', {
-            action: {
-              type: 'route',
-              label: 'To Tasks',
-              link: `/features/spaces/${this.spaceId()}/tasks`,
-            },
-          });
-        },
-        error: (err: unknown) => {
-          console.error(err);
-          this.notificationService.error('Translation Export Task can not be created.');
-        },
+      .subscribe(it => {
+        if (it.kind === 'LOCALE') {
+          saveAs(this.translationService.exportLocaleUrl(this.spaceId(), it.locale), `${it.locale}.json`);
+          return;
+        }
+        this.taskService.createTranslationExport(this.spaceId()).subscribe({
+          next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Translations Export' }),
+          error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Translations can not be exported.')),
+        });
       });
   }
 
   openTranslateLocaleDialog(locales: Locale[]): void {
     this.dialog
       .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
-        context: {
-          locales: locales,
-        },
+        context: { locales },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.translationService.translateLocale(this.spaceId(), it.sourceLocale, it.targetLocale, it.overwrite)),
+        switchMap(it =>
+          this.taskService.createTranslationTranslate(this.spaceId(), {
+            sourceLocale: it.sourceLocale,
+            targetLocale: it.targetLocale,
+            overwrite: it.overwrite,
+          }),
+        ),
       )
       .subscribe({
-        next: ({ translated, failed }) => {
-          if (failed > 0) {
-            this.notificationService.error(`Translated ${translated} keys; ${failed} failed and were left unchanged.`);
-          } else if (translated === 0) {
-            this.notificationService.success('Nothing to translate.');
-          } else {
-            this.notificationService.success(`Translated ${translated} keys.`);
-          }
-        },
-        error: (err: unknown) => {
-          this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.'));
-        },
+        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Locale Translation' }),
+        error: (err: unknown) => this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.')),
       });
   }
 

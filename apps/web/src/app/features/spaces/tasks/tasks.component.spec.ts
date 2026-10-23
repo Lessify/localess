@@ -1,10 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { Task, TaskKind, TaskStatus } from '@localess/shared';
+import { signal } from '@angular/core';
+import { UserStore } from '@core/stores/user.store';
+import { Task, TaskKind, TaskProgress, TaskStatus, UserRole } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 vi.mock('file-saver-es', () => ({
@@ -25,7 +27,7 @@ const settle = async () => {
 function task(overrides: Partial<Task> = {}): Task {
   return {
     id: 't1',
-    kind: TaskKind.ASSET_EXPORT,
+    kind: TaskKind.TRANSLATION_EXPORT,
     status: TaskStatus.FINISHED,
     createdAt: 0 as unknown as Task['createdAt'],
     updatedAt: 0 as unknown as Task['updatedAt'],
@@ -38,7 +40,7 @@ describe('TasksComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(tasks: Task[] = []) {
+  function setup(tasks: Task[] = [], role: UserRole = 'ADMIN') {
     const findAll = vi.fn().mockReturnValue(of({ items: tasks, page: 0, size: 20, total: tasks.length }));
     const downloadUrl = vi.fn().mockReturnValue(of('https://download-url'));
     const deleteTask = vi.fn().mockReturnValue(of(undefined));
@@ -46,22 +48,24 @@ describe('TasksComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const progress = new Subject<{ id: string; progress: TaskProgress }>();
 
     TestBed.overrideComponent(TasksComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TaskService, useValue: { findAll, downloadUrl, remove: deleteTask } },
+        { provide: TaskService, useValue: { findAll, downloadUrl, remove: deleteTask, spaceProgress: () => progress } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },
+        { provide: UserStore, useValue: { role: signal(role) } },
       ],
     });
     const fixture = TestBed.createComponent(TasksComponent);
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.detectChanges();
-    return { fixture, component: fixture.componentInstance, findAll, downloadUrl, deleteTask, navigate, success, error, open };
+    return { fixture, component: fixture.componentInstance, findAll, downloadUrl, deleteTask, navigate, success, error, open, progress };
   }
 
   it('loads the first page of the space tasks on init, newest first (the server default)', async () => {
@@ -77,14 +81,49 @@ describe('TasksComponent', () => {
     expect(component.page.loading()).toBe(false);
   });
 
+  it('the Kind filter offers only the kinds the role may start', () => {
+    const kinds = (role: UserRole) => setup([], role).component.filters[0].options.map(it => it.value);
+    expect(kinds('TRANSLATOR')).toEqual(['TRANSLATION_TRANSLATE']);
+    TestBed.resetTestingModule();
+    expect(kinds('EDITOR')).toEqual(['TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'TRANSLATION_TRANSLATE']);
+    TestBed.resetTestingModule();
+    expect(kinds('DEVELOPER')).toEqual([
+      'SCHEMA_EXPORT',
+      'SCHEMA_IMPORT',
+      'TRANSLATION_EXPORT',
+      'TRANSLATION_IMPORT',
+      'TRANSLATION_TRANSLATE',
+    ]);
+  });
+
+  it("shows a running task's progress from the space's progress events", () => {
+    const { component, progress } = setup();
+    progress.next({ id: 't1', progress: { step: 'Writing', done: 3, total: 10 } });
+    expect(component.progressText(task({ id: 't1', status: TaskStatus.IN_PROGRESS }))).toBe('Writing 3 / 10');
+    expect(component.progressText(task({ id: 't2', status: TaskStatus.IN_PROGRESS }))).toBeUndefined();
+  });
+
+  it('names the download by kind', () => {
+    const { component } = setup();
+    expect(component.downloadLabel(task({ kind: TaskKind.TRANSLATION_EXPORT }))).toBe('Download export');
+    expect(component.downloadLabel(task({ kind: TaskKind.TRANSLATION_IMPORT }))).toBe('Download uploaded file');
+  });
+
+  it('downloads only a finished task with a file', () => {
+    const { component } = setup();
+    expect(component.canDownload(task({ status: TaskStatus.FINISHED, file: { name: 'a.zip', size: 1 } }))).toBe(true);
+    expect(component.canDownload(task({ status: TaskStatus.ERROR, file: { name: 'a.zip', size: 1 } }))).toBe(false);
+    expect(component.canDownload(task({ status: TaskStatus.FINISHED }))).toBe(false);
+  });
+
   it('onFilterChange() asks the server for the search, kinds and statuses, from the first page', () => {
     const { fixture, component, findAll } = setup();
     component.list.page.set(2);
 
-    component.onFilterChange({ search: ' backup ', kind: ['ASSET_EXPORT', 'CONTENT_EXPORT'], status: [] });
+    component.onFilterChange({ search: ' backup ', kind: ['SCHEMA_EXPORT', 'TRANSLATION_EXPORT'], status: [] });
     fixture.detectChanges();
 
-    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&search=backup&kind=ASSET_EXPORT&kind=CONTENT_EXPORT');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&search=backup&kind=SCHEMA_EXPORT&kind=TRANSLATION_EXPORT');
   });
 
   it('onSortChange() asks for the creation time in the direction chosen', () => {
@@ -120,7 +159,7 @@ describe('TasksComponent', () => {
 
   it('onDownload() saves the file under its recorded name', () => {
     const { component, downloadUrl } = setup();
-    const exportTask = task({ id: 't1', kind: TaskKind.ASSET_EXPORT, file: { name: 'export.zip', size: 10 } });
+    const exportTask = task({ id: 't1', kind: TaskKind.TRANSLATION_EXPORT, file: { name: 'export.zip', size: 10 } });
 
     component.onDownload(exportTask as any);
 
@@ -130,7 +169,7 @@ describe('TasksComponent', () => {
 
   it('onDownload() falls back to "unknown" when the file has no name', () => {
     const { component } = setup();
-    const exportTask = task({ id: 't1', kind: TaskKind.ASSET_EXPORT });
+    const exportTask = task({ id: 't1', kind: TaskKind.TRANSLATION_EXPORT });
 
     component.onDownload(exportTask as any);
 

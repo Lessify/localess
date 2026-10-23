@@ -58,6 +58,13 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ LOCALESS_WEBHOOK_LOG_DAYS: '0' })).toThrow(/LOCALESS_WEBHOOK_LOG_DAYS/);
   });
 
+  it('runs one task at a time per instance unless configured, refusing 0 and more than 16', () => {
+    expect(loadConfig({}).taskConcurrency).toBe(1);
+    expect(loadConfig({ LOCALESS_TASK_CONCURRENCY: '3' }).taskConcurrency).toBe(3);
+    expect(() => loadConfig({ LOCALESS_TASK_CONCURRENCY: '0' })).toThrow(/LOCALESS_TASK_CONCURRENCY/);
+    expect(() => loadConfig({ LOCALESS_TASK_CONCURRENCY: '17' })).toThrow(/LOCALESS_TASK_CONCURRENCY/);
+  });
+
   it('turns test templates off unless LOCALESS_TEST_TEMPLATES=true', () => {
     expect(loadConfig({}).testTemplates).toBe(false);
     expect(loadConfig({ LOCALESS_TEST_TEMPLATES: 'true' }).testTemplates).toBe(true);

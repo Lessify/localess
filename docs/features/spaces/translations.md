@@ -3,8 +3,6 @@
 > Parent: [Spaces Overview](overview.md) · Related: [Publish Flow](../../publish-flow.md) · [Tasks](tasks.md) ·
 > [Concepts — Translation](../../concepts.md)
 
-> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
-
 ## Purpose
 
 Manage all localisation keys for a space. Supports creating, editing, and publishing translations across multiple locales. Includes
@@ -24,8 +22,8 @@ apps/web/src/app/features/spaces/translations/
   add-dialog/                            ← create new translation key
   edit-dialog/                           ← edit key metadata
   edit-id-dialog/                        ← rename a key's ID
-  export-dialog/                         ← export to file
-  import-dialog/                         ← import from file (creates Task)
+  export-dialog/                         ← all translations (a task) or one locale as key-value JSON (a direct download)
+  import-dialog/                         ← a .localess.zip / .llt.zip, or a key-value .json with its locale (a task)
   shared/components/
     translation-string-view/ translation-string-edit/  ← value view and editor (translations are plain text)
     translation-detail/                  ← per-key detail panel, locale editing, keyboard navigation
@@ -56,9 +54,9 @@ locales of the selected space.
 - Add and rename dialogs ask the server whether a key is taken (`isKeyTaken`: `?key=` in any letter case), so they work in a space of any size
 - Inline editing — clicking a row opens `TranslationDetailComponent` (see below) for the key
 - `publish()` — publishes all translations (`POST /api/app/spaces/:s/translations/publish`), which writes one published `translation_snapshots` row per locale (see [Publish Flow](../../publish-flow.md))
-- `openImportDialog()` — opens import dialog → creates a **Task** for background processing
-- `openExportDialog()` — opens export dialog → creates a **Task** for background processing
-- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → calls `translationService.translateLocale(spaceId, sourceLocale, targetLocale)` (`POST /api/app/spaces/:s/translations/translate-locale`) to bulk-translate one locale into another with the configured machine-translation provider, in a single transaction
+- `openImportDialog()` — content writers: the file only (a key-value `.json` also asks its locale, preselected from the file name, `de.json` → German) → a `TRANSLATION_IMPORT` task, followed in the progress dialog. Missing keys are added, existing ones updated; nothing is deleted; all or nothing
+- `openExportDialog()` — content writers: **All translations** → a `TRANSLATION_EXPORT` task (`.localess.zip`), followed in the progress dialog; **One locale** → downloads `{ key: value }` of the draft values at once (`TranslationService.exportLocaleUrl()`, `GET …/translations/export/:locale`), no task
+- `openTranslateLocaleDialog()` — opens the shared `TranslateLocaleDialogComponent` → a `TRANSLATION_TRANSLATE` task (`TaskService.createTranslationTranslate()`), followed in the progress dialog ("Locale Translation"); translators may start it
 - Layout toggle: **list** (flat) ↔ **tree** (hierarchical), persisted in `LocalSettingsStore.translationLayout`
 
 The page fills the window below the header; its columns follow the width the page has (container queries): list,
@@ -105,8 +103,8 @@ users, are gone; the Firebase import keeps such a value as the text it was store
 | `AddDialogComponent`             | Create a new translation key (Key, value, labels, description, optional client-side auto-translate to other locales)                                                  |
 | `EditDialogComponent`            | Edit key metadata (labels, description)                                                                                                                               |
 | `EditIdDialogComponent`          | Rename a translation key (`PUT …/:id/key`, addressed by the UUID `id`)                                                                                                 |
-| `ExportDialogComponent`          | Choose format and locales to export                                                                                                                                   |
-| `ImportDialogComponent`          | Upload a translation file → creates a Task                                                                                                                            |
+| `ExportDialogComponent`          | All translations (a task) or one locale as key-value JSON                                                                                                                                   |
+| `ImportDialogComponent`          | Pick a file (and a locale for a .json) → an import task                                                                                                                            |
 | `TranslateLocaleDialogComponent` | Bulk AI-translate to a target locale — shared/global component (`apps/web/src/app/shared/components/translate-locale-dialog/`), also used by Contents' `EditDocumentComponent` |
 | `ConfirmationDialogComponent`    | Delete confirmation                                                                                                                                                   |
 
@@ -114,8 +112,8 @@ users, are gone; the Firebase import keeps such a value as the text it was store
 
 | Service               | Purpose                                                                                                  |
 | --------------------- | -------------------------------------------------------------------------------------------------------- |
-| `TranslationService`  | CRUD + publish + translate-locale via `/api/app/spaces/:s/translations` (reads are live)                 |
-| `TaskService`         | Create import/export tasks                                                                               |
+| `TranslationService`  | CRUD + publish + the key-value export URL via `/api/app/spaces/:s/translations` (reads are live)                 |
+| `TaskService`         | Create import, export and translate-locale tasks                                                                               |
 | `SpaceTokenService`   | Retrieve API token for CDN preview links                                                                 |
 | `TranslateService`    | AI translation via `POST /api/app/translate` (`translate()` single, `translateBatch()` batch)            |
 | `NotificationService` | Snackbar feedback                                                                                        |
@@ -133,7 +131,7 @@ a change event in the same transaction (see [Publish Flow](../../publish-flow.md
 The server writes translation values only for the space's locales (`Not in space locales: …`, 400): creating a key with a
 `locales` map, `PUT …/translations/:translationId/locales/:localeId` with a value, and Translate Locale (source and target). Removing a value
 (an empty string) is allowed for any locale, so values left behind by a removed locale can be cleared. v1 push already refused
-other locales. The (hidden) import task skips other locales' values and logs how many, and refuses a single-locale import into a
+other locales. The import task skips other locales' values and logs how many, and refuses a single-locale import into a
 locale the space does not have.
 
 ## Auto-Translate on Create
