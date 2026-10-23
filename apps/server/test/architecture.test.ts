@@ -21,7 +21,8 @@ function sources(dir = SRC): string[] {
 
 const files = sources().map(path => {
   const text = readFileSync(path, 'utf8');
-  return { path, name: relative(SRC, path), source: ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true) };
+  // Posix separators on every platform: the checks match `modules/…`.
+  return { path, name: relative(SRC, path).replaceAll('\\', '/'), source: ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true) };
 });
 type File = (typeof files)[number];
 
@@ -61,6 +62,7 @@ const REWORKED = [
   'modules/schemas/',
   'modules/contents/',
   'modules/assets/',
+  'modules/plugins/',
 ];
 const isReworked = (file: File) => REWORKED.some(prefix => file.name.startsWith(prefix)) && !file.name.includes('/templates/');
 

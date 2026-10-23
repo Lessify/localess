@@ -31,7 +31,7 @@ apps/web/src/app/features/spaces/assets/
 
 File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Every folder of the space comes from `SpaceStore.assetFolders()` (`GET …/assets/folders`, live) as a map `id → folder`; the breadcrumbs are built from it (`@core/utils/folder-tree`). Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`. On a narrow screen the table drops its optional columns first (type and dates below `@md/table`, size and preview below `@lg/table`), the toolbar wraps, and the grid fits two cards of 160 px a row; the picker does the same.
 
-**Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
+**Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
 - One page of the current folder (`SpaceStore.assetFolderId`, `null` at the root), paged, sorted and searched on the
@@ -59,7 +59,7 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 - `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
 - `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
 
 ## CDN Asset Endpoint
 
@@ -339,6 +339,6 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 |---------|---------|
 | `AssetService` | `/api/app/spaces/:s/assets`: live reads, folder create, multipart file upload, rename/edit, move, delete |
 | `TaskService` | Create import/export tasks |
-| `UnsplashPluginService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
+| `UnsplashService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
 | `NotificationService` | Snackbar feedback |
 | `SpaceStore` | Current space + `assetFolderId` (the folder shown) |

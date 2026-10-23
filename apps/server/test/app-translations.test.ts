@@ -45,7 +45,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
   beforeAll(async () => {
     hooks = await fakeServer(() => ({ status: 204, body: '' }));
     unsplash = await fakeServer(request => ({
-      status: 200,
+      status: request.url?.includes('query=refused') ? 401 : 200,
       body: request.url?.startsWith('/search') ? { total: 1, results: [{ id: 'p1' }] } : [{ id: 'r1' }],
       headers: { 'X-RateLimit-Limit': '50', 'X-RateLimit-Remaining': '49' },
     }));
@@ -249,16 +249,24 @@ describe('app API: translations, machine translation, Unsplash', () => {
   describe('Unsplash', () => {
     it('proxies search and random with the server-side key, passing rate limits through', async () => {
       const search = await editor.get('/api/app/plugins/unsplash/search?query=cats&perPage=5&orientation=landscape');
-      expect(search.json()).toEqual({ limit: '50', remaining: '49', total: 1, results: [{ id: 'p1' }] });
+      expect(search.json()).toEqual({ limit: 50, remaining: 49, total: 1, results: [{ id: 'p1' }] });
       const request = unsplash.requests.at(-1)!;
       expect(request.headers.authorization).toBe('Client-ID unsplash-key');
       expect(new URL(request.url, unsplash.url).searchParams.get('orientation')).toBe('landscape');
       expect((await editor.get('/api/app/plugins/unsplash/random')).json()).toEqual({
-        limit: '50',
-        remaining: '49',
+        limit: 50,
+        remaining: 49,
         results: [{ id: 'r1' }],
       });
       expect((await reader.get('/api/app/plugins/unsplash/random')).statusCode).toBe(403);
+    });
+
+    it('refuses a search without a query (400) and answers 424 when Unsplash refuses the key', async () => {
+      expect((await editor.get('/api/app/plugins/unsplash/search')).statusCode).toBe(400);
+      expect((await editor.get('/api/app/plugins/unsplash/search?orientation=round&query=cats')).statusCode).toBe(400);
+      const refused = await editor.get('/api/app/plugins/unsplash/search?query=refused');
+      expect(refused.statusCode).toBe(424);
+      expect(refused.json()).toMatchObject({ message: 'Unsplash API Key is not configured properly.' });
     });
   });
 

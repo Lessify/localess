@@ -1,24 +1,21 @@
-export type UnsplashSearchParams = {
-  query: string;
-  page?: number;
-  perPage?: number;
-  color?: 'black_and_white' | 'black' | 'white' | 'yellow' | 'orange' | 'red' | 'purple' | 'magenta' | 'green' | 'teal' | 'blue';
-  orientation?: 'landscape' | 'portrait' | 'squarish';
-};
+// App API responses of the Unsplash plugin (`/api/app/plugins/unsplash`): Unsplash's own bodies, with the rate limit
+// of the operator's key (`X-RateLimit-Limit` / `X-RateLimit-Remaining`, absent when Unsplash sent none).
 
-export type UnsplashSearchResult = {
+/** `GET …/search`: one page of photos. */
+export interface UnsplashSearchResult {
   limit?: number;
   remaining?: number;
   total: number;
   total_pages: number;
   results: UnsplashPhoto[];
-};
+}
 
-export type UnsplashRandomResult = {
+/** `GET …/random`: 20 random photos. */
+export interface UnsplashRandomResult {
   limit?: number;
   remaining?: number;
   results: UnsplashPhoto[];
-};
+}
 
 export type UnsplashPhoto = {
   id: string;

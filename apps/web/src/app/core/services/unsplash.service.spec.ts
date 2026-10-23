@@ -4,15 +4,15 @@ import { TestBed } from '@angular/core/testing';
 import { AppConfigService, DEFAULT_APP_CONFIG } from '@core/api/app-config.service';
 import { firstValueFrom } from 'rxjs';
 
-import { UnsplashPluginService } from './unsplash-plugin.service';
+import { UnsplashService } from './unsplash.service';
 
-describe('UnsplashPluginService', () => {
+describe('UnsplashService', () => {
   let http: HttpTestingController;
 
   function setup() {
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
     http = TestBed.inject(HttpTestingController);
-    return TestBed.inject(UnsplashPluginService);
+    return TestBed.inject(UnsplashService);
   }
 
   afterEach(() => {

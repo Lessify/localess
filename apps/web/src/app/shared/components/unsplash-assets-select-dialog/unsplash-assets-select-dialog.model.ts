@@ -1,4 +1,4 @@
-import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
+import { UnsplashPhoto } from '@localess/shared';
 
 export interface UnsplashAssetsSelectDialogContext {
   spaceId: string;

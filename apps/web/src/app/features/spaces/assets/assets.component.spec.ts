@@ -5,7 +5,7 @@ import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { UnsplashService } from '@core/services/unsplash.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
@@ -75,7 +75,7 @@ describe('AssetsComponent', () => {
         { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
-        { provide: UnsplashPluginService, useValue: { enabled: () => false } },
+        { provide: UnsplashService, useValue: { enabled: () => false } },
         { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder, assetFolders } },
       ],
     });

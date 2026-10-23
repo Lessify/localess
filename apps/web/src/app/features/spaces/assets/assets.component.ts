@@ -5,7 +5,7 @@ import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { UnsplashService } from '@core/services/unsplash.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
@@ -15,6 +15,7 @@ import { ObjectUtils } from '@core/utils/object-utils.service';
 import { pagedResource } from '@core/utils/paged-resource';
 import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { UnsplashPhoto } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -65,7 +66,6 @@ import {
   fileIcon as resolveFileIcon,
   filePreview as isPreviewableFileType,
 } from '@shared/models/asset.model';
-import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
@@ -158,7 +158,7 @@ export class AssetsComponent implements OnInit {
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
-  readonly unsplashPluginService = inject(UnsplashPluginService);
+  readonly unsplashService = inject(UnsplashService);
 
   // Input
   spaceId = input.required<string>();

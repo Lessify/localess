@@ -29,7 +29,7 @@ Docs drift; checks do not. `apps/server/test/architecture.test.ts` (part of `pnp
 - **Access:** every route declares who may call it: `@Public`, a token (`@CdnToken`, `@ManagementToken`), `@RequireRole` or
   `@SignedIn` (on the method or its controller); the guard refuses a session route that declares none.
 - **Return types:** every public method and exported function declares one, in the modules reworked so far
-  (`REWORKED`: `modules/spaces/`, `modules/webhooks/`, `modules/users/`, `modules/translations/`).
+  (`REWORKED`: spaces, webhooks, users, translations, schemas, contents, assets, plugins).
 - **Queries:** a count or an existence check is `$count` (no `count()` imported from `drizzle-orm`), in the modules
   reworked so far. Relational reads over `select` are reviewed, not checked.
 - **Names:** singular file names whose class matches the file; injected services and repositories named after their

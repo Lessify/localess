@@ -17,6 +17,7 @@ export * from './models/timestamp.js';
 export * from './models/token.model.js';
 export * from './models/translate.model.js';
 export * from './models/translation.model.js';
+export * from './models/unsplash.model.js';
 export * from './models/user.model.js';
 export * from './models/webhook.model.js';
 export * from './roles.js';
