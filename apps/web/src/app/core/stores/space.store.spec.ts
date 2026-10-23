@@ -53,11 +53,11 @@ describe('SpaceStore', () => {
     environments?: Record<string, IdNameUrl[]>;
     findOne?: (spaceId: string) => Observable<Space>;
     /** The content folders and documents (`GET …/contents/folders`, `…/documents`). */
-    findAllFolders?: (spaceId: string) => Observable<unknown>;
-    findAllDocuments?: (spaceId: string) => Observable<unknown>;
+    findFolders?: (spaceId: string) => Observable<unknown>;
+    findDocuments?: (spaceId: string) => Observable<unknown>;
     /** The asset folders and files (`GET …/assets/folders`, `…/files`). */
-    findAllAssetFolders?: (spaceId: string) => Observable<unknown>;
-    findAllAssetFiles?: (spaceId: string) => Observable<unknown>;
+    findAssetFolders?: (spaceId: string) => Observable<unknown>;
+    findAssetFiles?: (spaceId: string) => Observable<unknown>;
     findAllSchemas?: (spaceId: string) => Observable<unknown>;
     notifyError?: ReturnType<typeof vi.fn>;
     isAuthenticated?: ReturnType<typeof signal<boolean>>;
@@ -81,15 +81,15 @@ describe('SpaceStore', () => {
         {
           provide: ContentService,
           useValue: {
-            findAllFolders: listeners.findAllFolders ?? (() => NEVER),
-            findAllDocuments: listeners.findAllDocuments ?? (() => NEVER),
+            findFolders: listeners.findFolders ?? (() => NEVER),
+            findDocuments: listeners.findDocuments ?? (() => NEVER),
           },
         },
         {
           provide: AssetService,
           useValue: {
-            findAllFolders: listeners.findAllAssetFolders ?? (() => NEVER),
-            findAllFiles: listeners.findAllAssetFiles ?? (() => NEVER),
+            findFolders: listeners.findAssetFolders ?? (() => NEVER),
+            findFiles: listeners.findAssetFiles ?? (() => NEVER),
           },
         },
         { provide: SchemaService, useValue: { findAll: listeners.findAllSchemas ?? (() => NEVER) } },
@@ -240,7 +240,7 @@ describe('SpaceStore', () => {
 
     it("loads the selected space's documents and schemas", () => {
       const store = createStore([space('a')], {
-        findAllDocuments: () => of([{ id: 'doc' }]),
+        findDocuments: () => of([{ id: 'doc' }]),
         findAllSchemas: () => of([{ id: 'schema' }]),
       });
       TestBed.tick();
@@ -253,12 +253,12 @@ describe('SpaceStore', () => {
     it('holds every folder and document with its path, and the folders, documents and ids worked out from them', () => {
       const documents = new Subject<unknown>();
       const store = createStore([space('a')], {
-        findAllFolders: () =>
+        findFolders: () =>
           of([
             { id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog' },
             { id: 'y24', kind: 'FOLDER', parentId: 'blog', name: '2024', slug: '2024' },
           ]),
-        findAllDocuments: () => documents,
+        findDocuments: () => documents,
       });
       TestBed.tick();
       // Loaded once both lists arrived.
@@ -276,13 +276,13 @@ describe('SpaceStore', () => {
 
     it('never listens to a persisted space that no longer exists (new install, deleted space)', () => {
       localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'missing', selectedEnvironmentBySpaceId: {} }));
-      const findAllDocuments = vi.fn().mockReturnValue(of([]));
+      const findDocuments = vi.fn().mockReturnValue(of([]));
       const findAllSchemas = vi.fn().mockReturnValue(of([]));
       const notifyError = vi.fn();
-      createStore([space('a')], { findAllDocuments, findAllSchemas, notifyError });
+      createStore([space('a')], { findDocuments, findAllSchemas, notifyError });
       TestBed.tick();
 
-      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(findDocuments.mock.calls).toEqual([['a']]);
       expect(findAllSchemas.mock.calls).toEqual([['a']]);
       expect(notifyError).not.toHaveBeenCalled();
     });
@@ -290,34 +290,34 @@ describe('SpaceStore', () => {
     it('waits for the space list before listening to the persisted space', () => {
       localStorage.setItem(LS_KEY, JSON.stringify({ selectedSpaceId: 'a', selectedEnvironmentBySpaceId: {} }));
       const spaces = new Subject<IdName[]>();
-      const findAllDocuments = vi.fn().mockReturnValue(NEVER);
-      configure(() => spaces, { findAllDocuments });
+      const findDocuments = vi.fn().mockReturnValue(NEVER);
+      configure(() => spaces, { findDocuments });
       TestBed.tick();
 
-      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findDocuments).not.toHaveBeenCalled();
 
       spaces.next([space('a')]);
       TestBed.tick();
 
-      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(findDocuments.mock.calls).toEqual([['a']]);
     });
 
     it('listens to documents and schemas for every role, a viewer included (as the server)', () => {
-      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
-      const store = createStore([space('a')], { findAllDocuments, findAllSchemas: () => of([{ id: 'schema' }]), role: 'VIEWER' });
+      const findDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const store = createStore([space('a')], { findDocuments, findAllSchemas: () => of([{ id: 'schema' }]), role: 'VIEWER' });
       TestBed.tick();
 
-      expect(findAllDocuments.mock.calls).toEqual([['a']]);
+      expect(findDocuments.mock.calls).toEqual([['a']]);
       expect(store.schemas()).toEqual([{ id: 'schema' }]);
     });
 
     it('listens to nothing for a user without a role (as the server)', () => {
-      const findAllDocuments = vi.fn(() => of([{ id: 'doc' }]));
+      const findDocuments = vi.fn(() => of([{ id: 'doc' }]));
       const findAllSchemas = vi.fn(() => of([{ id: 'schema' }]));
-      createStore([space('a')], { findAllDocuments, findAllSchemas, role: null });
+      createStore([space('a')], { findDocuments, findAllSchemas, role: null });
       TestBed.tick();
 
-      expect(findAllDocuments).not.toHaveBeenCalled();
+      expect(findDocuments).not.toHaveBeenCalled();
       expect(findAllSchemas).not.toHaveBeenCalled();
     });
 
@@ -325,7 +325,7 @@ describe('SpaceStore', () => {
       const documents = subjectsBySpace();
       const schemas = subjectsBySpace();
       const store = createStore([space('a'), space('b')], {
-        findAllDocuments: documents.listen,
+        findDocuments: documents.listen,
         findAllSchemas: schemas.listen,
       });
       TestBed.tick();
@@ -346,21 +346,21 @@ describe('SpaceStore', () => {
     });
 
     it('keeps the listeners and data when re-selecting the current space', () => {
-      const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
-      const store = createStore([space('a'), space('b')], { findAllDocuments });
+      const findDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
+      const store = createStore([space('a'), space('b')], { findDocuments });
       TestBed.tick();
 
       store.changeSpace(space('a'));
       TestBed.tick();
 
-      expect(findAllDocuments).toHaveBeenCalledTimes(1);
+      expect(findDocuments).toHaveBeenCalledTimes(1);
       expect(store.contents()).toEqual([{ id: 'doc' }]);
     });
 
     it('stops listening and drops the data on sign-out', () => {
       const documents = subjectsBySpace();
       const isAuthenticated = signal(true);
-      const store = createStore([space('a')], { findAllDocuments: documents.listen, isAuthenticated });
+      const store = createStore([space('a')], { findDocuments: documents.listen, isAuthenticated });
       TestBed.tick();
       documents.subjects.get('a')?.next([{ id: 'doc' }]);
 
@@ -374,12 +374,12 @@ describe('SpaceStore', () => {
     it('notifies the user and recovers documents after the listener errors once', async () => {
       vi.useFakeTimers();
       let call = 0;
-      const findAllDocuments = vi.fn().mockImplementation((): Observable<unknown> => {
+      const findDocuments = vi.fn().mockImplementation((): Observable<unknown> => {
         call++;
         return call === 1 ? throwError(() => new Error('boom')) : of([{ id: 'doc' }]);
       });
       const notifyError = vi.fn();
-      const store = createStore([space('a')], { findAllDocuments, notifyError });
+      const store = createStore([space('a')], { findDocuments, notifyError });
       TestBed.tick();
 
       expect(notifyError).toHaveBeenCalledWith('Lost connection to content updates. Retrying…');
@@ -388,7 +388,7 @@ describe('SpaceStore', () => {
       await vi.advanceTimersByTimeAsync(1000);
 
       expect(store.contents()).toEqual([{ id: 'doc' }]);
-      expect(findAllDocuments).toHaveBeenCalledTimes(2);
+      expect(findDocuments).toHaveBeenCalledTimes(2);
     });
 
     it('notifies the user and recovers schemas after the listener errors once', async () => {
@@ -412,20 +412,20 @@ describe('SpaceStore', () => {
     });
 
     it('does not notify or retry when the listeners succeed on the first try', () => {
-      const findAllDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
+      const findDocuments = vi.fn().mockReturnValue(of([{ id: 'doc' }]));
       const notifyError = vi.fn();
-      createStore([space('a')], { findAllDocuments, notifyError });
+      createStore([space('a')], { findDocuments, notifyError });
       TestBed.tick();
 
       expect(notifyError).not.toHaveBeenCalled();
-      expect(findAllDocuments).toHaveBeenCalledTimes(1);
+      expect(findDocuments).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('asset lists', () => {
     it('holds the asset folders of the selected space, and drops them when the space changes', () => {
-      const findAllAssetFolders = vi.fn((spaceId: string) => of([{ id: `f-${spaceId}`, name: 'Images' }]));
-      const store = createStore([space('a'), space('b')], { findAllAssetFolders });
+      const findAssetFolders = vi.fn((spaceId: string) => of([{ id: `f-${spaceId}`, name: 'Images' }]));
+      const store = createStore([space('a'), space('b')], { findAssetFolders });
       TestBed.tick();
       expect(store.assetFolders()).toEqual([{ id: 'f-a', name: 'Images' }]);
 
@@ -436,19 +436,19 @@ describe('SpaceStore', () => {
 
     it('reads the files only once asked (an Asset field), live, and stops when the space changes', () => {
       const files = new Map<string, Subject<unknown>>();
-      const findAllAssetFiles = vi.fn((spaceId: string) => {
+      const findAssetFiles = vi.fn((spaceId: string) => {
         const subject = new Subject<unknown>();
         files.set(spaceId, subject);
         return subject;
       });
-      const store = createStore([space('a'), space('b')], { findAllAssetFiles });
+      const store = createStore([space('a'), space('b')], { findAssetFiles });
       TestBed.tick();
-      expect(findAllAssetFiles).not.toHaveBeenCalled();
+      expect(findAssetFiles).not.toHaveBeenCalled();
 
       store.loadAssetFiles();
       store.loadAssetFiles();
       TestBed.tick();
-      expect(findAllAssetFiles.mock.calls).toEqual([['a']]);
+      expect(findAssetFiles.mock.calls).toEqual([['a']]);
       files.get('a')?.next([{ id: 'logo', name: 'logo' }]);
       expect(store.assetFilesLoaded()).toBe(true);
       expect(store.assetFileById().get('logo')?.name).toBe('logo');
@@ -460,7 +460,7 @@ describe('SpaceStore', () => {
       TestBed.tick();
       expect(files.get('a')?.observed).toBe(false);
       expect(store.assetFiles()).toEqual([]);
-      expect(findAllAssetFiles).toHaveBeenCalledTimes(1);
+      expect(findAssetFiles).toHaveBeenCalledTimes(1);
     });
   });
 

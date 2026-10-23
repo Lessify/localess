@@ -64,7 +64,7 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
 
 ## Web
 
-- **Service:** `findPage(…, params: HttpParams): Observable<Page<T>>`, a live query
+- **Service:** `findAll(…, params: HttpParams): Observable<Page<T>>`, a live query
   (`liveQueryWith(events, scope, () => http.get<Page<T>>(url, { params }))`): a change event refetches the page shown.
 - **Component:** a `PagedList` (`core/utils/paged-list.ts`) holds `size`, `sort`, `direction`, `filters`, and `page`
   (a `linkedSignal`: back to 0 whenever the sort, a filter or a derived filter changes; the paginator sets it);
@@ -73,7 +73,7 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
   for the folder just left (cancelled at once, a red line in DevTools). Load with `pagedResource` (`core/utils/
   paged-resource.ts`), an `rxResource` over the service's live Observable:
   ```ts
-  readonly page = pagedResource({ list: this.list, load: params => this.service.findPage(this.spaceId(), params), error: 'Tasks can not be loaded.' });
+  readonly page = pagedResource({ list: this.list, load: params => this.service.findAll(this.spaceId(), params), error: 'Tasks can not be loaded.' });
   ```
   One request per query (a newer one cancels the one in flight); `page.items()`, `page.total()`, `page.loading()`; the
   previous page stays shown while the next loads; a failed load is told and keeps the previous page; `onLoaded` moves to
@@ -99,7 +99,7 @@ The Tasks list is the reference; each step names the file.
 3. `modules/tasks/services/task.service.ts`: `findAll(spaceId, query)` → `Page<Task>`.
 4. `modules/tasks/controllers/task.controller.ts`: `findAll(@Query({ schema: zTaskPageable }) query)`.
 5. `apps/server/test/tasks-paging.test.ts`.
-6. `apps/web/src/app/core/services/task.service.ts`: `findPage(spaceId, params)`.
+6. `apps/web/src/app/core/services/task.service.ts`: `findAll(spaceId, params)`, the controller's name.
 7. `apps/web/src/app/features/spaces/tasks/tasks.component.ts` and `.html`: `PagedList`, `pagedResource`, paginator, sort, filters.
 8. Their specs; the e2e helpers if they read the list (`everyPage`); the feature doc (`docs/features/…`).
 
@@ -132,7 +132,7 @@ answers the full document for the editor).
   under the root, the whole space.
 - `kind` (`FOLDER` / `DOCUMENT`), `search` (the name or the slug, anywhere, case-insensitive, wildcards literal).
 
-The Contents table and the References picker read one page (`ContentService.findPage` with a `FolderList`, the folder,
+The Contents table and the References picker read one page (`ContentService.findAll` with a `FolderList`, the folder,
 search and scope state they share; the folder read from `SpaceStore.contentFolderId`, the picker's from its own signal:
 opening a folder sends one request). The breadcrumbs, the Move dialog, the Link and References fields read the light lists
 instead, held live by `SpaceStore` (see "Not paged" below). Tests: `apps/server/test/contents-paging.test.ts`.
@@ -149,7 +149,7 @@ instead, held live by `SpaceStore` (see "Not paged" below). Tests: `apps/server/
   `ASSET_FILE_TYPE_MIME`; folders stay listed, to browse; `ANY` filters nothing), `search` (the name, anywhere,
   case-insensitive, wildcards literal).
 
-The Assets page (list and grid) and the asset picker read one page (`AssetService.findPage` with a `FolderList`, as
+The Assets page (list and grid) and the asset picker read one page (`AssetService.findAll` with a `FolderList`, as
 Contents; the folder read from `SpaceStore.assetFolderId`, the picker's from its own signal). Tests: `apps/server/test/assets-paging.test.ts`.
 
 ## Not paged (and why)

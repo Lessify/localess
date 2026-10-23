@@ -30,7 +30,7 @@ export class TranslationService {
   }
 
   /** One page of the keys (`params`: page, size and the filter), read once; `TranslationPages` reads again on changes. */
-  findPage(spaceId: string, params: HttpParams): Observable<Page<Translation>> {
+  findAll(spaceId: string, params: HttpParams): Observable<Page<Translation>> {
     return this.http.get<Page<Translation>>(this.base(spaceId), { params });
   }
 

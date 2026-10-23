@@ -39,7 +39,7 @@ export class FirebaseImportDialogComponent {
     const { origin, token } = this.form.getRawValue();
     this.error.set(undefined);
     this.busy.set(true);
-    this.imports.sourceSpaces(origin, token).subscribe({
+    this.imports.findSourceSpaces(origin, token).subscribe({
       next: spaces => {
         this.spaces.set(spaces);
         this.busy.set(false);

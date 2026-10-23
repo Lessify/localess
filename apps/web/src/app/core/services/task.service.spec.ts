@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Observable, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Task, TaskLog } from '@localess/shared';
+import { Task } from '@localess/shared';
 import { TaskService } from './task.service';
 
 const BASE = '/api/app/spaces/space-1/tasks';
@@ -28,39 +28,20 @@ describe('TaskService', () => {
     vi.useRealTimers();
   });
 
-  it('findPage() reads one page of the space tasks with the query given', async () => {
+  it('findAll() reads one page of the space tasks with the query given', async () => {
     const service = setup();
     const params = new HttpParams().set('page', 1).set('size', 20).append('status', 'ERROR').append('status', 'FINISHED');
-    const result = firstValueFrom(service.findPage('space-1', params));
+    const result = firstValueFrom(service.findAll('space-1', params));
     const page = { items: [{ id: 't1' }], page: 1, size: 20, total: 21 };
     http.expectOne(`${BASE}?page=1&size=20&status=ERROR&status=FINISHED`).flush(page);
     expect(await result).toEqual(page);
   });
 
-  it('findById() reads one task', async () => {
+  it('findOne() reads one task', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 't1'));
+    const result = firstValueFrom(service.findOne('space-1', 't1'));
     http.expectOne(`${BASE}/t1`).flush({ id: 't1' });
     expect(await result).toEqual({ id: 't1' });
-  });
-
-  it('findLogs() reads the task logs and refetches on log events of that task only', async () => {
-    vi.useFakeTimers();
-    const service = setup();
-    const results: TaskLog[][] = [];
-    const subscription = service.findLogs('space-1', 't1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}/t1/logs`).flush([]);
-
-    events.next({ spaceId: 'space-1', entity: 'task_logs', id: 't2', op: 'created' });
-    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}/t1/logs`);
-
-    events.next({ spaceId: 'space-1', entity: 'task_logs', id: 't1', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}/t1/logs`).flush([{ id: '1' } as TaskLog]);
-    expect(results).toEqual([[], [{ id: '1' }]]);
-    subscription.unsubscribe();
   });
 
   async function expectExport(call: Observable<Task>, body: object) {
@@ -113,9 +94,9 @@ describe('TaskService', () => {
     expect(await firstValueFrom(service.downloadUrl('space-1', 't1'))).toBe(`${BASE}/t1/download`);
   });
 
-  it('delete() deletes the task', async () => {
+  it('remove() deletes the task', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', 't1'));
+    const done = firstValueFrom(service.remove('space-1', 't1'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/t1` }).flush(null);
     await done;
   });

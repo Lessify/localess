@@ -36,7 +36,10 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
   | A domain action | its verb | `publish`, `rename`, `move`, `setDefaultLocale`, `cancel`, `regenerate`, `invite` |
   | A count | `count` | `GET /contents/count` |
 
-- **Why:** the scaffold every NestJS developer knows; one name across the two layers, so a route is followed by name.
+  The web's service for the controller (`AssetController` → `AssetService`, a sub-entity's own: `TaskLogController` →
+  `TaskLogService`) calls each endpoint through a method of the same name too
+  ([frontend-architecture.md](../frontend-architecture.md#core-module)).
+- **Why:** the scaffold every NestJS developer knows; one name across the layers, so a route is followed by name.
 - **Example:** `modules/tasks/controllers/task.controller.ts` and `services/task.service.ts`.
 - **Don't:** `list`, `get`, `delete`, `page`, `getById`, or a bare noun (`logs`, `folders`). A sub-entity's methods
   are the plain ones on its own controller (`SpaceEnvironmentController.remove`), not `removeEnvironment` on the

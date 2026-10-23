@@ -3,6 +3,7 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
 import { Webhook, WebhookEvent, WebhookLog, WebhookStatus } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
+import { WebhookLogService } from '../webhook-log.service';
 import { WebhookService } from '../webhook.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
@@ -30,7 +31,7 @@ describe('WebhookDetailComponent', () => {
 
   /** `failLogs`: the logs request fails. */
   function setup(found: Webhook, logs: WebhookLog[] = [], failLogs = false) {
-    const findById = vi.fn().mockReturnValue(of(found));
+    const findOne = vi.fn().mockReturnValue(of(found));
     const findLogs = vi
       .fn()
       .mockReturnValue(failLogs ? throwError(() => new Error('boom')) : of({ items: logs, page: 0, size: 20, total: logs.length }));
@@ -49,7 +50,11 @@ describe('WebhookDetailComponent', () => {
       providers: [
         {
           provide: WebhookService,
-          useValue: { findById, findLogs, update, updateStatus, delete: deleteWebhook, createSecret, removeSecret },
+          useValue: { findOne, update, updateStatus, remove: deleteWebhook, createSecret, removeSecret },
+        },
+        {
+          provide: WebhookLogService,
+          useValue: { findAll: findLogs },
         },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
@@ -62,7 +67,7 @@ describe('WebhookDetailComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findById,
+      findOne,
       findLogs,
       update,
       updateStatus,
@@ -81,9 +86,9 @@ describe('WebhookDetailComponent', () => {
     const logs: WebhookLog[] = [
       { id: 'l1', event: WebhookEvent.CONTENT_PUBLISHED, status: WebhookStatus.SUCCESS } as unknown as WebhookLog,
     ];
-    const { component, findById, findLogs } = setup(found, logs);
+    const { component, findOne, findLogs } = setup(found, logs);
 
-    expect(findById).toHaveBeenCalledWith('space-1', 'w1');
+    expect(findOne).toHaveBeenCalledWith('space-1', 'w1');
     expect(findLogs).toHaveBeenCalledWith('space-1', 'w1', component.list.params());
     expect(component.webhook()).toEqual(found);
     expect(component.dataSource.filteredData()).toEqual(logs);

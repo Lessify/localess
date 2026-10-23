@@ -2,7 +2,7 @@ import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
-import { Page, WebhookEvent, WebhookLog } from '@localess/shared';
+import { WebhookEvent } from '@localess/shared';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -37,9 +37,9 @@ describe('WebhookService', () => {
     expect(await result).toEqual(page);
   });
 
-  it('findById() reads one webhook', async () => {
+  it('findOne() reads one webhook', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 'w1'));
+    const result = firstValueFrom(service.findOne('space-1', 'w1'));
     http.expectOne({ method: 'GET', url: `${base}/w1` }).flush({ id: 'w1' });
     expect(await result).toEqual({ id: 'w1' });
   });
@@ -95,38 +95,10 @@ describe('WebhookService', () => {
     await done;
   });
 
-  it('delete() deletes the webhook', async () => {
+  it('remove() deletes the webhook', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', 'w1'));
+    const done = firstValueFrom(service.remove('space-1', 'w1'));
     http.expectOne({ method: 'DELETE', url: `${base}/w1` }).flush(null);
     await done;
-  });
-
-  it('findLogs() reads one page of the logs with the query', async () => {
-    const service = setup();
-    const page = { items: [{ id: '1' }], page: 0, size: 20, total: 1 };
-    const result = firstValueFrom(service.findLogs('space-1', 'w1', new HttpParams().set('page', 0).append('status', 'FAILURE')));
-    http.expectOne({ method: 'GET', url: `${base}/w1/logs?page=0&status=FAILURE` }).flush(page);
-    expect(await result).toEqual(page);
-  });
-
-  it('findLogs() refetches on new logs of that webhook only', async () => {
-    vi.useFakeTimers();
-    const service = setup();
-    const results: Page<WebhookLog>[] = [];
-    const empty = { items: [], page: 0, size: 20, total: 0 };
-    const one = { items: [{ id: '1' } as WebhookLog], page: 0, size: 20, total: 1 };
-    const subscription = service.findLogs('space-1', 'w1', new HttpParams()).subscribe(it => results.push(it));
-    http.expectOne(`${base}/w1/logs`).flush(empty);
-
-    events.next({ spaceId: 'space-1', entity: 'webhook_logs', id: 'w2', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${base}/w1/logs`);
-
-    events.next({ spaceId: 'space-1', entity: 'webhook_logs', id: 'w1', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${base}/w1/logs`).flush(one);
-    expect(results).toEqual([empty, one]);
-    subscription.unsubscribe();
   });
 });

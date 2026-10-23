@@ -35,7 +35,7 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 
 **Key behaviour:**
 - One page of the current folder (`SpaceStore.assetFolderId`, `null` at the root), paged, sorted and searched on the
-  server (`AssetService.findPage()`, `GET …/assets`, live: it refetches on `assets` change events), in both layouts.
+  server (`AssetService.findAll()`, `GET …/assets`, live: it refetches on `assets` change events), in both layouts.
   Its query is a `FolderList` (`@core/utils/folder-list.ts`, the folder read from the store, so opening one sends one
   request; loaded by `pagedResource`), the same the Contents table and both pickers use: folders
   first, by name unless sorted by a column header (the grid follows the list's sort); the toolbar's search (the name, on

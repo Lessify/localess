@@ -18,7 +18,7 @@ import { AssetFileImport, AssetFolderCreateForm } from '@shared/models/asset.mod
 import { Observable } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 
-/** Asset library of a space (`/api/app/spaces/:spaceId/assets`); reads are live. */
+/** Asset library of a space (`/api/app/spaces/:spaceId/assets`, the server's `AssetController`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class AssetService {
   private readonly http = inject(HttpClient);
@@ -32,19 +32,19 @@ export class AssetService {
    * One page of the list (`GET …/assets`, folders first), live: the folder (`parentId`, absent: the root), `deep`,
    * `fileType`, `search`, the sort and the page come from a `FolderList`.
    */
-  findPage(spaceId: string, params: HttpParams): Observable<Page<Asset>> {
+  findAll(spaceId: string, params: HttpParams): Observable<Page<Asset>> {
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () => this.http.get<Page<Asset>>(this.base(spaceId), { params }));
   }
 
   /** Every folder of the space, live: `SpaceStore` holds it (breadcrumbs, paths, move targets). */
-  findAllFolders(spaceId: string): Observable<AssetFolderSummary[]> {
+  findFolders(spaceId: string): Observable<AssetFolderSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
       this.http.get<AssetFolderSummary[]>(`${this.base(spaceId)}/folders`),
     );
   }
 
   /** Every file of the space, light, live: `SpaceStore` holds it for the Asset and Assets fields. */
-  findAllFiles(spaceId: string): Observable<AssetFileSummary[]> {
+  findFiles(spaceId: string): Observable<AssetFileSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['assets'] }, () =>
       this.http.get<AssetFileSummary[]>(`${this.base(spaceId)}/files`),
     );
@@ -68,10 +68,15 @@ export class AssetService {
     return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentId, name: entity.name } satisfies AssetFolderCreate);
   }
 
+  /** A new file, multipart: the fields first, then the file; `createFile` and `importFile` fill the fields. */
+  upload(spaceId: string, fields: AssetUpload, file: File): Observable<AssetFile> {
+    return this.http.post<AssetFile>(`${this.base(spaceId)}/files`, multipartForm(fields, file));
+  }
+
   /** Name and extension are taken from the file name server-side. */
   createFile(spaceId: string, parentId: string | undefined, entity: File): Observable<AssetFile> {
     const fields: AssetUpload = { parentId: parentId ?? '' };
-    return this.upload(spaceId, multipartForm(fields, entity));
+    return this.upload(spaceId, fields, entity);
   }
 
   /** Downloads `entity.url` in the browser and uploads it as a new file; `parentId` absent: the root. */
@@ -86,13 +91,9 @@ export class AssetService {
           source: entity.source || undefined,
         };
         // A File (not a Blob plus filename): some FormData implementations drop the filename argument.
-        return this.upload(spaceId, multipartForm(fields, new File([blob], `${entity.name}${entity.extension}`, { type: blob.type })));
+        return this.upload(spaceId, fields, new File([blob], `${entity.name}${entity.extension}`, { type: blob.type }));
       }),
     );
-  }
-
-  private upload(spaceId: string, form: FormData): Observable<AssetFile> {
-    return this.http.post<AssetFile>(`${this.base(spaceId)}/files`, form);
   }
 
   /** Name (and alt for a file: empty removes it) and/or the folder (`parentId`); answers the asset as stored. */

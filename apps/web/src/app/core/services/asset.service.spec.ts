@@ -37,12 +37,12 @@ describe('AssetService', () => {
     vi.useRealTimers();
   });
 
-  it('findPage() reads one page of the query, and again when an asset of the space changes, ignoring other entities', async () => {
+  it('findAll() reads one page of the query, and again when an asset of the space changes, ignoring other entities', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: Page<Asset>[] = [];
     const params = new HttpParams().set('page', 1).set('size', 20).set('parentId', 'f1');
-    const subscription = service.findPage('space-1', params).subscribe(it => results.push(it));
+    const subscription = service.findAll('space-1', params).subscribe(it => results.push(it));
     http.expectOne(`${BASE}?page=1&size=20&parentId=f1`).flush(page([], 21, 1));
 
     events.next({ spaceId: 'space-1', entity: 'contents', id: 'c', op: 'updated' });
@@ -56,11 +56,11 @@ describe('AssetService', () => {
     subscription.unsubscribe();
   });
 
-  it('findAllFolders() reads every folder of the space, live', async () => {
+  it('findFolders() reads every folder of the space, live', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: unknown[][] = [];
-    const subscription = service.findAllFolders('space-1').subscribe(it => results.push(it));
+    const subscription = service.findFolders('space-1').subscribe(it => results.push(it));
     http.expectOne(`${BASE}/folders`).flush([{ id: 'f1', name: 'Photos' }]);
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'f2', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
@@ -76,11 +76,11 @@ describe('AssetService', () => {
     expect(await found).toEqual([{ id: 'a1' }]);
   });
 
-  it('findAllFiles() reads every file of the space, light, live', async () => {
+  it('findFiles() reads every file of the space, light, live', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: unknown[][] = [];
-    const subscription = service.findAllFiles('space-1').subscribe(it => results.push(it));
+    const subscription = service.findFiles('space-1').subscribe(it => results.push(it));
     http.expectOne(`${BASE}/files`).flush([{ id: 'a1', name: 'logo' }]);
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a1', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);

@@ -31,22 +31,22 @@ describe('ContentService', () => {
   /** A page of the list as the server answers it. */
   const page = (items: unknown[], total = items.length, index = 0) => ({ items, page: index, size: 100, total });
 
-  it('findPage() reads one page with the query as given', async () => {
+  it('findAll() reads one page with the query as given', async () => {
     const service = setup();
     const params = new HttpParams().set('page', 1).set('size', 20).set('parentId', 'f1').set('deep', 'true').set('search', 'blog');
-    const result = firstValueFrom(service.findPage('space-1', params));
+    const result = firstValueFrom(service.findAll('space-1', params));
     http.expectOne(`${BASE}?page=1&size=20&parentId=f1&deep=true&search=blog`).flush(page([{ id: 'c1' }], 21, 1));
     expect(await result).toEqual(page([{ id: 'c1' }], 21, 1));
   });
 
-  it('findAllFolders() and findAllDocuments() read every folder, every document, of the space, light, live', async () => {
+  it('findFolders() and findDocuments() read every folder, every document, of the space, light, live', async () => {
     vi.useFakeTimers();
     const service = setup();
     const folders: unknown[][] = [];
     const documents: unknown[][] = [];
     const subscriptions = [
-      service.findAllFolders('space-1').subscribe(it => folders.push(it)),
-      service.findAllDocuments('space-1').subscribe(it => documents.push(it)),
+      service.findFolders('space-1').subscribe(it => folders.push(it)),
+      service.findDocuments('space-1').subscribe(it => documents.push(it)),
     ];
     http.expectOne(`${BASE}/folders`).flush([{ id: 'f1', kind: 'FOLDER', name: 'Blog', slug: 'blog' }]);
     http.expectOne(`${BASE}/documents`).flush([]);
@@ -59,12 +59,12 @@ describe('ContentService', () => {
     subscriptions.forEach(it => it.unsubscribe());
   });
 
-  it('findPage() reads the page again when a content of the space changes, ignoring other entities', async () => {
+  it('findAll() reads the page again when a content of the space changes, ignoring other entities', async () => {
     vi.useFakeTimers();
     const service = setup();
     const results: Content[][] = [];
     const params = new HttpParams().set('page', 0).set('size', 20);
-    const subscription = service.findPage('space-1', params).subscribe(it => results.push(it.items));
+    const subscription = service.findAll('space-1', params).subscribe(it => results.push(it.items));
     http.expectOne(`${BASE}?page=0&size=20`).flush(page([]));
 
     events.next({ spaceId: 'space-1', entity: 'assets', id: 'a', op: 'updated' });

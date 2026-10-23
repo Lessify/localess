@@ -113,7 +113,7 @@ export class AssetsSelectDialogComponent implements OnInit {
   /** The page shown, live. */
   readonly page = pagedResource({
     list: this.assetList.list,
-    load: params => this.assetService.findPage(this.context.spaceId, params),
+    load: params => this.assetService.findAll(this.context.spaceId, params),
     error: 'Assets can not be loaded.',
   });
   readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);

@@ -27,7 +27,7 @@ const settle = async () => {
 describe('ReferencesSelectDialogComponent', () => {
   function setup(context: ReferencesSelectDialogContext, contents: Content[] = [], schemas: Schema[] = []) {
     const close = vi.fn();
-    const findPage = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
+    const findAll = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
     const error = vi.fn();
 
     TestBed.overrideComponent(ReferencesSelectDialogComponent, {
@@ -51,27 +51,27 @@ describe('ReferencesSelectDialogComponent', () => {
         {
           provide: ContentService,
           useValue: {
-            findPage,
+            findAll,
           },
         },
       ],
     });
     const fixture = TestBed.createComponent(ReferencesSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findPage, error };
+    return { component: fixture.componentInstance, close, findAll, error };
   }
 
   /** The query of the last page read. */
-  const lastQuery = (findPage: ReturnType<typeof setup>['findPage']) => (findPage.mock.calls.at(-1)?.[1] as HttpParams).toString();
+  const lastQuery = (findAll: ReturnType<typeof setup>['findAll']) => (findAll.mock.calls.at(-1)?.[1] as HttpParams).toString();
 
   it("loads the root's first page, the same query as the Contents table", async () => {
     const items = [folder({ id: 'f1' })];
     const schemas = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema];
-    const { component, findPage } = setup({ spaceId: 'space-1' }, items, schemas);
+    const { component, findAll } = setup({ spaceId: 'space-1' }, items, schemas);
     await settle();
 
-    expect(findPage.mock.calls.at(-1)?.[0]).toBe('space-1');
-    expect(lastQuery(findPage)).toBe('page=0&size=20');
+    expect(findAll.mock.calls.at(-1)?.[0]).toBe('space-1');
+    expect(lastQuery(findAll)).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(items);
     expect(component.page.total()).toBe(1);
     expect(component.schemasMapByName().get('s1')).toEqual(schemas[0]);
@@ -88,13 +88,13 @@ describe('ReferencesSelectDialogComponent', () => {
   });
 
   it('onRowSelect() navigates into folders, keeping the search and the scope', () => {
-    const { component, findPage } = setup({ spaceId: 'space-1' });
+    const { component, findAll } = setup({ spaceId: 'space-1' });
     component.contentList.onFilterChange({ search: 'home', scope: 'deep' });
 
     component.onRowSelect(folder({ id: 'f1', name: 'Docs', fullSlug: 'docs' }));
     TestBed.tick();
 
-    expect(lastQuery(findPage)).toBe('page=0&size=20&search=home&deep=true&parentId=f1');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=home&deep=true&parentId=f1');
   });
 
   it('keeps the selection across pages and folders', () => {
@@ -109,8 +109,8 @@ describe('ReferencesSelectDialogComponent', () => {
   });
 
   it('tells a failed load', async () => {
-    const { component, findPage, error } = setup({ spaceId: 'space-1' });
-    findPage.mockReturnValueOnce(throwError(() => new Error('boom')));
+    const { component, findAll, error } = setup({ spaceId: 'space-1' });
+    findAll.mockReturnValueOnce(throwError(() => new Error('boom')));
     component.contentList.onFilterChange({ search: 'x', scope: '' });
     await settle();
     expect(error).toHaveBeenCalledWith('Contents can not be loaded.');

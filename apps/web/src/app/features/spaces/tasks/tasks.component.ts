@@ -146,7 +146,7 @@ export class TasksComponent implements OnInit {
     toObservable(this.list.params, { injector: this.injector })
       .pipe(
         switchMap(params =>
-          this.taskService.findPage(spaceId, params).pipe(
+          this.taskService.findAll(spaceId, params).pipe(
             catchError(() => {
               this.notificationService.error('Tasks can not be loaded.');
               this.isLoading.set(false);
@@ -185,7 +185,7 @@ export class TasksComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.taskService.delete(this.spaceId(), element.id)),
+        switchMap(() => this.taskService.remove(this.spaceId(), element.id)),
       )
       .subscribe({
         next: () => {

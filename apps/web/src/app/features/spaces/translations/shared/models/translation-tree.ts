@@ -197,7 +197,7 @@ export class TranslationTree {
   }
 
   private readMatches(page: number): Promise<Page<Translation>> {
-    return firstValueFrom(this.translationService.findPage(this.spaceId, this.filterParams().set('page', page).set('size', LEVEL_SIZE)));
+    return firstValueFrom(this.translationService.findAll(this.spaceId, this.filterParams().set('page', page).set('size', LEVEL_SIZE)));
   }
 
   private filterParams(): HttpParams {

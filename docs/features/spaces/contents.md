@@ -59,7 +59,7 @@ File-system-like browser that shows a breadcrumb path and lists folders/document
 
 - Schemas from `SpaceStore.schemas()` (the ROOT ones for the Add Document dialog, every one for the Schema column)
 - One page of the current folder (`SpaceStore.contentFolderId`, `null` at the root), paged, sorted and searched on the
-  server: `GET /api/app/spaces/:s/contents` (`ContentService.findPage`, live; without the documents' data; see
+  server: `GET /api/app/spaces/:s/contents` (`ContentService.findAll`, live; without the documents' data; see
   [Pagination](../../server/pagination.md#contents-a-folders-page-or-everything-under-it)). The query is a
   `FolderList` (`@core/utils/folder-list.ts`: a `PagedList` with the folder read from the store, the search and the scope, shared with Assets; loaded by `pagedResource`, one request per folder opened), the same the
   References picker uses, so both behave alike: folders first, by name unless sorted by a column header; the toolbar's

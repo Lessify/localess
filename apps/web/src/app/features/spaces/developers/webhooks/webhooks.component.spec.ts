@@ -52,7 +52,7 @@ describe('WebhooksComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: WebhookService, useValue: { findAll, create, update, updateStatus, delete: deleteWebhook } },
+        { provide: WebhookService, useValue: { findAll, create, update, updateStatus, remove: deleteWebhook } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },

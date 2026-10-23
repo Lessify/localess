@@ -23,7 +23,7 @@ describe('FirebaseImportDialogComponent', () => {
   it('connects, lists spaces with imported ones disabled, starts the selected one', () => {
     const start = vi.fn().mockReturnValue(of({ id: 'r1', status: 'RUNNING', stages: [] }));
     const component = setup({
-      sourceSpaces: vi.fn().mockReturnValue(
+      findSourceSpaces: vi.fn().mockReturnValue(
         of([
           { id: 'a', name: 'A', importedAs: null },
           { id: 'b', name: 'B', importedAs: { id: 'x', name: 'B (imported)' } },
@@ -64,7 +64,7 @@ describe('FirebaseImportDialogComponent', () => {
 
   it('shows the connection error', () => {
     const component = setup({
-      sourceSpaces: vi
+      findSourceSpaces: vi
         .fn()
         .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message: 'The migration token was refused' } }))),
     });
@@ -76,7 +76,7 @@ describe('FirebaseImportDialogComponent', () => {
   it('shows the first issue of a refused request (a validation list)', () => {
     const message = ['origin: Invalid URL', 'token: Too small: expected string to have >=1 characters'];
     const component = setup({
-      sourceSpaces: vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } }))),
+      findSourceSpaces: vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } }))),
     });
     component.form.setValue({ origin: 'https://cms.example.com', token: 'bad' });
     component.connect();
@@ -102,7 +102,7 @@ describe('FirebaseImportDialogComponent', () => {
 
     it('scrolls a long list of source spaces inside the dialog, so Import stays reachable', () => {
       const spaces = Array.from({ length: 80 }, (_, i) => ({ id: `s${i}`, name: `Space ${i}`, importedAs: null }));
-      const fixture = render({ sourceSpaces: vi.fn().mockReturnValue(of(spaces)) });
+      const fixture = render({ findSourceSpaces: vi.fn().mockReturnValue(of(spaces)) });
       fixture.componentInstance.form.setValue({ origin: 'https://cms.example.com', token: 't' });
       fixture.componentInstance.connect();
       fixture.detectChanges();

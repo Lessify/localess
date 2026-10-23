@@ -3,10 +3,13 @@ import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { multipartForm } from '@core/utils/multipart';
-import { Page, Task, TaskCreate, TaskImportCreate, TaskKind, TaskLog } from '@localess/shared';
+import { Page, Task, TaskCreate, TaskImportCreate, TaskKind } from '@localess/shared';
 import { Observable, of } from 'rxjs';
 
-/** Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`); reads are live. */
+/**
+ * Export/import tasks of a space (`/api/app/spaces/:spaceId/tasks`, the server's `TaskController`); reads are live.
+ * Their logs: `TaskLogService`.
+ */
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   private readonly http = inject(HttpClient);
@@ -17,72 +20,70 @@ export class TaskService {
   }
 
   /** One page of the space's tasks (`PagedList.params()`: page, size, direction, search, kind, status). */
-  findPage(spaceId: string, params: HttpParams): Observable<Page<Task>> {
+  findAll(spaceId: string, params: HttpParams): Observable<Page<Task>> {
     return liveQueryWith(this.events, { spaceId, entities: ['tasks'] }, () => this.http.get<Page<Task>>(this.base(spaceId), { params }));
   }
 
-  findById(spaceId: string, id: string): Observable<Task> {
+  findOne(spaceId: string, id: string): Observable<Task> {
     return liveQueryWith(this.events, { spaceId, entities: ['tasks'], id }, () => this.http.get<Task>(`${this.base(spaceId)}/${id}`));
   }
 
-  findLogs(spaceId: string, taskId: string): Observable<TaskLog[]> {
-    return liveQueryWith(this.events, { spaceId, entities: ['task_logs'], id: taskId }, () =>
-      this.http.get<TaskLog[]>(`${this.base(spaceId)}/${taskId}/logs`),
-    );
+  /** An export (or the asset metadata regeneration); the `create<Kind>Task` methods below fill the body. */
+  create(spaceId: string, body: TaskCreate): Observable<Task> {
+    return this.http.post<Task>(this.base(spaceId), body);
+  }
+
+  /** An import: the fields and the file, multipart; the `create<Kind>ImportTask` methods below fill the fields. */
+  createImport(spaceId: string, fields: TaskImportCreate, file: File): Observable<Task> {
+    return this.http.post<Task>(`${this.base(spaceId)}/import`, multipartForm(fields, file));
   }
 
   createAssetExportTask(spaceId: string, path?: string): Observable<Task> {
-    return this.createExport(spaceId, path ? { kind: TaskKind.ASSET_EXPORT, path } : { kind: TaskKind.ASSET_EXPORT });
+    return this.create(spaceId, path ? { kind: TaskKind.ASSET_EXPORT, path } : { kind: TaskKind.ASSET_EXPORT });
   }
 
   createAssetImportTask(spaceId: string, file: File): Observable<Task> {
-    return this.createImport(spaceId, TaskKind.ASSET_IMPORT, file);
+    return this.createImport(spaceId, { kind: TaskKind.ASSET_IMPORT }, file);
   }
 
   createAssetRegenerateMetadataTask(spaceId: string): Observable<Task> {
-    return this.createExport(spaceId, { kind: TaskKind.ASSET_REGEN_METADATA });
+    return this.create(spaceId, { kind: TaskKind.ASSET_REGEN_METADATA });
   }
 
   createContentExportTask(spaceId: string, path?: string): Observable<Task> {
-    return this.createExport(spaceId, path ? { kind: TaskKind.CONTENT_EXPORT, path } : { kind: TaskKind.CONTENT_EXPORT });
+    return this.create(spaceId, path ? { kind: TaskKind.CONTENT_EXPORT, path } : { kind: TaskKind.CONTENT_EXPORT });
   }
 
   createContentImportTask(spaceId: string, file: File): Observable<Task> {
-    return this.createImport(spaceId, TaskKind.CONTENT_IMPORT, file);
+    return this.createImport(spaceId, { kind: TaskKind.CONTENT_IMPORT }, file);
   }
 
   createSchemaExportTask(spaceId: string): Observable<Task> {
-    return this.createExport(spaceId, { kind: TaskKind.SCHEMA_EXPORT });
+    return this.create(spaceId, { kind: TaskKind.SCHEMA_EXPORT });
   }
 
   createSchemaImportTask(spaceId: string, file: File): Observable<Task> {
-    return this.createImport(spaceId, TaskKind.SCHEMA_IMPORT, file);
+    return this.createImport(spaceId, { kind: TaskKind.SCHEMA_IMPORT }, file);
   }
 
   createTranslationExportTask(spaceId: string, locale?: string): Observable<Task> {
-    return this.createExport(spaceId, locale ? { kind: TaskKind.TRANSLATION_EXPORT, locale } : { kind: TaskKind.TRANSLATION_EXPORT });
+    return this.create(spaceId, locale ? { kind: TaskKind.TRANSLATION_EXPORT, locale } : { kind: TaskKind.TRANSLATION_EXPORT });
   }
 
   /** With a locale the file is a flat JSON of that locale; otherwise a full export. */
   createTranslationImportTask(spaceId: string, file: File, locale?: string): Observable<Task> {
-    return this.createImport(spaceId, TaskKind.TRANSLATION_IMPORT, file, locale);
+    return this.createImport(spaceId, { kind: TaskKind.TRANSLATION_IMPORT, locale: locale || undefined }, file);
   }
 
-  /** Same-origin and cookie-authenticated, so the URL can be opened directly. */
+  /**
+   * The URL of `TaskController.download`, not a request: same-origin and cookie-authenticated, so the URL can be opened
+   * directly.
+   */
   downloadUrl(spaceId: string, id: string): Observable<string> {
     return of(`${this.base(spaceId)}/${id}/download`);
   }
 
-  delete(spaceId: string, id: string): Observable<void> {
+  remove(spaceId: string, id: string): Observable<void> {
     return this.http.delete<void>(`${this.base(spaceId)}/${id}`);
-  }
-
-  private createExport(spaceId: string, body: TaskCreate): Observable<Task> {
-    return this.http.post<Task>(this.base(spaceId), body);
-  }
-
-  private createImport(spaceId: string, kind: TaskImportCreate['kind'], file: File, locale?: string): Observable<Task> {
-    const fields: TaskImportCreate = { kind, locale: locale || undefined };
-    return this.http.post<Task>(`${this.base(spaceId)}/import`, multipartForm(fields, file));
   }
 }

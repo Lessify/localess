@@ -30,7 +30,7 @@ A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks
 **Injected services:** `TaskService`, `HlmDialogService`, `NotificationService`, `Router`
 
 **Key behaviour:**
-- `loadData()` — one page of the space's tasks at a time (`TaskService.findPage()`, a live query on `GET …/tasks`, which answers `Page<Task>`); `list` (`PagedList`, 20 per page) holds the query, and the paginator, the sort header and the filters change it. A failed load is told ("Tasks can not be loaded.") and ends only that request
+- `loadData()` — one page of the space's tasks at a time (`TaskService.findAll()`, a live query on `GET …/tasks`, which answers `Page<Task>`); `list` (`PagedList`, 20 per page) holds the query, and the paginator, the sort header and the filters change it. A failed load is told ("Tasks can not be loaded.") and ends only that request
 - Sorting: only **Created At**, newest first by default (`sort=createdAt`, `direction` `desc` on the server); the header switches between newest and oldest first, never off. ID, Kind and Status have no sort header
 - `<ll-filter-toolbar>`: the search box (id, file name or message, case-insensitive, anywhere in them) and the multi-select **Kind** and **Status** filters go to the server (`search`, `kind`, `status`; several values repeat the parameter: `kind=ASSET_EXPORT&kind=CONTENT_EXPORT`) and start again from the first page
 - `navigateToDetail(task)` — navigates to `TaskDetailComponent` for the row
@@ -79,5 +79,6 @@ INITIATED → IN_PROGRESS → FINISHED
 
 | Service | Purpose |
 |---------|---------|
-| `TaskService` | Fetch tasks and logs (live), create export/import tasks, delete, build the download URL (`/api/app/spaces/:s/tasks/...`) |
+| `TaskService` | Fetch tasks (live), create export/import tasks, remove, build the download URL (`/api/app/spaces/:s/tasks/...`, `TaskController`) |
+| `TaskLogService` | Fetch a task's logs (live; `/api/app/spaces/:s/tasks/:id/logs`, `TaskLogController`) |
 | `NotificationService` | Snackbar feedback |

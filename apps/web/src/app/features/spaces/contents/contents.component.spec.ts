@@ -44,7 +44,7 @@ describe('ContentsComponent', () => {
   });
 
   function setup(contents: Content[] = [], schemas: Schema[] = [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema]) {
-    const findPage = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
+    const findAll = vi.fn().mockReturnValue(of({ items: contents, page: 0, size: 20, total: contents.length }));
     const createDocument = vi.fn().mockReturnValue(of(undefined));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
     const update = vi.fn().mockReturnValue(of(undefined));
@@ -81,7 +81,7 @@ describe('ContentsComponent', () => {
         {
           provide: ContentService,
           useValue: {
-            findPage,
+            findAll,
             createDocument,
             createFolder,
             update,
@@ -114,7 +114,7 @@ describe('ContentsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findPage,
+      findAll,
       createDocument,
       createFolder,
       update,
@@ -136,19 +136,19 @@ describe('ContentsComponent', () => {
   }
 
   /** The query of the last page read. */
-  const lastQuery = (findPage: ReturnType<typeof setup>['findPage']) => (findPage.mock.calls.at(-1)?.[1] as HttpParams).toString();
+  const lastQuery = (findAll: ReturnType<typeof setup>['findAll']) => (findAll.mock.calls.at(-1)?.[1] as HttpParams).toString();
 
   it("loads the root's first page in the server's order, and the ROOT schemas from the store", async () => {
     const b = doc({ id: 'b', name: 'B' });
     const a = doc({ id: 'a', name: 'A' });
-    const { component, findPage } = setup(
+    const { component, findAll } = setup(
       [b, a],
       [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema, { id: 'n1', name: 'n1', type: SchemaType.NODE } as Schema],
     );
     await settle();
 
-    expect(findPage.mock.calls.at(-1)?.[0]).toBe('space-1');
-    expect(lastQuery(findPage)).toBe('page=0&size=20');
+    expect(findAll.mock.calls.at(-1)?.[0]).toBe('space-1');
+    expect(lastQuery(findAll)).toBe('page=0&size=20');
     expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['b', 'a']);
     expect(component.page.total()).toBe(2);
     expect(component.schemas().map(it => it.name)).toEqual(['s1']);
@@ -156,18 +156,18 @@ describe('ContentsComponent', () => {
   });
 
   it('sends the search and the scope, and a sort, from the first page', () => {
-    const { component, findPage } = setup();
+    const { component, findAll } = setup();
     component.contentList.list.page.set(2);
     TestBed.tick();
 
     component.contentList.onFilterChange({ search: ' blog ', scope: 'deep' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&search=blog&deep=true');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=blog&deep=true');
     expect(component.contentList.deep()).toBe(true);
 
     component.contentList.onSortChange({ active: 'updatedAt', direction: 'desc' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=updatedAt&direction=desc&search=blog&deep=true');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&sort=updatedAt&direction=desc&search=blog&deep=true');
 
     component.contentList.onFilterChange({ search: '', scope: 'folder' });
     TestBed.tick();
@@ -175,15 +175,15 @@ describe('ContentsComponent', () => {
   });
 
   it('tells a failed load, and loads again on the next change', async () => {
-    const { component, findPage, error } = setup();
-    findPage.mockReturnValueOnce(throwError(() => new Error('boom')));
+    const { component, findAll, error } = setup();
+    findAll.mockReturnValueOnce(throwError(() => new Error('boom')));
     component.contentList.onFilterChange({ search: 'x', scope: '' });
     await settle();
     expect(error).toHaveBeenCalledWith('Contents can not be loaded.');
 
     component.contentList.onFilterChange({ search: 'y', scope: '' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&search=y');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=y');
   });
 
   describe('openAddDocumentDialog', () => {
@@ -457,25 +457,25 @@ describe('ContentsComponent', () => {
   });
 
   it('lists the children of the folder shown, keeping the search and the scope', () => {
-    const { component, contentFolderId, findPage } = setup();
+    const { component, contentFolderId, findAll } = setup();
     component.contentList.onFilterChange({ search: 'blog', scope: 'deep' });
     contentFolderId.set('f2');
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&search=blog&deep=true&parentId=f2');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&search=blog&deep=true&parentId=f2');
   });
 
   it('asks once for a folder opened, from its first page (never for the folder left)', async () => {
-    const { component, contentFolderId, findPage } = setup();
+    const { component, contentFolderId, findAll } = setup();
     await settle();
     component.contentList.list.page.set(2);
     await settle();
-    findPage.mockClear();
+    findAll.mockClear();
 
     contentFolderId.set('f1');
     await settle();
 
-    expect(findPage).toHaveBeenCalledTimes(1);
-    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f1');
   });
 
   describe('API links', () => {

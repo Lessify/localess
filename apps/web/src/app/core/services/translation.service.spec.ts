@@ -31,9 +31,9 @@ describe('TranslationService', () => {
   const page = (items: Translation[], total = items.length): Page<Translation> => ({ items, page: 0, size: 50, total });
   const params = new HttpParams().set('page', 0).set('size', 50).set('search', 'home');
 
-  it('findPage() reads one page with the given query, once', async () => {
+  it('findAll() reads one page with the given query, once', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findPage('space-1', params));
+    const result = firstValueFrom(service.findAll('space-1', params));
     http.expectOne(`${BASE}?page=0&size=50&search=home`).flush(page([{ id: 'hello' } as Translation]));
     expect(await result).toEqual(page([{ id: 'hello' } as Translation]));
   });

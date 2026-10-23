@@ -32,7 +32,7 @@ describe('TasksComponent', () => {
   });
 
   function setup(tasks: Task[] = []) {
-    const findPage = vi.fn().mockReturnValue(of({ items: tasks, page: 0, size: 20, total: tasks.length }));
+    const findAll = vi.fn().mockReturnValue(of({ items: tasks, page: 0, size: 20, total: tasks.length }));
     const downloadUrl = vi.fn().mockReturnValue(of('https://download-url'));
     const deleteTask = vi.fn().mockReturnValue(of(undefined));
     const navigate = vi.fn();
@@ -45,7 +45,7 @@ describe('TasksComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: TaskService, useValue: { findPage, downloadUrl, delete: deleteTask } },
+        { provide: TaskService, useValue: { findAll, downloadUrl, remove: deleteTask } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },
@@ -54,43 +54,43 @@ describe('TasksComponent', () => {
     const fixture = TestBed.createComponent(TasksComponent);
     fixture.componentRef.setInput('spaceId', 'space-1');
     fixture.detectChanges();
-    return { fixture, component: fixture.componentInstance, findPage, downloadUrl, deleteTask, navigate, success, error, open };
+    return { fixture, component: fixture.componentInstance, findAll, downloadUrl, deleteTask, navigate, success, error, open };
   }
 
   it('loads the first page of the space tasks on init, newest first (the server default)', () => {
     const tasks = [task({ id: 't1' }), task({ id: 't2' })];
-    const { component, findPage } = setup(tasks);
+    const { component, findAll } = setup(tasks);
 
-    expect(findPage).toHaveBeenCalledTimes(1);
-    expect(findPage.mock.calls[0][0]).toBe('space-1');
-    expect(findPage.mock.calls[0][1].toString()).toBe('page=0&size=20');
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(findAll.mock.calls[0][0]).toBe('space-1');
+    expect(findAll.mock.calls[0][1].toString()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(tasks);
     expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
   it('onFilterChange() asks the server for the search, kinds and statuses, from the first page', () => {
-    const { fixture, component, findPage } = setup();
+    const { fixture, component, findAll } = setup();
     component.list.page.set(2);
 
     component.onFilterChange({ search: ' backup ', kind: ['ASSET_EXPORT', 'CONTENT_EXPORT'], status: [] });
     fixture.detectChanges();
 
-    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20&search=backup&kind=ASSET_EXPORT&kind=CONTENT_EXPORT');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&search=backup&kind=ASSET_EXPORT&kind=CONTENT_EXPORT');
   });
 
   it('onSortChange() asks for the creation time in the direction chosen', () => {
-    const { fixture, component, findPage } = setup();
+    const { fixture, component, findAll } = setup();
 
     component.onSortChange({ active: 'createdAt', direction: 'asc' });
     fixture.detectChanges();
 
-    expect(findPage.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=createdAt&direction=asc');
+    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=createdAt&direction=asc');
   });
 
   it('tells a failed load, and loads again on the next query change', () => {
-    const { fixture, component, findPage, error } = setup();
-    findPage.mockReturnValueOnce(throwError(() => new Error('boom')));
+    const { fixture, component, findAll, error } = setup();
+    findAll.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     component.list.page.set(1);
     fixture.detectChanges();
@@ -98,7 +98,7 @@ describe('TasksComponent', () => {
 
     component.list.page.set(0);
     fixture.detectChanges();
-    expect(findPage).toHaveBeenCalledTimes(3);
+    expect(findAll).toHaveBeenCalledTimes(3);
   });
 
   it('navigateToDetail() navigates to the task detail route', () => {

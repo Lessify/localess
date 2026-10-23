@@ -22,8 +22,8 @@ function server(levels: Record<string, TranslationNode[]>, matches: Translation[
     return { items: items.slice(page * size, (page + 1) * size), page, size, total: items.length };
   };
   const findNodes = vi.fn((_spaceId: string, params: HttpParams) => of(slice(levels[params.get('parent') ?? ''] ?? [], params)));
-  const findPage = vi.fn((_spaceId: string, params: HttpParams) => of(slice(matches, params)));
-  return { service: { findNodes, findPage } as unknown as TranslationService, findNodes, findPage };
+  const findAll = vi.fn((_spaceId: string, params: HttpParams) => of(slice(matches, params)));
+  return { service: { findNodes, findAll } as unknown as TranslationService, findNodes, findAll };
 }
 
 /** The rows as `key` (`+` open group with its rows, `…` a placeholder), for readable expectations. */
@@ -109,12 +109,12 @@ describe('TranslationTree', () => {
 
   it('keeps a filter with more matches collapsed, read by level, with the count of matches', async () => {
     const matches = Array.from({ length: TREE_EXPAND_ALL_MAX + 1 }, (_, i) => translation(`home.k${i}`));
-    const { service, findPage } = server(levels, matches);
+    const { service, findAll } = server(levels, matches);
     const tree = new TranslationTree(service);
 
     await tree.load('space-1', { search: 'k' });
 
-    expect(findPage).toHaveBeenCalledTimes(1);
+    expect(findAll).toHaveBeenCalledTimes(1);
     expect(tree.mode()).toBe('lazy');
     expect(tree.matches()).toBe(TREE_EXPAND_ALL_MAX + 1);
     expect(tree.expandedKeys()).toEqual(new Set());

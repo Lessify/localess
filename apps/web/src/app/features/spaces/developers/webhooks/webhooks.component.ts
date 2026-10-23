@@ -224,7 +224,7 @@ export class WebhooksComponent {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.webhookService.delete(spaceId!, element.id)),
+        switchMap(() => this.webhookService.remove(spaceId!, element.id)),
       )
       .subscribe({
         next: () => this.notificationService.success(`Webhook '${element.name}' has been deleted.`),

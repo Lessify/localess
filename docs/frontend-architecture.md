@@ -121,16 +121,17 @@ if one feature uses it, it lives in that feature.
 - **`services/`** — App API services (`HttpClient`, reads are `liveQuery`s) used by several features or by a store. One
   service per server controller, named after it: `SpaceController` → `SpaceService`, `SpaceEnvironmentController` →
   `SpaceEnvironmentService`, `SpaceLocaleController` → `SpaceLocaleService` (used by one feature, so it lives in
-  `features/spaces/settings/locales/`), `LocaleController` → `LocaleService`. A route moves with its controller
-  (`PUT …/default-locale` is the space's: `SpaceService.setDefaultLocale`). Its methods carry the controller's method
-  names (`findAll` for a page or a list, `findAllNames`, `findOne`, `findTemplates`, `findOverview`, `create`, `update`,
-  `remove`, `move`, `setDefaultLocale`), so a call reads the same on both sides. Done for these four services and
-  `SchemaService` (`findAll`, `findOne`, `findUsage`, `create`, `update`, `rename`, `remove`) and `ContentService`
-  (`findPage`, `findAllFolders`, `findAllDocuments`, `findOne`, `search`, `createDocument` / `createFolder`, `update`, `move`, `updateData`,
-  `clone`, `remove`, `publish`, `unpublish`) and `AssetService` (`findPage`, `findAllFolders`, `findAllFiles`, `search`,
-  `findUsage`, `createFolder`, `createFile`, `importFile`, `update`, `move`, `remove`) so far; the others (tasks, tokens,
-  translations) still use
-  `findPage` / `findById` / `delete`.
+  `features/spaces/settings/locales/`), `LocaleController` → `LocaleService`, `TaskLogController` → `TaskLogService`,
+  `WebhookLogController` → `WebhookLogService`. A route moves with its controller (`PUT …/default-locale` is the
+  space's: `SpaceService.setDefaultLocale`).
+  **Rule:** the method that calls an endpoint carries the controller's method name, exactly (`AssetController.findAll`
+  → `AssetService.findAll`, `findFolders`, `findOne`, `create`, `upload`, `remove`, …), so a call is found by name on
+  both sides; see the server's names in [server/naming.md](server/naming.md). A convenience method may sit on top
+  (`search`, `move`, `createDocument` / `createFolder` over `create`, `createFile` / `importFile` over `upload`,
+  `create<Kind>Task` over `create` / `createImport`, `poll` over `findOne`, `translate` / `translateBatch` over
+  `translateText`, `isKeyTaken`, `firstValue`), but calls the controller-named method or the same endpoint, never under
+  another name in its place. URL builders that make no request are named for the URL (`TaskService.downloadUrl`,
+  `AuthApiService.oauthUrl`).
 - **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))
 - **`guards/`** — `roleGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard
 - **`utils/content-data.ts`** — `normalizeContent`, `copyBlock`: the shape documents are loaded, compared and saved in

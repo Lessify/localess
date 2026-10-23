@@ -172,7 +172,7 @@ export class AssetsComponent implements OnInit {
   /** The page shown, in both layouts, live. */
   readonly page = pagedResource({
     list: this.assetList.list,
-    load: params => this.assetService.findPage(this.spaceId(), params),
+    load: params => this.assetService.findAll(this.spaceId(), params),
     error: 'Assets can not be loaded.',
   });
   readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);

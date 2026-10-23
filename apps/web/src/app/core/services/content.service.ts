@@ -21,7 +21,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-/** Contents of a space (`/api/app/spaces/:spaceId/contents`); reads are live. */
+/** Contents of a space (`/api/app/spaces/:spaceId/contents`, the server's `ContentController`); reads are live. */
 @Injectable({ providedIn: 'root' })
 export class ContentService {
   private readonly http = inject(HttpClient);
@@ -35,21 +35,21 @@ export class ContentService {
    * One page of a folder (the root without `parentId`), or with `deep` of everything under it; folders first, without
    * the documents' data. Live: a change in the space reads the page again.
    */
-  findPage(spaceId: string, params: HttpParams): Observable<Page<Content>> {
+  findAll(spaceId: string, params: HttpParams): Observable<Page<Content>> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
       this.http.get<Page<Content>>(this.base(spaceId), { params }),
     );
   }
 
   /** Every folder of the space, light (no paths), live: `SpaceStore` holds it for the breadcrumbs, the Move dialog, the paths. */
-  findAllFolders(spaceId: string): Observable<ContentFolderSummary[]> {
+  findFolders(spaceId: string): Observable<ContentFolderSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
       this.http.get<ContentFolderSummary[]>(`${this.base(spaceId)}/folders`),
     );
   }
 
   /** Every document of the space, light (no data, no paths), live: `SpaceStore` holds it for the Link and References fields. */
-  findAllDocuments(spaceId: string): Observable<ContentDocumentSummary[]> {
+  findDocuments(spaceId: string): Observable<ContentDocumentSummary[]> {
     return liveQueryWith(this.events, { spaceId, entities: ['contents'] }, () =>
       this.http.get<ContentDocumentSummary[]>(`${this.base(spaceId)}/documents`),
     );
@@ -71,25 +71,30 @@ export class ContentService {
     );
   }
 
+  /** A folder or a document, by `kind`; `createDocument` and `createFolder` fill the body. */
+  create<T extends Content>(spaceId: string, body: ContentCreate): Observable<T> {
+    return this.http.post<T>(this.base(spaceId), body);
+  }
+
   /** `parentId` absent: the root. */
   createDocument(spaceId: string, parentId: string | undefined, entity: ContentDocumentCreate): Observable<ContentDocument> {
-    return this.http.post<ContentDocument>(this.base(spaceId), {
+    return this.create<ContentDocument>(spaceId, {
       kind: 'DOCUMENT',
       parentId,
       name: entity.name,
       slug: entity.slug,
       schema: entity.schema,
-    } satisfies ContentCreate);
+    });
   }
 
   /** `parentId` absent: the root. */
   createFolder(spaceId: string, parentId: string | undefined, entity: ContentFolderCreate): Observable<ContentFolder> {
-    return this.http.post<ContentFolder>(this.base(spaceId), {
+    return this.create<ContentFolder>(spaceId, {
       kind: 'FOLDER',
       parentId,
       name: entity.name,
       slug: entity.slug,
-    } satisfies ContentCreate);
+    });
   }
 
   /** Renames: the name and the slug (`PATCH`, as `move`). */

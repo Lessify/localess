@@ -35,7 +35,7 @@ describe('AssetsComponent', () => {
   });
 
   function setup(folderId: string | null = null) {
-    const findPage = vi.fn().mockReturnValue(of({ items: [], page: 0, size: 20, total: 0 }));
+    const findAll = vi.fn().mockReturnValue(of({ items: [], page: 0, size: 20, total: 0 }));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const importFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
@@ -62,7 +62,7 @@ describe('AssetsComponent', () => {
         {
           provide: AssetService,
           useValue: {
-            findPage,
+            findAll,
             createFile,
             importFile,
             createFolder,
@@ -84,7 +84,7 @@ describe('AssetsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
-      findPage,
+      findAll,
       createFile,
       importFile,
       createFolder,
@@ -104,51 +104,51 @@ describe('AssetsComponent', () => {
   }
 
   /** The query of the last page read. */
-  const lastQuery = (findPage: Mock) => (findPage.mock.calls.at(-1)![1] as HttpParams).toString();
+  const lastQuery = (findAll: Mock) => (findAll.mock.calls.at(-1)![1] as HttpParams).toString();
 
   it('loads the root page on init', async () => {
-    const { component, findPage } = setup();
+    const { component, findAll } = setup();
     await settle();
 
-    expect(findPage).toHaveBeenCalledTimes(1);
-    expect(findPage).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
-    expect(lastQuery(findPage)).toBe('page=0&size=20');
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(findAll).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
+    expect(lastQuery(findAll)).toBe('page=0&size=20');
     expect(component.page.loading()).toBe(false);
   });
 
   it('asks once for a folder opened, from its first page (never for the folder left)', async () => {
-    const { component, findPage, assetFolderId } = setup();
+    const { component, findAll, assetFolderId } = setup();
     await settle();
     component.assetList.list.page.set(2);
     await settle();
-    findPage.mockClear();
+    findAll.mockClear();
 
     assetFolderId.set('f1');
     await settle();
 
-    expect(findPage).toHaveBeenCalledTimes(1);
-    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f1');
   });
 
   it('loads the page of the current folder', () => {
-    const { findPage } = setup('f2');
+    const { findAll } = setup('f2');
 
-    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f2');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f2');
   });
 
   it('pages, sorts, searches and widens the scope on the server, from the first page again', () => {
-    const { component, findPage } = setup('f2');
+    const { component, findAll } = setup('f2');
     component.assetList.list.page.set(2);
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=2&size=20&parentId=f2');
+    expect(lastQuery(findAll)).toBe('page=2&size=20&parentId=f2');
 
     component.assetList.onSortChange({ active: 'size', direction: 'desc' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=size&direction=desc&parentId=f2');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&sort=size&direction=desc&parentId=f2');
 
     component.assetList.onFilterChange({ search: ' logo ', scope: 'deep' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=size&direction=desc&search=logo&deep=true&parentId=f2');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&sort=size&direction=desc&search=logo&deep=true&parentId=f2');
   });
 
   it('shows where each asset is only for a list from several folders', () => {

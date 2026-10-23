@@ -36,7 +36,7 @@ describe('AssetsSelectDialogComponent', () => {
 
   function setup(context: AssetsSelectDialogContext, assets: Asset[] = []) {
     const close = vi.fn();
-    const findPage = vi.fn().mockReturnValue(of({ items: assets, page: 0, size: 20, total: assets.length }));
+    const findAll = vi.fn().mockReturnValue(of({ items: assets, page: 0, size: 20, total: assets.length }));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new' }));
     const error = vi.fn();
 
@@ -50,7 +50,7 @@ describe('AssetsSelectDialogComponent', () => {
         {
           provide: AssetService,
           useValue: {
-            findPage,
+            findAll,
             createFile,
           },
         },
@@ -68,19 +68,19 @@ describe('AssetsSelectDialogComponent', () => {
     });
     const fixture = TestBed.createComponent(AssetsSelectDialogComponent);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, close, findPage, createFile, error };
+    return { component: fixture.componentInstance, close, findAll, createFile, error };
   }
 
   /** The query of the last page read. */
-  const lastQuery = (findPage: Mock) => (findPage.mock.calls.at(-1)![1] as HttpParams).toString();
+  const lastQuery = (findAll: Mock) => (findAll.mock.calls.at(-1)![1] as HttpParams).toString();
 
   it('loads the root page on init, files of the field type', async () => {
     const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
-    const { component, findPage } = setup({ spaceId: 'space-1', fileType: AssetFileType.IMAGE }, assets);
+    const { component, findAll } = setup({ spaceId: 'space-1', fileType: AssetFileType.IMAGE }, assets);
     await settle();
 
-    expect(findPage).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
-    expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE');
+    expect(findAll).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
+    expect(lastQuery(findAll)).toBe('page=0&size=20&fileType=IMAGE');
     expect(component.dataSource.filteredData()).toEqual(assets);
     expect(component.page.total()).toBe(2);
     expect(component.page.loading()).toBe(false);
@@ -96,26 +96,26 @@ describe('AssetsSelectDialogComponent', () => {
   });
 
   it('onAssetSelect() navigates into folders: one request, for the folder opened', async () => {
-    const { component, findPage } = setup({ spaceId: 'space-1' });
+    const { component, findAll } = setup({ spaceId: 'space-1' });
     await settle();
-    findPage.mockClear();
+    findAll.mockClear();
 
     component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
     await settle();
 
-    expect(findPage).toHaveBeenCalledTimes(1);
-    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f1');
   });
 
   it('keeps the field type through a search, and the selection across folders', () => {
-    const { component, findPage } = setup({ spaceId: 'space-1', multiple: true, fileType: AssetFileType.IMAGE });
+    const { component, findAll } = setup({ spaceId: 'space-1', multiple: true, fileType: AssetFileType.IMAGE });
     const first = file({ id: 'a1' });
     component.onAssetSelect(first);
 
     component.onAssetSelect(folder({ id: 'a', name: 'A' }));
     component.assetList.onFilterChange({ search: 'sun', scope: 'deep' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE&search=sun&deep=true&parentId=a');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&fileType=IMAGE&search=sun&deep=true&parentId=a');
 
     component.onAssetSelect(file({ id: 'a2', parentId: 'b' }));
     expect(component.selection.selected.map(it => it.id)).toEqual(['a1', 'a2']);
@@ -205,7 +205,7 @@ describe('AssetsSelectDialogComponent', () => {
         {
           provide: AssetService,
           useValue: {
-            findPage: vi.fn().mockReturnValue(of({ items: [asset], page: 0, size: 20, total: 1 })),
+            findAll: vi.fn().mockReturnValue(of({ items: [asset], page: 0, size: 20, total: 1 })),
             createFile: vi.fn(),
           },
         },

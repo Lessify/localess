@@ -83,7 +83,7 @@ export class TranslationPages {
   }
 
   private read(page: number): Promise<Page<Translation>> {
-    return firstValueFrom(this.translationService.findPage(this.spaceId, filterHttpParams(this.filter, page, LIST_PAGE_SIZE)));
+    return firstValueFrom(this.translationService.findAll(this.spaceId, filterHttpParams(this.filter, page, LIST_PAGE_SIZE)));
   }
 }
 

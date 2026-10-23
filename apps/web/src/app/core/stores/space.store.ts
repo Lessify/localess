@@ -218,7 +218,7 @@ export const SpaceStore = signalStore(
               ? merge(
                   listen(
                     () => spaceService.findOne(spaceId),
-                    'findById listener failed',
+                    'spaceService.findOne listener failed',
                     'Lost connection to space updates. Retrying…',
                   ).pipe(
                     distinctUntilChanged(sameContent),
@@ -237,22 +237,22 @@ export const SpaceStore = signalStore(
                   ),
                   canRead()
                     ? listen(
-                        () => contentService.findAllFolders(spaceId),
-                        'contentService.findAllFolders listener failed',
+                        () => contentService.findFolders(spaceId),
+                        'contentService.findFolders listener failed',
                         'Lost connection to content updates. Retrying…',
                       ).pipe(map(contentFolderSummaries => ({ contentFolderSummaries, contentFoldersLoaded: true })))
                     : EMPTY,
                   canRead()
                     ? listen(
-                        () => contentService.findAllDocuments(spaceId),
-                        'contentService.findAllDocuments listener failed',
+                        () => contentService.findDocuments(spaceId),
+                        'contentService.findDocuments listener failed',
                         'Lost connection to content updates. Retrying…',
                       ).pipe(map(contentDocumentSummaries => ({ contentDocumentSummaries, contentDocumentsLoaded: true })))
                     : EMPTY,
                   canRead()
                     ? listen(
-                        () => assetService.findAllFolders(spaceId),
-                        'assetService.findAllFolders listener failed',
+                        () => assetService.findFolders(spaceId),
+                        'assetService.findFolders listener failed',
                         'Lost connection to asset updates. Retrying…',
                       ).pipe(map(assetFolders => ({ assetFolders, assetFoldersLoaded: true })))
                     : EMPTY,
@@ -280,8 +280,8 @@ export const SpaceStore = signalStore(
           switchMap(spaceId =>
             spaceId
               ? listen(
-                  () => assetService.findAllFiles(spaceId),
-                  'assetService.findAllFiles listener failed',
+                  () => assetService.findFiles(spaceId),
+                  'assetService.findFiles listener failed',
                   'Lost connection to asset updates. Retrying…',
                 ).pipe(map(assetFiles => ({ assetFiles, assetFilesLoaded: true })))
               : EMPTY,

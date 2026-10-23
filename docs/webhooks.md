@@ -227,7 +227,7 @@ interface WebhookLogFailure extends WebhookLogBase {
 type WebhookLog = WebhookLogSuccess | WebhookLogFailure;
 ```
 
-Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns one page, newest first: every delivery kept can be reached page by page; the frontend `WebhookService.findLogs()` takes a `PagedList`'s params. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebhookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history a page at a time, filtered and searched on the server.
+Every delivery adds a row; `WebhookLogCleanupService` deletes rows older than `LOCALESS_WEBHOOK_LOG_DAYS` (30 by default) at start and every hour, and a webhook's rows go with it (see [Cleanup](#cleanup)). `GET …/webhooks/:webhookId/logs` returns one page, newest first: every delivery kept can be reached page by page; the frontend `WebhookLogService.findAll()` takes a `PagedList`'s params. `event` is checked against the known events, like `status` and `error_type`, and `data` is the payload's data (`WebhookPayloadData`). Webhook and log ids are UUIDv7s; a `:webhookId` that isn't a UUID answers 404. The [WebhookDetailComponent](#frontend) shows the log history a page at a time, filtered and searched on the server.
 
 ---
 

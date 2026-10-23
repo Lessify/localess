@@ -40,6 +40,7 @@ import { catchError, filter, switchMap, take } from 'rxjs/operators';
 import { WebhookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
 import { WebhookDialogContext } from '../webhook-dialog/webhook-dialog.model';
+import { WebhookLogService } from '../webhook-log.service';
 import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../webhook-secret-dialog/webhook-secret-dialog.component';
 
 @Component({
@@ -74,6 +75,7 @@ import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../web
 })
 export class WebhookDetailComponent implements OnInit {
   private readonly webhookService = inject(WebhookService);
+  private readonly webhookLogService = inject(WebhookLogService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
   private readonly router = inject(Router);
@@ -117,7 +119,7 @@ export class WebhookDetailComponent implements OnInit {
     const spaceId = this.spaceStore.selectedSpaceId()!;
 
     this.webhookService
-      .findById(spaceId, this.webhookId())
+      .findOne(spaceId, this.webhookId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(webhook => {
         this.webhook.set(webhook);
@@ -129,7 +131,7 @@ export class WebhookDetailComponent implements OnInit {
     toObservable(this.list.params, { injector: this.injector })
       .pipe(
         switchMap(params =>
-          this.webhookService.findLogs(spaceId, this.webhookId(), params).pipe(
+          this.webhookLogService.findAll(spaceId, this.webhookId(), params).pipe(
             catchError(() => {
               this.notificationService.error('Logs can not be loaded.');
               this.isLogsLoading.set(false);
@@ -264,7 +266,7 @@ export class WebhookDetailComponent implements OnInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.webhookService.delete(spaceId, webhook.id)),
+        switchMap(() => this.webhookService.remove(spaceId, webhook.id)),
       )
       .subscribe({
         next: () => {

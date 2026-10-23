@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { TaskService } from '@core/services/task.service';
+import { TaskLogService } from '@core/services/task-log.service';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
 import { Task, TaskLog, TaskLogLevel } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -76,6 +77,7 @@ const TASK_STATUS_LABELS: Record<string, string> = {
 })
 export class TaskDetailComponent implements OnInit, AfterViewInit {
   private readonly taskService = inject(TaskService);
+  private readonly taskLogService = inject(TaskLogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
 
@@ -116,15 +118,15 @@ export class TaskDetailComponent implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.taskService
-      .findById(this.spaceId(), this.taskId())
+      .findOne(this.spaceId(), this.taskId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(task => {
         this.task.set(task);
         this.isLoading.set(false);
       });
 
-    this.taskService
-      .findLogs(this.spaceId(), this.taskId())
+    this.taskLogService
+      .findAll(this.spaceId(), this.taskId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(logs => {
         this.logs.set(logs);

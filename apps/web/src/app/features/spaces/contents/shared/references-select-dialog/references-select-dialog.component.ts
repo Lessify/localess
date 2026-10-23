@@ -76,7 +76,7 @@ export class ReferencesSelectDialogComponent {
   /** The page shown, live. */
   readonly page = pagedResource({
     list: this.contentList.list,
-    load: params => this.contentService.findPage(this.context.spaceId, params),
+    load: params => this.contentService.findAll(this.context.spaceId, params),
     error: 'Contents can not be loaded.',
   });
   readonly dataSource = new TableDataSource<Content>(this.page.items, this.injector);

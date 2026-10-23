@@ -164,7 +164,7 @@ export class TranslationListComponent {
         untracked(() => this.selectedOutsideFilter.emit(false));
         return;
       }
-      const subscription = this.translationService.findPage(spaceId, filterHttpParams({ ...params, key }, 0, 1)).subscribe({
+      const subscription = this.translationService.findAll(spaceId, filterHttpParams({ ...params, key }, 0, 1)).subscribe({
         next: page => this.selectedOutsideFilter.emit(page.total === 0),
         error: () => this.selectedOutsideFilter.emit(false),
       });
