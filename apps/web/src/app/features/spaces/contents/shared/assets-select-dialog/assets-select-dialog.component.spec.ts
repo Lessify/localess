@@ -22,6 +22,13 @@ function folder(overrides: Partial<AssetFolder> = {}): AssetFolder {
   return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', ...overrides } as AssetFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('AssetsSelectDialogComponent', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -67,15 +74,16 @@ describe('AssetsSelectDialogComponent', () => {
   /** The query of the last page read. */
   const lastQuery = (findPage: Mock) => (findPage.mock.calls.at(-1)![1] as HttpParams).toString();
 
-  it('loads the root page on init, files of the field type', () => {
+  it('loads the root page on init, files of the field type', async () => {
     const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
     const { component, findPage } = setup({ spaceId: 'space-1', fileType: AssetFileType.IMAGE }, assets);
+    await settle();
 
     expect(findPage).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
     expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE');
     expect(component.dataSource.filteredData()).toEqual(assets);
-    expect(component.total()).toBe(2);
-    expect(component.isLoading()).toBe(false);
+    expect(component.page.total()).toBe(2);
+    expect(component.page.loading()).toBe(false);
   });
 
   it('onAssetSelect() toggles selection for files', () => {
@@ -87,12 +95,15 @@ describe('AssetsSelectDialogComponent', () => {
     expect(component.selection.isSelected(f)).toBe(true);
   });
 
-  it('onAssetSelect() navigates into folders', () => {
+  it('onAssetSelect() navigates into folders: one request, for the folder opened', async () => {
     const { component, findPage } = setup({ spaceId: 'space-1' });
+    await settle();
+    findPage.mockClear();
 
     component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
-    TestBed.tick();
+    await settle();
 
+    expect(findPage).toHaveBeenCalledTimes(1);
     expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
   });
 
@@ -104,7 +115,7 @@ describe('AssetsSelectDialogComponent', () => {
     component.onAssetSelect(folder({ id: 'a', name: 'A' }));
     component.assetList.onFilterChange({ search: 'sun', scope: 'deep' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE&parentId=a&search=sun&deep=true');
+    expect(lastQuery(findPage)).toBe('page=0&size=20&fileType=IMAGE&search=sun&deep=true&parentId=a');
 
     component.onAssetSelect(file({ id: 'a2', parentId: 'b' }));
     expect(component.selection.selected.map(it => it.id)).toEqual(['a1', 'a2']);

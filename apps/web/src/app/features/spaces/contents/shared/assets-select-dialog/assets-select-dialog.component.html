@@ -36,7 +36,7 @@
       }
     </div>
   </h2>
-  @if (isLoading()) {
+  @if (page.loading()) {
     <hlm-progress class="h-0.5">
       <hlm-progress-indicator />
     </hlm-progress>
@@ -166,11 +166,14 @@
 
         <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
         <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></tr>
-        @if (!isLoading()) {
-          <tr *llNoDataRow>
-            <td [attr.colspan]="displayedColumns.length">{{ assetList.filtering() ? 'No assets match.' : 'No assets here yet.' }}</td>
-          </tr>
-        }
+        <!-- Always declared: the table only shows a no-data row it had when the data changed; the text waits for the load. -->
+        <tr *llNoDataRow>
+          <td [attr.colspan]="displayedColumns.length">
+            @if (!page.loading()) {
+              {{ assetList.filtering() ? 'No assets match.' : 'No assets here yet.' }}
+            }
+          </td>
+        </tr>
       </table>
     </div>
   } @else {
@@ -189,7 +192,7 @@
       }
     </div>
   }
-  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
 </div>
 <hlm-dialog-footer>
   <button hlmBtn variant="ghost" [disabled]="selection.isEmpty()" (click)="selection.clear()">

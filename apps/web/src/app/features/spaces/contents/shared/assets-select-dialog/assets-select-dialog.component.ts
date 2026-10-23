@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -9,6 +9,7 @@ import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
+import { pagedResource } from '@core/utils/paged-resource';
 import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -45,7 +46,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Subject } from 'rxjs';
-import { catchError, concatMap, finalize, switchMap } from 'rxjs/operators';
+import { catchError, concatMap, finalize } from 'rxjs/operators';
 
 import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-select-dialog.model';
 
@@ -104,12 +105,18 @@ export class AssetsSelectDialogComponent implements OnInit {
   /** Required: scopes the browser to a space, and `multiple` decides the selection mode. */
   readonly context = injectBrnDialogContext<AssetsSelectDialogContext>();
 
+  /** The folder shown; `null`: the root. */
+  readonly folderId = signal<string | null>(null);
   /** The same paged query as the Assets page (folder, search, scope, sort, page), files of the field's type. */
-  readonly assetList = new FolderList(20, { fileType: this.context.fileType });
+  readonly assetList = new FolderList(this.folderId, 20, { fileType: this.context.fileType });
   readonly filters = FOLDER_LIST_FILTERS;
-  readonly total = signal(0);
-  private readonly assets = signal<Asset[]>([]);
-  readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
+  /** The page shown, live. */
+  readonly page = pagedResource({
+    list: this.assetList.list,
+    load: params => this.assetService.findPage(this.context.spaceId, params),
+    error: 'Assets can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
   /** Kept by id across pages, folders and searches: files can be picked from several folders. */
   selection = new SelectionModel<Asset>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
@@ -119,8 +126,6 @@ export class AssetsSelectDialogComponent implements OnInit {
   private readonly spaceStore = inject(SpaceStore);
   /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs and the paths are built from it. */
   private readonly folderMap = computed(() => new Map(this.spaceStore.assetFolders().map(it => [it.id, it])));
-  /** The folder shown; `null`: the root. */
-  readonly folderId = signal<string | null>(null);
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.folderId()));
   /** Where each asset is (`~/Images`), for a list from several folders (`deep`); `undefined` otherwise. */
@@ -132,33 +137,8 @@ export class AssetsSelectDialogComponent implements OnInit {
   // Subscriptions
   private fileUploadQueue$ = new Subject<File>();
   private destroyRef = inject(DestroyRef);
-  // Loading
-  isLoading = signal(true);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
-
-  /** The query's page, again whenever it changes (and live). A failed load is told and ends only that request. */
-  constructor() {
-    toObservable(this.assetList.list.params)
-      .pipe(
-        switchMap(params =>
-          this.assetService.findPage(this.context.spaceId, params).pipe(
-            catchError(() => {
-              this.notificationService.error('Assets can not be loaded.');
-              this.isLoading.set(false);
-              return EMPTY;
-            }),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(page => {
-        this.assets.set(page.items);
-        this.total.set(page.total);
-        this.assetList.list.onLoaded(page);
-        this.isLoading.set(false);
-      });
-  }
 
   ngOnInit(): void {
     this.fileUploadQueue$
@@ -187,10 +167,7 @@ export class AssetsSelectDialogComponent implements OnInit {
 
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
-    if (folderId === this.folderId()) return;
-    this.isLoading.set(true);
     this.folderId.set(folderId);
-    this.assetList.setFolder(folderId);
   }
 
   onAssetSelect(element: Asset): void {

@@ -86,7 +86,7 @@
     </ng-template>
   }
 </div>
-@if (isLoading()) {
+@if (page.loading()) {
   <hlm-progress class="h-0.5">
     <hlm-progress-indicator />
   </hlm-progress>
@@ -259,9 +259,10 @@
 
           <tr ll-header-row *llHeaderRowDef="displayedColumns; sticky: true"></tr>
           <tr ll-row *llRowDef="let row; columns: displayedColumns" (click)="onAssetSelect(row)" class="cursor-pointer"></tr>
-          @if (!isLoading()) {
-            <tr *llNoDataRow>
-              <td [attr.colspan]="displayedColumns.length" class="text-center align-middle">
+          <!-- Always declared: the table only shows a no-data row it had when the data changed; the text waits for the load. -->
+          <tr *llNoDataRow>
+            <td [attr.colspan]="displayedColumns.length" class="text-center align-middle">
+              @if (!page.loading()) {
                 @if (assetList.filtering()) {
                   No assets match.
                 } @else {
@@ -272,9 +273,9 @@
                   <br />
                   <br />
                 }
-              </td>
-            </tr>
-          }
+              }
+            </td>
+          </tr>
         </table>
       </div>
     } @else {
@@ -313,5 +314,5 @@
       </div>
     }
   </div>
-  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="assetList.list.page" [(pageSize)]="assetList.list.size" />
 </div>

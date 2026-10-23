@@ -4,6 +4,7 @@ import { expectToast } from '../pages/notifications';
 import { CSRF } from '../support/app-api';
 import { Cdn, contentById, contentNamed, contentsIn, pageSchema } from '../support/contents';
 import { expect, test } from '../support/fixtures';
+import { recordListReads } from '../support/requests';
 
 // Pre-check → action (UI) → post-check (the list, the breadcrumb, after a reload, the App API, the CDN API).
 test.describe('Contents → folders and documents', () => {
@@ -35,6 +36,30 @@ test.describe('Contents → folders and documents', () => {
     await contents.rootFolder.click();
     await expect(contents.row('Blog')).toBeVisible();
     await expect(contents.rows).toHaveCount(1);
+  });
+
+  test('opening a folder or going back asks once for its page, never for the folder left', async ({ page, api, space }) => {
+    const blog = await api.createFolder(space.id, { name: 'Blog', slug: 'blog' });
+    const news = await api.createFolder(space.id, { name: 'News', slug: 'news', parentId: blog.id });
+    const contents = new ContentsPage(page);
+
+    // Pre-check
+    await contents.goto(space.id);
+    await expect(contents.row('Blog')).toBeVisible();
+    const reads = recordListReads(page, 'contents');
+
+    // Action → post-check: down two levels, then back to the root by the breadcrumb; one read each, none cancelled.
+    await contents.openFolder('Blog');
+    await expect(contents.row('News')).toBeVisible();
+    await contents.openFolder('News');
+    await expect(contents.empty).toBeVisible();
+    await contents.rootFolder.click();
+    await expect(contents.row('Blog')).toBeVisible();
+    expect(reads).toEqual([
+      { query: `parentId=${blog.id}`, failed: false },
+      { query: `parentId=${news.id}`, failed: false },
+      { query: '', failed: false },
+    ]);
   });
 
   test('searches the folder, or with "Including subfolders" everything under it, showing where each row is', async ({

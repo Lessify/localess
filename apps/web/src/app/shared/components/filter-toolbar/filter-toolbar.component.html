@@ -47,7 +47,7 @@
           }
         }
       </div>
-      <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-[200px] p-0">
+      <hlm-command *hlmPopoverPortal="let ctx" hlmPopoverContent class="w-auto min-w-[200px] p-0">
         <hlm-command-input [placeholder]="'Search ' + def.label.toLowerCase() + '...'" />
         <div *hlmCommandEmptyState hlmCommandEmpty>No results found.</div>
         <hlm-command-list>
@@ -55,7 +55,7 @@
             @for (option of def.options; track option.value) {
               <button hlm-command-item [value]="option.value" (selected)="select(def, option.value); def.mode === 'single' && pop.close()">
                 <hlm-checkbox class="mr-2" [checked]="isSelected(def, option.value)" />
-                <span>{{ option.label }}</span>
+                <span class="whitespace-nowrap">{{ option.label }}</span>
               </button>
             }
           </hlm-command-group>

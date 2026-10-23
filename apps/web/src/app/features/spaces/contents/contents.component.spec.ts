@@ -31,6 +31,13 @@ function folder(overrides: Partial<ContentFolder> = {}): ContentFolder {
   } as unknown as ContentFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('ContentsComponent', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -131,20 +138,21 @@ describe('ContentsComponent', () => {
   /** The query of the last page read. */
   const lastQuery = (findPage: ReturnType<typeof setup>['findPage']) => (findPage.mock.calls.at(-1)?.[1] as HttpParams).toString();
 
-  it("loads the root's first page in the server's order, and the ROOT schemas from the store", () => {
+  it("loads the root's first page in the server's order, and the ROOT schemas from the store", async () => {
     const b = doc({ id: 'b', name: 'B' });
     const a = doc({ id: 'a', name: 'A' });
     const { component, findPage } = setup(
       [b, a],
       [{ id: 's1', name: 's1', type: SchemaType.ROOT } as Schema, { id: 'n1', name: 'n1', type: SchemaType.NODE } as Schema],
     );
+    await settle();
 
     expect(findPage.mock.calls.at(-1)?.[0]).toBe('space-1');
     expect(lastQuery(findPage)).toBe('page=0&size=20');
     expect(component.dataSource.filteredData().map(c => c.id)).toEqual(['b', 'a']);
-    expect(component.total()).toBe(2);
+    expect(component.page.total()).toBe(2);
     expect(component.schemas().map(it => it.name)).toEqual(['s1']);
-    expect(component.isLoading()).toBe(false);
+    expect(component.page.loading()).toBe(false);
   });
 
   it('sends the search and the scope, and a sort, from the first page', () => {
@@ -166,11 +174,11 @@ describe('ContentsComponent', () => {
     expect(component.contentList.deep()).toBe(false);
   });
 
-  it('tells a failed load, and loads again on the next change', () => {
+  it('tells a failed load, and loads again on the next change', async () => {
     const { component, findPage, error } = setup();
     findPage.mockReturnValueOnce(throwError(() => new Error('boom')));
     component.contentList.onFilterChange({ search: 'x', scope: '' });
-    TestBed.tick();
+    await settle();
     expect(error).toHaveBeenCalledWith('Contents can not be loaded.');
 
     component.contentList.onFilterChange({ search: 'y', scope: '' });
@@ -431,7 +439,6 @@ describe('ContentsComponent', () => {
 
       component.onRowSelect(folder({ id: 'f1', name: 'Folder', fullSlug: 'folder' }));
 
-      expect(component.isLoading()).toBe(true);
       expect(changeContentFolder).toHaveBeenCalledWith('f1');
     });
   });
@@ -454,7 +461,21 @@ describe('ContentsComponent', () => {
     component.contentList.onFilterChange({ search: 'blog', scope: 'deep' });
     contentFolderId.set('f2');
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f2&search=blog&deep=true');
+    expect(lastQuery(findPage)).toBe('page=0&size=20&search=blog&deep=true&parentId=f2');
+  });
+
+  it('asks once for a folder opened, from its first page (never for the folder left)', async () => {
+    const { component, contentFolderId, findPage } = setup();
+    await settle();
+    component.contentList.list.page.set(2);
+    await settle();
+    findPage.mockClear();
+
+    contentFolderId.set('f1');
+    await settle();
+
+    expect(findPage).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
   });
 
   describe('API links', () => {

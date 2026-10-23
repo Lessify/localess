@@ -3,6 +3,7 @@ import { cancel, expectRefused } from '../pages/dialogs';
 import { allAssets, assetNamed, assetsIn, listedName } from '../support/assets';
 import { pngFile } from '../support/files';
 import { expect, test } from '../support/fixtures';
+import { recordListReads } from '../support/requests';
 
 // Pre-check → action (UI) → post-check (the list, the breadcrumb, after a reload, the App API).
 test.describe('Assets → create folder', () => {
@@ -37,6 +38,30 @@ test.describe('Assets → create folder', () => {
     await expect(assets.row('Banners')).toHaveCount(0);
     await page.reload();
     await expect(assets.row('Images')).toBeVisible();
+  });
+
+  test('opening a folder or going back asks once for its page, never for the folder left', async ({ page, api, space }) => {
+    const images = await api.createAssetFolder(space.id, 'Images');
+    const year = await api.createAssetFolder(space.id, '2026', images.id);
+    const assets = new AssetsPage(page);
+
+    // Pre-check
+    await assets.goto(space.id);
+    await expect(assets.row('Images')).toBeVisible();
+    const reads = recordListReads(page, 'assets');
+
+    // Action → post-check: down two levels, then back to the root by the breadcrumb; one read each, none cancelled.
+    await assets.openFolder('Images');
+    await expect(assets.row('2026')).toBeVisible();
+    await assets.openFolder('2026');
+    await expect(assets.emptyFolder).toBeVisible();
+    await assets.rootFolder.click();
+    await expect(assets.row('Images')).toBeVisible();
+    expect(reads).toEqual([
+      { query: `parentId=${images.id}`, failed: false },
+      { query: `parentId=${year.id}`, failed: false },
+      { query: '', failed: false },
+    ]);
   });
 
   test('accepts a name the folder already has (folder or file): duplicates are allowed', async ({ page, api, space }) => {

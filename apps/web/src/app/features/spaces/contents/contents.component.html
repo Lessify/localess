@@ -45,7 +45,7 @@
     </hlm-dropdown-menu>
   </ng-template>
 </div>
-@if (isLoading()) {
+@if (page.loading()) {
   <hlm-progress class="h-0.5">
     <hlm-progress-indicator />
   </hlm-progress>
@@ -221,5 +221,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="contentList.list.page" [(pageSize)]="contentList.list.size" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="contentList.list.page" [(pageSize)]="contentList.list.size" />
 </div>

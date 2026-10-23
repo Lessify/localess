@@ -1,18 +1,6 @@
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  input,
-  OnInit,
-  signal,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -24,6 +12,7 @@ import { apiErrorMessage } from '@core/utils/api-error';
 import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { pagedResource } from '@core/utils/paged-resource';
 import { uploadErrorMessage } from '@core/utils/upload-error';
 import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -90,7 +79,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { combineLatest, EMPTY, of, Subject } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 import { catchError, concatMap, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
@@ -177,12 +166,16 @@ export class AssetsComponent implements OnInit {
   spaceStore = inject(SpaceStore);
 
   private destroyRef = inject(DestroyRef);
-  /** The folder's page shown, in both layouts: paged, sorted and searched on the server (`GET …/assets`). */
-  readonly assetList = new FolderList();
+  /** The folder shown (`SpaceStore.assetFolderId`): paged, sorted and searched on the server (`GET …/assets`). */
+  readonly assetList = new FolderList(this.spaceStore.assetFolderId);
   readonly filters = FOLDER_LIST_FILTERS;
-  readonly total = signal(0);
-  private readonly assets = signal<Asset[]>([]);
-  readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
+  /** The page shown, in both layouts, live. */
+  readonly page = pagedResource({
+    list: this.assetList.list,
+    load: params => this.assetService.findPage(this.spaceId(), params),
+    error: 'Assets can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);
   displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
   fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
   now = Date.now();
@@ -205,43 +198,8 @@ export class AssetsComponent implements OnInit {
   // Subscriptions
   private fileUploadQueue$ = new Subject<File | AssetFileImport>();
 
-  // Loading
-  isLoading = signal(true);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
-
-  /**
-   * The folder shown (`SpaceStore.assetFolderId`, `undefined` until the store has it) sets the list's folder; the list's
-   * query, again whenever it changes (and live), its page. A failed load is told and ends only that request.
-   */
-  constructor() {
-    effect(() => {
-      const folderId = this.spaceStore.assetFolderId();
-      if (folderId !== undefined) untracked(() => this.assetList.setFolder(folderId));
-    });
-    combineLatest([
-      toObservable(this.spaceStore.assetFolderId).pipe(filter(it => it !== undefined)),
-      toObservable(this.assetList.list.params),
-    ])
-      .pipe(
-        switchMap(([, params]) =>
-          this.assetService.findPage(this.spaceId(), params).pipe(
-            catchError(() => {
-              this.notificationService.error('Assets can not be loaded.');
-              this.isLoading.set(false);
-              return EMPTY;
-            }),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(page => {
-        this.assets.set(page.items);
-        this.total.set(page.total);
-        this.assetList.list.onLoaded(page);
-        this.isLoading.set(false);
-      });
-  }
 
   ngOnInit(): void {
     this.fileUploadQueue$
@@ -500,7 +458,6 @@ export class AssetsComponent implements OnInit {
         .closed$.pipe(take(1))
         .subscribe();
     } else if (element.kind === AssetKind.FOLDER) {
-      this.isLoading.set(true);
       this.spaceStore.changeAssetFolder(element.id);
     }
   }
@@ -508,7 +465,6 @@ export class AssetsComponent implements OnInit {
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
     if (folderId === this.spaceStore.assetFolderId()) return;
-    this.isLoading.set(true);
     this.spaceStore.changeAssetFolder(folderId);
   }
 

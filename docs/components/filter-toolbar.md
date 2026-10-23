@@ -111,6 +111,8 @@ FilterPredicateUtils.create<Schema>({
   shows a count badge (`hlmButtonGroupText`) once ≥1 option is selected.
 - **`single`**: clicking an option replaces the value and closes the popover; the trigger shows the
   selected option's `label` instead of a count.
+- **Options menu**: at least 200 px wide and as wide as its longest option (`w-auto min-w-[200px]`); each option's
+  label stays on one line (`whitespace-nowrap`), so "Including subfolders" doesn't wrap beside its checkbox.
 - **Reset**: `hasActiveValues` (a `computed()` over `toSignal(form.valueChanges)`) is true whenever
   search text or any filter value is non-empty. The button renders only then, and clears every
   control to its empty shape — `''` for `search` and `single`, `[]` for `multiple` — sending

@@ -1,18 +1,6 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  input,
-  signal,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { FEATURE_FLAGS } from '@core/feature-flags';
 import { ContentService } from '@core/services/content.service';
@@ -24,6 +12,7 @@ import { apiErrorMessage } from '@core/utils/api-error';
 import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
+import { pagedResource } from '@core/utils/paged-resource';
 import {
   Content,
   ContentDocument,
@@ -75,8 +64,7 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { combineLatest, EMPTY } from 'rxjs';
-import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
+import { filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { AddDocumentDialogComponent, AddDocumentDialogContext } from './add-document-dialog';
 import { AddFolderDialogComponent, AddFolderDialogContext } from './add-folder-dialog';
@@ -145,13 +133,19 @@ export class ContentsComponent {
 
   spaceStore = inject(SpaceStore);
 
-  isLoading = signal(true);
-  /** The folder's page shown: paged, sorted and searched on the server (`GET …/contents`, without the documents' data). */
-  readonly contentList = new FolderList();
+  /**
+   * The folder shown (`SpaceStore.contentFolderId`): paged, sorted and searched on the server (`GET …/contents`,
+   * without the documents' data).
+   */
+  readonly contentList = new FolderList(this.spaceStore.contentFolderId);
   readonly filters = FOLDER_LIST_FILTERS;
-  readonly total = signal(0);
-  private readonly contents = signal<Content[]>([]);
-  readonly dataSource = new TableDataSource<Content>(this.contents, this.injector);
+  /** The page shown, live. */
+  readonly page = pagedResource({
+    list: this.contentList.list,
+    load: params => this.contentService.findPage(this.spaceId(), params),
+    error: 'Contents can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Content>(this.page.items, this.injector);
   displayedColumns: string[] = ['status', 'name', 'schema', /*'publishedAt', 'createdAt',*/ 'updatedAt', 'actions'];
 
   /** The ROOT schemas a document can be created with, from `SpaceStore` (live). */
@@ -175,39 +169,6 @@ export class ContentsComponent {
   }
 
   private destroyRef = inject(DestroyRef);
-
-  /**
-   * The folder shown (`SpaceStore.contentFolderId`, `undefined` until the store has it) sets the list's folder; the
-   * list's query, again whenever it changes (and live), its page. A failed load is told and ends only that request.
-   */
-  constructor() {
-    effect(() => {
-      const folderId = this.spaceStore.contentFolderId();
-      if (folderId !== undefined) untracked(() => this.contentList.setFolder(folderId));
-    });
-    combineLatest([
-      toObservable(this.spaceStore.contentFolderId).pipe(filter(it => it !== undefined)),
-      toObservable(this.contentList.list.params),
-    ])
-      .pipe(
-        switchMap(([, params]) =>
-          this.contentService.findPage(this.spaceId(), params).pipe(
-            catchError(() => {
-              this.notificationService.error('Contents can not be loaded.');
-              this.isLoading.set(false);
-              return EMPTY;
-            }),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(page => {
-        this.contents.set(page.items);
-        this.total.set(page.total);
-        this.contentList.list.onLoaded(page);
-        this.isLoading.set(false);
-      });
-  }
 
   openAddDocumentDialog(): void {
     this.dialog
@@ -450,7 +411,6 @@ export class ContentsComponent {
   }
 
   onRowSelect(element: Content): void {
-    this.isLoading.set(true);
     if (element.kind === ContentKind.DOCUMENT) {
       if (this.schemasMapByName().has(element.schema)) {
         this.router.navigate(['features', 'spaces', this.spaceId(), 'contents', element.id]);
@@ -474,7 +434,6 @@ export class ContentsComponent {
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
     if (folderId === this.spaceStore.contentFolderId()) return;
-    this.isLoading.set(true);
     this.spaceStore.changeContentFolder(folderId);
   }
 

@@ -21,6 +21,13 @@ function folder(overrides: Partial<AssetFolder> = {}): AssetFolder {
   return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', ...overrides } as AssetFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('AssetsComponent', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -99,12 +106,28 @@ describe('AssetsComponent', () => {
   /** The query of the last page read. */
   const lastQuery = (findPage: Mock) => (findPage.mock.calls.at(-1)![1] as HttpParams).toString();
 
-  it('loads the root page on init', () => {
+  it('loads the root page on init', async () => {
     const { component, findPage } = setup();
+    await settle();
 
+    expect(findPage).toHaveBeenCalledTimes(1);
     expect(findPage).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
     expect(lastQuery(findPage)).toBe('page=0&size=20');
-    expect(component.isLoading()).toBe(false);
+    expect(component.page.loading()).toBe(false);
+  });
+
+  it('asks once for a folder opened, from its first page (never for the folder left)', async () => {
+    const { component, findPage, assetFolderId } = setup();
+    await settle();
+    component.assetList.list.page.set(2);
+    await settle();
+    findPage.mockClear();
+
+    assetFolderId.set('f1');
+    await settle();
+
+    expect(findPage).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findPage)).toBe('page=0&size=20&parentId=f1');
   });
 
   it('loads the page of the current folder', () => {
@@ -125,7 +148,7 @@ describe('AssetsComponent', () => {
 
     component.assetList.onFilterChange({ search: ' logo ', scope: 'deep' });
     TestBed.tick();
-    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=size&direction=desc&parentId=f2&search=logo&deep=true');
+    expect(lastQuery(findPage)).toBe('page=0&size=20&sort=size&direction=desc&search=logo&deep=true&parentId=f2');
   });
 
   it('shows where each asset is only for a list from several folders', () => {
@@ -350,7 +373,6 @@ describe('AssetsComponent', () => {
 
       component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
 
-      expect(component.isLoading()).toBe(true);
       expect(changeAssetFolder).toHaveBeenCalledWith('f1');
     });
 

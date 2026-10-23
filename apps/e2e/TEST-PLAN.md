@@ -214,6 +214,7 @@ receives). Specs in `tests/contents/`.
 | Scenario | How | Status |
 |---|---|---|
 | **Folders** three levels deep; the breadcrumb back to each level | UI + API | ✅ `contents/tree` |
+| Opening a folder or going back: one read of its page, none for the folder left nor cancelled | UI (requests) | ✅ `contents/tree` |
 | **Search** in the folder (name or slug); **Scope: Including subfolders**: every match under it, each row with its path; back to the folder | UI | ✅ `contents/tree` |
 | A document in the open folder; only Root schemas offered; slug from the name | UI + API | ✅ `contents/tree` @smoke |
 | Slugs: taken in the folder refused (dialog and 409), fine in another; invalid refused, Normalize | UI + API | ✅ `contents/tree` |
@@ -295,6 +296,7 @@ Pre-check → action → post-check (the list, the breadcrumb, after a reload, t
 | Upload into the open folder only | UI + API | ✅ `assets/upload` |
 | Upload a name the folder has: both kept | UI + API | ✅ `assets/upload` (roadmap N2) |
 | **Create folder**, a folder inside it, the breadcrumb back | UI + API | ✅ `assets/folders` @smoke |
+| Opening a folder or going back: one read of its page, none for the folder left nor cancelled | UI (requests) | ✅ `assets/folders` |
 | A name the folder has (folder or file) accepted: duplicates are allowed (the list is paged) | UI + API | ✅ `assets/folders` (roadmap N2) |
 | Under 3 characters, spaces around refused; cancel creates nothing | UI + API | ✅ `assets/folders` |
 | **Rename** a file: extension kept, same id, the download uses the new name | UI + API + CDN | ✅ `assets/rename` @smoke |
