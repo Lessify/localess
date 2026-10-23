@@ -15,6 +15,13 @@ import { saveAs } from 'file-saver-es';
 
 import { TasksComponent } from './tasks.component';
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 function task(overrides: Partial<Task> = {}): Task {
   return {
     id: 't1',
@@ -57,16 +64,17 @@ describe('TasksComponent', () => {
     return { fixture, component: fixture.componentInstance, findAll, downloadUrl, deleteTask, navigate, success, error, open };
   }
 
-  it('loads the first page of the space tasks on init, newest first (the server default)', () => {
+  it('loads the first page of the space tasks on init, newest first (the server default)', async () => {
     const tasks = [task({ id: 't1' }), task({ id: 't2' })];
     const { component, findAll } = setup(tasks);
+    await settle();
 
     expect(findAll).toHaveBeenCalledTimes(1);
     expect(findAll.mock.calls[0][0]).toBe('space-1');
     expect(findAll.mock.calls[0][1].toString()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(tasks);
-    expect(component.total()).toBe(2);
-    expect(component.isLoading()).toBe(false);
+    expect(component.page.total()).toBe(2);
+    expect(component.page.loading()).toBe(false);
   });
 
   it('onFilterChange() asks the server for the search, kinds and statuses, from the first page', () => {
@@ -88,16 +96,17 @@ describe('TasksComponent', () => {
     expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=createdAt&direction=asc');
   });
 
-  it('tells a failed load, and loads again on the next query change', () => {
+  it('tells a failed load, and loads again on the next query change', async () => {
     const { fixture, component, findAll, error } = setup();
+    await settle();
     findAll.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     component.list.page.set(1);
-    fixture.detectChanges();
+    await settle();
     expect(error).toHaveBeenCalledWith('Tasks can not be loaded.');
 
     component.list.page.set(0);
-    fixture.detectChanges();
+    await settle();
     expect(findAll).toHaveBeenCalledTimes(3);
   });
 

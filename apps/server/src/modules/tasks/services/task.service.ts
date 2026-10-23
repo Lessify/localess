@@ -1,6 +1,6 @@
 import type { Readable } from 'node:stream';
 
-import type { Page, Task, TaskPageable } from '@localess/shared';
+import { type Page, type Task, type TaskCreate, type TaskImportCreate, TaskKind, type TaskPageable } from '@localess/shared';
 import { Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
@@ -14,17 +14,8 @@ import { TaskRepository } from '../repositories/task.repository.js';
 import { taskFileKey, taskFilesPrefix } from '../utils/task.utils.js';
 import { assertCanManage } from '../utils/task-roles.js';
 
-/** An export or metadata regeneration, as the client asks for it. */
-export type ExportTaskInput =
-  | { kind: 'ASSET_EXPORT' | 'CONTENT_EXPORT'; path?: string }
-  | { kind: 'SCHEMA_EXPORT' | 'ASSET_REGEN_METADATA' }
-  | { kind: 'TRANSLATION_EXPORT'; locale?: string };
-
-/** An uploaded import file; `stream.truncated` is set when it went over the upload limit. */
-export interface ImportUpload {
-  kind: 'ASSET_IMPORT' | 'CONTENT_IMPORT' | 'SCHEMA_IMPORT' | 'TRANSLATION_IMPORT';
-  /** Translation import of one locale from a flat JSON file. */
-  locale?: string;
+/** An import's fields and its uploaded file; `stream.truncated` is set when it went over the upload limit. */
+export interface ImportUpload extends TaskImportCreate {
   filename: string;
   stream: Readable & { truncated?: boolean };
 }
@@ -49,17 +40,21 @@ export class TaskService {
   ) {}
 
   async findAll(spaceId: string, query: TaskPageable): Promise<Page<Task>> {
-    const { rows, total } = await this.taskRepository.findPage(spaceId, query);
+    await this.requireSpace(spaceId);
+    const [rows, total] = await Promise.all([
+      this.taskRepository.findAll(spaceId, query),
+      this.taskRepository.findAllCount(spaceId, query),
+    ]);
     return toPage(rows, total, query, toTask);
   }
 
   async findOne(spaceId: string, id: string): Promise<Task> {
-    return toTask(await this.find(spaceId, id));
+    return toTask(await this.requireTask(spaceId, id));
   }
 
   /** The task's file (export result or uploaded import). */
   async download(spaceId: string, id: string): Promise<TaskDownload> {
-    const task = await this.find(spaceId, id);
+    const task = await this.requireTask(spaceId, id);
     const key = taskFileKey({ spaceId, id });
     const stat = await this.storage.stat(key);
     if (!stat) throw new NotFoundException('This task has no file');
@@ -68,9 +63,12 @@ export class TaskService {
   }
 
   /** Exports and metadata regeneration. */
-  async create(spaceId: string, input: ExportTaskInput, user: UserEntity): Promise<Task> {
+  async create(spaceId: string, input: TaskCreate, user: UserEntity): Promise<Task> {
     assertCanManage(user, input.kind);
-    return toTask(await this.taskRepository.create(spaceId, { id: newUuid(), ...input }));
+    await this.requireSpace(spaceId);
+    const id = newUuid();
+    await this.taskRepository.create(spaceId, { id, ...input });
+    return this.findOne(spaceId, id);
   }
 
   /**
@@ -78,37 +76,40 @@ export class TaskService {
    * that fails. The caller checked `assertCanManage` (it must drain the upload when that fails).
    */
   async createImport(spaceId: string, upload: ImportUpload): Promise<Task> {
-    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
+    await this.requireSpace(spaceId);
     const id = newUuid();
     try {
       const stored = await this.storage.put(taskFileKey({ spaceId, id }), upload.stream);
       if (upload.stream.truncated) throw new PayloadTooLargeException('File is too large');
-      const translation = upload.kind === 'TRANSLATION_IMPORT';
-      return toTask(
-        await this.taskRepository.create(spaceId, {
-          id,
-          kind: upload.kind,
-          file: { name: upload.filename, size: stored.size },
-          ...(translation ? { type: upload.locale ? 'flat-json' : 'full', locale: upload.locale ?? null } : {}),
-        }),
-      );
+      const translation = upload.kind === TaskKind.TRANSLATION_IMPORT;
+      await this.taskRepository.create(spaceId, {
+        id,
+        kind: upload.kind,
+        file: { name: upload.filename, size: stored.size },
+        ...(translation ? { type: upload.locale ? 'flat-json' : 'full', locale: upload.locale ?? null } : {}),
+      });
     } catch (error) {
       await this.storage.deletePrefix(taskFilesPrefix(spaceId, id));
       throw error;
     }
+    return this.findOne(spaceId, id);
   }
 
   /** Logs cascade; the task's files go too. */
   async remove(spaceId: string, id: string, user: UserEntity): Promise<void> {
-    const task = await this.find(spaceId, id);
+    const task = await this.requireTask(spaceId, id);
     assertCanManage(user, task.kind);
     await this.taskRepository.delete(spaceId, id);
     await this.storage.deletePrefix(taskFilesPrefix(spaceId, id));
   }
 
-  private async find(spaceId: string, id: string): Promise<TaskEntity> {
-    const task = await this.taskRepository.findById(spaceId, id);
+  private async requireTask(spaceId: string, id: string): Promise<TaskEntity> {
+    const task = await this.taskRepository.findOne(spaceId, id);
     if (!task) throw new NotFoundException('Task not found');
     return task;
+  }
+
+  private async requireSpace(spaceId: string): Promise<void> {
+    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
   }
 }

@@ -30,7 +30,7 @@ A paginated `ll-table` (see the [Table](../../components/table.md)) of all Tasks
 **Injected services:** `TaskService`, `HlmDialogService`, `NotificationService`, `Router`
 
 **Key behaviour:**
-- `loadData()` — one page of the space's tasks at a time (`TaskService.findAll()`, a live query on `GET …/tasks`, which answers `Page<Task>`); `list` (`PagedList`, 20 per page) holds the query, and the paginator, the sort header and the filters change it. A failed load is told ("Tasks can not be loaded.") and ends only that request
+- `page` (`pagedResource`) — one page of the space's tasks at a time (`TaskService.findAll()`, a live query on `GET …/tasks`, which answers `Page<Task>`); `list` (`PagedList`, 20 per page) holds the query, and the paginator, the sort header and the filters change it. A failed load is told ("Tasks can not be loaded.") and keeps the previous page
 - Sorting: only **Created At**, newest first by default (`sort=createdAt`, `direction` `desc` on the server); the header switches between newest and oldest first, never off. ID, Kind and Status have no sort header
 - `<ll-filter-toolbar>`: the search box (id, file name or message, case-insensitive, anywhere in them) and the multi-select **Kind** and **Status** filters go to the server (`search`, `kind`, `status`; several values repeat the parameter: `kind=ASSET_EXPORT&kind=CONTENT_EXPORT`) and start again from the first page
 - `navigateToDetail(task)` — navigates to `TaskDetailComponent` for the row

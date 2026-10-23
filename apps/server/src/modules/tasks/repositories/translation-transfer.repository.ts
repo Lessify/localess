@@ -39,11 +39,10 @@ export class TranslationTransferRepository {
 
   /** By key, byte order (`collate "C"`), so exports are stable. */
   findAll(spaceId: string): Promise<TranslationEntity[]> {
-    return this.db
-      .select()
-      .from(translations)
-      .where(eq(translations.spaceId, spaceId))
-      .orderBy(asc(sql`${translations.key} collate "C"`));
+    return this.db.query.translations.findMany({
+      where: eq(translations.spaceId, spaceId),
+      orderBy: [asc(sql`${translations.key} collate "C"`)],
+    });
   }
 
   /** Writes a full import in one transaction, in the file's order. Answers the number of keys written. */

@@ -39,7 +39,7 @@ repositories call it.
     `{ statusCode, error, message: ["path: issue", …] }` (the web shows `message[0]`).
   - An id in the path, `:spaceId` included: `@Param('spaceId', UuidParamPipe)`, which answers 404 (not 400) for a
     malformed one. The service then checks that the row exists (404); a repository does not check an id's format.
-    Done in the Spaces, Users, Webhooks, Translations, Schemas, Contents and Assets (App API) modules; the others still lean on `isUuid` in their
+    Done in the Spaces, Users, Webhooks, Translations, Schemas, Contents, Assets and Tasks (App API) modules; the others still lean on `isUuid` in their
     repositories (and in `SpaceLookupRepository`) until they are reworked. The v1 controllers answer their own error body, not the pipe's.
   - Roles: `@RequireRole(CONTENT_WRITERS)` (a list of `@localess/shared` `roles.ts`, or one role) on each method or the controller,
     the same the UI checks.
@@ -88,10 +88,9 @@ repositories call it.
   answer it; count with `select({ total: count() })` or check existence with `findFirst({ columns: { id: true } })`;
   read rows with `select().from()` (or a join) a relational query expresses.
 
-Reworked so far: the Spaces, Webhooks, Users, Translations, Schemas, Contents, Assets and Plugins modules (`REWORKED` in `apps/server/test/architecture.test.ts`). The others still read
-with `findPage` (rows and total together), count with `select({ … count() })` (assets,
-tasks) and some writes answer rows; each module moves to these shapes when it is reworked, and
-joins `REWORKED` then.
+Reworked so far: the Spaces, Webhooks, Users, Translations, Schemas, Contents, Assets, Plugins and Tasks modules
+(`REWORKED` in `apps/server/test/architecture.test.ts`). The one left, Firebase import, moves to these shapes when it
+is reworked, and joins `REWORKED` then.
 
 **Reading a space from another module:** `SpaceLookupRepository` (`shared/repositories/space-lookup.repository.ts`,
 injected as `spaceLookupRepository`): `exists(spaceId, tx?)` and `findOne(spaceId, tx?)` answering a

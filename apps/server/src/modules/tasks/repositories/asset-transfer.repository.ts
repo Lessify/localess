@@ -16,10 +16,7 @@ export class AssetTransferRepository {
   ) {}
 
   findFiles(spaceId: string): Promise<AssetEntity[]> {
-    return this.db
-      .select()
-      .from(assets)
-      .where(and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FILE')));
+    return this.db.query.assets.findMany({ where: and(eq(assets.spaceId, spaceId), eq(assets.kind, 'FILE')) });
   }
 
   /** A file's regenerated metadata and alt (each only when read), and it is no longer in progress. */

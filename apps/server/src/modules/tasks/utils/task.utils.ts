@@ -21,10 +21,10 @@ export const KIND_LABEL: Record<TaskExportMetadata['kind'], string> = {
 };
 
 /** The task's file: the export result, or the uploaded import. */
-export const taskFileKey = (task: { spaceId: string; id: string }) => `spaces/${task.spaceId}/tasks/${task.id}/original`;
+export const taskFileKey = (task: { spaceId: string; id: string }): string => `spaces/${task.spaceId}/tasks/${task.id}/original`;
 /** Everything stored for a task, dropped with it. */
-export const taskFilesPrefix = (spaceId: string, id: string) => `spaces/${spaceId}/tasks/${id}/`;
-export const assetFileKey = (spaceId: string, id: string) => `spaces/${spaceId}/assets/${id}/original`;
+export const taskFilesPrefix = (spaceId: string, id: string): string => `spaces/${spaceId}/tasks/${id}/`;
+export const assetFileKey = (spaceId: string, id: string): string => `spaces/${spaceId}/assets/${id}/original`;
 
 export function formatZodError(error: ZodError): string {
   const total = error.issues.length;

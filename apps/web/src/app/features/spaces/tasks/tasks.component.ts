@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, inject, Injector, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
 import { PagedList } from '@core/utils/paged-list';
+import { pagedResource } from '@core/utils/paged-resource';
 import { Task, TaskExport, TaskImport, TaskKind, TaskStatus } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -34,8 +34,7 @@ import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { saveAs } from 'file-saver-es';
-import { EMPTY } from 'rxjs';
-import { catchError, filter, switchMap, take } from 'rxjs/operators';
+import { filter, switchMap, take } from 'rxjs/operators';
 
 const TASK_KIND_LABELS: Record<TaskKind, string> = {
   [TaskKind.ASSET_EXPORT]: 'Asset Export',
@@ -86,25 +85,27 @@ const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
     }),
   ],
 })
-export class TasksComponent implements OnInit {
+export class TasksComponent {
   private readonly taskService = inject(TaskService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
 
   // Input
   spaceId = input.required<string>();
 
-  isLoading = signal(true);
   displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdAt', 'actions'];
 
-  /** The page shown: paged and filtered on the server, newest first unless sorted otherwise. */
+  /** The query: paged and filtered on the server, newest first unless sorted otherwise. */
   readonly list = new PagedList(20);
-  readonly total = signal(0);
-  private readonly tasks = signal<Task[]>([]);
-  readonly dataSource = new TableDataSource<Task>(this.tasks, this.injector);
+  /** The page shown, live: a change of any task of the space reads it again. */
+  readonly page = pagedResource({
+    list: this.list,
+    load: params => this.taskService.findAll(this.spaceId(), params),
+    error: 'Tasks can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Task>(this.page.items, this.injector);
 
   readonly filters: FilterDef[] = [
     {
@@ -121,10 +122,6 @@ export class TasksComponent implements OnInit {
     },
   ];
 
-  ngOnInit(): void {
-    this.loadData(this.spaceId());
-  }
-
   /** The search box (id, file name, message) and the Kind and Status filters, on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
     this.list.setFilters({ search: value.search?.trim() || undefined, kind: value['kind'], status: value['status'] });
@@ -136,32 +133,6 @@ export class TasksComponent implements OnInit {
 
   navigateToDetail(task: Task): void {
     this.router.navigate(['features', 'spaces', this.spaceId(), 'tasks', task.id]);
-  }
-
-  /**
-   * The current query's page, again whenever the query changes or a task does (live). A failed load is told and ends
-   * only that request: the next query change (page, sort, filters) fetches again.
-   */
-  loadData(spaceId: string): void {
-    toObservable(this.list.params, { injector: this.injector })
-      .pipe(
-        switchMap(params =>
-          this.taskService.findAll(spaceId, params).pipe(
-            catchError(() => {
-              this.notificationService.error('Tasks can not be loaded.');
-              this.isLoading.set(false);
-              return EMPTY;
-            }),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(page => {
-        this.tasks.set(page.items);
-        this.total.set(page.total);
-        this.list.onLoaded(page);
-        this.isLoading.set(false);
-      });
   }
 
   onDownload(element: TaskExport | TaskImport): void {

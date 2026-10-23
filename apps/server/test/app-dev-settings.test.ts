@@ -487,6 +487,15 @@ describe('app API: tokens, webhooks, tasks, OpenAPI', () => {
       expect((await exporter.get(`${base}/${list[2].id}/download`)).statusCode).toBe(404);
     });
 
+    it('answers 404 for a malformed or unknown space, and for the logs of an unknown task', async () => {
+      const unknown = `/api/app/spaces/${newUuid()}/tasks`;
+      expect((await exporter.get('/api/app/spaces/not-a-uuid/tasks')).statusCode).toBe(404);
+      expect((await exporter.get(unknown)).statusCode).toBe(404);
+      expect((await exporter.post(unknown, { kind: 'CONTENT_EXPORT' })).statusCode).toBe(404);
+      expect((await exporter.get(`${unknown}/${newUuid()}/logs`)).statusCode).toBe(404);
+      expect((await exporter.get(`${base}/${newUuid()}/logs`)).statusCode).toBe(404);
+    });
+
     it('deletes with the role the kind names, removing logs and files', async () => {
       const list = (await exporter.get(base)).json().items;
       const imported = list.find((it: { kind: string }) => it.kind === 'CONTENT_IMPORT');

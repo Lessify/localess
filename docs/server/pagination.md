@@ -54,8 +54,7 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
    the id, `limit: query.size`, `offset: offsetOf(query)`, `with` the relations the list shows) and
    `findAllCount(…, query): Promise<number>` (`this.db.$count(table, where)` with the same `where`, one private method
    building it for both). Search with `containsPattern(search)` and `ilike` (`shared/utils/paging.ts`). A sort or filter needs an index
-   when the table is large (`tasks_space_idx (space_id, created_at desc)`). Spaces follow this, and space locales, environments, tokens, webhooks and users; Tasks still
-   answers both from one `findPage` until its module is reworked.
+   when the table is large (`tasks_space_idx (space_id, created_at desc)`). Spaces follow this, and space locales, environments, tokens, webhooks, users and tasks.
 3. **Service** `findAll(…, query): Promise<Page<T>>`: both reads, then `toPage(rows, total, query, toX)`.
 4. **Controller** `findAll(@Query({ schema: zXPageable }) query: XPageable)`.
 5. **Server test** (`apps/server/test/<entity>-paging.test.ts`): the first page and the total; the next page and past
@@ -77,8 +76,8 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
   ```
   One request per query (a newer one cancels the one in flight); `page.items()`, `page.total()`, `page.loading()`; the
   previous page stays shown while the next loads; a failed load is told and keeps the previous page; `onLoaded` moves to
-  the last page when the one shown emptied. Moved so far: Contents, Assets and their pickers; the other paged screens
-  still use `toObservable(list.params).pipe(switchMap(…))` until they move (with Tasks).
+  the last page when the one shown emptied. Moved so far: Contents, Assets and their pickers, Tasks; the other paged screens
+  still use `toObservable(list.params).pipe(switchMap(…))` until they move.
 - **Template:** `<ll-paginator [length]="page.total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />`;
   `(sortChange)="onSortChange($event)"` on `llTableSort` (a fixed default order: `llTableSortActive`,
   `llTableSortDirection`, `[llTableSortDisableClear]="true"`); the filter toolbar's `(filterChange)` calls
@@ -95,7 +94,7 @@ interface Pageable<S> { page: number; size: number; sort: S; direction: 'asc' | 
 The Tasks list is the reference; each step names the file.
 
 1. `packages/shared/src/models/task.model.ts` (`TASK_SORT_FIELDS`) and `task.zod.ts` (`zTaskPageable`, `TaskPageable`).
-2. `modules/tasks/repositories/task.repository.ts`: `findPage(spaceId, query)`.
+2. `modules/tasks/repositories/task.repository.ts`: `findAll(spaceId, query)` and `findAllCount(spaceId, query)`, one private `where`.
 3. `modules/tasks/services/task.service.ts`: `findAll(spaceId, query)` → `Page<Task>`.
 4. `modules/tasks/controllers/task.controller.ts`: `findAll(@Query({ schema: zTaskPageable }) query)`.
 5. `apps/server/test/tasks-paging.test.ts`.

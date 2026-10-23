@@ -19,7 +19,7 @@ export class TaskLogRepository {
 
   /** In the order they were written. */
   findAll(taskId: string): Promise<TaskLogEntity[]> {
-    return this.db.select().from(taskLogs).where(eq(taskLogs.taskId, taskId)).orderBy(asc(taskLogs.createdAt), asc(taskLogs.id));
+    return this.db.query.taskLogs.findMany({ where: eq(taskLogs.taskId, taskId), orderBy: [asc(taskLogs.createdAt), asc(taskLogs.id)] });
   }
 
   create(

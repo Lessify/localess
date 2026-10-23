@@ -1,5 +1,5 @@
 import type { MultipartFile } from '@fastify/multipart';
-import type { TaskCreate, TaskPageable } from '@localess/shared';
+import type { Page, Task, TaskCreate, TaskPageable } from '@localess/shared';
 import { CONTENT_WRITERS } from '@localess/shared';
 import { zTaskCreate, zTaskImportCreate, zTaskPageable } from '@localess/shared/zod';
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
@@ -30,20 +30,24 @@ export class TaskController {
 
   @Get()
   @RequireRole(CONTENT_WRITERS)
-  findAll(@Param('spaceId') spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable) {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Query({ schema: zTaskPageable }) query: TaskPageable): Promise<Page<Task>> {
     return this.taskService.findAll(spaceId, query);
   }
 
   @Get(':id')
   @RequireRole(CONTENT_WRITERS)
-  findOne(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+  findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<Task> {
     return this.taskService.findOne(spaceId, id);
   }
 
   /** The task's file (export result or uploaded import), as an attachment. */
   @Get(':id/download')
   @RequireRole(CONTENT_WRITERS)
-  async download(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @Res() reply: FastifyReply): Promise<void> {
+  async download(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('id', UuidParamPipe) id: string,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
     const { filename, size, stream } = await this.taskService.download(spaceId, id);
     void reply
       .header('content-disposition', buildContentDisposition(filename, true))
@@ -56,7 +60,11 @@ export class TaskController {
   /** Exports and metadata regeneration: `{ kind, path? | locale? }`. */
   @Post()
   @RequireRole(CONTENT_WRITERS)
-  create(@Param('spaceId') spaceId: string, @Body({ schema: zTaskCreate }) body: TaskCreate, @CurrentUser() user: UserEntity) {
+  create(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Body({ schema: zTaskCreate }) body: TaskCreate,
+    @CurrentUser() user: UserEntity,
+  ): Promise<Task> {
     return this.taskService.create(spaceId, body, user);
   }
 
@@ -66,7 +74,11 @@ export class TaskController {
    */
   @Post('import')
   @RequireRole(CONTENT_WRITERS)
-  async createImport(@Param('spaceId') spaceId: string, @Req() request: FastifyRequest, @CurrentUser() user: UserEntity) {
+  async createImport(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Req() request: FastifyRequest,
+    @CurrentUser() user: UserEntity,
+  ): Promise<Task> {
     if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
     const file = await request.file();
     if (!file) throw new BadRequestException('Missing file part');
@@ -88,7 +100,11 @@ export class TaskController {
   @Delete(':id')
   @HttpCode(204)
   @RequireRole(CONTENT_WRITERS)
-  remove(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity): Promise<void> {
+  remove(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('id', UuidParamPipe) id: string,
+    @CurrentUser() user: UserEntity,
+  ): Promise<void> {
     return this.taskService.remove(spaceId, id, user);
   }
 }

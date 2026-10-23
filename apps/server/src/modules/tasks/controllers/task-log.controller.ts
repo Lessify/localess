@@ -1,4 +1,4 @@
-import { CONTENT_WRITERS } from '@localess/shared';
+import { CONTENT_WRITERS, type TaskLog } from '@localess/shared';
 import { Controller, Get, Param } from '@nestjs/common';
 
 import { RequireRole } from '../../../auth/decorators.js';
@@ -12,7 +12,7 @@ export class TaskLogController {
 
   @Get()
   @RequireRole(CONTENT_WRITERS)
-  findAll(@Param('spaceId') spaceId: string, @Param('id', UuidParamPipe) id: string) {
+  findAll(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('id', UuidParamPipe) id: string): Promise<TaskLog[]> {
     return this.taskLogService.findAll(spaceId, id);
   }
 }

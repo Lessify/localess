@@ -2,6 +2,7 @@ import type { TaskLog } from '@localess/shared';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import type { TaskEntity } from '../../../shared/entities/task.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { toTaskLog } from '../../../shared/transformers/task.transformer.js';
 import { errorMessage } from '../../../shared/utils/error-message.js';
 import { TaskRepository } from '../repositories/task.repository.js';
@@ -14,13 +15,15 @@ export class TaskLogService {
   private readonly logger = new Logger('TaskRunner');
 
   constructor(
+    private readonly spaceLookupRepository: SpaceLookupRepository,
     private readonly taskRepository: TaskRepository,
     private readonly taskLogRepository: TaskLogRepository,
   ) {}
 
-  /** In the order they were written; 404 when the space has no task `taskId`. */
+  /** In the order they were written; 404 when the space or its task `taskId` is not there. */
   async findAll(spaceId: string, taskId: string): Promise<TaskLog[]> {
-    if (!(await this.taskRepository.findById(spaceId, taskId))) throw new NotFoundException('Task not found');
+    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
+    if (!(await this.taskRepository.exists(spaceId, taskId))) throw new NotFoundException('Task not found');
     return (await this.taskLogRepository.findAll(taskId)).map(toTaskLog);
   }
 

@@ -18,16 +18,12 @@ export class SchemaTransferRepository {
   ) {}
 
   findAll(spaceId: string): Promise<SchemaEntity[]> {
-    return this.db.select().from(schemas).where(eq(schemas.spaceId, spaceId));
+    return this.db.query.schemas.findMany({ where: eq(schemas.spaceId, spaceId) });
   }
 
   /** By name, byte order (`collate "C"`), so exports are stable. */
   findAllByName(spaceId: string): Promise<SchemaEntity[]> {
-    return this.db
-      .select()
-      .from(schemas)
-      .where(eq(schemas.spaceId, spaceId))
-      .orderBy(sql`${schemas.name} collate "C"`);
+    return this.db.query.schemas.findMany({ where: eq(schemas.spaceId, spaceId), orderBy: [sql`${schemas.name} collate "C"`] });
   }
 
   /**

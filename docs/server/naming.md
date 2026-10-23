@@ -70,7 +70,7 @@ Other files: `<name>.transformer.ts` with `to<Model>(entity)` functions (`toSpac
 - **Why:** what a method answers is read from its signature, not worked out from its body.
 - **Example:** `modules/spaces/` (every file).
 - **Scope:** checked in the modules reworked so far (spaces, webhooks, users, translations, schemas, contents, assets,
-  plugins); each module joins the check when it is reworked
+  plugins, tasks); each module joins the check when it is reworked
   (`REWORKED` in `apps/server/test/architecture.test.ts`).
 
 ## Repository methods
