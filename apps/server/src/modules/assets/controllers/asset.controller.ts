@@ -19,18 +19,22 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   Patch,
   PayloadTooLargeException,
   Post,
   Query,
   Req,
+  Res,
 } from '@nestjs/common';
-import type { FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { RequireRole } from '../../../auth/decorators.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { AssetService } from '../services/asset.service.js';
+import { AssetDeliveryService } from '../services/asset-delivery.service.js';
+import { buildAssetETag } from '../utils/asset-etag.js';
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
@@ -45,7 +49,10 @@ function fieldValues(file: MultipartFile): Record<string, string> {
 /** Asset library (was direct Firestore access plus browser uploads to Cloud Storage). `:assetId` is the UUID. */
 @Controller('api/app/spaces/:spaceId/assets')
 export class AssetController {
-  constructor(private readonly assetService: AssetService) {}
+  constructor(
+    private readonly assetService: AssetService,
+    private readonly assetDeliveryService: AssetDeliveryService,
+  ) {}
 
   /**
    * One page, folders first: `?page=&size=&sort=&direction=` (Pageable), `?parentId=` (absent: the root), `?deep=true`,
@@ -84,6 +91,33 @@ export class AssetController {
   @RequireRole(ANY_ROLE)
   findOne(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('assetId', UuidParamPipe) assetId: string): Promise<Asset> {
     return this.assetService.findOne(spaceId, assetId);
+  }
+
+  /**
+   * The platform's thumbnail of a file (every list, grid and field shows it): WebP, the longest side at most 512 px,
+   * generated once. An asset's bytes never change, so the browser keeps it for a year. `404` when the asset has none
+   * (a folder, a file that is not an image or a video): the platform shows its icon.
+   */
+  @Get(':assetId/thumbnail')
+  @RequireRole(ANY_ROLE)
+  async findThumbnail(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+    @Req() request: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
+    const thumbnail = await this.assetDeliveryService.findThumbnail(spaceId, assetId);
+    if (!thumbnail) throw new NotFoundException('No thumbnail');
+    void reply.header('cache-control', 'private, max-age=31536000, immutable');
+    if (thumbnail.md5) {
+      const etag = buildAssetETag(thumbnail.md5, 'thumbnail', false);
+      void reply.header('etag', etag);
+      if (request.headers['if-none-match'] === etag) {
+        void reply.code(304).send();
+        return;
+      }
+    }
+    void reply.type('image/webp').send(thumbnail.output);
   }
 
   /** How many contents use it (a folder: any file under it), for the warning before a delete. */

@@ -175,12 +175,18 @@ Without an edge CDN every transform would run sharp on each request, so by defau
 original:
 
 ```
-$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/original
-$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/{etagSuffix|orig}[-thumbnail]
+$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/{original_name}
+$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/w800-h600-q60-fit-cover.avif
+$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/w400.jpg            ← ?w=400, format kept
+$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/w200-frame.webp     ← ?w=200&thumbnail
+$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/full.jpg            ← a bare re-encode
+$LOCALESS_STORAGE_DIR/spaces/{spaceId}/assets/{assetId}/renditions/thumbnail.webp      ← the platform thumbnail
 ```
 
-The key is the ETag suffix, i.e. the effective encode, so two spellings producing identical bytes
-share one file. Renditions are deleted with the asset. Cache writes are best-effort (a failed write
+A rendition is named by what defines its bytes, in a fixed order (`w`, `h`, `q`, `fit`, `frame`), with the encoded
+format as its extension (`renditionKey`, `modules/assets/utils/storage-keys.ts`), so equal requests share one file
+and storage shows what each file is. `thumbnail.webp` is the App API's platform thumbnail
+(`GET /api/app/spaces/{s}/assets/{id}/thumbnail`, 512 px WebP), stored even with the cache off. Renditions are deleted with the asset. Cache writes are best-effort (a failed write
 is logged, the response still goes out). With `LOCALESS_RENDITION_CACHE=off` every transform runs in the request, as
 the Firebase function did, and nothing is stored beyond the original: for installs behind a CDN or caching proxy,
 which caches the 365-day responses. The cache has no size limit or eviction yet (renditions go with their asset).

@@ -442,10 +442,10 @@ describe('app API: spaces, locales, instance label', () => {
         { spaceId, id: newUuid(), kind: 'FOLDER', name: 'Blog', slug: 'blog' },
       ]);
       await t.db.insert(assets).values([
-        { spaceId, id: newUuid(), kind: 'FILE', name: 'a', size: 1000 },
-        { spaceId, id: newUuid(), kind: 'FILE', name: 'b', size: 24 },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'a', originalName: 'a', size: 1000 },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'b', originalName: 'b', size: 24 },
         // Imported from Firebase without its file: counted, size unknown.
-        { spaceId, id: newUuid(), kind: 'FILE', name: 'c', size: null },
+        { spaceId, id: newUuid(), kind: 'FILE', name: 'c', originalName: 'c', size: null },
         { spaceId, id: newUuid(), kind: 'FOLDER', name: 'f' },
       ]);
       await t.db.insert(schemas).values({ id: newUuid(), spaceId, name: 'page', type: 'ROOT', fields: [] });

@@ -9,13 +9,15 @@ CREATE TABLE "assets" (
 	"type" text,
 	"size" bigint,
 	"md5" text,
+	"original_name" text,
 	"alt" text,
 	"source" text,
 	"metadata" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "assets_space_id_id_pk" PRIMARY KEY("space_id","id"),
-	CONSTRAINT "assets_kind_check" CHECK ("assets"."kind" in ('FOLDER', 'FILE'))
+	CONSTRAINT "assets_kind_check" CHECK ("assets"."kind" in ('FOLDER', 'FILE')),
+	CONSTRAINT "assets_original_name_check" CHECK (("assets"."kind" = 'FILE') = ("assets"."original_name" is not null))
 );
 --> statement-breakpoint
 CREATE TABLE "content_link_snapshots" (

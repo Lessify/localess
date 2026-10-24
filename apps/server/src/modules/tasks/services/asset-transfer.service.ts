@@ -3,8 +3,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import type { TaskEntity } from '../../../shared/entities/task.entity.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
+import { assetOriginalKey } from '../../../shared/utils/asset-files.js';
 import { AssetTransferRepository } from '../repositories/asset-transfer.repository.js';
-import { assetFileKey, formatCounts, type TaskOutcome } from '../utils/task.utils.js';
+import { formatCounts, type TaskOutcome } from '../utils/task.utils.js';
 import type { TaskProgressReporter } from '../utils/task-progress.js';
 import { TaskLogService } from './task-log.service.js';
 
@@ -26,8 +27,8 @@ export class AssetTransferService {
     let skipped = 0;
     for (const [index, file] of files.entries()) {
       await progress.report('Regenerating', index, files.length);
-      const key = assetFileKey(task.spaceId, file.id);
-      if (!(await this.storage.stat(key))) {
+      const key = file.originalName && assetOriginalKey(task.spaceId, file.id, file.originalName);
+      if (!key || !(await this.storage.stat(key))) {
         await this.taskLogService.log(task, 'WARN', `asset ${file.id} has no file`);
         skipped++;
         continue;

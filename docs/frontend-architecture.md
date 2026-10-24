@@ -98,6 +98,16 @@ A custom `IMAGE_LOADER` is registered in `app.config.ts` that automatically appe
 // → becomes: /api/v1/.../assets/...?w=400&thumbnail=true
 ```
 
+Lists, grids and Asset fields don't use it: they show the platform thumbnail, one fixed file per asset (a plain `src`,
+no `srcset`), so every screen shares the copy in the browser cache:
+
+```html
+<img src="/api/app/spaces/{{ spaceId }}/assets/{{ asset.id }}/thumbnail" width="200" height="200" loading="lazy" alt="thumbnail" />
+```
+
+WebP, the longest side at most 512 px, for images and videos (`filePreview()`); `404` for any other file. Only the
+image preview dialog still sizes through the loader (`?w=1000`).
+
 ---
 
 ## `packages/ui/` Component Library

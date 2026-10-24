@@ -1,5 +1,5 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -68,7 +68,6 @@ import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-se
     LlTableImports,
     TimeDurationPipe,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmBreadcrumbImports,
     HlmIconImports,
     HlmProgressImports,

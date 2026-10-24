@@ -68,6 +68,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "original_name": {
+          "name": "original_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "alt": {
           "name": "alt",
           "type": "text",
@@ -216,6 +222,10 @@
         "assets_kind_check": {
           "name": "assets_kind_check",
           "value": "\"assets\".\"kind\" in ('FOLDER', 'FILE')"
+        },
+        "assets_original_name_check": {
+          "name": "assets_original_name_check",
+          "value": "(\"assets\".\"kind\" = 'FILE') = (\"assets\".\"original_name\" is not null)"
         }
       },
       "isRLSEnabled": false

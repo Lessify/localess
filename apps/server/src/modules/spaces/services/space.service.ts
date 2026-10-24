@@ -5,12 +5,13 @@ import { BadRequestException, ConflictException, Inject, Injectable, NotFoundExc
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
-import { assetFilesPrefix, spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
+import { spaceFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
 import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
 import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { type PublicSpace, toLocale, toPublicSpace, toSpace } from '../../../shared/transformers/space.transformer.js';
+import { assetOriginalKey, toOriginalName } from '../../../shared/utils/asset-files.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { SpaceRepository } from '../repositories/space.repository.js';
 import { SpaceOverviewRepository } from '../repositories/space-overview.repository.js';
@@ -93,12 +94,13 @@ export class SpaceService {
       for (let start = 0; start < files.length; start += STORE_BATCH) {
         const batch = files.slice(start, start + STORE_BATCH).map(async (asset, offset) => {
           const id = ids[start + offset];
-          // The asset module's key for an original (modules/assets/utils/storage-keys.ts `originalKey`).
-          const key = `${assetFilesPrefix(spaceId, id)}original`;
+          // Stored as an upload of `name` + `extension` would be.
+          const originalName = toOriginalName(`${asset.name}${asset.file!.extension}`);
+          const key = assetOriginalKey(spaceId, id, originalName);
           const info = await this.storage.put(key, await asset.file!.bytes());
           // Known from the generator, or read as for an upload.
           const metadata = asset.file!.metadata ?? (await this.assetMetadataService.extract(key, asset.file!.type, null)).metadata ?? null;
-          return { key: asset.key, id, size: info.size, md5: info.md5, metadata };
+          return { key: asset.key, id, originalName, size: info.size, md5: info.md5, metadata };
         });
         // Every store of the batch settles before a failure is acted on: one still writing after the cleanup would
         // recreate the folder with its guard already released, and stay for good.

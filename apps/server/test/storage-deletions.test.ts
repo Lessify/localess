@@ -55,7 +55,7 @@ describe('storage deletions', () => {
 
   it('queues the files of a deleted file and deletes them right after the commit', async () => {
     const file = await upload('a');
-    expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
+    expect(await exists(`spaces/${S1}/assets/${file.id}/a.txt`)).toBe(true);
     await assets.remove(S1, file.id);
     await sweeper.whenIdle();
     expect(await exists(`spaces/${S1}/assets/${file.id}`)).toBe(false);
@@ -75,7 +75,7 @@ describe('storage deletions', () => {
       lastError: 'disk unavailable',
     });
     expect(entry.notBefore.getTime()).toBeGreaterThan(Date.now());
-    expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
+    expect(await exists(`spaces/${S1}/assets/${file.id}/b.txt`)).toBe(true);
 
     await due();
     await sweeper.sweep();
@@ -125,7 +125,7 @@ describe('storage deletions', () => {
     await expect(upload('e')).rejects.toThrow('connection lost');
     const [entry] = await queue();
     expect(entry.notBefore.getTime()).toBeGreaterThan(Date.now() + 55 * 60 * 1000);
-    expect(await exists(`spaces/${S1}/assets/${entry.assetId}/original`)).toBe(true);
+    expect(await exists(`spaces/${S1}/assets/${entry.assetId}/e.txt`)).toBe(true);
 
     await sweeper.sweep();
     expect(await queue()).toHaveLength(1);
@@ -140,7 +140,7 @@ describe('storage deletions', () => {
     await t.db.insert(storageDeletions).values({ prefix: `spaces/${S1}/assets/${file.id}/`, spaceId: S1, assetId: file.id });
     await sweeper.sweep();
     expect(await queue()).toEqual([]);
-    expect(await exists(`spaces/${S1}/assets/${file.id}/original`)).toBe(true);
+    expect(await exists(`spaces/${S1}/assets/${file.id}/f.txt`)).toBe(true);
     await assets.remove(S1, file.id);
     await sweeper.whenIdle();
   });

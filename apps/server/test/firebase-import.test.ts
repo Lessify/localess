@@ -171,8 +171,11 @@ describe('Firebase import run', () => {
       id: expect.stringMatching(UUID_V7),
       parentId: folder.id,
       md5: createHash('md5').update(photo).digest('base64'),
+      // Stored by its Firebase name and extension, made safe; set for a file Firebase had no bytes for, too.
+      originalName: 'photo.jpg',
     });
-    expect(rows.find(it => it.legacyId === 'a2')!.parentId).toBeNull();
+    expect(rows.find(it => it.legacyId === 'a2')).toMatchObject({ parentId: null, originalName: 'missing.jpg' });
+    expect(photos.originalName).toBeNull();
     const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${space.id}/assets/${file.id}/original` });
     expect(served.rawPayload.equals(photo)).toBe(true);
 

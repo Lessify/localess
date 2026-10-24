@@ -164,9 +164,14 @@ An **Asset** is either a `FOLDER` or a `FILE`. Metadata is a Postgres row; the f
 
 ```
 Postgres: assets (space_id, id uuid, legacy_id, parent_id)        ← parent_id: its folder (null: root), FK with cascade
-Storage:  spaces/{spaceId}/assets/{assetId}/original               ← raw file
+Storage:  spaces/{spaceId}/assets/{assetId}/{original_name}        ← raw file
           spaces/{spaceId}/assets/{assetId}/renditions/…           ← cached image transforms
 ```
+
+A file's `original_name` is its upload's file name made safe for any filesystem or object store
+(`apps/server/src/shared/utils/asset-files.ts`), set once, so storage shows what each file is (`beach-sunset.jpg`).
+It is never sent by the API: `name` + `extension` is what the API shows, renames and uses as the download file name,
+and a rename never touches storage.
 
 The CDN endpoint (`/api/v1/spaces/:spaceId/assets/:assetId`) supports:
 - `?w=<px>` — resize images on-the-fly via Sharp
@@ -225,7 +230,7 @@ spaces                            default_locale_id
 Storage (`LOCALESS_STORAGE_DIR`) holds only binaries:
 
 ```
-spaces/{spaceId}/assets/{assetId}/original
+spaces/{spaceId}/assets/{assetId}/{original_name}
 spaces/{spaceId}/assets/{assetId}/renditions/…
 spaces/{spaceId}/tasks/{taskId}/original
 ```

@@ -45,4 +45,3 @@ export const taskFileKey = (task: { spaceId: string; id: string }, name: string)
   `spaces/${task.spaceId}/tasks/${task.id}/${name}`;
 /** Everything stored for a task, dropped with it. */
 export const taskFilesPrefix = (spaceId: string, id: string): string => `spaces/${spaceId}/tasks/${id}/`;
-export const assetFileKey = (spaceId: string, id: string): string => `spaces/${spaceId}/assets/${id}/original`;

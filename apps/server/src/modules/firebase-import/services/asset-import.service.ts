@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
+import { assetOriginalKey, toOriginalName } from '../../../shared/utils/asset-files.js';
 import { AssetImportRepository } from '../repositories/asset-import.repository.js';
 import type { FirebaseDoc } from '../utils/firebase-client.js';
 import { obj, str, timestamps } from '../utils/firebase-docs.js';
@@ -35,14 +36,17 @@ export class AssetImportService {
     for (const doc of parents.order) {
       const id = assetIds.get(doc.id)!;
       const isFile = doc['kind'] === 'FILE';
+      const extension = typeof doc['extension'] === 'string' ? doc['extension'] : '';
+      // Stored by its Firebase file name (`name` + `extension`), as an upload is.
+      const originalName = isFile ? toOriginalName(`${str(doc['name']) ?? doc.id}${extension}`) : null;
       let stored: { size: number; md5: string } | undefined;
       let extracted: { metadata?: Record<string, unknown>; alt?: string } | undefined;
       if (isFile) {
         const stream = await client.assetFile(sourceSpaceId, doc.id).catch(error => {
           throw new StageFailure('assets', `Downloading asset '${str(doc['name']) ?? doc.id}' failed: ${(error as Error).message}`);
         });
-        if (stream) {
-          const key = `spaces/${sid}/assets/${id}/original`;
+        if (stream && originalName) {
+          const key = assetOriginalKey(sid, id, originalName);
           stored = await this.storage.put(key, stream);
           if (!obj(doc['metadata']))
             extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
@@ -56,8 +60,9 @@ export class AssetImportService {
         legacyId: doc.id,
         kind: isFile ? 'FILE' : 'FOLDER',
         name: str(doc['name']) ?? doc.id,
+        originalName,
         parentId: parents.parentOf.get(doc.id) ?? null,
-        extension: isFile ? (typeof doc['extension'] === 'string' ? doc['extension'] : '') : null,
+        extension: isFile ? extension : null,
         type: isFile ? str(doc['type']) : null,
         size: isFile ? (stored?.size ?? (typeof doc['size'] === 'number' ? doc['size'] : null)) : null,
         md5: stored?.md5 ?? null,

@@ -5,14 +5,52 @@
   The minimum is capped by the window: a fixed 800px pushed the caption and Close below a smaller screen.
 -->
 <h2 hlmDialogTitle class="sr-only">{{ context.asset.name }}{{ context.asset.extension }}</h2>
-<img
-  class="image-bg max-h-[calc(100vh-180px)] min-h-[min(800px,calc(100vh-180px))] max-w-[calc(100vw-180px)] min-w-[min(800px,calc(100vw-180px))] object-contain"
-  width="1000"
-  height="1000"
-  loading="lazy"
-  [alt]="context.asset.name + context.asset.extension"
-  [loaderParams]="{ thumbnail: true }"
-  ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ context.asset.id }}" />
+@if (isVideo && !playbackFailed()) {
+  @if (playing()) {
+    <!--
+      Mounted on Play, so opening the dialog fetches nothing of the file. The browser then streams it with Range
+      requests: a few seconds ahead of playback, and from the new position on a seek. It starts at once: the click
+      that mounted it is the user's go-ahead, sound included.
+    -->
+    <video
+      class="max-h-[calc(100vh-180px)] min-h-[min(800px,calc(100vh-180px))] max-w-[calc(100vw-180px)] min-w-[min(800px,calc(100vw-180px))] bg-black object-contain"
+      controls
+      autoplay
+      preload="none"
+      [attr.aria-label]="context.asset.name + context.asset.extension"
+      [attr.poster]="thumbnailUrl"
+      [src]="originalUrl"
+      (error)="playbackFailed.set(true)"></video>
+  } @else {
+    <!-- Only the platform thumbnail until Play is pressed. -->
+    <button
+      type="button"
+      class="group relative grid max-h-[calc(100vh-180px)] min-h-[min(800px,calc(100vh-180px))] max-w-[calc(100vw-180px)] min-w-[min(800px,calc(100vw-180px))] cursor-pointer place-items-center bg-black"
+      [attr.aria-label]="'Play ' + context.asset.name + context.asset.extension"
+      (click)="playing.set(true)">
+      <img class="absolute inset-0 size-full object-contain" alt="" [src]="thumbnailUrl" />
+      <span
+        class="relative grid size-20 place-items-center rounded-full bg-black/60 text-white transition-transform group-hover:scale-110 group-focus-visible:ring-4 group-focus-visible:ring-white">
+        <ng-icon hlm size="xl" name="lucidePlay" class="translate-x-0.5" />
+      </span>
+    </button>
+  }
+} @else {
+  <img
+    class="image-bg max-h-[calc(100vh-180px)] min-h-[min(800px,calc(100vh-180px))] max-w-[calc(100vw-180px)] min-w-[min(800px,calc(100vw-180px))] object-contain"
+    width="1000"
+    height="1000"
+    loading="lazy"
+    [alt]="context.asset.name + context.asset.extension"
+    [loaderParams]="{ thumbnail: true }"
+    ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ context.asset.id }}" />
+  @if (playbackFailed()) {
+    <p class="text-muted-foreground text-sm" role="status">
+      This video can't be played in your browser.
+      <a class="underline" [href]="downloadUrl">Download it</a> to watch it.
+    </p>
+  }
+}
 <hlm-dialog-footer class="justify-between!">
   <div class="text-sm">
     {{ context.asset.name }}{{ context.asset.extension }}

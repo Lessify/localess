@@ -168,6 +168,7 @@ export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): P
     spaceId,
     kind: 'FILE',
     name: 'photo',
+    originalName: `photo${asset.extension}`,
     extension: asset.extension,
     type: asset.type,
     size: asset.bytes?.length ?? 0,
@@ -176,7 +177,7 @@ export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): P
     alt: 'A photo',
   });
   if (asset.bytes && !asset.storageMissing) {
-    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/${asset.id}/original`, asset.bytes);
+    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/${asset.id}/photo${asset.extension}`, asset.bytes);
   }
   return md5 ?? '';
 }

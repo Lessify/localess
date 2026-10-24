@@ -109,8 +109,7 @@
                 height="200"
                 alt="thumbnail"
                 loading="lazy"
-                [loaderParams]="{ thumbnail: true }"
-                ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ element.id }}" />
+                src="/api/app/spaces/{{ context.spaceId }}/assets/{{ element.id }}/thumbnail" />
             }
           </td>
         </ng-container>

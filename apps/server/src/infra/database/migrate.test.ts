@@ -115,7 +115,7 @@ describe('migrateDatabase', () => {
         [id],
       );
       await pool.query(
-        `insert into assets (id, space_id, kind, name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo')`,
+        `insert into assets (id, space_id, kind, name, original_name) values ('00000000-0000-7000-8000-0000000000a1', $1, 'FILE', 'logo', 'logo.png')`,
         [id],
       );
       await pool.query(

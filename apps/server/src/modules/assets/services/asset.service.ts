@@ -10,11 +10,13 @@ import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toAsset, toAssetFileSummary, toAssetFolderSummary } from '../../../shared/transformers/asset.transformer.js';
+import { toOriginalName } from '../../../shared/utils/asset-files.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { AssetRepository } from '../repositories/asset.repository.js';
 import { assetErrors } from '../utils/asset-errors.js';
 import { splitFilename } from '../utils/split-filename.js';
 import { assetPrefix, originalKey } from '../utils/storage-keys.js';
+import { AssetDeliveryService } from './asset-delivery.service.js';
 
 export interface UploadInput {
   /** The folder; null: the root. */
@@ -37,7 +39,7 @@ function found<T>(result: T | undefined): T {
 
 /**
  * Asset library of a space (was direct `spaces/{s}/assets` access, browser uploads to Storage, and
- * the upload/delete triggers). Files are stored under `spaces/{s}/assets/{id}/original`.
+ * the upload/delete triggers). Files are stored under `spaces/{s}/assets/{id}/{original_name}`.
  */
 @Injectable()
 export class AssetService {
@@ -47,6 +49,7 @@ export class AssetService {
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly assetMetadataService: AssetMetadataService,
     private readonly storageSweeperService: StorageSweeperService,
+    private readonly assetDeliveryService: AssetDeliveryService,
   ) {}
 
   /** One page of the list, folders first. */
@@ -108,7 +111,9 @@ export class AssetService {
       throw new BadRequestException(assetErrors.noName);
     }
     const id = newUuid();
-    const key = originalKey(spaceId, id);
+    // The upload's file name, as sent: storage shows what the file is whatever the asset is named or renamed to later.
+    const originalName = toOriginalName(input.filename);
+    const key = originalKey(spaceId, id, originalName);
     // If this request dies before the row exists, the guard lets the sweeper remove the file in an hour.
     await this.assetRepository.guardUpload(spaceId, id);
     try {
@@ -121,6 +126,7 @@ export class AssetService {
       await this.assetRepository.createFile(spaceId, {
         id,
         name,
+        originalName,
         extension: input.extension ?? derived.extension,
         type,
         size: stored.size,
@@ -131,7 +137,9 @@ export class AssetService {
         metadata: extracted.metadata ?? null,
       });
       // Its folder went since the check: createFile throws, and the file is removed below, as for any failed upload.
-      return await this.findAsset(spaceId, id);
+      const asset = await this.findAsset(spaceId, id);
+      this.assetDeliveryService.warmThumbnail(spaceId, id);
+      return asset;
     } catch (error) {
       // Cleaned up at once when storage allows; otherwise the guard stays and the sweeper does it.
       const cleaned = await this.storage.deletePrefix(assetPrefix(spaceId, id)).then(

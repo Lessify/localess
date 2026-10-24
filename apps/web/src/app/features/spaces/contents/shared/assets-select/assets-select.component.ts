@@ -1,5 +1,5 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -12,6 +12,7 @@ import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/co
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { filePreview } from '@shared/models/asset.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -35,7 +36,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogContext } from '../asset
     ImagePreviewDirective,
     CommonModule,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmButtonImports,
     HlmFieldImports,
     HlmIconImports,
@@ -70,6 +70,8 @@ export class AssetsSelectComponent implements OnInit {
   assetsChange = output<string[]>();
 
   private readonly spaceStore = inject(SpaceStore);
+  /** Images and videos show their thumbnail; other files an icon. */
+  protected readonly filePreview = filePreview;
   /** The ids picked, in their order (the form's values). */
   readonly ids = signal<string[]>([]);
   /** The files picked, from `SpaceStore` (live: a rename or a new image shows at once); one gone is left out. */

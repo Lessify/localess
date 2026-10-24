@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdir } from 'node:fs/promises';
+import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { ContentData } from '@localess/shared';
@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
 import { assets, contents } from '../src/infra/database/schema.js';
+import { AssetDeliveryService } from '../src/modules/assets/services/asset-delivery.service.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { S1, UUID_V7 } from './ids.js';
 import { api, createTestApp, insertSpace, multipart, TestApp, userWithAccess, XHR } from './test-app.js';
@@ -141,6 +142,82 @@ describe('app API: assets', () => {
       const response = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo['id']}/original` });
       expect(response.statusCode).toBe(200);
       expect(response.headers.etag).toBe(`"${createHash('md5').update(photoBytes).digest('base64')}-orig"`);
+    });
+
+    it('stores the file by its upload name, kept on a rename: the API shows and downloads only `name`', async () => {
+      await t.app.get(AssetDeliveryService).whenIdle();
+      const dir = join(t.storageDir, `spaces/${S1}/assets/${photo.id}`);
+      // The upload, and what is generated from it: the thumbnail, made in the background after the upload.
+      expect((await readdir(dir)).sort()).toEqual(['Sunset.Final.JPG', 'renditions']);
+      expect(await readdir(join(dir, 'renditions'))).toEqual(['thumbnail.webp']);
+      expect(photo).not.toHaveProperty('originalName');
+
+      const renamed = await editor.patch(`${base}/${photo.id}`, { name: 'Bay' });
+      expect(renamed.statusCode, renamed.body).toBe(200);
+      expect((await readdir(dir)).sort()).toEqual(['Sunset.Final.JPG', 'renditions']);
+      const download = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo.id}/download` });
+      expect(download.statusCode).toBe(200);
+      expect(download.headers['content-disposition']).toContain('Bay.JPG');
+      await editor.patch(`${base}/${photo.id}`, { name: 'Sunset.Final' });
+    });
+
+    describe('thumbnail', () => {
+      const thumbnail = (id: string, headers: Record<string, string> = {}) =>
+        t.request({ method: 'GET', url: `${base}/${id}/thumbnail`, headers: { cookie, ...headers } });
+
+      it('serves one WebP for the platform, never enlarged, kept by the browser for a year', async () => {
+        const response = await thumbnail(photo.id);
+        expect(response.statusCode, response.body).toBe(200);
+        expect(response.headers['content-type']).toBe('image/webp');
+        expect(response.headers['cache-control']).toBe('private, max-age=31536000, immutable');
+        // Stored 400x300 with EXIF orientation 6: upright, and smaller than 512 px, so kept at its size.
+        expect(await sharp(response.rawPayload).metadata()).toMatchObject({ format: 'webp', width: 300, height: 400 });
+
+        const again = await thumbnail(photo.id, { 'if-none-match': String(response.headers.etag) });
+        expect(again.statusCode).toBe(304);
+      });
+
+      it('fits a large image inside 512 px, generated on the first request when none is stored', async () => {
+        const created = await upload({}, { filename: 'wide.jpg', type: 'image/jpeg', bytes: await jpeg(1600, 900).toBuffer() });
+        const id = created.json().id;
+        await t.app.get(AssetDeliveryService).whenIdle();
+        const stored = join(t.storageDir, `spaces/${S1}/assets/${id}/renditions/thumbnail.webp`);
+        await rm(stored);
+
+        const response = await thumbnail(id);
+        expect(response.statusCode).toBe(200);
+        expect(await sharp(response.rawPayload).metadata()).toMatchObject({ width: 512, height: 288 });
+        expect((await sharp(stored).metadata()).width).toBe(512);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('shows the first frame of an animation', async () => {
+        const frames = 3;
+        const raw = Buffer.alloc(20 * 20 * frames * 3, 0);
+        const gif = await sharp(raw, { raw: { width: 20, height: 20 * frames, channels: 3, pageHeight: 20 } })
+          .gif()
+          .toBuffer();
+        const id = (await upload({}, { filename: 'spin.gif', type: 'image/gif', bytes: gif })).json().id;
+        const metadata = await sharp((await thumbnail(id)).rawPayload).metadata();
+        expect(metadata).toMatchObject({ format: 'webp', width: 20, height: 20 });
+        expect(metadata.pages ?? 1).toBe(1);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('answers 404 for a file that is not an image or a video, and for a folder', async () => {
+        const id = (await upload({}, { filename: 'notes.txt', type: 'text/plain', bytes: Buffer.from('notes') })).json().id;
+        expect((await thumbnail(id)).statusCode).toBe(404);
+        expect((await thumbnail(nested.id)).statusCode).toBe(404);
+        expect((await thumbnail(newUuid())).statusCode).toBe(404);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('is for signed-in users only', async () => {
+        expect((await t.request({ method: 'GET', url: `${base}/${photo.id}/thumbnail` })).statusCode).toBe(401);
+      });
     });
 
     it('records the frame count of animations and keeps explicit name, alt and source', async () => {

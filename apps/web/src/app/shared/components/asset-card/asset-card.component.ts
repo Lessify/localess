@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Asset, type AssetFileMetadata } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -24,16 +24,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
   templateUrl: './asset-card.component.html',
   styleUrls: ['./asset-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    CommonModule,
-    NgOptimizedImage,
-    TimeDurationPipe,
-    FormatFileSizePipe,
-    HlmCardImports,
-    HlmBadgeImports,
-    HlmIconImports,
-    HlmTooltipImports,
-  ],
+  imports: [CommonModule, TimeDurationPipe, FormatFileSizePipe, HlmCardImports, HlmBadgeImports, HlmIconImports, HlmTooltipImports],
   providers: [
     provideIcons({
       lucideFile,

@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AssetService } from '@core/services/asset.service';
@@ -107,7 +107,6 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     LlFilterToolbarImports,
     TimeDurationPipe,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmButtonImports,
     HlmIconImports,
     HlmBadgeImports,

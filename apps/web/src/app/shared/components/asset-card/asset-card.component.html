@@ -16,12 +16,11 @@
         <img
           class="bg-primary-foreground aspect-square w-full object-contain"
           [class.cursor-zoom-in]="zoomCursor()"
-          ngSrc="/api/v1/spaces/{{ spaceId() }}/assets/{{ asset.id }}"
+          src="/api/app/spaces/{{ spaceId() }}/assets/{{ asset.id }}/thumbnail"
           alt=""
           width="600"
           height="600"
-          loading="lazy"
-          [loaderParams]="{ thumbnail: true }" />
+          loading="lazy" />
       </div>
     } @else if (asset.kind === 'FILE') {
       <div class="bg-primary-foreground relative aspect-square w-full">

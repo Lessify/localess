@@ -221,5 +221,6 @@ describe('AssetsSelectDialogComponent', () => {
     const html: string = fixture.nativeElement.innerHTML;
 
     expect(html).not.toContain('/spaces/undefined/');
+    expect(html).toContain('/api/app/spaces/space-1/assets/a1/thumbnail');
   });
 });

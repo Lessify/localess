@@ -123,6 +123,7 @@ describe('task worker: exports and imports', () => {
         id: PIC,
         kind: 'FILE',
         name: 'pic',
+        originalName: 'pic.jpg',
         parentId: PHOTOS,
         extension: '.jpg',
         type: 'image/jpeg',
@@ -130,7 +131,7 @@ describe('task worker: exports and imports', () => {
         metadata: { type: 'image', width: 64, height: 48 },
       },
     ]);
-    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${SPACE_A}/assets/${PIC}/original`, jpeg);
+    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${SPACE_A}/assets/${PIC}/pic.jpg`, jpeg);
   });
 
   afterAll(() => t?.close());

@@ -64,10 +64,12 @@ describe('app API: the large assets template (assets_large)', () => {
     expect(response.statusCode, response.body).toBe(201);
     const spaceId = response.json().id;
     const [image] = await t.db
-      .select({ id: assets.id, metadata: assets.metadata })
+      .select({ id: assets.id, originalName: assets.originalName, metadata: assets.metadata })
       .from(assets)
       .where(and(eq(assets.spaceId, spaceId), eq(assets.name, 'file-0010')));
-    const read = await t.app.get(AssetMetadataService).extract(`spaces/${spaceId}/assets/${image.id}/original`, 'image/png', null);
+    const read = await t.app
+      .get(AssetMetadataService)
+      .extract(`spaces/${spaceId}/assets/${image.id}/${image.originalName}`, 'image/png', null);
     expect(read.metadata).toBeDefined();
     expect(image.metadata).toEqual(read.metadata);
   });

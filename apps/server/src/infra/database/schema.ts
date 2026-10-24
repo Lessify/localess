@@ -339,6 +339,9 @@ export const assets = pgTable(
     size: bigint('size', { mode: 'number' }),
     // Base64 md5 of the original file — the same encoding as GCS `md5Hash`, so asset ETags survive the migration.
     md5: text('md5'),
+    // A file's name in storage (`spaces/{s}/assets/{id}/{original_name}`, shared/utils/asset-files.ts): the upload's
+    // file name made safe, set once. Never sent: `name` is what the API shows and renames. Null for folders.
+    originalName: text('original_name'),
     alt: text('alt'),
     source: text('source'),
     metadata: jsonb('metadata').$type<Record<string, unknown>>(),
@@ -354,6 +357,7 @@ export const assets = pgTable(
     index('assets_parent_idx').on(t.spaceId, t.parentId, t.kind.desc(), t.name),
     index('assets_kind_idx').on(t.spaceId, t.kind, t.name),
     oneOf('assets_kind_check', t.kind, values(AssetKind)),
+    check('assets_original_name_check', sql`(${t.kind} = 'FILE') = (${t.originalName} is not null)`),
   ],
 );
 

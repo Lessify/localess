@@ -1,4 +1,4 @@
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -11,6 +11,7 @@ import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/co
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { filePreview } from '@shared/models/asset.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -34,7 +35,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogContext } from '../asset
     CommonModule,
     ImagePreviewDirective,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmButtonImports,
     HlmFieldImports,
     HlmIconImports,
@@ -65,6 +65,8 @@ export class AssetSelectComponent implements OnInit {
   locked = input(false);
   hover = input(false);
   private readonly spaceStore = inject(SpaceStore);
+  /** Images and videos show their thumbnail; other files an icon. */
+  protected readonly filePreview = filePreview;
   /** The id picked (the form's value). */
   readonly id = signal<string | undefined>(undefined);
   /** The file picked, from `SpaceStore` (live: a rename or a new image shows at once); none when it is gone. */

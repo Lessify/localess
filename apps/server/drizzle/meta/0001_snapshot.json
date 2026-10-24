@@ -68,6 +68,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "original_name": {
+          "name": "original_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "alt": {
           "name": "alt",
           "type": "text",
@@ -119,9 +125,9 @@
             }
           ],
           "isUnique": true,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "assets_parent_idx": {
           "name": "assets_parent_idx",
@@ -152,9 +158,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "assets_kind_idx": {
           "name": "assets_kind_idx",
@@ -179,29 +185,29 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "assets_space_id_spaces_id_fk": {
           "name": "assets_space_id_spaces_id_fk",
           "tableFrom": "assets",
-          "columnsFrom": ["space_id"],
           "tableTo": "spaces",
+          "columnsFrom": ["space_id"],
           "columnsTo": ["id"],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "assets_parent_fk": {
           "name": "assets_parent_fk",
           "tableFrom": "assets",
-          "columnsFrom": ["space_id", "parent_id"],
           "tableTo": "assets",
+          "columnsFrom": ["space_id", "parent_id"],
           "columnsTo": ["space_id", "id"],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
@@ -216,6 +222,10 @@
         "assets_kind_check": {
           "name": "assets_kind_check",
           "value": "\"assets\".\"kind\" in ('FOLDER', 'FILE')"
+        },
+        "assets_original_name_check": {
+          "name": "assets_original_name_check",
+          "value": "(\"assets\".\"kind\" = 'FILE') = (\"assets\".\"original_name\" is not null)"
         }
       },
       "isRLSEnabled": false

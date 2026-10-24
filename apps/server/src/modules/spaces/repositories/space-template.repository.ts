@@ -15,6 +15,8 @@ export interface StoredTemplateFile {
   /** The template's key of the asset. */
   key: string;
   id: string;
+  /** Its name in storage (`assets.original_name`). */
+  originalName: string;
   size: number;
   md5: string;
   metadata: Record<string, unknown> | null;
@@ -104,7 +106,14 @@ export class SpaceTemplateRepository {
           name: asset.name,
           parentId: parentId(asset.parent),
           ...(asset.file && stored
-            ? { extension: asset.file.extension, type: asset.file.type, size: stored.size, md5: stored.md5, metadata: stored.metadata }
+            ? {
+                originalName: stored.originalName,
+                extension: asset.file.extension,
+                type: asset.file.type,
+                size: stored.size,
+                md5: stored.md5,
+                metadata: stored.metadata,
+              }
             : {}),
         };
       });

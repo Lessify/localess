@@ -17,6 +17,8 @@ import { assetErrors } from '../utils/asset-errors.js';
 export interface NewAssetFile {
   id: string;
   name: string;
+  /** Its name in storage (`shared/utils/asset-files.ts`). */
+  originalName: string;
   extension: string;
   type: string;
   size: number;
