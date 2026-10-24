@@ -220,6 +220,99 @@ describe('app API: assets', () => {
       });
     });
 
+    describe('preview, original and download', () => {
+      const get = (path: string, headers: Record<string, string> = {}) =>
+        t.request({ method: 'GET', url: `${base}/${path}`, headers: { cookie, ...headers } });
+      const removeAsset = async (id: string) => {
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      };
+
+      it('previews a large image as one WebP inside 2048 px, made on the first request and stored', async () => {
+        const id = (await upload({}, { filename: 'pano.jpg', type: 'image/jpeg', bytes: await jpeg(3000, 1500).toBuffer() })).json().id;
+        await t.app.get(AssetDeliveryService).whenIdle();
+        const stored = join(t.storageDir, `spaces/${S1}/assets/${id}/renditions`);
+        // Not made on upload: most images are never previewed.
+        expect(await readdir(stored)).toEqual(['thumbnail.webp']);
+
+        const response = await get(`${id}/preview`);
+        expect(response.statusCode, response.body).toBe(200);
+        expect(response.headers['content-type']).toBe('image/webp');
+        expect(response.headers['cache-control']).toBe('private, max-age=31536000, immutable');
+        expect(await sharp(response.rawPayload).metadata()).toMatchObject({ format: 'webp', width: 2048, height: 1024 });
+        expect((await readdir(stored)).sort()).toEqual(['preview.webp', 'thumbnail.webp']);
+        expect((await get(`${id}/preview`, { 'if-none-match': String(response.headers.etag) })).statusCode).toBe(304);
+        await removeAsset(id);
+      });
+
+      it('never enlarges a small image, only re-encodes it, upright', async () => {
+        // Stored 400x300 with EXIF orientation 6.
+        expect(await sharp((await get(`${photo.id}/preview`)).rawPayload).metadata()).toMatchObject({
+          format: 'webp',
+          width: 300,
+          height: 400,
+        });
+      });
+
+      it('shows an SVG and an animation as stored: vector, or it plays', async () => {
+        const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20"><rect width="40" height="20"/></svg>');
+        const vector = (await upload({}, { filename: 'logo.svg', type: 'image/svg+xml', bytes: svg })).json().id;
+        const raw = Buffer.alloc(20 * 20 * 3 * 3, 0);
+        // Frames that differ: identical ones are merged into a still image.
+        for (let f = 0; f < 3; f++) raw.fill(f * 80, f * 1200, (f + 1) * 1200);
+        const gif = await sharp(raw, { raw: { width: 20, height: 60, channels: 3, pageHeight: 20 } })
+          .gif()
+          .toBuffer();
+        const animation = (await upload({}, { filename: 'spin.gif', type: 'image/gif', bytes: gif })).json().id;
+
+        const svgPreview = await get(`${vector}/preview`);
+        expect(svgPreview.headers['content-type']).toBe('image/svg+xml');
+        expect(svgPreview.rawPayload.equals(svg)).toBe(true);
+        // Opened on its own, the SVG runs sandboxed: no script on the app's origin.
+        expect(svgPreview.headers['content-security-policy']).toContain('sandbox');
+        expect((await get(`${animation}/preview`)).rawPayload.equals(gif)).toBe(true);
+        await removeAsset(vector);
+        await removeAsset(animation);
+      });
+
+      it('has no preview for a video or another file: the dialog shows the thumbnail', async () => {
+        const id = (await upload({}, { filename: 'notes.txt', type: 'text/plain', bytes: Buffer.from('notes') })).json().id;
+        expect((await get(`${id}/preview`)).statusCode).toBe(404);
+        expect((await get(`${nested.id}/preview`)).statusCode).toBe(404);
+        await removeAsset(id);
+      });
+
+      it('streams the original inline, with Range requests for the video player', async () => {
+        const response = await get(`${photo.id}/original`);
+        expect(response.statusCode).toBe(200);
+        expect(response.rawPayload.equals(photoBytes)).toBe(true);
+        expect(response.headers['content-type']).toBe('image/jpeg');
+        expect(response.headers['content-disposition']).toMatch(/^inline/);
+        expect(response.headers['accept-ranges']).toBe('bytes');
+
+        const part = await get(`${photo.id}/original`, { range: 'bytes=0-9' });
+        expect(part.statusCode).toBe(206);
+        expect(part.headers['content-range']).toBe(`bytes 0-9/${photoBytes.length}`);
+        expect(part.rawPayload.equals(photoBytes.subarray(0, 10))).toBe(true);
+      });
+
+      it('downloads the original as an attachment named after the asset, revalidated as its name can change', async () => {
+        const response = await get(`${photo.id}/download`);
+        expect(response.statusCode).toBe(200);
+        expect(response.rawPayload.equals(photoBytes)).toBe(true);
+        expect(response.headers['content-disposition']).toMatch(/^attachment/);
+        expect(response.headers['content-disposition']).toContain('Sunset.Final.JPG');
+        expect(response.headers['cache-control']).toBe('private, no-cache');
+        expect((await get(`${newUuid()}/download`)).statusCode).toBe(404);
+      });
+
+      it('is for signed-in users only', async () => {
+        for (const path of ['preview', 'original', 'download']) {
+          expect((await t.request({ method: 'GET', url: `${base}/${photo.id}/${path}` })).statusCode).toBe(401);
+        }
+      });
+    });
+
     it('records the frame count of animations and keeps explicit name, alt and source', async () => {
       const frames = 3;
       const raw = Buffer.alloc(20 * 20 * frames * 3, 0);

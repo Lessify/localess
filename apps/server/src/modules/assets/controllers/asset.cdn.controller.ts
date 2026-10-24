@@ -15,8 +15,8 @@ import { AssetDeliveryService } from '../services/asset-delivery.service.js';
 import { buildAssetETag } from '../utils/asset-etag.js';
 import { assetResponsePolicy } from '../utils/asset-headers.js';
 import { buildAssetQuery, findTransformParam } from '../utils/asset-query.js';
-import { parseByteRange } from '../utils/byte-range.js';
 import { parseAssetTransformQuery } from '../utils/image-transform.js';
+import { sendStoredObject } from '../utils/send-stored-object.js';
 
 /**
  * Asset delivery on the CDN API (no token): transformed images, the original file and downloads. A Firestore asset
@@ -163,22 +163,7 @@ export class AssetCdnController {
     sendV1Error(reply, 400, 'invalid-argument', message, { cacheControl: publicCache(CACHE_BAD_REQUEST_MAX_AGE) });
   }
 
-  /** Streams a stored object, honouring a single `Range` (videos are where clients resume). */
   private sendObject(request: FastifyRequest, reply: FastifyReply, key: string, size: number): void {
-    void reply.header('accept-ranges', 'bytes');
-    const range = parseByteRange(request.headers.range, size);
-    if (range === 'unsatisfiable') {
-      void reply.code(416).header('content-range', `bytes */${size}`).send();
-      return;
-    }
-    if (range) {
-      void reply
-        .code(206)
-        .header('content-range', `bytes ${range.start}-${range.end}/${size}`)
-        .header('content-length', range.end - range.start + 1)
-        .send(this.assetDeliveryService.createReadStream(key, range));
-      return;
-    }
-    void reply.header('content-length', size).send(this.assetDeliveryService.createReadStream(key));
+    sendStoredObject(request, reply, size, range => this.assetDeliveryService.createReadStream(key, range));
   }
 }

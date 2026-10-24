@@ -324,10 +324,18 @@ The public CDN API is unchanged: customer sites keep `?w=` and `?thumbnail` on `
 
 ## Image Preview
 
-The preview dialog (`ImagePreviewDialogComponent`, opened from the list, the grid and the Asset/Assets fields) shows:
+The preview dialog (`ImagePreviewDialogComponent`, opened from the list, the grid and the Asset/Assets fields) reads everything from the App API (session cookie, any role), never the public CDN API:
 
-- **An image:** through `NgOptimizedImage` with the custom `IMAGE_LOADER`, which appends `?w=<width>` to the CDN URL (`&thumbnail=true` for an animation's first frame).
-- **A video:** its platform thumbnail with a Play button, so opening the dialog fetches nothing of the file. Play mounts a `<video controls autoplay>` streaming `/api/v1/…/assets/{assetId}/original`: the browser fetches it with Range requests, a few seconds ahead of playback and from the new position on a seek, never the whole file at once. A video the browser can't decode (a codec it lacks) falls back to its picture, with a link to download it.
+| Route | What |
+|---|---|
+| `GET /api/app/spaces/{spaceId}/assets/{assetId}/preview` | An image: WebP, the longest side at most 2048 px, never enlarged (a smaller image keeps its size, only re-encoded), quality 85. Generated the first time it is previewed, not on upload, and stored as `renditions/preview.webp`, even with `LOCALESS_RENDITION_CACHE=off`. An SVG (vector) and an animation (it plays) are served as stored. `404` for anything else. |
+| `GET /api/app/spaces/{spaceId}/assets/{assetId}/original` | The stored file, with Range requests; inline only where that can't script, an SVG under a sandboxing CSP, as on the CDN API. |
+| `GET /api/app/spaces/{spaceId}/assets/{assetId}/download` | The stored file as an attachment named `name` + `extension` (also the Download action of the list). |
+
+Generated images and the original are `Cache-Control: private, max-age=31536000, immutable` with an ETag from the original's md5; a download is `private, no-cache`, as it carries the asset's name, which can change.
+
+- **An image:** its preview.
+- **A video:** its platform thumbnail with a Play button, so opening the dialog fetches nothing of the file. Play mounts a `<video controls autoplay>` streaming `…/original`: the browser fetches it with Range requests, a few seconds ahead of playback and from the new position on a seek, never the whole file at once. A video the browser can't decode (a codec it lacks) falls back to its thumbnail, with a link to download it.
 
 The Asset/Assets content fields show thumbnails for images and videos (`filePreview()`), like the list and the grid.
 

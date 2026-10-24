@@ -77,6 +77,24 @@ describe('ImagePreviewDialogComponent', () => {
     expect(element.querySelector('img')!.getAttribute('alt')).toBe('photo.png');
   });
 
+  it('shows the preview of an image, from the App API', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        {
+          provide: DIALOG_DATA,
+          useValue: { spaceId: 'space-1', asset: { id: 'a1', kind: AssetKind.FILE, name: 'photo', type: 'image/png' } as AssetFile },
+        },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ImagePreviewDialogComponent);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('img')!.getAttribute('src')).toBe(
+      '/api/app/spaces/space-1/assets/a1/preview',
+    );
+  });
+
   describe('a video', () => {
     const render = () => {
       TestBed.configureTestingModule({
@@ -110,7 +128,7 @@ describe('ImagePreviewDialogComponent', () => {
       fixture.detectChanges();
 
       const video = element.querySelector('video')!;
-      expect(video.getAttribute('src')).toBe('/api/v1/spaces/space-1/assets/v1/original');
+      expect(video.getAttribute('src')).toBe('/api/app/spaces/space-1/assets/v1/original');
       expect(video.getAttribute('poster')).toBe('/api/app/spaces/space-1/assets/v1/thumbnail');
       expect(video.hasAttribute('controls')).toBe(true);
       expect(video.hasAttribute('autoplay')).toBe(true);
@@ -127,9 +145,9 @@ describe('ImagePreviewDialogComponent', () => {
       fixture.detectChanges();
 
       expect(element.querySelector('video')).toBeNull();
-      expect(element.querySelector('img')).not.toBeNull();
+      expect(element.querySelector('img')!.getAttribute('src')).toBe('/api/app/spaces/space-1/assets/v1/thumbnail');
       expect(element.querySelector('[role="status"]')!.textContent).toContain("can't be played in your browser");
-      expect(element.querySelector('a')!.getAttribute('href')).toBe('/api/v1/spaces/space-1/assets/v1/download');
+      expect(element.querySelector('a')!.getAttribute('href')).toBe('/api/app/spaces/space-1/assets/v1/download');
     });
   });
 });

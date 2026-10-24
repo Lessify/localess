@@ -1,4 +1,3 @@
-import { NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import type { AssetFileMetadata } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -17,7 +16,7 @@ import { ImagePreviewDialogContext } from './image-preview-dialog.model';
   templateUrl: './image-preview-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'grid gap-4' },
-  imports: [HlmDialogImports, NgOptimizedImage, FormatFileSizePipe, TimeDurationPipe, HlmButtonImports, HlmIconImports],
+  imports: [HlmDialogImports, FormatFileSizePipe, TimeDurationPipe, HlmButtonImports, HlmIconImports],
   providers: [provideIcons({ lucidePlay })],
 })
 export class ImagePreviewDialogComponent {
@@ -35,8 +34,10 @@ export class ImagePreviewDialogComponent {
   /** The browser can't decode it (a codec it lacks): its picture is shown instead, with a download link. */
   protected readonly playbackFailed = signal(false);
 
-  private readonly assetUrl = `/api/v1/spaces/${this.context.spaceId}/assets/${this.context.asset.id}`;
+  /** The App API (session cookie): the platform never reads its own files through the public CDN API. */
+  private readonly assetUrl = `/api/app/spaces/${this.context.spaceId}/assets/${this.context.asset.id}`;
   protected readonly originalUrl = `${this.assetUrl}/original`;
   protected readonly downloadUrl = `${this.assetUrl}/download`;
-  protected readonly thumbnailUrl = `/api/app/spaces/${this.context.spaceId}/assets/${this.context.asset.id}/thumbnail`;
+  protected readonly previewUrl = `${this.assetUrl}/preview`;
+  protected readonly thumbnailUrl = `${this.assetUrl}/thumbnail`;
 }

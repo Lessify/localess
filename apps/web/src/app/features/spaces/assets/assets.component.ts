@@ -492,7 +492,7 @@ export class AssetsComponent implements OnInit {
 
   onDownload(element: Asset): void {
     if (element.kind !== AssetKind.FILE) return;
-    window.open(`/api/v1/spaces/${this.spaceId()}/assets/${element.id}/download`);
+    window.open(`/api/app/spaces/${this.spaceId()}/assets/${element.id}/download`);
   }
 
   filesUpload(event: File[]) {

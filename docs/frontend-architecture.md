@@ -105,8 +105,9 @@ no `srcset`), so every screen shares the copy in the browser cache:
 <img src="/api/app/spaces/{{ spaceId }}/assets/{{ asset.id }}/thumbnail" width="200" height="200" loading="lazy" alt="thumbnail" />
 ```
 
-WebP, the longest side at most 512 px, for images and videos (`filePreview()`); `404` for any other file. Only the
-image preview dialog still sizes through the loader (`?w=1000`).
+WebP, the longest side at most 512 px, for images and videos (`filePreview()`); `404` for any other file. The preview
+dialog uses the App API too (`…/preview`, `…/original`, `…/download`), so no screen of the platform reads assets through
+the CDN API or the loader any more; it stays for an `ngSrc` on `/api/` that wants `?w=`.
 
 ---
 

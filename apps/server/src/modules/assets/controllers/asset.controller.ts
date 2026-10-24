@@ -31,10 +31,16 @@ import {
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { RequireRole } from '../../../auth/decorators.js';
+import { buildContentDisposition } from '../../../infra/http/content-disposition.js';
 import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
 import { AssetService } from '../services/asset.service.js';
-import { AssetDeliveryService } from '../services/asset-delivery.service.js';
+import { AssetDeliveryService, type StoredAsset } from '../services/asset-delivery.service.js';
 import { buildAssetETag } from '../utils/asset-etag.js';
+import { assetResponsePolicy } from '../utils/asset-headers.js';
+import { sendStoredObject } from '../utils/send-stored-object.js';
+
+/** A response made from an asset's bytes, which never change: the browser keeps it for a year. */
+const PRIVATE_IMMUTABLE = 'private, max-age=31536000, immutable';
 
 /** Values of the non-file parts that preceded the file in the multipart body. */
 function fieldValues(file: MultipartFile): Record<string, string> {
@@ -108,16 +114,57 @@ export class AssetController {
   ): Promise<void> {
     const thumbnail = await this.assetDeliveryService.findThumbnail(spaceId, assetId);
     if (!thumbnail) throw new NotFoundException('No thumbnail');
-    void reply.header('cache-control', 'private, max-age=31536000, immutable');
-    if (thumbnail.md5) {
-      const etag = buildAssetETag(thumbnail.md5, 'thumbnail', false);
-      void reply.header('etag', etag);
-      if (request.headers['if-none-match'] === etag) {
-        void reply.code(304).send();
-        return;
-      }
+    this.sendPlatformImage(request, reply, thumbnail.output, thumbnail.md5, 'thumbnail');
+  }
+
+  /**
+   * The preview dialog's picture of an image: WebP, the longest side at most 2048 px, never enlarged, generated the
+   * first time it is asked for; an SVG or an animation as stored (vector, or it plays). `404` for anything else: the
+   * dialog shows the thumbnail.
+   */
+  @Get(':assetId/preview')
+  @RequireRole(ANY_ROLE)
+  async findPreview(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+    @Req() request: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
+    const preview = await this.assetDeliveryService.findPreview(spaceId, assetId);
+    if (!preview) throw new NotFoundException('No preview');
+    if (preview.kind === 'generated') {
+      this.sendPlatformImage(request, reply, preview.output, preview.md5, 'preview');
+    } else {
+      this.sendStored(request, reply, preview.stored, false);
     }
-    void reply.type('image/webp').send(thumbnail.output);
+  }
+
+  /** The stored file as uploaded, inline where that is safe, with Range requests: the preview dialog plays videos from it. */
+  @Get(':assetId/original')
+  @RequireRole(ANY_ROLE)
+  async findOriginal(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+    @Req() request: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
+    const stored = await this.assetDeliveryService.findStored(spaceId, assetId);
+    if (stored.kind === 'missing') throw new NotFoundException('Asset not found');
+    this.sendStored(request, reply, stored, false);
+  }
+
+  /** The stored file as an attachment named `name` + `extension`: Download in the platform. */
+  @Get(':assetId/download')
+  @RequireRole(ANY_ROLE)
+  async findDownload(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+    @Req() request: FastifyRequest,
+    @Res() reply: FastifyReply,
+  ): Promise<void> {
+    const stored = await this.assetDeliveryService.findStored(spaceId, assetId);
+    if (stored.kind === 'missing') throw new NotFoundException('Asset not found');
+    this.sendStored(request, reply, stored, true);
   }
 
   /** How many contents use it (a folder: any file under it), for the warning before a delete. */
@@ -185,5 +232,38 @@ export class AssetController {
   @RequireRole(CONTENT_WRITERS)
   remove(@Param('spaceId', UuidParamPipe) spaceId: string, @Param('assetId', UuidParamPipe) assetId: string): Promise<void> {
     return this.assetService.remove(spaceId, assetId);
+  }
+
+  /**
+   * A generated platform image (WebP). An asset's bytes never change, so neither does what is made from them: the
+   * browser keeps it for a year, and revalidates by the original's md5.
+   */
+  private sendPlatformImage(request: FastifyRequest, reply: FastifyReply, output: Buffer, md5: string | null, kind: string): void {
+    void reply.header('cache-control', PRIVATE_IMMUTABLE);
+    if (md5 && this.notModified(request, reply, buildAssetETag(md5, kind, false))) return;
+    void reply.type('image/webp').send(output);
+  }
+
+  /**
+   * The stored bytes, typed and disposed as on the CDN API (only what can't script is inline). An attachment is
+   * revalidated on every use: it carries the asset's name, which can change.
+   */
+  private sendStored(request: FastifyRequest, reply: FastifyReply, stored: StoredAsset, attachment: boolean): void {
+    const policy = assetResponsePolicy(stored.type, attachment);
+    void reply.header('cache-control', attachment ? 'private, no-cache' : PRIVATE_IMMUTABLE);
+    if (stored.md5 && this.notModified(request, reply, buildAssetETag(stored.md5, '', false))) return;
+    void reply
+      .header('content-disposition', buildContentDisposition(stored.filename, policy.attachment))
+      .headers(policy.headers)
+      .type(policy.contentType);
+    sendStoredObject(request, reply, stored.size, range => this.assetDeliveryService.createReadStream(stored.key, range));
+  }
+
+  /** Sets the `etag`, and answers `304` when the request already has it. */
+  private notModified(request: FastifyRequest, reply: FastifyReply, etag: string): boolean {
+    void reply.header('etag', etag);
+    if (request.headers['if-none-match'] !== etag) return false;
+    void reply.code(304).send();
+    return true;
   }
 }

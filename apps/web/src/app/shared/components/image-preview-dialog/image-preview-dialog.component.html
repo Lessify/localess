@@ -36,14 +36,11 @@
     </button>
   }
 } @else {
+  <!-- An image: its preview (at most 2048 px; an SVG or an animation as stored). A video that can't play: its thumbnail. -->
   <img
     class="image-bg max-h-[calc(100vh-180px)] min-h-[min(800px,calc(100vh-180px))] max-w-[calc(100vw-180px)] min-w-[min(800px,calc(100vw-180px))] object-contain"
-    width="1000"
-    height="1000"
-    loading="lazy"
     [alt]="context.asset.name + context.asset.extension"
-    [loaderParams]="{ thumbnail: true }"
-    ngSrc="/api/v1/spaces/{{ context.spaceId }}/assets/{{ context.asset.id }}" />
+    [src]="isVideo ? thumbnailUrl : previewUrl" />
   @if (playbackFailed()) {
     <p class="text-muted-foreground text-sm" role="status">
       This video can't be played in your browser.

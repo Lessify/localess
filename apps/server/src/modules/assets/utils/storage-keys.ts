@@ -36,5 +36,8 @@ export function renditionKey(spaceId: string, assetId: string, rendition: Rendit
   return `${assetFilesPrefix(spaceId, assetId)}renditions/${name || 'full'}${extension}`;
 }
 
-/** The platform thumbnail (`GET /api/app/…/assets/:id/thumbnail`); no transform name starts with `thumbnail`. */
+/** The platform thumbnail (`GET /api/app/…/assets/:id/thumbnail`); no transform name starts with `thumbnail` or `preview`. */
 export const thumbnailKey = (spaceId: string, assetId: string): string => `${assetFilesPrefix(spaceId, assetId)}renditions/thumbnail.webp`;
+
+/** The platform preview (`GET /api/app/…/assets/:id/preview`), beside the thumbnail. */
+export const previewKey = (spaceId: string, assetId: string): string => `${assetFilesPrefix(spaceId, assetId)}renditions/preview.webp`;

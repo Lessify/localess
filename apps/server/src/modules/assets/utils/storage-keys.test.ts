@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assetPrefix, originalKey, renditionKey, thumbnailKey } from './storage-keys.js';
+import { assetPrefix, originalKey, previewKey, renditionKey, thumbnailKey } from './storage-keys.js';
 
 describe('asset storage keys', () => {
   it('stores the upload by its original name under the asset prefix', () => {
@@ -16,8 +16,9 @@ describe('asset storage keys', () => {
     expect(renditionKey('s1', 'a1', { frame: false }, '.png')).toBe('spaces/s1/assets/a1/renditions/full.png');
   });
 
-  it('keeps the platform thumbnail with the renditions, apart from any transform', () => {
+  it('keeps the platform thumbnail and preview with the renditions, apart from any transform', () => {
     expect(thumbnailKey('s1', 'a1')).toBe('spaces/s1/assets/a1/renditions/thumbnail.webp');
+    expect(previewKey('s1', 'a1')).toBe('spaces/s1/assets/a1/renditions/preview.webp');
   });
 
   it('keeps every file of an asset under its prefix, so deleting the prefix deletes them all', () => {
@@ -26,5 +27,6 @@ describe('asset storage keys', () => {
     expect(originalKey('s1', 'a1', 'photo.jpg').startsWith(prefix)).toBe(true);
     expect(renditionKey('s1', 'a1', { width: 10, frame: true }, '.webp').startsWith(prefix)).toBe(true);
     expect(thumbnailKey('s1', 'a1').startsWith(prefix)).toBe(true);
+    expect(previewKey('s1', 'a1').startsWith(prefix)).toBe(true);
   });
 });
