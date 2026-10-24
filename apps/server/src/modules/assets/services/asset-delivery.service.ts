@@ -101,9 +101,12 @@ export type Rendition =
   | { kind: 'bad-request'; message: string }
   | { kind: 'rendition'; output: Buffer | undefined; contentType: string; filename: string };
 
-/** First frame of a video at `time`, as a file in `dir`. */
+/**
+ * A frame of a video at `time`, as a file in `dir`. PNG: its encoder is built into every ffmpeg, where WebP needs
+ * libwebp, which some builds lack (Homebrew's: "Encoder not found"); sharp encodes the frame to its final format.
+ */
 function extractVideoFrame(videoPath: string, dir: string, time = '00:00:01'): Promise<string> {
-  const filename = 'frame.webp';
+  const filename = 'frame.png';
   return new Promise((resolve, reject) => {
     ffmpeg(videoPath)
       .on('end', () => resolve(join(dir, filename)))
@@ -199,8 +202,9 @@ export class AssetDeliveryService implements OnModuleDestroy {
       quality,
       resizing: width !== undefined || height !== undefined,
     });
-    // What the pipeline encodes to; `format` alone decides the response's type and extension.
-    const encodeAs = format ?? sourceEncoderFormat(assetType);
+    // What the pipeline encodes to; `format` alone decides the response's type and extension. A video's frame is
+    // WebP unless asked otherwise: the frame ffmpeg hands over is a PNG, which sharp would otherwise keep.
+    const encodeAs = format ?? (assetType.startsWith('video/') ? 'webp' : sourceEncoderFormat(assetType));
     // Names what the caller asked for (download filename).
     const suffix = [width ? `w${width}` : '', height ? `h${height}` : '', format ? `f${format}` : '', fit ? `fit${fit}` : '']
       .filter(Boolean)

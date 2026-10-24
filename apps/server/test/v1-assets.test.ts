@@ -368,7 +368,8 @@ describe('v1 asset routes', () => {
     const response = await get(`${url}?w=100&thumbnail`);
     expect(response.statusCode).toBe(200);
     expect(response.headers['content-type']).toBe('image/webp');
-    expect((await sharp(response.rawPayload).metadata()).width).toBe(100);
+    // WebP bytes, not only the header: the frame ffmpeg extracts is a PNG.
+    expect(await sharp(response.rawPayload).metadata()).toMatchObject({ format: 'webp', width: 100 });
     expect(response.headers['content-disposition']).toContain('photo-w100-thumbnail.webp');
     const again = await get(`${url}?w=100&thumbnail`);
     expect(again.rawPayload.equals(response.rawPayload)).toBe(true);
