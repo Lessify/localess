@@ -1,27 +1,69 @@
-import { ScrollingModule } from '@angular/cdk/scrolling';
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, output, signal } from '@angular/core';
+import { CdkVirtualScrollViewport, ScrollingModule } from '@angular/cdk/scrolling';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { ChangeEventsService } from '@core/api/change-events.service';
+import { NotificationService } from '@core/services/notification.service';
+import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { Locale, Translation } from '@localess/shared';
-import { collectGroupKeys, LlTreeImports } from '@shared/components/tree/tree.imports';
+import { LlTreeImports } from '@shared/components/tree/tree.imports';
+import { InViewDirective } from '@shared/directives/in-view.directive';
 import { HlmItemImports } from '@spartan-ng/helm/item';
 import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
+import { debounceTime, filter, switchMap } from 'rxjs/operators';
 
-import { identifyLocaleStatus, identifyTranslationStatus, TranslationNode } from '../../models/translation.model';
+import { identifyTranslationStatus } from '../../models/translation.model';
+import { filterHttpParams, TranslationPages } from '../../models/translation-pages';
 import { isLocaleStatus, isTranslationStatus, LocaleStatus, TranslationStatus } from '../../models/translation-status.model';
+import { isFiltering, TranslationFilterParams, TranslationTree, TranslationTreeRow } from '../../models/translation-tree';
 import { TranslationFilterCriteria } from '../translation-filter/translation-filter.component';
 import { TranslationStatusComponent } from '../translation-status/translation-status.component';
 import { TranslationStringViewComponent } from '../translation-string-view/translation-string-view.component';
 
+/** The filter's statuses as the server names them (`?status=`, `?localeStatus=`). */
+const STATUS_PARAM: Record<TranslationStatus, string> = {
+  [TranslationStatus.TRANSLATED]: 'TRANSLATED',
+  [TranslationStatus.PARTIALLY_TRANSLATED]: 'PARTIALLY_TRANSLATED',
+  [TranslationStatus.UNTRANSLATED]: 'UNTRANSLATED',
+};
+const LOCALE_STATUS_PARAM: Record<LocaleStatus, string> = {
+  [LocaleStatus.TRANSLATED]: 'TRANSLATED',
+  [LocaleStatus.UNTRANSLATED]: 'UNTRANSLATED',
+};
+
+/** A row of the virtual list: a key, or the marker at its end that loads the next keys when it comes into view. */
+export type ListRow = { kind: 'key'; translation: Translation } | { kind: 'end' };
+const LIST_END: ListRow = { kind: 'end' };
+/** The end marker's track id: never a translation id. */
+const LIST_END_ID = '\u0000end';
+
+/**
+ * The keys of the Translations page, from the server: the list view as the user scrolls (`TranslationPages`), the tree
+ * view one level at a time (`TranslationTree`). Both send the same filter; both read again what they show after a change.
+ */
 @Component({
   selector: 'll-translation-list',
   templateUrl: './translation-list.component.html',
   styleUrls: ['./translation-list.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // A column of the page: the list (or tree) takes its height, the count line the rest.
+  host: { class: 'flex min-h-0 flex-col' },
   imports: [
-    CommonModule,
     ScrollingModule,
     LlTreeImports,
+    InViewDirective,
     TranslationStatusComponent,
     TranslationStringViewComponent,
     HlmItemImports,
@@ -30,137 +72,235 @@ import { TranslationStringViewComponent } from '../translation-string-view/trans
 })
 export class TranslationListComponent {
   readonly settingsStore = inject(LocalSettingsStore);
+  private readonly translationService = inject(TranslationService);
+  private readonly notificationService = inject(NotificationService);
+  private readonly events = inject(ChangeEventsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   // Inputs
-  readonly translations = input.required<Translation[]>();
+  readonly spaceId = input.required<string>();
   readonly availableLocales = input.required<Locale[]>();
   readonly currentLocale = input('');
   readonly filterCriteria = input<TranslationFilterCriteria | undefined>(undefined);
   readonly selectedId = input<string | undefined>(undefined);
+  /** The selected translation's key: the tree highlights it (the tree tracks nodes by key, the page by id). */
+  readonly selectedKey = input<string | undefined>(undefined);
   readonly isLocaleUpdateLoading = input(false);
   readonly translationUpdateId = input<string | undefined>(undefined);
 
   // Outputs
   readonly translationSelect = output<Translation>();
+  /** The first key the view shows, again whenever it changes (the page selects it when nothing is selected). */
+  readonly firstTranslation = output<Translation | undefined>();
+  /** Whether the selected key is outside the filter (the editor says so). */
+  readonly selectedOutsideFilter = output<boolean>();
 
-  readonly translationsFiltered = computed(() => {
+  /** The filter both views send. */
+  readonly filterParams = computed<TranslationFilterParams>(() => {
     const criteria = this.filterCriteria();
-    return this.filterTranslations(
-      this.translations(),
-      criteria?.locale || 'en',
-      criteria?.search || '',
-      criteria?.labels || [],
-      criteria?.states?.filter(it => isTranslationStatus(it)) || [],
-      criteria?.states?.filter(it => isLocaleStatus(it)) || [],
-    );
+    const states = criteria?.states ?? [];
+    return {
+      locale: this.currentLocale() || undefined,
+      search: criteria?.search?.trim() || undefined,
+      label: criteria?.labels?.length ? criteria.labels : undefined,
+      status: states.filter(isTranslationStatus).map(it => STATUS_PARAM[it]),
+      localeStatus: states.filter(isLocaleStatus).map(it => LOCALE_STATUS_PARAM[it]),
+    };
   });
-  readonly translationTreeFiltered = computed(() => this.buildTranslationTree(this.translationsFiltered()));
-  readonly translationMap = computed(() => new Map<string, Translation>(this.translations().map(it => [it.key, it])));
+  readonly isFiltering = computed(() => isFiltering(this.filterParams()));
 
-  /** True when any filter narrows the list — search text, labels or states. */
-  readonly isFiltering = computed(() => {
-    const criteria = this.filterCriteria();
-    return !!(criteria?.search || criteria?.labels?.length || criteria?.states?.length);
+  // List view: read as the user scrolls.
+  readonly pages = new TranslationPages(this.translationService);
+  /** The rows of the virtual list: the keys, then a marker while the server has more (it loads them when in view). */
+  readonly listRows = computed<ListRow[]>(() => {
+    const rows: ListRow[] = this.pages.items().map(translation => ({ kind: 'key', translation }));
+    return this.pages.hasMore() ? [...rows, LIST_END] : rows;
   });
+  /** The height of a list row and of the end marker, in px (`h-16`): a fixed-size virtual list needs one height. */
+  readonly rowHeight = 64;
+  readonly trackListRow = (_: number, row: ListRow): string => (row.kind === 'end' ? LIST_END_ID : row.translation.id);
+  private readonly listViewport = viewChild(CdkVirtualScrollViewport);
+  /** Whether the end marker reported itself on screen (it says nothing when the virtual list drops it). */
+  private readonly listEndSeen = signal(false);
+  /** The end of the virtual list's rendered range: the marker exists only while it is within it. */
+  private readonly listRenderedEnd = signal(0);
+  /** The end marker is rendered and on screen: more keys load while it is. */
+  private readonly listEndInView = computed(
+    () => this.listEndSeen() && this.pages.hasMore() && this.listRenderedEnd() >= this.listRows().length,
+  );
 
-  /** Expansion the user chose by hand while browsing unfiltered. */
-  private readonly manualExpandedKeys = signal<ReadonlySet<string>>(new Set<string>());
+  // Tree view: one level at a time.
+  readonly tree = new TranslationTree(this.translationService);
+  /** The levels whose "Load more" row is on screen: their next nodes load while it is. */
+  private readonly treeMoreInView = signal<ReadonlySet<string>>(new Set<string>());
 
-  /**
-   * Expansion the user chose by hand *during* the current filter. Reset to `null`
-   * whenever the criteria change, so each new filter starts fully expanded again.
-   */
-  private readonly filterExpandedKeys = linkedSignal<TranslationFilterCriteria | undefined, ReadonlySet<string> | null>({
-    source: this.filterCriteria,
-    computation: () => null,
-  });
+  /** The first key shown: the list's first row, or the tree's first key at its top level or in an open group. */
+  private readonly firstShown = computed(() =>
+    this.settingsStore.translationLayout() === 'tree' ? firstShownKey(this.tree.rows(), this.tree.expandedKeys()) : this.pages.items()[0],
+  );
+  /** Bumped after a change: whether the selected key still matches the filter is asked again. */
+  private readonly matchCheck = signal(0);
 
-  /**
-   * While a filter is active the tree opens fully, so no match can hide behind a
-   * collapsed parent; the manual state is restored once the filter clears.
-   */
-  readonly expandedKeys = computed<ReadonlySet<string>>(() => {
-    if (!this.isFiltering()) {
-      return this.manualExpandedKeys();
-    }
-    return this.filterExpandedKeys() ?? collectGroupKeys(this.translationTreeFiltered());
-  });
-
-  onExpandedKeysChange(keys: ReadonlySet<string>): void {
-    if (this.isFiltering()) {
-      this.filterExpandedKeys.set(keys);
-    } else {
-      this.manualExpandedKeys.set(keys);
-    }
-  }
-
-  onNodeSelect(node: TranslationNode): void {
-    const translation = this.translationMap().get(node.key);
-    if (translation) {
-      this.translationSelect.emit(translation);
-    }
-  }
-
-  identifyTranslationStatus(translate: Translation): TranslationStatus {
-    return identifyTranslationStatus(translate, this.availableLocales());
-  }
-
-  identifyLocaleStatus(translate: Translation, locale: string): LocaleStatus {
-    return identifyLocaleStatus(translate, locale);
-  }
-
-  filterTranslations(
-    items: Translation[],
-    locale: string,
-    search: string,
-    labels: string[],
-    translationStates: TranslationStatus[],
-    localeStates: LocaleStatus[],
-  ): Translation[] {
-    const lcFilter = search.trim().toLowerCase();
-    if (!items || (!search && !labels.length && !translationStates.length && !localeStates.length)) {
-      return items;
-    }
-    return items.filter(it => {
-      const matchByLabel = !labels.length || (it.labels && it.labels.length > 0 && labels.some(label => it.labels?.includes(label)));
-      const matchByTranslationStatus =
-        !translationStates.length || translationStates.includes(identifyTranslationStatus(it, this.availableLocales()));
-      const matchByLocaleStatus = !localeStates.length || localeStates.includes(identifyLocaleStatus(it, locale));
-      if (!matchByTranslationStatus) return false;
-      if (!matchByLocaleStatus) return false;
-      if (it.key.toLowerCase().includes(lcFilter) && matchByLabel) {
-        return true;
-      } else {
-        const localeValue = it.locales[locale];
-        if (localeValue) {
-          return localeValue.toLowerCase().includes(lcFilter) && matchByLabel;
-        }
-        return false;
+  constructor() {
+    // A new space, filter or layout: the shown view from its start.
+    effect(() => {
+      const spaceId = this.spaceId();
+      const params = this.filterParams();
+      const layout = this.settingsStore.translationLayout();
+      untracked(() => void (layout === 'tree' ? this.loadTree(spaceId, params) : this.loadList(spaceId, params)));
+    });
+    effect(() => {
+      const first = this.firstShown();
+      untracked(() => this.firstTranslation.emit(first));
+    });
+    // The selected key and the filter: one key asked of the server (`?key=` and the filter, one row), unless no filter
+    // narrows the keys. (The loaded rows can't answer: right after a new filter they are still the old filter's.)
+    effect(onCleanup => {
+      const key = this.selectedKey();
+      const params = this.filterParams();
+      const spaceId = this.spaceId();
+      this.matchCheck();
+      if (!key || !isFiltering(params)) {
+        untracked(() => this.selectedOutsideFilter.emit(false));
+        return;
       }
+      const subscription = this.translationService.findAll(spaceId, filterHttpParams({ ...params, key }, 0, 1)).subscribe({
+        next: page => this.selectedOutsideFilter.emit(page.total === 0),
+        error: () => this.selectedOutsideFilter.emit(false),
+      });
+      onCleanup(() => subscription.unsubscribe());
+    });
+    // The end of the list (or a level of the tree) on screen: its next keys. Runs again when a read ends, so a
+    // marker still showing after a short page loads the next one too.
+    // The virtual list's rendered range (the viewport is there only in the list layout).
+    effect(onCleanup => {
+      const viewport = this.listViewport();
+      if (!viewport) return;
+      const subscription = viewport.renderedRangeStream.subscribe(range => this.onListRendered(range.end));
+      onCleanup(() => subscription.unsubscribe());
+    });
+    effect(() => {
+      if (this.settingsStore.translationLayout() !== 'list') return;
+      if (this.listEndInView() && this.pages.hasMore() && !this.pages.loading()) untracked(() => this.loadMoreList());
+    });
+    effect(() => {
+      if (this.settingsStore.translationLayout() !== 'tree') return;
+      const loading = this.tree.loadingMore();
+      // Only a row still shown counts: one in a group closed meanwhile said nothing when it went.
+      const shown = shownMoreRows(this.tree.rows(), this.tree.expandedKeys());
+      for (const parent of this.treeMoreInView()) {
+        if (!shown.has(parent)) continue;
+        if (!loading.has(parent)) untracked(() => this.loadMoreTree(parent));
+      }
+    });
+    // A change (here or by someone else): what is shown is read again, in place.
+    toObservable(this.spaceId)
+      .pipe(
+        switchMap(spaceId => this.events.changes(spaceId)),
+        filter(event => event.entity === 'translations'),
+        debounceTime(300),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.matchCheck.update(it => it + 1);
+        const refresh = this.settingsStore.translationLayout() === 'tree' ? this.tree.refresh() : this.pages.refresh();
+        void refresh.catch(() => this.notificationService.error('Translations can not be loaded.'));
+      });
+  }
+
+  /** The virtual list rendered its rows up to `end` (exclusive): the marker is there when `end` reaches it. */
+  onListRendered(end: number): void {
+    this.listRenderedEnd.set(end);
+  }
+
+  onListEndInView(inView: boolean): void {
+    this.listEndSeen.set(inView);
+  }
+
+  onTreeMoreInView(parent: string, inView: boolean): void {
+    this.treeMoreInView.update(it => {
+      const next = new Set(it);
+      if (inView) next.add(parent);
+      else next.delete(parent);
+      return next;
     });
   }
 
-  buildTranslationTree(translations: Translation[]): TranslationNode[] {
-    const tTree: Record<string, any> = {};
-    for (const translation of translations) {
-      const keys = translation.key.split('.');
-      let currentNode = tTree;
-      for (const key of keys) {
-        if (!currentNode[key]) {
-          currentNode[key] = {};
-        }
-        currentNode = currentNode[key];
-      }
-    }
-
-    function convertTree(node: Record<string, any>, prefix?: string): TranslationNode[] {
-      return Object.entries(node).map(([key, value]) => ({
-        name: key,
-        key: prefix ? `${prefix}.${key}` : key,
-        ...(Object.keys(value).length > 0 && { children: convertTree(value, prefix ? `${prefix}.${key}` : key) }),
-      }));
-    }
-
-    return convertTree(tTree);
+  onExpandedKeysChange(keys: ReadonlySet<string>): void {
+    void this.tree.setExpanded(keys).catch(() => this.notificationService.error('Translations can not be loaded.'));
   }
+
+  onNodeSelect(row: TranslationTreeRow): void {
+    if (row.kind === 'more') {
+      this.loadMoreTree(row.parent ?? '');
+      return;
+    }
+    if (row.translation) this.translationSelect.emit(row.translation);
+  }
+
+  onListSelect(translation: Translation): void {
+    this.translationSelect.emit(translation);
+  }
+
+  identifyTranslationStatus(translation: Translation): TranslationStatus {
+    return identifyTranslationStatus(translation, this.availableLocales());
+  }
+
+  private async loadList(spaceId: string, params: TranslationFilterParams): Promise<void> {
+    // A new filter starts at the top; the marker's state is the old list's.
+    this.listEndSeen.set(false);
+    this.listViewport()?.scrollToIndex(0);
+    try {
+      await this.pages.load(spaceId, params);
+    } catch {
+      this.notificationService.error('Translations can not be loaded.');
+    }
+  }
+
+  private loadMoreList(): void {
+    void this.pages.loadMore().catch(() => {
+      // The marker stays on screen: wait until it scrolls back into view instead of asking again at once.
+      this.listEndSeen.set(false);
+      this.notificationService.error('Translations can not be loaded.');
+    });
+  }
+
+  private loadMoreTree(parent: string): void {
+    void this.tree.loadMore(parent).catch(() => {
+      this.onTreeMoreInView(parent, false);
+      this.notificationService.error('Translations can not be loaded.');
+    });
+  }
+
+  private async loadTree(spaceId: string, params: TranslationFilterParams): Promise<void> {
+    this.treeMoreInView.set(new Set<string>());
+    try {
+      await this.tree.load(spaceId, params);
+    } catch {
+      this.notificationService.error('Translations can not be loaded.');
+    }
+  }
+}
+
+/** The levels whose "Load more" row is shown: in the top level or in an open group. */
+function shownMoreRows(rows: readonly TranslationTreeRow[], expanded: ReadonlySet<string>): Set<string> {
+  const shown = new Set<string>();
+  const visit = (items: readonly TranslationTreeRow[]) => {
+    for (const row of items) {
+      if (row.kind === 'more') shown.add(row.parent ?? '');
+      else if (row.children && expanded.has(row.key)) visit(row.children);
+    }
+  };
+  visit(rows);
+  return shown;
+}
+
+/** The first translation the tree shows, in its order: at the top level or in an open group (a closed one hides its keys). */
+export function firstShownKey(rows: readonly TranslationTreeRow[], expanded: ReadonlySet<string>): Translation | undefined {
+  for (const row of rows) {
+    if (row.translation) return row.translation;
+    const below = row.children && expanded.has(row.key) ? firstShownKey(row.children, expanded) : undefined;
+    if (below) return below;
+  }
+  return undefined;
 }

@@ -1,11 +1,11 @@
+import { HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
-import { Space } from '@localess/shared';
+import { FirebaseImport, Page, Space } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceService } from '@core/services/space.service';
-import { SpaceTemplateService } from './space-template.service';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { FirebaseImportDialogComponent } from './firebase-import-dialog/firebase-import-dialog.component';
@@ -16,10 +16,17 @@ function space(overrides: Partial<Space> = {}): Space {
   return { id: 's1', name: 'Space 1', ...overrides } as Space;
 }
 
+/** A space imported from Firebase, its run in `status` (the relation the admin list loads). */
+function imported(status: FirebaseImport['status']): Space {
+  return space({ firebaseImport: { status, sourceSpaceId: 'fb1' } as FirebaseImport });
+}
+
 describe('SpacesComponent', () => {
   function setup(spaces: Space[] = []) {
-    const findAll = vi.fn().mockReturnValue(of(spaces));
-    // `create` resolves to a DocumentReference: the component reads `ref.id` to apply a template.
+    const findAll = vi.fn(
+      (params: HttpParams): Observable<Page<Space>> =>
+        of({ items: spaces, page: Number(params.get('page')), size: Number(params.get('size')), total: spaces.length }),
+    );
     const create = vi.fn().mockReturnValue(of({ id: 'new-space' }));
     const update = vi.fn().mockReturnValue(of(undefined));
     const deleteSpace = vi.fn().mockReturnValue(of(undefined));
@@ -27,19 +34,15 @@ describe('SpacesComponent', () => {
     const error = vi.fn();
     const warning = vi.fn();
     const open = vi.fn();
-    const apply = vi.fn().mockReturnValue(of(undefined));
 
     TestBed.overrideComponent(SpacesComponent, {
-      // The sort defaults mirror the real template: by name, ascending.
-      set: { template: '<table llTableSort llTableSortActive="name" llTableSortDirection="asc"></table><ll-paginator [length]="0" />' },
+      set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: SpaceService, useValue: { findAll, create, update, delete: deleteSpace } },
+        { provide: SpaceService, useValue: { findAll, create, update, remove: deleteSpace } },
         { provide: NotificationService, useValue: { success, error, warning } },
         { provide: HlmDialogService, useValue: { open } },
-        // Stubbed rather than real: the real one talks to the API, which this spec has no use for.
-        { provide: SpaceTemplateService, useValue: { apply } },
       ],
     });
     const fixture = TestBed.createComponent(SpacesComponent);
@@ -56,7 +59,9 @@ describe('SpacesComponent', () => {
 
     return {
       component: fixture.componentInstance,
+      fixture,
       findAll,
+      lastQuery: () => findAll.mock.calls.at(-1)![0].toString(),
       create,
       update,
       deleteSpace,
@@ -64,7 +69,6 @@ describe('SpacesComponent', () => {
       error,
       warning,
       open,
-      apply,
       navigateWithAction,
     };
   }
@@ -74,27 +78,48 @@ describe('SpacesComponent', () => {
     return { closed$: of(result) };
   }
 
-  it('loads spaces on init', () => {
+  it('loads the first page on init, in the server’s order, and shows the total', () => {
     const spaces = [space({ id: 's1' }), space({ id: 's2' })];
-    const { component, findAll } = setup(spaces);
+    const { component, lastQuery } = setup(spaces);
 
-    expect(findAll).toHaveBeenCalled();
+    expect(lastQuery()).toBe('page=0&size=20');
     expect(component.dataSource.filteredData()).toEqual(spaces);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('sorts by name by default, case-insensitive like the server', () => {
-    const { component } = setup([space({ id: 's1', name: 'beta' }), space({ id: 's2', name: 'Gamma' }), space({ id: 's3', name: 'Alpha' })]);
+  it('tells about a failed load and keeps answering the table: the next query change fetches again', () => {
+    const { fixture, component, findAll, error } = setup();
+    findAll.mockImplementationOnce(() => throwError(() => new Error('boom')));
+    component.onFilterChange({ search: 'fails' });
+    fixture.detectChanges();
+    expect(error).toHaveBeenCalledWith('Spaces can not be loaded.');
+    expect(component.isLoading()).toBe(false);
 
-    expect(component.dataSource.sortedData().map(it => it.name)).toEqual(['Alpha', 'beta', 'Gamma']);
+    component.onFilterChange({ search: 'works' });
+    fixture.detectChanges();
+
+    expect(findAll.mock.calls.at(-1)![0].toString()).toBe('page=0&size=20&search=works');
+    expect(findAll).toHaveBeenCalledTimes(3);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
-    const { component } = setup();
+  it('asks the server for the search, from the first page', () => {
+    const { fixture, component, lastQuery } = setup();
+    component.list.page.set(1);
 
     component.onFilterChange({ search: 'space' });
+    fixture.detectChanges();
 
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'space' }));
+    expect(lastQuery()).toBe('page=0&size=20&search=space');
+  });
+
+  it('asks the server for the sorted column and direction', () => {
+    const { fixture, component, lastQuery } = setup();
+
+    component.onSortChange({ active: 'updatedAt', direction: 'desc' });
+    fixture.detectChanges();
+
+    expect(lastQuery()).toBe('page=0&size=20&sort=updatedAt&direction=desc');
   });
 
   describe('?action=create', () => {
@@ -168,7 +193,7 @@ describe('SpacesComponent', () => {
 
     it('creates the space and notifies success when confirmed', () => {
       const { open, create, success, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
+      open.mockReturnValue(closesWith({ name: 'New Space' }));
 
       navigateWithAction('create');
 
@@ -176,37 +201,17 @@ describe('SpacesComponent', () => {
       expect(success).toHaveBeenCalledWith('Space has been created.');
     });
 
-    it('applies the chosen template to the created space', () => {
-      const { open, apply, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
+    it('creates the space from the chosen template in one request', () => {
+      // The server applies the template in the creating transaction: there is no second step that could fail alone.
+      const { open, create, success, warning, navigateWithAction } = setup();
+      open.mockReturnValue(closesWith({ name: 'New Space', template: 'blog' }));
 
       navigateWithAction('create');
 
-      expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'BLOG' }));
-    });
-
-    it('hands EMPTY to a template service that short-circuits on it', () => {
-      const { open, apply, success, navigateWithAction } = setup();
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
-
-      navigateWithAction('create');
-
-      expect(apply).toHaveBeenCalledWith('new-space', expect.objectContaining({ id: 'EMPTY', schemas: [] }));
+      expect(create).toHaveBeenCalledTimes(1);
+      expect(create).toHaveBeenCalledWith({ name: 'New Space', template: 'blog' });
       expect(success).toHaveBeenCalledWith('Space has been created.');
-    });
-
-    it('reports the space as created when only the template failed', () => {
-      // The space exists and is usable. Calling this a failed creation would invite the user to
-      // retry a create that already succeeded.
-      const { open, apply, warning, error, success, navigateWithAction } = setup();
-      apply.mockReturnValue(throwError(() => new Error('permission-denied')));
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'BLOG' }));
-
-      navigateWithAction('create');
-
-      expect(warning).toHaveBeenCalledWith('Space has been created, but the template could not be applied.');
-      expect(error).not.toHaveBeenCalled();
-      expect(success).not.toHaveBeenCalled();
+      expect(warning).not.toHaveBeenCalled();
     });
 
     it('does not create anything when dismissed', () => {
@@ -221,7 +226,7 @@ describe('SpacesComponent', () => {
     it('notifies an error when the space itself cannot be created', () => {
       const { open, create, error, navigateWithAction } = setup();
       create.mockReturnValue(throwError(() => new Error('boom')));
-      open.mockReturnValue(closesWith({ name: 'New Space', template: 'EMPTY' }));
+      open.mockReturnValue(closesWith({ name: 'New Space' }));
 
       navigateWithAction('create');
 
@@ -240,16 +245,18 @@ describe('SpacesComponent', () => {
 
   it('labels spaces being imported or whose import failed', () => {
     const { component } = setup();
-    expect(component.importLabel({ importStatus: 'IMPORTING' } as Space)).toBe('Importing');
-    expect(component.importLabel({ importStatus: 'FAILED' } as Space)).toBe('Import failed');
+    expect(component.importLabel(imported('RUNNING'))).toBe('Importing');
+    expect(component.importLabel(imported('FAILED'))).toBe('Import failed');
+    expect(component.importLabel(imported('FINISHED'))).toBeUndefined();
     expect(component.importLabel({} as Space)).toBeUndefined();
   });
 
   it('tells what to do with a space whose import failed', () => {
     const { component } = setup();
-    expect(component.importHint({ importStatus: 'FAILED' } as Space)).toBe('Delete the space and import it again');
-    expect(component.importHint({ importStatus: 'IMPORTING' } as Space)).toBe('It opens once the import has finished');
-    expect(component.importHint({} as Space)).toBeUndefined();
+    expect(component.importHint(imported('FAILED'))).toBe('Delete the space and import it again');
+    expect(component.importHint(imported('RUNNING'))).toBe('It opens once the import has finished');
+    expect(component.importHint(imported('FINISHED'))).toBeNull();
+    expect(component.importHint({} as Space)).toBeNull();
   });
 
   it('openEditDialog() updates the space and notifies success when confirmed', () => {

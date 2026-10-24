@@ -54,8 +54,9 @@ export class AddDialogComponent {
   /** Required: the caller always passes the names already taken, which the name validator needs. */
   private readonly context = injectBrnDialogContext<AddDialogContext>();
 
-  schemaTypeDescriptions = schemaTypeDescriptions;
-  types: string[] = Object.keys(SchemaType);
+  /** A schema type's name, icon and description (typed key: the table and the select hand over untyped values). */
+  protected readonly schemaTypeDescription = (type: SchemaType) => schemaTypeDescriptions[type];
+  types: SchemaType[] = Object.values(SchemaType);
 
   form: FormGroup = this.fb.group({
     displayName: this.fb.control<string | undefined>(undefined, SchemaValidator.DISPLAY_NAME),

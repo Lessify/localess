@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { SpaceStore } from '@core/stores/space.store';
 import { provideIcons } from '@ng-icons/core';
 import { lucidePlus } from '@ng-icons/lucide';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 
@@ -13,7 +13,7 @@ import { HlmIconImports } from '@spartan-ng/helm/icon';
   templateUrl: './welcome.component.html',
   styleUrl: './welcome.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AsyncPipe, RouterModule, CanUserPerformPipe, HlmButtonImports, HlmIconImports],
+  imports: [AsyncPipe, RouterModule, HasRolePipe, HlmButtonImports, HlmIconImports],
   providers: [provideIcons({ lucidePlus })],
 })
 export class WelcomeComponent {

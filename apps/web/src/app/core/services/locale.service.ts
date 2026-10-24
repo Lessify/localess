@@ -4,34 +4,16 @@ import { GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '
 import { toProviderLocale } from '@shared/models/locale.model';
 import { Observable } from 'rxjs';
 
+/**
+ * The locale catalog (`/api/app/locales`, the server's `LocaleController`) and what the translation provider supports.
+ * A space's own locales: `SpaceLocaleService`; its default locale: `SpaceService.setDefaultLocale`.
+ */
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
   private readonly http = inject(HttpClient);
 
-  private base(spaceId: string): string {
-    return `/api/app/spaces/${spaceId}`;
-  }
-
-  setDefault(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/default-locale`, { id: entity.id });
-  }
-
-  /** Adds a locale from the list (`findAllLocales`); the server takes only its id. */
-  create(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.post<void>(`${this.base(spaceId)}/locales`, { id: entity.id });
-  }
-
-  /** `localeIds`: every locale of the space, in the new order. */
-  reorder(spaceId: string, localeIds: string[]): Observable<void> {
-    return this.http.put<void>(`${this.base(spaceId)}/locales/order`, { ids: localeIds });
-  }
-
-  delete(spaceId: string, entity: Locale): Observable<void> {
-    return this.http.delete<void>(`${this.base(spaceId)}/locales/${entity.id}`);
-  }
-
   /** Every locale a space can add. Database data, read-only. */
-  findAllLocales(): Observable<Locale[]> {
+  findAll(): Observable<Locale[]> {
     return this.http.get<Locale[]>('/api/app/locales');
   }
 

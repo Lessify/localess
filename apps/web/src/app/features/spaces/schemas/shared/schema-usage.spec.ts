@@ -15,7 +15,18 @@ describe('describeSchemaUsage', () => {
   it('lists the referring fields and the first contents, saying how many more there are', () => {
     const first = ['a', 'b', 'c', 'd', 'e'].map(name => ({ name, fullSlug: `docs/${name}` }));
 
-    expect(describeSchemaUsage(usage([{ schema: 'page', field: 'items' }, { schema: 'article', field: 'blocks' }], 7, first))).toBe(
+    expect(
+      describeSchemaUsage(
+        usage(
+          [
+            { schema: 'page', field: 'items' },
+            { schema: 'article', field: 'blocks' },
+          ],
+          7,
+          first,
+        ),
+      ),
+    ).toBe(
       [
         'Referenced by the fields:',
         '• page › items',

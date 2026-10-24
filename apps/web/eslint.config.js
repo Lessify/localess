@@ -11,12 +11,7 @@ export default tseslint.config(
   },
   {
     files: ['**/*.ts'],
-    extends: [
-      eslint.configs.recommended,
-      ...tseslint.configs.recommended,
-      ...angular.configs.tsRecommended,
-      prettierRecommended,
-    ],
+    extends: [eslint.configs.recommended, ...tseslint.configs.recommended, ...angular.configs.tsRecommended, prettierRecommended],
     processor: angular.processInlineTemplates,
     plugins: { 'simple-import-sort': simpleImportSort },
     rules: {

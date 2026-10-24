@@ -1,26 +1,17 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  Injector,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { breadcrumbs } from '@core/utils/folder-tree';
+import { SpaceStore } from '@core/stores/space.store';
+import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
+import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
+import { pagedResource } from '@core/utils/paged-resource';
 import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetFolderSummary, AssetKind } from '@localess/shared';
+import { Asset, AssetKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideFile,
@@ -36,11 +27,12 @@ import {
   lucideUpload,
 } from '@ng-icons/lucide';
 import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { fileIcon as resolveFileIcon, filePreview as isPreviewableFileType } from '@shared/models/asset.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -54,7 +46,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import { EMPTY, Subject } from 'rxjs';
-import { catchError, concatMap, finalize, switchMap } from 'rxjs/operators';
+import { catchError, concatMap, finalize } from 'rxjs/operators';
 
 import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-select-dialog.model';
 
@@ -71,11 +63,11 @@ import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-se
     CommonModule,
     HlmDialogImports,
     LlPaginatorImports,
-    CanUserPerformPipe,
+    LlFilterToolbarImports,
+    HasRolePipe,
     LlTableImports,
     TimeDurationPipe,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmBreadcrumbImports,
     HlmIconImports,
     HlmProgressImports,
@@ -102,7 +94,7 @@ import { AssetsSelectDialogContext, AssetsSelectDialogResult } from './assets-se
     }),
   ],
 })
-export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
+export class AssetsSelectDialogComponent implements OnInit {
   private readonly assetService = inject(AssetService);
   private readonly notificationService = inject(NotificationService);
   readonly fe = inject(FormErrorHandlerService);
@@ -112,58 +104,40 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
   /** Required: scopes the browser to a space, and `multiple` decides the selection mode. */
   readonly context = injectBrnDialogContext<AssetsSelectDialogContext>();
 
-  sort = viewChild(TableSort);
-  paginator = viewChild.required(Paginator);
-
-  private readonly assets = signal<Asset[]>([]);
-  readonly dataSource = new TableDataSource<Asset>(this.assets, this.injector);
+  /** The folder shown; `null`: the root. */
+  readonly folderId = signal<string | null>(null);
+  /** The same paged query as the Assets page (folder, search, scope, sort, page), files of the field's type. */
+  readonly assetList = new FolderList(this.folderId, 20, { fileType: this.context.fileType });
+  readonly filters = FOLDER_LIST_FILTERS;
+  /** The page shown, live. */
+  readonly page = pagedResource({
+    list: this.assetList.list,
+    load: params => this.assetService.findAll(this.context.spaceId, params),
+    error: 'Assets can not be loaded.',
+  });
+  readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);
   displayedColumns: string[] = ['select', 'icon', 'preview', 'name', 'size', 'type', 'updatedAt'];
+  /** Kept by id across pages, folders and searches: files can be picked from several folders. */
   selection = new SelectionModel<Asset>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
 
   fileUploadQueue = signal<File[]>([]);
 
-  /** Every folder of the space: the breadcrumbs are built from it. */
-  private readonly folders = toSignal(this.assetService.findAllFolders(this.context.spaceId), {
-    initialValue: [] as AssetFolderSummary[],
-  });
-  private readonly folderMap = computed(() => new Map(this.folders().map(it => [it.id, it])));
-  /** The folder shown; `null`: the root. */
-  readonly folderId = signal<string | null>(null);
+  private readonly spaceStore = inject(SpaceStore);
+  /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs and the paths are built from it. */
+  private readonly folderMap = computed(() => new Map(this.spaceStore.assetFolders().map(it => [it.id, it])));
   /** The folders from the root down to the one shown. */
   readonly trail = computed(() => breadcrumbs(this.folderMap(), this.folderId()));
-  private readonly folderId$ = toObservable(this.folderId);
+  /** Where each asset is (`~/Images`), for a list from several folders (`deep`); `undefined` otherwise. */
+  readonly location = computed(() => {
+    const folders = this.folderMap();
+    return this.assetList.deep() ? (asset: Asset) => assetLocation(folders, asset.parentId) : () => undefined;
+  });
 
   // Subscriptions
   private fileUploadQueue$ = new Subject<File>();
   private destroyRef = inject(DestroyRef);
-  // Loading
-  isLoading = signal(true);
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
-
-  constructor() {
-    // `sort` is only present in list layout — re-bind whenever the table (and its
-    // llTableSort directive) is created/destroyed by the list/grid toggle.
-    effect(() => {
-      this.dataSource.sort = this.sort() ?? null;
-    });
-
-    this.folderId$
-      .pipe(
-        switchMap(folderId => this.assetService.findAll(this.context.spaceId, folderId ?? undefined, this.context.fileType)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: assets => {
-          this.assets.set(assets);
-          this.isLoading.set(false);
-        },
-      });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator();
-  }
 
   ngOnInit(): void {
     this.fileUploadQueue$
@@ -192,8 +166,6 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
 
   /** A breadcrumb: a folder, or `null` for the root. */
   navigateToFolder(folderId: string | null) {
-    if (folderId === this.folderId()) return;
-    this.isLoading.set(true);
     this.folderId.set(folderId);
   }
 
@@ -202,8 +174,7 @@ export class AssetsSelectDialogComponent implements OnInit, AfterViewInit {
       this.selection.toggle(element);
       return;
     } else if (element.kind === AssetKind.FOLDER) {
-      this.isLoading.set(true);
-      this.folderId.set(element.id);
+      this.navigateToFolder(element.id);
     }
   }
 

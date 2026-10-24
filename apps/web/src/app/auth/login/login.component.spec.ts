@@ -14,7 +14,11 @@ import { LoginComponent } from './login.component';
 describe('LoginComponent', () => {
   let http: HttpTestingController;
 
-  function setup(config: Partial<PublicAppConfig['auth']> = {}, query: Record<string, string> = {}, instance?: PublicAppConfig['instance']) {
+  function setup(
+    config: Partial<PublicAppConfig['auth']> = {},
+    query: Record<string, string> = {},
+    instance?: PublicAppConfig['instance'],
+  ) {
     const signedIn = vi.fn();
     TestBed.configureTestingModule({
       providers: [
@@ -22,7 +26,9 @@ describe('LoginComponent', () => {
         provideHttpClientTesting(),
         {
           provide: AppConfigService,
-          useValue: { config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config }, ...(instance ? { instance } : {}) }) },
+          useValue: {
+            config: signal({ ...DEFAULT_APP_CONFIG, auth: { ...DEFAULT_APP_CONFIG.auth, ...config }, ...(instance ? { instance } : {}) }),
+          },
         },
         { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap(query)) } },
         { provide: UserStore, useValue: { signedIn, isAuthenticated: signal(false), email: signal(undefined) } },
@@ -78,10 +84,20 @@ describe('LoginComponent', () => {
     component.form.setValue({ email: 'me@example.com', password: 'nope' });
     component.loginWithEmailAndPassword();
     http.expectOne('/api/auth/login').flush({ message: 'Invalid email or password' }, { status: 401, statusText: 'Unauthorized' });
-    expect(component.hasAuthError()).toBe(true);
+    expect(component.authError()).toBe('User or password is wrong');
     expect(component.pending()).toBe(false);
     expect(signedIn).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it('says so when sign-in is rate limited (429), instead of blaming the password', () => {
+    const { component, signedIn } = setup();
+    component.form.setValue({ email: 'me@example.com', password: 'right-password' });
+    component.loginWithEmailAndPassword();
+    http.expectOne('/api/auth/login').flush({ message: 'Rate limit exceeded' }, { status: 429, statusText: 'Too Many Requests' });
+    expect(component.authError()).toBe('Too many sign-in attempts. Try again in a minute.');
+    expect(component.pending()).toBe(false);
+    expect(signedIn).not.toHaveBeenCalled();
   });
 
   it('does nothing when the form is empty', () => {

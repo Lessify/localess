@@ -1,6 +1,11 @@
 import { gunzipSync } from 'node:zlib';
+
+import { TokenType } from '@localess/shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { tokens } from '../src/infra/database/schema.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
 import {
   seedContent,
   seedSpace,
@@ -13,9 +18,6 @@ import {
   tokenRow,
 } from './seed.js';
 import { createTestApp, insertSpace, setImport, TestApp } from './test-app.js';
-import { C, contentName, EMPTY_SPACE, S1, S2 } from './ids.js';
-import { TokenType } from '@localess/shared';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
 
 /**
  * The public delivery API against real rows. The cases ported from functions/src/v1/*.test.ts keep
@@ -32,7 +34,12 @@ describe('v1 CDN API', () => {
     await seedContent(t);
     await seedTranslations(t);
     // A second space with nothing published, and its own token.
-    await insertSpace(t.db, { id: EMPTY_SPACE, name: 'Empty', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
+    await insertSpace(t.db, {
+      id: EMPTY_SPACE,
+      name: 'Empty',
+      locales: [{ id: 'en', name: 'English' }],
+      defaultLocale: { id: 'en', name: 'English' },
+    });
     await t.db.insert(tokens).values(tokenRow(EMPTY_SPACE, TokenType.PUBLIC, EMPTY_TOKEN, 'read'));
   });
 
@@ -234,7 +241,12 @@ describe('v1 CDN API', () => {
     it('resolves links (skipping deleted targets), assets and references on request', async () => {
       const body = (await content(C.home, '&resolveLink=true&resolveAsset=true&resolveReference=true')).json();
       expect(body.links).toEqual({
-        [C.post1]: expect.objectContaining({ id: C.post1, kind: 'DOCUMENT', fullSlug: 'blog/post-1', publishedAt: '2026-01-01T00:00:00.000Z' }),
+        [C.post1]: expect.objectContaining({
+          id: C.post1,
+          kind: 'DOCUMENT',
+          fullSlug: 'blog/post-1',
+          publishedAt: '2026-01-01T00:00:00.000Z',
+        }),
       });
       expect(body.references[C.post1]).toMatchObject({ id: C.post1, locale: 'en', data: { title: 'Post 1' } });
       expect(body.references[C.post1]).not.toHaveProperty('assets');
@@ -303,12 +315,24 @@ describe('v1 CDN API', () => {
     });
 
     it('selects a folder subtree by prefix, without sibling folders that share it', async () => {
-      expect(Object.keys((await links('&parentSlug=blog')).json()).map(contentName).sort()).toEqual(['post1']);
+      expect(
+        Object.keys((await links('&parentSlug=blog')).json())
+          .map(contentName)
+          .sort(),
+      ).toEqual(['post1']);
     });
 
     it('filters to direct children and by kind', async () => {
-      expect(Object.keys((await links('&excludeChildren=true')).json()).map(contentName).sort()).toEqual(['archive', 'blog', 'home']);
-      expect(Object.keys((await links('&excludeChildren=true&kind=FOLDER')).json()).map(contentName).sort()).toEqual(['archive', 'blog']);
+      expect(
+        Object.keys((await links('&excludeChildren=true')).json())
+          .map(contentName)
+          .sort(),
+      ).toEqual(['archive', 'blog', 'home']);
+      expect(
+        Object.keys((await links('&excludeChildren=true&kind=FOLDER')).json())
+          .map(contentName)
+          .sort(),
+      ).toEqual(['archive', 'blog']);
     });
   });
 

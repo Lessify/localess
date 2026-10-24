@@ -1,7 +1,7 @@
 <div class="flex justify-end gap-2 p-2">
-  <button hlmBtn (click)="inviteDialog()">
+  <button hlmBtn (click)="openAddDialog()">
     <ng-icon hlm size="sm" name="lucideUserPlus" />
-    Invite
+    Add User
   </button>
 </div>
 
@@ -18,7 +18,7 @@
     [filters]="filters"
     (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table ll-table [dataSource]="dataSource" llTableSort (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="email">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="email">Email</th>
         <td llCell *llCellDef="let element" class="break-all">
@@ -37,37 +37,32 @@
         <th llHeaderCell *llHeaderCellDef>Active</th>
         <td llCell *llCellDef="let element">
           @if (element.disabled) {
-            <ng-icon name="lucideX" hlmTooltip="User is Disabled" />
+            <ng-icon name="lucideX" hlmTooltip="User is Disabled" role="img" aria-hidden="false" aria-label="User is Disabled" />
           } @else {
-            <ng-icon name="lucideCheck" hlmTooltip="User is Active" />
+            <ng-icon name="lucideCheck" hlmTooltip="User is Active" role="img" aria-hidden="false" aria-label="User is Active" />
           }
         </td>
       </ng-container>
-      <ng-container llColumnDef="providers">
-        <th llHeaderCell *llHeaderCellDef>Providers</th>
+      <ng-container llColumnDef="signIn">
+        <th llHeaderCell *llHeaderCellDef>Sign-in</th>
         <td llCell *llCellDef="let element">
-          @for (provider of element.providers; track provider) {
-            @switch (provider) {
-              @case ('password') {
-                <ng-icon name="lucideMail" hlmTooltip="Email & Password" />
-              }
-              @default {
-                <ng-icon name="lucideShieldCheck" [hlmTooltip]="provider" />
-              }
-            }
+          @if (element.hasPassword) {
+            <ng-icon name="lucideMail" hlmTooltip="Email & Password" role="img" aria-hidden="false" aria-label="Email & Password" />
+          }
+          @for (identity of element.identities ?? []; track identity.provider) {
+            <ng-icon
+              name="lucideShieldCheck"
+              [hlmTooltip]="loginLabel(identity.provider)"
+              role="img"
+              aria-hidden="false"
+              [attr.aria-label]="loginLabel(identity.provider)" />
           }
         </td>
       </ng-container>
       <ng-container llColumnDef="role">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="role">Role</th>
-        <td llCell *llCellDef="let element" class="flex gap-1">
-          {{ element.role || 'none' | uppercase }}
-          @if (element.role === 'CUSTOM') {
-            <ng-icon name="lucideInfo" [hlmTooltip]="element.permissions?.join('\n')" position="right" />
-            @if (element.lock) {
-              <ng-icon name="lucideLock" hlmTooltip="The user is not be able to change his password and other personal data." />
-            }
-          }
+        <td llCell *llCellDef="let element">
+          {{ roleLabel(element.role) }}
         </td>
       </ng-container>
       <ng-container llColumnDef="createdAt">
@@ -85,19 +80,17 @@
       <ng-container llColumnDef="actions">
         <th llHeaderCell *llHeaderCellDef>Actions</th>
         <td llCell *llCellDef="let element">
-          @if (canManage(element)) {
-            <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
-              <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
-            </button>
-          } @else {
-            <span hlmTooltip="Only an admin can manage this user.">
-              <button hlmBtn size="icon" variant="ghost" disabled aria-label="Actions unavailable">
-                <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
-              </button>
-            </span>
-          }
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            aria-label="Actions"
+            [hlmDropdownMenuTrigger]="actionsMenu"
+            (click)="$event.stopPropagation()">
+            <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
+          </button>
           <ng-template #actionsMenu>
-            <hlm-dropdown-menu>
+            <hlm-dropdown-menu class="text-nowrap">
               <hlm-dropdown-menu-group>
                 <button hlmDropdownMenuItem (click)="openEditDialog(element)">
                   <ng-icon hlm size="sm" name="lucidePencil" />
@@ -138,5 +131,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

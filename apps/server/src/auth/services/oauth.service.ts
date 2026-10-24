@@ -1,8 +1,10 @@
 import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import * as client from 'openid-client';
+
 import { APP_CONFIG, type AppConfig, OAuthProviderId } from '../../infra/config/config.js';
-import type { UserRow } from '../../shared/models/user.js';
-import { AuthUsersRepository } from '../repositories/auth-users.repository.js';
+import type { UserEntity } from '../../shared/entities/user.entity.js';
+import { errorMessage } from '../../shared/utils/error-message.js';
+import { AuthUserRepository } from '../repositories/auth-user.repository.js';
 
 /** What we keep between the redirect to the provider and its callback (in an HttpOnly cookie). */
 export interface OAuthFlow {
@@ -44,7 +46,7 @@ export class OAuthService implements OnModuleInit {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly users: AuthUsersRepository,
+    private readonly authUserRepository: AuthUserRepository,
   ) {}
 
   onModuleInit(): void {
@@ -109,7 +111,7 @@ export class OAuthService implements OnModuleInit {
     return { url: client.buildAuthorizationUrl(configuration, parameters), flow };
   }
 
-  async finish(flow: OAuthFlow, callbackUrl: URL): Promise<UserRow> {
+  async finish(flow: OAuthFlow, callbackUrl: URL): Promise<UserEntity> {
     const configuration = await this.configuration(flow.provider);
     let claims: client.IDToken | undefined;
     try {
@@ -121,7 +123,7 @@ export class OAuthService implements OnModuleInit {
       });
       claims = tokens.claims();
     } catch (error) {
-      this.logger.warn(`${flow.provider} sign-in failed: ${error instanceof Error ? error.message : error}`);
+      this.logger.warn(`${flow.provider} sign-in failed: ${errorMessage(error)}`);
       throw new OAuthError('failed', 'Sign-in with the provider failed');
     }
     if (!claims) throw new OAuthError('failed', 'The provider returned no ID token');
@@ -148,23 +150,25 @@ export class OAuthService implements OnModuleInit {
     return email;
   }
 
-  private async resolveUser(provider: OAuthProviderId, claims: client.IDToken): Promise<UserRow> {
+  private async resolveUser(provider: OAuthProviderId, claims: client.IDToken): Promise<UserEntity> {
     const subject = claims.sub;
-    const identityUserId = await this.users.findIdentityUserId(provider, subject);
+    const identityUserId = await this.authUserRepository.findIdentityUserId(provider, subject);
 
-    let user = identityUserId ? await this.users.findById(identityUserId) : undefined;
+    let user = identityUserId ? await this.authUserRepository.findById(identityUserId) : undefined;
     if (!user) {
       const email = this.verifiedEmail(provider, claims);
-      user = await this.users.findByEmail(email);
+      user = await this.authUserRepository.findByEmail(email);
       if (!user) {
         if (!this.config.auth.autoRegister) throw new OAuthError('no-account', `No Localess account for ${email}`);
-        user = await this.users.create({
+        user = await this.authUserRepository.create({
           email,
           emailVerified: true,
           displayName: typeof claims['name'] === 'string' ? claims['name'] || null : null,
         });
       }
-      await this.users.linkIdentity(user.id, provider, subject);
+      // A refused sign-in changes nothing: no identity for a disabled account.
+      if (user.disabled) throw new OAuthError('disabled', 'This account is disabled');
+      await this.authUserRepository.linkIdentity(user.id, provider, subject);
     } else if (provider === 'google') {
       // Re-check the domain on every sign-in, not just the first.
       this.verifiedEmail(provider, claims);

@@ -1,23 +1,27 @@
 import { createHash } from 'node:crypto';
+
+import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FIREBASE_IMPORT_STAGES } from '@localess/shared';
+
 import { newUuid } from '../src/infra/database/id.js';
-import { assets, contents, firebaseImports, schemas, spaces, tokens, translations, webhooks } from '../src/infra/database/schema.js';
+import { assets, contents, firebaseImports, schemas, tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { FirebaseClient } from '../src/modules/firebase-import/utils/firebase-client.js';
 import { FirebaseImportRunner } from '../src/modules/firebase-import/workers/firebase-import.runner.js';
-import { selectSpaces } from '../src/shared/queries/space.query.js';
 import { toFirebaseImport } from '../src/shared/transformers/firebase-import.transformer.js';
 import { fakeFirebase, FakeFirebaseSpace } from './fake-firebase.js';
 import { UUID_V7 } from './ids.js';
-import { createTestApp, TestApp } from './test-app.js';
+import { createTestApp, readSpaces, TestApp } from './test-app.js';
 
 const photo = Buffer.from('photo-bytes');
 const site: FakeFirebaseSpace = {
   id: 'fbSpace',
   name: 'Site',
   doc: {
-    locales: [{ id: 'en', name: 'English' }, { id: 'de', name: 'German' }],
+    locales: [
+      { id: 'en', name: 'English' },
+      { id: 'de', name: 'German' },
+    ],
     localeFallback: { id: 'en', name: 'English' },
     environments: [{ name: 'Preview', url: 'https://preview.example.com' }],
     createdAt: '2025-01-01T00:00:00.000Z',
@@ -28,10 +32,22 @@ const site: FakeFirebaseSpace = {
   ],
   webhooks: [{ id: 'w1', name: 'Site', url: 'https://example.com/hook', enabled: true, events: ['content.published'], secret: 's' }],
   schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] }],
-  translations: [{ id: 'greeting', type: 'STRING', locales: { en: 'Hello' } }, { id: 'bye', type: 'STRING', locales: { en: 'Bye' } }],
+  translations: [
+    { id: 'greeting', type: 'STRING', locales: { en: 'Hello' } },
+    { id: 'bye', type: 'STRING', locales: { en: 'Bye' } },
+  ],
   assets: [
     // Before its folder: Firestore pages come in no tree order.
-    { id: 'a1', kind: 'FILE', name: 'photo', parentPath: 'f1/f2', extension: '.jpg', type: 'image/jpeg', size: photo.length, createdAt: '2025-02-01T00:00:00.000Z' },
+    {
+      id: 'a1',
+      kind: 'FILE',
+      name: 'photo',
+      parentPath: 'f1/f2',
+      extension: '.jpg',
+      type: 'image/jpeg',
+      size: photo.length,
+      createdAt: '2025-02-01T00:00:00.000Z',
+    },
     { id: 'f2', kind: 'FOLDER', name: '2025', parentPath: 'f1' },
     { id: 'f1', kind: 'FOLDER', name: 'Photos', parentPath: '' },
     { id: 'a2', kind: 'FILE', name: 'missing', parentPath: 'gone', extension: '.jpg', type: 'image/jpeg', size: 1 },
@@ -47,13 +63,29 @@ const site: FakeFirebaseSpace = {
       schema: 'page',
       publishedAt: '2025-03-01T00:00:00.000Z',
       updatedAt: '2025-02-15T00:00:00.000Z',
-      data: JSON.stringify({ _id: 'r', _schema: 'page', title: 'Hi', hero: { kind: 'ASSET', uri: 'a1' }, next: { kind: 'LINK', type: 'content', uri: 'home' }, lost: { kind: 'REFERENCE', uri: 'deleted' } }),
+      data: JSON.stringify({
+        _id: 'r',
+        _schema: 'page',
+        title: 'Hi',
+        hero: { kind: 'ASSET', uri: 'a1' },
+        next: { kind: 'LINK', type: 'content', uri: 'home' },
+        lost: { kind: 'REFERENCE', uri: 'deleted' },
+      }),
       assets: ['a1'],
       links: ['home'],
       references: ['deleted'],
     },
     { id: 'home', kind: 'DOCUMENT', name: 'Home', slug: 'home', parentSlug: '', fullSlug: 'home', schema: 'page', data: '{not json' },
-    { id: 'lost', kind: 'DOCUMENT', name: 'Lost', slug: 'lost', parentSlug: 'nowhere', fullSlug: 'nowhere/lost', schema: 'page', data: '{}' },
+    {
+      id: 'lost',
+      kind: 'DOCUMENT',
+      name: 'Lost',
+      slug: 'lost',
+      parentSlug: 'nowhere',
+      fullSlug: 'nowhere/lost',
+      schema: 'page',
+      data: '{}',
+    },
     // After its children: Firestore pages come in no tree order.
     { id: 'blog', kind: 'FOLDER', name: 'Blog', slug: 'blog', parentSlug: '', fullSlug: 'blog' },
   ],
@@ -84,7 +116,9 @@ describe('Firebase import run', () => {
       stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
       startedBy: { name: 'Admin', email: 'admin@example.com' },
     });
-    await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(fake.url, 'migration-secret', { allowInternal: true }), sourceSpaceId);
+    await t.app
+      .get(FirebaseImportRunner)
+      .execute(id, new FirebaseClient(fake.url, 'migration-secret', { allowInternal: true }), sourceSpaceId);
     return (await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id)))[0];
   };
 
@@ -104,7 +138,7 @@ describe('Firebase import run', () => {
       contentMigration: ['DONE', 1],
     });
 
-    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({
       name: 'Site',
       legacyId: 'fbSpace',
@@ -117,8 +151,14 @@ describe('Firebase import run', () => {
     const spaceTokens = await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id));
     expect(spaceTokens).toHaveLength(1);
     expect(spaceTokens[0]).toMatchObject({ type: 'preview', name: 'Auto Generated Preview Token' });
-    expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({ enabled: false, secret: 's' });
-    expect((await t.db.select().from(translations).where(eq(translations.spaceId, space.id))).map(it => it.key).sort()).toEqual(['bye', 'greeting']);
+    expect((await t.db.select().from(webhooks).where(eq(webhooks.spaceId, space.id)))[0]).toMatchObject({
+      enabled: false,
+      secret: `whsec_${Buffer.from('s').toString('base64')}`,
+    });
+    expect((await t.db.select().from(translations).where(eq(translations.spaceId, space.id))).map(it => it.key).sort()).toEqual([
+      'bye',
+      'greeting',
+    ]);
     expect((await t.db.select().from(schemas).where(eq(schemas.spaceId, space.id)))[0].name).toBe('page');
 
     const rows = await t.db.select().from(assets).where(eq(assets.spaceId, space.id));
@@ -127,8 +167,15 @@ describe('Firebase import run', () => {
     const file = rows.find(it => it.legacyId === 'a1')!;
     expect(photos.parentId).toBeNull();
     expect(folder.parentId).toBe(photos.id);
-    expect(file).toMatchObject({ id: expect.stringMatching(UUID_V7), parentId: folder.id, md5: createHash('md5').update(photo).digest('base64') });
-    expect(rows.find(it => it.legacyId === 'a2')!.parentId).toBeNull();
+    expect(file).toMatchObject({
+      id: expect.stringMatching(UUID_V7),
+      parentId: folder.id,
+      md5: createHash('md5').update(photo).digest('base64'),
+      // Stored by its Firebase name and extension, made safe; set for a file Firebase had no bytes for, too.
+      originalName: 'photo.jpg',
+    });
+    expect(rows.find(it => it.legacyId === 'a2')).toMatchObject({ parentId: null, originalName: 'missing.jpg' });
+    expect(photos.originalName).toBeNull();
     const served = await t.request({ method: 'GET', url: `/api/v1/spaces/${space.id}/assets/${file.id}/original` });
     expect(served.rawPayload.equals(photo)).toBe(true);
 
@@ -144,11 +191,16 @@ describe('Firebase import run', () => {
     expect(post.publishedAt).toBeNull();
     // Rewriting its references is not an edit: it keeps the date it had in Firebase.
     expect(post.updatedAt).toEqual(new Date('2025-02-15T00:00:00.000Z'));
-    expect(post.data).toMatchObject({ hero: { kind: 'ASSET', uri: file.id }, next: { kind: 'LINK', type: 'content', uri: home.id }, lost: { kind: 'REFERENCE', uri: 'deleted' } });
+    expect(post.data).toMatchObject({
+      hero: { kind: 'ASSET', uri: file.id },
+      next: { kind: 'LINK', type: 'content', uri: home.id },
+      lost: { kind: 'REFERENCE', uri: 'deleted' },
+    });
     expect(post).toMatchObject({ assets: [file.id], links: [home.id], references: ['deleted'] });
 
     const warnings = run.stages.flatMap(it => it.warnings ?? []).join('\n');
     expect(warnings).toMatch(/missing: no file/); // a2 has no file in Firebase
+    expect(warnings).toMatch(/Site: signed; regenerate its secret/);
     expect(warnings).toMatch(/missing: parent folder 'gone' not found, imported at the root/);
     expect(warnings).toMatch(/home: data is not valid JSON/);
     expect(warnings).toMatch(/blog\/post: no content 'deleted'/);
@@ -159,11 +211,17 @@ describe('Firebase import run', () => {
     const paged = await fakeFirebase([{ ...site, id: 'fbPaged' }], { pageSize: 1 });
     const id = newUuid();
     await t.db.insert(firebaseImports).values({
-      id, origin: paged.url, sourceSpaceId: 'fbPaged', sourceSpaceName: 'Site', status: 'RUNNING',
+      id,
+      origin: paged.url,
+      sourceSpaceId: 'fbPaged',
+      sourceSpaceName: 'Site',
+      status: 'RUNNING',
       stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
       startedBy: { name: 'Admin', email: 'admin@example.com' },
     });
-    await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(paged.url, 'migration-secret', { allowInternal: true }), 'fbPaged');
+    await t.app
+      .get(FirebaseImportRunner)
+      .execute(id, new FirebaseClient(paged.url, 'migration-secret', { allowInternal: true }), 'fbPaged');
     await paged.close();
     const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
     expect(run.status).toBe('FINISHED');
@@ -180,7 +238,7 @@ describe('Firebase import run', () => {
     expect(run.status).toBe('FINISHED');
     expect(run.stages.every(it => it.status === 'DONE')).toBe(true);
     expect(run.stages.find(it => it.stage === 'contents')!.count).toBe(0);
-    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({ locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
   });
 
@@ -199,11 +257,17 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: odd.url, sourceSpaceId: 'fbValues', sourceSpaceName: 'Values', status: 'RUNNING',
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbValues',
+        sourceSpaceName: 'Values',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
-      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbValues');
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbValues');
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const sid = run.spaceId!;
@@ -253,11 +317,17 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: odd.url, sourceSpaceId: 'fbFields', sourceSpaceName: 'Fields', status: 'RUNNING',
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbFields',
+        sourceSpaceName: 'Fields',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
-      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbFields');
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbFields');
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, run.spaceId!)).orderBy(schemas.name);
@@ -285,19 +355,43 @@ describe('Firebase import run', () => {
         doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
         schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT' }] }],
         contents: [
-          { id: 'c1', kind: 'DOCUMENT', name: 'First', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{"_id":"r1","_schema":"page"}' },
-          { id: 'c2', kind: 'DOCUMENT', name: 'Second', slug: 'post', parentSlug: '', fullSlug: 'post', schema: 'page', data: '{"_id":"r2","_schema":"page"}' },
+          {
+            id: 'c1',
+            kind: 'DOCUMENT',
+            name: 'First',
+            slug: 'post',
+            parentSlug: '',
+            fullSlug: 'post',
+            schema: 'page',
+            data: '{"_id":"r1","_schema":"page"}',
+          },
+          {
+            id: 'c2',
+            kind: 'DOCUMENT',
+            name: 'Second',
+            slug: 'post',
+            parentSlug: '',
+            fullSlug: 'post',
+            schema: 'page',
+            data: '{"_id":"r2","_schema":"page"}',
+          },
         ],
       },
     ]);
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: twice.url, sourceSpaceId: 'fbTwice', sourceSpaceName: 'Twice', status: 'RUNNING',
+        id,
+        origin: twice.url,
+        sourceSpaceId: 'fbTwice',
+        sourceSpaceName: 'Twice',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
-      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(twice.url, 'migration-secret', { allowInternal: true }), 'fbTwice');
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(twice.url, 'migration-secret', { allowInternal: true }), 'fbTwice');
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const rows = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
@@ -326,11 +420,17 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: loop.url, sourceSpaceId: 'fbLoop', sourceSpaceName: 'Loop', status: 'RUNNING',
+        id,
+        origin: loop.url,
+        sourceSpaceId: 'fbLoop',
+        sourceSpaceName: 'Loop',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
-      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(loop.url, 'migration-secret', { allowInternal: true }), 'fbLoop');
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(loop.url, 'migration-secret', { allowInternal: true }), 'fbLoop');
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const rows = await t.db.select().from(contents).where(eq(contents.spaceId, run.spaceId!));
@@ -339,7 +439,9 @@ describe('Firebase import run', () => {
       // The first one keeps its parent; the one that would close the loop goes to the root.
       expect(x.parentId).toBe(y.id);
       expect(y.parentId).toBeNull();
-      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual(["y: parent folder 'x' would make a cycle, imported at the root"]);
+      expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual([
+        "y: parent folder 'x' would make a cycle, imported at the root",
+      ]);
     } finally {
       await loop.close();
     }
@@ -362,11 +464,17 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: loop.url, sourceSpaceId: 'fbAssetLoop', sourceSpaceName: 'Asset loop', status: 'RUNNING',
+        id,
+        origin: loop.url,
+        sourceSpaceId: 'fbAssetLoop',
+        sourceSpaceName: 'Asset loop',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
-      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(loop.url, 'migration-secret', { allowInternal: true }), 'fbAssetLoop');
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(loop.url, 'migration-secret', { allowInternal: true }), 'fbAssetLoop');
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const rows = await t.db.select().from(assets).where(eq(assets.spaceId, run.spaceId!));
@@ -375,7 +483,9 @@ describe('Firebase import run', () => {
       expect(p.parentId).toBeNull();
       expect(q.parentId).toBe(p.id);
       expect(rows.find(it => it.name === 'X')!.parentId).toBe(p.id);
-      expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual(["P: parent folder 'q' would make a cycle, imported at the root"]);
+      expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual([
+        "P: parent folder 'q' would make a cycle, imported at the root",
+      ]);
     } finally {
       await loop.close();
     }
@@ -413,7 +523,11 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: odd.url, sourceSpaceId: 'fbData', sourceSpaceName: 'Data', status: 'RUNNING',
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbData',
+        sourceSpaceName: 'Data',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
@@ -466,11 +580,17 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: odd.url, sourceSpaceId: 'fbRules', sourceSpaceName: 'Rules', status: 'RUNNING',
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbRules',
+        sourceSpaceName: 'Rules',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
-      await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbRules');
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbRules');
       const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
       expect(run.status).toBe('FINISHED');
       const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, run.spaceId!)).orderBy(schemas.name);
@@ -506,7 +626,11 @@ describe('Firebase import run', () => {
         id: 'fbOdd',
         name: 'Odd',
         doc: {
-          locales: [{ id: 'xx-old', name: 'Old' }, { id: 'fr', name: 'Français' }, { id: 'de', name: 'German' }],
+          locales: [
+            { id: 'xx-old', name: 'Old' },
+            { id: 'fr', name: 'Français' },
+            { id: 'de', name: 'German' },
+          ],
           localeFallback: { id: 'xx-old', name: 'Old' },
           environments: [{ name: 'Ok', url: 'https://ok.example.com' }, { name: 'Broken' }],
           createdAt: '2025-01-01T00:00:00.000Z',
@@ -516,7 +640,11 @@ describe('Firebase import run', () => {
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
-        id, origin: odd.url, sourceSpaceId: 'fbOdd', sourceSpaceName: 'Odd', status: 'RUNNING',
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbOdd',
+        sourceSpaceName: 'Odd',
+        status: 'RUNNING',
         stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
         startedBy: { name: 'Admin', email: 'admin@example.com' },
       });
@@ -527,9 +655,12 @@ describe('Firebase import run', () => {
       expect(stage.count).toBe(2);
       expect(stage.warnings?.join('\n')).toMatch(/xx-old: not a known locale, skipped/);
       expect(stage.warnings?.join('\n')).toMatch(/default locale xx-old skipped; fr is the default/);
-      const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+      const [space] = await readSpaces(t.db, run.spaceId!);
       // Names come from the locales table, not from the Firebase space.
-      expect(space.locales).toEqual([{ id: 'fr', name: 'French' }, { id: 'de', name: 'German' }]);
+      expect(space.locales).toEqual([
+        { id: 'fr', name: 'French' },
+        { id: 'de', name: 'German' },
+      ]);
       expect(space.defaultLocale).toEqual({ id: 'fr', name: 'French' });
       expect(space.environments.map(it => it.name)).toEqual(['Ok']);
       expect(run.stages.find(it => it.stage === 'environments')!.warnings).toEqual(['1 without a name or URL, skipped']);
@@ -542,11 +673,17 @@ describe('Firebase import run', () => {
     const failing = await fakeFirebase([{ ...site, id: 'fbFail' }], { failAfterFiles: 0 });
     const id = newUuid();
     await t.db.insert(firebaseImports).values({
-      id, origin: failing.url, sourceSpaceId: 'fbFail', sourceSpaceName: 'Site', status: 'RUNNING',
+      id,
+      origin: failing.url,
+      sourceSpaceId: 'fbFail',
+      sourceSpaceName: 'Site',
+      status: 'RUNNING',
       stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
       startedBy: { name: 'Admin', email: 'admin@example.com' },
     });
-    await t.app.get(FirebaseImportRunner).execute(id, new FirebaseClient(failing.url, 'migration-secret', { allowInternal: true }), 'fbFail');
+    await t.app
+      .get(FirebaseImportRunner)
+      .execute(id, new FirebaseClient(failing.url, 'migration-secret', { allowInternal: true }), 'fbFail');
     await failing.close();
     const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
     expect(run.status).toBe('FAILED');
@@ -554,7 +691,7 @@ describe('Firebase import run', () => {
     expect(run.stages.find(it => it.stage === 'translations')!.status).toBe('DONE');
     expect(run.stages.find(it => it.stage === 'assets')!.status).toBe('FAILED');
     expect(run.stages.find(it => it.stage === 'contents')!.status).toBe('PENDING');
-    const [space] = await selectSpaces(t.db).where(eq(spaces.id, run.spaceId!));
+    const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({ legacyId: 'fbFail', importStatus: 'FAILED' });
   });
 });

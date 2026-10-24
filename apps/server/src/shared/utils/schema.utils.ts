@@ -1,15 +1,14 @@
 import {
   Schema,
-  SchemaComponent,
+  SCHEMA_PREVIEW_FIELD_KINDS,
   SchemaComponentExport,
-  SchemaEnum,
   SchemaEnumExport,
   SchemaExport,
   SchemaField,
   SchemaFieldKind,
-  SCHEMA_PREVIEW_FIELD_KINDS,
   SchemaType,
 } from '@localess/shared';
+
 import { isLabelsEqual } from './labels.utils.js';
 import { stableStringify } from './stable-json.js';
 
@@ -22,7 +21,9 @@ export function fieldRefersTo(field: SchemaField, name: string): boolean {
 
 /** One problem of a reference: the schema it names is missing, or of another type than the field needs. */
 function referenceProblem(target: string, types: ReadonlyMap<string, SchemaType>, wanted: SchemaType): string {
-  return types.has(target) ? `'${target}', which is not ${wanted === SchemaType.ENUM ? 'an' : 'a'} ${wanted} schema` : `'${target}', which does not exist`;
+  return types.has(target)
+    ? `'${target}', which is not ${wanted === SchemaType.ENUM ? 'an' : 'a'} ${wanted} schema`
+    : `'${target}', which does not exist`;
 }
 
 /** The problems of one field's references: blocks (`schemas`) must be NODE schemas, options (`source`) an ENUM. */
@@ -33,7 +34,12 @@ export function fieldReferenceProblems(field: SchemaField, types: ReadonlyMap<st
       .map(it => ({ target: it, problem: `field '${field.name}' allows ${referenceProblem(it, types, SchemaType.NODE)}` }));
   }
   if ((field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) && types.get(field.source) !== SchemaType.ENUM) {
-    return [{ target: field.source, problem: `field '${field.name}' takes its options from ${referenceProblem(field.source, types, SchemaType.ENUM)}` }];
+    return [
+      {
+        target: field.source,
+        problem: `field '${field.name}' takes its options from ${referenceProblem(field.source, types, SchemaType.ENUM)}`,
+      },
+    ];
   }
   return [];
 }
@@ -43,7 +49,8 @@ export function previewFieldProblem(previewField: string | undefined | null, fie
   if (!previewField) return undefined;
   const field = fields.find(it => it.name === previewField);
   if (!field) return `preview field '${previewField}' is not a field of the schema`;
-  if (!SCHEMA_PREVIEW_FIELD_KINDS.includes(field.kind)) return `preview field '${previewField}' is a ${field.kind} field, which can not be a preview`;
+  if (!SCHEMA_PREVIEW_FIELD_KINDS.includes(field.kind))
+    return `preview field '${previewField}' is a ${field.kind} field, which can not be a preview`;
   return undefined;
 }
 
@@ -52,10 +59,15 @@ export function previewFieldProblem(previewField: string | undefined | null, fie
  * field names unique (case-sensitive), the preview one of its fields of a previewable kind, blocks (`schemas`) NODE
  * schemas, options (`source`) an ENUM. Answers the problems, empty when there are none.
  */
-export function checkSchemaFields(schema: { previewField?: string | null; fields?: SchemaField[] | null }, types: ReadonlyMap<string, SchemaType>): string[] {
+export function checkSchemaFields(
+  schema: { previewField?: string | null; fields?: SchemaField[] | null },
+  types: ReadonlyMap<string, SchemaType>,
+): string[] {
   const fields = schema.fields ?? [];
   const names = fields.map(it => it.name);
-  const problems = [...new Set(names.filter((name, index) => names.indexOf(name) !== index))].map(name => `field '${name}' is defined more than once`);
+  const problems = [...new Set(names.filter((name, index) => names.indexOf(name) !== index))].map(
+    name => `field '${name}' is defined more than once`,
+  );
   const preview = previewFieldProblem(schema.previewField, fields);
   if (preview) problems.push(preview);
   for (const field of fields) problems.push(...fieldReferenceProblems(field, types).map(it => it.problem));
@@ -66,7 +78,8 @@ export function checkSchemaFields(schema: { previewField?: string | null; fields
 export function schemaReferences(fields: SchemaField[]): Map<string, SchemaType> {
   const references = new Map<string, SchemaType>();
   for (const field of fields) {
-    if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS) for (const it of field.schemas ?? []) references.set(it, SchemaType.NODE);
+    if (field.kind === SchemaFieldKind.SCHEMA || field.kind === SchemaFieldKind.SCHEMAS)
+      for (const it of field.schemas ?? []) references.set(it, SchemaType.NODE);
     if (field.kind === SchemaFieldKind.OPTION || field.kind === SchemaFieldKind.OPTIONS) references.set(field.source, SchemaType.ENUM);
   }
   return references;
@@ -97,21 +110,19 @@ export interface SchemaPushPlan {
  */
 export function docSchemaToExport(id: string, schema: Schema): SchemaExport {
   if (schema.type === SchemaType.ENUM) {
-    const enumSchema = schema as SchemaEnum;
-    const out: SchemaEnumExport = { id, type: enumSchema.type };
-    if (enumSchema.displayName) out.displayName = enumSchema.displayName;
-    if (enumSchema.description) out.description = enumSchema.description;
-    if (enumSchema.labels) out.labels = enumSchema.labels;
-    if (enumSchema.values) out.values = enumSchema.values;
+    const out: SchemaEnumExport = { id, type: schema.type };
+    if (schema.displayName) out.displayName = schema.displayName;
+    if (schema.description) out.description = schema.description;
+    if (schema.labels) out.labels = schema.labels;
+    if (schema.values) out.values = schema.values;
     return out;
   }
-  const component = schema as SchemaComponent;
-  const out: SchemaComponentExport = { id, type: component.type };
-  if (component.displayName) out.displayName = component.displayName;
-  if (component.description) out.description = component.description;
-  if (component.labels) out.labels = component.labels;
-  if (component.previewField) out.previewField = component.previewField;
-  if (component.fields) out.fields = component.fields;
+  const out: SchemaComponentExport = { id, type: schema.type };
+  if (schema.displayName) out.displayName = schema.displayName;
+  if (schema.description) out.description = schema.description;
+  if (schema.labels) out.labels = schema.labels;
+  if (schema.previewField) out.previewField = schema.previewField;
+  if (schema.fields) out.fields = schema.fields;
   return out;
 }
 
@@ -133,15 +144,11 @@ export function isSchemaChanged(existing: Schema, imported: SchemaExport): boole
     (existing.type === SchemaType.ROOT || existing.type === SchemaType.NODE) &&
     (imported.type === SchemaType.ROOT || imported.type === SchemaType.NODE)
   ) {
-    const e = existing as SchemaComponent;
-    const i = imported as SchemaComponentExport;
-    if ((e.previewField ?? undefined) !== (i.previewField ?? undefined)) return true;
-    if (stableStringify(e.fields ?? []) !== stableStringify(i.fields ?? [])) return true;
+    if ((existing.previewField ?? undefined) !== (imported.previewField ?? undefined)) return true;
+    if (stableStringify(existing.fields ?? []) !== stableStringify(imported.fields ?? [])) return true;
   }
   if (existing.type === SchemaType.ENUM && imported.type === SchemaType.ENUM) {
-    const e = existing as SchemaEnum;
-    const i = imported as SchemaEnumExport;
-    if (stableStringify(e.values ?? []) !== stableStringify(i.values ?? [])) return true;
+    if (stableStringify(existing.values ?? []) !== stableStringify(imported.values ?? [])) return true;
   }
   return false;
 }
@@ -172,7 +179,7 @@ export function planSchemaPush(existing: Map<string, Schema>, incoming: SchemaEx
     }
     for (const schema of incoming) {
       if (schema.type === SchemaType.ENUM) continue;
-      for (const field of (schema as SchemaComponentExport).fields ?? []) {
+      for (const field of schema.fields ?? []) {
         for (const name of deletes.filter(it => fieldRefersTo(field, it))) {
           errors.push(`Cannot delete schema '${name}': still referenced by '${schema.id}' field '${field.name}'`);
         }

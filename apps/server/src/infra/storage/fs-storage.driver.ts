@@ -4,6 +4,7 @@ import { mkdir, readdir, readFile, rename, rm, stat, unlink } from 'node:fs/prom
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+
 import { ByteRange, StorageDriver, StoredObjectInfo } from './storage.driver.js';
 
 const isMissing = (error: unknown) => (error as NodeJS.ErrnoException)?.code === 'ENOENT';

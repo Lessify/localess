@@ -3,11 +3,11 @@ import { DatePipe, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { UnsplashService } from '@core/services/unsplash.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
+import { UnsplashPhoto, UnsplashSearch } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideMonitor, lucideSearch, lucideSmartphone, lucideSquare } from '@ng-icons/lucide';
-import { UnsplashPhoto } from '@shared/models/unsplash-plugin.model';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
@@ -46,7 +46,7 @@ import { UnsplashAssetsSelectDialogContext, UnsplashAssetsSelectDialogResult } f
   providers: [provideIcons({ lucideSearch, lucideSquare, lucideMonitor, lucideSmartphone })],
 })
 export class UnsplashAssetsSelectDialogComponent implements OnInit {
-  private readonly unsplashPluginService = inject(UnsplashPluginService);
+  private readonly unsplashService = inject(UnsplashService);
   readonly fe = inject(FormErrorHandlerService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly dialogRef = inject<BrnDialogRef<UnsplashAssetsSelectDialogResult>>(BrnDialogRef);
@@ -62,7 +62,12 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
   currentPage = signal<number>(1);
   showLoadMore = signal<boolean>(false);
 
-  orientation = signal<'landscape' | 'portrait' | 'squarish' | undefined>(undefined);
+  orientation = signal<UnsplashSearch['orientation']>(undefined);
+
+  /** The single-choice toggle group: one orientation, or none (cleared). */
+  onOrientationChange(value: 'landscape' | 'portrait' | 'squarish' | ('landscape' | 'portrait' | 'squarish')[] | null | undefined): void {
+    this.orientation.set(Array.isArray(value) ? value[0] : (value ?? undefined));
+  }
 
   selection = new SelectionModel<UnsplashPhoto>(this.context.multiple, [], undefined, (o1, o2) => o1.id === o2.id);
   // Subscriptions
@@ -73,7 +78,7 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
   settingsStore = inject(LocalSettingsStore);
 
   ngOnInit(): void {
-    this.unsplashPluginService
+    this.unsplashService
       .random()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -89,7 +94,7 @@ export class UnsplashAssetsSelectDialogComponent implements OnInit {
   search(searchTerm: string, page?: number | undefined): void {
     if (searchTerm.length < 1) return;
     this.isLoading.set(true);
-    this.unsplashPluginService
+    this.unsplashService
       .search({ query: searchTerm, orientation: this.orientation(), page: page })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({

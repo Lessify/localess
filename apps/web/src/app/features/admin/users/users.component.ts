@@ -1,22 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  DestroyRef,
-  inject,
-  Injector,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
 import { UserStore } from '@core/stores/user.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { User } from '@localess/shared';
+import { PagedList } from '@core/utils/paged-list';
+import { OAuthProvider, User } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCheck,
@@ -41,23 +30,23 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
+import { roleLabel } from '@shared/models/user-role.model';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { of } from 'rxjs';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { EMPTY, of } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
 import { UserService } from './user.service';
+import { UserAddDialogComponent } from './user-add-dialog/user-add-dialog.component';
+import { UserAddDialogResult } from './user-add-dialog/user-add-dialog.model';
 import { UserDialogComponent } from './user-dialog/user-dialog.component';
 import { UserDialogContext, UserDialogResult } from './user-dialog/user-dialog.model';
-import { UserInviteDialogComponent } from './user-invite-dialog/user-invite-dialog.component';
-import { UserInviteDialogResult } from './user-invite-dialog/user-invite-dialog.model';
-import { canManageUser } from './user-management';
 
 @Component({
   selector: 'll-users',
@@ -93,7 +82,7 @@ import { canManageUser } from './user-management';
     }),
   ],
 })
-export class UsersComponent implements OnInit, AfterViewInit {
+export class UsersComponent implements OnInit {
   private readonly dialog = inject(HlmDialogService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly notificationService = inject(NotificationService);
@@ -101,13 +90,16 @@ export class UsersComponent implements OnInit, AfterViewInit {
   private readonly injector = inject(Injector);
   private readonly userStore = inject(UserStore);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
+  /** The page shown: paged, sorted and filtered on the server (`GET /api/app/users`). */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly users = signal<User[]>([]);
   readonly dataSource = new TableDataSource<User>(this.users, this.injector);
-  displayedColumns: string[] = ['email', 'name', 'active', 'providers', 'role', 'createdAt', 'updatedAt', 'actions'];
+  /** How an OAuth login is named in the Sign-in column. */
+  protected readonly loginLabel = (provider: OAuthProvider): string => (provider === 'google' ? 'Google' : 'Microsoft');
+
+  displayedColumns: string[] = ['email', 'name', 'active', 'signIn', 'role', 'createdAt', 'updatedAt', 'actions'];
 
   readonly filters: FilterDef[] = [
     {
@@ -124,61 +116,66 @@ export class UsersComponent implements OnInit, AfterViewInit {
   private destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<User>({
-      searchFields: user => [user.email, user.displayName],
-      filterFields: [{ key: 'active', accessor: user => (user.disabled ? 'inactive' : 'active') }],
-    });
     this.loadData();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
-  }
+  /** Admin → Users is for admins only (the route and the server): every user may be managed. */
+  protected readonly roleLabel = roleLabel;
 
-  /** Whether the signed-in user may edit or delete `element` - the same limits the server enforces. */
-  canManage(element: User): boolean {
-    return canManageUser({ id: this.userStore.id(), role: this.userStore.role(), permissions: this.userStore.permissions() }, element);
-  }
-
+  /** The search box (email or display name) and the Active filter, on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+    const active = value['active'];
+    this.list.setFilters({ search: value.search?.trim() || undefined, active: typeof active === 'string' ? active : undefined });
   }
 
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
+  }
+
+  /**
+   * The current query's page, again whenever the query changes or a user does (live). A failed load is told and
+   * ends only that request: the next query change (page, sort, search) fetches again.
+   */
   loadData(): void {
-    this.userService
-      .findAll()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: users => {
-          this.users.set(users);
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
-        error: () => {
-          this.notificationService.error('Users can not be loaded.');
-          this.isLoading.set(false);
-          this.cd.markForCheck();
-        },
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params =>
+          this.userService.findAll(params).pipe(
+            catchError(() => {
+              this.notificationService.error('Users can not be loaded.');
+              this.isLoading.set(false);
+              this.cd.markForCheck();
+              return EMPTY;
+            }),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        this.users.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
+        this.isLoading.set(false);
+        this.cd.markForCheck();
       });
   }
 
-  inviteDialog(): void {
+  openAddDialog(): void {
     this.dialog
-      .open<UserInviteDialogResult>(UserInviteDialogComponent, {
+      .open<UserAddDialogResult>(UserAddDialogComponent, {
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
         take(1),
         filter(it => it !== undefined),
-        switchMap(it => this.userService.invite(it!)),
+        switchMap(it => this.userService.create(it!)),
       )
       .subscribe({
         next: () => {
-          this.notificationService.success('User has been invited.');
+          this.notificationService.success('User has been added.');
         },
         error: () => {
-          this.notificationService.error('User can not be invited.');
+          this.notificationService.error('User can not be added.');
         },
       });
   }
@@ -186,11 +183,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
   openEditDialog(element: User): void {
     this.dialog
       .open<UserDialogResult, UserDialogContext>(UserDialogComponent, {
-        context: {
-          role: element.role,
-          permissions: element.permissions,
-          lock: element.lock,
-        },
+        context: { role: element.role },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
@@ -222,7 +215,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.userService.delete(element.id)),
+        switchMap(() => this.userService.remove(element.id)),
       )
       .subscribe({
         next: () => {
@@ -234,9 +227,9 @@ export class UsersComponent implements OnInit, AfterViewInit {
       });
   }
 
-  /** Disable/Enable is offered on everyone you may manage except yourself (the server refuses that too). */
+  /** Disable/Enable is offered on everyone except yourself (the server refuses that too). */
   canChangeStatus(element: User): boolean {
-    return element.id !== this.userStore.id() && this.canManage(element);
+    return element.id !== this.userStore.id();
   }
 
   /** Disabling asks first: it signs the user out at once. Enabling just lets them sign in again. */
@@ -257,7 +250,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
             filter(it => it || false),
           )
       : of(true);
-    confirmed$.pipe(switchMap(() => this.userService.setDisabled(element.id, disabled))).subscribe({
+    confirmed$.pipe(switchMap(() => this.userService.updateStatus(element.id, { disabled }))).subscribe({
       next: () => {
         this.notificationService.success(
           disabled
@@ -273,7 +266,7 @@ export class UsersComponent implements OnInit, AfterViewInit {
 
   copyPasswordResetLink(element: User): void {
     this.userService
-      .passwordResetLink(element.id)
+      .createPasswordResetLink(element.id)
       .pipe(switchMap(({ url }) => navigator.clipboard.writeText(url)))
       .subscribe({
         next: () => {

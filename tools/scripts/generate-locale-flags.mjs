@@ -59,7 +59,9 @@ export function collectFlags(flagsDir = FLAGS_DIR) {
     countriesByHash.set(hash, [...(countriesByHash.get(hash) ?? []), region]);
   }
   const identicalPairs = languages
-    .flatMap(language => (countriesByHash.get(hashOf(join(flagsDir, 'language', `${language}.svg`))) ?? []).map(region => `${language}-${region}`))
+    .flatMap(language =>
+      (countriesByHash.get(hashOf(join(flagsDir, 'language', `${language}.svg`))) ?? []).map(region => `${language}-${region}`),
+    )
     .sort();
   return { languages, countries, identicalPairs };
 }

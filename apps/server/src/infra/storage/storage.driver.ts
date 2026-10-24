@@ -16,7 +16,7 @@ export interface ByteRange {
 
 /**
  * Binary object storage (was the default Cloud Storage bucket). Keys keep the Firebase layout,
- * e.g. `spaces/{spaceId}/assets/{assetId}/original`. Only binaries live here; published JSON moved
+ * e.g. `spaces/{spaceId}/assets/{assetId}/{original_name}`. Only binaries live here; published JSON moved
  * into Postgres.
  */
 export interface StorageDriver {

@@ -2,6 +2,10 @@
   <h2 hlmDialogTitle>Translations Export</h2>
 </hlm-dialog-header>
 <form [formGroup]="form" class="flex flex-col gap-4">
+  <p class="text-muted-foreground text-sm">
+    All translations go into a Localess file (keys, every locale, descriptions and labels) to import into another space. One locale
+    downloads at once as <code>{{ '{' }} "key": "value" {{ '}' }}</code> JSON, for a translator or a tool.
+  </p>
   <div hlmField>
     <label hlmFieldLabel for="kind">Type</label>
     <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
@@ -16,7 +20,7 @@
     </hlm-select>
   </div>
 
-  @if (form.value.kind === 'FLAT') {
+  @if (form.value.kind === 'LOCALE') {
     <div hlmField>
       <label hlmFieldLabel for="locale">Locale</label>
       <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">

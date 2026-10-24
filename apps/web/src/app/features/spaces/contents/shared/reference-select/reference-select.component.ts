@@ -1,10 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { ContentService } from '@core/services/content.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { Content, ContentDocument, SchemaFieldKind, SchemaFieldReference, Space } from '@localess/shared';
+import { SpaceStore } from '@core/stores/space.store';
+import { ContentDocument, SchemaFieldKind, SchemaFieldReference, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_XL } from '@shared/components/dialog/dialog-width';
@@ -49,7 +49,7 @@ import { ReferencesSelectDialogComponent, ReferencesSelectDialogContext } from '
 export class ReferenceSelectComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(HlmDialogService);
-  private readonly contentService = inject(ContentService);
+  private readonly spaceStore = inject(SpaceStore);
 
   // Input
   form = input.required<FormGroup>();
@@ -58,7 +58,13 @@ export class ReferenceSelectComponent implements OnInit {
   /** Shared, non-translatable value viewed outside the default locale: shown, but not editable. */
   locked = input(false);
 
-  content = signal<Content | undefined>(undefined);
+  /** The id picked (the form's value). */
+  readonly id = signal<string | undefined>(undefined);
+  /** The document picked, from `SpaceStore` (live); `undefined` when none, or gone from the space. */
+  readonly content = computed(() => {
+    const id = this.id();
+    return id ? this.spaceStore.contentById().get(id) : undefined;
+  });
 
   // Settings
   settingsStore = inject(LocalSettingsStore);
@@ -67,18 +73,7 @@ export class ReferenceSelectComponent implements OnInit {
     if (this.form().value.kind === null) {
       this.form().patchValue({ kind: SchemaFieldKind.REFERENCE });
     }
-    this.loadData();
-  }
-
-  loadData(): void {
-    const id: string | undefined = this.form().value.uri;
-    if (id) {
-      this.contentService.findById(this.space().id, id).subscribe({
-        next: content => {
-          this.content.set(content);
-        },
-      });
-    }
+    this.id.set(this.form().value.uri || undefined);
   }
 
   openReferenceSelectDialog(): void {
@@ -94,7 +89,7 @@ export class ReferenceSelectComponent implements OnInit {
       .subscribe({
         next: selectedDocuments => {
           if (selectedDocuments && selectedDocuments.length > 0) {
-            this.content.set(selectedDocuments[0]);
+            this.id.set(selectedDocuments[0].id);
             this.form().patchValue({
               uri: selectedDocuments[0].id,
               kind: SchemaFieldKind.REFERENCE,
@@ -105,7 +100,7 @@ export class ReferenceSelectComponent implements OnInit {
   }
 
   deleteReference() {
-    this.content.set(undefined);
+    this.id.set(undefined);
     this.form().controls['uri'].setValue(null);
   }
 }

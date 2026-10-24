@@ -2,10 +2,10 @@ import { eq } from 'drizzle-orm';
 import type { LightMyRequestResponse } from 'fastify';
 import { OAuth2Server } from 'oauth2-mock-server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
 import { userIdentities, users } from '../src/infra/database/schema.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
 import { freePort } from './free-port.js';
-import { createTestApp, sessionCookie, TestApp } from './test-app.js';
+import { createTestApp, createUser, sessionCookie, TestApp } from './test-app.js';
 
 const ORIGIN = 'http://localess.test';
 
@@ -66,9 +66,8 @@ describe('OAuth sign-in', () => {
 
     beforeAll(async () => {
       t = await appFor();
-      const service = t.app.get(UsersService);
-      await service.create({ email: 'Alice@Example.com', role: 'CUSTOM', permissions: ['CONTENT_READ'] });
-      await service.create({ email: 'blocked@example.com', role: 'CUSTOM' });
+      await createUser(t, { email: 'Alice@Example.com', role: 'VIEWER' });
+      await createUser(t, { email: 'blocked@example.com', role: 'VIEWER' });
       await t.db.update(users).set({ disabled: true }).where(eq(users.email, 'blocked@example.com'));
     });
 
@@ -91,7 +90,12 @@ describe('OAuth sign-in', () => {
       expect(response.headers.location).toBe('/features/spaces');
 
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'Alice@Example.com', role: 'CUSTOM', providers: ['google.com'] });
+      expect(me.json().user).toMatchObject({
+        email: 'Alice@Example.com',
+        role: 'VIEWER',
+        hasPassword: false,
+        identities: [{ provider: 'google', createdAt: expect.any(String) }],
+      });
       expect(await t.db.select().from(userIdentities)).toEqual([
         expect.objectContaining({ provider: 'google', providerSubject: 'google-sub-1' }),
       ]);
@@ -117,13 +121,14 @@ describe('OAuth sign-in', () => {
       expect((await signIn(t)).headers.location).toBe('/auth/login?error=email-not-verified');
     });
 
-    it('refuses disabled accounts', async () => {
+    it('refuses disabled accounts, and links no identity to them', async () => {
       claims = { sub: 'blocked-sub', email: 'blocked@example.com', email_verified: true };
       expect((await signIn(t)).headers.location).toBe('/auth/login?error=disabled');
+      expect(await t.db.select().from(userIdentities).where(eq(userIdentities.providerSubject, 'blocked-sub'))).toEqual([]);
     });
 
     it('never links by a Microsoft email the directory did not verify', async () => {
-      await t.app.get(UsersService).create({ email: 'bob@contoso.com', role: 'CUSTOM' });
+      await createUser(t, { email: 'bob@contoso.com', role: 'VIEWER' });
       claims = { sub: 'ms-impostor', preferred_username: 'bob@contoso.com' };
       expect((await signIn(t, 'microsoft')).headers.location).toBe('/auth/login?error=email-not-verified');
       claims = { sub: 'ms-impostor', email: 'bob@contoso.com' };
@@ -137,7 +142,11 @@ describe('OAuth sign-in', () => {
       const response = await signIn(t, 'microsoft');
       expect(response.headers.location).toBe('/features');
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'bob@contoso.com', providers: ['microsoft.com'] });
+      expect(me.json().user).toMatchObject({
+        email: 'bob@contoso.com',
+        hasPassword: false,
+        identities: [{ provider: 'microsoft', createdAt: expect.any(String) }],
+      });
 
       // Already linked: the stored identity decides, so a token without the optional claims still signs in.
       claims = { sub: 'ms-sub-1', preferred_username: 'bob@contoso.com' };
@@ -190,7 +199,11 @@ describe('OAuth sign-in', () => {
       claims = { sub: 'ms-new', email: 'carol@contoso.com', xms_edov: true, name: 'Carol' };
       const response = await signIn(t, 'microsoft');
       const me = await t.request({ method: 'GET', url: '/api/auth/me', headers: { cookie: sessionCookie(response) } });
-      expect(me.json().user).toMatchObject({ email: 'carol@contoso.com', providers: ['microsoft.com'] });
+      expect(me.json().user).toMatchObject({
+        email: 'carol@contoso.com',
+        hasPassword: false,
+        identities: [{ provider: 'microsoft', createdAt: expect.any(String) }],
+      });
     });
   });
 
@@ -218,7 +231,8 @@ describe('OAuth sign-in', () => {
         email: 'alice@example.com',
         displayName: 'Alice',
         emailVerified: true,
-        providers: ['google.com'],
+        hasPassword: false,
+        identities: [{ provider: 'google', createdAt: expect.any(String) }],
       });
       expect(me.json().user).not.toHaveProperty('role');
     });

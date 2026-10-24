@@ -1,5 +1,6 @@
 import { Controller, Get, Inject } from '@nestjs/common';
 import type { Pool } from 'pg';
+
 import { Public } from '../../auth/decorators.js';
 import { PG_POOL } from '../database/database.module.js';
 

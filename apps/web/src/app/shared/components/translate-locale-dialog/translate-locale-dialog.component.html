@@ -5,8 +5,8 @@
   <div hlmFieldGroup class="w-full">
     <div hlmField>
       <label hlmFieldLabel for="sourceLocale">Source Locale</label>
-      <hlm-select id="sourceLocale" formControlName="sourceLocale" [itemToString]="localeItemToString">
-        <hlm-select-trigger class="w-full">
+      <hlm-select formControlName="sourceLocale" [itemToString]="localeItemToString">
+        <hlm-select-trigger class="w-full" buttonId="sourceLocale">
           <ng-template hlmSelectValueTemplate let-value>
             <div class="flex items-center">
               <ll-locale-icon class="mr-2" [locale]="value" [defaultLocale]="context.defaultLocale?.id" />
@@ -26,8 +26,8 @@
     </div>
     <div hlmField>
       <label hlmFieldLabel for="targetLocale">Target Locale</label>
-      <hlm-select id="targetLocale" formControlName="targetLocale" [itemToString]="localeItemToString">
-        <hlm-select-trigger class="w-full">
+      <hlm-select formControlName="targetLocale" [itemToString]="localeItemToString">
+        <hlm-select-trigger class="w-full" buttonId="targetLocale">
           <ng-template hlmSelectValueTemplate let-value>
             <div class="flex items-center">
               <ll-locale-icon class="mr-2" [locale]="value" [defaultLocale]="context.defaultLocale?.id" />

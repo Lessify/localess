@@ -15,6 +15,8 @@ A root `vitest-base.config.ts` sets **`test.isolate: true`**. The Angular builde
 
 The server (`apps/server/`) has its own suite: `pnpm server:test` (Vitest against a real embedded Postgres; see [apps/server/README.md](../apps/server/README.md)).
 
+End-to-end tests (`apps/e2e/`, Playwright) drive the production build in Chromium (and the CDN / Management APIs over HTTP) against the built server on a fresh embedded Postgres: `pnpm e2e:install` once, then `pnpm e2e` (builds first, what CI runs), `pnpm e2e:run` (existing builds) or `pnpm e2e:smoke` (critical path). Every UI test also fails on any app error (uncaught, or reported to the `ErrorHandler`). Setup and conventions: [apps/e2e/README.md](../apps/e2e/README.md); what is covered and planned: [apps/e2e/TEST-PLAN.md](../apps/e2e/TEST-PLAN.md).
+
 ## Test scope
 
 **No coverage configuration exists** — not in `angular.json`, `vitest-base.config.ts` or `package.json` (`@vitest/coverage-v8` is installed as a devDependency but nothing wires it up). There are no specs under `packages/ui/**`: it's the Spartan/Helm component library (Brain headless primitives + Helm styling layer, 44+ components) — largely unmodified UI building blocks, not app logic. If a `packages/ui` component needs verification, exercise it indirectly through the feature component that uses it. Specs live under `apps/web/src/app/**`.

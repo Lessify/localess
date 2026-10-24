@@ -1,19 +1,13 @@
-import { type ContentDocumentStorage, SchemaFieldKind, TokenType } from '@localess/shared';
 import { createHash } from 'node:crypto';
-import {
-  assets,
-  contents,
-  contentSnapshots,
-  schemas,
-  tokens,
-  translationSnapshots,
-  translations,
-} from '../src/infra/database/schema.js';
-import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { C, S1 } from './ids.js';
+
+import { type ContentDocumentStorage, SchemaFieldKind, TokenType } from '@localess/shared';
+
 import { newUuid } from '../src/infra/database/id.js';
-import { insertSpace, type TestApp } from './test-app.js';
+import { assets, contents, contentSnapshots, schemas, tokens, translations, translationSnapshots } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { newApiToken, tokenColumns } from '../src/shared/utils/api-token-format.js';
+import { C, S1 } from './ids.js';
+import { insertSpace, type TestApp } from './test-app.js';
 
 export const TOKEN_PUBLIC = newApiToken(TokenType.PUBLIC);
 /** Preview, default redirect TTL: reads published and drafts. */
@@ -40,13 +34,15 @@ const at = new Date('2026-01-01T00:00:00Z');
 /** A space `s1` (en fallback, de) with one token per type and cache setting. */
 export async function seedSpace(t: TestApp, spaceId = S1): Promise<void> {
   await insertSpace(t.db, { id: spaceId, name: 'Space', locales: [en, de], defaultLocale: en });
-  await t.db.insert(tokens).values([
-    tokenRow(spaceId, TokenType.PREVIEW, TOKEN_READ, 'read'),
-    tokenRow(spaceId, TokenType.PUBLIC, TOKEN_PUBLIC, 'public'),
-    tokenRow(spaceId, TokenType.PREVIEW, TOKEN_DRAFT, 'draft', 30),
-    tokenRow(spaceId, TokenType.MANAGEMENT, TOKEN_MANAGEMENT, 'management'),
-    tokenRow(spaceId, TokenType.PUBLIC, TOKEN_NO_CACHE, 'no cache', 0),
-  ]);
+  await t.db
+    .insert(tokens)
+    .values([
+      tokenRow(spaceId, TokenType.PREVIEW, TOKEN_READ, 'read'),
+      tokenRow(spaceId, TokenType.PUBLIC, TOKEN_PUBLIC, 'public'),
+      tokenRow(spaceId, TokenType.PREVIEW, TOKEN_DRAFT, 'draft', 30),
+      tokenRow(spaceId, TokenType.MANAGEMENT, TOKEN_MANAGEMENT, 'management'),
+      tokenRow(spaceId, TokenType.PUBLIC, TOKEN_NO_CACHE, 'no cache', 0),
+    ]);
 }
 
 /**
@@ -172,6 +168,7 @@ export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): P
     spaceId,
     kind: 'FILE',
     name: 'photo',
+    originalName: `photo${asset.extension}`,
     extension: asset.extension,
     type: asset.type,
     size: asset.bytes?.length ?? 0,
@@ -180,7 +177,7 @@ export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): P
     alt: 'A photo',
   });
   if (asset.bytes && !asset.storageMissing) {
-    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/${asset.id}/original`, asset.bytes);
+    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/${asset.id}/photo${asset.extension}`, asset.bytes);
   }
   return md5 ?? '';
 }

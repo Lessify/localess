@@ -44,7 +44,16 @@ describe('EditFieldComponent', () => {
 
   it('counts empty optional texts as 0 characters, never NaN (a new field has none of them)', () => {
     const { host, fixture } = setup();
-    host.form.set(new FormBuilder().group({ name: ['title'], kind: [''], displayName: [null], required: [false], description: [null], defaultValue: [null] }));
+    host.form.set(
+      new FormBuilder().group({
+        name: ['title'],
+        kind: [''],
+        displayName: [null],
+        required: [false],
+        description: [null],
+        defaultValue: [null],
+      }),
+    );
     fixture.detectChanges();
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -140,6 +149,16 @@ describe('EditFieldComponent', () => {
       expect(schemas.valid).toBe(true);
     });
   });
+
+  it.each([SchemaFieldKind.SCHEMA, SchemaFieldKind.SCHEMAS])(
+    '%s starts its allowed schemas as an empty list, so the multi-select can add to it',
+    kind => {
+      const { editField } = setup();
+      editField.selectFieldKind(kind);
+
+      expect(editField.form().controls['schemas'].value).toEqual([]);
+    },
+  );
 
   describe('nodeSchemas / enumSchemas', () => {
     it('filters to NODE type schemas, sorted', () => {

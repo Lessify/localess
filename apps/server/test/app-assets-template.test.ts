@@ -1,0 +1,119 @@
+import { readdir } from 'node:fs/promises';
+import { join } from 'node:path';
+
+import { and, count, eq, like } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { assets, contents, spaces, storageDeletions } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
+import { SpaceService } from '../src/modules/spaces/services/space.service.js';
+import { ASSETS_LARGE_TEMPLATE } from '../src/modules/spaces/templates/index.js';
+import { AssetMetadataService } from '../src/shared/services/asset-metadata.service.js';
+import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
+import { orphansOf, storedAssetDirs } from './orphans.js';
+import { api, createTestApp, insertsByTable, statementsDuring, TestApp, userWithAccess } from './test-app.js';
+
+// One app in this file: image metadata is read by a process-wide exiftool, which closing an app ends.
+
+describe('app API: the large assets template (assets_large)', () => {
+  let t: TestApp;
+  let admin: ReturnType<typeof api>;
+
+  beforeAll(async () => {
+    t = await createTestApp({ LOCALESS_TEST_TEMPLATES: 'true' });
+    admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
+  });
+
+  afterAll(() => t?.close());
+
+  const rows = async () => ({
+    spaces: (await t.db.select({ n: count() }).from(spaces))[0].n,
+    assets: (await t.db.select({ n: count() }).from(assets))[0].n,
+    contents: (await t.db.select({ n: count() }).from(contents))[0].n,
+  });
+
+  it('creates 1,000 files in Bulk in one request, the rows and upload guards in chunks', async ({ annotate }) => {
+    const started = Date.now();
+    const { result: response, statements } = await statementsDuring(() =>
+      admin.post('/api/app/spaces', { name: 'Assets', template: 'assets_large' }),
+    );
+    expect(response.statusCode, response.body).toBe(201);
+    // How the rows are written, not how fast this machine is: 1,003 asset rows and their upload guards in chunks of
+    // 1,000 (one statement per file took 8.1 s).
+    expect(insertsByTable(statements)).toMatchObject({ assets: 2, storage_deletions: 2 });
+    expect(statements.length).toBeLessThan(50);
+    await annotate(`created in ${Date.now() - started} ms, ${statements.length} statements`);
+    const space = response.json();
+
+    const base = `/api/app/spaces/${space.id}/assets`;
+    const root = (await admin.get(base)).json<{ items: { id: string; name: string }[] }>().items;
+    expect(root.map(it => it.name)).toEqual(['Bulk', 'Empty', 'Nested']);
+    const bulk = `${base}?parentId=${root[0].id}`;
+    type Files = { total: number; items: { name: string; type: string; size: number; metadata?: Record<string, unknown> }[] };
+    const files = async (query: string) => (await admin.get(`${bulk}&${query}`)).json<Files>();
+    expect((await files('kind=FILE')).total).toBe(1_000);
+    expect((await files('kind=FILE&fileType=IMAGE')).total).toBe(100);
+    expect((await files('search=file-0010')).items[0]?.metadata).toMatchObject({ width: 16, height: 16 });
+    expect((await files('search=file-0999')).items[0]).toMatchObject({ type: 'text/plain', size: 999 });
+    expect(await storedAssetDirs(t, space.id)).toHaveLength(1_002);
+    expect(await orphansOf(t, space.id)).toEqual([]);
+  });
+
+  it('declares for its images exactly the metadata an upload of the same file gets (read by AssetMetadataService)', async () => {
+    const response = await admin.post('/api/app/spaces', { name: 'Metadata', template: 'assets_large' });
+    expect(response.statusCode, response.body).toBe(201);
+    const spaceId = response.json().id;
+    const [image] = await t.db
+      .select({ id: assets.id, originalName: assets.originalName, metadata: assets.metadata })
+      .from(assets)
+      .where(and(eq(assets.spaceId, spaceId), eq(assets.name, 'file-0010')));
+    const read = await t.app
+      .get(AssetMetadataService)
+      .extract(`spaces/${spaceId}/assets/${image.id}/${image.originalName}`, 'image/png', null);
+    expect(read.metadata).toBeDefined();
+    expect(image.metadata).toEqual(read.metadata);
+  });
+
+  it('leaves no file behind when one store fails while others in its batch are still writing', async () => {
+    const storage = t.app.get<StorageDriver>(STORAGE_DRIVER);
+    const put = storage.put.bind(storage);
+    let calls = 0;
+    // The 5th store fails at once; the others of the batch finish later, after the failure is known.
+    storage.put = async (key, data) => {
+      calls++;
+      if (calls === 5) throw new Error('disk full');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return put(key, data);
+    };
+    try {
+      await expect(t.app.get(SpaceService).createFromTemplate('Failing', ASSETS_LARGE_TEMPLATE)).rejects.toThrow('disk full');
+    } finally {
+      storage.put = put;
+    }
+    // Long enough for every delayed store of the batch to have landed.
+    await new Promise(resolve => setTimeout(resolve, 600));
+    await t.app.get(StorageSweeperService).whenIdle();
+    const spaceIds = new Set((await t.db.select({ id: spaces.id }).from(spaces)).map(it => it.id));
+    const strays = (await readdir(join(t.storageDir, 'spaces')).catch(() => [])).filter(it => !spaceIds.has(it));
+    // Either nothing is left, or what is left is still guarded (the sweeper removes it when the guard expires).
+    const guarded = new Set((await t.db.select().from(storageDeletions)).map(it => it.spaceId));
+    expect(strays.filter(it => !guarded.has(it))).toEqual([]);
+  });
+
+  it('rolls back and removes every stored file when the create fails', async () => {
+    const before = await rows();
+    const broken = {
+      ...ASSETS_LARGE_TEMPLATE,
+      contents: [
+        ...ASSETS_LARGE_TEMPLATE.contents!,
+        { key: 'bad', kind: 'DOCUMENT' as const, name: 'Bad', slug: 'bad', parent: 'nope', schema: 'gallery' },
+      ],
+    };
+    await expect(t.app.get(SpaceService).createFromTemplate('Broken', broken)).rejects.toThrow('Unknown template key: nope');
+    expect(await rows()).toEqual(before);
+    await t.app.get(StorageSweeperService).whenIdle();
+    const spaceIds = new Set((await t.db.select({ id: spaces.id }).from(spaces)).map(it => it.id));
+    expect((await readdir(join(t.storageDir, 'spaces')).catch(() => [])).filter(it => !spaceIds.has(it))).toEqual([]);
+    expect(await t.db.select().from(storageDeletions).where(like(storageDeletions.prefix, 'spaces/%'))).toEqual([]);
+  });
+});

@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Translation } from '@localess/shared';
+import { Page, Translation, TranslationNode } from '@localess/shared';
 import { TranslationService } from './translation.service';
 
 const BASE = '/api/app/spaces/space-1/translations';
@@ -28,43 +28,40 @@ describe('TranslationService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the space translations', async () => {
+  const page = (items: Translation[], total = items.length): Page<Translation> => ({ items, page: 0, size: 50, total });
+  const params = new HttpParams().set('page', 0).set('size', 50).set('search', 'home');
+
+  it('findAll() reads one page with the given query, once', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(BASE).flush([{ id: 'hello' }]);
-    expect(await result).toEqual([{ id: 'hello' }]);
+    const result = firstValueFrom(service.findAll('space-1', params));
+    http.expectOne(`${BASE}?page=0&size=50&search=home`).flush(page([{ id: 'hello' } as Translation]));
+    expect(await result).toEqual(page([{ id: 'hello' } as Translation]));
   });
 
-  it('findAll() refetches when a translation of the space changes, ignoring other entities', async () => {
-    vi.useFakeTimers();
+  it('findNodes() reads one level of the tree once', async () => {
     const service = setup();
-    const results: Translation[][] = [];
-    const subscription = service.findAll('space-1').subscribe(it => results.push(it));
-    http.expectOne(BASE).flush([]);
-
-    events.next({ spaceId: 'space-1', entity: 'schemas', id: 's', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(BASE);
-
-    events.next({ spaceId: 'space-1', entity: 'translations', id: 'hello', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(BASE).flush([{ id: 'hello' } as Translation]);
-    expect(results).toEqual([[], [{ id: 'hello' }]]);
-    subscription.unsubscribe();
+    const result = firstValueFrom(service.findNodes('space-1', new HttpParams().set('parent', 'home')));
+    const nodes: Page<TranslationNode> = { items: [{ name: 'title', path: 'home.title', children: 0 }], page: 0, size: 100, total: 1 };
+    http.expectOne(`${BASE}/nodes?parent=home`).flush(nodes);
+    expect(await result).toEqual(nodes);
   });
 
-  it('countAll() maps the count response to a number', async () => {
+  it('findLabels() reads the labels of the space', async () => {
     const service = setup();
-    const result = firstValueFrom(service.countAll('space-1'));
-    http.expectOne(`${BASE}/count`).flush({ count: 7 });
-    expect(await result).toBe(7);
+    const result = firstValueFrom(service.findLabels('space-1'));
+    http.expectOne(`${BASE}/labels`).flush(['cta', 'form']);
+    expect(await result).toEqual(['cta', 'form']);
   });
 
-  it('findById() reads one translation', async () => {
+  it('isKeyTaken() asks for that exact key, one row at most', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 'hello'));
-    http.expectOne(`${BASE}/hello`).flush({ id: 'hello' });
-    expect(await result).toEqual({ id: 'hello' });
+    const taken = firstValueFrom(service.isKeyTaken('space-1', 'home.title'));
+    http.expectOne(`${BASE}?key=home.title&size=1`).flush(page([{ id: 'x' } as Translation]));
+    expect(await taken).toBe(true);
+
+    const free = firstValueFrom(service.isKeyTaken('space-1', 'home.new'));
+    http.expectOne(`${BASE}?key=home.new&size=1`).flush(page([], 0));
+    expect(await free).toBe(false);
   });
 
   it('create() posts the translation with its values as they are, dropping empty labels/description', async () => {
@@ -91,9 +88,9 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('updateKey() renames on the server, addressing the translation by id', async () => {
+  it('rename() renames on the server, addressing the translation by id', async () => {
     const service = setup();
-    const done = firstValueFrom(service.updateKey('space-1', { id: 'uuid-1', key: 'old' } as Translation, 'new'));
+    const done = firstValueFrom(service.rename('space-1', { id: 'uuid-1', key: 'old' } as Translation, 'new'));
     const request = http.expectOne({ method: 'PUT', url: `${BASE}/uuid-1/key` });
     expect(request.request.body).toEqual({ key: 'new' });
     request.flush({});
@@ -109,13 +106,13 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('delete() and deleteAll() delete one or all translations', async () => {
+  it('remove() and removeAll() delete one or all translations', async () => {
     const service = setup();
-    const one = firstValueFrom(service.delete('space-1', 'hello'));
+    const one = firstValueFrom(service.remove('space-1', 'hello'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/hello` }).flush(null);
     await one;
 
-    const all = firstValueFrom(service.deleteAll('space-1'));
+    const all = firstValueFrom(service.removeAll('space-1'));
     http.expectOne({ method: 'DELETE', url: BASE }).flush(null);
     await all;
   });
@@ -127,12 +124,8 @@ describe('TranslationService', () => {
     await done;
   });
 
-  it('translateLocale() posts source, target and overwrite (default false)', async () => {
+  it('exportLocaleUrl() is the key-value download of one locale (no request: saveAs opens it)', () => {
     const service = setup();
-    const done = firstValueFrom(service.translateLocale('space-1', 'en', 'de'));
-    const request = http.expectOne({ method: 'POST', url: `${BASE}/translate-locale` });
-    expect(request.request.body).toEqual({ sourceLocaleId: 'en', targetLocaleId: 'de', overwrite: false });
-    request.flush({});
-    await done;
+    expect(service.exportLocaleUrl('space-1', 'de')).toBe(`${BASE}/export/de`);
   });
 });

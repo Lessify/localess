@@ -1,15 +1,19 @@
 import { createServer, IncomingMessage, Server } from 'node:http';
 import { AddressInfo } from 'node:net';
-import { and, eq } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { TRANSLATION_VALUE_MAX_LENGTH, TokenType } from '@localess/shared';
-import { newApiToken } from '../src/shared/utils/api-token-format.js';
-import { tokenRow } from './seed.js';
-import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
-import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
-import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
-import { S1, UUID_V7 } from './ids.js';
+
+import { TokenType, TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
+import { and, eq, like } from 'drizzle-orm';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { newUuid } from '../src/infra/database/id.js';
+import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
+import { TaskWorker } from '../src/modules/tasks/workers/task-worker.service.js';
+import { TranslateService } from '../src/shared/services/translate.service.js';
+import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
+import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { S1, UUID_V7 } from './ids.js';
+import { tokenRow } from './seed.js';
+import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 /** A local HTTP server recording requests and answering with `respond`. */
 async function fakeServer(respond: (request: IncomingMessage) => { status: number; body: unknown; headers?: Record<string, string> }) {
@@ -43,7 +47,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
   beforeAll(async () => {
     hooks = await fakeServer(() => ({ status: 204, body: '' }));
     unsplash = await fakeServer(request => ({
-      status: 200,
+      status: request.url?.includes('query=refused') ? 401 : 200,
       body: request.url?.startsWith('/search') ? { total: 1, results: [{ id: 'p1' }] } : [{ id: 'r1' }],
       headers: { 'X-RateLimit-Limit': '50', 'X-RateLimit-Remaining': '49' },
     }));
@@ -62,31 +66,22 @@ describe('app API: translations, machine translation, Unsplash', () => {
       ],
       defaultLocale: { id: 'en', name: 'English' },
     });
-    await t.db
-      .insert(tokens)
-      .values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
-    await t.db
-      .insert(webhooks)
-      .values({ id: newUuid(), spaceId: S1, name: 'h', url: `${hooks.url}/hook`, events: ['translation.changed', 'translation.published'], enabled: true });
+    await t.db.insert(tokens).values(tokenRow(S1, TokenType.PREVIEW, TOKEN, 't'));
+    await t.db.insert(webhooks).values({
+      id: newUuid(),
+      spaceId: S1,
+      name: 'h',
+      url: `${hooks.url}/hook`,
+      events: ['translation.changed', 'translation.published'],
+      enabled: true,
+    });
     editor = api(
       t,
       await userWithAccess(t, 'editor@example.com', {
-        role: 'CUSTOM',
-        permissions: [
-          'TRANSLATION_READ',
-          'TRANSLATION_CREATE',
-          'TRANSLATION_UPDATE',
-          'TRANSLATION_DELETE',
-          'TRANSLATION_PUBLISH',
-          'CONTENT_UPDATE',
-          'ASSET_CREATE',
-        ],
+        role: 'EDITOR',
       }),
     );
-    reader = api(
-      t,
-      await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ', 'TRANSLATION_UPDATE'] }),
-    );
+    reader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'TRANSLATOR' }));
   });
 
   afterAll(async () => {
@@ -149,7 +144,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       const refused = await editor.post(base, { key: 'stray', locales: { en: 'Hi', fr: 'Salut' } });
       expect(refused.statusCode).toBe(400);
       expect(refused.json().message).toMatch(/fr/);
-      expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).not.toContain('stray');
+      expect((await reader.get(base)).json().items.map((it: { key: string }) => it.key)).not.toContain('stray');
 
       expect((await editor.put(`${url('home.title')}/locales/fr`, { value: 'Bienvenue' })).statusCode).toBe(400);
       expect((await stored('home.title')).locales).toEqual({ en: 'Welcome' });
@@ -190,9 +185,8 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await stored('hero.title')).locales).toEqual({ en: 'Welcome' });
     });
 
-    it('lists by key and counts', async () => {
-      expect((await reader.get(base)).json().map((it: { key: string }) => it.key)).toEqual(['hero.title', 'taken']);
-      expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 2 });
+    it('lists by key', async () => {
+      expect((await reader.get(base)).json().items.map((it: { key: string }) => it.key)).toEqual(['hero.title', 'taken']);
     });
   });
 
@@ -205,7 +199,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect(await events()).toEqual(['translation.published']);
 
       const redirect = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/translations/de?token=${TOKEN}` });
-      const published = await t.request({ method: 'GET', url: redirect.headers.location as string });
+      const published = await t.request({ method: 'GET', url: redirect.headers.location });
       expect(published.json()).toEqual({ 'hero.title': 'Welcome', taken: 'genommen' });
     });
 
@@ -215,28 +209,120 @@ describe('app API: translations, machine translation, Unsplash', () => {
   });
 
   describe('machine translation (stub provider)', () => {
-    it('translates a locale: only keys missing the target, unless overwrite', async () => {
-      const response = await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de' });
-      expect(response.json()).toEqual({ translated: 1, failed: 0 });
+    const tasksBase = `/api/app/spaces/${S1}/tasks`;
+    /** Starts a translate-locale task and waits for its end. */
+    const translateLocale = async (user: ReturnType<typeof api>, params: object) => {
+      const created = await user.post(tasksBase, { kind: 'TRANSLATION_TRANSLATE', params: { type: 'translation-translate', ...params } });
+      expect(created.statusCode, created.body).toBe(201);
+      await t.app.get(TaskWorker).whenIdle();
+      const task = (await user.get(`${tasksBase}/${created.json().id}`)).json();
+      // What it did is in its logs: the counts line, and a WARN line per key the provider failed on.
+      const lines = (await user.get(`${tasksBase}/${task.id}/logs`)).json<{ level: string; message: string }[]>();
+      const numbers =
+        lines
+          .find(it => / created · /.test(it.message))
+          ?.message.match(/\d+/g)
+          ?.map(Number) ?? [];
+      const counts = { created: numbers[0], updated: numbers[1], unchanged: numbers[2], skipped: numbers[3] };
+      const problems = lines.filter(it => it.level === 'WARN').map(it => it.message);
+      return { ...task, counts, problems };
+    };
+
+    it('translates a locale as a task: only keys missing the target, unless overwrite', async () => {
+      expect(await translateLocale(editor, { sourceLocale: 'en', targetLocale: 'de' })).toMatchObject({
+        status: 'FINISHED',
+        params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de', overwrite: false },
+        counts: { created: 0, updated: 1, unchanged: 0, skipped: 0 },
+      });
       expect((await stored('hero.title')).locales.de).toBe('Welcome : en -> de');
       expect((await stored('taken')).locales.de).toBe('genommen');
+      expect((await events()).filter(it => it === 'translation.changed')).toHaveLength(1);
 
-      expect(
-        (await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de', overwrite: true })).json(),
-      ).toEqual({
-        translated: 2,
-        failed: 0,
+      expect((await translateLocale(editor, { sourceLocale: 'en', targetLocale: 'de', overwrite: true })).counts).toMatchObject({
+        updated: 2,
+        skipped: 0,
       });
       expect((await stored('taken')).locales.de).toBe('x : en -> de');
     });
 
-    it("translates only between the space's locales", async () => {
-      expect((await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'fr' })).statusCode).toBe(400);
-      expect((await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'fr', targetLocaleId: 'de' })).statusCode).toBe(400);
+    it('a translator may start it, and follow it', async () => {
+      expect(await translateLocale(reader, { sourceLocale: 'en', targetLocale: 'de' })).toMatchObject({ status: 'FINISHED' });
+    });
+
+    it('keys the provider failed on are skipped and listed, the rest written', async () => {
+      const service = t.app.get(TranslateService);
+      const spy = vi.spyOn(service, 'translateItems').mockImplementation(async items => ({
+        items: items.slice(1).map(it => ({ id: it.id, content: `${it.content} (spied)` })),
+        failed: items.slice(0, 1).map(it => ({ id: it.id, reason: 'quota' })),
+      }));
+      const task = await translateLocale(editor, { sourceLocale: 'en', targetLocale: 'de', overwrite: true });
+      spy.mockRestore();
+      expect(task).toMatchObject({ status: 'FINISHED', counts: { updated: 1, skipped: 1 } });
+      expect(task.problems).toEqual([expect.stringMatching(/^[\w.]+: quota$/)]);
+    });
+
+    it('without overwrite, keeps a target value typed while the task runs', async () => {
+      await t.db.insert(translations).values({ id: newUuid(), spaceId: S1, key: 'typed.meanwhile', locales: { en: 'Typed' } });
+      const service = t.app.get(TranslateService);
+      const original = service.translateItems.bind(service);
+      const spy = vi.spyOn(service, 'translateItems').mockImplementation(async (...args) => {
+        await t.db
+          .update(translations)
+          .set({ locales: { en: 'Typed', de: 'Von Hand' } })
+          .where(and(eq(translations.spaceId, S1), eq(translations.key, 'typed.meanwhile')));
+        return original(...args);
+      });
+      await translateLocale(editor, { sourceLocale: 'en', targetLocale: 'de' });
+      spy.mockRestore();
+      expect((await stored('typed.meanwhile')).locales.de).toBe('Von Hand');
+    });
+
+    it('keeps its log lines in the order written: 100 problem lines, then the end', async () => {
+      await t.db
+        .insert(translations)
+        .values(Array.from({ length: 150 }, (_, i) => ({ id: newUuid(), spaceId: S1, key: `order.k${i}`, locales: { en: `v${i}` } })));
+      const service = t.app.get(TranslateService);
+      const spy = vi.spyOn(service, 'translateItems').mockImplementation(async items => ({
+        items: [],
+        failed: items.map(it => ({ id: it.id, reason: 'quota' })),
+      }));
+      const created = await editor.post(tasksBase, {
+        kind: 'TRANSLATION_TRANSLATE',
+        params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de', overwrite: true },
+      });
+      await t.app.get(TaskWorker).whenIdle();
+      spy.mockRestore();
+      const lines = (await editor.get(`${tasksBase}/${created.json().id}/logs`)).json<{ level: string; message: string }[]>();
+      expect(lines.filter(it => it.level === 'WARN')).toHaveLength(100);
+      expect(lines.at(-1)?.message).toBe('Task finished successfully');
+      const firstWarn = lines.findIndex(it => it.level === 'WARN');
+      expect(lines.slice(firstWarn, firstWarn + 100).every(it => it.level === 'WARN')).toBe(true);
+      await t.db.delete(translations).where(and(eq(translations.spaceId, S1), like(translations.key, 'order.%')));
+    });
+
+    it("translates only between the space's locales, refused when it is created", async () => {
+      expect(
+        (
+          await editor.post(tasksBase, {
+            kind: 'TRANSLATION_TRANSLATE',
+            params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'fr' },
+          })
+        ).statusCode,
+      ).toBe(400);
+      const unknown = await editor.post(tasksBase, {
+        kind: 'TRANSLATION_TRANSLATE',
+        params: { type: 'translation-translate', sourceLocale: 'fr', targetLocale: 'de' },
+      });
+      expect(unknown.statusCode).toBe(400);
+      expect(unknown.json().message).toBe('Locale fr is not in the space locales.');
       expect((await stored('taken')).locales).not.toHaveProperty('fr');
     });
 
-    it('translates single strings and batches for editors with both permissions', async () => {
+    it('the old endpoint is gone', async () => {
+      expect((await editor.post(`${base}/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de' })).statusCode).toBe(404);
+    });
+
+    it('translates single strings and batches for translators and up, not for a viewer', async () => {
       expect(
         (await editor.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: '<p>Hi</p>', format: 'html' })).json(),
       ).toEqual({
@@ -248,34 +334,68 @@ describe('app API: translations, machine translation, Unsplash', () => {
         items: [{ id: 'a', content: 'One : en -> de' }],
         failed: [],
       });
-      // TRANSLATION_UPDATE alone is not enough: the callable required CONTENT_UPDATE too.
-      expect((await reader.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(403);
+      expect((await reader.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(200);
+      const viewer = api(t, await userWithAccess(t, 'viewer@example.com', { role: 'VIEWER' }));
+      expect((await viewer.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' })).statusCode).toBe(403);
     });
   });
 
   describe('Unsplash', () => {
     it('proxies search and random with the server-side key, passing rate limits through', async () => {
       const search = await editor.get('/api/app/plugins/unsplash/search?query=cats&perPage=5&orientation=landscape');
-      expect(search.json()).toEqual({ limit: '50', remaining: '49', total: 1, results: [{ id: 'p1' }] });
+      expect(search.json()).toEqual({ limit: 50, remaining: 49, total: 1, results: [{ id: 'p1' }] });
       const request = unsplash.requests.at(-1)!;
       expect(request.headers.authorization).toBe('Client-ID unsplash-key');
       expect(new URL(request.url, unsplash.url).searchParams.get('orientation')).toBe('landscape');
       expect((await editor.get('/api/app/plugins/unsplash/random')).json()).toEqual({
-        limit: '50',
-        remaining: '49',
+        limit: 50,
+        remaining: 49,
         results: [{ id: 'r1' }],
       });
       expect((await reader.get('/api/app/plugins/unsplash/random')).statusCode).toBe(403);
     });
+
+    it('refuses a search without a query (400) and answers 424 when Unsplash refuses the key', async () => {
+      expect((await editor.get('/api/app/plugins/unsplash/search')).statusCode).toBe(400);
+      expect((await editor.get('/api/app/plugins/unsplash/search?orientation=round&query=cats')).statusCode).toBe(400);
+      const refused = await editor.get('/api/app/plugins/unsplash/search?query=refused');
+      expect(refused.statusCode).toBe(424);
+      expect(refused.json()).toMatchObject({ message: 'Unsplash API Key is not configured properly.' });
+    });
+  });
+
+  describe('key-value export', () => {
+    it("downloads one locale's draft values by key, without the keys that have none", async () => {
+      await t.db.insert(translations).values([
+        { id: newUuid(), spaceId: S1, key: 'kv.zeta', locales: { en: 'Z', de: 'Zett' } },
+        { id: newUuid(), spaceId: S1, key: 'kv.alpha', locales: { en: 'A' } },
+      ]);
+      const response = await editor.get(`${base}/export/de`);
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['content-disposition']).toMatch(/attachment; filename="s-de.json"/);
+      expect(response.headers['cache-control']).toBe('private, no-store');
+      const values = response.json<Record<string, string>>();
+      expect(values['kv.zeta']).toBe('Zett');
+      expect(values).not.toHaveProperty('kv.alpha');
+      expect(Object.keys(values)).toEqual([...Object.keys(values)].sort((a, b) => (Buffer.from(a) < Buffer.from(b) ? -1 : 1)));
+    });
+
+    it('is for content writers, and only for a locale of the space', async () => {
+      expect((await reader.get(`${base}/export/de`)).statusCode).toBe(403);
+      const unknown = await editor.get(`${base}/export/fr`);
+      expect(unknown.statusCode).toBe(400);
+      expect(unknown.json().message).toBe('Locale fr is not in the space locales.');
+      expect((await editor.get(`/api/app/spaces/${newUuid()}/translations/export/de`)).statusCode).toBe(404);
+    });
   });
 
   describe('deleting', () => {
-    it('deletes one key, or all keys with SPACE_MANAGEMENT', async () => {
+    it('deletes one key, or all keys as a developer', async () => {
       expect((await editor.delete(url('taken'))).statusCode).toBe(204);
       expect((await editor.delete(base)).statusCode).toBe(403);
       const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
       expect((await admin.delete(base)).statusCode).toBe(204);
-      expect((await reader.get(`${base}/count`)).json()).toEqual({ count: 0 });
+      expect((await reader.get(base)).json()).toMatchObject({ items: [], total: 0 });
     });
   });
 });
@@ -300,14 +420,18 @@ describe('app API: without a translation provider or Unsplash key', () => {
 
   it('answers 412 with an explanation, so the UI can tell the user why', async () => {
     const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
-    expect((await admin.get('/api/app/translate/status')).json()).toEqual({ enabled: false, provider: 'none' });
+    expect((await admin.get('/api/config')).json().translate).toEqual({ enabled: false });
+    expect((await admin.get('/api/app/translate/status')).statusCode).toBe(404);
     const single = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' });
     expect(single.statusCode).toBe(412);
     expect(single.json().message).toMatch(/not configured on this environment/);
     const batch = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', items: [{ id: 'a', content: 'x' }] });
     expect(batch.statusCode).toBe(412);
     // Even with nothing to translate: the user learns translation is unavailable, not "0 translated".
-    const locale = await admin.post(`/api/app/spaces/${S1}/translations/translate-locale`, { sourceLocaleId: 'en', targetLocaleId: 'de' });
+    const locale = await admin.post(`/api/app/spaces/${S1}/tasks`, {
+      kind: 'TRANSLATION_TRANSLATE',
+      params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de' },
+    });
     expect(locale.statusCode).toBe(412);
     expect((await admin.get('/api/app/plugins/unsplash/random')).statusCode).toBe(501);
   });

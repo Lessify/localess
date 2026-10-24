@@ -1,33 +1,50 @@
+import { ADMINS, CONTENT_WRITERS, DEVELOPERS, hasRole, TRANSLATORS } from '../roles.js';
 import type { Timestamp } from './timestamp.js';
+import type { UserRole } from './user.model.js';
 
 export enum TaskKind {
-  ASSET_EXPORT = 'ASSET_EXPORT',
-  ASSET_IMPORT = 'ASSET_IMPORT',
   ASSET_REGEN_METADATA = 'ASSET_REGEN_METADATA',
-  CONTENT_EXPORT = 'CONTENT_EXPORT',
-  CONTENT_IMPORT = 'CONTENT_IMPORT',
   SCHEMA_EXPORT = 'SCHEMA_EXPORT',
   SCHEMA_IMPORT = 'SCHEMA_IMPORT',
   TRANSLATION_EXPORT = 'TRANSLATION_EXPORT',
   TRANSLATION_IMPORT = 'TRANSLATION_IMPORT',
+  TRANSLATION_TRANSLATE = 'TRANSLATION_TRANSLATE',
+}
+
+/** Who may start, read and delete a task of each kind (the server checks it; the web shows only these kinds). */
+export const TASK_KIND_ROLES: Record<TaskKind, readonly UserRole[]> = {
+  [TaskKind.ASSET_REGEN_METADATA]: ADMINS,
+  [TaskKind.SCHEMA_EXPORT]: DEVELOPERS,
+  [TaskKind.SCHEMA_IMPORT]: DEVELOPERS,
+  [TaskKind.TRANSLATION_EXPORT]: CONTENT_WRITERS,
+  [TaskKind.TRANSLATION_IMPORT]: CONTENT_WRITERS,
+  [TaskKind.TRANSLATION_TRANSLATE]: TRANSLATORS,
+};
+
+/** The kinds `user` may start (and so read), sorted. */
+export function taskKindsFor(user: { role?: UserRole | null } | null | undefined): TaskKind[] {
+  return Object.values(TaskKind)
+    .filter(kind => hasRole(user, TASK_KIND_ROLES[kind]))
+    .sort();
 }
 
 export enum TaskStatus {
-  INITIATED = 'INITIATED',
+  /** Waiting in the queue: no instance has picked it up yet. */
+  QUEUED = 'QUEUED',
   IN_PROGRESS = 'IN_PROGRESS',
   ERROR = 'ERROR',
   FINISHED = 'FINISHED',
 }
+
+/** The field the Tasks page may sort by: newest first by default. Request schemas: `task.zod.ts`. */
+export const TASK_SORT_FIELDS = ['createdAt'] as const;
+export type TaskSortField = (typeof TASK_SORT_FIELDS)[number];
 
 export enum TaskLogLevel {
   INFO = 'INFO',
   WARN = 'WARN',
   ERROR = 'ERROR',
 }
-
-/** Translation import formats: the whole file (`full`), or one locale as a flat or nested JSON map. */
-export const TRANSLATION_IMPORT_FORMATS = ['full', 'flat-json', 'nested-json'] as const;
-export type TranslationImportFormat = (typeof TRANSLATION_IMPORT_FORMATS)[number];
 
 export interface TaskLog {
   id: string;
@@ -37,191 +54,122 @@ export interface TaskLog {
   createdAt: Timestamp;
 }
 
+/** A task's file: the upload of an import, or what an export produced. */
 export interface TaskFile {
   name: string;
   size: number;
 }
 
+/** What a running task is doing: its step (`Reading file`, `Checking`, `Writing`, …) and how far it got. Sent in events. */
+export interface TaskProgress {
+  step: string;
+  done: number;
+  /** Absent while unknown (an indeterminate bar). */
+  total?: number;
+}
+
+/** Who started a task. */
+export interface TaskUser {
+  id: string;
+  email: string;
+  displayName?: string;
+}
+
+/**
+ * A task's input, discriminated by `type` (so the app can switch on it): what a translation import reads, or what a
+ * translate-locale task translates. Nested JSON is not supported yet.
+ */
+export const TASK_PARAMS_TYPES = ['translation-full', 'translation-json-flat', 'translation-translate'] as const;
+export type TaskParamsType = (typeof TASK_PARAMS_TYPES)[number];
+
+/** The types a translation import reads: a `.localess.zip` (or old `.llt.zip`), or one locale as key-value JSON. */
+export const TRANSLATION_IMPORT_TYPES = ['translation-full', 'translation-json-flat'] as const;
+
+/** A translation import of a `.localess.zip` (or an old `.llt.zip`): every locale the file holds. */
+export interface TranslationFullParams {
+  type: 'translation-full';
+}
+
+/** A translation import of one locale from a key-value JSON. */
+export interface TranslationJsonFlatParams {
+  type: 'translation-json-flat';
+  locale: string;
+}
+
+export type TranslationImportParams = TranslationFullParams | TranslationJsonFlatParams;
+
+/** A translate-locale task's input. */
+export interface TranslationTranslateParams {
+  type: 'translation-translate';
+  sourceLocale: string;
+  targetLocale: string;
+  /** Replace target values that already exist instead of filling only the empty ones. */
+  overwrite: boolean;
+}
+
+/** A `tasks` row as the App API answers it. */
 export interface TaskBase {
   id: string;
   kind: TaskKind;
   status: TaskStatus;
-
-  // Error Message
-  message?: string;
-  trace?: string;
-  // Dates
+  /** The export's file, or the uploaded one. */
+  file?: TaskFile;
+  /** Present when the user still exists. */
+  createdBy?: TaskUser;
+  /** When an instance picked it up (the end of the wait). */
+  startedAt?: Timestamp;
+  /** When it ended. */
+  finishedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
-}
-
-export interface TaskAssetExport extends TaskBase {
-  kind: TaskKind.ASSET_EXPORT;
-  // Export Only data under this path
-  path?: string;
-  // Exported file
-  file?: TaskFile;
-}
-
-export interface TaskAssetImport extends TaskBase {
-  kind: TaskKind.ASSET_IMPORT;
-  // Where Import Archive is located temporarily
-  tmpPath: string;
-  file: TaskFile;
 }
 
 export interface TaskAssetRegenMetadata extends TaskBase {
   kind: TaskKind.ASSET_REGEN_METADATA;
 }
 
-export interface TaskContentExport extends TaskBase {
-  kind: TaskKind.CONTENT_EXPORT;
-  // Export Only data under this path
-  path?: string;
-  // Exported file
-  file?: TaskFile;
-}
-
-export interface TaskContentImport extends TaskBase {
-  kind: TaskKind.CONTENT_IMPORT;
-  // Where Import Archive is located temporarily
-  tmpPath: string;
-  file: TaskFile;
-}
-
 export interface TaskSchemaExport extends TaskBase {
   kind: TaskKind.SCHEMA_EXPORT;
-  // Exported file
-  file?: TaskFile;
 }
 
 export interface TaskSchemaImport extends TaskBase {
   kind: TaskKind.SCHEMA_IMPORT;
-  // Where Import Archive is located temporarily
-  tmpPath: string;
-  file: TaskFile;
 }
 
 export interface TaskTranslationExport extends TaskBase {
   kind: TaskKind.TRANSLATION_EXPORT;
-  type: TranslationImportFormat;
-  // Export locale
-  locale?: string;
-  // Exported file
-  file?: TaskFile;
 }
 
 export interface TaskTranslationImport extends TaskBase {
   kind: TaskKind.TRANSLATION_IMPORT;
-  type: TranslationImportFormat;
-  // Imported locale
-  locale?: string;
-  // Where Import Archive is located temporarily
-  tmpPath: string;
-  file: TaskFile;
+  params: TranslationImportParams;
+}
+
+export interface TaskTranslationTranslate extends TaskBase {
+  kind: TaskKind.TRANSLATION_TRANSLATE;
+  params: TranslationTranslateParams;
 }
 
 export type Task =
-  | TaskAssetExport
-  | TaskAssetImport
   | TaskAssetRegenMetadata
-  | TaskContentExport
-  | TaskContentImport
   | TaskSchemaExport
   | TaskSchemaImport
   | TaskTranslationExport
-  | TaskTranslationImport;
+  | TaskTranslationImport
+  | TaskTranslationTranslate;
 
-export type TaskExport = TaskAssetExport | TaskContentExport | TaskSchemaExport | TaskTranslationExport;
+/** The input a task of any kind may carry. */
+export type TaskParams = TranslationImportParams | TranslationTranslateParams;
 
-export type TaskImport = TaskAssetImport | TaskContentImport | TaskSchemaImport | TaskTranslationImport;
+/** The kinds whose task ends with a file to download. */
+export const EXPORT_TASK_KINDS: readonly TaskKind[] = [TaskKind.SCHEMA_EXPORT, TaskKind.TRANSLATION_EXPORT];
 
-// FireStore
+export function isTaskExport(task: Pick<Task, 'kind'>): boolean {
+  return EXPORT_TASK_KINDS.includes(task.kind);
+}
+
+// The legacy (Firebase-era) archive's metadata.json; read only by the import of old files.
 export interface TaskExportMetadata {
   kind: 'ASSET' | 'CONTENT' | 'SCHEMA' | 'TRANSLATION';
   path?: string;
-}
-
-/**
- * Type Guard for Asset Export Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskAssetExport(task: Task): task is TaskAssetExport {
-  return task.kind === TaskKind.ASSET_EXPORT;
-}
-
-/**
- * Type Guard for Asset Import Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskAssetImport(task: Task): task is TaskAssetImport {
-  return task.kind === TaskKind.ASSET_IMPORT;
-}
-
-/**
- * Type Guard for Asset Regenerate Metadata Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskAssetRegenMetadata(task: Task): task is TaskAssetRegenMetadata {
-  return task.kind === TaskKind.ASSET_REGEN_METADATA;
-}
-/**
- * Type Guard for Content Export Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskContentExport(task: Task): task is TaskContentExport {
-  return task.kind === TaskKind.CONTENT_EXPORT;
-}
-/**
- * Type Guard for Content Import Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskContentImport(task: Task): task is TaskContentImport {
-  return task.kind === TaskKind.CONTENT_IMPORT;
-}
-/**
- * Type Guard for Schema Export Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskSchemaExport(task: Task): task is TaskSchemaExport {
-  return task.kind === TaskKind.SCHEMA_EXPORT;
-}
-/**
- * Type Guard for Schema Import Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskSchemaImport(task: Task): task is TaskSchemaImport {
-  return task.kind === TaskKind.SCHEMA_IMPORT;
-}
-/**
- * Type Guard for Translation Export Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskTranslationExport(task: Task): task is TaskTranslationExport {
-  return task.kind === TaskKind.TRANSLATION_EXPORT;
-}
-/**
- * Type Guard for Translation Import Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskTranslationImport(task: Task): task is TaskTranslationImport {
-  return task.kind === TaskKind.TRANSLATION_IMPORT;
-}
-
-/**
- * Type Guard for Export Task
- * @param {Task}task
- * @return {boolean}
- */
-export function isTaskExport(task: Task): task is TaskAssetExport | TaskContentExport | TaskSchemaExport | TaskTranslationExport {
-  return [TaskKind.ASSET_EXPORT, TaskKind.CONTENT_EXPORT, TaskKind.SCHEMA_EXPORT, TaskKind.TRANSLATION_EXPORT].includes(task.kind);
 }

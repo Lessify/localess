@@ -1,0 +1,26 @@
+<fieldset hlmFieldSet>
+  <legend hlmFieldLegend>Role</legend>
+  <p hlmFieldDescription>One role for every space: what the user may do.</p>
+  <hlm-radio-group [formControl]="control()">
+    @for (option of options; track option.key) {
+      <label hlmFieldLabel [for]="option.key">
+        <div hlmField orientation="horizontal">
+          <div hlmFieldContent>
+            <div hlmFieldTitle [id]="option.key + '-title'">
+              <ng-icon hlm size="sm" [name]="option.icon" />
+              {{ option.label }}
+            </div>
+            <div hlmFieldDescription [id]="option.key + '-description'">{{ option.desc }}</div>
+          </div>
+          <hlm-radio
+            [value]="option.id"
+            [inputId]="option.key"
+            [aria-labelledby]="option.key + '-title'"
+            [aria-describedby]="option.key + '-description'">
+            <hlm-radio-indicator indicator />
+          </hlm-radio>
+        </div>
+      </label>
+    }
+  </hlm-radio-group>
+</fieldset>

@@ -1,6 +1,6 @@
 # Frontend Architecture
 
-> Related: [State Management](frontend-state.md) · [User Roles & Permissions](frontend-permissions.md) · [Concepts](concepts.md) · [Spartan UI Migration](spartan-ui-migration.md)
+> Related: [State Management](frontend-state.md) · [User Roles](frontend-permissions.md) · [Concepts](concepts.md) · [Spartan UI Migration](spartan-ui-migration.md)
 
 ## Tech Stack
 
@@ -48,21 +48,21 @@ All authenticated routes live under `/features` and are protected by `authGuard(
   me/                               → profile, account settings
   spaces/:spaceId/
     dashboard                       → DashboardModule
-    translations                    → TranslationsModule  [TRANSLATION_READ]
-    contents                        → ContentsModule      [CONTENT_READ]
-    assets                          → AssetsModule        [ASSET_READ]
-    schemas                         → SchemasModule       [SCHEMA_READ]
-    tasks                           → TasksModule         [any *_EXPORT / *_IMPORT]
-    developers/                     → DevelopersModule (no route guard — see note below)
+    translations                    → TranslationsModule  [ANY_ROLE]
+    contents                        → ContentsModule      [ANY_ROLE]
+    assets                          → AssetsModule        [ANY_ROLE]
+    schemas                         → SchemasModule       [ANY_ROLE]
+    tasks                           → TasksModule         [CONTENT_WRITERS]
+    developers/                     → DevelopersModule    [DEVELOPERS]
       webhooks, webhooks/:webhookId → WebhooksComponent / WebhookDetailComponent
       open-api                      → OpenApiComponent (nested under developers, not a standalone route)
-    settings                        → SettingsModule      [SPACE_MANAGEMENT]
+    settings                        → SettingsModule      [DEVELOPERS]
   admin/
-    users                           → UsersModule         [USER_MANAGEMENT]
-    spaces                          → SpacesModule        [SPACE_MANAGEMENT]
+    users                           → UsersModule         [ADMINS]
+    spaces                          → SpacesModule        [ADMINS]
 ```
 
-Guards in brackets are `permissionGuard(...)` (`core/guards/permission.guard.ts`), reading role and permissions from `UserStore`; the server enforces the same permissions on every `/api/app` call. `spaces/:spaceId/developers` (and its `webhooks`/`open-api` children) has no `canActivate` guard at the route level — access to those sections is only gated client-side via sidebar visibility (see [User Roles & Permissions](frontend-permissions.md)).
+Guards in brackets are `roleGuard(list)` (`core/guards/role.guard.ts`), reading the role from `UserStore`; the server enforces the same lists on every `/api/app` call (`@RequireRole`; see [User Roles](frontend-permissions.md)).
 
 `features/whats-new/` holds the What's New dialog (`WhatsNewDialogComponent` + `whats-new.data.ts`). It is opened from the sidebar in `features.component`, which shows an "unseen" marker while the newest entry's version is newer than `LocalSettingsStore.lastSeenWhatsNewVersion`.
 
@@ -98,6 +98,16 @@ A custom `IMAGE_LOADER` is registered in `app.config.ts` that automatically appe
 // → becomes: /api/v1/.../assets/...?w=400&thumbnail=true
 ```
 
+Lists, grids and Asset fields don't use it: they show the platform thumbnail, one fixed file per asset (a plain `src`,
+no `srcset`), so every screen shares the copy in the browser cache:
+
+```html
+<img src="/api/app/spaces/{{ spaceId }}/assets/{{ asset.id }}/thumbnail" width="200" height="200" loading="lazy" alt="thumbnail" />
+```
+
+WebP, the longest side at most 512 px, for images and videos (`filePreview()`); `404` for any other file. Only the
+image preview dialog still sizes through the loader (`?w=1000`).
+
 ---
 
 ## `packages/ui/` Component Library
@@ -106,6 +116,11 @@ A custom `IMAGE_LOADER` is registered in `app.config.ts` that automatically appe
 
 Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json` map these to `packages/ui/<component-name>/src/index.ts`).
 
+**Do not edit `packages/ui/`**: it is kept as Spartan ships it, so a sync with the Spartan CLI does not lose changes.
+Add what a component lacks from the app instead: attributes on the Helm element in the template (`role="list"` on
+`hlmItemGroup`), or a directive in `shared/directives/` (`llChipRemoveLabel` names a combobox chip's remove button,
+`llSplitterValue` gives a resize handle its `aria-valuenow`).
+
 ---
 
 ## `core/` Module
@@ -113,9 +128,22 @@ Import from `@spartan-ng/helm/<component-name>` (path aliases in `tsconfig.json`
 App-wide singletons and state (`@core/*`). Rule: if more than one feature (or a store) uses it, it lives here;
 if one feature uses it, it lives in that feature.
 
-- **`services/`** — App API services (`HttpClient`, reads are `liveQuery`s) used by several features or by a store
+- **`services/`** — App API services (`HttpClient`, reads are `liveQuery`s) used by several features or by a store. One
+  service per server controller, named after it: `SpaceController` → `SpaceService`, `SpaceEnvironmentController` →
+  `SpaceEnvironmentService`, `SpaceLocaleController` → `SpaceLocaleService` (used by one feature, so it lives in
+  `features/spaces/settings/locales/`), `LocaleController` → `LocaleService`, `TaskLogController` → `TaskLogService`,
+  `WebhookLogController` → `WebhookLogService`. A route moves with its controller (`PUT …/default-locale` is the
+  space's: `SpaceService.setDefaultLocale`).
+  **Rule:** the method that calls an endpoint carries the controller's method name, exactly (`AssetController.findAll`
+  → `AssetService.findAll`, `findFolders`, `findOne`, `create`, `upload`, `remove`, …), so a call is found by name on
+  both sides; see the server's names in [server/naming.md](server/naming.md). A convenience method may sit on top
+  (`search`, `move`, `createDocument` / `createFolder` over `create`, `createFile` / `importFile` over `upload`,
+  `create<Kind>Task` over `create` / `createImport`, `poll` over `findOne`, `translate` / `translateBatch` over
+  `translateText`, `isKeyTaken`, `firstValue`), but calls the controller-named method or the same endpoint, never under
+  another name in its place. URL builders that make no request are named for the URL (`TaskService.downloadUrl`,
+  `AuthApiService.oauthUrl`).
 - **`stores/`** — the 4 NgRx Signal stores (see [frontend-state.md](frontend-state.md))
-- **`guards/`** — `permissionGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard
+- **`guards/`** — `roleGuard`, `spaceSelectionGuard`, the dirty-form (unsaved changes) guard
 - **`utils/content-data.ts`** — `normalizeContent`, `copyBlock`: the shape documents are loaded, compared and saved in
 - **`AppErrorHandler`** (`error-handler/app-error-handler.service.ts`) — global Angular error handler for errors nobody handled (`provideBrowserGlobalErrorListeners()` in `app.config.ts` routes uncaught errors to it, including an HTTP call subscribed without an `error` callback). Shows a generic error toast via `NotificationService`, then delegates to the default handler (console). Chunk-load failures (a stale tab after a deploy) instead show a persistent "A new version is available" toast with a Reload action. A handled HTTP error is not reported here: the caller shows its own message, so the user sees one toast.
 - **`FormErrorHandlerService`** (`error-handler/form-error-handler.service.ts`) — maps reactive-form control errors to display messages
@@ -131,11 +159,11 @@ if one feature uses it, it lives in that feature.
 ```
 shared/           ← reusable UI only (`@shared/*`)
   models/        ← UI-only model helpers (labels, icons, sorting, form shapes). The API's JSON shapes themselves
-                   (timestamps are ISO strings), enums and permission rules come from `@localess/shared` (packages/shared)
+                   (timestamps are ISO strings), enums and role lists come from `@localess/shared` (packages/shared)
   components/    ← tree, table, paginator, filter-toolbar (see components/README.md), locale-icon, asset-card, background, logo,
                    confirmation-dialog, image-preview-dialog, translate-locale-dialog, unsplash-assets-select-dialog, dialog (width constants)
   directives/    ← custom Angular directives
-  pipes/         ← custom Angular pipes (incl. `canUserPerform`, see frontend-permissions.md)
+  pipes/         ← custom Angular pipes (incl. `hasRole`, see frontend-permissions.md)
   validators/    ← reactive form validators used by more than one feature (`common`, `space`); single-feature validators
                    live in their feature (e.g. `features/spaces/schemas/shared/schema.validator.ts`)
   generated/     ← auto-generated code (do not edit manually)
@@ -171,6 +199,6 @@ How the CSP is built:
 - `apps/web/src/app/app.config.ts` — root provider configuration
 - `apps/web/src/app/core/api/` — runtime config, change events (SSE), `liveQuery`, `apiInterceptor`
 - `apps/web/src/app/app-routing.ts` — root routes and `authGuard`
-- `apps/web/src/app/features/features-routing.module.ts` — all feature routes and permission guards
+- `apps/web/src/app/features/features-routing.module.ts` — all feature routes and role guards
 - `apps/server/src/infra/static/static-site.ts` — static serving, cache and security headers
 - `packages/ui/` — shared component library

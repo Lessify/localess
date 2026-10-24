@@ -1,0 +1,34 @@
+<hlm-dialog-header>
+  <h2 hlmDialogTitle>Add User</h2>
+</hlm-dialog-header>
+<form [formGroup]="form" class="flex max-h-[60vh] flex-col gap-4 overflow-x-hidden overflow-y-auto">
+  <div hlmField>
+    <label hlmFieldLabel for="email">Email</label>
+    <input hlmInput id="email" type="email" formControlName="email" required autocomplete="off" class="w-full" />
+    @if (form.controls['email'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="password">Password</label>
+    <input hlmInput id="password" type="password" formControlName="password" required autocomplete="off" class="w-full" />
+    @if (form.controls['password'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <div hlmField>
+    <label hlmFieldLabel for="displayName">Display Name</label>
+    <input hlmInput id="displayName" type="text" formControlName="displayName" autocomplete="off" class="w-full" />
+    @if (form.controls['displayName'].errors; as errors) {
+      <hlm-field-error>{{ fe.errors(errors) }}</hlm-field-error>
+    }
+  </div>
+
+  <ll-user-role-choice [control]="roleControl" />
+</form>
+<hlm-dialog-footer>
+  <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
+  <button hlmBtn [disabled]="!form.valid" (click)="save()">Add</button>
+</hlm-dialog-footer>

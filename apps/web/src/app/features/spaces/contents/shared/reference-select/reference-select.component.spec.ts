@@ -1,8 +1,9 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { FormBuilder } from '@angular/forms';
 import { ContentDocument, ContentKind, SchemaFieldKind, SchemaFieldReference, Space } from '@localess/shared';
-import { ContentService } from '@core/services/content.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
@@ -14,14 +15,15 @@ function doc(id: string, name: string): ContentDocument {
 
 describe('ReferenceSelectComponent', () => {
   function setup(uri: string | null, kind: SchemaFieldKind.REFERENCE | null = SchemaFieldKind.REFERENCE) {
-    const findById = vi.fn().mockReturnValue(of(doc('c1', 'Page')));
+    // What SpaceStore holds.
+    const contentById = signal(new Map([doc('c1', 'Page'), doc('c2', 'New')].map(it => [it.id, it])));
     const open = vi.fn();
 
     TestBed.overrideComponent(ReferenceSelectComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: HlmDialogService, useValue: { open } },
-        { provide: ContentService, useValue: { findById } },
+        { provide: SpaceStore, useValue: { contentById } },
       ],
     });
     const fb = TestBed.inject(FormBuilder);
@@ -31,7 +33,7 @@ describe('ReferenceSelectComponent', () => {
     fixture.componentRef.setInput('component', {} as unknown as SchemaFieldReference);
     fixture.componentRef.setInput('space', { id: 'space-1' } as Space);
     fixture.detectChanges();
-    return { component: fixture.componentInstance, findById, open, form };
+    return { component: fixture.componentInstance, contentById, open, form };
   }
 
   it('defaults the kind to REFERENCE when unset', () => {
@@ -40,17 +42,16 @@ describe('ReferenceSelectComponent', () => {
     expect(form.value.kind).toBe(SchemaFieldKind.REFERENCE);
   });
 
-  it('loads the referenced content when a uri is already set', () => {
-    const { component, findById } = setup('c1');
+  it('shows the referenced document from SpaceStore when a uri is already set', () => {
+    const { component } = setup('c1');
 
-    expect(findById).toHaveBeenCalledWith('space-1', 'c1');
-    expect(component.content()?.id).toBe('c1');
+    expect(component.content()?.name).toBe('Page');
   });
 
-  it('does not load content when there is no uri', () => {
-    const { findById } = setup(null);
-
-    expect(findById).not.toHaveBeenCalled();
+  it('shows nothing without a uri, or for a document gone from the space', () => {
+    expect(setup(null).component.content()).toBeUndefined();
+    TestBed.resetTestingModule();
+    expect(setup('gone').component.content()).toBeUndefined();
   });
 
   it('openReferenceSelectDialog() sets the content and form fields from the dialog result', () => {
@@ -60,7 +61,7 @@ describe('ReferenceSelectComponent', () => {
 
     component.openReferenceSelectDialog();
 
-    expect(component.content()).toEqual(selected);
+    expect(component.content()?.id).toBe(selected.id);
     expect(form.value).toEqual({ uri: 'c2', kind: SchemaFieldKind.REFERENCE });
   });
 

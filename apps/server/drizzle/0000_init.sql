@@ -9,13 +9,15 @@ CREATE TABLE "assets" (
 	"type" text,
 	"size" bigint,
 	"md5" text,
+	"original_name" text,
 	"alt" text,
 	"source" text,
 	"metadata" jsonb,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "assets_space_id_id_pk" PRIMARY KEY("space_id","id"),
-	CONSTRAINT "assets_kind_check" CHECK ("assets"."kind" in ('FOLDER', 'FILE'))
+	CONSTRAINT "assets_kind_check" CHECK ("assets"."kind" in ('FOLDER', 'FILE')),
+	CONSTRAINT "assets_original_name_check" CHECK (("assets"."kind" = 'FILE') = ("assets"."original_name" is not null))
 );
 --> statement-breakpoint
 CREATE TABLE "content_link_snapshots" (
@@ -163,19 +165,17 @@ CREATE TABLE "tasks" (
 	"space_id" uuid NOT NULL,
 	"kind" text NOT NULL,
 	"status" text NOT NULL,
-	"message" text,
-	"trace" text,
-	"path" text,
-	"locale" text,
-	"type" text,
+	"params" jsonb,
 	"file" jsonb,
+	"created_by_id" uuid,
 	"locked_by" text,
-	"locked_at" timestamp with time zone,
+	"heartbeat_at" timestamp with time zone,
+	"started_at" timestamp with time zone,
+	"finished_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "tasks_kind_check" CHECK ("tasks"."kind" in ('ASSET_EXPORT', 'ASSET_IMPORT', 'ASSET_REGEN_METADATA', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT')),
-	CONSTRAINT "tasks_status_check" CHECK ("tasks"."status" in ('INITIATED', 'IN_PROGRESS', 'ERROR', 'FINISHED')),
-	CONSTRAINT "tasks_type_check" CHECK ("tasks"."type" in ('full', 'flat-json', 'nested-json'))
+	CONSTRAINT "tasks_kind_check" CHECK ("tasks"."kind" in ('ASSET_REGEN_METADATA', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'TRANSLATION_TRANSLATE')),
+	CONSTRAINT "tasks_status_check" CHECK ("tasks"."status" in ('QUEUED', 'IN_PROGRESS', 'ERROR', 'FINISHED'))
 );
 --> statement-breakpoint
 CREATE TABLE "tokens" (
@@ -241,12 +241,9 @@ CREATE TABLE "users" (
 	"photo_url" text,
 	"disabled" boolean DEFAULT false NOT NULL,
 	"role" text,
-	"permissions" text[] DEFAULT '{}' NOT NULL,
-	"lock" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "users_role_check" CHECK ("users"."role" in ('ADMIN', 'CUSTOM')),
-	CONSTRAINT "users_permissions_check" CHECK ("users"."permissions" <@ array['USER_MANAGEMENT', 'SPACE_MANAGEMENT', 'TRANSLATION_READ', 'TRANSLATION_CREATE', 'TRANSLATION_UPDATE', 'TRANSLATION_DELETE', 'TRANSLATION_PUBLISH', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'SCHEMA_READ', 'SCHEMA_CREATE', 'SCHEMA_UPDATE', 'SCHEMA_DELETE', 'SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'CONTENT_READ', 'CONTENT_CREATE', 'CONTENT_UPDATE', 'CONTENT_DELETE', 'CONTENT_PUBLISH', 'CONTENT_EXPORT', 'CONTENT_IMPORT', 'ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE', 'ASSET_EXPORT', 'ASSET_IMPORT', 'DEV_OPEN_API', 'DEV_WEBHOOK']::text[])
+	CONSTRAINT "users_role_check" CHECK ("users"."role" in ('ADMIN', 'DEVELOPER', 'EDITOR', 'TRANSLATOR', 'VIEWER'))
 );
 --> statement-breakpoint
 CREATE TABLE "webhook_logs" (
@@ -301,6 +298,7 @@ ALTER TABLE "space_locales" ADD CONSTRAINT "space_locales_locale_id_locales_id_f
 ALTER TABLE "spaces" ADD CONSTRAINT "spaces_default_locale_id_locales_id_fk" FOREIGN KEY ("default_locale_id") REFERENCES "public"."locales"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "task_logs" ADD CONSTRAINT "task_logs_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "public"."tasks"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tasks" ADD CONSTRAINT "tasks_created_by_id_users_id_fk" FOREIGN KEY ("created_by_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "translation_snapshots" ADD CONSTRAINT "translation_snapshots_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "translations" ADD CONSTRAINT "translations_space_id_spaces_id_fk" FOREIGN KEY ("space_id") REFERENCES "public"."spaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -322,9 +320,11 @@ CREATE INDEX "space_environments_space_idx" ON "space_environments" USING btree 
 CREATE INDEX "storage_deletions_due_idx" ON "storage_deletions" USING btree ("not_before");--> statement-breakpoint
 CREATE INDEX "task_logs_task_idx" ON "task_logs" USING btree ("task_id","created_at");--> statement-breakpoint
 CREATE INDEX "tasks_space_idx" ON "tasks" USING btree ("space_id","created_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "tasks_queue_idx" ON "tasks" USING btree ("created_at") WHERE "tasks"."status" = 'INITIATED';--> statement-breakpoint
+CREATE INDEX "tasks_queue_idx" ON "tasks" USING btree ("created_at") WHERE "tasks"."status" = 'QUEUED';--> statement-breakpoint
+CREATE UNIQUE INDEX "tasks_running_space_idx" ON "tasks" USING btree ("space_id") WHERE "tasks"."status" = 'IN_PROGRESS';--> statement-breakpoint
 CREATE INDEX "tokens_space_idx" ON "tokens" USING btree ("space_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE UNIQUE INDEX "translations_key_idx" ON "translations" USING btree ("space_id","key");--> statement-breakpoint
+CREATE INDEX "translations_key_bytes_idx" ON "translations" USING btree ("space_id","key" COLLATE "C");--> statement-breakpoint
 CREATE INDEX "user_identities_user_idx" ON "user_identities" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_email_idx" ON "users" USING btree (lower("email"));--> statement-breakpoint
 CREATE INDEX "webhook_logs_webhook_idx" ON "webhook_logs" USING btree ("webhook_id","created_at" DESC NULLS LAST);--> statement-breakpoint

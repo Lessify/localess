@@ -1,8 +1,8 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { COMMA, ENTER, SPACE } from '@angular/cdk/keycodes';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
@@ -11,11 +11,14 @@ import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
 import { SchemaService } from '@core/services/schema.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { Schema, SchemaEnumUpdate, SchemaEnumValue, SchemaType } from '@localess/shared';
+import { SpaceStore } from '@core/stores/space.store';
+import { formValueKey } from '@core/utils/form-value';
+import { Schema, SchemaEnumValue, SchemaType, SchemaUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideArrowLeft, lucideCircleX, lucideGripVertical, lucideSave, lucideTrash } from '@ng-icons/lucide';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { CommonValidator } from '@shared/validators/common.validator';
+import { LabelValidator } from '@shared/validators/label.validator';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
@@ -30,7 +33,7 @@ import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmTabsImports } from '@spartan-ng/helm/tabs';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { combineLatest } from 'rxjs';
+import { combineLatest, filter } from 'rxjs';
 
 import { EditValueComponent } from '../shared/edit-value/edit-value.component';
 import { SchemaValidator } from '../shared/schema.validator';
@@ -44,7 +47,7 @@ import { SchemaValidator } from '../shared/schema.validator';
     '(window:keydown)': 'captureKeyboard($event)',
   },
   imports: [
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     HlmTabsImports,
     ReactiveFormsModule,
@@ -81,6 +84,11 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   private readonly cd = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
+  private readonly spaceStore = inject(SpaceStore);
+  /** The space's schemas (live, from `SpaceStore`), once they arrived: the ones a field may offer. */
+  private readonly spaceSchemas$ = toObservable(
+    computed(() => (this.spaceStore.schemasLoaded() ? this.spaceStore.schemas() : undefined)),
+  ).pipe(filter(it => it !== undefined));
   private readonly notificationService = inject(NotificationService);
 
   // Input
@@ -116,24 +124,53 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
   }
 
   loadData(spaceId: string, entityId: string): void {
-    combineLatest([this.schemaService.findAll(spaceId), this.schemaService.findById(spaceId, entityId)])
+    combineLatest([this.spaceSchemas$, this.schemaService.findOne(spaceId, entityId)])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: ([schemas, schema]) => {
-          this.fieldReservedNames = [];
           this.schemas = schemas;
-          this.entity = schema;
-
-          this.form.reset();
-          this.form.patchValue(schema);
-          if (schema.type === SchemaType.ENUM) {
-            this.values.clear();
-            schema.values?.forEach(it => this.addValueForm(it));
+          // Live: any change to the space's schemas re-emits. Unsaved edits are kept (a reload wiped them when a
+          // colleague saved another schema); the form reloads after Save.
+          if (this.form.dirty) {
+            this.cd.markForCheck();
+            return;
           }
-          this.isLoading.set(false);
-          this.cd.markForCheck();
+          if (this.isStale(schema)) return;
+          this.applySchema(schema);
         },
       });
+  }
+
+  /** Fills the form from the stored schema. */
+  /** The version a Save replaced: until a newer one arrives, an answer at or before it is stale. */
+  private savedOver?: string;
+
+  /**
+   * A live answer older than what the form shows, or not newer than the version just saved: a refetch that started
+   * before the Save and answered after it. Applying it would put the old values back (and a following edit would
+   * build on them).
+   */
+  private isStale(schema: Schema): boolean {
+    const at = Date.parse(schema.updatedAt);
+    if (Number.isNaN(at)) return false;
+    if (this.savedOver !== undefined && at <= Date.parse(this.savedOver)) return true;
+    return this.entity !== undefined && at < Date.parse(this.entity.updatedAt);
+  }
+
+  private applySchema(schema: Schema): void {
+    this.savedOver = undefined;
+    // Emptied in place: the new-value validator holds this array (a new one left it checking an empty list).
+    this.fieldReservedNames.length = 0;
+    this.entity = schema;
+
+    this.form.reset();
+    this.form.patchValue(schema);
+    if (schema.type === SchemaType.ENUM) {
+      this.values.clear();
+      schema.values?.forEach(it => this.addValueForm(it));
+    }
+    this.isLoading.set(false);
+    this.cd.markForCheck();
   }
 
   get isFormDirty(): boolean {
@@ -148,32 +185,52 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
     }
   }
 
-  addLabel(value: string): void {
-    if (value) {
-      const labels = this.form.controls['labels'].value;
-      if (labels instanceof Array) {
-        labels.push(value);
-      } else {
-        this.form.controls['labels'].setValue([value]);
-      }
-    }
+  /** Why the label typed last was not added; cleared once one is. */
+  readonly labelError = signal<string | undefined>(undefined);
+
+  /**
+   * Adds the typed label (Enter); an invalid or duplicate one stays in the input with the reason shown. A new array,
+   * and the form marked dirty: it was pushed in place, so neither the form nor the leave guard saw the change.
+   */
+  addLabel(input: HTMLInputElement): void {
+    const label = input.value.trim();
+    if (!label) return;
+    const labels: string[] = this.form.controls['labels'].value ?? [];
+    const error = LabelValidator.error(label, labels);
+    this.labelError.set(error);
+    if (error) return;
+    this.form.controls['labels'].setValue([...labels, label]);
+    this.form.markAsDirty();
+    input.value = '';
   }
 
   removeLabel(label: string): void {
-    const labels = this.form.controls['labels'].value;
-    if (labels instanceof Array) {
-      const index: number = labels.indexOf(label);
-      labels.splice(index, 1);
-    }
+    const labels: string[] = this.form.controls['labels'].value ?? [];
+    this.form.controls['labels'].setValue(labels.filter(it => it !== label));
     this.form.markAsDirty();
+  }
+
+  /** What Save sends: the enum's settings from the form, and only those (the server refuses other keys). */
+  private body(): SchemaUpdate {
+    const value = this.form.value;
+    return { displayName: value['displayName'], description: value['description'], labels: value['labels'], values: value['values'] };
   }
 
   save(): void {
     //console.group('save')
     this.isSaveLoading.set(true);
-    this.schemaService.updateEnum(this.spaceId(), this.schemaId(), this.form.value as SchemaEnumUpdate).subscribe({
-      next: () => {
+    const sent = formValueKey(this.form.value);
+    this.schemaService.update(this.spaceId(), this.schemaId(), this.body()).subscribe({
+      next: schema => {
+        this.savedOver = this.entity?.updatedAt;
         this.notificationService.success('Schema has been updated.');
+        // Edits made while the request was in flight were not sent: they stay unsaved (dirty, the leave guard warns)
+        // and are not reloaded over; the next Save sends them.
+        if (formValueKey(this.form.value) !== sent) return;
+        // Saved: live updates may reload the form again; it shows what was stored.
+        // The answer is the schema as stored.
+        this.form.markAsPristine();
+        if (!this.isStale(schema)) this.applySchema(schema);
       },
       error: () => {
         this.notificationService.error('Schema can not be updated.');
@@ -213,7 +270,7 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
     if (cValue) {
       const idx = this.fieldReservedNames.indexOf(cValue);
       if (idx !== -1) {
-        this.fieldReservedNames.splice(index, 1);
+        this.fieldReservedNames.splice(idx, 1);
       }
     }
     // Remove Component

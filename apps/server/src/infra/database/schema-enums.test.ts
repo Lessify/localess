@@ -1,5 +1,3 @@
-import pg from 'pg';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   AssetKind,
   ContentKind,
@@ -9,13 +7,14 @@ import {
   TaskLogLevel,
   TaskStatus,
   TokenType,
-  TRANSLATION_IMPORT_FORMATS,
   USER_ROLES,
-  UserPermission,
-  WebHookErrorType,
-  WebHookEvent,
-  WebHookStatus,
+  WebhookErrorType,
+  WebhookEvent,
+  WebhookStatus,
 } from '@localess/shared';
+import pg from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { createTestDatabase, TestDatabase } from '../../../test/database.js';
 import { OAUTH_PROVIDERS } from '../config/oauth-providers.js';
 import { migrateDatabase } from './migrate.js';
@@ -24,7 +23,6 @@ import { HASH_ALGORITHMS, SNAPSHOT_VERSIONS } from './schema.js';
 /** Every column with a fixed set of values, and the values (from @localess/shared or the server) it accepts. */
 const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][] = [
   ['users', 'role', USER_ROLES],
-  ['users', 'permissions', Object.values(UserPermission)],
   ['user_credentials', 'hash_algo', HASH_ALGORITHMS],
   ['user_identities', 'provider', OAUTH_PROVIDERS],
   ['contents', 'kind', Object.values(ContentKind)],
@@ -35,13 +33,12 @@ const ENUM_COLUMNS: [table: string, column: string, values: readonly string[]][]
   ['content_link_snapshots', 'version', SNAPSHOT_VERSIONS],
   ['tasks', 'kind', Object.values(TaskKind)],
   ['tasks', 'status', Object.values(TaskStatus)],
-  ['tasks', 'type', TRANSLATION_IMPORT_FORMATS],
   ['task_logs', 'level', Object.values(TaskLogLevel)],
   ['tokens', 'type', Object.values(TokenType)],
-  ['webhooks', 'events', Object.values(WebHookEvent)],
-  ['webhook_logs', 'event', Object.values(WebHookEvent)],
-  ['webhook_logs', 'status', Object.values(WebHookStatus)],
-  ['webhook_logs', 'error_type', Object.values(WebHookErrorType)],
+  ['webhooks', 'events', Object.values(WebhookEvent)],
+  ['webhook_logs', 'event', Object.values(WebhookEvent)],
+  ['webhook_logs', 'status', Object.values(WebhookStatus)],
+  ['webhook_logs', 'error_type', Object.values(WebhookErrorType)],
   ['firebase_imports', 'status', FIREBASE_IMPORT_STATUSES],
 ];
 
@@ -78,8 +75,6 @@ describe('columns with a fixed set of values', () => {
       pool.query(`insert into users (id, email, role) values (gen_random_uuid(), $1, $2)`, [`${role}@example.com`, role]);
     await expect(insert('admin')).rejects.toMatchObject({ code: '23514' });
     await expect(insert('ADMIN')).resolves.toBeDefined();
-    await expect(pool.query(`insert into users (id, email, permissions) values (gen_random_uuid(), 'p@example.com', '{NOPE}')`)).rejects.toMatchObject({
-      code: '23514',
-    });
+    await expect(insert('CUSTOM')).rejects.toMatchObject({ code: '23514' });
   });
 });

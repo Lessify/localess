@@ -1,4 +1,4 @@
-@if (isLoading()) {
+@if (page.loading()) {
   <hlm-progress class="h-0.5">
     <hlm-progress-indicator />
   </hlm-progress>
@@ -7,54 +7,39 @@
 <div class="mx-auto px-2">
   <ll-filter-toolbar class="my-3" [filters]="filters" (filterChange)="onFilterChange($event)" />
   <div llTableContainer>
-    <table ll-table [dataSource]="dataSource" llTableSort>
+    <table
+      ll-table
+      [dataSource]="dataSource"
+      llTableSort
+      llTableSortActive="createdAt"
+      llTableSortDirection="desc"
+      llTableSortStart="desc"
+      [llTableSortDisableClear]="true"
+      (sortChange)="onSortChange($event)">
       <ng-container llColumnDef="id" llColumnDefClass="hidden @5xl/table:table-cell">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="id">ID</th>
+        <th llHeaderCell *llHeaderCellDef>ID</th>
         <td llCell *llCellDef="let element">{{ element.id }}</td>
       </ng-container>
       <ng-container llColumnDef="kind">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="kind">Kind</th>
+        <th llHeaderCell *llHeaderCellDef>Kind</th>
         <td llCell *llCellDef="let element">
-          @switch (element.kind) {
-            @case ('ASSET_EXPORT') {
-              Asset Export
-            }
-            @case ('ASSET_IMPORT') {
-              Asset Import
-            }
-            @case ('ASSET_REGEN_METADATA') {
-              Asset Regeneration Metadata
-            }
-            @case ('CONTENT_EXPORT') {
-              Content Export
-            }
-            @case ('CONTENT_IMPORT') {
-              Content Import
-            }
-            @case ('SCHEMA_EXPORT') {
-              Schema Export
-            }
-            @case ('SCHEMA_IMPORT') {
-              Schema Import
-            }
-            @case ('TRANSLATION_EXPORT') {
-              Translation Export
-            }
-            @case ('TRANSLATION_IMPORT') {
-              Translation Import
-            }
-          }
+          {{ kindLabel(element.kind) }}
         </td>
       </ng-container>
       <ng-container llColumnDef="status">
-        <th llHeaderCell *llHeaderCellDef llTableSortHeader="status">Status</th>
+        <th llHeaderCell *llHeaderCellDef>Status</th>
         <td llCell *llCellDef="let element">
           @switch (element.status) {
-            @case ('INITIATED') {
+            @case ('QUEUED') {
               <ng-icon hlm size="sm" name="lucideCircleEllipsis" [hlmTooltip]="element.status" />
             }
             @case ('IN_PROGRESS') {
-              <hlm-spinner [hlmTooltip]="element.status" />
+              <div class="flex items-center gap-2">
+                <hlm-spinner [hlmTooltip]="element.status" />
+                @if (progressText(element); as progress) {
+                  <span class="text-muted-foreground text-xs">{{ progress }}</span>
+                }
+              </div>
             }
             @case ('FINISHED') {
               <ng-icon hlm size="sm" name="lucideCheck" [hlmTooltip]="element.status" />
@@ -82,24 +67,20 @@
         <th llHeaderCell *llHeaderCellDef>Description</th>
         <td llCell *llCellDef="let element">
           <div>
-            @if (element.file) {
-              @if (element.path) {
-                <div>Partial export by path</div>
-              } @else {
-                <div>Full export</div>
+            @if (paramsText(element); as params) {
+              <div>{{ params }}</div>
+            }
+            @if (durations(element); as time) {
+              @if (time.waited) {
+                <div>Waited {{ time.waited }}{{ time.ran ? ' · ran ' + time.ran : '' }}</div>
               }
-            }
-            @if (element.locale; as locale) {
-              <div>Locale : {{ locale }}</div>
-            }
-            @if (element.status === 'FINISHED') {
-              <div>Duration : {{ element.createdAt | timeBetween: element.updatedAt }}</div>
-            }
-            @if (element.message; as message) {
-              <div [hlmTooltip]="element.trace">Message : {{ message }}</div>
             }
           </div>
         </td>
+      </ng-container>
+      <ng-container llColumnDef="createdBy" llColumnDefClass="hidden @5xl/table:table-cell">
+        <th llHeaderCell *llHeaderCellDef>Started by</th>
+        <td llCell *llCellDef="let element">{{ element.createdBy?.displayName ?? element.createdBy?.email ?? '-' }}</td>
       </ng-container>
       <ng-container llColumnDef="createdAt">
         <th llHeaderCell *llHeaderCellDef llTableSortHeader="createdAt">Created At</th>
@@ -110,16 +91,22 @@
       <ng-container llColumnDef="actions">
         <th llHeaderCell *llHeaderCellDef>Actions</th>
         <td llCell *llCellDef="let element">
-          <button hlmBtn size="icon" variant="ghost" [hlmDropdownMenuTrigger]="actionsMenu" (click)="$event.stopPropagation()">
+          <button
+            hlmBtn
+            size="icon"
+            variant="ghost"
+            aria-label="Actions"
+            [hlmDropdownMenuTrigger]="actionsMenu"
+            (click)="$event.stopPropagation()">
             <ng-icon hlm size="sm" name="lucideEllipsisVertical" />
           </button>
           <ng-template #actionsMenu>
             <hlm-dropdown-menu>
-              @if (element.file) {
+              @if (canDownload(element)) {
                 <hlm-dropdown-menu-group>
                   <button hlmDropdownMenuItem (click)="onDownload(element)">
                     <ng-icon hlm size="sm" name="lucideDownload" />
-                    Download
+                    {{ downloadLabel(element) }}
                   </button>
                 </hlm-dropdown-menu-group>
                 <hlm-dropdown-menu-separator />
@@ -129,7 +116,7 @@
                   hlmDropdownMenuItem
                   variant="destructive"
                   (click)="openDeleteDialog(element)"
-                  [disabled]="element.status === 'INITIATED' || element.status === 'IN_PROGRESS'">
+                  [disabled]="element.status === 'QUEUED' || element.status === 'IN_PROGRESS'">
                   <ng-icon hlm size="sm" name="lucideTrash" />
                   Delete
                 </button>
@@ -146,5 +133,5 @@
     </table>
   </div>
 
-  <ll-paginator [sticky]="true" [length]="dataSource.filteredData().length" />
+  <ll-paginator [sticky]="true" [length]="page.total()" [(pageIndex)]="list.page" [(pageSize)]="list.size" />
 </div>

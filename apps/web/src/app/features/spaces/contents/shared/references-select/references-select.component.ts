@@ -1,11 +1,12 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { ContentService } from '@core/services/content.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { Content, ContentDocument, ContentKind, SchemaFieldKind, SchemaFieldReferences, Space } from '@localess/shared';
+import { SpaceStore } from '@core/stores/space.store';
+import { ContentDocumentWithPath } from '@core/utils/content-summaries';
+import { ContentDocument, ContentKind, SchemaFieldKind, SchemaFieldReferences, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFileSymlink, lucideTrash } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_XL } from '@shared/components/dialog/dialog-width';
@@ -51,7 +52,7 @@ export class ReferencesSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(HlmDialogService);
-  private readonly contentService = inject(ContentService);
+  private readonly spaceStore = inject(SpaceStore);
 
   // Input
   form = input.required<FormArray>();
@@ -62,30 +63,23 @@ export class ReferencesSelectComponent implements OnInit {
   // Outputs
   referencesChange = output<string[]>();
 
-  contents = signal<ContentDocument[]>([]);
+  /** The ids picked, in their order (the form's values). */
+  readonly ids = signal<string[]>([]);
+  /** The documents picked, from `SpaceStore` (live: a rename or a publish shows at once); one gone is left out. */
+  readonly contents = computed(() =>
+    this.ids()
+      .map(id => this.spaceStore.contentById().get(id))
+      .filter((it): it is ContentDocumentWithPath => it?.kind === ContentKind.DOCUMENT),
+  );
   // Settings
   settingsStore = inject(LocalSettingsStore);
 
   ngOnInit(): void {
-    this.loadData();
-  }
-
-  loadData(): void {
-    const ids: string[] | undefined = this.form().controls.map(it => it.value.uri as string);
-    if (ids && ids.length > 0) {
-      this.contentService.findByIds(this.space().id, ids).subscribe({
-        next: contents => {
-          const byId = new Map<string, Content>(contents.map(item => [item.id, item]));
-          // Make sure to have contents display in exactly the same order
-          this.contents.set(
-            ids
-              .map(it => byId.get(it))
-              .filter(content => content?.kind === ContentKind.DOCUMENT)
-              .map(it => it as ContentDocument),
-          );
-        },
-      });
-    }
+    this.ids.set(
+      this.form()
+        .controls.map(it => it.value.uri as string)
+        .filter(Boolean),
+    );
   }
 
   openReferenceSelectDialog(): void {
@@ -101,40 +95,46 @@ export class ReferencesSelectComponent implements OnInit {
       .subscribe({
         next: selectedDocuments => {
           if (selectedDocuments) {
-            this.contents.update(current => [...current, ...selectedDocuments]);
+            this.ids.update(current => [...current, ...selectedDocuments.map(it => it.id)]);
             this.form().clear();
-            this.contents().forEach(it => this.form().push(this.documentToForm(it)));
-            this.referencesChange.emit(this.contents().map(it => it.id));
+            this.ids().forEach(id => this.form().push(this.documentToForm(id)));
+            this.referencesChange.emit(this.ids());
           }
         },
       });
   }
 
-  documentToForm(document: ContentDocument): FormGroup {
+  documentToForm(id: string): FormGroup {
     return this.fb.group({
-      uri: this.fb.control(document.id),
+      uri: this.fb.control(id),
       kind: this.fb.control(SchemaFieldKind.REFERENCE),
     });
   }
 
-  deleteReference(idx: number) {
-    this.contents.update(current => current.filter((_, i) => i !== idx));
-    this.form().removeAt(idx);
-    this.referencesChange.emit(this.contents().map(it => it.id));
+  /** By id: a document gone from the space is not shown, so the list's index is not the form's. */
+  deleteReference(id: string) {
+    const index = this.ids().indexOf(id);
+    if (index < 0) return;
+    this.ids.update(current => current.filter((_, i) => i !== index));
+    this.form().removeAt(index);
+    this.referencesChange.emit(this.ids());
   }
 
+  /** The list's positions turned into the form's (see `deleteReference`). */
   referenceDropDrop(event: CdkDragDrop<string[]>) {
     if (event.previousIndex === event.currentIndex) return;
-    const tmp = this.form().at(event.previousIndex);
-    if (tmp) {
-      this.form().removeAt(event.previousIndex);
-      this.form().insert(event.currentIndex, tmp);
-      this.contents.update(current => {
-        const arr = [...current];
-        moveItemInArray(arr, event.previousIndex, event.currentIndex);
-        return arr;
-      });
-      this.referencesChange.emit(this.contents().map(it => it.id));
-    }
+    const shown = this.contents();
+    const from = this.ids().indexOf(shown[event.previousIndex]?.id ?? '');
+    const to = this.ids().indexOf(shown[event.currentIndex]?.id ?? '');
+    if (from < 0 || to < 0) return;
+    const control = this.form().at(from);
+    this.form().removeAt(from);
+    this.form().insert(to, control);
+    this.ids.update(current => {
+      const arr = [...current];
+      moveItemInArray(arr, from, to);
+      return arr;
+    });
+    this.referencesChange.emit(this.ids());
   }
 }

@@ -21,14 +21,14 @@
           </button>
         </hlm-input-group-addon>
       </div>
-      <hlm-toggle-group type="single" variant="outline" [value]="orientation()" (valueChange)="orientation.set($event)">
-        <button hlmToggleGroupItem value="squarish" hlmTooltip="Squarish">
+      <hlm-toggle-group type="single" variant="outline" [value]="orientation()" (valueChange)="onOrientationChange($event)">
+        <button hlmToggleGroupItem value="squarish" hlmTooltip="Squarish" aria-label="Squarish">
           <ng-icon hlm name="lucideSquare" />
         </button>
-        <button hlmToggleGroupItem value="landscape" hlmTooltip="Landscape">
+        <button hlmToggleGroupItem value="landscape" hlmTooltip="Landscape" aria-label="Landscape">
           <ng-icon hlm name="lucideMonitor" />
         </button>
-        <button hlmToggleGroupItem value="portrait" hlmTooltip="Portrait">
+        <button hlmToggleGroupItem value="portrait" hlmTooltip="Portrait" aria-label="Portrait">
           <ng-icon hlm name="lucideSmartphone" />
         </button>
       </hlm-toggle-group>
@@ -48,7 +48,10 @@
             <p [hlmTooltip]="item.updated_at | date: 'medium'">{{ item.updated_at | date: 'mediumDate' }}</p>
             <p>
               by
-              <a [href]="item.user.links.html + '?utm_source=localess&utm_medium=referral'" target="_blank" class="underline">
+              <a
+                [href]="(item.user.links?.html ?? 'https://unsplash.com') + '?utm_source=localess&utm_medium=referral'"
+                target="_blank"
+                class="underline">
                 {{ item.user.name }}
               </a>
             </p>

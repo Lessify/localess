@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { User, UserPermission } from '@localess/shared';
+import { Page, User } from '@localess/shared';
 import { UserService } from './user.service';
 
 describe('UserService', () => {
@@ -26,85 +26,81 @@ describe('UserService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the users', async () => {
+  const params = new HttpParams().set('page', 1).set('size', 25).set('search', 'ali');
+  const page = (items: User[]): Page<User> => ({ items, page: 1, size: 25, total: 26 });
+
+  it('findAll() reads one page with the given query', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll());
-    http.expectOne({ method: 'GET', url: '/api/app/users' }).flush([{ id: 'u1' }]);
-    expect(await result).toEqual([{ id: 'u1' }]);
+    const result = firstValueFrom(service.findAll(params));
+    http.expectOne({ method: 'GET', url: '/api/app/users?page=1&size=25&search=ali' }).flush(page([{ id: 'u1' } as User]));
+    expect(await result).toEqual(page([{ id: 'u1' } as User]));
   });
 
-  it('findAll() refetches when a user changes', async () => {
+  it('findAll() reads the page again when a user changes', async () => {
     vi.useFakeTimers();
     const service = setup();
-    const results: User[][] = [];
-    const subscription = service.findAll().subscribe(it => results.push(it));
-    http.expectOne('/api/app/users').flush([]);
+    const results: Page<User>[] = [];
+    const subscription = service.findAll(params).subscribe(it => results.push(it));
+    http.expectOne('/api/app/users?page=1&size=25&search=ali').flush(page([]));
 
     events.next({ spaceId: null, entity: 'spaces', id: 's1', op: 'updated' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectNone('/api/app/users');
+    http.expectNone(() => true);
 
     events.next({ spaceId: null, entity: 'users', id: 'u1', op: 'created' });
     await vi.advanceTimersByTimeAsync(200);
-    http.expectOne('/api/app/users').flush([{ id: 'u1' } as User]);
-    expect(results).toEqual([[], [{ id: 'u1' }]]);
+    http.expectOne('/api/app/users?page=1&size=25&search=ali').flush(page([{ id: 'u1' } as User]));
+    expect(results.map(it => it.items.length)).toEqual([0, 1]);
     subscription.unsubscribe();
   });
 
-  it('findById() reads one user', async () => {
+  it('update() patches the role', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findById('u1'));
-    http.expectOne({ method: 'GET', url: '/api/app/users/u1' }).flush({ id: 'u1' });
-    expect(await result).toEqual({ id: 'u1' });
-  });
-
-  it('update() patches role, permissions and lock', async () => {
-    const service = setup();
-    const done = firstValueFrom(service.update('u1', { role: 'CUSTOM', permissions: [UserPermission.CONTENT_READ], lock: true }));
+    const done = firstValueFrom(service.update('u1', { role: 'EDITOR' }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
-    expect(request.request.body).toEqual({ role: 'CUSTOM', permissions: ['CONTENT_READ'], lock: true });
+    expect(request.request.body).toEqual({ role: 'EDITOR' });
     request.flush({});
     await done;
   });
 
   it('update() sends a null role to clear the access', async () => {
     const service = setup();
-    const done = firstValueFrom(service.update('u1', {}));
+    const done = firstValueFrom(service.update('u1', { role: null }));
     const request = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1' });
-    expect(request.request.body).toEqual({ role: null, permissions: undefined, lock: undefined });
+    expect(request.request.body).toEqual({ role: null });
     request.flush({});
     await done;
   });
 
-  it('delete() deletes the user', async () => {
+  it('remove() deletes the user', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('u1'));
+    const done = firstValueFrom(service.remove('u1'));
     http.expectOne({ method: 'DELETE', url: '/api/app/users/u1' }).flush(null);
     await done;
   });
 
-  it('setDisabled() patches the status', async () => {
+  it('updateStatus() patches the status', async () => {
     const service = setup();
-    const done = firstValueFrom(service.setDisabled('u1', true));
+    const done = firstValueFrom(service.updateStatus('u1', { disabled: true }));
     const req = http.expectOne({ method: 'PATCH', url: '/api/app/users/u1/status' });
     expect(req.request.body).toEqual({ disabled: true });
     req.flush({});
     await done;
   });
 
-  it('invite() posts the invite', async () => {
+  it('create() posts the new user', async () => {
     const service = setup();
-    const invite = { email: 'new@example.com', password: 'secret1', role: 'ADMIN' as const };
-    const done = firstValueFrom(service.invite(invite));
+    const model = { email: 'new@example.com', password: 'secret1', role: 'ADMIN' as const };
+    const done = firstValueFrom(service.create(model));
     const request = http.expectOne({ method: 'POST', url: '/api/app/users' });
-    expect(request.request.body).toEqual(invite);
+    expect(request.request.body).toEqual(model);
     request.flush({ id: 'u2' });
     await done;
   });
 
-  it('passwordResetLink() creates a reset link', async () => {
+  it('createPasswordResetLink() creates a reset link', async () => {
     const service = setup();
-    const result = firstValueFrom(service.passwordResetLink('u1'));
+    const result = firstValueFrom(service.createPasswordResetLink('u1'));
     const link = { url: 'https://cms.example.com/auth/reset?token=t', expiresAt: '2026-01-01T00:00:00.000Z' };
     http.expectOne({ method: 'POST', url: '/api/app/users/u1/password-reset-link' }).flush(link);
     expect(await result).toEqual(link);

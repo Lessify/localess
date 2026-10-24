@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
 import { AssetMetadata, ContentDocumentApi, ContentDocumentStorage, ContentKind, ContentMetadata } from '@localess/shared';
+import { Injectable } from '@nestjs/common';
 
 import { isUuid } from '../../../infra/database/id.js';
-import type { SpaceRow } from '../../../shared/queries/space.query.js';
-import { toAssetMetadata, toContentMetadata } from '../../../shared/transformers/content.transformer.js';
 import { isDraft } from '../../../infra/http/v1/v1-request.js';
+import type { SpaceWithLocales } from '../../../shared/entities/space.entity.js';
+import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
+import { toAssetMetadata, toContentMetadata } from '../../../shared/transformers/content.transformer.js';
 import { ContentDeliveryRepository } from '../repositories/content-delivery.repository.js';
-import { SpaceRepository } from '../repositories/space.repository.js';
 import { stripStorageIds } from '../utils/strip-storage-ids.js';
 
 export interface LinkFilter {
@@ -31,16 +31,16 @@ export interface LocaleDocument {
 @Injectable()
 export class ContentDeliveryService {
   constructor(
-    private readonly delivery: ContentDeliveryRepository,
-    private readonly spaces: SpaceRepository,
+    private readonly contentDeliveryRepository: ContentDeliveryRepository,
+    private readonly spaceLookupRepository: SpaceLookupRepository,
   ) {}
 
-  findSpace(spaceId: string): Promise<SpaceRow | undefined> {
-    return this.spaces.find(spaceId);
+  findSpace(spaceId: string): Promise<SpaceWithLocales | undefined> {
+    return this.spaceLookupRepository.findOne(spaceId);
   }
 
   findContentIdByFullSlug(spaceId: string, fullSlug: string): Promise<string | undefined> {
-    return this.delivery.findIdByFullSlug(spaceId, fullSlug);
+    return this.contentDeliveryRepository.findIdByFullSlug(spaceId, fullSlug);
   }
 
   /** Snapshots of `ids` in `locale` (published, or drafts built when missing). Missing ones are absent. */
@@ -52,7 +52,9 @@ export class ContentDeliveryService {
   ): Promise<Map<string, { document: ContentDocumentStorage; builtAt: Date }>> {
     ids = [...new Set(ids.filter(isUuid))];
     if (!ids.length) return new Map();
-    const rows = draft ? await this.delivery.findDrafts(spaceId, ids, locale) : await this.delivery.findPublished(spaceId, ids, locale);
+    const rows = draft
+      ? await this.contentDeliveryRepository.findDrafts(spaceId, ids, locale)
+      : await this.contentDeliveryRepository.findPublished(spaceId, ids, locale);
     return new Map(rows.map(row => [row.contentId, { document: row.data, builtAt: row.builtAt }]));
   }
 
@@ -60,7 +62,12 @@ export class ContentDeliveryService {
    * The document in `locale`, else in the space's default locale (what `resolveLocaleFilePath` did with the two
    * Storage files): a locale added since the publish, or one never published. A draft is built for any locale.
    */
-  async findLocaleDocument(space: SpaceRow, contentId: string, locale: string, version: unknown): Promise<LocaleDocument | undefined> {
+  async findLocaleDocument(
+    space: SpaceWithLocales,
+    contentId: string,
+    locale: string,
+    version: unknown,
+  ): Promise<LocaleDocument | undefined> {
     const draft = isDraft(version);
     const primary = (await this.localeDocuments(space.id, [contentId], locale, draft)).get(contentId);
     if (primary) return { ...primary, resolvedLocale: locale };
@@ -78,7 +85,7 @@ export class ContentDeliveryService {
     const resolved: Record<string, ContentDocumentApi> = {};
     for (const id of valid) {
       const document = found.get(id)?.document;
-      if (document) resolved[id] = stripStorageIds(document) as ContentDocumentApi;
+      if (document) resolved[id] = stripStorageIds(document);
     }
     return resolved;
   }
@@ -87,7 +94,7 @@ export class ContentDeliveryService {
   async resolveLinks(spaceId: string, ids: string[]): Promise<Record<string, ContentMetadata>> {
     const unique = [...new Set(ids.filter(isUuid))];
     if (!unique.length) return {};
-    const rows = await this.delivery.findContents(spaceId, unique);
+    const rows = await this.contentDeliveryRepository.findContents(spaceId, unique);
     return Object.fromEntries(rows.map(row => [row.id, toContentMetadata(row)]));
   }
 
@@ -95,7 +102,7 @@ export class ContentDeliveryService {
   async resolveAssets(spaceId: string, ids: string[]): Promise<Record<string, AssetMetadata>> {
     const unique = [...new Set(ids.filter(isUuid))];
     if (!unique.length) return {};
-    const rows = await this.delivery.findAssets(spaceId, unique);
+    const rows = await this.contentDeliveryRepository.findAssets(spaceId, unique);
     const byId = new Map(rows.map(row => [row.id, row]));
     const resolved: Record<string, AssetMetadata> = {};
     for (const id of unique) {
@@ -113,15 +120,20 @@ export class ContentDeliveryService {
    * The subtree used to be the Firestore range `parentSlug >= p AND < p + "/~"`, which also matched sibling folders
    * sharing the prefix (`blog-archive` under `blog`). It is an exact prefix match.
    */
-  async listLinks(spaceId: string, version: unknown, filter: LinkFilter): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
-    const snapshot = await this.delivery.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
+  async findLinks(
+    spaceId: string,
+    version: unknown,
+    filter: LinkFilter,
+  ): Promise<{ links: Record<string, ContentMetadata>; builtAt: Date }> {
+    const snapshot = await this.contentDeliveryRepository.findLinks(spaceId, isDraft(version) ? 'draft' : 'published');
     const all = Object.values(snapshot.data);
     const { parentSlug, excludeChildren, kind } = filter;
     const links = all.filter(
       it =>
         (parentSlug
           ? it.parentSlug === parentSlug || (!excludeChildren && it.parentSlug.startsWith(`${parentSlug}/`))
-          : !excludeChildren || it.parentSlug === '') && (!kind || it.kind === kind),
+          : !excludeChildren || it.parentSlug === '') &&
+        (!kind || it.kind === kind),
     );
     return { links: Object.fromEntries(links.map(it => [it.id, it])), builtAt: snapshot.builtAt };
   }

@@ -1,46 +1,46 @@
+import type { FirebaseImport, FirebaseImportConnection, FirebaseImportStart, FirebaseSourceSpace } from '@localess/shared';
+import { ADMINS } from '@localess/shared';
+import { zFirebaseImportConnection, zFirebaseImportStart } from '@localess/shared/zod';
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
-import { z } from 'zod';
-import { RequireAdmin } from '../../../auth/decorators.js';
-import { CurrentUser } from '../../../auth/request-context.js';
-import type { UserRow } from '../../../shared/models/user.js';
-import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
-import { ZodValidationPipe } from '../../../infra/http/zod-validation.pipe.js';
-import { FirebaseImportService } from '../services/firebase-import.service.js';
 
-const connection = z.object({ origin: z.string().min(1).max(2048), token: z.string().min(1).max(500) });
-const startSchema = connection.extend({ spaceId: z.string().min(1).max(128) });
+import { RequireRole } from '../../../auth/decorators.js';
+import { CurrentUser } from '../../../auth/request-context.js';
+import { UuidParamPipe } from '../../../infra/http/uuid-param.pipe.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
+import { FirebaseImportService } from '../services/firebase-import.service.js';
 
 /** Admin → Spaces → Import from Firebase. The migration token is used for the request and never stored. */
 @Controller('api/app/admin/firebase-import')
-@RequireAdmin()
+@RequireRole(ADMINS)
 export class FirebaseImportController {
-  constructor(private readonly imports: FirebaseImportService) {}
+  constructor(private readonly firebaseImportService: FirebaseImportService) {}
 
+  /** A `POST`: the token travels in the body, never in a URL. */
   @Post('spaces')
   @HttpCode(200)
-  spaces(@Body(new ZodValidationPipe(connection)) body: z.infer<typeof connection>) {
-    return this.imports.sourceSpaces(body.origin, body.token);
+  findSourceSpaces(@Body({ schema: zFirebaseImportConnection }) body: FirebaseImportConnection): Promise<FirebaseSourceSpace[]> {
+    return this.firebaseImportService.findSourceSpaces(body);
   }
 
   @Post()
   @HttpCode(202)
-  start(@Body(new ZodValidationPipe(startSchema)) body: z.infer<typeof startSchema>, @CurrentUser() user: UserRow) {
-    return this.imports.start(body.origin, body.token, body.spaceId, user);
+  start(@Body({ schema: zFirebaseImportStart }) body: FirebaseImportStart, @CurrentUser() user: UserEntity): Promise<FirebaseImport> {
+    return this.firebaseImportService.start(body, user);
   }
 
   @Get()
-  list() {
-    return this.imports.list();
+  findAll(): Promise<FirebaseImport[]> {
+    return this.firebaseImportService.findAll();
   }
 
   @Get(':id')
-  get(@Param('id', UuidParamPipe) id: string) {
-    return this.imports.get(id);
+  findOne(@Param('id', UuidParamPipe) id: string): Promise<FirebaseImport> {
+    return this.firebaseImportService.findOne(id);
   }
 
   @Post(':id/cancel')
   @HttpCode(200)
-  cancel(@Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserRow) {
-    return this.imports.cancel(id, user);
+  cancel(@Param('id', UuidParamPipe) id: string, @CurrentUser() user: UserEntity): Promise<FirebaseImport> {
+    return this.firebaseImportService.cancel(id, user);
   }
 }

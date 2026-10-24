@@ -26,15 +26,20 @@ pnpm server:build      # Compile the server (apps/server/dist; builds packages/s
 docker compose up      # Server + Postgres 18 from the Dockerfile
 
 # Code quality
-pnpm lint              # ESLint check
+pnpm lint              # ESLint check: web (angular-eslint), server, shared and e2e (typescript-eslint, type-aware, imports sorted); the server's also type-checks its tests
 pnpm lint:fix          # Auto-fix lint issues
-pnpm prettier:fix      # Format code
+pnpm prettier          # Prettier check of the whole repository (CI); .prettierignore keeps docs, packages/ui and third-party copies out
+pnpm prettier:fix      # Format the whole repository
 
 # Testing
 pnpm test              # Vitest + happy-dom (via Angular's @angular/build:unit-test builder); specs use Jasmine-style describe/it
 pnpm test:scripts      # node:test suites for tools/scripts and packages/visual-editor-sync
 pnpm server:test       # Server vitest suite (real embedded Postgres, one database per file)
-pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, permissions, locales)
+pnpm shared:test       # packages/shared: type-check + vitest (models, zod validators, roles, locales)
+pnpm e2e               # Playwright end-to-end tests (apps/e2e): builds SPA + server, runs them on a fresh embedded Postgres
+pnpm e2e:run           # same, against the existing builds; `pnpm e2e:install` once to download Chromium
+pnpm e2e:smoke         # only the @smoke critical path (~30 s), against the existing builds
+pnpm demos             # product videos for the website (apps/e2e/demos) into apps/e2e/demo-videos (WebM; MP4 + poster with ffmpeg)
 
 # Server CLI (apps/server/src/cli; needs `pnpm server:build` first)
 pnpm localess <command>                       # db:migrate, check, admin:create --email <email>
@@ -67,7 +72,8 @@ pnpm workspace monorepo (one root `package.json`, `pnpm-workspace.yaml` and `pnp
 ```
 apps/web/                  # @localess/web — Angular app (its own angular.json)
 apps/server/               # @localess/server — NestJS server, Drizzle migrations in apps/server/drizzle
-packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, permissions, locales, extractContent; zod validators in @localess/shared/zod
+apps/e2e/                  # @localess/e2e — Playwright end-to-end tests against the built server + SPA
+packages/shared/           # @localess/shared — domain contract used by server and web: models, enums, roles, locales, extractContent; zod validators in @localess/shared/zod
 packages/ui/               # @localess/ui — Spartan/Helm components (source only), imported as @spartan-ng/helm/*
 packages/visual-editor-sync/ # sync-v1.js for customer sites in the Visual Editor, built into the web assets
 tools/scripts/             # repo tooling: version bump, version.json, locale flags generator
@@ -88,7 +94,7 @@ apps/web/src/app/
 │   ├── api/       # Runtime config, SSE change events, liveQuery, apiInterceptor
 │   ├── services/  # App API services used by several features or by a store
 │   ├── stores/    # 3 NgRx Signal stores (UserStore, SpaceStore, LocalSettingsStore)
-│   ├── guards/    # permissionGuard, spaceSelectionGuard, dirty-form guard
+│   ├── guards/    # roleGuard, spaceSelectionGuard, dirty-form guard
 │   └── error-handler/, title/, utils/
 ├── shared/        # Reusable UI only (@shared/*)
 │   ├── components/# Dialogs, table, paginator, tree, filter-toolbar, locale-icon, logo, etc. (toasts via NotificationService/Sonner)
@@ -106,14 +112,14 @@ apps/server/src/   # NestJS server: infra/ (config, database, storage, events, h
 ### State Management
 
 Three NgRx Signal stores initialized at app startup:
-- **`UserStore`**: Auth state, role, granular permissions (loaded from `/api/auth/me`)
+- **`UserStore`**: Auth state and the user's one role (loaded from `/api/auth/me`)
 - **`SpaceStore`**: Selected workspace, content hierarchy, schemas, documents
 - **`LocalSettingsStore`**: User preferences (persisted to localStorage)
 
 ### Routing & Guards
 
 - Root redirects to `/features`, authenticated via `authGuard()`
-- Feature routes use `permissionGuard(...permissions)` in `features-routing.module.ts`; the server enforces the same permissions with `@RequirePermission` on every App API route
+- Feature routes use `roleGuard(list)` in `features-routing.module.ts`; the server enforces the same role lists (`packages/shared/src/roles.ts`: `ANY_ROLE`, `TRANSLATORS`, `CONTENT_WRITERS`, `DEVELOPERS`, `ADMINS`) with `@RequireRole` on every App API route
 - All features are lazy-loaded
 
 ### Services Pattern
@@ -136,6 +142,7 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 - **Services**: `providedIn: 'root'` for singletons
 - **Images**: Use `NgOptimizedImage` for static images
 - **TypeScript**: Strict mode, avoid `any` (use `unknown`), prefer type inference
+- **Templates**: type-checked strictly (`strictTemplates`); give a template typed values (a typed getter or lookup in the component) rather than `$any()` or an untyped `form.controls[name]`
 
 ## Git Commits
 
@@ -146,7 +153,8 @@ These apply to all Angular code in this project (from `.github/copilot-instructi
 After every code change, always run the following in order:
 
 1. `pnpm build` — verify the project compiles without errors
-2. `pnpm lint:fix` — auto-fix lint and prettier issues
+2. `pnpm lint:fix` — auto-fix lint issues
+3. `pnpm prettier:fix` — format (the whole repository: server, shared, e2e and tools included)
 
 ## Environment & Local Setup
 
@@ -168,15 +176,27 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | API token types (public, preview, management), values, guards | [docs/auth-tokens.md](docs/auth-tokens.md) | Middleware, token management, public API |
 | Frontend architecture, routing, packages/ui | [docs/frontend-architecture.md](docs/frontend-architecture.md) | Any Angular feature work |
 | NgRx Signal stores, state patterns | [docs/frontend-state.md](docs/frontend-state.md) | Adding/editing stores or components |
-| User roles, route guards, UI permissions | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management |
+| User roles (Admin, Developer, Editor, Translator, Viewer), the role lists, `@RequireRole`, route guards, `hasRole` | [docs/frontend-permissions.md](docs/frontend-permissions.md) | Auth, guards, user management, any new route or button that changes data |
 | Spartan UI migration (checkbox, select, notifications) | [docs/spartan-ui-migration.md](docs/spartan-ui-migration.md) | Migrating Material → Spartan, dialogs, forms |
 | **Shared components** (`ll-table`, `ll-paginator`, `ll-tree`, `ll-filter-toolbar`) — index, required doc structure | [docs/components/README.md](docs/components/README.md) | Anything in `apps/web/src/app/shared/components/`; read before adding or changing one |
 | **Firebase → NestJS/Postgres migration** — plan, phases, progress log | [docs/roadmap/firebase-to-nestjs-postgres.md](docs/roadmap/firebase-to-nestjs-postgres.md), [apps/server/README.md](apps/server/README.md) | Anything in `apps/server/`, or replacing a Firebase dependency |
 | Repository layout, workspaces, structure refactoring phases | [docs/roadmap/monorepo-structure.md](docs/roadmap/monorepo-structure.md) | Moving files between apps/packages, workspace scripts, Dockerfile |
-| Import / Export (hidden behind `FEATURE_FLAGS.importExport`) — what is hidden, what must be fixed before turning it back on | [docs/roadmap/import-export.md](docs/roadmap/import-export.md) | Contents/Schemas/Assets/Translations import or export, Tasks page, `apps/server/src/modules/tasks/task-runner.service.ts` |
-| **Server architecture** — layers (controller, service, transformer, repository), independent modules, the shared module, transactions, data rules | [docs/server-architecture.md](docs/server-architecture.md) | Any code in `apps/server/src/modules/`; read before adding or moving server code |
+| Import / Export — Translations and Schemas only (`.localess.zip`: manifest + JSON Lines; one locale as key-value JSON is a direct download); why Contents and Assets move with the full export; the Tasks engine (one task per space, progress, result, all-or-nothing, roles by kind) | [docs/roadmap/import-export.md](docs/roadmap/import-export.md), [docs/features/spaces/tasks.md](docs/features/spaces/tasks.md) | Translations/Schemas import or export, Translate Locale, the Tasks page, `apps/server/src/modules/tasks/` |
+| **Server rules** — index of the normative server docs, how a rule is written, what checks them (`apps/server/test/architecture.test.ts`) | [docs/server/README.md](docs/server/README.md) | Before any server change |
+| **Pagination** — `Page<T>` / `Pageable` (`@localess/shared`), `zPageable` (default direction per endpoint), `zMultiValue` (`status=A&status=B`), repository `findAll` + `findAllCount`, web `PagedList`, the step-by-step for a new paged list (Tasks); decision records: round 1, round 2 specs | [docs/server/pagination.md](docs/server/pagination.md) | Any list endpoint or table that may grow: page it on the server the same way |
+| **Server architecture** — modules and layers (controller, service, transformer, repository), auth, transactions, the shared module, data rules, database entities (`shared/entities/<entity>.entity.ts`: `<Entity>Entity`, `<Entity>InsertEntity`, `<Entity>Select` with the relations of `infra/database/relations.ts`; never sent to the web) | [docs/server/architecture.md](docs/server/architecture.md) | Any code in `apps/server/src/`; read before adding or moving server code |
+| **Controllers, services, repositories** — one set per entity and sub-entity (`space`, `space-locale`, `space-environment`), what each layer does, validation (`@Body({ schema: zX })`, the 400 body), request models defined once in `@localess/shared` (`<entity>.zod.ts`: `zX` + `X`, the web sends `X`), repositories that only query (`findAll` / `findAllCount` / `findOne`, relational first, writes answer nothing), `SpaceLookupRepository` for reading a space from any module | [docs/server/controllers-services-repositories.md](docs/server/controllers-services-repositories.md) | Adding or splitting a controller, service or repository |
+| **Naming** — singular files and classes (`space-locale.service.ts` / `SpaceLocaleService`), NestJS method names (`findAll`, `findOne`, `find<What>`, `create`, `update`, `remove`), repository names (`findPage`, `delete`), request models `zX` / `X` (`<Entity>Create`, `<Entity>Update`, `<Entity><Action>`, `<Entity>Pageable`), response models mirroring their entity with optional relations, declared return types (Spaces so far) | [docs/server/naming.md](docs/server/naming.md) | Naming any server file, class, method or model |
 | **Content and asset trees** — `parent_id` with cascade, slugs unique per parent, paths computed (`content-tree.query.ts`), the editor's folder map | [docs/roadmap/content-asset-tree.md](docs/roadmap/content-asset-tree.md) | Anything that creates, moves or deletes contents or assets, or needs a `fullSlug` |
+| Contents in `SpaceStore` patched from change events (TODO) — the light list of every folder and document is read again on each change today; patch it from the event when spaces grow | [docs/roadmap/content-store-patch.md](docs/roadmap/content-store-patch.md) | `SpaceStore` contents, breadcrumbs, Move dialog, Link / References fields, change events |
+| Asset name rules (TODO) — upload vs dialogs vs server: short names, duplicates, Edit Folder length | [docs/roadmap/asset-names.md](docs/roadmap/asset-names.md) | Asset upload, folder or file dialogs, asset name validation |
+| Space templates on the server (one create transaction), test templates (`LOCALESS_TEST_TEMPLATES`: "Translations (large)", 10,000 generated keys; "Contents (all fields)", every field kind, files, nested blocks; "Assets (large)", 1,000 files in one folder; "Contents (large)", 2,000 documents) for prepared e2e spaces | [docs/roadmap/space-templates.md](docs/roadmap/space-templates.md), [docs/roadmap/contents-template.md](docs/roadmap/contents-template.md), [docs/roadmap/assets-template.md](docs/roadmap/assets-template.md), [docs/roadmap/contents-large-template.md](docs/roadmap/contents-large-template.md) | Space creation, `apps/server/src/modules/spaces/templates/`, the Create Space dialog, e2e test data (`spaceTemplate` fixture option) |
+| Screen scenarios and recordings for the documentation (TODO) — a scenario and video per feature, doc screenshots, one realistic "Acme" space for every recording; kept apart from the e2e tests | [docs/roadmap/documentation-media.md](docs/roadmap/documentation-media.md) | The product videos (`apps/e2e/demos/`), docs media |
+| Space export and backups (TODO) — a whole space as one `.localess.zip` (entity state, no published versions) vs in-app backups with restore points; both on the Tasks engine, one task per space; what is decided and what is open | [docs/roadmap/space-export-backup.md](docs/roadmap/space-export-backup.md) | Exporting or importing a whole space, backups, restore |
+| Search for contents and assets (TODO) — none today; `?name=` stays a name prefix, search gets its own parameter; fields, matching, index, scope to decide | [docs/roadmap/search.md](docs/roadmap/search.md) | Contents or Assets lists, the pickers, the `?name=` filter of the App API |
+| Reference field Path setting (TODO) — stored but unused by the picker since 2024; options: filter, open in folder, remove | [docs/roadmap/reference-path-filter.md](docs/roadmap/reference-path-filter.md) | Reference / References fields, the references picker dialog |
 | Database structure review — per-table decisions (locales, default locale, environments), open TODOs | [docs/roadmap/database-structure.md](docs/roadmap/database-structure.md) | `apps/server/src/infra/database/schema.ts`, new tables or columns, space locales/environments |
+| End-to-end tests (Playwright) — how a run works, fixtures, error guard, page objects, conventions; the test plan (what is covered, planned, bugs found); the product videos (`demos/`); the e2e skills (`writing-localess-e2e-tests`: one test or covering a whole feature; `playwright-best-practices`) and the Playwright Test Agents (`.claude/agents/`, drafts only) | [apps/e2e/README.md](apps/e2e/README.md), [apps/e2e/TEST-PLAN.md](apps/e2e/TEST-PLAN.md) | Any `apps/e2e/` test, or any UI change to a covered flow (labels, button names, dialogs, toasts are what the tests look for) |
 | Frontend testing — Vitest setup (`test.isolate: true`), HttpTestingController + ChangeEventsService stub pattern for services | [docs/testing.md](docs/testing.md) | Any new/edited `*.spec.ts`, `apps/web/src/test-setup.ts` |
 | UUIDv7 ids (`newUuid()`), `legacy_id` (assets only; a space's Firestore id is its `firebase_imports.source_space_id`, for old asset URLs), schema `name` / translation `key` / token `token` as references; the original migration plan, superseded by the space import | [docs/roadmap/firebase-migration-uuidv7.md](docs/roadmap/firebase-migration-uuidv7.md) | Any new table or id, schema/translation/token keys |
 | **Deployment & self-hosting** | | |

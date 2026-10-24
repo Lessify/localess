@@ -64,7 +64,7 @@ export class LocaleDialogComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.localeService.findAllLocales().subscribe(response => {
+    this.localeService.findAll().subscribe(response => {
       // `?.` because the injection above is optional: without it, a dialog opened with no context
       // at all throws here rather than falling back to the full list.
       const taken = new Set((this.context?.locales ?? []).map(it => it.id));

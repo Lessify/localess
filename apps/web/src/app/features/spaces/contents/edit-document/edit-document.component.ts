@@ -18,7 +18,7 @@ import { DirtyFormGuardComponent } from '@core/guards/dirty-form.guard';
 import { ContentService } from '@core/services/content.service';
 import { NotificationService } from '@core/services/notification.service';
 import { PlatformService } from '@core/services/platform.service';
-import { TokenService } from '@core/services/token.service';
+import { SpaceTokenService } from '@core/services/space-token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
@@ -65,10 +65,11 @@ import {
   TranslateLocaleDialogContext,
   TranslateLocaleDialogResult,
 } from '@shared/components/translate-locale-dialog';
+import { SplitterValueDirective } from '@shared/directives/splitter-value.directive';
 import { ContentError } from '@shared/models/content.model';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { TOKEN_TYPE_INFO } from '@shared/models/token.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -101,7 +102,7 @@ import {
   moveBlockUp,
   removeBlock,
 } from '../shared/block-actions';
-import { collectTranslatableFields, extractReferences } from '../shared/content.utils';
+import { collectTranslatableFields } from '../shared/content.utils';
 import { ContentHelperService } from '../shared/content-helper.service';
 import { DocumentStatusComponent } from '../shared/document-status/document-status.component';
 import { SchemaPathItem } from './edit-document.model';
@@ -116,11 +117,12 @@ import { SchemaPathItem } from './edit-document.model';
   },
   imports: [
     ClipboardModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     ContentPreviewComponent,
     EditDocumentSchemaComponent,
     HlmResizableImports,
+    SplitterValueDirective,
     HlmBreadcrumbImports,
     HlmIconImports,
     HlmButtonImports,
@@ -165,7 +167,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   readonly platformService = inject(PlatformService);
   private readonly cd = inject(ChangeDetectorRef);
   private readonly contentService = inject(ContentService);
-  private readonly tokenService = inject(TokenService);
+  private readonly spaceTokenService = inject(SpaceTokenService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
   private readonly contentHelperService = inject(ContentHelperService);
@@ -176,7 +178,8 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   spaceId = input.required<string>();
   contentId = input.required<string>();
   document = input.required<ContentDocument>();
-  documents = computed(() => this.spaceStore.documents());
+  /** Every document of the space with its path, from `SpaceStore` (live): the Link field's choices. */
+  documents = computed(() => this.spaceStore.contentDocuments());
   schemas = computed(() => this.spaceStore.schemas());
   // Computed out of inputs
   rootSchema = computed(() => this.schemas().find(it => it.name === this.document().schema));
@@ -191,10 +194,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   selectedSpace = computed(() => this.spaceStore.selectedSpace());
   // Locales
   availableLocales = computed<Locale[]>(() => {
-    const space = this.selectedSpace();
-    if (space) {
-      const { locales, defaultLocale } = space;
-      return locales.map(locale => {
+    const defaultLocale = this.spaceStore.defaultLocale();
+    if (defaultLocale) {
+      return this.spaceStore.locales().map(locale => {
         if (locale.id === defaultLocale.id) {
           return {
             id: CONTENT_DEFAULT_LOCALE.id,
@@ -208,12 +210,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
   });
   availableLocalesMap = computed(() => new Map<string, string>(this.availableLocales().map(it => [it.id, it.name])));
 
-  selectedLocale = linkedSignal<Locale>(() => {
-    const locales = this.availableLocales();
-    if (locales.length > 0) {
-      return locales[0];
-    }
-    return CONTENT_DEFAULT_LOCALE;
+  // Keeps the chosen locale while it exists: the space list is live and re-emits whenever any space changes, and
+  // following it reset the editor to the default locale mid-edit.
+  selectedLocale = linkedSignal<Locale[], Locale>({
+    source: this.availableLocales,
+    computation: (locales, previous) => locales.find(it => it.id === previous?.value.id) ?? locales[0] ?? CONTENT_DEFAULT_LOCALE,
   });
   hoverSchemaPath = signal<string[] | undefined>(undefined);
   hoverSchemaField = signal<string | undefined>(undefined);
@@ -262,9 +263,11 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     // Initialize document data
     if (document.kind === ContentKind.DOCUMENT) {
       if (document.data === undefined) {
+        // The document's own schema name: the space's schemas may not have loaded yet (a deep link into another
+        // space), and an empty `_schema` left the editor without fields for good.
         this.documentData = {
           _id: v4(),
-          _schema: this.rootSchema()?.name || '',
+          _schema: document.schema,
         };
       } else if (typeof document.data === 'string') {
         this.documentData = normalizeContent(JSON.parse(document.data));
@@ -305,13 +308,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be published.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
@@ -325,13 +324,9 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Content can not be unpublished.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
   }
 
@@ -340,25 +335,12 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
     this.contentErrors = [];
     this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), CONTENT_DEFAULT_LOCALE.id));
-    for (const locale of this.selectedSpace()?.locales || []) {
+    for (const locale of this.spaceStore.locales()) {
       this.contentErrors.push(...this.contentHelperService.validateContent(this.documentData, this.schemas(), locale.id));
     }
 
     if (this.contentErrors.length === 0) {
-      const refs = this.availableLocales()
-        .map(it => extractReferences(this.documentData, this.schemas(), it.id))
-        .reduce(
-          (acc, val) => {
-            const [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc] = acc;
-            const [inUseAssetsVal, inUseLinksVal, inUseReferencesVal] = val;
-            inUseAssetsVal.forEach(it => inUseAssetsAcc.add(it));
-            inUseLinksVal.forEach(it => inUseLinksAcc.add(it));
-            inUseReferencesVal.forEach(it => inUseReferencesAcc.add(it));
-            return [inUseAssetsAcc, inUseLinksAcc, inUseReferencesAcc];
-          },
-          [new Set<string>(), new Set<string>(), new Set<string>()],
-        );
-      this.contentService.updateDocumentData(this.spaceId(), this.contentId(), this.documentData, refs).subscribe({
+      this.contentService.updateData(this.spaceId(), this.contentId(), this.documentData).subscribe({
         next: () => {
           this.notificationService.success('Content has been saved in draft.');
           this.previewComponent()?.sendEvent({ type: 'save', documentId: this.contentId() });
@@ -367,18 +349,30 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
         },
         error: () => {
           this.notificationService.error('Content can not be saved.');
+          // An error ends the request without `complete`: Save must work again.
+          this.stopSaveLoading();
         },
-        complete: () => {
-          setTimeout(() => {
-            this.isSaveLoading.set(false);
-            this.cd.markForCheck();
-          }, 1000);
-        },
+        complete: () => this.stopSaveLoading(),
       });
     } else {
       this.notificationService.error('Content is not valid. Please check all fields are filled correctly.');
       this.isSaveLoading.set(false);
     }
+  }
+
+  /** After a publish or unpublish, failed or not (an error ends the request without `complete`). */
+  private stopPublishLoading(): void {
+    setTimeout(() => {
+      this.isPublishLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
+  }
+
+  private stopSaveLoading(): void {
+    setTimeout(() => {
+      this.isSaveLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   back(): void {
@@ -410,7 +404,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
 
   /** Opens `open` with the current value of the first of `types` the space has; a toast when it has none or the lookup fails. */
   private withApiToken(types: TokenType[], open: (token: string) => void): void {
-    this.tokenService.firstValue(this.spaceId(), types).subscribe({
+    this.spaceTokenService.firstValue(this.spaceId(), types).subscribe({
       next: token => {
         if (token) open(token);
         else this.notificationService.error(`Please create a ${TOKEN_TYPE_INFO[types[0]].label} Token in your Space Settings`);
@@ -583,12 +577,13 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
           }
         }
         selectedContentId = contentIdIteration.shift();
-        this.clickSchemaField.set(field);
       } else {
         console.warn(`onPreviewSchemaSelect: schema "${this.selectedDocumentData._schema}" not found`);
         return;
       }
     }
+    // After the walk, so a field of the document itself (no block in between) is focused too.
+    this.clickSchemaField.set(field);
   }
 
   onPreviewSchemaHover(event: { id: string; field?: string }): void {
@@ -691,7 +686,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
             return EMPTY;
           }
           const byId = new Map(fields.map(field => [field.id, field]));
-          const defaultLocaleId = this.selectedSpace()?.defaultLocale.id;
+          const defaultLocaleId = this.selectedSpace()?.defaultLocale?.id;
           return this.translateService
             .translateBatch({
               items: fields.map(({ id, content, format }) => ({ id, content, format })),

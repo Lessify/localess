@@ -1,15 +1,15 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
-import { AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
-import { UnsplashPluginService } from '@core/services/unsplash-plugin.service';
+import { UnsplashService } from '@core/services/unsplash.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, Subject, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 import { AssetsComponent } from './assets.component';
 
@@ -21,6 +21,13 @@ function folder(overrides: Partial<AssetFolder> = {}): AssetFolder {
   return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', ...overrides } as AssetFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('AssetsComponent', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -28,37 +35,46 @@ describe('AssetsComponent', () => {
   });
 
   function setup(folderId: string | null = null) {
-    const findAll = vi.fn().mockReturnValue(of([]));
+    const findAll = vi.fn().mockReturnValue(of({ items: [], page: 0, size: 20, total: 0 }));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const importFile = vi.fn().mockReturnValue(of({ id: 'new-file' }));
     const createFolder = vi.fn().mockReturnValue(of(undefined));
-    const updateFolder = vi.fn().mockReturnValue(of(undefined));
-    const updateFile = vi.fn().mockReturnValue(of(undefined));
-    const deleteAsset = vi.fn().mockReturnValue(of(undefined));
-    const usage = vi.fn().mockReturnValue(of({ contents: 0 }));
+    const update = vi.fn().mockReturnValue(of({}));
+    const remove = vi.fn().mockReturnValue(of(undefined));
+    const findUsage = vi.fn().mockReturnValue(of({ contents: 0 }));
     const move = vi.fn().mockReturnValue(of(undefined));
-    const createAssetImportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createAssetExportTask = vi.fn().mockReturnValue(of({ id: 't1' }));
-    const createAssetRegenerateMetadataTask = vi.fn().mockReturnValue(of({ id: 't1' }));
+    const createAssetRegenerateMetadata = vi.fn().mockReturnValue(of({ id: 't1' }));
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
     const changeAssetFolder = vi.fn();
     const assetFolderId = signal<string | null>(folderId);
-    const findAllFolders = vi.fn().mockReturnValue(of([{ id: 'f1', name: 'Images' }, { id: 'f2', name: '2026', parentId: 'f1' }]));
+    const assetFolders = signal([
+      { id: 'f1', name: 'Images' },
+      { id: 'f2', name: '2026', parentId: 'f1' },
+    ]);
 
     TestBed.overrideComponent(AssetsComponent, { set: { template: '<ll-paginator [length]="0" />' } });
     TestBed.configureTestingModule({
       providers: [
         {
           provide: AssetService,
-          useValue: { findAll, findAllFolders, createFile, importFile, createFolder, updateFolder, updateFile, delete: deleteAsset, move, usage },
+          useValue: {
+            findAll,
+            createFile,
+            importFile,
+            createFolder,
+            update,
+            remove,
+            move,
+            findUsage,
+          },
         },
-        { provide: TaskService, useValue: { createAssetImportTask, createAssetExportTask, createAssetRegenerateMetadataTask } },
+        { provide: TaskService, useValue: { createAssetRegenerateMetadata } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
-        { provide: UnsplashPluginService, useValue: { enabled: () => false } },
-        { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder } },
+        { provide: UnsplashService, useValue: { enabled: () => false } },
+        { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder, assetFolders } },
       ],
     });
     const fixture = TestBed.createComponent(AssetsComponent);
@@ -70,34 +86,75 @@ describe('AssetsComponent', () => {
       createFile,
       importFile,
       createFolder,
-      updateFolder,
-      updateFile,
-      deleteAsset,
-      usage,
+      update,
+      remove,
+      findUsage,
       move,
-      createAssetImportTask,
-      createAssetExportTask,
-      createAssetRegenerateMetadataTask,
+      createAssetRegenerateMetadata,
       success,
       error,
       open,
       changeAssetFolder,
       assetFolderId,
-      findAllFolders,
     };
   }
 
-  it('loads root assets on init', () => {
-    const { component, findAll } = setup();
+  /** The query of the last page read. */
+  const lastQuery = (findAll: Mock) => (findAll.mock.calls.at(-1)![1] as HttpParams).toString();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', undefined);
-    expect(component.isLoading()).toBe(false);
+  it('loads the root page on init', async () => {
+    const { component, findAll } = setup();
+    await settle();
+
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(findAll).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
+    expect(lastQuery(findAll)).toBe('page=0&size=20');
+    expect(component.page.loading()).toBe(false);
   });
 
-  it('loads assets under the current folder', () => {
+  it('asks once for a folder opened, from its first page (never for the folder left)', async () => {
+    const { component, findAll, assetFolderId } = setup();
+    await settle();
+    component.assetList.list.page.set(2);
+    await settle();
+    findAll.mockClear();
+
+    assetFolderId.set('f1');
+    await settle();
+
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f1');
+  });
+
+  it('loads the page of the current folder', () => {
     const { findAll } = setup('f2');
 
-    expect(findAll).toHaveBeenCalledWith('space-1', 'f2');
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f2');
+  });
+
+  it('pages, sorts, searches and widens the scope on the server, from the first page again', () => {
+    const { component, findAll } = setup('f2');
+    component.assetList.list.page.set(2);
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=2&size=20&parentId=f2');
+
+    component.assetList.onSortChange({ active: 'size', direction: 'desc' });
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=0&size=20&sort=size&direction=desc&parentId=f2');
+
+    component.assetList.onFilterChange({ search: ' logo ', scope: 'deep' });
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=0&size=20&sort=size&direction=desc&search=logo&deep=true&parentId=f2');
+  });
+
+  it('shows where each asset is only for a list from several folders', () => {
+    const { component } = setup('f1');
+    const photo = { id: 'a1', kind: AssetKind.FILE, name: 'photo', parentId: 'f2' } as Asset;
+    expect(component.location()(photo)).toBeUndefined();
+
+    component.assetList.onFilterChange({ search: '', scope: 'deep' });
+    expect(component.location()(photo)).toBe('~/Images/2026');
+    expect(component.location()({ ...photo, parentId: undefined })).toBe('~');
   });
 
   describe('onFileUpload', () => {
@@ -226,69 +283,69 @@ describe('AssetsComponent', () => {
 
   describe('openEditDialog', () => {
     it('routes files to openEditFileDialog', () => {
-      const { component, open, updateFile, success } = setup();
+      const { component, open, update, success } = setup();
       open.mockReturnValue({ closed$: of({ name: 'renamed' }) });
 
       component.openEditDialog(file({ id: 'a1' }));
 
-      expect(updateFile).toHaveBeenCalledWith('space-1', 'a1', { name: 'renamed' });
+      expect(update).toHaveBeenCalledWith('space-1', 'a1', { name: 'renamed', alt: '' });
       expect(success).toHaveBeenCalledWith('File has been updated.');
     });
 
     it('routes folders to openEditFolderDialog', () => {
-      const { component, open, updateFolder, success } = setup();
+      const { component, open, update, success } = setup();
       open.mockReturnValue({ closed$: of({ name: 'renamed' }) });
 
       component.openEditDialog(folder({ id: 'f1' }));
 
-      expect(updateFolder).toHaveBeenCalledWith('space-1', 'f1', { name: 'renamed' });
+      expect(update).toHaveBeenCalledWith('space-1', 'f1', { name: 'renamed' });
       expect(success).toHaveBeenCalledWith('Folder has been updated.');
     });
   });
 
   describe('openDeleteDialog', () => {
     it('deletes and notifies success when confirmed', () => {
-      const { component, open, deleteAsset, success } = setup();
+      const { component, open, remove, success } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.openDeleteDialog(file({ id: 'a1', name: 'photo' }));
 
-      expect(deleteAsset).toHaveBeenCalledWith('space-1', 'a1');
+      expect(remove).toHaveBeenCalledWith('space-1', 'a1');
       expect(success).toHaveBeenCalledWith("Asset 'photo' has been deleted.");
     });
 
     const dialogContent = (open: ReturnType<typeof vi.fn>) => (open.mock.calls[0][1] as { context: { content: string } }).context.content;
 
     it('warns how many contents use the asset before deleting', () => {
-      const { component, open, usage } = setup();
-      usage.mockReturnValue(of({ contents: 2 }));
+      const { component, open, findUsage } = setup();
+      findUsage.mockReturnValue(of({ contents: 2 }));
       open.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(file({ id: 'a1', name: 'photo' }));
 
-      expect(usage).toHaveBeenCalledWith('space-1', 'a1');
+      expect(findUsage).toHaveBeenCalledWith('space-1', 'a1');
       expect(dialogContent(open)).toContain('It is used by 2 contents, which will show it as missing.');
     });
 
     it('says nothing about use when no content uses it, or when the count cannot be loaded', () => {
-      const { component, open, usage } = setup();
+      const { component, open, findUsage } = setup();
       open.mockReturnValue({ closed$: of(undefined) });
       component.openDeleteDialog(file({ id: 'a1' }));
       expect(dialogContent(open)).not.toContain('used by');
 
       open.mockClear();
-      usage.mockReturnValue(throwError(() => new Error('offline')));
+      findUsage.mockReturnValue(throwError(() => new Error('offline')));
       component.openDeleteDialog(file({ id: 'a1' }));
       expect(dialogContent(open)).not.toContain('used by');
     });
 
     it('does not delete when cancelled', () => {
-      const { component, open, deleteAsset } = setup();
+      const { component, open, remove } = setup();
       open.mockReturnValue({ closed$: of(undefined) });
 
       component.openDeleteDialog(file({ id: 'a1' }));
 
-      expect(deleteAsset).not.toHaveBeenCalled();
+      expect(remove).not.toHaveBeenCalled();
     });
   });
 
@@ -312,7 +369,6 @@ describe('AssetsComponent', () => {
 
       component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
 
-      expect(component.isLoading()).toBe(true);
       expect(changeAssetFolder).toHaveBeenCalledWith('f1');
     });
 
@@ -336,8 +392,7 @@ describe('AssetsComponent', () => {
 
   describe('breadcrumbs', () => {
     it('are built from the folder map, and navigate by folder id', () => {
-      const { component, changeAssetFolder, findAllFolders } = setup('f2');
-      expect(findAllFolders).toHaveBeenCalledWith('space-1');
+      const { component, changeAssetFolder } = setup('f2');
       expect(component.trail().map(it => it.name)).toEqual(['Images', '2026']);
 
       component.navigateToFolder('f1');
@@ -389,35 +444,14 @@ describe('AssetsComponent', () => {
   });
 
   describe('task dialogs', () => {
-    it('openImportDialog() creates an import task and notifies success', () => {
-      const { component, open, createAssetImportTask, success } = setup();
-      const uploadedFile = new File(['data'], 'assets.zip');
-      open.mockReturnValue({ closed$: of({ file: uploadedFile }) });
-
-      component.openImportDialog();
-
-      expect(createAssetImportTask).toHaveBeenCalledWith('space-1', uploadedFile);
-      expect(success).toHaveBeenCalledWith('Assets Import Task has been created.', expect.anything());
-    });
-
-    it('openExportDialog() creates an export task and notifies success', () => {
-      const { component, open, createAssetExportTask, success } = setup();
-      open.mockReturnValue({ closed$: of({ path: 'images' }) });
-
-      component.openExportDialog();
-
-      expect(createAssetExportTask).toHaveBeenCalledWith('space-1', 'images');
-      expect(success).toHaveBeenCalledWith('Assets Export Task has been created.', expect.anything());
-    });
-
-    it('openRegenerateMetadataDialog() creates the task when confirmed', () => {
-      const { component, open, createAssetRegenerateMetadataTask, success } = setup();
+    it('openRegenerateMetadataDialog() creates the task when confirmed, and follows it', () => {
+      const { component, open, createAssetRegenerateMetadata } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.openRegenerateMetadataDialog();
 
-      expect(createAssetRegenerateMetadataTask).toHaveBeenCalledWith('space-1');
-      expect(success).toHaveBeenCalledWith('Assets Regenerate Metadata Task has been created.', expect.anything());
+      expect(createAssetRegenerateMetadata).toHaveBeenCalledWith('space-1');
+      expect(open.mock.calls[1][1].context).toEqual({ spaceId: 'space-1', task: { id: 't1' }, title: 'Regenerate Metadata' });
     });
   });
 

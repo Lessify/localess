@@ -31,4 +31,11 @@ export class WebhookValidator {
   public static URL: ValidatorFn[] = [Validators.required, Validators.maxLength(2048), webhookUrl];
 
   public static EVENTS: ValidatorFn[] = [Validators.required, Validators.minLength(1)];
+
+  /** An HTTP header name (a token); which names Localess sets itself the server says on save. */
+  public static HEADER_NAME: ValidatorFn = Validators.pattern(/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/);
+
+  /** One line, at most 2000 characters. */
+  public static HEADER_VALUE: ValidatorFn = control =>
+    Validators.maxLength(2000)(control) ?? (/[\r\n]/.test(String(control.value ?? '')) ? { pattern: true } : null);
 }

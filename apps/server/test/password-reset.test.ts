@@ -1,30 +1,23 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, MockInstance, vi } from 'vitest';
-import { UserPermission } from '@localess/shared';
+
 import { passwordResetTokens } from '../src/infra/database/schema.js';
+import type { UserEntity } from '../src/shared/entities/user.entity.js';
 import { MailMessage, MailService } from '../src/shared/services/mail.service.js';
-import type { UserRow } from '../src/shared/models/user.js';
-import { UsersService } from '../src/modules/users/services/users.service.js';
-import { createTestApp, login, TestApp, XHR } from './test-app.js';
+import { createTestApp, createUser, login, TestApp, XHR } from './test-app.js';
 
 const tokenFrom = (url: string) => new URL(url).searchParams.get('token') as string;
 
 describe('password reset', () => {
   let t: TestApp;
   let send: MockInstance<(message: MailMessage) => Promise<void>>;
-  let target: UserRow;
-  let admin: UserRow;
+  let target: UserEntity;
+  let admin: UserEntity;
 
   beforeAll(async () => {
     t = await createTestApp({ LOCALESS_SMTP_URL: 'smtp://127.0.0.1:2525', LOCALESS_PUBLIC_URL: 'https://cms.example.com' });
-    const users = t.app.get(UsersService);
-    admin = await users.create({ email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
-    target = await users.create({ email: 'forgetful@example.com', password: 'old-pass', role: 'CUSTOM' });
-    await users.create({
-      email: 'manager@example.com',
-      password: 'manager-pass',
-      role: 'CUSTOM',
-      permissions: [UserPermission.USER_MANAGEMENT],
-    });
+    admin = await createUser(t, { email: 'admin@example.com', password: 'admin-pass', role: 'ADMIN' });
+    target = await createUser(t, { email: 'forgetful@example.com', password: 'old-pass', role: 'VIEWER' });
+    await createUser(t, { email: 'manager@example.com', password: 'manager-pass', role: 'DEVELOPER' });
     send = vi.spyOn(t.app.get(MailService), 'send').mockResolvedValue();
   });
 
@@ -87,7 +80,7 @@ describe('password reset', () => {
     expect((await confirm(tokenFrom(response.json().url), 'from-admin')).statusCode).toBe(204);
   });
 
-  it('applies the outrank rule to reset links', async () => {
+  it('hands out reset links to admins only', async () => {
     const cookie = await login(t, 'manager@example.com', 'manager-pass');
     const response = await t.request({
       method: 'POST',
@@ -103,7 +96,7 @@ describe('password reset without SMTP', () => {
 
   beforeAll(async () => {
     t = await createTestApp();
-    await t.app.get(UsersService).create({ email: 'someone@example.com', password: 'secret1', role: 'CUSTOM' });
+    await createUser(t, { email: 'someone@example.com', password: 'secret1', role: 'VIEWER' });
   });
 
   afterAll(() => t?.close());

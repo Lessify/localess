@@ -12,24 +12,46 @@
       <ul hlmSidebarMenu>
         @if (spaceStore.spaces().length > 0) {
           <li hlmSidebarMenuItem>
-            <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom">
+            <button hlmSidebarMenuButton [hlmDropdownMenuTrigger]="spaceMenu" side="bottom" (hlmDropdownMenuClosed)="onSpaceMenuClosed()">
               <ng-icon hlm name="tablerSpaces" /> <span>{{ spaceStore.selectedSpace()?.name }}</span>
               <ng-icon hlm name="lucideChevronDown" class="ml-auto" />
             </button>
             <ng-template #spaceMenu>
               <hlm-dropdown-menu class="w-60">
-                @for (space of spaceStore.spaces(); track space.id) {
-                  <button hlmDropdownMenuRadio [checked]="space.id === spaceStore.selectedSpaceId()" (click)="onSpaceSelection(space)">
-                    <hlm-dropdown-menu-radio-indicator /> <span> {{ space.name }} </span>
-                  </button>
+                <!-- The list scrolls, not the menu: the search box stays on top. -->
+                @if (showSpaceSearch()) {
+                  <!-- Keys typed here are the search's: the menu's own keyboard handling (typeahead, arrows) stays out. -->
+                  <input
+                    hlmInput
+                    type="search"
+                    class="mb-1 h-8 w-full"
+                    placeholder="Search spaces..."
+                    aria-label="Search spaces"
+                    autocomplete="off"
+                    [value]="spaceSearch()"
+                    (input)="spaceSearch.set($any($event.target).value)"
+                    (keydown)="$event.stopPropagation()" />
                 }
+                <div class="max-h-80 overflow-y-auto">
+                  @for (space of filteredSpaces(); track space.id) {
+                    <button
+                      hlmDropdownMenuRadio
+                      [keepOpen]="false"
+                      [checked]="space.id === spaceStore.selectedSpaceId()"
+                      (click)="onSpaceSelection(space)">
+                      <hlm-dropdown-menu-radio-indicator /> <span> {{ space.name }} </span>
+                    </button>
+                  } @empty {
+                    <p class="text-muted-foreground px-2 py-1.5 text-sm">No spaces found</p>
+                  }
+                </div>
               </hlm-dropdown-menu>
             </ng-template>
           </li>
-        } @else if (spaceStore.hasNoSpaces() && ('SPACE_MANAGEMENT' | canUserPerform | async)) {
+        } @else if (spaceStore.hasNoSpaces() && ('ADMINS' | hasRole | async)) {
           <!--
             Fills the slot the space switcher leaves empty, so the shell is never a dead end.
-            Gated on SPACE_MANAGEMENT because that is what the server requires to create a
+            Gated on ADMINS because that is what the server requires to create a
             space, and what guards the route this links to.
           -->
           <li hlmSidebarMenuItem>
@@ -51,10 +73,11 @@
           <div hlmSidebarGroupContent>
             <ul hlmSidebarMenu>
               @for (item of userSideMenu(); track item.label) {
-                @if (item.permission | canUserPerform | async) {
+                @if (item.role | hasRole | async) {
                   @if (item.items) {
-                    <hlm-collapsible [expanded]="item.isOpen!()" (expandedChange)="item.isOpen!.set($event)">
-                      <li hlmSidebarMenuItem>
+                    <!-- The collapsible inside the item: a list may only hold list items. -->
+                    <li hlmSidebarMenuItem>
+                      <hlm-collapsible [expanded]="item.isOpen!()" (expandedChange)="item.isOpen!.set($event)">
                         <button hlmSidebarMenuButton hlmCollapsibleTrigger>
                           <ng-icon hlm [name]="item.icon" />
                           <span>{{ item.label }}</span>
@@ -63,7 +86,7 @@
                         <hlm-collapsible-content>
                           <ul hlmSidebarMenuSub>
                             @for (subItem of item.items; track subItem.label) {
-                              @if (subItem.permission | canUserPerform | async) {
+                              @if (subItem.role | hasRole | async) {
                                 <li hlmSidebarMenuSubItem>
                                   <a
                                     hlmSidebarMenuSubButton
@@ -79,8 +102,8 @@
                             }
                           </ul>
                         </hlm-collapsible-content>
-                      </li>
-                    </hlm-collapsible>
+                      </hlm-collapsible>
+                    </li>
                   } @else {
                     <li hlmSidebarMenuItem>
                       <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
@@ -95,13 +118,13 @@
           </div>
         </div>
       }
-      @if (['USER_MANAGEMENT', 'SPACE_MANAGEMENT'] | canUserPerform | async) {
+      @if ('ADMINS' | hasRole | async) {
         <div hlmSidebarGroup>
           <div hlmSidebarGroupLabel>Admin</div>
           <div hlmSidebarGroupContent>
             <ul hlmSidebarMenu>
               @for (item of adminSideMenu; track item.label) {
-                @if (item.permission | canUserPerform | async) {
+                @if (item.role | hasRole | async) {
                   <li hlmSidebarMenuItem>
                     <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
                       <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" /> <span>{{ item.label }}</span>
@@ -225,7 +248,7 @@
         <li hlmSidebarMenuItem>
           <button hlmSidebarMenuButton size="lg" [hlmDropdownMenuTrigger]="userMenu" side="right" class="flex gap-2">
             <hlm-avatar>
-              <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+              <img [src]="userStore.photoUrl()" hlmAvatarImage alt="User Avatar" />
               <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
             </hlm-avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
@@ -238,7 +261,7 @@
             <hlm-dropdown-menu class="w-60">
               <div class="flex gap-2 p-2">
                 <hlm-avatar>
-                  <img [src]="userStore.photoURL()" hlmAvatarImage alt="User Avatar" />
+                  <img [src]="userStore.photoUrl()" hlmAvatarImage alt="User Avatar" />
                   <span class="text-primary-foreground bg-primary" hlmAvatarFallback>{{ userStore.initials() }}</span>
                 </hlm-avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
@@ -277,7 +300,14 @@
                 @if (isLast) {
                   <span hlmBreadcrumbPage>{{ breadcrumb.label }}</span>
                   @if (breadcrumb.helpUrl) {
-                    <a hlmBtn variant="link" size="icon-sm" [href]="breadcrumb.helpUrl" target="_blank" hlmTooltip="Help Article">
+                    <a
+                      hlmBtn
+                      variant="link"
+                      size="icon-sm"
+                      [href]="breadcrumb.helpUrl"
+                      target="_blank"
+                      hlmTooltip="Help Article"
+                      aria-label="Help Article">
                       <ng-icon name="lucideBadgeInfo" />
                     </a>
                   }
@@ -291,7 +321,14 @@
       </div>
       <div id="header-actions" class="flex items-center gap-2 px-4">
         @if (isDebug) {
-          <button hlmBtn size="icon-sm" variant="ghost" (click)="showDebugSettings.set(true)" hlmTooltip="App Settings" position="bottom">
+          <button
+            hlmBtn
+            size="icon-sm"
+            variant="ghost"
+            (click)="showDebugSettings.set(true)"
+            hlmTooltip="App Settings"
+            aria-label="App Settings"
+            position="bottom">
             <ng-icon hlm name="lucideSettings" size="sm" />
           </button>
         }
@@ -312,7 +349,12 @@
     }
     <router-outlet></router-outlet>
   </main>
-  <hlm-sheet side="right" [state]="showDebugSettings() ? 'open' : 'closed'" (closed)="showDebugSettings.set(false)">
+  <!-- An id of its own: Spartan numbers declared and opened dialogs with two counters that both make "brn-dialog-N". -->
+  <hlm-sheet
+    id="debug-settings-sheet"
+    side="right"
+    [state]="showDebugSettings() ? 'open' : 'closed'"
+    (closed)="showDebugSettings.set(false)">
     <hlm-sheet-content *hlmSheetPortal="let ctx">
       <hlm-sheet-header>
         <h3 hlmSheetTitle>Debug Settings</h3>

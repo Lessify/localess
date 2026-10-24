@@ -1,28 +1,34 @@
-import { createHmac, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
+
+import {
+  type ContentWebhookEvent,
+  type ContentWebhookPayloadData,
+  type TranslationWebhookEvent,
+  WebhookErrorType,
+  WebhookEvent,
+  type WebhookPayload,
+  type WebhookPayloadData,
+  WebhookStatus,
+} from '@localess/shared';
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
-import { WebHookErrorType, WebHookEvent, WebHookStatus } from '@localess/shared';
+
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { newUuid } from '../../infra/database/id.js';
-import { type NewWebhookLog, type WebhookEntity, WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
+import type { WebhookEntity } from '../entities/webhook.entity.js';
+import type { WebhookLogInsertEntity } from '../entities/webhook-log.entity.js';
+import { WebhookDeliveryRepository } from '../repositories/webhook-delivery.repository.js';
+import { errorMessage } from '../utils/error-message.js';
 import { checkWebhookUrl, postWebhook, sanitizeWebhookHeaders } from '../utils/webhook-request.js';
+import { signWebhook } from '../utils/webhook-signature.js';
+import { maskWebhookUrl } from '../utils/webhook-url.js';
 
 const MAX_RESPONSE_BODY_LENGTH = 4096;
 const TIMEOUT_MS = 30_000;
 
-export interface WebhookPayload {
-  event: WebHookEvent;
-  spaceId: string;
-  timestamp: string;
-  data: { id: string; fullSlug: string } | Record<string, never>;
-}
-
-export function generateSignature(secret: string, payload: string): string {
-  return 'sha256=' + createHmac('sha256', secret).update(payload).digest('hex');
-}
-
 /**
  * Delivers webhook events (ported from functions/src/utils/webhook-utils.ts): one POST per enabled
- * webhook subscribed to the event, signed with HMAC when it has a secret, SSRF-checked, logged to
+ * webhook subscribed to the event, signed when it has a secret (Standard Webhooks: `webhook-id`,
+ * `webhook-timestamp`, `webhook-signature`), SSRF-checked, logged to
  * `webhook_logs`. Deliveries run after the request that caused them has answered; shutdown waits for
  * the ones in flight.
  */
@@ -33,12 +39,16 @@ export class WebhookDispatcher implements OnApplicationShutdown {
 
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly deliveries: WebhookDeliveryRepository,
+    private readonly webhookDeliveryRepository: WebhookDeliveryRepository,
   ) {}
 
-  /** Fire-and-forget: never throws, never delays the caller. */
-  dispatch(spaceId: string, event: WebHookEvent, data: WebhookPayload['data'] = {}): void {
-    const payload: WebhookPayload = { event, spaceId, timestamp: new Date().toISOString(), data };
+  /** Fire-and-forget: never throws, never delays the caller. A content event carries the content's id and full slug. */
+  dispatch(spaceId: string, event: ContentWebhookEvent, data: ContentWebhookPayloadData): void;
+  /** Fire-and-forget: never throws, never delays the caller. A translation event carries no data. */
+  dispatch(spaceId: string, event: TranslationWebhookEvent): void;
+  dispatch(spaceId: string, event: WebhookEvent, data: WebhookPayloadData = {}): void {
+    // The signatures above pair each event with its data.
+    const payload = { event, spaceId, timestamp: new Date().toISOString(), data } as WebhookPayload;
     const delivery = this.deliverAll(payload)
       .catch(error => this.logger.error(`Webhook dispatch for ${event} failed: ${error}`))
       .finally(() => this.inFlight.delete(delivery));
@@ -55,7 +65,7 @@ export class WebhookDispatcher implements OnApplicationShutdown {
   }
 
   private async deliverAll(payload: WebhookPayload): Promise<void> {
-    const targets = await this.deliveries.findTargets(payload.spaceId, payload.event);
+    const targets = await this.webhookDeliveryRepository.findTargets(payload.spaceId, payload.event);
     await Promise.allSettled(targets.map(webhook => this.deliver(webhook, payload)));
   }
 
@@ -64,25 +74,28 @@ export class WebhookDispatcher implements OnApplicationShutdown {
     const deliveryId = randomUUID();
     const payloadJson = JSON.stringify(payload);
     const requestSize = Buffer.byteLength(payloadJson, 'utf8');
+    const timestamp = Math.floor(startTime / 1000);
     const headers: Record<string, string> = {
       ...sanitizeWebhookHeaders(webhook.headers ?? undefined),
       'Content-Type': 'application/json',
-      'User-Agent': 'Localess-WebHook/1.0',
+      'User-Agent': 'Localess-Webhook/1.0',
+      'webhook-id': deliveryId,
+      'webhook-timestamp': String(timestamp),
       'X-Webhook-Event': payload.event,
-      'X-Webhook-Delivery': deliveryId,
     };
-    if (webhook.secret) headers['X-Webhook-Signature'] = generateSignature(webhook.secret, payloadJson);
+    if (webhook.secret) headers['webhook-signature'] = signWebhook(webhook.secret, deliveryId, timestamp, payloadJson);
     const base = {
       id: newUuid(),
       webhookId: webhook.id,
       event: payload.event,
-      url: webhook.url,
+      // Logged without its query values: they are often the destination's credentials.
+      url: maskWebhookUrl(webhook.url),
       requestSize,
       deliveryId,
       data: payload.data,
     };
 
-    let log: NewWebhookLog;
+    let log: WebhookLogInsertEntity;
     try {
       const checked = checkWebhookUrl(webhook.url, this.config.webhookAllowInternal);
       if (!checked.ok) throw Object.assign(new Error(`Webhook URL is not allowed: ${checked.reason}`), { code: 'EBLOCKEDURL' });
@@ -97,8 +110,8 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       const ok = response.status >= 200 && response.status < 300;
       log = {
         ...base,
-        status: ok ? WebHookStatus.SUCCESS : WebHookStatus.FAILURE,
-        errorType: ok ? null : WebHookErrorType.HTTP,
+        status: ok ? WebhookStatus.SUCCESS : WebhookStatus.FAILURE,
+        errorType: ok ? null : WebhookErrorType.HTTP,
         statusCode: response.status,
         statusText: response.statusText,
         duration: Date.now() - startTime,
@@ -109,16 +122,16 @@ export class WebhookDispatcher implements OnApplicationShutdown {
       const isTimeout = err.name === 'TimeoutError' || err.name === 'AbortError';
       log = {
         ...base,
-        status: WebHookStatus.FAILURE,
-        errorType: isTimeout ? WebHookErrorType.TIMEOUT : WebHookErrorType.NETWORK,
+        status: WebhookStatus.FAILURE,
+        errorType: isTimeout ? WebhookErrorType.TIMEOUT : WebhookErrorType.NETWORK,
         errorMessage: err.message,
         duration: Date.now() - startTime,
       };
     }
     try {
-      await this.deliveries.saveLog(payload.spaceId, log);
+      await this.webhookDeliveryRepository.saveLog(payload.spaceId, log);
     } catch (error) {
-      this.logger.error(`Could not log webhook delivery ${deliveryId}: ${error}`);
+      this.logger.error(`Could not log webhook delivery ${deliveryId}: ${errorMessage(error)}`);
     }
   }
 }

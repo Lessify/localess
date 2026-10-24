@@ -1,22 +1,21 @@
-import { inArray } from 'drizzle-orm';
-import type { Database } from '../../infra/database/database.module.js';
-import { userCredentials, userIdentities } from '../../infra/database/schema.js';
+import { asc } from 'drizzle-orm';
+
+import { userIdentities } from '../../infra/database/schema.js';
+import type { UserEntity } from '../entities/user.entity.js';
+import type { UserIdentityEntity } from '../entities/user-identity.entity.js';
 
 /**
- * How each user signs in, by user id: `password` when they have a credential, then their OAuth providers
- * (`google`, `microsoft`). The users module and auth both return users with it (`toUser`).
+ * The relations a user is read with wherever the App API answers one (`with: USER_SIGN_IN`): their OAuth identities
+ * (provider and when it was linked, oldest first) and whether they have a credential (its key only: the hash is never
+ * read for an answer).
  */
-export async function findUserLogins(db: Pick<Database, 'select'>, userIds: string[]): Promise<Map<string, string[]>> {
-  const logins = new Map<string, string[]>();
-  if (!userIds.length) return logins;
-  const [credentials, identities] = await Promise.all([
-    db.select({ userId: userCredentials.userId }).from(userCredentials).where(inArray(userCredentials.userId, userIds)),
-    db
-      .select({ userId: userIdentities.userId, provider: userIdentities.provider })
-      .from(userIdentities)
-      .where(inArray(userIdentities.userId, userIds)),
-  ]);
-  for (const { userId } of credentials) logins.set(userId, ['password']);
-  for (const { userId, provider } of identities) logins.set(userId, [...(logins.get(userId) ?? []), provider]);
-  return logins;
-}
+export const USER_SIGN_IN = {
+  identities: { columns: { provider: true as const, createdAt: true as const }, orderBy: [asc(userIdentities.createdAt)] },
+  credential: { columns: { userId: true as const } },
+};
+
+/** A user row read `with: USER_SIGN_IN`. */
+export type UserWithSignIn = UserEntity & {
+  identities: Pick<UserIdentityEntity, 'provider' | 'createdAt'>[];
+  credential: { userId: string } | null;
+};

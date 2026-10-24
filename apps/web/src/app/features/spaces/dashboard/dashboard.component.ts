@@ -30,7 +30,7 @@ export class DashboardComponent {
   private readonly state = toSignal(
     toObservable(this.spaceId).pipe(
       switchMap(spaceId =>
-        this.spaceService.overview(spaceId).pipe(
+        this.spaceService.findOverview(spaceId).pipe(
           map((overview): OverviewState => ({ status: 'loaded', overview })),
           startWith<OverviewState>({ status: 'loading' }),
           catchError(() => of<OverviewState>({ status: 'error' })),

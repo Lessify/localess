@@ -1,63 +1,50 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { MeEmailUpdate, MePasswordUpdate, MeUpdate, User } from '@localess/shared';
+import { ConflictException, Injectable } from '@nestjs/common';
+
 import { AuthService } from '../../../auth/services/auth.service.js';
 import { SessionService } from '../../../auth/services/session.service.js';
 import { hashPassword } from '../../../auth/utils/password.js';
-import type { UserRow } from '../../../shared/models/user.js';
-import type { UserDto } from '../../../shared/transformers/user.transformer.js';
-import { type UserUpdate, UsersRepository } from '../repositories/users.repository.js';
-import { UsersService } from './users.service.js';
-
-function requireUnlocked(user: UserRow): void {
-  if (user.lock) throw new ForbiddenException('Your profile is locked');
-}
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
+import { UserRepository, type UserUpdate as UserValues } from '../repositories/user.repository.js';
+import { UserService } from './user.service.js';
 
 /**
- * The signed-in user's own profile (was `updateProfile` / `updateEmail` / `updatePassword` on Firebase Auth). A locked
- * user (`users.lock`, set by an admin) can read it but not change it.
+ * The signed-in user's own profile: name and photo, email (with the current password), password.
  */
 @Injectable()
 export class MeService {
   constructor(
-    private readonly users: UsersRepository,
-    private readonly usersService: UsersService,
-    private readonly auth: AuthService,
-    private readonly sessions: SessionService,
+    private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
+    private readonly authService: AuthService,
+    private readonly sessionService: SessionService,
   ) {}
 
-  get(user: UserRow): Promise<UserDto> {
-    return this.usersService.toDto(user);
-  }
-
-  async updateProfile(user: UserRow, profile: { displayName?: string | null; photoURL?: string | null }): Promise<UserDto> {
-    requireUnlocked(user);
+  /** A field left out is kept; `''` or `null` clears it. */
+  async updateProfile(user: UserEntity, input: MeUpdate): Promise<User> {
     return this.updated(user.id, {
-      ...(profile.displayName !== undefined ? { displayName: profile.displayName || null } : {}),
-      ...(profile.photoURL !== undefined ? { photoUrl: profile.photoURL || null } : {}),
+      ...(input.displayName !== undefined ? { displayName: input.displayName || null } : {}),
+      ...(input.photoUrl !== undefined ? { photoUrl: input.photoUrl || null } : {}),
     });
   }
 
   /** A new email needs the current password (when the account has one), and is unverified. */
-  async updateEmail(user: UserRow, email: string, currentPassword: string | undefined): Promise<UserDto> {
-    requireUnlocked(user);
-    await this.auth.confirmCurrentPassword(user, currentPassword);
-    const existing = await this.users.findByEmail(email);
-    if (existing && existing.id !== user.id) {
-      throw new ConflictException('A user with this email already exists');
-    }
-    return this.updated(user.id, { email, emailVerified: false });
+  async updateEmail(user: UserEntity, input: MeEmailUpdate): Promise<User> {
+    await this.authService.confirmCurrentPassword(user, input.currentPassword);
+    if (await this.userRepository.existsByEmail(input.email, user.id)) throw new ConflictException('A user with this email already exists');
+    return this.updated(user.id, { email: input.email, emailVerified: false });
   }
 
   /** Changing the password signs out every other session. */
-  async updatePassword(user: UserRow, sessionId: string, currentPassword: string | undefined, newPassword: string): Promise<void> {
-    requireUnlocked(user);
-    await this.auth.confirmCurrentPassword(user, currentPassword);
-    await this.users.setPasswordHash(user.id, await hashPassword(newPassword));
-    await this.sessions.revokeAllForUser(user.id, sessionId);
+  async updatePassword(user: UserEntity, sessionId: string, input: MePasswordUpdate): Promise<void> {
+    await this.authService.confirmCurrentPassword(user, input.currentPassword);
+    await this.userRepository.updatePasswordHash(user.id, await hashPassword(input.newPassword));
+    await this.sessionService.revokeAllForUser(user.id, sessionId);
   }
 
-  private async updated(id: string, values: UserUpdate): Promise<UserDto> {
-    const user = await this.users.update(id, values);
-    if (!user) throw new NotFoundException('User not found');
-    return this.usersService.toDto(user);
+  /** The signed-in user exists (the session resolved to them); re-read after the write. */
+  private async updated(id: string, values: UserValues): Promise<User> {
+    await this.userRepository.update(id, values);
+    return this.userService.findOne(id);
   }
 }

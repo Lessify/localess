@@ -1,11 +1,11 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { firstValueFrom, Observable, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Task, TaskLog } from '@localess/shared';
+import { Task } from '@localess/shared';
 import { TaskService } from './task.service';
 
 const BASE = '/api/app/spaces/space-1/tasks';
@@ -28,37 +28,20 @@ describe('TaskService', () => {
     vi.useRealTimers();
   });
 
-  it('findAll() reads the space tasks', async () => {
+  it('findAll() reads one page of the space tasks with the query given', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findAll('space-1'));
-    http.expectOne(BASE).flush([{ id: 't1' }]);
-    expect(await result).toEqual([{ id: 't1' }]);
+    const params = new HttpParams().set('page', 1).set('size', 20).append('status', 'ERROR').append('status', 'FINISHED');
+    const result = firstValueFrom(service.findAll('space-1', params));
+    const page = { items: [{ id: 't1' }], page: 1, size: 20, total: 21 };
+    http.expectOne(`${BASE}?page=1&size=20&status=ERROR&status=FINISHED`).flush(page);
+    expect(await result).toEqual(page);
   });
 
-  it('findById() reads one task', async () => {
+  it('findOne() reads one task', async () => {
     const service = setup();
-    const result = firstValueFrom(service.findById('space-1', 't1'));
+    const result = firstValueFrom(service.findOne('space-1', 't1'));
     http.expectOne(`${BASE}/t1`).flush({ id: 't1' });
     expect(await result).toEqual({ id: 't1' });
-  });
-
-  it('findLogs() reads the task logs and refetches on log events of that task only', async () => {
-    vi.useFakeTimers();
-    const service = setup();
-    const results: TaskLog[][] = [];
-    const subscription = service.findLogs('space-1', 't1').subscribe(it => results.push(it));
-    http.expectOne(`${BASE}/t1/logs`).flush([]);
-
-    events.next({ spaceId: 'space-1', entity: 'task_logs', id: 't2', op: 'created' });
-    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'updated' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectNone(`${BASE}/t1/logs`);
-
-    events.next({ spaceId: 'space-1', entity: 'task_logs', id: 't1', op: 'created' });
-    await vi.advanceTimersByTimeAsync(200);
-    http.expectOne(`${BASE}/t1/logs`).flush([{ id: '1' } as TaskLog]);
-    expect(results).toEqual([[], [{ id: '1' }]]);
-    subscription.unsubscribe();
   });
 
   async function expectExport(call: Observable<Task>, body: object) {
@@ -69,15 +52,16 @@ describe('TaskService', () => {
     expect((await done).id).toBe('new-task');
   }
 
-  it('export creators post the kind with optional path or locale', async () => {
+  it('creators post the kind, and translate locale its params', async () => {
     const service = setup();
-    await expectExport(service.createAssetExportTask('space-1'), { kind: 'ASSET_EXPORT' });
-    await expectExport(service.createAssetExportTask('space-1', '/a'), { kind: 'ASSET_EXPORT', path: '/a' });
-    await expectExport(service.createContentExportTask('space-1', '/c'), { kind: 'CONTENT_EXPORT', path: '/c' });
-    await expectExport(service.createSchemaExportTask('space-1'), { kind: 'SCHEMA_EXPORT' });
-    await expectExport(service.createTranslationExportTask('space-1'), { kind: 'TRANSLATION_EXPORT' });
-    await expectExport(service.createTranslationExportTask('space-1', 'de'), { kind: 'TRANSLATION_EXPORT', locale: 'de' });
-    await expectExport(service.createAssetRegenerateMetadataTask('space-1'), { kind: 'ASSET_REGEN_METADATA' });
+    await expectExport(service.createSchemaExport('space-1'), { kind: 'SCHEMA_EXPORT' });
+    await expectExport(service.createTranslationExport('space-1'), { kind: 'TRANSLATION_EXPORT' });
+    await expectExport(service.createAssetRegenerateMetadata('space-1'), { kind: 'ASSET_REGEN_METADATA' });
+    const params = { sourceLocale: 'en', targetLocale: 'de', overwrite: false };
+    await expectExport(service.createTranslationTranslate('space-1', params), {
+      kind: 'TRANSLATION_TRANSLATE',
+      params: { type: 'translation-translate', ...params },
+    });
   });
 
   async function expectImport(call: Observable<Task>, fields: [string, string][]) {
@@ -96,14 +80,27 @@ describe('TaskService', () => {
   it('import creators post multipart with the fields before the file', async () => {
     const service = setup();
     const file = new File(['{}'], 'data.json', { type: 'application/json' });
-    await expectImport(service.createAssetImportTask('space-1', file), [['kind', 'ASSET_IMPORT']]);
-    await expectImport(service.createContentImportTask('space-1', file), [['kind', 'CONTENT_IMPORT']]);
-    await expectImport(service.createSchemaImportTask('space-1', file), [['kind', 'SCHEMA_IMPORT']]);
-    await expectImport(service.createTranslationImportTask('space-1', file), [['kind', 'TRANSLATION_IMPORT']]);
-    await expectImport(service.createTranslationImportTask('space-1', file, 'de'), [
+    await expectImport(service.createSchemaImport('space-1', file), [['kind', 'SCHEMA_IMPORT']]);
+    await expectImport(service.createTranslationImport('space-1', file), [
       ['kind', 'TRANSLATION_IMPORT'],
+      ['type', 'translation-full'],
+    ]);
+    await expectImport(service.createTranslationImport('space-1', file, 'de'), [
+      ['kind', 'TRANSLATION_IMPORT'],
+      ['type', 'translation-json-flat'],
       ['locale', 'de'],
     ]);
+  });
+
+  it("progress() follows one task's progress events, nothing else", () => {
+    const service = setup();
+    const seen: unknown[] = [];
+    const subscription = service.progress('space-1', 't1').subscribe(it => seen.push(it));
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't2', op: 'progress', progress: { step: 'Writing', done: 9 } });
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'updated' });
+    events.next({ spaceId: 'space-1', entity: 'tasks', id: 't1', op: 'progress', progress: { step: 'Writing', done: 3, total: 10 } });
+    expect(seen).toEqual([{ step: 'Writing', done: 3, total: 10 }]);
+    subscription.unsubscribe();
   });
 
   it('downloadUrl() resolves to the same-origin download endpoint', async () => {
@@ -111,9 +108,9 @@ describe('TaskService', () => {
     expect(await firstValueFrom(service.downloadUrl('space-1', 't1'))).toBe(`${BASE}/t1/download`);
   });
 
-  it('delete() deletes the task', async () => {
+  it('remove() deletes the task', async () => {
     const service = setup();
-    const done = firstValueFrom(service.delete('space-1', 't1'));
+    const done = firstValueFrom(service.remove('space-1', 't1'));
     http.expectOne({ method: 'DELETE', url: `${BASE}/t1` }).flush(null);
     await done;
   });

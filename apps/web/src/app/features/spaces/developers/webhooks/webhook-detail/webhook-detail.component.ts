@@ -1,24 +1,22 @@
 import { CommonModule } from '@angular/common';
-import {
-  AfterViewInit,
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  inject,
-  Injector,
-  input,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { WebHook, WebHookEvent, WebHookLog, WebHookStatus } from '@localess/shared';
+import { PagedList } from '@core/utils/paged-list';
+import { Webhook, WebhookEvent, WebhookLog, WebhookStatus, WebhookUpdate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
-import { lucideArrowLeft, lucideChevronRight, lucideInfo, lucidePencil, lucideWebhook, lucideWebhookOff } from '@ng-icons/lucide';
+import {
+  lucideArrowLeft,
+  lucideChevronRight,
+  lucideInfo,
+  lucideKeyRound,
+  lucidePencil,
+  lucideRefreshCw,
+  lucideWebhook,
+  lucideWebhookOff,
+} from '@ng-icons/lucide';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -27,7 +25,7 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { TimeDurationPipe } from '@shared/pipes/time-duration.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -36,11 +34,14 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { filter, switchMap, take } from 'rxjs/operators';
+import { EMPTY, of } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
 
-import { WebHookService } from '../webhook.service';
+import { WebhookService } from '../webhook.service';
 import { WebhookDialogComponent } from '../webhook-dialog/webhook-dialog.component';
-import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/webhook-dialog.model';
+import { WebhookDialogContext } from '../webhook-dialog/webhook-dialog.model';
+import { WebhookLogService } from '../webhook-log.service';
+import { WebhookSecretDialogComponent, WebhookSecretDialogContext } from '../webhook-secret-dialog/webhook-secret-dialog.component';
 
 @Component({
   selector: 'll-webhook-detail',
@@ -61,6 +62,8 @@ import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/web
   ],
   providers: [
     provideIcons({
+      lucideKeyRound,
+      lucideRefreshCw,
       lucideArrowLeft,
       lucidePencil,
       lucideChevronRight,
@@ -70,8 +73,9 @@ import { WebhookDialogContext, WebhookDialogResult } from '../webhook-dialog/web
     }),
   ],
 })
-export class WebhookDetailComponent implements OnInit, AfterViewInit {
-  private readonly webhookService = inject(WebHookService);
+export class WebhookDetailComponent implements OnInit {
+  private readonly webhookService = inject(WebhookService);
+  private readonly webhookLogService = inject(WebhookLogService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
   private readonly router = inject(Router);
@@ -81,71 +85,73 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
 
   webhookId = input.required<string>();
 
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
   isLogsLoading = signal(true);
-  webhook = signal<WebHook | undefined>(undefined);
+  webhook = signal<Webhook | undefined>(undefined);
 
-  private readonly logs = signal<WebHookLog[]>([]);
-  readonly dataSource = new TableDataSource<WebHookLog>(this.logs, this.injector);
+  /** The page of delivery logs shown: newest first, filtered and searched on the server. */
+  readonly list = new PagedList(20);
+  readonly logsTotal = signal(0);
+  private readonly logs = signal<WebhookLog[]>([]);
+  readonly dataSource = new TableDataSource<WebhookLog>(this.logs, this.injector);
   displayedColumns: string[] = ['expand', 'id', 'event', 'status', 'duration', 'createdAt'];
 
   expandedLogs = signal<Set<string>>(new Set());
 
-  protected readonly WebHookStatus = WebHookStatus;
+  protected readonly WebhookStatus = WebhookStatus;
 
   readonly filters: FilterDef[] = [
     {
       key: 'event',
       label: 'Event Type',
       mode: 'multiple',
-      options: Object.values(WebHookEvent).map(event => ({ value: event, label: event })),
+      options: Object.values(WebhookEvent).map(event => ({ value: event, label: event })),
     },
     {
       key: 'status',
       label: 'Status',
       mode: 'multiple',
-      options: Object.values(WebHookStatus).map(status => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) })),
+      options: Object.values(WebhookStatus).map(status => ({ value: status, label: status.charAt(0).toUpperCase() + status.slice(1) })),
     },
   ];
-
-  constructor() {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<WebHookLog>({
-      searchFields: log => [log.id],
-      filterFields: [
-        { key: 'event', accessor: log => log.event },
-        { key: 'status', accessor: log => log.status },
-      ],
-    });
-  }
 
   ngOnInit(): void {
     const spaceId = this.spaceStore.selectedSpaceId()!;
 
     this.webhookService
-      .findById(spaceId, this.webhookId())
+      .findOne(spaceId, this.webhookId())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(webhook => {
         this.webhook.set(webhook);
         this.isLoading.set(false);
       });
 
-    this.webhookService
-      .findLogs(spaceId, this.webhookId())
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(logs => {
-        this.logs.set(logs);
+    // The current query's page, again whenever it changes, and live (a new delivery reloads the page shown). A failed
+    // load is told and ends only that request.
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params =>
+          this.webhookLogService.findAll(spaceId, this.webhookId(), params).pipe(
+            catchError(() => {
+              this.notificationService.error('Logs can not be loaded.');
+              this.isLogsLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        this.logs.set(page.items);
+        this.logsTotal.set(page.total);
+        this.list.onLoaded(page);
         this.isLogsLoading.set(false);
       });
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator();
-  }
-
+  /** The search box (the log id), Event Type and Status (any of them), on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+    this.list.setFilters({ search: value.search?.trim() || undefined, event: value['event'], status: value['status'] });
   }
 
   openEditDialog(): void {
@@ -153,7 +159,7 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
     const webhook = this.webhook();
     if (!webhook) return;
     this.dialog
-      .open<WebhookDialogResult, WebhookDialogContext>(WebhookDialogComponent, {
+      .open<WebhookUpdate, WebhookDialogContext>(WebhookDialogComponent, {
         context: webhook,
         contentClass: DIALOG_WIDTH_SM,
       })
@@ -184,6 +190,66 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
     });
   }
 
+  /**
+   * Signs deliveries with a new secret, shown once. Replacing one asks first: the receiver must get the new secret, or
+   * it refuses every delivery from then on.
+   */
+  createSecret(): void {
+    const spaceId = this.spaceStore.selectedSpaceId()!;
+    const webhook = this.webhook();
+    if (!webhook) return;
+    const confirmed = webhook.hasSecret
+      ? this.dialog
+          .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+            context: {
+              title: 'Regenerate Secret',
+              content: `The current secret of '${webhook.name}' stops at once: deliveries are signed with the new one, which your receiver needs.`,
+              variant: 'destructive',
+            },
+            contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+          })
+          .closed$.pipe(
+            take(1),
+            filter(it => it || false),
+          )
+      : of(true);
+    confirmed.pipe(switchMap(() => this.webhookService.createSecret(spaceId, webhook.id))).subscribe({
+      next: updated => {
+        this.notificationService.success(`Webhook '${webhook.name}' signs its deliveries with a new secret.`);
+        this.dialog.open<void, WebhookSecretDialogContext>(WebhookSecretDialogComponent, {
+          context: { name: updated.name, secret: updated.secret! },
+          contentClass: DIALOG_WIDTH_SM,
+        });
+      },
+      error: () => this.notificationService.error(`A secret for webhook '${webhook.name}' can not be made.`),
+    });
+  }
+
+  /** Deliveries are no longer signed: asks first, a receiver that checks signatures refuses them. */
+  removeSecret(): void {
+    const spaceId = this.spaceStore.selectedSpaceId()!;
+    const webhook = this.webhook();
+    if (!webhook) return;
+    this.dialog
+      .open<ConfirmationDialogResult, ConfirmationDialogContext>(ConfirmationDialogComponent, {
+        context: {
+          title: 'Turn Off Signing',
+          content: `Deliveries of '${webhook.name}' will no longer be signed; a receiver that checks signatures refuses them.`,
+          variant: 'destructive',
+        },
+        contentClass: CONFIRMATION_DIALOG_CONTENT_CLASS,
+      })
+      .closed$.pipe(
+        take(1),
+        filter(it => it || false),
+        switchMap(() => this.webhookService.removeSecret(spaceId, webhook.id)),
+      )
+      .subscribe({
+        next: () => this.notificationService.success(`Webhook '${webhook.name}' no longer signs its deliveries.`),
+        error: () => this.notificationService.error(`Signing of webhook '${webhook.name}' can not be turned off.`),
+      });
+  }
+
   openDeleteDialog(): void {
     const spaceId = this.spaceStore.selectedSpaceId()!;
     const webhook = this.webhook();
@@ -200,7 +266,7 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.webhookService.delete(spaceId, webhook.id)),
+        switchMap(() => this.webhookService.remove(spaceId, webhook.id)),
       )
       .subscribe({
         next: () => {
@@ -230,7 +296,7 @@ export class WebhookDetailComponent implements OnInit, AfterViewInit {
     this.expandedLogs.set(current);
   }
 
-  protected eventsToText(events: WebHookEvent[]): string {
+  protected eventsToText(events: WebhookEvent[]): string {
     return events.join('\n');
   }
 }

@@ -4,7 +4,7 @@ import { Translation } from '@localess/shared';
  * Result of planTranslationUpdate: the classified changes a translation update would apply.
  */
 export interface TranslationUpdatePlan {
-  /** Translation ids present in `values` but not yet in Firestore. */
+  /** Translation keys present in `values` but not yet in the space. */
   creates: string[];
   /** Translation ids present in both, with a different value for this locale. */
   updates: string[];
@@ -20,7 +20,7 @@ export interface TranslationUpdatePlan {
 }
 
 /**
- * Compute the changes a translation update would apply, without touching Firestore.
+ * Compute the changes a translation update would apply, without writing anything.
  * Fetch-strategy agnostic: pass a full collection map to get `keyDeletes`/`valueDeletes` populated,
  * or a map scoped to only the ids in `values` (cheaper) when deletes aren't needed for this request.
  * @param {Map<string, Translation>} existing current translation documents keyed by id
@@ -69,8 +69,8 @@ export function storedLocaleValues(translations: Map<string, Translation>, local
 }
 
 /**
- * The flat `{key: value}` map for one locale, filling gaps from the default locale — the rule of
- * `saveTranslationFiles` in functions/src/services/translation.service.ts.
+ * The flat `{key: value}` map for one locale, filling gaps from the default locale: what the CDN API serves for a
+ * locale.
  */
 export function buildTranslationMap(
   rows: { key: string; locales: Record<string, string> }[],

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
 import { fakeFirebase } from '../../../../test/fake-firebase.js';
 import { FirebaseClient, FirebaseConnectionError, normalizeOrigin } from './firebase-client.js';
 
@@ -78,14 +79,18 @@ describe('FirebaseClient', () => {
   it('names the failure: wrong token, disabled API, unreachable', async () => {
     const local = { allowInternal: true };
     await expect(new FirebaseClient(fake.url, 'wrong', local).spaces()).rejects.toMatchObject({ reason: 'unauthorized' });
-    await expect(new FirebaseClient(`${fake.url}/nothing-here`, 'migration-secret', local).spaces()).rejects.toMatchObject({ reason: 'disabled' });
+    await expect(new FirebaseClient(`${fake.url}/nothing-here`, 'migration-secret', local).spaces()).rejects.toMatchObject({
+      reason: 'disabled',
+    });
     await expect(new FirebaseClient('http://127.0.0.1:1', 'x', local).spaces()).rejects.toBeInstanceOf(FirebaseConnectionError);
   });
 
   it('reports a site without the migration API (its app answering 200 with HTML) as not enabled', async () => {
     const spa = await fakeFirebase([], { spa: true });
     try {
-      await expect(new FirebaseClient(spa.url, 'migration-secret', { allowInternal: true }).spaces()).rejects.toMatchObject({ reason: 'disabled' });
+      await expect(new FirebaseClient(spa.url, 'migration-secret', { allowInternal: true }).spaces()).rejects.toMatchObject({
+        reason: 'disabled',
+      });
     } finally {
       await spa.close();
     }

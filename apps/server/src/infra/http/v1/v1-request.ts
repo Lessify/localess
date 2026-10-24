@@ -1,4 +1,5 @@
 import type { FastifyReply } from 'fastify';
+
 import {
   CACHE_BAD_REQUEST_MAX_AGE,
   CACHE_MAX_AGE,
@@ -24,8 +25,8 @@ export const CONTENT_CACHE = publicCache(CACHE_MAX_AGE, CACHE_SHARE_MAX_AGE);
 export const isDraft = (version: unknown): boolean => version === 'draft';
 
 /** Same rule as functions `identifySpaceLocale`: unknown or missing locales use the default locale. */
-export function identifySpaceLocale(space: { locales: { id: string }[]; defaultLocaleId: string }, locale: unknown): string {
-  if (typeof locale === 'string' && space.locales.some(it => it.id === locale)) return locale;
+export function identifySpaceLocale(space: { spaceLocales: { localeId: string }[]; defaultLocaleId: string }, locale: unknown): string {
+  if (typeof locale === 'string' && space.spaceLocales.some(it => it.localeId === locale)) return locale;
   return space.defaultLocaleId;
 }
 
@@ -54,7 +55,7 @@ export function redirectToVersion(reply: FastifyReply, url: string, token: { cac
 }
 
 /** Whether the request's `cv` is missing or stale, so it must be redirected to the current version. */
-export const needsRedirect = (cv: unknown, version: number) => cv === undefined || String(cv) !== String(version);
+export const needsRedirect = (cv: string | undefined, version: number): boolean => cv === undefined || cv !== String(version);
 
 export function sendJson(reply: FastifyReply, body: unknown): void {
   void reply.header('cache-control', CONTENT_CACHE).type('application/json; charset=utf-8').send(JSON.stringify(body));

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+
 import { newUuid } from '../../../infra/database/id.js';
 import { TranslationImportRepository } from '../repositories/translation-import.repository.js';
 import { obj, str, strings, timestamps } from '../utils/firebase-docs.js';
@@ -10,13 +11,13 @@ import type { ImportStage } from '../utils/firebase-import.utils.js';
  */
 @Injectable()
 export class TranslationImportService {
-  constructor(private readonly translations: TranslationImportRepository) {}
+  constructor(private readonly translationImportRepository: TranslationImportRepository) {}
 
   /** Answers the count. */
   async import(stage: ImportStage): Promise<number> {
     let translationCount = 0;
     for await (const page of stage.client.pages(stage.sourceSpaceId, 'translations')) {
-      await this.translations.insertMany(
+      await this.translationImportRepository.insertMany(
         page.map(doc => ({
           id: newUuid(timestamps(doc).createdAt),
           spaceId: stage.spaceId,

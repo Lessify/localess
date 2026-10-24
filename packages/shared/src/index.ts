@@ -6,8 +6,11 @@ export * from './models/app-config.model.js';
 export * from './models/asset.model.js';
 export * from './models/content.model.js';
 export * from './models/firebase-import.model.js';
+export * from './models/id-name.model.js';
 export * from './models/locale.model.js';
+export * from './models/localess-file.model.js';
 export * from './models/open-api.model.js';
+export * from './models/page.model.js';
 export * from './models/schema.model.js';
 export * from './models/space.model.js';
 export * from './models/task.model.js';
@@ -15,6 +18,52 @@ export * from './models/timestamp.js';
 export * from './models/token.model.js';
 export * from './models/translate.model.js';
 export * from './models/translation.model.js';
+export * from './models/unsplash.model.js';
 export * from './models/user.model.js';
 export * from './models/webhook.model.js';
-export * from './permissions.js';
+export * from './roles.js';
+
+// The types of the App API requests, inferred from their schemas in '@localess/shared/zod' (one definition for the
+// server's validation and the web's bodies). Type-only, so the web app never loads zod.
+export type { AssetCountQuery, AssetFolderCreate, AssetPageable, AssetUpdate, AssetUpload } from './models/asset.zod.js';
+export type { AuthLogin, PasswordResetConfirm, PasswordResetRequest } from './models/auth.zod.js';
+export type {
+  ContentCountQuery,
+  ContentCreate,
+  ContentDataUpdate,
+  ContentDocumentCreate,
+  ContentFolderCreate,
+  ContentPageable,
+  ContentUpdate,
+} from './models/content.zod.js';
+export type { FirebaseImportConnection, FirebaseImportStart } from './models/firebase-import.zod.js';
+export type { SchemaCreate, SchemaRename, SchemaTypeFilter, SchemaUpdate } from './models/schema.zod.js';
+export type {
+  SpaceCreate,
+  SpaceDefaultLocaleUpdate,
+  SpaceEnvironmentCreate,
+  SpaceEnvironmentMove,
+  SpaceEnvironmentPageable,
+  SpaceEnvironmentUpdate,
+  SpaceLocaleCreate,
+  SpaceLocaleMove,
+  SpaceLocalePageable,
+  SpacePageable,
+  SpaceTokenCreate,
+  SpaceTokenPageable,
+  SpaceTokenUpdate,
+  SpaceUpdate,
+} from './models/space.zod.js';
+export type { TaskCreate, TaskImportCreate, TaskPageable } from './models/task.zod.js';
+export type {
+  TranslationCreate,
+  TranslationLocaleUpdate,
+  TranslationNodePageable,
+  TranslationPageable,
+  TranslationPush,
+  TranslationRename,
+  TranslationUpdate,
+} from './models/translation.zod.js';
+export type { UnsplashSearch } from './models/unsplash.zod.js';
+export type { MeEmailUpdate, MePasswordUpdate, MeUpdate, UserAdd, UserPageable, UserStatusUpdate, UserUpdate } from './models/user.zod.js';
+export type { WebhookCreate, WebhookLogPageable, WebhookPageable, WebhookStatusUpdate, WebhookUpdate } from './models/webhook.zod.js';

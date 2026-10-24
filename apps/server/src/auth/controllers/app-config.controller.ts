@@ -1,8 +1,9 @@
-import { Controller, Get, Inject } from '@nestjs/common';
 import type { PublicAppConfig } from '@localess/shared';
+import { Controller, Get, Inject } from '@nestjs/common';
+
+import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 import { Public } from '../decorators.js';
 import { OAuthService } from '../services/oauth.service.js';
-import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 
 /**
  * Runtime settings for the SPA, replacing the build-time LOCALESS_* `--define`s so one build works
@@ -13,14 +14,14 @@ import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
 export class AppConfigController {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
-    private readonly oauth: OAuthService,
+    private readonly oauthService: OAuthService,
   ) {}
 
   @Get()
   get(): PublicAppConfig {
     return {
       auth: {
-        providers: this.oauth.enabledProviders().map(it => it.toUpperCase() as 'GOOGLE' | 'MICROSOFT'),
+        providers: this.oauthService.enabledProviders().map(it => it.toUpperCase() as 'GOOGLE' | 'MICROSOFT'),
         loginMessage: this.config.loginMessage,
         passwordResetByEmail: this.config.smtp !== undefined,
       },

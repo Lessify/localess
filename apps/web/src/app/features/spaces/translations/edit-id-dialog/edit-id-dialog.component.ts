@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { CommonValidator } from '@shared/validators/common.validator';
 import { BrnDialogRef, injectBrnDialogContext } from '@spartan-ng/brain/dialog';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
@@ -23,11 +22,14 @@ export class EditIdDialogComponent implements OnInit {
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialogRef = inject<BrnDialogRef<EditIdDialogResult>>(BrnDialogRef);
 
-  /** Required: the caller always passes the current id and the ids already taken. */
+  /** Required: the caller always passes the current key and the key check. */
   private readonly context = injectBrnDialogContext<EditIdDialogContext>();
 
   form: FormGroup = this.fb.group({
-    key: this.fb.control('', [...TranslationValidator.ID, CommonValidator.reservedName(this.context.reservedKeys)]),
+    key: this.fb.control('', {
+      validators: TranslationValidator.ID,
+      asyncValidators: TranslationValidator.keyTaken(this.context.isKeyTaken, this.context.key),
+    }),
   });
 
   ngOnInit(): void {

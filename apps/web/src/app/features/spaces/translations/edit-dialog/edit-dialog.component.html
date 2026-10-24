@@ -25,7 +25,10 @@
       autocomplete="off"
       placeholder="Add label..."
       class="w-full"
-      (keydown.enter)="$event.preventDefault(); addLabel(labelInput.value); labelInput.value = ''" />
+      (keydown.enter)="$event.preventDefault(); addLabel(labelInput)" />
+    @if (labelError(); as error) {
+      <hlm-field-error forceShow>{{ error }}</hlm-field-error>
+    }
     <div class="flex flex-wrap gap-2">
       @for (label of form.controls['labels'].value; track label) {
         <button hlmBtn variant="outline" size="xs" (click)="removeLabel(label)">

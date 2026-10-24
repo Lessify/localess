@@ -1,10 +1,13 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+
 import { count, eq } from 'drizzle-orm';
+
 import type { AppConfig } from '../infra/config/config.js';
 import type { Database } from '../infra/database/database.module.js';
 import { users } from '../infra/database/schema.js';
 import type { StorageDriver } from '../infra/storage/storage.driver.js';
+import { errorMessage } from '../shared/utils/error-message.js';
 
 export type CheckStatus = 'ok' | 'warn' | 'fail';
 export interface CheckResult {
@@ -42,7 +45,7 @@ export async function runChecks(config: AppConfig, db: Database, storage: Storag
     await storage.delete(key);
     add('storage', 'ok', `writable (${config.storageDir})`);
   } catch (error) {
-    add('storage', 'fail', `not writable (${config.storageDir}): ${error instanceof Error ? error.message : error}`);
+    add('storage', 'fail', `not writable (${config.storageDir}): ${errorMessage(error)}`);
   }
 
   try {

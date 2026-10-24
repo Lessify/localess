@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common';
 import { type SchemaField, SchemaFieldKind, SchemaType } from '@localess/shared';
 import { schemaEnumValueSchema, schemaFieldSchema } from '@localess/shared/zod';
+import { Injectable } from '@nestjs/common';
 import type { z } from 'zod';
+
 import { newUuid } from '../../../infra/database/id.js';
+import { fieldReferenceProblems, previewFieldProblem } from '../../../shared/utils/schema.utils.js';
 import { SchemaImportRepository } from '../repositories/schema-import.repository.js';
 import { str, strings, timestamps, typeOf } from '../utils/firebase-docs.js';
 import type { ImportStage } from '../utils/firebase-import.utils.js';
-import { fieldReferenceProblems, previewFieldProblem } from '../../../shared/utils/schema.utils.js';
 
 /**
  * Each item of a list that `schema` accepts, as parsed (keys it does not have dropped); the others are left out, with
@@ -69,7 +70,7 @@ function keepFieldRules(
  */
 @Injectable()
 export class SchemaImportService {
-  constructor(private readonly schemas: SchemaImportRepository) {}
+  constructor(private readonly schemaImportRepository: SchemaImportRepository) {}
 
   /** Answers the count. */
   async import(stage: ImportStage): Promise<number> {
@@ -97,9 +98,12 @@ export class SchemaImportService {
       const types = new Map(rows.map(it => [it.name, it.type]));
       for (const row of rows) {
         if (row.type === SchemaType.ENUM) continue;
-        Object.assign(row, keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)));
+        Object.assign(
+          row,
+          keepFieldRules(row.previewField ?? undefined, row.fields, types, warning => stage.warn(`${row.name}: ${warning}`)),
+        );
       }
-      await this.schemas.insertMany(rows);
+      await this.schemaImportRepository.insertMany(rows);
     }
     return schemaDocs.length;
   }

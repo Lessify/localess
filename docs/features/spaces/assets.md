@@ -2,16 +2,16 @@
 
 > Parent: [Spaces Overview](overview.md) · Related: [Tasks](tasks.md) · [Concepts — Asset](../../concepts.md) · [CDN & Caching](../../cdn-caching.md)
 
-> **Hidden for now:** Import and Export are switched off in the UI (`FEATURE_FLAGS.importExport`) until the issues in [Import / Export](../../roadmap/import-export.md) are fixed.
+> **Import and Export** of assets are removed: assets move with the full export ([Space export and backups](../../roadmap/space-export-backup.md), [why](../../roadmap/import-export.md#why-contents-and-assets-are-not-here)).
 
 ## Purpose
 
-Browse, upload, organise, and manage binary assets (images, videos, documents, fonts) stored by the server under `$LOCALESS_STORAGE_DIR` (`spaces/{spaceId}/assets/{assetId}/original`), with their metadata in the `assets` table. Supports folder hierarchy, drag-and-drop upload, clipboard paste upload, image resizing preview, and Unsplash integration.
+Browse, upload, organise, and manage binary assets (images, videos, documents, fonts) stored by the server under `$LOCALESS_STORAGE_DIR` (`spaces/{spaceId}/assets/{assetId}/{original_name}`: the upload's file name made safe, never sent by the API, kept on a rename), with their metadata in the `assets` table. Supports folder hierarchy, drag-and-drop upload, clipboard paste upload, image resizing preview, and Unsplash integration.
 
 ## Route
 
 ```
-/features/spaces/:spaceId/assets    [ASSET_READ]
+/features/spaces/:spaceId/assets    [ANY_ROLE]
 ```
 
 ## Key Files
@@ -22,36 +22,41 @@ apps/web/src/app/features/spaces/assets/
   add-folder-dialog/
   edit-file-dialog/                  ← edit file metadata (name, alt text)
   edit-folder-dialog/
-  export-dialog/
-  import-dialog/
   move-dialog/
 ```
 
 ## AssetsComponent
 
-File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Every folder of the space is loaded once (`GET …/assets/folders`, live) into a map `id → folder`; the breadcrumbs are built from it (`@core/utils/folder-tree`). Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`.
+File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Every folder of the space comes from `SpaceStore.assetFolders()` (`GET …/assets/folders`, live) as a map `id → folder`; the breadcrumbs are built from it (`@core/utils/folder-tree`). Supports two layout modes (**list** and **grid**) persisted in `LocalSettingsStore.assetLayout`. On a narrow screen the table drops its optional columns first (type and dates below `@md/table`, size and preview below `@lg/table`), the toolbar wraps, and the grid fits two cards of 160 px a row; the picker does the same.
 
-**Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashPluginService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
+**Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
-- Loading is reactive: the constructor subscribes to `toObservable(spaceStore.assetFolderId)` and `switchMap`s to `AssetService.findAll()` for the current level, so changing the path reloads the list (there is no `loadData()` method). `findAll()` is a live query, so the list also refetches on `assets` change events from the SSE stream
+- One page of the current folder (`SpaceStore.assetFolderId`, `null` at the root), paged, sorted and searched on the
+  server (`AssetService.findAll()`, `GET …/assets`, live: it refetches on `assets` change events), in both layouts.
+  Its query is a `FolderList` (`@core/utils/folder-list.ts`, the folder read from the store, so opening one sends one
+  request; loaded by `pagedResource`), the same the Contents table and both pickers use: folders
+  first, by name unless sorted by a column header (the grid follows the list's sort); the toolbar's search (the name, on
+  Enter) and **Scope** (*This folder* / *Including subfolders*, `deep=true`: everything under the folder). A list from
+  several folders shows where each asset is under its name (`~/Images/2026`, `assetLocation()` from the folder map), on
+  rows and cards alike. A new folder, search, scope or sort starts again from page 1; "No assets match." when a search
+  or the scope finds nothing. See [Pagination](../../server/pagination.md#assets-a-folders-page-or-everything-under-it)
 - `onAssetSelect(asset)` — a previewable file opens `ImagePreviewDialogComponent`; a folder is opened (`SpaceStore.changeAssetFolder(id)`); a breadcrumb calls `navigateToFolder(id)` (`null`: the root)
 - `onPaste(event)` — intercepts clipboard paste to upload image from clipboard
 - Drag-and-drop is handled by the `FileDragAndDropDirective` (`@shared/directives/file-drag-and-drop.directive`), which calls `filesUpload(event)` with the dropped files — there is no `onDrop()` method on `AssetsComponent` itself
 - `onFileUpload(event)` — handles the `<input type="file">` change event and queues each selected file
-- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentId`/`name`/… fields must precede the file). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset DTO: the file is already stored (there is no in-progress state; the `in_progress` column is gone). Every uploaded file has a name, a `type` (`application/octet-stream` when the browser sends none) and an `extension` (`''` when its name has none; a sent `extension` must start with a dot); a file with no name is refused with `400`. Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
+- Upload flow: file → `filesUpload()` / `onFileUpload()` queues it → `AssetService.createFile()` → `POST /api/app/spaces/:s/assets/files` as `multipart/form-data` (the `parentId`/`name`/`extension`/`alt`/`source` fields must precede the file; any other field is refused with `400`). The server streams the file to storage, computes md5 and extracts metadata in the request, and creates the `assets` row last, so the response is the finished asset DTO: the file is already stored (there is no in-progress state; the `in_progress` column is gone). Every uploaded file has a name, a `type` (`application/octet-stream` when the browser sends none) and an `extension` (`''` when its name has none; a sent `extension` must start with a dot); a file with no name is refused with `400`. Uploads above `LOCALESS_UPLOAD_MAX_MB` are rejected with `413`
 - The queue uploads one item at a time, in order (`enqueue()`, also used by URL and Unsplash imports). A failed item gets its own notification (`uploadErrorMessage()` in `@core/utils/upload-error`: a `413` from the server or a reverse proxy reads "the file is too large") and the queue moves on; the "Uploading … (n)" count drops on success and failure alike. The asset picker in the content editor (`assets-select-dialog`) behaves the same
 - `openUrlPrompt()` — prompts for a URL and uploads the remote file as an asset
-- `openAddFolderDialog()` — creates a new folder (`POST …/assets/folders` takes `parentId` and `name` only: file fields are refused with `400`, and a folder takes no alt text)
+- `openAddFolderDialog()` — creates a new folder (`POST …/assets/folders` takes `parentId` and `name` only: file fields are refused with `400`, and a folder takes no alt text). A name the folder already has is accepted here and in the Edit dialogs: the folder's list is paged, so the dialogs can't know every name ([asset names, N2](../../roadmap/asset-names.md))
 - `openEditDialog(asset)` — dispatches to `openEditFileDialog()` or `openEditFolderDialog()` by `kind`
 - `openEditFileDialog(asset)` — edit metadata: display name, alt text
 - `openEditFolderDialog(asset)` — rename folder
-- `openDeleteDialog(asset)` — delete file or folder (with cascade for folders, done by the server: the rows go in the transaction, which queues their stored files and renditions in `storage_deletions`; the storage sweeper deletes them right after the commit and retries if storage fails — see [Storage deletions](../../roadmap/database-structure.md#storage-deletions)). Before asking, it reads `GET …/assets/:id/usage` (`{ contents }`: how many contents' draft data holds `{ kind: 'ASSET', uri }` for the file, or any file under the folder) and, when some do, says "It is used by N contents, which will show it as missing." Deleting stays allowed; a failed count just leaves the warning out
-- `openMoveDialog(asset)` — moves a file or a folder (with everything under it) into another folder (`PUT /api/app/spaces/:s/assets/:id/parent { parentId }`, `null`: the root): one row on the server. The dialog lists the root and every folder from the folder map, by path of names, without where the asset is and, for a folder, without itself and everything under it (400 "A folder cannot be moved into itself" on the server)
-- `openImportDialog()` / `openExportDialog()` — creates Tasks for background processing
-- `openRegenerateMetadataDialog()` — confirms then creates an `ASSET_REGEN_METADATA` Task (via `TaskService.createAssetRegenerateMetadataTask()`) to regenerate metadata for all assets in the space
+- `openDeleteDialog(asset)` — delete file or folder (with cascade for folders, done by the server: the rows go in the transaction, which queues their stored files and renditions in `storage_deletions`; the storage sweeper deletes them right after the commit and retries if storage fails — see [Storage deletions](../../roadmap/database-structure.md#storage-deletions)). Before asking, it reads `GET …/assets/:assetId/usage` (`{ contents }`: how many contents' draft data holds `{ kind: 'ASSET', uri }` for the file, or any file under the folder) and, when some do, says "It is used by N contents, which will show it as missing." Deleting stays allowed; a failed count just leaves the warning out
+- `openMoveDialog(asset)` — moves a file or a folder (with everything under it) into another folder (`AssetService.move()`: `PATCH /api/app/spaces/:s/assets/:assetId { parentId }`, `null`: the root; the same route renames, as for contents): one row on the server. The dialog is a folder tree (`ll-tree` with `selectGroups`, as the Contents Move dialog): the root and every folder from `SpaceStore.assetFolders()`, the path to where the asset is open and marked "(current)" (not a target); for a folder, itself and everything under it are left out (400 "A folder cannot be moved into itself" on the server). The filter matches a folder's name or path and keeps its parents
+- `openRegenerateMetadataDialog()` — admins only: confirms, then creates an `ASSET_REGEN_METADATA` Task (`TaskService.createAssetRegenerateMetadata()`) that reads every file's metadata again, followed in the progress dialog ([Tasks](tasks.md))
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
-- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashPluginService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
+- `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
 
 ## CDN Asset Endpoint
 
@@ -303,11 +308,28 @@ Omitting `w`/`h` does **not** return the untouched original — a still raster i
 
 > See [V1 API — Asset resize combinations](../../v1-api.md) for the full implementation detail.
 
-Generated renditions are cached in storage under `spaces/{spaceId}/assets/{assetId}/renditions/` and deleted with the asset. There is no CDN in front by default; the `Cache-Control` headers above take effect once a CDN or caching reverse proxy is put in front.
+Generated renditions are cached in storage under `spaces/{spaceId}/assets/{assetId}/renditions/` (`w400.jpg`, `w200-frame.webp`, see [CDN caching](../../cdn-caching.md)) and deleted with the asset. There is no CDN in front by default; the `Cache-Control` headers above take effect once a CDN or caching reverse proxy is put in front.
+
+## Thumbnail
+
+Every list, grid card and Asset field shows the platform thumbnail: `GET /api/app/spaces/{spaceId}/assets/{assetId}/thumbnail` (App API, any role).
+
+- **What:** one WebP per asset, the longest side at most 512 px, never enlarged, quality 75 (transparency kept): the first frame of an animation, a frame of a video, an SVG rasterised. About 16 KB on average for photos, screenshots and logos.
+- **When:** generated in the background right after an upload, and on the first request for any asset without one (Firebase imports, space templates). Stored as `renditions/thumbnail.webp`, even with `LOCALESS_RENDITION_CACHE=off`.
+- **Caching:** `Cache-Control: private, max-age=31536000, immutable` and an ETag from the original's md5: an asset's bytes never change.
+- **None:** `404` for a folder or a file that is neither an image nor a video, or one that can't be read; the platform shows the file's icon.
+- **Why 512 px:** a grid card is up to 320 px wide, so 512 is sharp on 2× screens everywhere but the widest cards. Changing the size or quality needs the stored `thumbnail.webp` files deleted.
+
+The public CDN API is unchanged: customer sites keep `?w=` and `?thumbnail` on `GET /api/v1/…/assets/{assetId}`.
 
 ## Image Preview
 
-Assets of type `image/*` render previews using `NgOptimizedImage` with the custom `IMAGE_LOADER`. The loader appends `?w=<width>` to the CDN URL for responsive resizing and `&thumbnail=true` for animated files.
+The preview dialog (`ImagePreviewDialogComponent`, opened from the list, the grid and the Asset/Assets fields) shows:
+
+- **An image:** through `NgOptimizedImage` with the custom `IMAGE_LOADER`, which appends `?w=<width>` to the CDN URL (`&thumbnail=true` for an animation's first frame).
+- **A video:** its platform thumbnail with a Play button, so opening the dialog fetches nothing of the file. Play mounts a `<video controls autoplay>` streaming `/api/v1/…/assets/{assetId}/original`: the browser fetches it with Range requests, a few seconds ahead of playback and from the new position on a seek, never the whole file at once. A video the browser can't decode (a codec it lacks) falls back to its picture, with a link to download it.
+
+The Asset/Assets content fields show thumbnails for images and videos (`filePreview()`), like the list and the grid.
 
 ## Dialogs
 
@@ -316,8 +338,6 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | `AddFolderDialogComponent` | Create new folder |
 | `EditFileDialogComponent` | Edit name and alt text |
 | `EditFolderDialogComponent` | Rename folder |
-| `ExportDialogComponent` | Export assets to archive |
-| `ImportDialogComponent` | Upload asset archive → creates a Task |
 | `MoveDialogComponent` | Move a file or folder to another folder |
 | `UnsplashAssetsSelectDialogComponent`* | Browse and import from Unsplash |
 | `ImagePreviewDialogComponent`* | Full-size image preview |
@@ -330,7 +350,7 @@ Assets of type `image/*` render previews using `NgOptimizedImage` with the custo
 | Service | Purpose |
 |---------|---------|
 | `AssetService` | `/api/app/spaces/:s/assets`: live reads, folder create, multipart file upload, rename/edit, move, delete |
-| `TaskService` | Create import/export tasks |
-| `UnsplashPluginService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
+| `TaskService` | Create the Regenerate Metadata task |
+| `UnsplashService` | Unsplash search/random via `/api/app/plugins/unsplash/*` |
 | `NotificationService` | Snackbar feedback |
 | `SpaceStore` | Current space + `assetFolderId` (the folder shown) |

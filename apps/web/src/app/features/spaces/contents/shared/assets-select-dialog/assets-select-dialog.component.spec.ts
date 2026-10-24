@@ -1,13 +1,15 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpParams, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFileType, AssetFolder, AssetKind } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { AssetService } from '@core/services/asset.service';
+import { SpaceStore } from '@core/stores/space.store';
+import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { type Mock, vi } from 'vitest';
 
 import { AssetsSelectDialogContext } from './assets-select-dialog.model';
 import { AssetsSelectDialogComponent } from './assets-select-dialog.component';
@@ -20,6 +22,13 @@ function folder(overrides: Partial<AssetFolder> = {}): AssetFolder {
   return { id: 'f1', kind: AssetKind.FOLDER, name: 'Images', ...overrides } as AssetFolder;
 }
 
+/** Lets the page's resource take the answer (it resolves through a promise), then runs the effects. */
+const settle = async () => {
+  TestBed.tick();
+  await new Promise(resolve => setTimeout(resolve));
+  TestBed.tick();
+};
+
 describe('AssetsSelectDialogComponent', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -27,7 +36,7 @@ describe('AssetsSelectDialogComponent', () => {
 
   function setup(context: AssetsSelectDialogContext, assets: Asset[] = []) {
     const close = vi.fn();
-    const findAll = vi.fn().mockReturnValue(of(assets));
+    const findAll = vi.fn().mockReturnValue(of({ items: assets, page: 0, size: 20, total: assets.length }));
     const createFile = vi.fn().mockReturnValue(of({ id: 'new' }));
     const error = vi.fn();
 
@@ -40,7 +49,19 @@ describe('AssetsSelectDialogComponent', () => {
         { provide: BrnDialogRef, useValue: { close } },
         {
           provide: AssetService,
-          useValue: { findAll, createFile, findAllFolders: () => of([{ id: 'a', name: 'A' }, { id: 'b', name: 'B', parentId: 'a' }]) },
+          useValue: {
+            findAll,
+            createFile,
+          },
+        },
+        {
+          provide: SpaceStore,
+          useValue: {
+            assetFolders: signal([
+              { id: 'a', name: 'A' },
+              { id: 'b', name: 'B', parentId: 'a' },
+            ]),
+          },
         },
         { provide: NotificationService, useValue: { error } },
       ],
@@ -50,13 +71,19 @@ describe('AssetsSelectDialogComponent', () => {
     return { component: fixture.componentInstance, close, findAll, createFile, error };
   }
 
-  it('loads root assets on init', () => {
-    const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
-    const { component, findAll } = setup({ spaceId: 'space-1' }, assets);
+  /** The query of the last page read. */
+  const lastQuery = (findAll: Mock) => (findAll.mock.calls.at(-1)![1] as HttpParams).toString();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', undefined, undefined);
+  it('loads the root page on init, files of the field type', async () => {
+    const assets = [file({ id: 'a1' }), folder({ id: 'f1' })];
+    const { component, findAll } = setup({ spaceId: 'space-1', fileType: AssetFileType.IMAGE }, assets);
+    await settle();
+
+    expect(findAll).toHaveBeenCalledWith('space-1', expect.any(HttpParams));
+    expect(lastQuery(findAll)).toBe('page=0&size=20&fileType=IMAGE');
     expect(component.dataSource.filteredData()).toEqual(assets);
-    expect(component.isLoading()).toBe(false);
+    expect(component.page.total()).toBe(2);
+    expect(component.page.loading()).toBe(false);
   });
 
   it('onAssetSelect() toggles selection for files', () => {
@@ -68,14 +95,31 @@ describe('AssetsSelectDialogComponent', () => {
     expect(component.selection.isSelected(f)).toBe(true);
   });
 
-  it('onAssetSelect() navigates into folders', () => {
+  it('onAssetSelect() navigates into folders: one request, for the folder opened', async () => {
     const { component, findAll } = setup({ spaceId: 'space-1' });
+    await settle();
     findAll.mockClear();
 
     component.onAssetSelect(folder({ id: 'f1', name: 'Images' }));
-    TestBed.tick();
+    await settle();
 
-    expect(findAll).toHaveBeenCalledWith('space-1', 'f1', undefined);
+    expect(findAll).toHaveBeenCalledTimes(1);
+    expect(lastQuery(findAll)).toBe('page=0&size=20&parentId=f1');
+  });
+
+  it('keeps the field type through a search, and the selection across folders', () => {
+    const { component, findAll } = setup({ spaceId: 'space-1', multiple: true, fileType: AssetFileType.IMAGE });
+    const first = file({ id: 'a1' });
+    component.onAssetSelect(first);
+
+    component.onAssetSelect(folder({ id: 'a', name: 'A' }));
+    component.assetList.onFilterChange({ search: 'sun', scope: 'deep' });
+    TestBed.tick();
+    expect(lastQuery(findAll)).toBe('page=0&size=20&fileType=IMAGE&search=sun&deep=true&parentId=a');
+
+    component.onAssetSelect(file({ id: 'a2', parentId: 'b' }));
+    expect(component.selection.selected.map(it => it.id)).toEqual(['a1', 'a2']);
+    expect(component.location()(file({ parentId: 'b' }))).toBe('~/A/B');
   });
 
   it('builds the breadcrumbs from the folder map, and goes back by folder id', () => {
@@ -158,7 +202,14 @@ describe('AssetsSelectDialogComponent', () => {
       providers: [
         { provide: DIALOG_DATA, useValue: { spaceId: 'space-1' } },
         { provide: BrnDialogRef, useValue: { close: vi.fn() } },
-        { provide: AssetService, useValue: { findAll: vi.fn().mockReturnValue(of([asset])), findAllFolders: () => of([]), createFile: vi.fn() } },
+        {
+          provide: AssetService,
+          useValue: {
+            findAll: vi.fn().mockReturnValue(of({ items: [asset], page: 0, size: 20, total: 1 })),
+            createFile: vi.fn(),
+          },
+        },
+        { provide: SpaceStore, useValue: { assetFolders: signal([]) } },
         { provide: NotificationService, useValue: { error: vi.fn() } },
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -170,5 +221,6 @@ describe('AssetsSelectDialogComponent', () => {
     const html: string = fixture.nativeElement.innerHTML;
 
     expect(html).not.toContain('/spaces/undefined/');
+    expect(html).toContain('/api/app/spaces/space-1/assets/a1/thumbnail');
   });
 });

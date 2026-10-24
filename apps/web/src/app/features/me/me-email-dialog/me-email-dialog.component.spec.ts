@@ -7,13 +7,13 @@ import { vi } from 'vitest';
 import { MeEmailDialogComponent } from './me-email-dialog.component';
 
 describe('MeEmailDialogComponent', () => {
-  function setup(isPasswordProvider = false) {
+  function setup(hasPassword = false) {
     const close = vi.fn();
     TestBed.overrideComponent(MeEmailDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
         { provide: BrnDialogRef, useValue: { close } },
-        { provide: UserStore, useValue: { isPasswordProvider: signal(isPasswordProvider) } },
+        { provide: UserStore, useValue: { hasPassword: signal(hasPassword) } },
       ],
     });
     const fixture = TestBed.createComponent(MeEmailDialogComponent);

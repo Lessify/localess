@@ -27,25 +27,37 @@ describe('ExportDialogComponent', () => {
     return { component: fixture.componentInstance, close };
   }
 
-  it('defaults to a FULL export with no locale selected', () => {
+  it('defaults to the full Localess file, with no locale selected', () => {
     const { component } = setup({ locales });
 
     expect(component.form.value).toEqual({ kind: 'FULL', locale: null });
+    expect(component.form.valid).toBe(true);
   });
 
-  it('lists FULL and FLAT export kinds', () => {
+  it('offers the full Localess file and one locale as key-value JSON', () => {
     const { component } = setup({ locales });
 
     expect(component.exportKinds).toEqual([
-      { key: 'FULL', value: 'FULL' },
-      { key: 'FLAT', value: 'FLAT JSON' },
+      { key: 'FULL', value: 'All translations (Localess file)' },
+      { key: 'LOCALE', value: 'One locale (key-value JSON)' },
     ]);
+  });
+
+  it('one locale needs the locale chosen', () => {
+    const { component, close } = setup({ locales });
+
+    component.form.patchValue({ kind: 'LOCALE' });
+    expect(component.form.valid).toBe(false);
+    component.form.patchValue({ locale: 'de' });
+    expect(component.form.valid).toBe(true);
+    component.save();
+    expect(close).toHaveBeenCalledWith({ kind: 'LOCALE', locale: 'de' });
   });
 
   it('kindItemToString() shows the friendly kind label, or falls back to the raw value', () => {
     const { component } = setup({ locales });
 
-    expect(component['kindItemToString']('FLAT')).toBe('FLAT JSON');
+    expect(component['kindItemToString']('LOCALE')).toBe('One locale (key-value JSON)');
     expect(component['kindItemToString']('unknown')).toBe('unknown');
   });
 

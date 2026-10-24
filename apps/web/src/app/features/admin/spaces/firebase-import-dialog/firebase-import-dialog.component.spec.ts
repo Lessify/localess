@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { FirebaseImportService } from '@core/services/firebase-import.service';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
@@ -22,10 +23,12 @@ describe('FirebaseImportDialogComponent', () => {
   it('connects, lists spaces with imported ones disabled, starts the selected one', () => {
     const start = vi.fn().mockReturnValue(of({ id: 'r1', status: 'RUNNING', stages: [] }));
     const component = setup({
-      sourceSpaces: vi.fn().mockReturnValue(of([
-        { id: 'a', name: 'A', importedAs: null },
-        { id: 'b', name: 'B', importedAs: { id: 'x', name: 'B (imported)' } },
-      ])),
+      findSourceSpaces: vi.fn().mockReturnValue(
+        of([
+          { id: 'a', name: 'A', importedAs: null },
+          { id: 'b', name: 'B', importedAs: { id: 'x', name: 'B (imported)' } },
+        ]),
+      ),
       start,
       poll: vi.fn().mockReturnValue(of({ id: 'r1', status: 'FINISHED', stages: [] })),
     });
@@ -49,17 +52,35 @@ describe('FirebaseImportDialogComponent', () => {
   });
 
   it('shows why a cancel was refused', () => {
-    const component = setup({ cancel: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'The import is not running' } }))) });
+    const component = setup({
+      cancel: vi
+        .fn()
+        .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'The import is not running' } }))),
+    });
     component.run.set({ id: 'r1', status: 'RUNNING', stages: [] } as never);
     component.cancel();
     expect(component.error()).toBe('The import is not running');
   });
 
   it('shows the connection error', () => {
-    const component = setup({ sourceSpaces: vi.fn().mockReturnValue(throwError(() => ({ error: { message: 'The migration token was refused' } }))) });
+    const component = setup({
+      findSourceSpaces: vi
+        .fn()
+        .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message: 'The migration token was refused' } }))),
+    });
     component.form.setValue({ origin: 'https://cms.example.com', token: 'bad' });
     component.connect();
     expect(component.error()).toBe('The migration token was refused');
+  });
+
+  it('shows the first issue of a refused request (a validation list)', () => {
+    const message = ['origin: Invalid URL', 'token: Too small: expected string to have >=1 characters'];
+    const component = setup({
+      findSourceSpaces: vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status: 400, error: { message } }))),
+    });
+    component.form.setValue({ origin: 'https://cms.example.com', token: 'bad' });
+    component.connect();
+    expect(component.error()).toBe('origin: Invalid URL');
   });
 
   describe('with its template', () => {
@@ -81,7 +102,7 @@ describe('FirebaseImportDialogComponent', () => {
 
     it('scrolls a long list of source spaces inside the dialog, so Import stays reachable', () => {
       const spaces = Array.from({ length: 80 }, (_, i) => ({ id: `s${i}`, name: `Space ${i}`, importedAs: null }));
-      const fixture = render({ sourceSpaces: vi.fn().mockReturnValue(of(spaces)) });
+      const fixture = render({ findSourceSpaces: vi.fn().mockReturnValue(of(spaces)) });
       fixture.componentInstance.form.setValue({ origin: 'https://cms.example.com', token: 't' });
       fixture.componentInstance.connect();
       fixture.detectChanges();

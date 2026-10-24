@@ -1,17 +1,18 @@
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, signal } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
 import { FormErrorHandlerService } from '@core/error-handler/form-error-handler.service';
-import { AssetService } from '@core/services/asset.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
-import { Asset, AssetFile, AssetKind, SchemaFieldAssets, SchemaFieldKind, Space } from '@localess/shared';
+import { SpaceStore } from '@core/stores/space.store';
+import { assetFieldFileType, AssetFile, AssetFileSummary, SchemaFieldAssets, SchemaFieldKind, Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideChevronDown, lucideFile, lucideFilePlusCorner, lucideGripVertical, lucideLanguages, lucideTrash } from '@ng-icons/lucide';
 import { DIALOG_WIDTH_FULL_SCREEN, DIALOG_WIDTH_IMAGE_PREVIEW } from '@shared/components/dialog/dialog-width';
 import { ImagePreviewDialogComponent } from '@shared/components/image-preview-dialog/image-preview-dialog.component';
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { ImagePreviewDirective } from '@shared/directives/image-preview.directive';
+import { filePreview } from '@shared/models/asset.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HlmAccordionImports } from '@spartan-ng/helm/accordion';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -35,7 +36,6 @@ import { AssetsSelectDialogComponent, AssetsSelectDialogContext } from '../asset
     ImagePreviewDirective,
     CommonModule,
     FormatFileSizePipe,
-    NgOptimizedImage,
     HlmButtonImports,
     HlmFieldImports,
     HlmIconImports,
@@ -59,7 +59,6 @@ export class AssetsSelectComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   readonly fe = inject(FormErrorHandlerService);
   private readonly dialog = inject(HlmDialogService);
-  private readonly assetService = inject(AssetService);
 
   // Inputs
   form = input.required<FormArray>();
@@ -70,36 +69,31 @@ export class AssetsSelectComponent implements OnInit {
   // Outputs
   assetsChange = output<string[]>();
 
-  assets = signal<AssetFile[]>([]);
+  private readonly spaceStore = inject(SpaceStore);
+  /** Images and videos show their thumbnail; other files an icon. */
+  protected readonly filePreview = filePreview;
+  /** The ids picked, in their order (the form's values). */
+  readonly ids = signal<string[]>([]);
+  /** The files picked, from `SpaceStore` (live: a rename or a new image shows at once); one gone is left out. */
+  readonly assets = computed(() =>
+    this.ids().flatMap(id => {
+      const file = this.spaceStore.assetFileById().get(id);
+      return file ? [file] : [];
+    }),
+  );
   // Settings
   settingsStore = inject(LocalSettingsStore);
 
   ngOnInit(): void {
-    //console.group('AssetsSelectComponent:ngOnInit')
-    //console.log(this.form)
-    this.loadData();
-    //console.groupEnd()
+    this.spaceStore.loadAssetFiles();
+    this.ids.set(
+      this.form()
+        .controls.map(it => it.value.uri as string)
+        .filter(Boolean),
+    );
   }
 
-  loadData(): void {
-    const ids: string[] | undefined = this.form().controls.map(it => it.value.uri as string);
-    if (ids && ids.length > 0) {
-      this.assetService.findByIds(this.space().id, ids).subscribe({
-        next: assets => {
-          const byId = new Map<string, Asset>(assets.map(item => [item.id, item]));
-          // Make sure to have assets display in exactly the same order
-          this.assets.set(
-            ids
-              .map(it => byId.get(it))
-              .filter(asset => asset?.kind === AssetKind.FILE)
-              .map(it => it as AssetFile),
-          );
-        },
-      });
-    }
-  }
-
-  openImagePreview(element: AssetFile): void {
+  openImagePreview(element: AssetFileSummary): void {
     this.dialog
       .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
         context: {
@@ -122,7 +116,7 @@ export class AssetsSelectComponent implements OnInit {
         context: {
           spaceId: this.space().id,
           multiple: true,
-          fileType: this.component().fileTypes?.at(0),
+          fileType: assetFieldFileType(this.component()),
         },
         contentClass: DIALOG_WIDTH_FULL_SCREEN,
       })
@@ -130,40 +124,46 @@ export class AssetsSelectComponent implements OnInit {
       .subscribe({
         next: selectedAssets => {
           if (selectedAssets) {
-            this.assets.update(current => [...current, ...selectedAssets]);
+            this.ids.update(current => [...current, ...selectedAssets.map(it => it.id)]);
             this.form().clear();
-            this.assets().forEach(it => this.form().push(this.assetToForm(it)));
-            this.assetsChange.emit(this.assets().map(it => it.id));
+            this.ids().forEach(id => this.form().push(this.assetToForm(id)));
+            this.assetsChange.emit(this.ids());
           }
         },
       });
   }
 
-  assetToForm(asset: Asset): FormGroup {
+  assetToForm(id: string): FormGroup {
     return this.fb.group({
-      uri: this.fb.control(asset.id),
+      uri: this.fb.control(id),
       kind: this.fb.control(SchemaFieldKind.ASSET),
     });
   }
 
-  deleteAsset(idx: number) {
-    this.assets.update(current => current.filter((_, i) => i !== idx));
-    this.form().removeAt(idx);
-    this.assetsChange.emit(this.assets().map(it => it.id));
+  /** By id: a file gone from the space is not shown, so the list's index is not the form's. */
+  deleteAsset(id: string) {
+    const index = this.ids().indexOf(id);
+    if (index < 0) return;
+    this.ids.update(current => current.filter((_, i) => i !== index));
+    this.form().removeAt(index);
+    this.assetsChange.emit(this.ids());
   }
 
+  /** The list's positions turned into the form's (see `deleteAsset`). */
   assetDropDrop(event: CdkDragDrop<string[]>) {
     if (event.previousIndex === event.currentIndex) return;
-    const tmp = this.form().at(event.previousIndex);
-    if (tmp) {
-      this.form().removeAt(event.previousIndex);
-      this.form().insert(event.currentIndex, tmp);
-      this.assets.update(current => {
-        const arr = [...current];
-        moveItemInArray(arr, event.previousIndex, event.currentIndex);
-        return arr;
-      });
-      this.assetsChange.emit(this.assets().map(it => it.id));
-    }
+    const shown = this.assets();
+    const from = this.ids().indexOf(shown[event.previousIndex]?.id ?? '');
+    const to = this.ids().indexOf(shown[event.currentIndex]?.id ?? '');
+    if (from < 0 || to < 0) return;
+    const control = this.form().at(from);
+    this.form().removeAt(from);
+    this.form().insert(to, control);
+    this.ids.update(current => {
+      const arr = [...current];
+      moveItemInArray(arr, from, to);
+      return arr;
+    });
+    this.assetsChange.emit(this.ids());
   }
 }

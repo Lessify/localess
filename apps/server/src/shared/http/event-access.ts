@@ -1,43 +1,32 @@
-import { canPerform, hasAnyRole, Principal, UserPermission } from '@localess/shared';
-import type { ChangeEvent } from '../../infra/events/events.service.js';
+import { ADMINS, ANY_ROLE, DEVELOPERS, hasRole, TASK_KIND_ROLES, type TaskKind, type UserRole } from '@localess/shared';
 
-const TASK_READ = [
-  UserPermission.ASSET_EXPORT,
-  UserPermission.ASSET_IMPORT,
-  UserPermission.CONTENT_EXPORT,
-  UserPermission.CONTENT_IMPORT,
-  UserPermission.SCHEMA_EXPORT,
-  UserPermission.SCHEMA_IMPORT,
-  UserPermission.TRANSLATION_EXPORT,
-  UserPermission.TRANSLATION_IMPORT,
-];
+import type { ChangeEvent } from '../../infra/events/event.service.js';
 
 /**
- * Who may hear about a change: the permissions (any one is enough) of the endpoint that reads the
- * entity, or `'anyRole'`. Keep in step with the controllers' `@Require*`. An entity missing here
- * reaches admins only, so a new one fails closed.
+ * Who may hear about a change: the roles of the endpoint that reads the entity (`@RequireRole`). Keep in step with the
+ * controllers. An entity missing here reaches admins only, so a new one fails closed.
  */
-const READ_ACCESS: Record<string, readonly UserPermission[] | 'anyRole'> = {
-  spaces: 'anyRole',
-  contents: [UserPermission.CONTENT_READ],
-  schemas: [UserPermission.SCHEMA_READ, UserPermission.CONTENT_READ],
-  assets: [UserPermission.ASSET_READ, UserPermission.CONTENT_READ],
-  translations: [UserPermission.TRANSLATION_READ],
-  tasks: TASK_READ,
-  task_logs: TASK_READ,
-  tokens: [UserPermission.SPACE_MANAGEMENT],
-  webhooks: [UserPermission.SPACE_MANAGEMENT],
-  webhook_logs: [UserPermission.SPACE_MANAGEMENT],
-  users: [UserPermission.USER_MANAGEMENT],
+const READ_ROLES: Record<string, readonly UserRole[]> = {
+  spaces: ANY_ROLE,
+  contents: ANY_ROLE,
+  schemas: ANY_ROLE,
+  assets: ANY_ROLE,
+  translations: ANY_ROLE,
+  tokens: DEVELOPERS,
+  webhooks: DEVELOPERS,
+  webhook_logs: DEVELOPERS,
+  users: ADMINS,
 };
 
-/** Whether `principal` may receive `event` on the change stream (the same rule Firestore rules applied to listeners). */
-export function canReceive(principal: Principal, event: ChangeEvent): boolean {
-  if (!hasAnyRole(principal)) return false;
-  if (principal.role === 'ADMIN') return true;
-  // Everyone hears about their own account, so a changed role or permission set reaches their UI.
-  if (event.entity === 'users' && event.id === principal.id) return true;
-  const access = READ_ACCESS[event.entity];
-  if (!access) return false;
-  return access === 'anyRole' || access.some(permission => canPerform(principal, permission));
+/** Whether `user` may receive `event` on the change stream. */
+export function canReceive(user: { id: string; role?: UserRole | null }, event: ChangeEvent): boolean {
+  if (!hasRole(user, ANY_ROLE)) return false;
+  // Everyone hears about their own account, so a changed role reaches their UI.
+  if (event.entity === 'users' && event.id === user.id) return true;
+  // A task's events (its row, its logs, its progress): the roles that may start its kind, as its reads; no kind: admins.
+  if (event.entity === 'tasks' || event.entity === 'task_logs') {
+    const roles = event.kind ? TASK_KIND_ROLES[event.kind as TaskKind] : undefined;
+    return hasRole(user, roles ?? ADMINS);
+  }
+  return hasRole(user, READ_ROLES[event.entity] ?? ADMINS);
 }

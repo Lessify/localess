@@ -2,29 +2,30 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Router } from '@angular/router';
-import { Space, WebHook, WebHookEvent } from '@localess/shared';
+import { Space, Webhook, WebhookEvent } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
-import { WebHookService } from './webhook.service';
+import { WebhookService } from './webhook.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { WebhookSecretDialogComponent } from './webhook-secret-dialog/webhook-secret-dialog.component';
 import { WebhooksComponent } from './webhooks.component';
 
 function space(id: string): Space {
   return { id, name: `Space ${id}` } as unknown as Space;
 }
 
-function webhook(overrides: Partial<WebHook> = {}): WebHook {
+function webhook(overrides: Partial<Webhook> = {}): Webhook {
   return {
     id: 'w1',
     name: 'Slack',
     url: 'https://example.com',
     enabled: true,
-    events: [WebHookEvent.CONTENT_PUBLISHED],
+    events: [WebhookEvent.CONTENT_PUBLISHED],
     ...overrides,
-  } as WebHook;
+  } as Webhook;
 }
 
 describe('WebhooksComponent', () => {
@@ -32,9 +33,12 @@ describe('WebhooksComponent', () => {
     vi.clearAllMocks();
   });
 
-  function setup(webhooks: WebHook[] = []) {
-    const findAll = vi.fn().mockReturnValue(of(webhooks));
-    const create = vi.fn().mockReturnValue(of(undefined));
+  /** `failLoad`: the page request fails. */
+  function setup(webhooks: Webhook[] = [], failLoad = false) {
+    const findAll = vi
+      .fn()
+      .mockReturnValue(failLoad ? throwError(() => new Error('boom')) : of({ items: webhooks, page: 0, size: 20, total: webhooks.length }));
+    const create = vi.fn().mockReturnValue(of(webhook({ id: 'w-new', hasSecret: false })));
     const update = vi.fn().mockReturnValue(of(undefined));
     const updateStatus = vi.fn().mockReturnValue(of(undefined));
     const deleteWebhook = vi.fn().mockReturnValue(of(undefined));
@@ -48,7 +52,7 @@ describe('WebhooksComponent', () => {
     });
     TestBed.configureTestingModule({
       providers: [
-        { provide: WebHookService, useValue: { findAll, create, update, updateStatus, delete: deleteWebhook } },
+        { provide: WebhookService, useValue: { findAll, create, update, updateStatus, remove: deleteWebhook } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: Router, useValue: { navigate } },
         { provide: HlmDialogService, useValue: { open } },
@@ -64,17 +68,47 @@ describe('WebhooksComponent', () => {
     const webhooks = [webhook({ id: 'w1' }), webhook({ id: 'w2' })];
     const { component, findAll } = setup(webhooks);
 
-    expect(findAll).toHaveBeenCalledWith('space-1');
+    expect(findAll).toHaveBeenCalledWith('space-1', component.list.params());
     expect(component.dataSource.filteredData()).toEqual(webhooks);
+    expect(component.total()).toBe(2);
     expect(component.isLoading()).toBe(false);
   });
 
-  it('onFilterChange() serializes the filter value onto the data source', () => {
+  it('onFilterChange() searches and filters on the server, from the first page', () => {
+    const { component, findAll } = setup();
+    component.list.page.set(2);
+
+    component.onFilterChange({
+      search: ' slack ',
+      enabled: 'false',
+      events: [WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.TRANSLATION_CHANGED],
+    });
+    TestBed.tick();
+
+    const params = component.list.params();
+    expect(component.list.page()).toBe(0);
+    expect(findAll).toHaveBeenLastCalledWith('space-1', params);
+    expect(params.get('search')).toBe('slack');
+    expect(params.get('enabled')).toBe('false');
+    expect(params.getAll('event')).toEqual([WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.TRANSLATION_CHANGED]);
+  });
+
+  it('onSortChange() sorts on the server; cleared, back to by name', () => {
     const { component } = setup();
 
-    component.onFilterChange({ search: 'slack' });
+    component.onSortChange({ active: 'updatedAt', direction: 'desc' });
+    expect(component.list.params().get('sort')).toBe('updatedAt');
+    expect(component.list.params().get('direction')).toBe('desc');
 
-    expect(component.dataSource.filter).toBe(JSON.stringify({ search: 'slack' }));
+    component.onSortChange({ active: 'updatedAt', direction: '' });
+    expect(component.list.params().has('sort')).toBe(false);
+  });
+
+  it('tells a failed load and stops loading', () => {
+    const { component, error } = setup([], true);
+
+    expect(error).toHaveBeenCalledWith('Webhooks can not be loaded.');
+    expect(component.isLoading()).toBe(false);
   });
 
   it('navigateToDetail() navigates to the webhook detail route', () => {
@@ -87,13 +121,28 @@ describe('WebhooksComponent', () => {
 
   it('openAddDialog() creates the webhook and notifies success when confirmed', () => {
     const { component, open, create, success } = setup();
-    const model = { name: 'Slack', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const model = { name: 'Slack', url: 'https://example.com', events: [WebhookEvent.CONTENT_PUBLISHED] };
     open.mockReturnValue({ closed$: of(model) });
 
     component.openAddDialog();
 
     expect(create).toHaveBeenCalledWith('space-1', model);
     expect(success).toHaveBeenCalledWith('Webhook has been created.');
+    // Unsigned: no secret to show.
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
+  it('openAddDialog() shows the secret of a signed webhook once it is created', () => {
+    const { component, open, create } = setup();
+    create.mockReturnValue(of(webhook({ id: 'w-new', name: 'Signed', hasSecret: true, secret: 'whsec_once' })));
+    open.mockReturnValueOnce({ closed$: of({ name: 'Signed', url: 'https://example.com', events: [], signed: true }) });
+
+    component.openAddDialog();
+
+    expect(open).toHaveBeenLastCalledWith(
+      WebhookSecretDialogComponent,
+      expect.objectContaining({ context: { name: 'Signed', secret: 'whsec_once' } }),
+    );
   });
 
   it('openAddDialog() does nothing when dismissed without a result', () => {
@@ -117,7 +166,7 @@ describe('WebhooksComponent', () => {
 
   it('openEditDialog() updates the webhook and notifies success when confirmed', () => {
     const { component, open, update, success } = setup();
-    const model = { name: 'Renamed', url: 'https://example.com', events: [WebHookEvent.CONTENT_PUBLISHED] };
+    const model = { name: 'Renamed', url: 'https://example.com', events: [WebhookEvent.CONTENT_PUBLISHED] };
     open.mockReturnValue({ closed$: of(model) });
 
     component.openEditDialog(webhook({ id: 'w1' }));
@@ -197,7 +246,7 @@ describe('WebhooksComponent', () => {
   it('eventsToText() joins events with newlines', () => {
     const { component } = setup();
 
-    expect(component['eventsToText']([WebHookEvent.CONTENT_PUBLISHED, WebHookEvent.CONTENT_CHANGED])).toBe(
+    expect(component['eventsToText']([WebhookEvent.CONTENT_PUBLISHED, WebhookEvent.CONTENT_CHANGED])).toBe(
       'content.published\ncontent.changed',
     );
   });

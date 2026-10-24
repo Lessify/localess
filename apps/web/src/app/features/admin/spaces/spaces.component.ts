@@ -1,7 +1,6 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule } from '@angular/common';
 import {
-  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -12,13 +11,12 @@ import {
   linkedSignal,
   OnInit,
   signal,
-  viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceService } from '@core/services/space.service';
-import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
+import { PagedList } from '@core/utils/paged-list';
 import { Space } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import { lucideCopy, lucidePencil, lucidePlus, lucideTrash } from '@ng-icons/lucide';
@@ -30,16 +28,16 @@ import {
 } from '@shared/components/confirmation-dialog';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
-import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
-import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
+import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
+import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { Observable, of } from 'rxjs';
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { EMPTY } from 'rxjs';
+import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import { FirebaseImportDialogComponent } from './firebase-import-dialog/firebase-import-dialog.component';
 import { FirebaseImportsDialogComponent } from './firebase-imports-dialog/firebase-imports-dialog.component';
@@ -47,9 +45,6 @@ import { SpaceCreateDialogComponent } from './space-create-dialog/space-create-d
 import { SpaceCreateDialogResult } from './space-create-dialog/space-create-dialog.model';
 import { SpaceEditDialogComponent } from './space-edit-dialog/space-edit-dialog.component';
 import { SpaceEditDialogContext, SpaceEditDialogResult } from './space-edit-dialog/space-edit-dialog.model';
-import { SpaceTemplateId } from './space-template.model';
-import { SpaceTemplateService } from './space-template.service';
-import { SPACE_TEMPLATES } from './templates';
 
 /** `?action=create` opens the create dialog. Other values are ignored rather than dispatched. */
 const CREATE_ACTION = 'create';
@@ -81,17 +76,16 @@ const CREATE_ACTION = 'create';
     }),
   ],
 })
-export class SpacesComponent implements OnInit, AfterViewInit {
+export class SpacesComponent implements OnInit {
   private readonly spaceService = inject(SpaceService);
-  private readonly spaceTemplateService = inject(SpaceTemplateService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
 
-  sort = viewChild.required(TableSort);
-  paginator = viewChild.required(Paginator);
-
   isLoading = signal(true);
+  /** The page shown: paged, sorted and searched on the server (`GET /api/app/spaces`); by name unless sorted. */
+  readonly list = new PagedList(20);
+  readonly total = signal(0);
   private readonly spaces = signal<Space[]>([]);
   readonly dataSource = new TableDataSource<Space>(this.spaces, this.injector);
   displayedColumns: string[] = ['id', 'name', /*'createdAt',*/ 'updatedAt', 'actions'];
@@ -115,32 +109,40 @@ export class SpacesComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.dataSource.filterPredicate = FilterPredicateUtils.create<Space>({
-      searchFields: space => [space.id, space.name],
-    });
-    // Names compare case-insensitively, the order the server lists spaces in.
-    this.dataSource.sortingDataAccessor = (space, column) => {
-      const value = (space as unknown as Record<string, unknown>)[column];
-      return column === 'name' ? space.name.toLowerCase() : ((value ?? '') as string | number);
-    };
     this.loadData();
   }
 
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort();
-    this.dataSource.paginator = this.paginator();
-  }
-
+  /** The search box (name, or the id), on the server; from the first page. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.dataSource.filter = JSON.stringify(value);
+    this.list.setFilters({ search: value.search?.trim() || undefined });
   }
 
+  onSortChange(sort: TableSortState): void {
+    this.list.setSort(sort.active, sort.direction);
+  }
+
+  /**
+   * The current query's page, again whenever the query changes or a space does (live). A failed load is told and
+   * ends only that request: the next query change (page, sort, search) fetches again.
+   */
   loadData(): void {
-    this.spaceService
-      .findAll()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(response => {
-        this.spaces.set(response);
+    toObservable(this.list.params, { injector: this.injector })
+      .pipe(
+        switchMap(params =>
+          this.spaceService.findAll(params).pipe(
+            catchError(() => {
+              this.notificationService.error('Spaces can not be loaded.');
+              this.isLoading.set(false);
+              return EMPTY;
+            }),
+          ),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(page => {
+        this.spaces.set(page.items);
+        this.total.set(page.total);
+        this.list.onLoaded(page);
         this.isLoading.set(false);
       });
   }
@@ -155,16 +157,17 @@ export class SpacesComponent implements OnInit, AfterViewInit {
 
   /** A space being imported from Firebase, or whose import failed, cannot be opened until it is done or deleted. */
   importLabel(space: Space): string | undefined {
-    if (space.importStatus === 'IMPORTING') return 'Importing';
-    if (space.importStatus === 'FAILED') return 'Import failed';
+    if (space.firebaseImport?.status === 'RUNNING') return 'Importing';
+    if (space.firebaseImport?.status === 'FAILED') return 'Import failed';
     return undefined;
   }
 
   /** What to do about it: a failed import is not retried into its space. */
-  importHint(space: Space): string | undefined {
-    if (space.importStatus === 'IMPORTING') return 'It opens once the import has finished';
-    if (space.importStatus === 'FAILED') return 'Delete the space and import it again';
-    return undefined;
+  /** The tooltip of a space being imported or whose import failed; `null`: none. */
+  importHint(space: Space): string | null {
+    if (space.firebaseImport?.status === 'RUNNING') return 'It opens once the import has finished';
+    if (space.firebaseImport?.status === 'FAILED') return 'Delete the space and import it again';
+    return null;
   }
 
   openAddDialog(): void {
@@ -176,43 +179,17 @@ export class SpacesComponent implements OnInit, AfterViewInit {
         take(1),
         tap(() => this.clearAction()),
         filter((result): result is SpaceCreateDialogResult => result !== undefined),
-        switchMap(model =>
-          this.spaceService.create({ name: model.name }).pipe(switchMap(ref => this.applyTemplate(ref.id, model.template))),
-        ),
+        // One request: the server writes the space and its template's content in one transaction.
+        switchMap(model => this.spaceService.create(model)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ templateFailed }) => {
-          if (templateFailed) {
-            this.notificationService.warning('Space has been created, but the template could not be applied.');
-          } else {
-            this.notificationService.success('Space has been created.');
-          }
-        },
+        next: () => this.notificationService.success('Space has been created.'),
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error('Space can not be created.');
         },
       });
-  }
-
-  private applyTemplate(spaceId: string, templateId: SpaceTemplateId): Observable<{ templateFailed: boolean }> {
-    const template = SPACE_TEMPLATES.find(it => it.id === templateId);
-    // EMPTY resolves to a template whose schemas array is empty, and apply() short-circuits on that
-    // without calling the server. An unknown id means nothing to apply either.
-    if (!template) return of({ templateFailed: false });
-
-    return this.spaceTemplateService.apply(spaceId, template).pipe(
-      map(() => ({ templateFailed: false })),
-      // The space exists and is usable, so a failed template is not a failed creation. Reporting it
-      // as one would be a lie, and would invite the user to retry a create that already succeeded.
-      // There is deliberately no rollback: deleting a space the user just watched appear is worse
-      // than leaving an empty one.
-      catchError((err: unknown) => {
-        console.error(err);
-        return of({ templateFailed: true });
-      }),
-    );
   }
 
   /** `replaceUrl` so a dismissed dialog is not one Back press away from reopening itself. */
@@ -257,7 +234,7 @@ export class SpacesComponent implements OnInit, AfterViewInit {
       .closed$.pipe(
         take(1),
         filter(it => it || false),
-        switchMap(() => this.spaceService.delete(element.id)),
+        switchMap(() => this.spaceService.remove(element.id)),
       )
       .subscribe({
         next: () => {

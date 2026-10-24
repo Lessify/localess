@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyReply } from 'fastify';
-import { isUuid } from '../../infra/database/id.js';
+
 import type { Database } from '../../infra/database/database.module.js';
+import { isUuid } from '../../infra/database/id.js';
 import { firebaseImports, spaces } from '../../infra/database/schema.js';
-import { importStatusOf, type SpaceImportStatus } from '../queries/space.query.js';
 import { isValidId } from '../../infra/http/v1/id-param.js';
 import { CONTENT_CACHE } from '../../infra/http/v1/v1-request.js';
 import { sendV1Error } from '../../infra/http/v1/v1-response.js';
+import { importStatusOf, type SpaceImportStatus } from '../utils/import-status.js';
 
 /** A space as the public API sees it before any controller: its UUID and whether an import is running or failed. */
 export interface ResolvedSpace {

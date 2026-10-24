@@ -1,0 +1,8 @@
+.auth
+test-results
+playwright-report
+blob-report
+all-blob-reports
+.data-demos
+.data-limits
+demo-videos

@@ -1,31 +1,18 @@
-import { createHash, randomBytes } from 'node:crypto';
-import { readdir } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+
 import type { ContentData } from '@localess/shared';
 import { and, eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assets, contents } from '../src/infra/database/schema.js';
-import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess, XHR } from './test-app.js';
-import { S1, UUID_V7 } from './ids.js';
-import { newUuid } from '../src/infra/database/id.js';
 
-/** A multipart body with the fields first, then the file — the order the endpoint expects. */
-function multipart(fields: Record<string, string>, file: { filename: string; type: string; bytes: Buffer }) {
-  const boundary = `----localess${randomBytes(8).toString('hex')}`;
-  const parts: Buffer[] = [];
-  for (const [name, value] of Object.entries(fields)) {
-    parts.push(Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`));
-  }
-  parts.push(
-    Buffer.from(
-      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${file.filename}"\r\nContent-Type: ${file.type}\r\n\r\n`,
-    ),
-  );
-  parts.push(file.bytes, Buffer.from(`\r\n--${boundary}--\r\n`));
-  return { payload: Buffer.concat(parts), contentType: `multipart/form-data; boundary=${boundary}` };
-}
+import { newUuid } from '../src/infra/database/id.js';
+import { assets, contents } from '../src/infra/database/schema.js';
+import { AssetDeliveryService } from '../src/modules/assets/services/asset-delivery.service.js';
+import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
+import { S1, UUID_V7 } from './ids.js';
+import { api, createTestApp, insertSpace, multipart, TestApp, userWithAccess, XHR } from './test-app.js';
 
 const jpeg = (width: number, height: number) => sharp({ create: { width, height, channels: 3, background: '#88aa44' } }).jpeg();
 
@@ -40,11 +27,10 @@ describe('app API: assets', () => {
     t = await createTestApp({ LOCALESS_UPLOAD_MAX_MB: '1' });
     await insertSpace(t.db, { id: S1, name: 'S', locales: [{ id: 'en', name: 'English' }], defaultLocale: { id: 'en', name: 'English' } });
     cookie = await userWithAccess(t, 'editor@example.com', {
-      role: 'CUSTOM',
-      permissions: ['ASSET_READ', 'ASSET_CREATE', 'ASSET_UPDATE', 'ASSET_DELETE'],
+      role: 'EDITOR',
     });
     editor = api(t, cookie);
-    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['CONTENT_READ'] }));
+    contentReader = api(t, await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' }));
   });
 
   afterAll(() => t?.close());
@@ -124,7 +110,8 @@ describe('app API: assets', () => {
   });
 
   describe('uploads', () => {
-    let photo: Record<string, unknown>;
+    let photo: Record<string, unknown> & { id: string };
+    let photoBytes: Buffer;
 
     it('stores the file and records size, md5, oriented dimensions and the embedded caption', async () => {
       // Stored 400x300 with EXIF orientation 6 (rotate 90°): it displays as 300x400 portrait.
@@ -132,10 +119,8 @@ describe('app API: assets', () => {
         .withMetadata({ orientation: 6 })
         .withExif({ IFD0: { ImageDescription: 'Sunset over the bay' } })
         .toBuffer();
-      const response = await upload(
-        { parentId: nested.id },
-        { filename: 'Sunset.Final.JPG', type: 'image/jpeg', bytes },
-      );
+      photoBytes = bytes;
+      const response = await upload({ parentId: nested.id }, { filename: 'Sunset.Final.JPG', type: 'image/jpeg', bytes });
       expect(response.statusCode, response.body).toBe(201);
       photo = response.json();
       expect(photo).toMatchObject({
@@ -144,19 +129,95 @@ describe('app API: assets', () => {
         extension: '.JPG',
         type: 'image/jpeg',
         size: bytes.length,
-        md5: createHash('md5').update(bytes).digest('base64'),
         parentId: nested.id,
         alt: 'Sunset over the bay',
         metadata: { type: 'image', format: 'jpg', width: 300, height: 400, orientation: 'portrait' },
       });
-      // The response is the stored asset: there is no in-progress state.
+      // The response is the stored asset: there is no in-progress state. The md5 stays on the server (ETags).
       expect(photo).not.toHaveProperty('inProgress');
+      expect(photo).not.toHaveProperty('md5');
     });
 
     it('is served by the public API straight away, with an ETag built from the stored md5', async () => {
       const response = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo['id']}/original` });
       expect(response.statusCode).toBe(200);
-      expect(response.headers.etag).toBe(`"${photo['md5']}-orig"`);
+      expect(response.headers.etag).toBe(`"${createHash('md5').update(photoBytes).digest('base64')}-orig"`);
+    });
+
+    it('stores the file by its upload name, kept on a rename: the API shows and downloads only `name`', async () => {
+      await t.app.get(AssetDeliveryService).whenIdle();
+      const dir = join(t.storageDir, `spaces/${S1}/assets/${photo.id}`);
+      // The upload, and what is generated from it: the thumbnail, made in the background after the upload.
+      expect((await readdir(dir)).sort()).toEqual(['Sunset.Final.JPG', 'renditions']);
+      expect(await readdir(join(dir, 'renditions'))).toEqual(['thumbnail.webp']);
+      expect(photo).not.toHaveProperty('originalName');
+
+      const renamed = await editor.patch(`${base}/${photo.id}`, { name: 'Bay' });
+      expect(renamed.statusCode, renamed.body).toBe(200);
+      expect((await readdir(dir)).sort()).toEqual(['Sunset.Final.JPG', 'renditions']);
+      const download = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo.id}/download` });
+      expect(download.statusCode).toBe(200);
+      expect(download.headers['content-disposition']).toContain('Bay.JPG');
+      await editor.patch(`${base}/${photo.id}`, { name: 'Sunset.Final' });
+    });
+
+    describe('thumbnail', () => {
+      const thumbnail = (id: string, headers: Record<string, string> = {}) =>
+        t.request({ method: 'GET', url: `${base}/${id}/thumbnail`, headers: { cookie, ...headers } });
+
+      it('serves one WebP for the platform, never enlarged, kept by the browser for a year', async () => {
+        const response = await thumbnail(photo.id);
+        expect(response.statusCode, response.body).toBe(200);
+        expect(response.headers['content-type']).toBe('image/webp');
+        expect(response.headers['cache-control']).toBe('private, max-age=31536000, immutable');
+        // Stored 400x300 with EXIF orientation 6: upright, and smaller than 512 px, so kept at its size.
+        expect(await sharp(response.rawPayload).metadata()).toMatchObject({ format: 'webp', width: 300, height: 400 });
+
+        const again = await thumbnail(photo.id, { 'if-none-match': String(response.headers.etag) });
+        expect(again.statusCode).toBe(304);
+      });
+
+      it('fits a large image inside 512 px, generated on the first request when none is stored', async () => {
+        const created = await upload({}, { filename: 'wide.jpg', type: 'image/jpeg', bytes: await jpeg(1600, 900).toBuffer() });
+        const id = created.json().id;
+        await t.app.get(AssetDeliveryService).whenIdle();
+        const stored = join(t.storageDir, `spaces/${S1}/assets/${id}/renditions/thumbnail.webp`);
+        await rm(stored);
+
+        const response = await thumbnail(id);
+        expect(response.statusCode).toBe(200);
+        expect(await sharp(response.rawPayload).metadata()).toMatchObject({ width: 512, height: 288 });
+        expect((await sharp(stored).metadata()).width).toBe(512);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('shows the first frame of an animation', async () => {
+        const frames = 3;
+        const raw = Buffer.alloc(20 * 20 * frames * 3, 0);
+        const gif = await sharp(raw, { raw: { width: 20, height: 20 * frames, channels: 3, pageHeight: 20 } })
+          .gif()
+          .toBuffer();
+        const id = (await upload({}, { filename: 'spin.gif', type: 'image/gif', bytes: gif })).json().id;
+        const metadata = await sharp((await thumbnail(id)).rawPayload).metadata();
+        expect(metadata).toMatchObject({ format: 'webp', width: 20, height: 20 });
+        expect(metadata.pages ?? 1).toBe(1);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('answers 404 for a file that is not an image or a video, and for a folder', async () => {
+        const id = (await upload({}, { filename: 'notes.txt', type: 'text/plain', bytes: Buffer.from('notes') })).json().id;
+        expect((await thumbnail(id)).statusCode).toBe(404);
+        expect((await thumbnail(nested.id)).statusCode).toBe(404);
+        expect((await thumbnail(newUuid())).statusCode).toBe(404);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('is for signed-in users only', async () => {
+        expect((await t.request({ method: 'GET', url: `${base}/${photo.id}/thumbnail` })).statusCode).toBe(401);
+      });
     });
 
     it('records the frame count of animations and keeps explicit name, alt and source', async () => {
@@ -203,66 +264,81 @@ describe('app API: assets', () => {
     });
 
     it('requires ASSET_CREATE and a multipart body', async () => {
-      const readerCookie = await userWithAccess(t, 'r2@example.com', { role: 'CUSTOM', permissions: ['ASSET_READ'] });
+      const readerCookie = await userWithAccess(t, 'r2@example.com', { role: 'VIEWER' });
       expect((await upload({}, { filename: 'a.txt', type: 'text/plain', bytes: Buffer.from('x') }, readerCookie)).statusCode).toBe(403);
       expect((await editor.post(`${base}/files`, { file: 'nope' })).statusCode).toBe(400);
     });
   });
 
   describe('browsing', () => {
-    it('lists a folder (folders first), filters by MIME prefix, name prefix and ids, and counts', async () => {
-      const root = (await contentReader.get(`${base}?parentId=`)).json();
+    it('lists a folder (folders first), filters by file type and searches the space, and counts', async () => {
+      const root = (await contentReader.get(base)).json().items;
       expect(root.map((a: { name: string }) => a.name)).toEqual(['Photos', 'Spinner', 'terms']);
-      expect((await contentReader.get(`${base}?parentId=&fileType=image`)).json().map((a: { name: string }) => a.name)).toEqual([
+      expect((await contentReader.get(`${base}?fileType=IMAGE`)).json().items.map((a: { name: string }) => a.name)).toEqual([
         'Photos',
         'Spinner',
       ]);
-      expect((await contentReader.get(`${base}?name=sun`)).json().map((a: { name: string }) => a.name)).toEqual(['Sunset.Final']);
+      expect((await contentReader.get(`${base}?search=sun&deep=true`)).json().items.map((a: { name: string }) => a.name)).toEqual([
+        'Sunset.Final',
+      ]);
       expect((await contentReader.get(`${base}/count?kind=FILE`)).json()).toEqual({ count: 3 });
       expect((await contentReader.post(`${base}/folders`, { name: 'x' })).statusCode).toBe(403);
     });
 
-    it('`?ids=` matches asset UUIDs exactly, not the Firestore id an asset was imported with', async () => {
-      const [first] = (await contentReader.get(`${base}?parentId=&kind=FILE`)).json();
+    it('answers the UUID and, for an asset imported from Firebase, its Firestore id', async () => {
+      const [first] = (await contentReader.get(`${base}?kind=FILE`)).json().items;
       expect(first.id).toMatch(UUID_V7);
       await t.db.update(assets).set({ legacyId: 'FirestoreAsset000001' }).where(eq(assets.id, first.id));
-      expect((await contentReader.get(`${base}?ids=FirestoreAsset000001`)).json()).toEqual([]);
-      expect((await contentReader.get(`${base}?ids=${first.id}`)).json()[0]).toMatchObject({
-        id: first.id,
-        legacyId: 'FirestoreAsset000001',
+      expect((await contentReader.get(`${base}/${first.id}`)).json()).toMatchObject({ id: first.id, legacyId: 'FirestoreAsset000001' });
+    });
+
+    it('lists every file of the space, light, with what an Asset field shows', async () => {
+      const files = (await contentReader.get(`${base}/files`)).json<(Record<string, unknown> & { name: string; extension: string })[]>();
+      expect(files.map(it => `${it.name}${it.extension}`)).toEqual(['Spinner.gif', 'Sunset.Final.JPG', 'terms.pdf']);
+      const sunset = files.find(it => it.name === 'Sunset.Final')!;
+      expect(sunset).toEqual({
+        id: expect.any(String),
+        parentId: expect.any(String),
+        name: 'Sunset.Final',
+        extension: '.JPG',
+        type: 'image/jpeg',
+        size: expect.any(Number),
+        metadata: { width: 300, height: 400 },
       });
     });
   });
 
   describe('editing', () => {
     it('renames and sets or clears alt text', async () => {
-      const [file] = (await editor.get(`${base}?name=spinner`)).json();
+      const [file] = (await editor.get(`${base}?search=spinner&deep=true`)).json().items;
       expect((await editor.patch(`${base}/${file.id}`, { name: 'Loader', alt: '' })).json()).toMatchObject({ name: 'Loader' });
       expect((await editor.get(`${base}/${file.id}`)).json()).not.toHaveProperty('alt');
     });
 
     it('moves files and folders: one row, whatever is under it', async () => {
-      const [file] = (await editor.get(`${base}?name=terms`)).json();
-      expect((await editor.put(`${base}/${file.id}/parent`, { parentId: photos.id })).json().parentId).toBe(photos.id);
-      expect((await editor.put(`${base}/${file.id}/parent`, { parentId: newUuid() })).statusCode).toBe(400);
+      const [file] = (await editor.get(`${base}?search=terms&deep=true`)).json().items;
+      expect((await editor.patch(`${base}/${file.id}`, { parentId: photos.id })).json().parentId).toBe(photos.id);
+      expect((await editor.patch(`${base}/${file.id}`, { parentId: newUuid() })).statusCode).toBe(400);
       // A folder moves with everything under it: the photo stays in it.
-      const moved = await editor.put(`${base}/${nested.id}/parent`, { parentId: null });
+      const moved = await editor.patch(`${base}/${nested.id}`, { parentId: null });
       expect(moved.statusCode).toBe(200);
       expect(moved.json()).not.toHaveProperty('parentId');
-      expect((await editor.get(`${base}?parentId=${nested.id}`)).json().map((a: { name: string }) => a.name)).toEqual(['Sunset.Final']);
-      await editor.put(`${base}/${nested.id}/parent`, { parentId: photos.id });
+      expect((await editor.get(`${base}?parentId=${nested.id}`)).json().items.map((a: { name: string }) => a.name)).toEqual([
+        'Sunset.Final',
+      ]);
+      await editor.patch(`${base}/${nested.id}`, { parentId: photos.id });
     });
 
     it('refuses moving a folder into itself or under itself', async () => {
       for (const parentId of [photos.id, nested.id]) {
-        const response = await editor.put(`${base}/${photos.id}/parent`, { parentId });
+        const response = await editor.patch(`${base}/${photos.id}`, { parentId });
         expect(response.statusCode).toBe(400);
         expect(response.json().message).toBe('A folder cannot be moved into itself');
       }
     });
 
     it('refuses a file as the parent', async () => {
-      const [file] = (await editor.get(`${base}?name=terms`)).json();
+      const [file] = (await editor.get(`${base}?search=terms&deep=true`)).json().items;
       const response = await editor.post(`${base}/folders`, { parentId: file.id, name: 'X' });
       expect(response.statusCode).toBe(400);
       expect(response.json().message).toBe('No such folder');
@@ -313,7 +389,7 @@ describe('app API: assets', () => {
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(204);
       // Their files are queued in the delete and swept right after the commit.
       await t.app.get(StorageSweeperService).whenIdle();
-      expect((await editor.get(`${base}?parentId=`)).json().map((a: { name: string }) => a.name)).toEqual(['Loader']);
+      expect((await editor.get(base)).json().items.map((a: { name: string }) => a.name)).toEqual(['Loader']);
       // The photo (nested two levels down) and the moved PDF are gone from storage too.
       expect(await storedFiles()).toHaveLength(1);
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(404);

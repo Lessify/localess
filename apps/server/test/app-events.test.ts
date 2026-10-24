@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { EventsService } from '../src/infra/events/events.service.js';
-import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
+
+import { EventService } from '../src/infra/events/event.service.js';
 import { S1, S2 } from './ids.js';
+import { api, createTestApp, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 /** Reads SSE `change` events from a live stream until `count` arrived (or the timeout). */
 async function readEvents(url: string, cookie: string, count: number, trigger: () => Promise<unknown>): Promise<unknown[]> {
@@ -69,7 +70,7 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     const client = api(t, cookie);
     let page = '';
     const events = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, cookie, 2, async () => {
-      await t.app.get(EventsService).publish({ spaceId: S2, entity: 'contents', id: 'x', op: 'updated' });
+      await t.app.get(EventService).publish({ spaceId: S2, entity: 'contents', id: 'x', op: 'updated' });
       page = (await client.post(`/api/app/spaces/${S1}/schemas`, { name: 'page', type: 'ROOT' })).json().id;
       await client.patch(`/api/app/spaces/${S1}`, { name: 'Renamed' });
     });
@@ -79,17 +80,19 @@ describe('app API: change events (SSE over LISTEN/NOTIFY)', () => {
     ]);
   });
 
-  it('sends a custom user only the events it may read', async () => {
-    const reader = await userWithAccess(t, 'reader@example.com', { role: 'CUSTOM', permissions: ['TRANSLATION_READ'] });
-    const events = t.app.get(EventsService);
-    const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 2, async () => {
+  it('sends a role only the events it may read', async () => {
+    const reader = await userWithAccess(t, 'reader@example.com', { role: 'VIEWER' });
+    const events = t.app.get(EventService);
+    const received = await readEvents(`${origin}/api/app/events?spaceId=${S1}`, reader, 3, async () => {
       await events.publish({ spaceId: S1, entity: 'tokens', id: 'tok', op: 'updated' });
       await events.publish({ spaceId: S1, entity: 'contents', id: 'c', op: 'updated' });
       await events.publish({ spaceId: null, entity: 'users', id: 'someone', op: 'updated' });
       await events.publish({ spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' });
       await events.publish({ spaceId: null, entity: 'spaces', id: S1, op: 'updated' });
     });
+    // A viewer reads contents and translations, not tokens, nor other users.
     expect(received).toEqual([
+      { spaceId: S1, entity: 'contents', id: 'c', op: 'updated' },
       { spaceId: S1, entity: 'translations', id: 'tr', op: 'updated' },
       { spaceId: null, entity: 'spaces', id: S1, op: 'updated' },
     ]);

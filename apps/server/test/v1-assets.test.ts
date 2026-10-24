@@ -1,16 +1,18 @@
 import { execFileSync } from 'node:child_process';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+
+import { eq } from 'drizzle-orm';
 import ffmpegStatic from 'ffmpeg-static';
 import sharp from 'sharp';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { eq } from 'drizzle-orm';
+
+import { newUuid } from '../src/infra/database/id.js';
 import { assets } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, StorageDriver } from '../src/infra/storage/storage.driver.js';
-import { seedAsset, seedSpace, SeededAsset } from './seed.js';
-import { createTestApp, setImport, TestApp } from './test-app.js';
 import { S1 } from './ids.js';
-import { newUuid } from '../src/infra/database/id.js';
+import { seedAsset, SeededAsset, seedSpace } from './seed.js';
+import { createTestApp, setImport, TestApp } from './test-app.js';
 
 /** Ported from functions/src/v1/cdn-assets.test.ts, against real rows and files instead of spies. */
 
@@ -230,14 +232,14 @@ describe('v1 asset routes', () => {
       const { url, id } = await given({ bytes: await jpegFixture(), type: 'image/jpeg', extension: '.jpg' });
       const first = await get(`${url}?w=120&q=50`);
       const renditions = await readdir(join(t.storageDir, `spaces/${S1}/assets/${id}/renditions`));
-      expect(renditions).toEqual(['w120-q50-fjpeg']);
+      expect(renditions).toEqual(['w120-q50.jpg']);
 
       const storage = t.app.get<StorageDriver>(STORAGE_DRIVER);
       const read = vi.spyOn(storage, 'read');
       const second = await get(`${url}?w=120&q=50`);
       expect(second.rawPayload.equals(first.rawPayload)).toBe(true);
       // Only the cached rendition was read, never the original.
-      expect(read.mock.calls.map(([key]) => key)).toEqual([`spaces/${S1}/assets/${id}/renditions/w120-q50-fjpeg`]);
+      expect(read.mock.calls.map(([key]) => key)).toEqual([`spaces/${S1}/assets/${id}/renditions/w120-q50.jpg`]);
     });
   });
 

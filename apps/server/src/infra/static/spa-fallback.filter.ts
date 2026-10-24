@@ -1,7 +1,9 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+
 import { ArgumentsHost, Catch, ExceptionFilter, NotFoundException } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+
 import { isApiPath } from './static-site.js';
 
 /**

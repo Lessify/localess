@@ -115,6 +115,12 @@ export function checkWebhookUrl(raw: unknown, allowInternal: boolean): WebhookUr
   return { ok: true, url };
 }
 
+/** Whether a custom header would override a transport or Localess header (refused on save, dropped at delivery). */
+export function isReservedWebhookHeader(name: string): boolean {
+  const lower = name.toLowerCase();
+  return RESERVED_HEADERS.has(lower) || lower.startsWith('x-webhook-') || lower.startsWith('webhook-');
+}
+
 /**
  * Drops custom headers that would override transport or Localess headers.
  *
@@ -124,8 +130,7 @@ export function checkWebhookUrl(raw: unknown, allowInternal: boolean): WebhookUr
 export function sanitizeWebhookHeaders(headers: Record<string, string> | undefined): Record<string, string> {
   const safe: Record<string, string> = {};
   for (const [name, value] of Object.entries(headers ?? {})) {
-    const lower = name.toLowerCase();
-    if (RESERVED_HEADERS.has(lower) || lower.startsWith('x-webhook-')) continue;
+    if (isReservedWebhookHeader(name)) continue;
     if (typeof value !== 'string') continue;
     safe[name] = value;
   }
@@ -144,7 +149,7 @@ type LookupCallback = (err: NodeJS.ErrnoException | null, address: string | Look
 export function guardedLookup(hostname: string, options: { all?: boolean; family?: number }, callback: LookupCallback): void {
   dnsLookup(hostname, { all: true, family: options.family ?? 0 }, (err, addresses) => {
     if (err) return callback(err, []);
-    const list = addresses as LookupAddress[];
+    const list = addresses;
     if (list.length === 0 || list.some(entry => isBlockedAddress(entry.address))) {
       const error: NodeJS.ErrnoException = new Error(`Webhook URL is not allowed: '${hostname}' resolves to a private address`);
       error.code = 'EBLOCKEDADDRESS';

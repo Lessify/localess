@@ -30,7 +30,8 @@ export async function fakeFirebase(
   const server = createServer((request, response) => {
     const url = new URL(request.url ?? '/', 'http://fake');
     requests.push(url.pathname + url.search);
-    const json = (status: number, body: unknown) => response.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
+    const json = (status: number, body: unknown) =>
+      response.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
     const file = /^\/api\/v1\/spaces\/([^/]+)\/assets\/([^/]+)\/original$/.exec(url.pathname);
     if (file) {
       if (options.failAfterFiles !== undefined && filesServed >= options.failAfterFiles) return void response.destroy();
@@ -44,7 +45,11 @@ export async function fakeFirebase(
     if (!url.pathname.startsWith('/api/migration/')) return json(404, { message: 'Not found' });
     if (request.headers.authorization !== `Bearer ${token}`) return json(401, { message: 'Missing or invalid migration token' });
     const parts = url.pathname.split('/').slice(3); // ['spaces', id?, collection?]
-    if (parts.length === 1) return json(200, spaces.map(it => ({ id: it.id, name: it.name, createdAt: it.doc['createdAt'] })));
+    if (parts.length === 1)
+      return json(
+        200,
+        spaces.map(it => ({ id: it.id, name: it.name, createdAt: it.doc['createdAt'] })),
+      );
     const space = spaces.find(it => it.id === parts[1]);
     if (!space) return json(404, { message: 'Space not found' });
     if (parts.length === 2) return json(200, { id: space.id, name: space.name, ...space.doc });

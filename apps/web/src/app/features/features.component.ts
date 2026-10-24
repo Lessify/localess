@@ -1,3 +1,4 @@
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -15,14 +16,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { AppConfigService } from '@core/api/app-config.service';
-import { FEATURE_FLAGS } from '@core/feature-flags';
 import { AuthApiService } from '@core/services/auth-api.service';
 import { NotificationService } from '@core/services/notification.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { VersionService } from '@core/services/version.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
-import { Space, USER_PERMISSIONS_IMPORT_EXPORT, UserPermission } from '@localess/shared';
+import { IdName, RoleListName } from '@localess/shared';
 import { IconType, provideIcons } from '@ng-icons/core';
 import {
   lucideBadgeInfo,
@@ -64,7 +65,7 @@ import { Release } from '@shared/generated/github/models/release';
 import { ReposService } from '@shared/generated/github/services/repos.service';
 import { BreadcrumbItem } from '@shared/models/breadcrumb.model';
 import { Version } from '@shared/models/version.model';
-import { CanUserPerformPipe } from '@shared/pipes/can-user-perform.pipe';
+import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmAvatarImports } from '@spartan-ng/helm/avatar';
 import { HlmBreadcrumbImports } from '@spartan-ng/helm/breadcrumb';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
@@ -74,6 +75,7 @@ import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmHoverCardImports } from '@spartan-ng/helm/hover-card';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmSeparatorImports } from '@spartan-ng/helm/separator';
 import { HlmSheetImports } from '@spartan-ng/helm/sheet';
 import { HlmSidebarImports, HlmSidebarService } from '@spartan-ng/helm/sidebar';
@@ -97,11 +99,17 @@ interface SideMenuItem {
   icon: IconType;
   link: string;
   label: string;
-  permission?: UserPermission | UserPermission[];
+  /** Who sees it (`roles.ts` of @localess/shared); none: everyone signed in. */
+  role?: RoleListName;
   color?: 'primary';
   items?: SideMenuItem[];
   isOpen?: WritableSignal<boolean>;
 }
+
+/** A window narrower than this collapses the sidebar to its icons. */
+const SIDEBAR_COLLAPSE_QUERY = '(max-width: 1023.98px)';
+/** Set while the sidebar is collapsed because the window is narrow (not by the user). */
+const SIDEBAR_AUTO_COLLAPSED_KEY = 'll-sidebar-auto-collapsed';
 
 @Component({
   selector: 'll-features',
@@ -111,7 +119,7 @@ interface SideMenuItem {
   imports: [
     InstanceLabelComponent,
     RouterModule,
-    CanUserPerformPipe,
+    HasRolePipe,
     CommonModule,
     LogoComponent,
     HlmSidebarImports,
@@ -119,6 +127,7 @@ interface SideMenuItem {
     HlmHoverCardImports,
     HlmTooltipImports,
     HlmDropdownMenuImports,
+    HlmInputImports,
     HlmAvatarImports,
     HlmButtonImports,
     HlmSeparatorImports,
@@ -176,6 +185,9 @@ export class FeaturesComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly hlmDialog = inject(HlmDialogService);
   public readonly sidebarService = inject(HlmSidebarService);
+  private readonly breakpoints = inject(BreakpointObserver);
+  /** Whether the window is narrow (`SIDEBAR_COLLAPSE_QUERY`). */
+  private readonly narrowWindow = signal(false);
   public readonly spaceStore = inject(SpaceStore);
   public readonly userStore = inject(UserStore);
   public readonly localeSettingsStore = inject(LocalSettingsStore);
@@ -235,7 +247,6 @@ export class FeaturesComponent implements OnInit {
     const url = lastSuccessfulNavigation?.finalUrl?.toString() ?? this.router.url;
     console.log('User Side Menu Computed : Selected Space Id :', selectedSpaceId);
     console.log('User Side Menu Computed : User Role :', this.userStore.role());
-    console.log('User Side Menu Computed : User Permissions :', this.userStore.permissions());
     if (selectedSpaceId) {
       return [
         { link: `spaces/${selectedSpaceId}/dashboard`, label: 'Dashboard', icon: 'lucideGauge' },
@@ -243,44 +254,35 @@ export class FeaturesComponent implements OnInit {
           link: `spaces/${selectedSpaceId}/translations`,
           label: 'Translations',
           icon: 'lucideLanguages',
-          permission: UserPermission.TRANSLATION_READ,
+          role: 'ANY_ROLE',
         },
         {
           link: `spaces/${selectedSpaceId}/contents`,
           label: 'Content',
           icon: 'lucideGalleryHorizontal',
-          permission: UserPermission.CONTENT_READ,
+          role: 'ANY_ROLE',
         },
-        { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', permission: UserPermission.ASSET_READ },
-        { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', permission: UserPermission.SCHEMA_READ },
-        ...(FEATURE_FLAGS.importExport
-          ? [
-              {
-                link: `spaces/${selectedSpaceId}/tasks`,
-                label: 'Tasks',
-                icon: 'lucideFileCheck',
-                permission: USER_PERMISSIONS_IMPORT_EXPORT,
-              },
-            ]
-          : []),
+        { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', role: 'ANY_ROLE' },
+        { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', role: 'ANY_ROLE' },
+        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', role: 'TRANSLATORS' },
         {
           link: '',
           label: 'Developers',
           icon: 'lucideCode2',
-          permission: [UserPermission.DEV_OPEN_API, UserPermission.DEV_WEBHOOK],
+          role: 'DEVELOPERS',
           isOpen: signal(url.includes(`/spaces/${selectedSpaceId}/developers/`)),
           items: [
             {
               link: `spaces/${selectedSpaceId}/developers/webhooks`,
               label: 'Webhooks',
               icon: 'lucideWebhook',
-              permission: UserPermission.DEV_WEBHOOK,
+              role: 'DEVELOPERS',
             },
             {
               link: `spaces/${selectedSpaceId}/developers/open-api`,
               label: 'Open API',
               icon: 'tablerApi',
-              permission: UserPermission.DEV_OPEN_API,
+              role: 'DEVELOPERS',
             },
           ],
         },
@@ -288,7 +290,7 @@ export class FeaturesComponent implements OnInit {
           link: `spaces/${selectedSpaceId}/settings`,
           label: 'Settings',
           icon: 'lucideSettings',
-          permission: UserPermission.SPACE_MANAGEMENT,
+          role: 'DEVELOPERS',
         },
       ];
     } else {
@@ -297,8 +299,8 @@ export class FeaturesComponent implements OnInit {
   });
 
   adminSideMenu: SideMenuItem[] = [
-    { link: 'admin/users', label: 'Users', icon: 'lucideUsers', permission: UserPermission.USER_MANAGEMENT },
-    { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', permission: UserPermission.SPACE_MANAGEMENT },
+    { link: 'admin/users', label: 'Users', icon: 'lucideUsers', role: 'ADMINS' },
+    { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', role: 'ADMINS' },
   ];
 
   communitySideMenu: SideMenuItem[] = [
@@ -313,6 +315,29 @@ export class FeaturesComponent implements OnInit {
   breadcrumbs = signal<BreadcrumbItem[]>([]);
 
   constructor() {
+    // A task the user started tells its end wherever they are.
+    inject(TaskNotifierService).start();
+    // Below 1024px the sidebar collapses to its icons, leaving the page room; a wider window opens it again, unless
+    // the user had collapsed it themselves. Who collapsed it is kept in localStorage: Spartan's cookie keeps only
+    // "closed", so after a reload in a narrow window the app could not tell. (Spartan's mobile overlay starts at 768px.)
+    this.breakpoints
+      .observe(SIDEBAR_COLLAPSE_QUERY)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ matches }) => {
+        this.narrowWindow.set(matches);
+        if (matches && this.sidebarService.open()) {
+          this.sidebarService.setOpen(false);
+          localStorage.setItem(SIDEBAR_AUTO_COLLAPSED_KEY, 'true');
+        } else if (!matches && localStorage.getItem(SIDEBAR_AUTO_COLLAPSED_KEY)) {
+          localStorage.removeItem(SIDEBAR_AUTO_COLLAPSED_KEY);
+          if (!this.sidebarService.open()) this.sidebarService.setOpen(true);
+        }
+      });
+    // Opened by the user in a narrow window: theirs from now on, not to be restored or collapsed for them.
+    effect(() => {
+      if (this.sidebarService.open() && this.narrowWindow()) localStorage.removeItem(SIDEBAR_AUTO_COLLAPSED_KEY);
+    });
+
     const reposService = this.reposService;
 
     reposService
@@ -326,6 +351,9 @@ export class FeaturesComponent implements OnInit {
             this.latestRelease.set(value);
           }
         },
+        // Best effort: GitHub rate-limits anonymous calls and an install may have no internet access. Unhandled,
+        // the error surfaced as an uncaught error on every page load.
+        error: () => undefined,
       });
     effect(async () => {
       if (!this.userStore.isAuthenticated()) {
@@ -380,8 +408,22 @@ export class FeaturesComponent implements OnInit {
       });
   }
 
+  /** What is typed in the space switcher's search box (shown past 10 spaces). */
+  readonly spaceSearch = signal('');
+  readonly showSpaceSearch = computed(() => this.spaceStore.spaces().length > 10);
+  /** The switcher's spaces: those whose name holds the search, case-insensitive; all of them without one. */
+  readonly filteredSpaces = computed(() => {
+    const search = this.spaceSearch().trim().toLowerCase();
+    const spaces = this.spaceStore.spaces();
+    return search ? spaces.filter(it => it.name.toLowerCase().includes(search)) : spaces;
+  });
+
+  onSpaceMenuClosed(): void {
+    this.spaceSearch.set('');
+  }
+
   /** The URL selects the space (see `spaceSelectionGuard`), so an unsaved-changes prompt can still cancel it. */
-  onSpaceSelection(space: Space): void {
+  onSpaceSelection(space: IdName): void {
     this.router.navigate(['features', 'spaces', space.id, 'dashboard']);
   }
 

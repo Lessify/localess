@@ -25,7 +25,7 @@ describe('MeComponent', () => {
         { provide: HlmDialogService, useValue: { open } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: MeService, useValue: { updateProfile, updateEmail, updatePassword } },
-        { provide: UserStore, useValue: { displayName: signal('Alex'), photoURL: signal('https://example.com/a.png') } },
+        { provide: UserStore, useValue: { displayName: signal('Alex'), photoUrl: signal('https://example.com/a.png') } },
       ],
     });
     const fixture = TestBed.createComponent(MeComponent);
@@ -42,7 +42,7 @@ describe('MeComponent', () => {
 
       expect(open).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ context: { displayName: 'Alex', photoURL: 'https://example.com/a.png' } }),
+        expect.objectContaining({ context: { displayName: 'Alex', photoUrl: 'https://example.com/a.png' } }),
       );
       expect(updateProfile).toHaveBeenCalledWith({ displayName: 'New Name' });
       expect(success).toHaveBeenCalledWith('User has been updated.');
@@ -75,7 +75,7 @@ describe('MeComponent', () => {
 
       component.openUpdateEmailDialog();
 
-      expect(updateEmail).toHaveBeenCalledWith('new@example.com', 'old-secret');
+      expect(updateEmail).toHaveBeenCalledWith({ email: 'new@example.com', currentPassword: 'old-secret' });
       expect(success).toHaveBeenCalledWith('User email has been updated.');
     });
 
@@ -106,7 +106,7 @@ describe('MeComponent', () => {
 
       component.openUpdatePasswordDialog();
 
-      expect(updatePassword).toHaveBeenCalledWith('new-password', 'old-secret');
+      expect(updatePassword).toHaveBeenCalledWith({ newPassword: 'new-password', currentPassword: 'old-secret' });
       expect(success).toHaveBeenCalledWith('User password has been updated.');
     });
 
