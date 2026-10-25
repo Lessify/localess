@@ -754,7 +754,7 @@ describe('EditDocumentComponent', () => {
 
       component.openTranslateLocaleDialog();
 
-      expect(open.mock.calls[0][1].context).toMatchObject({ selectedLocale: 'de', defaultLocale: en });
+      expect(open.mock.calls[0][1].context).toMatchObject({ mode: 'review', selectedLocale: 'de', defaultLocale: en });
     });
 
     it('sends the collected fields as one batch and applies the results to the document', () => {

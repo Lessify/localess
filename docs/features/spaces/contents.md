@@ -339,7 +339,10 @@ Three things worth knowing:
 
 Translate Locale for translation keys is a different feature that shares the name: a task (`TRANSLATION_TRANSLATE`,
 `apps/server/src/modules/tasks/services/translation-translate.service.ts`) using the same provider and `translateItems` batching,
-writing its values in one transaction at the end.
+writing its values in one transaction at the end. Both open the shared `TranslateLocaleDialogComponent`, whose `mode` says the
+difference before the author starts: `review` here ("…are filled… Nothing is saved: review them, then press Save.", button
+**Translate**), `save` on Translations ("…saved at once, as a task.", button **Translate and Save**, and a "cannot be undone" warning
+when Overwrite is ticked).
 
 ### Styling
 

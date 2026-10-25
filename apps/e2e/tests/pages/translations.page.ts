@@ -4,9 +4,12 @@ import { escapeRegExp } from '../support/text';
 import { choose, dialog } from './dialogs';
 import { confirmDialog, expectToast } from './notifications';
 
-/** A locale in a select, by its name; the space's default locale is listed as `English (Default)`. */
+/**
+ * A locale in a select, by its name; the space's default locale is listed as `English (Default)`, and Translate Locale
+ * marks the locale the list shows as `English (Currently Selected)`.
+ */
 function localeOption(name: string): RegExp {
-  return new RegExp(`^${escapeRegExp(name)}( \\(Default\\))?$`);
+  return new RegExp(`^${escapeRegExp(name)}( \\((Default|Currently Selected)\\))?$`);
 }
 
 /** Turns on a Spartan checkbox or switch: its state follows the click a moment later (no `check()`). */
@@ -266,7 +269,7 @@ export class TranslationsPage {
     await choose(this.page, form.getByLabel('Target Locale'), localeOption(target));
     await expect(form.getByLabel('Target Locale')).toContainText(target);
     if (overwrite) await turnOn(form.getByRole('checkbox', { name: 'Overwrite existing translations' }));
-    await form.getByRole('button', { name: 'Translate' }).click();
+    await form.getByRole('button', { name: 'Translate and Save' }).click();
     await expect(form).toBeHidden();
   }
 }

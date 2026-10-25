@@ -341,6 +341,17 @@ describe('TranslationsComponent', () => {
       return { createTranslationTranslate, error, open };
     }
 
+    // The task writes every key at once, so the dialog has to say it saves; the column on show is the likely target.
+    it('opens the dialog in save mode, on the locale the list shows', () => {
+      const { component, open } = setup();
+      open.mockReturnValue({ closed$: of(undefined) });
+      component.currentLocale.set('de');
+
+      component.openTranslateLocaleDialog([en, de]);
+
+      expect(open.mock.calls[0][1].context).toMatchObject({ mode: 'save', locales: [en, de], selectedLocale: 'de' });
+    });
+
     it('starts a translate-locale task and follows it', () => {
       const { createTranslationTranslate, open } = run(of({ id: 'task1' }));
       expect(createTranslationTranslate).toHaveBeenCalledWith('space-1', { sourceLocale: 'en', targetLocale: 'de', overwrite: true });

@@ -51,8 +51,9 @@
     </div>
   </div>
 </form>
-@if (context.description) {
-  <p class="text-muted-foreground text-sm">{{ context.description }}</p>
+<p class="text-muted-foreground text-sm" data-testid="translate-locale-explanation">{{ explanation() }}</p>
+@if (overwriteWarning(); as warning) {
+  <p class="text-destructive text-sm" role="alert">{{ warning }}</p>
 }
 <hlm-dialog-footer>
   <button hlmBtn variant="outline" hlmDialogClose>Cancel</button>
@@ -60,6 +61,6 @@
     hlmBtn
     [disabled]="!form.valid || form.value.sourceLocale === form.value.targetLocale || !isSelectionTranslatable()"
     (click)="save()">
-    Translate
+    {{ submitLabel }}
   </button>
 </hlm-dialog-footer>

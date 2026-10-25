@@ -668,6 +668,7 @@ export class EditDocumentComponent implements OnInit, DirtyFormGuardComponent {
     this.dialog
       .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
         context: {
+          mode: 'review',
           locales: this.availableLocales(),
           defaultLocale: this.selectedSpace()?.defaultLocale,
           selectedLocale: this.selectedLocale().id,

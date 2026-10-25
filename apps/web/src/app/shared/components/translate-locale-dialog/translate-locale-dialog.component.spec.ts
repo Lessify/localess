@@ -13,12 +13,13 @@ describe('TranslateLocaleDialogComponent', () => {
   const en: Locale = { id: 'en', name: 'English' };
   const de: Locale = { id: 'de', name: 'German' };
 
-  function setup(context: TranslateLocaleDialogContext) {
+  // The wording is the only thing the mode changes; everything else runs in review mode.
+  function setup(context: Omit<TranslateLocaleDialogContext, 'mode'> & Partial<Pick<TranslateLocaleDialogContext, 'mode'>>) {
     const close = vi.fn();
     TestBed.overrideComponent(TranslateLocaleDialogComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
       providers: [
-        { provide: DIALOG_DATA, useValue: context },
+        { provide: DIALOG_DATA, useValue: { mode: 'review', ...context } },
         { provide: BrnDialogRef, useValue: { close } },
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -29,10 +30,11 @@ describe('TranslateLocaleDialogComponent', () => {
     return { component: fixture.componentInstance, close };
   }
 
-  it('defaults both source and target to the first locale', () => {
+  // A pair of one locale is refused, so the target does not start on the source.
+  it('defaults the source to the first locale and the target to the next one', () => {
     const { component } = setup({ locales: [en, de] });
 
-    expect(component.form.value).toEqual({ sourceLocale: 'en', targetLocale: 'en', overwrite: false });
+    expect(component.form.value).toEqual({ sourceLocale: 'en', targetLocale: 'de', overwrite: false });
     expect(component.form.valid).toBe(true);
   });
 
@@ -56,12 +58,17 @@ describe('TranslateLocaleDialogComponent', () => {
       expect(component.form.value).toMatchObject({ sourceLocale: CONTENT_DEFAULT_LOCALE.id, targetLocale: 'fr' });
     });
 
-    // The Translations screen has no `default` sentinel and passes no current locale, so both ends
-    // keep falling back to the first supported locale.
-    it('falls back to the first supported locale when neither is on offer', () => {
+    // The Translations screen has no `default` sentinel: its default locale is a real language.
+    it('preselects the space default locale as the source when there is no sentinel', () => {
+      const { component } = setup({ locales: [de, en, fr], defaultLocale: en });
+
+      expect(component.form.value).toMatchObject({ sourceLocale: 'en', targetLocale: 'de' });
+    });
+
+    it('falls back to the first supported locales when neither end is given', () => {
       const { component } = setup({ locales: [de, fr] });
 
-      expect(component.form.value).toMatchObject({ sourceLocale: 'de', targetLocale: 'de' });
+      expect(component.form.value).toMatchObject({ sourceLocale: 'de', targetLocale: 'fr' });
     });
 
     it('marks the caller’s current locale in the list and in the trigger', () => {
@@ -70,6 +77,52 @@ describe('TranslateLocaleDialogComponent', () => {
       expect(component.localeLabel(fr)).toBe('French (Currently Selected)');
       expect(component.localeLabel(de)).toBe('German');
       expect(component['localeItemToString']('fr')).toBe('French (Currently Selected)');
+    });
+  });
+
+  /**
+   * The Translations screen and the content editor share this form, not the consequence: one saves
+   * every key of the space at once with no undo, the other fills a form the author still reviews.
+   */
+  describe('wording', () => {
+    it('says the save mode writes every key, and keeps existing values unless overwriting', () => {
+      const { component } = setup({ mode: 'save', locales: [en, de] });
+
+      expect(component.submitLabel).toBe('Translate and Save');
+      expect(component.explanation()).toBe(
+        'Every key is translated from English into German and saved at once, as a task. Keys that already have a German value keep it.',
+      );
+      expect(component.overwriteWarning()).toBeUndefined();
+    });
+
+    it('warns in save mode that overwriting cannot be undone', () => {
+      const { component } = setup({ mode: 'save', locales: [en, de] });
+
+      component.form.controls['overwrite'].setValue(true);
+
+      expect(component.explanation()).toBe('Every key is translated from English into German and saved at once, as a task.');
+      expect(component.overwriteWarning()).toBe('Existing German translations will be replaced. This cannot be undone.');
+    });
+
+    it('follows the chosen locales', () => {
+      const fr: Locale = { id: 'fr', name: 'French' };
+      const { component } = setup({ mode: 'save', locales: [en, de, fr] });
+
+      component.form.patchValue({ targetLocale: 'fr' });
+
+      expect(component.explanation()).toContain('from English into French');
+    });
+
+    it('says the review mode saves nothing, and does not warn about overwriting', () => {
+      const { component } = setup({ mode: 'review', locales: [en, de] });
+
+      component.form.controls['overwrite'].setValue(true);
+
+      expect(component.submitLabel).toBe('Translate');
+      expect(component.explanation()).toBe(
+        "The document's German fields are filled from English. Nothing is saved: review them, then press Save.",
+      );
+      expect(component.overwriteWarning()).toBeUndefined();
     });
   });
 

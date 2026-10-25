@@ -339,7 +339,12 @@ export class TranslationsComponent implements OnInit {
   openTranslateLocaleDialog(locales: Locale[]): void {
     this.dialog
       .open<TranslateLocaleDialogResult, TranslateLocaleDialogContext>(TranslateLocaleDialogComponent, {
-        context: { locales },
+        context: {
+          mode: 'save',
+          locales,
+          defaultLocale: this.spaceStore.defaultLocale(),
+          selectedLocale: this.currentLocale() || undefined,
+        },
         contentClass: DIALOG_WIDTH_SM,
       })
       .closed$.pipe(
