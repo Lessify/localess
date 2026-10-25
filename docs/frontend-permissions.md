@@ -69,7 +69,7 @@ On a method `@RequireRole` replaces the controller's. No session → `401`; a ro
 depend on the body live in the service: creating or deleting a task needs the roles its `kind` names
 (`modules/tasks/utils/task-roles.ts`: schema tasks `DEVELOPERS`, metadata regeneration `ADMINS`, Translate Locale
 `TRANSLATORS`, translation import and export `CONTENT_WRITERS`). The same map decides what a user reads: the task list
-answers only the kinds the user may start, and another kind's task, logs or file answer 404. The change stream (`/api/app/events`) sends each entity's events to the roles that may read it
+answers only the kinds the user may start, and another kind's task, logs or file answer 404. The change streams (`/api/app/events`, `/api/app/spaces/:spaceId/events`) send each entity's events to the roles that may read it
 (`modules/events/utils/event-access.ts`). CSRF: every non-GET request authenticated by the session cookie must carry
 `X-Requested-With` (added by the Angular `apiInterceptor`).
 

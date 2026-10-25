@@ -1,34 +1,24 @@
 import { ANY_ROLE } from '@localess/shared';
-import { Controller, MessageEvent, Query, Sse } from '@nestjs/common';
-import { filter, interval, map, merge, Observable } from 'rxjs';
+import { Controller, MessageEvent, Sse } from '@nestjs/common';
+import { Observable } from 'rxjs';
 
 import { RequireRole } from '../../../auth/decorators.js';
 import { CurrentUser } from '../../../auth/request-context.js';
-import { EventService } from '../../../infra/events/event.service.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import { canReceive } from '../utils/event-access.js';
-
-const HEARTBEAT_MS = 25_000;
+import { EventStreamService } from '../services/event-stream.service.js';
 
 /**
- * Server-sent change events for the SPA (`new EventSource('/api/app/events?spaceId=…')`, cookie-authenticated).
- * The client refetches whatever an event names. Each user gets only the events for data they may read
- * (`canReceive`, checked with the access they had when connecting). A heartbeat keeps proxies from closing idle streams.
+ * Server-sent change events outside spaces (`new EventSource('/api/app/events')`, cookie-authenticated): spaces
+ * created, changed or deleted, and users. A space's own data: `SpaceEventController`. The client refetches whatever an
+ * event names.
  */
 @Controller('api/app/events')
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(private readonly eventStreamService: EventStreamService) {}
 
   @Sse()
   @RequireRole(ANY_ROLE)
-  stream(@CurrentUser() user: UserEntity, @Query('spaceId') spaceId?: string): Observable<MessageEvent> {
-    const listener = { id: user.id, role: user.role };
-    return merge(
-      this.eventService.stream(spaceId).pipe(
-        filter(event => canReceive(listener, event)),
-        map(event => ({ type: 'change', data: event }) satisfies MessageEvent),
-      ),
-      interval(HEARTBEAT_MS).pipe(map(() => ({ type: 'heartbeat', data: {} }) satisfies MessageEvent)),
-    );
+  findAll(@CurrentUser() user: UserEntity): Observable<MessageEvent> {
+    return this.eventStreamService.findGlobal(user);
   }
 }

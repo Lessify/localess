@@ -56,7 +56,7 @@ describe('TaskProgressDialogComponent', () => {
   it('shows a queued task, and follows it so the notifier stays quiet', () => {
     const fixture = setup(base());
     expect(text(fixture)).toContain('Queued');
-    expect(follow).toHaveBeenCalledWith('t1');
+    expect(follow).toHaveBeenCalledWith('s1', 't1');
   });
 
   it('shows the step and how far it got, from the progress events', () => {

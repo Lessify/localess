@@ -2,7 +2,7 @@ import type { UserRole } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
 import type { ChangeEvent } from '../../../infra/events/event.service.js';
-import { canReceive } from './event-access.js';
+import { canReceive, isGlobal, isInSpace } from './event-access.js';
 
 const S = '00000000-0000-7000-8000-000000000001';
 const event = (entity: string, spaceId: string | null = S, id?: string): ChangeEvent => ({ spaceId, entity, id, op: 'updated' });
@@ -59,5 +59,25 @@ describe('canReceive', () => {
   it('gives nothing to a user without a role', () => {
     expect(canReceive(as(null), event('spaces', null))).toBe(false);
     expect(canReceive(as(null), event('users', null, 'me'))).toBe(false);
+  });
+});
+
+describe('isGlobal / isInSpace', () => {
+  const OTHER = '00000000-0000-7000-8000-000000000002';
+
+  it('puts spaces and users on the global stream, nothing of a space', () => {
+    expect(isGlobal(event('spaces', null, S))).toBe(true);
+    expect(isGlobal(event('users', null, 'u'))).toBe(true);
+    expect(isGlobal(event('contents', S))).toBe(false);
+    expect(isGlobal(event('tasks', S))).toBe(false);
+  });
+
+  it("puts on a space's stream its own events and the space itself, nothing of another space or of users", () => {
+    expect(isInSpace(event('contents', S), S)).toBe(true);
+    expect(isInSpace(event('tasks', S), S)).toBe(true);
+    expect(isInSpace(event('spaces', null, S), S)).toBe(true);
+    expect(isInSpace(event('spaces', null, OTHER), S)).toBe(false);
+    expect(isInSpace(event('contents', OTHER), S)).toBe(false);
+    expect(isInSpace(event('users', null, 'u'), S)).toBe(false);
   });
 });

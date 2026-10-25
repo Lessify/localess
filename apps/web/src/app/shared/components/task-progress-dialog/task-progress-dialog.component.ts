@@ -80,7 +80,7 @@ export class TaskProgressDialogComponent {
   private downloaded = false;
 
   constructor() {
-    this.notifier.follow(this.context.task.id);
+    this.notifier.follow(this.context.spaceId, this.context.task.id);
     inject(DestroyRef).onDestroy(() => this.notifier.unfollow(this.context.task.id));
     effect(() => {
       const task = this.task();

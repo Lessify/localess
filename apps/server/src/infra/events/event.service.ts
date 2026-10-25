@@ -2,7 +2,7 @@ import type { TaskProgress } from '@localess/shared';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { SQL, sql } from 'drizzle-orm';
 import pg from 'pg';
-import { filter, Observable, Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 
 import { errorMessage } from '../../shared/utils/error-message.js';
 import { DATABASE, type Database, PG_POOL } from '../database/database.module.js';
@@ -104,8 +104,8 @@ export class EventService implements OnModuleInit, OnModuleDestroy {
     await executor.execute(sql`select pg_notify(${EVENTS_CHANNEL}, ${JSON.stringify(event)})`);
   }
 
-  /** Events for one space plus global ones (spaceId null); every event when `spaceId` is undefined. */
-  stream(spaceId?: string): Observable<ChangeEvent> {
-    return this.events.pipe(filter(event => spaceId === undefined || event.spaceId === null || event.spaceId === spaceId));
+  /** Every event; the App API's two streams (`modules/events`) each pick theirs. */
+  stream(): Observable<ChangeEvent> {
+    return this.events.asObservable();
   }
 }

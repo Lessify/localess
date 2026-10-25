@@ -35,6 +35,6 @@ Webhooks (under Developers) has no page in this folder — it is documented in [
 - `SpaceStore` is injected in most modules to access the current `selectedSpace` and `selectedSpaceId`
 - Import/export operations create a **Task** — they don't run inline. The user monitors progress in the [Tasks module](tasks.md)
 - Publishing content/translations writes snapshot rows to Postgres (`content_snapshots` / `translation_snapshots`), which moves the public API's `cv`; see the [Publish Flow](../../publish-flow.md)
-- Lists stay current without manual refresh: services return `liveQuery` Observables that refetch when a matching change event arrives on the space's SSE stream (`GET /api/app/events`, `ChangeEventsService`)
+- Lists stay current without manual refresh: services return `liveQuery` Observables that refetch when a matching change event arrives on the space's SSE stream (`GET /api/app/spaces/:spaceId/events`, `ChangeEventsService`)
 - `isFormDirtyGuard` is applied to routed editor components (contents, schemas) to warn on unsaved changes
 - Dialogs follow the pattern: open via `HlmDialogService.open(Component, { context, contentClass })` → pipe `.closed$` (`take(1)`, filter out `undefined`) → run the service call on confirm. `apps/web/src/app/features/spaces` imports nothing from `@angular/material` (e.g. `schemas/schemas.component.ts` `openAddDialog()`)

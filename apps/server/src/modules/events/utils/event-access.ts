@@ -18,7 +18,7 @@ const READ_ROLES: Record<string, readonly UserRole[]> = {
   users: ADMINS,
 };
 
-/** Whether `user` may receive `event` on the change stream. */
+/** Whether `user` may receive `event` on a change stream. */
 export function canReceive(user: { id: string; role?: UserRole | null }, event: ChangeEvent): boolean {
   if (!hasRole(user, ANY_ROLE)) return false;
   // Everyone hears about their own account, so a changed role reaches their UI.
@@ -29,4 +29,17 @@ export function canReceive(user: { id: string; role?: UserRole | null }, event: 
     return hasRole(user, roles ?? ADMINS);
   }
   return hasRole(user, READ_ROLES[event.entity] ?? ADMINS);
+}
+
+/** On the global stream: changes outside spaces (spaces themselves, users). */
+export function isGlobal(event: ChangeEvent): boolean {
+  return event.spaceId === null;
+}
+
+/**
+ * On the stream of `spaceId`: everything that changes in the space, the space itself included (its name, locales and
+ * environments are published outside spaces, as a `spaces` event, so the space lists hear them too).
+ */
+export function isInSpace(event: ChangeEvent, spaceId: string): boolean {
+  return event.spaceId === spaceId || (event.spaceId === null && event.entity === 'spaces' && event.id === spaceId);
 }

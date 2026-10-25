@@ -134,7 +134,7 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 
 | Area | Endpoints |
 |---|---|
-| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`modules/events/utils/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
+| Change events | `GET /api/app/events` (spaces, users) and `GET /api/app/spaces/:spaceId/events` (everything in the space, the space itself included; 404 for an unknown space) — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`modules/events/utils/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
 | Spaces | `/api/app/spaces` CRUD, `GET …/:id/overview` (computed on request), `GET …/:id/locales` (paged), `GET …/:id/locales/names`, `POST/DELETE …/:id/locales[/:locale]`, `POST …/:id/locales/:locale/move`, `PUT …/:id/default-locale`, `GET …/:id/environments` (paged), `GET …/:id/environments/names`, `POST …/:id/environments`, `PUT/DELETE …/:id/environments/:environmentId`, `POST …/:id/environments/:environmentId/move`; `GET /api/app/locales` (read-only) |
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`?type=`; `:schemaId` = UUID), `GET …/:schemaId/usage`, `PUT …/:schemaId/name` (rename); every route checks the space first |

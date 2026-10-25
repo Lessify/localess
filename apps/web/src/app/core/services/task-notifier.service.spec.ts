@@ -4,9 +4,10 @@ import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
+import { SpaceStore } from '@core/stores/space.store';
 import { UserStore } from '@core/stores/user.store';
 import { Task, TaskKind, TaskStatus } from '@localess/shared';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TaskNotifierService } from './task-notifier.service';
@@ -23,28 +24,45 @@ const task = (overrides: Partial<Task> = {}): Task =>
   }) as Task;
 
 describe('TaskNotifierService', () => {
-  let events: Subject<ChangeEvent>;
+  /** One stream per space, and how many subscribe to each. */
+  let streams: Map<string, Subject<ChangeEvent>>;
+  let listeners: Map<string, number>;
+  let selectedSpaceId: ReturnType<typeof signal<string | undefined>>;
   let current: Task;
 
   function setup() {
-    events = new Subject<ChangeEvent>();
+    streams = new Map();
+    listeners = new Map();
+    selectedSpaceId = signal<string | undefined>('s1');
+    const changes = (spaceId: string) =>
+      new Observable<ChangeEvent>(subscriber => {
+        if (!streams.has(spaceId)) streams.set(spaceId, new Subject());
+        listeners.set(spaceId, (listeners.get(spaceId) ?? 0) + 1);
+        const subscription = streams.get(spaceId)!.subscribe(subscriber);
+        return () => {
+          listeners.set(spaceId, listeners.get(spaceId)! - 1);
+          subscription.unsubscribe();
+        };
+      });
     const findOne = vi.fn(() => of(current));
     const success = vi.fn();
     const error = vi.fn();
     TestBed.configureTestingModule({
       providers: [
-        { provide: ChangeEventsService, useValue: { changes: () => events } },
+        { provide: ChangeEventsService, useValue: { changes } },
         { provide: TaskService, useValue: { findOne, downloadUrl: () => of('/url') } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: UserStore, useValue: { id: signal('me') } },
+        { provide: SpaceStore, useValue: { selectedSpaceId } },
       ],
     });
     const notifier = TestBed.inject(TaskNotifierService);
     notifier.start();
+    TestBed.tick();
     return { notifier, findOne, success, error };
   }
 
-  const update = (id = 't1') => events.next({ spaceId: 's1', entity: 'tasks', id, op: 'updated' });
+  const update = (id = 't1', spaceId = 's1') => streams.get(spaceId)?.next({ spaceId, entity: 'tasks', id, op: 'updated' });
 
   it('tells the user who started a task when it ends, once', () => {
     const { success } = setup();
@@ -67,16 +85,26 @@ describe('TaskNotifierService', () => {
 
   it('stays quiet while a dialog follows the task, and speaks once it was sent to the background', () => {
     const { notifier, success } = setup();
-    current = task();
-    notifier.follow('t1');
+    notifier.follow('s1', 't1');
+    current = task({ status: TaskStatus.IN_PROGRESS });
     update();
-    expect(success).not.toHaveBeenCalled();
     notifier.unfollow('t1');
+    current = task();
     update();
     expect(success).toHaveBeenCalledTimes(1);
   });
 
-  it('reads a task the user may not see once, not on every progress event', () => {
+  it('leaves the end to a dialog that follows the task when it ends', () => {
+    const { notifier, success } = setup();
+    notifier.follow('s1', 't1');
+    current = task();
+    update();
+    notifier.unfollow('t1');
+    update();
+    expect(success).not.toHaveBeenCalled();
+  });
+
+  it('reads a task the user may not see once, not on every update', () => {
     const { findOne } = setup();
     findOne.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
     update();
@@ -90,5 +118,28 @@ describe('TaskNotifierService', () => {
     current = task({ status: TaskStatus.ERROR });
     update();
     expect(error.mock.calls[0][0]).toBe('Translation Import failed');
+  });
+
+  it('listens to the selected space, and follows it to another one', () => {
+    setup();
+    expect(listeners.get('s1')).toBe(1);
+    selectedSpaceId.set('s2');
+    TestBed.tick();
+    expect(listeners.get('s1')).toBe(0);
+    expect(listeners.get('s2')).toBe(1);
+  });
+
+  it('keeps listening to the space of a task the user started until it ends, after they moved to another space', () => {
+    const { notifier, success } = setup();
+    notifier.follow('s1', 't1');
+    notifier.unfollow('t1');
+    selectedSpaceId.set('s2');
+    TestBed.tick();
+    expect(listeners.get('s1')).toBe(1);
+    current = task();
+    update('t1', 's1');
+    expect(success).toHaveBeenCalledTimes(1);
+    TestBed.tick();
+    expect(listeners.get('s1')).toBe(0);
   });
 });

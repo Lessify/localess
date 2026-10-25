@@ -15,7 +15,7 @@ load balancer) in front and:
   headers (`trustProxy` is on), so session cookies get the `Secure` flag and the login rate limit
   sees real client IPs. Because the headers are trusted, do **not** expose the server port directly
   to the internet — only the proxy should reach it.
-- Do not buffer `/api/app/events`: it is a Server-Sent Events stream that keeps the admin UI live.
+- Do not buffer `/api/app/events` and `/api/app/spaces/<id>/events`: they are Server-Sent Events streams that keep the admin UI live.
   (nginx: `proxy_buffering off;` and a long `proxy_read_timeout` for that location.)
 - Allow request bodies up to `LOCALESS_UPLOAD_MAX_MB` (default 1024 MB) on the upload routes, or
   lower that variable to match your proxy.
