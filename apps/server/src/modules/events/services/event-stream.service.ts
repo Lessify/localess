@@ -1,9 +1,8 @@
-import { Injectable, MessageEvent, NotFoundException } from '@nestjs/common';
+import { Injectable, MessageEvent } from '@nestjs/common';
 import { filter, interval, map, merge, Observable } from 'rxjs';
 
 import { type ChangeEvent, EventService } from '../../../infra/events/event.service.js';
 import type { UserEntity } from '../../../shared/entities/user.entity.js';
-import { SpaceLookupRepository } from '../../../shared/repositories/space-lookup.repository.js';
 import { canReceive, isGlobal, isInSpace } from '../utils/event-access.js';
 
 const HEARTBEAT_MS = 25_000;
@@ -15,19 +14,15 @@ const HEARTBEAT_MS = 25_000;
  */
 @Injectable()
 export class EventStreamService {
-  constructor(
-    private readonly eventService: EventService,
-    private readonly spaceLookupRepository: SpaceLookupRepository,
-  ) {}
+  constructor(private readonly eventService: EventService) {}
 
   /** Changes outside spaces: the spaces themselves (the space lists) and users. */
   findGlobal(user: UserEntity): Observable<MessageEvent> {
     return this.messages(user, isGlobal);
   }
 
-  /** Everything that changes in the space, the space itself included. 404 for an unknown space. */
-  async findSpace(user: UserEntity, spaceId: string): Promise<Observable<MessageEvent>> {
-    if (!(await this.spaceLookupRepository.exists(spaceId))) throw new NotFoundException('Space not found');
+  /** Everything that changes in the space, the space itself included (the controller's pipe checked it exists). */
+  findSpace(user: UserEntity, spaceId: string): Observable<MessageEvent> {
     return this.messages(user, event => isInSpace(event, spaceId));
   }
 
