@@ -1,7 +1,7 @@
 import type { UserRole } from '@localess/shared';
 import { describe, expect, it } from 'vitest';
 
-import type { ChangeEvent } from '../../infra/events/event.service.js';
+import type { ChangeEvent } from '../../../infra/events/event.service.js';
 import { canReceive } from './event-access.js';
 
 const S = '00000000-0000-7000-8000-000000000001';

@@ -70,7 +70,7 @@ depend on the body live in the service: creating or deleting a task needs the ro
 (`modules/tasks/utils/task-roles.ts`: schema tasks `DEVELOPERS`, metadata regeneration `ADMINS`, Translate Locale
 `TRANSLATORS`, translation import and export `CONTENT_WRITERS`). The same map decides what a user reads: the task list
 answers only the kinds the user may start, and another kind's task, logs or file answer 404. The change stream (`/api/app/events`) sends each entity's events to the roles that may read it
-(`shared/http/event-access.ts`). CSRF: every non-GET request authenticated by the session cookie must carry
+(`modules/events/utils/event-access.ts`). CSRF: every non-GET request authenticated by the session cookie must carry
 `X-Requested-With` (added by the Angular `apiInterceptor`).
 
 ### Frontend (navigation only)
@@ -134,7 +134,7 @@ to anyone. Two rules remain: at least one active admin always remains (a change 
 - `packages/shared/src/models/user.model.ts` — `User`, `UserRole`, `USER_ROLES`
 - `packages/shared/src/roles.ts` — the role lists, `ROLE_LISTS`, `hasRole` (server and web)
 - `apps/server/src/auth/decorators.ts` / `auth.guard.ts` — `@Public`, `@RequireRole`, `@SignedIn`, global guard (fails closed) + CSRF check
-- `apps/server/src/shared/http/event-access.ts` — who receives which change event
+- `apps/server/src/modules/events/utils/event-access.ts` — who receives which change event
 - `apps/server/src/modules/tasks/utils/task-roles.ts` — the roles of each task kind
 - `apps/server/src/modules/users/` — user management API (admins only)
 - `apps/web/src/app/core/stores/user.store.ts` — loads `GET /api/auth/me`, exposes `role`, `isRoleAdmin`, `loaded`

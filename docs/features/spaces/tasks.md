@@ -71,7 +71,7 @@ One container for every export, `.localess.zip`: `manifest.json` (`format: "loca
 
 ## Roles
 
-Each role sees **the kinds it can start** (`apps/server/src/modules/tasks/utils/task-roles.ts`, the table above): the list answers only those kinds (a filter on another kind gives an empty page), and another kind's task, logs or file answer 404. A translator sees only Translate Locale tasks; an editor the translation tasks; a developer also the schema tasks; an admin every kind. The Tasks page and its sidebar entry are open to `TRANSLATORS`. Every `tasks` and `task_logs` change event carries the task's `kind`, and reaches only the roles that may start that kind (`shared/http/event-access.ts`).
+Each role sees **the kinds it can start** (`apps/server/src/modules/tasks/utils/task-roles.ts`, the table above): the list answers only those kinds (a filter on another kind gives an empty page), and another kind's task, logs or file answer 404. A translator sees only Translate Locale tasks; an editor the translation tasks; a developer also the schema tasks; an admin every kind. The Tasks page and its sidebar entry are open to `TRANSLATORS`. Every `tasks` and `task_logs` change event carries the task's `kind`, and reaches only the roles that may start that kind (`modules/events/utils/event-access.ts`).
 
 ## Task Status Flow
 

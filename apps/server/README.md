@@ -43,7 +43,7 @@ schema changes are new migrations. Without `DATABASE_URL` it starts an embedded 
 src/
   main.ts · cli.ts · app.module.ts · app.factory.ts
   infra/        config, database (Drizzle schema, migrations, embedded Postgres), storage,
-                events (pg_notify → SSE), static (SPA), health, http (App API helpers; v1/ public API plumbing)
+                events (pg_notify; served as SSE by modules/events), static (SPA), health, http (App API helpers; v1/ public API plumbing)
   auth/         sign-in, layered like a module (controllers/, services/, repositories/, utils/): sessions, OAuth,
                 password reset, the guard and decorators, ApiTokenModule (v1 token check)
   shared/       SharedModule (global): mail, webhook delivery; transformers, data rules, shared utils
@@ -51,7 +51,7 @@ src/
                 utils/, workers/: docs/server/architecture.md) — spaces (+ locales, environments, API
                 tokens), settings, schemas (+ OpenAPI), contents, translations, assets, webhooks, tasks,
                 plugins, users (+ me, first admin),
-                firebase-import
+                firebase-import, events (the SSE change stream)
   cli/          commands, check
 ```
 
@@ -134,7 +134,7 @@ Firestore document shapes plus `id`, with ISO timestamps and absent (not null) o
 
 | Area | Endpoints |
 |---|---|
-| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`shared/http/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
+| Change events | `GET /api/app/events?spaceId=` — SSE, `event: change`, `{ spaceId, entity, id, op }`; each user gets only events for entities they may read (`modules/events/utils/event-access.ts`, admins get all, an entity missing from its map reaches admins only) |
 | Spaces | `/api/app/spaces` CRUD, `GET …/:id/overview` (computed on request), `GET …/:id/locales` (paged), `GET …/:id/locales/names`, `POST/DELETE …/:id/locales[/:locale]`, `POST …/:id/locales/:locale/move`, `PUT …/:id/default-locale`, `GET …/:id/environments` (paged), `GET …/:id/environments/names`, `POST …/:id/environments`, `PUT/DELETE …/:id/environments/:environmentId`, `POST …/:id/environments/:environmentId/move`; `GET /api/app/locales` (read-only) |
 | Import from Firebase (admin) | `POST /api/app/admin/firebase-import/spaces` (list a Firebase environment's spaces), `POST /api/app/admin/firebase-import` (start, 202), `GET …` (runs), `GET …/:id` (stages) |
 | Schemas | `/api/app/spaces/:s/schemas` CRUD (`?type=`; `:schemaId` = UUID), `GET …/:schemaId/usage`, `PUT …/:schemaId/name` (rename); every route checks the space first |

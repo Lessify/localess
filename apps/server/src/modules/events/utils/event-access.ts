@@ -1,6 +1,6 @@
 import { ADMINS, ANY_ROLE, DEVELOPERS, hasRole, TASK_KIND_ROLES, type TaskKind, type UserRole } from '@localess/shared';
 
-import type { ChangeEvent } from '../../infra/events/event.service.js';
+import type { ChangeEvent } from '../../../infra/events/event.service.js';
 
 /**
  * Who may hear about a change: the roles of the endpoint that reads the entity (`@RequireRole`). Keep in step with the

@@ -2,11 +2,11 @@ import { ANY_ROLE } from '@localess/shared';
 import { Controller, MessageEvent, Query, Sse } from '@nestjs/common';
 import { filter, interval, map, merge, Observable } from 'rxjs';
 
-import { RequireRole } from '../../auth/decorators.js';
-import { CurrentUser } from '../../auth/request-context.js';
-import { EventService } from '../../infra/events/event.service.js';
-import type { UserEntity } from '../entities/user.entity.js';
-import { canReceive } from './event-access.js';
+import { RequireRole } from '../../../auth/decorators.js';
+import { CurrentUser } from '../../../auth/request-context.js';
+import { EventService } from '../../../infra/events/event.service.js';
+import type { UserEntity } from '../../../shared/entities/user.entity.js';
+import { canReceive } from '../utils/event-access.js';
 
 const HEARTBEAT_MS = 25_000;
 

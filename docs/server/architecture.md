@@ -137,7 +137,7 @@ update(spaceId: string, id: string, values: TranslationUpdate, tx?: Transaction)
 | `shared/queries/` | Queries several modules build on (plain functions taking the database or a transaction) | `content-tree.query.ts`, `asset-tree.query.ts` (the trees' paths and subtrees) |
 | | | `user.query.ts`: `USER_SIGN_IN` (the `with` of every user the App API answers: `identities`, and the credential's key for `hasPassword`), `UserWithSignIn`; for `toUser` in auth and users |
 | | | `schema.query.ts`: `applySchemaPushPlan`, the write of a schema push plan (the CLI push in schemas, the schema import task), inside the caller's transaction; `lockSchemaReferences`, which locks the schemas written fields refer to (schemas, the schema import task) |
-| `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports; `event.controller.ts` + `event-access.ts`: the SSE change stream, filtered by what the user may see |
+| `shared/http/` | Request plumbing that knows the domain | `space-id.ts`: resolves a legacy (Firestore) space id and answers 503 while a space imports. No controllers: every endpoint lives in a module (the SSE change stream is `modules/events/`) |
 | `shared/utils/` | Pure functions several modules use | `webhook-request.ts` (SSRF-checked requests: webhook delivery, the Firebase client); `paging.ts` (`offsetOf`, `toPage`, `containsPattern`, `escapeLike`: see [Pagination](pagination.md)) |
 | | | `schema.utils.ts` (`planSchemaPush`, `checkSchemaFields`, `fieldRefersTo`, `isSchemaChanged`, `docSchemaToExport`), `stable-json.ts`, `labels.utils.ts` (`isLabelsEqual`): schemas and the schema import/export tasks |
 | | | `asset-path.utils.ts` (`folderPath`): assets and the asset import task; `embedded-alt.ts`, `media-duration.ts`, `media-orientation.ts`, `media-pages.ts` (`isAnimatedPages`, also asset delivery): `AssetMetadataService` |
@@ -153,7 +153,7 @@ Files, classes, methods, models, utils: [Naming](naming.md).
 
 | Module | Layered |
 |---|---|
-| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets, tasks, users, firebase-import (and `auth/`) | ✅ |
+| translations, settings, tokens, webhooks, plugins, spaces, schemas, contents, assets, tasks, users, firebase-import, events (and `auth/`) | ✅ |
 
 Every module is layered.
 
