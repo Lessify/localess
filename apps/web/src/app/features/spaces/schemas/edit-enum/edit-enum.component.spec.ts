@@ -310,13 +310,17 @@ describe('EditEnumComponent', () => {
     expect(findOne).not.toHaveBeenCalled();
   });
 
-  it('save() notifies an error on failure', () => {
+  it('save() notifies an error on failure, and Save stops spinning (an error never completes)', async () => {
+    vi.useFakeTimers();
     const { component, update, error } = setup(enumSchema());
     update.mockReturnValue(throwError(() => new Error('boom')));
 
     component.save();
 
     expect(error).toHaveBeenCalledWith('Schema can not be updated.');
+    expect(component.isSaveLoading()).toBe(true);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(component.isSaveLoading()).toBe(false);
   });
 
   it('back() navigates to the schemas list', () => {

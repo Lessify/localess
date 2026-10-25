@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 
 import { newUuid } from '../src/infra/database/id.js';
 import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
+import { EventService } from '../src/infra/events/event.service.js';
 import { TaskWorker } from '../src/modules/tasks/workers/task-worker.service.js';
 import { TranslateService } from '../src/shared/services/translate.service.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
@@ -210,12 +211,24 @@ describe('app API: translations, machine translation, Unsplash', () => {
 
   describe('machine translation (stub provider)', () => {
     const tasksBase = `/api/app/spaces/${S1}/tasks`;
+    /**
+     * Waits until a task has ended. The worker takes a task when its `created` event arrives (Postgres LISTEN,
+     * asynchronous): until then it is idle, so `whenIdle()` alone may return before the task even started.
+     */
+    const ended = async (user: ReturnType<typeof api>, id: string) => {
+      for (let i = 0; i < 200; i++) {
+        await t.app.get(TaskWorker).whenIdle();
+        const task = (await user.get(`${tasksBase}/${id}`)).json();
+        if (task.status === 'FINISHED' || task.status === 'ERROR') return task;
+        await new Promise(resolve => setTimeout(resolve, 25));
+      }
+      throw new Error(`task ${id} never ended`);
+    };
     /** Starts a translate-locale task and waits for its end. */
     const translateLocale = async (user: ReturnType<typeof api>, params: object) => {
       const created = await user.post(tasksBase, { kind: 'TRANSLATION_TRANSLATE', params: { type: 'translation-translate', ...params } });
       expect(created.statusCode, created.body).toBe(201);
-      await t.app.get(TaskWorker).whenIdle();
-      const task = (await user.get(`${tasksBase}/${created.json().id}`)).json();
+      const task = await ended(user, created.json().id);
       // What it did is in its logs: the counts line, and a WARN line per key the provider failed on.
       const lines = (await user.get(`${tasksBase}/${task.id}/logs`)).json<{ level: string; message: string }[]>();
       const numbers =
@@ -243,6 +256,21 @@ describe('app API: translations, machine translation, Unsplash', () => {
         skipped: 0,
       });
       expect((await stored('taken')).locales.de).toBe('x : en -> de');
+    });
+
+    it('reports its steps: Translating, then Writing while it saves (not a finished "Translating" all along)', async () => {
+      const publish = vi.spyOn(t.app.get(EventService), 'publish');
+      await translateLocale(editor, { sourceLocale: 'en', targetLocale: 'de', overwrite: true });
+      const steps = publish.mock.calls
+        .map(([event]) => event)
+        .filter(it => it.entity === 'tasks' && it.op === 'progress')
+        .map(it => (it as { progress: { step: string; done: number; total?: number } }).progress);
+      publish.mockRestore();
+      expect(steps[0]).toMatchObject({ step: 'Translating', done: 0, total: 2 });
+      expect(steps.slice(-2)).toEqual([
+        { step: 'Writing', done: 0, total: 2 },
+        { step: 'Writing', done: 2, total: 2 },
+      ]);
     });
 
     it('a translator may start it, and follow it', async () => {
@@ -290,7 +318,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
         kind: 'TRANSLATION_TRANSLATE',
         params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de', overwrite: true },
       });
-      await t.app.get(TaskWorker).whenIdle();
+      await ended(editor, created.json().id);
       spy.mockRestore();
       const lines = (await editor.get(`${tasksBase}/${created.json().id}/logs`)).json<{ level: string; message: string }[]>();
       expect(lines.filter(it => it.level === 'WARN')).toHaveLength(100);

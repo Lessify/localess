@@ -1,4 +1,5 @@
 import { cancel, expectRefused } from '../pages/dialogs';
+import { expectToast } from '../pages/notifications';
 import { TranslationsPage } from '../pages/translations.page';
 import { expect, test } from '../support/fixtures';
 import { published, translationsByKey, withThreeLocales } from '../support/translations';
@@ -42,6 +43,29 @@ test.describe('Translations → edit', () => {
     await expect(translations.valueOf('greeting')).toHaveText('Hallo');
     await translations.filterLocale('Romanian');
     await expect(translations.valueOf('greeting')).toHaveText('Bună');
+  });
+
+  test('a failed Publish says so, and Publish works again', async ({ page, api, space, request }) => {
+    await api.createTranslation(space.id, { key: 'greeting', locales: { en: 'Hello' } });
+    const translations = new TranslationsPage(page);
+    const publishButton = page.getByRole('button', { name: 'Publish', exact: true });
+    await translations.goto(space.id);
+
+    // The first publish is refused (answered here, once); the button must not keep spinning.
+    await page.route(
+      `**/api/app/spaces/${space.id}/translations/publish`,
+      route => route.fulfill({ status: 400, json: { message: 'Refused' } }),
+      {
+        times: 1,
+      },
+    );
+    await publishButton.click();
+    await expectToast(page, 'Translations can not be published.');
+    await expect(publishButton).toBeEnabled();
+
+    // Again: it works, and the CDN serves the value.
+    await translations.publish();
+    expect(await published(request, api, space.id, 'en')).toEqual({ greeting: 'Hello' });
   });
 
   test('Save stays disabled until the value changes', async ({ page, api, space }) => {

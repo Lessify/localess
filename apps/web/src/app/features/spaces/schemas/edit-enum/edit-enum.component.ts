@@ -234,15 +234,19 @@ export class EditEnumComponent implements OnInit, DirtyFormGuardComponent {
       },
       error: () => {
         this.notificationService.error('Schema can not be updated.');
+        this.stopSaveLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isSaveLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopSaveLoading(),
     });
     //console.groupEnd()
+  }
+
+  /** After a save, failed or not (an error ends the request without `complete`): Save works again. */
+  private stopSaveLoading(): void {
+    setTimeout(() => {
+      this.isSaveLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   back(): void {

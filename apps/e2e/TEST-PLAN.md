@@ -363,7 +363,7 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | **Tasks page**: a finished export listed (kind, status by name, file), downloaded again from its row (the same file), its page with the logs; deleted (also after a reload, 404 in the API) | UI + download + API | ✅ `tasks/tasks` |
 | Tasks page: each role lists the kinds it may start (admin all four, developer three, editor two, translator Translate Locale); a viewer has no Tasks link and the route sends them away | UI (four sessions) | ✅ `tasks/tasks` |
 | **Active tasks** in the action bar: another user's running Translate Locale (10,000 keys, `translations_large`) shows on a viewer's Translations page without a reload, with its input and the "may overwrite" warning; View task only for who may open it; gone when it ends | UI (two sessions) + API | ✅ `tasks/tasks` |
-| Active tasks: a second task of the same space waits ("+1 queued"); the running one shows its progress ("Translating 1,200 / 9,980"); the popover lists both, running first, each with its warning; the second starts only after the first finished | UI + API (`translations_large`) | ✅ `tasks/tasks` |
+| Active tasks: a second task of the same space waits ("+1 queued"); the running one shows its step and progress ("Writing 0 / 9,980"); the popover lists both, running first, each with its warning; the second starts only after the first finished | UI + API (`translations_large`) | ✅ `tasks/tasks` |
 | Tasks page: search (part of a file name in any letter case, an id), Kind (one, then two), Reset, Status, Status and Kind together (no match) | UI + API | ✅ `tasks/tasks` |
 
 ### 11. CDN and Management APIs
@@ -447,6 +447,8 @@ regression test.
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
 | Tasks page: the status column was an icon with a tooltip only (no name for assistive technology), the tooltip the raw value (`FINISHED`) | The status in words as the icon's accessible name and tooltip (`statusLabel`) |
 | Translations Export and Import dialogs: the Type and Locale labels pointed at the select's wrapper, not its button, so the selects had no name | The labels point at the trigger (`buttonId`), as in the other dialogs |
+| After a failed request some buttons kept spinning (the loading flag was reset only on `complete`, which an error never reaches): the schema editors' Save, Translations' Publish and value save, the detail panel's Translate | Reset on error too, as the document editor already did; unit tests per button, and `translations/edit` makes a Publish fail once (answered with a 400) and publishes again |
+| Translate Locale reported no step while it saved: "Translating 9,980 / 9,980" for the whole save (about 7 s for 10,000 values in e2e) | A `Writing` step around the save, as in the imports (server test `app-translations`); `tasks/tasks` waits for it |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
 guard those fixes: new tokens locked to Public and "Add Webhook" titled "Edit Webhook" (`b7dfc4ec`), inviting a Custom
@@ -457,7 +459,6 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 
 | Finding | Where |
 |---|---|
-| After a failed request some buttons keep spinning (their loading flag is reset only when the request completes, which an error never does): the schema editors' Save (`edit-comp`, `edit-enum`), Translations' Publish and value save (`translations.component.ts`), the detail panel's Translate (`translation-detail`). Fixed in the document editor | To fix like the editor (reset on error too); not asserted |
 | Lists that update live re-render their rows and close an open row menu | Page objects retry opening (`rowMenu`, `expectRowMenu`) |
 | Machine translation of a single value (and "Translate other locales" on add) needs TRANSLATION_UPDATE **and** CONTENT_UPDATE (kept from the Firebase callable, pinned by a server test), while "Translate Locale" needs only TRANSLATION_UPDATE; a translator without CONTENT_UPDATE sees the Translate button and gets "Could not be translated." | Product decision; not asserted |
 | Tree view: a key that is also the prefix of other keys (`home` next to `home.title`) is a group node and can't be selected, so that translation can't be opened in the tree | Product decision; not asserted |
@@ -472,4 +473,3 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Deleting a locale keeps its stored values (translations, content): the CDN no longer serves them, but adding the locale again brings the old values back | Product decision; `space/locales` pins today's behaviour |
 | Reference / References: the field's Path ("Path to be filtered by") is stored but never used: the picker offers every document | Roadmap to-do [reference-path-filter.md](../../docs/roadmap/reference-path-filter.md) |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload and move but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |
-| Translate Locale reports no step while it saves: the indicator shows "Translating 9,980 / 9,980" for the whole save (about 7 s for 10,000 values in e2e, where the stub provider translates at once), where imports say "Writing" | `apps/server/src/modules/tasks/services/translation-translate.service.ts` (a `Writing` report before `updateLocaleValues` would match the imports); `tasks/tasks` accepts either |

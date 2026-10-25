@@ -161,14 +161,18 @@ export class TranslationDetailComponent {
         error: (err: unknown) => {
           console.error(err);
           this.notificationService.error(translateErrorMessage(err, 'Could not be translated.'));
+          this.stopTranslateLoading();
         },
-        complete: () => {
-          setTimeout(() => {
-            this.isTranslateLoading.set(false);
-            this.cd.detectChanges();
-          }, 1000);
-        },
+        complete: () => this.stopTranslateLoading(),
       });
+  }
+
+  /** After a translation, failed or not (an error ends the request without `complete`): Translate works again. */
+  private stopTranslateLoading(): void {
+    setTimeout(() => {
+      this.isTranslateLoading.set(false);
+      this.cd.detectChanges();
+    }, 1000);
   }
 
   isLocaleTranslatable(sourceLocale: Locale, targetLocale: Locale): boolean {

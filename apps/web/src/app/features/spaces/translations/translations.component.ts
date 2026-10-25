@@ -227,14 +227,18 @@ export class TranslationsComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('Translations can not be published.');
+        this.stopPublishLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isPublishLoading.set(false);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopPublishLoading(),
     });
+  }
+
+  /** After a publish, failed or not (an error ends the request without `complete`): Publish works again. */
+  private stopPublishLoading(): void {
+    setTimeout(() => {
+      this.isPublishLoading.set(false);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   openAddDialog(): void {
@@ -387,15 +391,19 @@ export class TranslationsComponent implements OnInit {
       },
       error: () => {
         this.notificationService.error('Translation can not be updated.');
+        this.stopLocaleUpdateLoading();
       },
-      complete: () => {
-        setTimeout(() => {
-          this.isLocaleUpdateLoading.set(false);
-          this.translationUpdateId.set(undefined);
-          this.cd.markForCheck();
-        }, 1000);
-      },
+      complete: () => this.stopLocaleUpdateLoading(),
     });
+  }
+
+  /** After a value save, failed or not (an error ends the request without `complete`). */
+  private stopLocaleUpdateLoading(): void {
+    setTimeout(() => {
+      this.isLocaleUpdateLoading.set(false);
+      this.translationUpdateId.set(undefined);
+      this.cd.markForCheck();
+    }, 1000);
   }
 
   openApiV1InNewTab(locale: string, token: string, version?: 'draft'): void {

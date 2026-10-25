@@ -188,13 +188,17 @@ describe('TranslationsComponent', () => {
       expect(component.isPublishLoading()).toBe(false);
     });
 
-    it('notifies an error on failure', () => {
+    it('notifies an error on failure, and Publish stops spinning (an error never completes)', async () => {
+      vi.useFakeTimers();
       const { component, publish, error } = setup();
       publish.mockReturnValue(throwError(() => new Error('boom')));
 
       component.publish();
 
       expect(error).toHaveBeenCalledWith('Translations can not be published.');
+      expect(component.isPublishLoading()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isPublishLoading()).toBe(false);
     });
   });
 
@@ -398,13 +402,18 @@ describe('TranslationsComponent', () => {
       expect(component.translationUpdateId()).toBeUndefined();
     });
 
-    it('notifies an error on failure', () => {
+    it('notifies an error on failure, and the value stops saving (an error never completes)', async () => {
+      vi.useFakeTimers();
       const { component, updateLocale, error } = setup();
       updateLocale.mockReturnValue(throwError(() => new Error('boom')));
 
       component.updateLocale(translation({ id: 't1' }), de, 'Hallo');
 
       expect(error).toHaveBeenCalledWith('Translation can not be updated.');
+      expect(component.isLocaleUpdateLoading()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isLocaleUpdateLoading()).toBe(false);
+      expect(component.translationUpdateId()).toBeUndefined();
     });
   });
 

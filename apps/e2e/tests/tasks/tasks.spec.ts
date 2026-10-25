@@ -23,20 +23,11 @@ async function ended(api: AppApi, spaceId: string, body: object): Promise<TaskDt
   return current;
 }
 
-/** The kinds a user's Tasks page lists, sorted. */
-async function kindsSeenBy(page: Page, spaceId: string): Promise<string[]> {
+/** A user's Tasks page lists exactly these kinds (the list loads, then stays live: polled until it matches). */
+async function expectKinds(page: Page, spaceId: string, expected: string[]): Promise<void> {
   const tasks = new TasksPage(page);
   await tasks.goto(spaceId);
-  let kinds: string[] = [];
-  // The list is live: read it until two reads agree.
-  await expect
-    .poll(async () => {
-      const previous = kinds;
-      kinds = (await tasks.kinds()).sort();
-      return kinds.length > 0 && JSON.stringify(kinds) === JSON.stringify(previous);
-    })
-    .toBe(true);
-  return kinds;
+  await expect.poll(async () => (await tasks.kinds()).sort()).toEqual(expected);
 }
 
 // The Tasks page is the history of a space's tasks. Tasks are started through the App API here (the screens that
@@ -90,18 +81,13 @@ test.describe('Space → Tasks', () => {
       params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de', overwrite: false },
     });
 
-    expect(await kindsSeenBy(page, space.id)).toEqual([
-      'Regenerate Asset Metadata',
-      'Schema Export',
-      'Translate Locale',
-      'Translation Export',
-    ]);
+    await expectKinds(page, space.id, ['Regenerate Asset Metadata', 'Schema Export', 'Translate Locale', 'Translation Export']);
     const developer = await signInAs(await createUser({ role: 'DEVELOPER' }));
-    expect(await kindsSeenBy(developer, space.id)).toEqual(['Schema Export', 'Translate Locale', 'Translation Export']);
+    await expectKinds(developer, space.id, ['Schema Export', 'Translate Locale', 'Translation Export']);
     const editor = await signInAs(await createUser({ role: 'EDITOR' }));
-    expect(await kindsSeenBy(editor, space.id)).toEqual(['Translate Locale', 'Translation Export']);
+    await expectKinds(editor, space.id, ['Translate Locale', 'Translation Export']);
     const translator = await signInAs(await createUser({ role: 'TRANSLATOR' }));
-    expect(await kindsSeenBy(translator, space.id)).toEqual(['Translate Locale']);
+    await expectKinds(translator, space.id, ['Translate Locale']);
 
     // A viewer: no Tasks link, and the route sends them away.
     const viewer = await signInAs(await createUser({ role: 'VIEWER' }));
@@ -227,10 +213,10 @@ test.describe('Space → active tasks in the action bar', () => {
     });
     const exported = await api.send<TaskDto>('post', `/api/app/spaces/${space.id}/tasks`, { kind: 'TRANSLATION_EXPORT' });
 
-    // The pill: the running task, how far it got (from its progress events: the keys with an English value), and the
-    // one waiting.
+    // The pill: the running task, its step and how far it got (from its progress events: Translating, then Writing,
+    // the long step here as the stub provider translates at once; the keys with an English value), and the one waiting.
     await expect(indicator).toContainText('+1 queued');
-    await expect(indicator).toContainText(/Translating [\d,]+ \/ [\d,]+/, { timeout: 30_000 });
+    await expect(indicator).toContainText(/Writing [\d,]+ \/ [\d,]+/, { timeout: 30_000 });
 
     // The popover: both, the running one first, each with what it means for the data.
     await indicator.click();

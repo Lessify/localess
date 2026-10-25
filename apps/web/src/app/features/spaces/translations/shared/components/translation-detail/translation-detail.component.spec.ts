@@ -220,7 +220,8 @@ describe('TranslationDetailComponent', () => {
       expect(component.isTranslateLoading()).toBe(false);
     });
 
-    it('notifies a plain error on failure', () => {
+    it('notifies a plain error on failure, and Translate stops spinning (an error never completes)', async () => {
+      vi.useFakeTimers();
       const t = translation({ id: 't1', locales: { en: 'Hello' } });
       const { component, translate, error } = setup(t);
       translate.mockReturnValue(throwError(() => new Error('boom')));
@@ -228,6 +229,9 @@ describe('TranslationDetailComponent', () => {
       component.translate();
 
       expect(error).toHaveBeenCalledWith('Could not be translated.');
+      expect(component.isTranslateLoading()).toBe(true);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(component.isTranslateLoading()).toBe(false);
     });
 
     it('explains that translation is not configured on a 412', () => {

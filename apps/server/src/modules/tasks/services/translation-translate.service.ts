@@ -51,10 +51,14 @@ export class TranslationTranslateService {
     }
     await progress.report('Translating', candidates.length, candidates.length);
     await progress.flush();
+    // Saving the values (one transaction) is a step of its own, as in the imports: it can take seconds on a large space.
+    await progress.report('Writing', 0, values.length);
     if (values.length) {
       await this.translationTransferRepository.updateLocaleValues(task.spaceId, targetLocale, values, !overwrite);
       this.webhookDispatcher.dispatch(task.spaceId, WebhookEvent.TRANSLATION_CHANGED);
     }
+    await progress.report('Writing', values.length, values.length);
+    await progress.flush();
     // Keys the provider failed on: WARN lines (`key: reason`, at most 100), the task still FINISHED.
     await this.taskLogService.logMany(task, [
       { level: 'INFO', message: formatCounts({ created: 0, updated: values.length, unchanged: 0, skipped: failed }) },

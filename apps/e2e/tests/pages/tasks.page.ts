@@ -17,8 +17,9 @@ export class TasksPage {
     return this.page.getByRole('table');
   }
 
+  /** The task rows: not the "No tasks yet." row (shown while the first page loads, too). */
   get rows(): Locator {
-    return dataRows(this.table);
+    return dataRows(this.table).filter({ hasNotText: 'No tasks yet.' });
   }
 
   /** A task's row, by a text in it (its kind, its file name). */
