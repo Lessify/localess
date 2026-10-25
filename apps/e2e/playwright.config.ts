@@ -128,6 +128,9 @@ function server(options: ServerOptions) {
       LOCALESS_WEBHOOK_ALLOW_INTERNAL: 'true',
       // The test-only space templates (prepared spaces: tests/support/fixtures.ts `spaceTemplate`).
       LOCALESS_TEST_TEMPLATES: 'true',
+      // Tests run in parallel, each in its own space: tasks of different spaces run side by side instead of queueing
+      // behind each other (one space still runs one task at a time).
+      LOCALESS_TASK_CONCURRENCY: '4',
       LOCALESS_LOG_LEVEL: 'warn',
       // Google and Microsoft sign-in against a mock OpenID provider (scripts/start-server.mjs starts it and sets the
       // issuers; tests/support/oauth.ts picks who signs in).

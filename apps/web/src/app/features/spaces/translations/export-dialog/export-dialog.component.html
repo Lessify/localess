@@ -7,9 +7,9 @@
     downloads at once as <code>{{ '{' }} "key": "value" {{ '}' }}</code> JSON, for a translator or a tool.
   </p>
   <div hlmField>
-    <label hlmFieldLabel for="kind">Type</label>
+    <label hlmFieldLabel for="kind-trigger">Type</label>
     <hlm-select id="kind" formControlName="kind" [itemToString]="kindItemToString">
-      <hlm-select-trigger class="w-full">
+      <hlm-select-trigger class="w-full" buttonId="kind-trigger">
         <hlm-select-value />
       </hlm-select-trigger>
       <hlm-select-content *hlmSelectPortal>
@@ -22,9 +22,9 @@
 
   @if (form.value.kind === 'LOCALE') {
     <div hlmField>
-      <label hlmFieldLabel for="locale">Locale</label>
+      <label hlmFieldLabel for="locale-trigger">Locale</label>
       <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
-        <hlm-select-trigger class="w-full">
+        <hlm-select-trigger class="w-full" buttonId="locale-trigger">
           <hlm-select-placeholder>Select locale...</hlm-select-placeholder>
           <ng-template hlmSelectValueTemplate let-value>
             <div class="flex items-center">

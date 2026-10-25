@@ -28,24 +28,46 @@
       </ng-container>
       <ng-container llColumnDef="status">
         <th llHeaderCell *llHeaderCellDef>Status</th>
+        <!-- The icon is the only place the status shows: its label is the icon's name (ng-icon hides itself otherwise). -->
         <td llCell *llCellDef="let element">
           @switch (element.status) {
             @case ('QUEUED') {
-              <ng-icon hlm size="sm" name="lucideCircleEllipsis" [hlmTooltip]="element.status" />
+              <ng-icon
+                hlm
+                size="sm"
+                name="lucideCircleEllipsis"
+                [hlmTooltip]="statusLabel(element.status)"
+                role="img"
+                aria-hidden="false"
+                [attr.aria-label]="statusLabel(element.status)" />
             }
             @case ('IN_PROGRESS') {
               <div class="flex items-center gap-2">
-                <hlm-spinner [hlmTooltip]="element.status" />
+                <hlm-spinner [hlmTooltip]="statusLabel(element.status)" [aria-label]="statusLabel(element.status)" />
                 @if (progressText(element); as progress) {
                   <span class="text-muted-foreground text-xs">{{ progress }}</span>
                 }
               </div>
             }
             @case ('FINISHED') {
-              <ng-icon hlm size="sm" name="lucideCheck" [hlmTooltip]="element.status" />
+              <ng-icon
+                hlm
+                size="sm"
+                name="lucideCheck"
+                [hlmTooltip]="statusLabel(element.status)"
+                role="img"
+                aria-hidden="false"
+                [attr.aria-label]="statusLabel(element.status)" />
             }
             @case ('ERROR') {
-              <ng-icon hlm size="sm" name="lucideOctagonAlert" [hlmTooltip]="element.status" />
+              <ng-icon
+                hlm
+                size="sm"
+                name="lucideOctagonAlert"
+                [hlmTooltip]="statusLabel(element.status)"
+                role="img"
+                aria-hidden="false"
+                [attr.aria-label]="statusLabel(element.status)" />
             }
           }
         </td>

@@ -158,7 +158,12 @@ stub provider, so translated values are exact (`Hello : en -> de`). Specs in `te
 | "Translate Locale" fills only missing values; nothing left; with overwrite replaces all (a task: "started", then "finished" toasts) | UI + API | ✅ `translations/translate` |
 | **List view**: key and value per row, opening a key, 120 keys in the virtual list, live updates | UI + API | ✅ `translations/views` |
 | **Tree view**: groups by dots, expand / collapse, selection shown, the first key shown is selected (not one in a closed group), a selected key outside the search stays open with a note, search filters the tree, layout kept after reload | UI | ✅ `translations/views` |
-| Import / export | Translations and Schemas (tasks: the action bar's active tasks, the "finished" toast with Download), one locale as key-value JSON | ⬜ planned |
+| **Export / import** (tasks: "started", then a "finished" toast with Download): all translations to a `.localess.zip`, downloaded from the toast, imported into another space: keys, every locale, description, labels | UI + download + API | ✅ `translations/import-export` |
+| Export one locale: downloads at once as key-value JSON, its draft values only (a key without that locale left out), no task | UI + download + API | ✅ `translations/import-export` |
+| Import a key-value JSON into one locale (`ro.json` picks Romanian): updated and missing keys added; other locales and keys untouched | UI + API | ✅ `translations/import-export` |
+| An import with an invalid key fails ("failed" toast, View): the task page says why, by line; nothing written, also not the valid keys | UI + API | ✅ `translations/import-export` |
+| Import dialog: a file of another type refused (Import disabled); a key-value JSON needs its locale; Cancel starts nothing | UI + API | ✅ `translations/import-export` |
+| Import and Export for editors and up: a translator's More menu has Translate Locale only | UI | ✅ `translations/import-export` |
 
 **At scale** (`translations/large-space`): a prepared space from the test template "Translations (large)": English,
 German, French, 10,000 generated keys, nothing published (`support/large-translations.ts`).
@@ -204,6 +209,9 @@ schema's effect shows). Specs in `tests/schemas/`.
 | **Delete** an unused schema; cancel keeps it | UI + API | ✅ `schemas/rename-delete` @smoke |
 | **List**: search by name, filter by one or another label, Reset | UI | ✅ `schemas/list` |
 | Field kind settings (min/max length and value, min/max values) and their content validation | UI + content editor | ✅ `contents/validation` |
+| **Export / import** (tasks): every schema to a `.localess.zip`, downloaded from the toast, imported into another space: the same schemas, a Schemas field's allowed schema kept by name | UI + download + API | ✅ `schemas/import-export` |
+| An import updates the schemas it names in place (same id) and keeps the others | UI + API | ✅ `schemas/import-export` |
+| Import and Export for developers and up: an editor reads the list without the More menu | UI | ✅ `schemas/import-export` |
 | Schema (One) field, Reference / Link / Asset fields in the content editor | UI + content editor | ✅ `contents/blocks`, `contents/fields-relations` |
 
 ### 8. Contents
@@ -351,7 +359,11 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | Webhooks: the list a page at a time (22 webhooks), the Status filter and the URL search on the server | UI + API | ✅ `developers/webhooks` |
 | Webhooks: a webhook's logs a page at a time (25 deliveries), the Status filter and the id search on the server | UI + receiver | ✅ `developers/webhooks` |
 | Webhooks: content events carry id and full slug | API + receiver | ✅ `contents/delivery` |
-| Tasks page | Each role sees the kinds it may start; progress, result, download | ⬜ planned |
+| **Tasks page**: a finished export listed (kind, status by name, file), downloaded again from its row (the same file), its page with the logs; deleted (also after a reload, 404 in the API) | UI + download + API | ✅ `tasks/tasks` |
+| Tasks page: each role lists the kinds it may start (admin all four, developer three, editor two, translator Translate Locale); a viewer has no Tasks link and the route sends them away | UI (four sessions) | ✅ `tasks/tasks` |
+| **Active tasks** in the action bar: another user's running Translate Locale (10,000 keys, `translations_large`) shows on a viewer's Translations page without a reload, with its input and the "may overwrite" warning; View task only for who may open it; gone when it ends | UI (two sessions) + API | ✅ `tasks/tasks` |
+| Active tasks: "+N queued" and the progress text while running | Needs two long tasks of one space | ⬜ |
+| Tasks page: search and the Kind / Status filters | UI | ⬜ (server: `tasks-paging`) |
 
 ### 11. CDN and Management APIs
 
@@ -432,6 +444,8 @@ regression test.
 | Schema editors: a live refetch that started before Save and answered after it put the old schema back into the (just saved, so pristine) form; a label removed then removed every label (found as a flake of `schemas/settings` under load) | An answer older than the version just saved, or than the form's, is ignored (unit tests, Root/Node and Enum editors) |
 | A rate-limited sign-in (429) said "User or password is wrong", also to someone typing the right password | "Too many sign-in attempts. Try again in a minute." (unit test; `limits/limits`) |
 | Icon-only buttons had no accessible name (screen readers, tests) | `aria-label` from the tooltip text; labels for the translation locale selects and the space name |
+| Tasks page: the status column was an icon with a tooltip only (no name for assistive technology), the tooltip the raw value (`FINISHED`) | The status in words as the icon's accessible name and tooltip (`statusLabel`) |
+| Translations Export and Import dialogs: the Type and Locale labels pointed at the select's wrapper, not its button, so the selects had no name | The labels point at the trigger (`buttonId`), as in the other dialogs |
 
 The suite also caught bugs that were being fixed at the same time on `refactor/monorepo-structure`; their tests now
 guard those fixes: new tokens locked to Public and "Add Webhook" titled "Edit Webhook" (`b7dfc4ec`), inviting a Custom

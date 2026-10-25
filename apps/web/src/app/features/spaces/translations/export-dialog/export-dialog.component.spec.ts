@@ -67,4 +67,23 @@ describe('ExportDialogComponent', () => {
     expect(component['localeItemToString']('de')).toBe('German');
     expect(component['localeItemToString']('fr')).toBe('fr');
   });
+
+  it('names each select by its label: the label points at the select button', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: { locales } },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ExportDialogComponent);
+    fixture.componentInstance.form.patchValue({ kind: 'LOCALE' });
+    fixture.detectChanges();
+
+    const element: HTMLElement = fixture.nativeElement;
+    const labels = Array.from(element.querySelectorAll('label'));
+    expect(labels.map(it => it.textContent?.trim())).toEqual(['Type', 'Locale']);
+    for (const label of labels) {
+      expect(element.querySelector(`#${label.htmlFor}`)?.tagName).toBe('BUTTON');
+    }
+  });
 });

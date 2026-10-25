@@ -103,6 +103,11 @@ describe('TasksComponent', () => {
     expect(component.progressText(task({ id: 't2', status: TaskStatus.IN_PROGRESS }))).toBeUndefined();
   });
 
+  it('names each status in words: the status icon has it as its accessible name', () => {
+    const { component } = setup();
+    expect(Object.values(TaskStatus).map(component.statusLabel)).toEqual(['Queued', 'In Progress', 'Error', 'Finished']);
+  });
+
   it('names the download by kind', () => {
     const { component } = setup();
     expect(component.downloadLabel(task({ kind: TaskKind.TRANSLATION_EXPORT }))).toBe('Download export');

@@ -56,6 +56,35 @@ export class SchemasPage {
     await expect(this.page.getByRole('button', { name: 'Add Schema' })).toBeVisible();
   }
 
+  /** The More menu (Import, Export): for developers and admins only. */
+  get moreButton(): Locator {
+    return this.page.getByRole('button', { name: 'More' });
+  }
+
+  /** More → Export: starts the export task (it says so). */
+  async exportAll(): Promise<void> {
+    await this.moreButton.click();
+    await this.page.getByRole('menuitem', { name: 'Export' }).click();
+    const form = await dialog(this.page, 'Schema Export');
+    await form.getByRole('button', { name: 'Export' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Schema Export started');
+  }
+
+  /** More → Import: the dialog, no file chosen yet. */
+  async openImport(): Promise<Locator> {
+    await this.moreButton.click();
+    await this.page.getByRole('menuitem', { name: 'Import' }).click();
+    return dialog(this.page, 'Schema Import');
+  }
+
+  /** Starts the import task of a dialog with its file chosen. */
+  async startImport(form: Locator): Promise<void> {
+    await form.getByRole('button', { name: 'Import' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Schema Import started');
+  }
+
   /** A row, by the schema name (the name cell shows the display name, then `#name` on its own line). */
   row(name: string): Locator {
     return this.page.getByRole('row').filter({ has: this.page.getByText(`#${name}`, { exact: true }) });

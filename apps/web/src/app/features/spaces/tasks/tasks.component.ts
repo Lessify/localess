@@ -126,6 +126,7 @@ export class TasksComponent {
   }
 
   readonly kindLabel = (kind: TaskKind): string => TASK_KIND_LABELS[kind];
+  readonly statusLabel = (status: TaskStatus): string => TASK_STATUS_LABELS[status];
   readonly durations = taskDurations;
 
   /** The running tasks' progress, by id, from the space's progress events (never stored). */

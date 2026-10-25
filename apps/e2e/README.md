@@ -58,7 +58,9 @@ Two other setups, both run in CI (`.github/workflows/build.yml`):
    read by `tests/support/mail.ts`).
 3. The server seeds the first admin from `LOCALESS_ADMIN_EMAIL` / `LOCALESS_ADMIN_PASSWORD` (`tests/support/env.ts`)
    with the "Hello World" space, as on a new installation. Machine translation uses the `stub` provider, and webhooks
-   may call loopback addresses (for the local receiver).
+   may call loopback addresses (for the local receiver). Tasks of different spaces run 4 at a time
+   (`LOCALESS_TASK_CONCURRENCY`), so parallel tests don't queue behind each other's tasks; a test waits up to
+   `TASK_ENDS_WITHIN` (`tests/pages/tasks.ts`) for a task to end.
 4. The `setup` project (`tests/auth.setup.ts`) signs in through the login form and saves the session to
    `.auth/admin.json`. Two projects depend on it:
    - `ui`: Chromium, every spec except `tests/api` and `tests/limits`.
@@ -101,11 +103,12 @@ tests/
 ├── admin/                  # Admin → Users, Admin → Spaces
 ├── me/                     # profile
 ├── space/                  # settings (general, locales, environments, tokens, danger zone), dashboard, navigation
-├── translations/           # add, edit, delete, labels, search and language, machine translation, list and tree views
+├── translations/           # add, edit, delete, labels, search and language, machine translation, import and export, list and tree views
 ├── assets/                 # upload, create folder, rename, move, delete, grid layout and preview
-├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list
+├── schemas/                # create, fields (and the content editor), settings, references, enum values, edit ID and delete, list, import and export
 ├── contents/               # folders and documents, lifecycle, every field kind, blocks, validation, locales, delivery, Visual Editor
 ├── developers/             # webhooks: create, edit, disable / enable, delete, delivery logs
+├── tasks/                  # the Tasks page (history, download, delete, roles) and the action bar's active tasks
 ├── confirmations/          # Cancel changes nothing: destructive confirmations and form dialogs
 ├── limits/                 # on the second server (low limits): a too-large upload, the sign-in rate limit
 └── a11y/                   # axe-core scan (WCAG 2 A / AA): pages, dialogs, the Visual Editor

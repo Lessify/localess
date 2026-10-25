@@ -37,6 +37,12 @@ export class TranslationsPage {
     await expect(this.page.getByRole('button', { name: 'Publish' })).toBeVisible();
   }
 
+  /** As `goto`, for a role that may not publish (a translator): waits for the More menu instead. */
+  async gotoWithoutPublish(spaceId: string): Promise<void> {
+    await this.page.goto(`/features/spaces/${spaceId}/translations`);
+    await expect(this.page.getByRole('button', { name: 'More' })).toBeVisible();
+  }
+
   // --- List and tree -----------------------------------------------------------------------------------------------
 
   /** The list layout (a virtual scroll: it renders only the rows in view). */
@@ -258,6 +264,55 @@ export class TranslationsPage {
   /** The detail panel's Translate button: fills the target value from the source (not saved). */
   get translateButton(): Locator {
     return this.page.getByRole('button', { name: 'Translate', exact: true });
+  }
+
+  // --- Import and export ---------------------------------------------------------------------------------------------
+
+  /** The items of the More menu (Translate Locale, Import, Export, the Draft / Published downloads), as named. */
+  async moreMenuItems(): Promise<string[]> {
+    await this.page.getByRole('button', { name: 'More' }).click();
+    const items = this.page.getByRole('menuitem');
+    await expect(items.first()).toBeVisible();
+    const names = (await items.allInnerTexts()).map(it => it.trim());
+    await this.page.keyboard.press('Escape');
+    await expect(items).toHaveCount(0);
+    return names;
+  }
+
+  /** More → Export → "All translations": starts the export task (it says so). */
+  async exportAll(): Promise<void> {
+    const form = await this.openExport();
+    await form.getByRole('button', { name: 'Export' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Translation Export started');
+  }
+
+  /** More → Export → "One locale": the dialog, with the locale chosen (Export downloads at once). */
+  async openExportLocale(name: string): Promise<Locator> {
+    const form = await this.openExport();
+    await choose(this.page, form.getByLabel('Type'), 'One locale (key-value JSON)');
+    await choose(this.page, form.getByLabel('Locale'), localeOption(name));
+    return form;
+  }
+
+  private async openExport(): Promise<Locator> {
+    await this.page.getByRole('button', { name: 'More' }).click();
+    await this.page.getByRole('menuitem', { name: 'Export' }).click();
+    return dialog(this.page, 'Translations Export');
+  }
+
+  /** More → Import: the dialog, nothing chosen yet. */
+  async openImport(): Promise<Locator> {
+    await this.page.getByRole('button', { name: 'More' }).click();
+    await this.page.getByRole('menuitem', { name: 'Import' }).click();
+    return dialog(this.page, 'Translations Import');
+  }
+
+  /** Starts the import task of a dialog with its file (and locale) chosen. */
+  async startImport(form: Locator): Promise<void> {
+    await form.getByRole('button', { name: 'Import' }).click();
+    await expect(form).toBeHidden();
+    await expectToast(this.page, 'Translation Import started');
   }
 
   /** More menu → Translate Locale: machine-translates a whole locale. */

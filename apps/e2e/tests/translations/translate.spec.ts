@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 
 import { expectToast } from '../pages/notifications';
+import { expectTaskToast, TASK_ENDS_WITHIN } from '../pages/tasks';
 import { TranslationsPage } from '../pages/translations.page';
 import type { AppApi } from '../support/app-api';
 import { expect, test } from '../support/fixtures';
@@ -13,12 +14,15 @@ import { stubTranslation, translationsByKey, withThreeLocales } from '../support
  */
 async function expectTaskDone(page: Page, api: AppApi, spaceId: string, finished: number): Promise<void> {
   await expectToast(page, 'Translate Locale started');
-  await expectToast(page, 'Translate Locale finished');
+  await expectTaskToast(page, 'Translate Locale finished');
   await expect
-    .poll(async () => {
-      const tasks = await api.get<{ total: number }>(`/api/app/spaces/${spaceId}/tasks?kind=TRANSLATION_TRANSLATE&status=FINISHED`);
-      return tasks.total;
-    })
+    .poll(
+      async () => {
+        const tasks = await api.get<{ total: number }>(`/api/app/spaces/${spaceId}/tasks?kind=TRANSLATION_TRANSLATE&status=FINISHED`);
+        return tasks.total;
+      },
+      { timeout: TASK_ENDS_WITHIN },
+    )
     .toBe(finished);
 }
 

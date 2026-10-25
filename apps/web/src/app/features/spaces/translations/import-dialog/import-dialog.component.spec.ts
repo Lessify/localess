@@ -89,4 +89,21 @@ describe('ImportDialogComponent', () => {
     expect(component['localeItemToString']('de')).toBe('German');
     expect(component['localeItemToString']('fr')).toBe('fr');
   });
+
+  it('names the locale select by its label: the label points at the select button', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DIALOG_DATA, useValue: { locales } },
+        { provide: BrnDialogRef, useValue: { close: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ImportDialogComponent);
+    fixture.componentInstance.isJson.set(true);
+    fixture.detectChanges();
+
+    const element: HTMLElement = fixture.nativeElement;
+    const label = element.querySelector('label');
+    expect(label?.textContent?.trim()).toBe('Locale');
+    expect(element.querySelector(`#${label?.htmlFor}`)?.tagName).toBe('BUTTON');
+  });
 });

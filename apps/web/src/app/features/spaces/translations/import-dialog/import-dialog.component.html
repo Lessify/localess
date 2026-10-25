@@ -21,9 +21,9 @@
 
   @if (isJson()) {
     <div hlmField>
-      <label hlmFieldLabel for="locale">Locale</label>
+      <label hlmFieldLabel for="locale-trigger">Locale</label>
       <hlm-select id="locale" formControlName="locale" [itemToString]="localeItemToString">
-        <hlm-select-trigger class="w-full">
+        <hlm-select-trigger class="w-full" buttonId="locale-trigger">
           <hlm-select-placeholder>Select locale...</hlm-select-placeholder>
           <ng-template hlmSelectValueTemplate let-value>
             <div class="flex items-center">
