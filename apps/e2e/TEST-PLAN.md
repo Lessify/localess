@@ -362,8 +362,8 @@ text file N is N bytes), `Nested/Deep`, `Empty`, a `Gallery` document (`support/
 | **Tasks page**: a finished export listed (kind, status by name, file), downloaded again from its row (the same file), its page with the logs; deleted (also after a reload, 404 in the API) | UI + download + API | ✅ `tasks/tasks` |
 | Tasks page: each role lists the kinds it may start (admin all four, developer three, editor two, translator Translate Locale); a viewer has no Tasks link and the route sends them away | UI (four sessions) | ✅ `tasks/tasks` |
 | **Active tasks** in the action bar: another user's running Translate Locale (10,000 keys, `translations_large`) shows on a viewer's Translations page without a reload, with its input and the "may overwrite" warning; View task only for who may open it; gone when it ends | UI (two sessions) + API | ✅ `tasks/tasks` |
-| Active tasks: "+N queued" and the progress text while running | Needs two long tasks of one space | ⬜ |
-| Tasks page: search and the Kind / Status filters | UI | ⬜ (server: `tasks-paging`) |
+| Active tasks: a second task of the same space waits ("+1 queued"); the running one shows its progress ("Translating 1,200 / 9,980"); the popover lists both, running first, each with its warning; the second starts only after the first finished | UI + API (`translations_large`) | ✅ `tasks/tasks` |
+| Tasks page: search (part of a file name in any letter case, an id), Kind (one, then two), Reset, Status, Status and Kind together (no match) | UI + API | ✅ `tasks/tasks` |
 
 ### 11. CDN and Management APIs
 
@@ -471,3 +471,4 @@ including for a user without a role (`b2e0382d`), and "NaN characters left" in t
 | Deleting a locale keeps its stored values (translations, content): the CDN no longer serves them, but adding the locale again brings the old values back | Product decision; `space/locales` pins today's behaviour |
 | Reference / References: the field's Path ("Path to be filtered by") is stored but never used: the picker offers every document | Roadmap to-do [reference-path-filter.md](../../docs/roadmap/reference-path-filter.md) |
 | Asset names: a short file name blocks Edit; duplicates allowed on upload and move but refused (more broadly) in the dialogs; Edit Folder stops at 100 characters | Roadmap to-do [asset-names.md](../../docs/roadmap/asset-names.md); "roadmap check" tests pin today's behaviour |
+| Translate Locale reports no step while it saves: the indicator shows "Translating 9,980 / 9,980" for the whole save (about 7 s for 10,000 values in e2e, where the stub provider translates at once), where imports say "Writing" | `apps/server/src/modules/tasks/services/translation-translate.service.ts` (a `Writing` report before `updateLocaleValues` would match the imports); `tasks/tasks` accepts either |

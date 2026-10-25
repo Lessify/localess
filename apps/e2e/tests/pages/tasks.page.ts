@@ -38,6 +38,26 @@ export class TasksPage {
     return row.getByRole('img', { name: status, exact: true });
   }
 
+  // --- Search and filters (on the server) ---------------------------------------------------------------------------
+
+  /** Searches the id and the file name; runs on Enter, an emptied box lists every task again by itself. */
+  async search(text: string): Promise<void> {
+    const box = this.page.getByRole('searchbox');
+    await box.fill(text);
+    if (text) await box.press('Enter');
+  }
+
+  /** Toggles values of the "Kind" or "Status" filter (several may be chosen). */
+  async filter(name: 'Kind' | 'Status', ...values: string[]): Promise<void> {
+    await this.page.getByRole('button', { name, exact: true }).click();
+    for (const value of values) await this.page.getByRole('option', { name: value, exact: true }).click();
+    await this.page.keyboard.press('Escape');
+  }
+
+  async resetFilters(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Reset' }).click();
+  }
+
   /** Deletes a task from its row menu, confirmed. */
   async delete(row: Locator, taskId: string): Promise<void> {
     await rowMenu(this.page, row, 'Delete');

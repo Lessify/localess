@@ -126,6 +126,22 @@ export class AppApi {
     return expectOk(response, 'upload asset');
   }
 
+  // --- Tasks ----------------------------------------------------------------------------------------------
+
+  /** Starts a key-value JSON import into one locale (a task); returns it as created (QUEUED). */
+  async importTranslationsJson(
+    spaceId: string,
+    locale: string,
+    file: { name: string; mimeType: string; buffer: Buffer },
+  ): Promise<{ id: string; status: string }> {
+    const response = await this.request.post(`/api/app/spaces/${spaceId}/tasks/import`, {
+      headers: CSRF,
+      // Field parts before the file part, as the app sends them.
+      multipart: { kind: 'TRANSLATION_IMPORT', type: 'translation-json-flat', locale, file },
+    });
+    return expectOk(response, 'import translations');
+  }
+
   // --- Tokens ---------------------------------------------------------------------------------------------
 
   createToken(

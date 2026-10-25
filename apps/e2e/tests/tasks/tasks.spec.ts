@@ -112,6 +112,55 @@ test.describe('Space → Tasks', () => {
     await viewer.goto(`/features/spaces/${space.id}/tasks`);
     await expect(viewer).toHaveURL(/\/features\/welcome/);
   });
+  test('search (id, file name) and the Kind and Status filters, on the server', async ({ page, api, space }) => {
+    await api.addLocale(space.id, 'de');
+    await api.createTranslation(space.id, { key: 'greeting', locales: { en: 'Hello' } });
+    const translationExport = await finishedExport(api, space.id, 'TRANSLATION_EXPORT');
+    const schemaExport = await finishedExport(api, space.id, 'SCHEMA_EXPORT');
+    const json = (name: string, values: Record<string, string>) => ({
+      name,
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(values)),
+    });
+    const good = await api.importTranslationsJson(space.id, 'de', json('greetings-de.json', { greeting: 'Hallo' }));
+    const broken = await api.importTranslationsJson(space.id, 'de', json('broken-de.json', { 'trailing.': 'Bad' }));
+    const statusOf = async (id: string) => (await api.get<TaskDto>(`/api/app/spaces/${space.id}/tasks/${id}`)).status;
+    await expect.poll(() => statusOf(good.id), { timeout: TASK_ENDS_WITHIN }).toBe('FINISHED');
+    await expect.poll(() => statusOf(broken.id), { timeout: TASK_ENDS_WITHIN }).toBe('ERROR');
+    const tasks = new TasksPage(page);
+
+    // Pre-check: all four listed.
+    await tasks.goto(space.id);
+    await expect(tasks.rows).toHaveCount(4);
+
+    // Search: part of a file name, any letter case; an id.
+    await tasks.search('BROKEN');
+    await expect(tasks.rows).toHaveCount(1);
+    await expect(tasks.status(tasks.row('broken-de.json'), 'Error')).toBeVisible();
+    await tasks.search(schemaExport.id);
+    await expect(tasks.rows).toHaveCount(1);
+    await expect(tasks.rows).toContainText('Schema Export');
+    await tasks.search('');
+    await expect(tasks.rows).toHaveCount(4);
+
+    // Kind: one, then a second one (either of them).
+    await tasks.filter('Kind', 'Translation Import');
+    await expect(tasks.rows).toHaveCount(2);
+    await tasks.filter('Kind', 'Schema Export');
+    await expect(tasks.rows).toHaveCount(3);
+    await expect(tasks.row(translationExport.file?.name ?? '')).toHaveCount(0);
+
+    // Status, after Reset.
+    await tasks.resetFilters();
+    await expect(tasks.rows).toHaveCount(4);
+    await tasks.filter('Status', 'Error');
+    await expect(tasks.rows).toHaveCount(1);
+    await expect(tasks.rows).toContainText('broken-de.json');
+
+    // Status and Kind together: nothing failed among the exports.
+    await tasks.filter('Kind', 'Translation Export', 'Schema Export');
+    await expect(page.getByText('No tasks yet.', { exact: true })).toBeVisible();
+  });
 });
 
 // A task runs long enough to be seen only on a large space: Translate Locale with overwrite on the 10,000 keys of
@@ -159,5 +208,51 @@ test.describe('Space → active tasks in the action bar', () => {
     await expect(indicator(viewer)).toHaveCount(0, { timeout: 120_000 });
     await expect(indicator(page)).toHaveCount(0);
     expect((await api.get<TaskDto>(`/api/app/spaces/${space.id}/tasks/${task.id}`)).status).toBe('FINISHED');
+  });
+
+  test('a task of the same space waits: "+1 queued", the running one with its progress, each in the popover', async ({
+    page,
+    api,
+    space,
+  }) => {
+    test.slow();
+    const indicator = page.getByRole('button', { name: 'Active tasks: Translate Locale' });
+    await new TranslationsPage(page).goto(space.id);
+    await expect(page.getByRole('button', { name: /^Active tasks:/ })).toHaveCount(0);
+
+    // Translate Locale over 10,000 values, then an export of the same space: it waits for the first.
+    const translate = await api.send<TaskDto>('post', `/api/app/spaces/${space.id}/tasks`, {
+      kind: 'TRANSLATION_TRANSLATE',
+      params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de', overwrite: true },
+    });
+    const exported = await api.send<TaskDto>('post', `/api/app/spaces/${space.id}/tasks`, { kind: 'TRANSLATION_EXPORT' });
+
+    // The pill: the running task, how far it got (from its progress events: the keys with an English value), and the
+    // one waiting.
+    await expect(indicator).toContainText('+1 queued');
+    await expect(indicator).toContainText(/Translating [\d,]+ \/ [\d,]+/, { timeout: 30_000 });
+
+    // The popover: both, the running one first, each with what it means for the data.
+    await indicator.click();
+    const entries = page.getByTestId('active-task');
+    await expect(entries).toHaveCount(2);
+    await expect(entries.nth(0)).toContainText('Translate Locale');
+    await expect(entries.nth(0)).toContainText('Running');
+    await expect(entries.nth(0)).toContainText('May overwrite translations changed while it runs.');
+    await expect(entries.nth(1)).toContainText('Translation Export');
+    await expect(entries.nth(1)).toContainText('Queued');
+    await expect(entries.nth(1)).toContainText('Changes made now may not be in the exported file.');
+    await page.keyboard.press('Escape');
+
+    // Both run, one after the other; then nothing is active.
+    await expect(page.getByRole('button', { name: /^Active tasks:/ })).toHaveCount(0, { timeout: 120_000 });
+    const ended = await Promise.all(
+      [translate, exported].map(it =>
+        api.get<TaskDto & { startedAt: string; finishedAt: string }>(`/api/app/spaces/${space.id}/tasks/${it.id}`),
+      ),
+    );
+    expect(ended.map(it => it.status)).toEqual(['FINISHED', 'FINISHED']);
+    // The export started only once Translate Locale had finished.
+    expect(Date.parse(ended[1].startedAt)).toBeGreaterThanOrEqual(Date.parse(ended[0].finishedAt));
   });
 });
