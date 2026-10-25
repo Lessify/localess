@@ -47,11 +47,12 @@ describe('TaskNotifierService', () => {
     const findOne = vi.fn(() => of(current));
     const success = vi.fn();
     const error = vi.fn();
+    const info = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         { provide: ChangeEventsService, useValue: { changes } },
         { provide: TaskService, useValue: { findOne, downloadUrl: () => of('/url') } },
-        { provide: NotificationService, useValue: { success, error } },
+        { provide: NotificationService, useValue: { success, error, info } },
         { provide: UserStore, useValue: { id: signal('me') } },
         { provide: SpaceStore, useValue: { selectedSpaceId } },
       ],
@@ -59,7 +60,7 @@ describe('TaskNotifierService', () => {
     const notifier = TestBed.inject(TaskNotifierService);
     notifier.start();
     TestBed.tick();
-    return { notifier, findOne, success, error };
+    return { notifier, findOne, success, error, info };
   }
 
   const update = (id = 't1', spaceId = 's1') => streams.get(spaceId)?.next({ spaceId, entity: 'tasks', id, op: 'updated' });
@@ -83,25 +84,17 @@ describe('TaskNotifierService', () => {
     expect(error).not.toHaveBeenCalled();
   });
 
-  it('stays quiet while a dialog follows the task, and speaks once it was sent to the background', () => {
-    const { notifier, success } = setup();
-    notifier.follow('s1', 't1');
-    current = task({ status: TaskStatus.IN_PROGRESS });
-    update();
-    notifier.unfollow('t1');
-    current = task();
-    update();
-    expect(success).toHaveBeenCalledTimes(1);
+  it('says a task the user just started has started', () => {
+    const { notifier, info } = setup();
+    notifier.watch('s1', task({ kind: TaskKind.TRANSLATION_EXPORT }));
+    expect(info).toHaveBeenCalledWith('Translation Export started');
   });
 
-  it('leaves the end to a dialog that follows the task when it ends', () => {
-    const { notifier, success } = setup();
-    notifier.follow('s1', 't1');
-    current = task();
+  it('offers to download an export that finished', () => {
+    const { success } = setup();
+    current = task({ kind: TaskKind.TRANSLATION_EXPORT, file: { name: 'translations.localess.zip', size: 1 } });
     update();
-    notifier.unfollow('t1');
-    update();
-    expect(success).not.toHaveBeenCalled();
+    expect(success.mock.calls[0]).toEqual(['Translation Export finished', { action: expect.objectContaining({ label: 'Download' }) }]);
   });
 
   it('reads a task the user may not see once, not on every update', () => {
@@ -131,8 +124,7 @@ describe('TaskNotifierService', () => {
 
   it('keeps listening to the space of a task the user started until it ends, after they moved to another space', () => {
     const { notifier, success } = setup();
-    notifier.follow('s1', 't1');
-    notifier.unfollow('t1');
+    notifier.watch('s1', task());
     selectedSpaceId.set('s2');
     TestBed.tick();
     expect(listeners.get('s1')).toBe(1);

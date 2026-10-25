@@ -11,12 +11,13 @@ import { saveAs } from 'file-saver-es';
 import { catchError, EMPTY, filter, map, mergeMap, Subscription, take } from 'rxjs';
 
 /**
- * Tells the user when a task they started ends, wherever they are in the app: "<kind> finished" with Download (an
- * export) or View, or "<kind> failed". Quiet about a task an open progress dialog follows (`follow` / `unfollow`), and
- * about other users' tasks. Started once by the features shell.
+ * Tells the user about the tasks they start: "<kind> started" when a screen creates one (`watch`; the screen's
+ * `ll-active-tasks` shows its progress), then, wherever they are in the app, "<kind> finished" with Download (an export)
+ * or View, or "<kind> failed" with View (its logs say why). Quiet about other users' tasks. Started once by the
+ * features shell.
  *
  * Task events come on each space's own stream, so it listens to the selected space and to every space where a task the
- * user started here (a progress dialog followed it) still runs, until it ends.
+ * user started here still runs, until it ends.
  */
 @Injectable({ providedIn: 'root' })
 export class TaskNotifierService {
@@ -27,9 +28,7 @@ export class TaskNotifierService {
   private readonly spaceStore = inject(SpaceStore);
   private readonly injector = inject(Injector);
 
-  private started = false;
-  /** Followed by an open progress dialog: it tells the end itself. */
-  private readonly followed = new Set<string>();
+  private listeningStarted = false;
   /** Told already, or not the user's: never read again. */
   private readonly done = new Set<string>();
   /** The space of each task the user started here that has not ended. */
@@ -42,8 +41,8 @@ export class TaskNotifierService {
   private readonly listening = new Map<string, Subscription>();
 
   start(): void {
-    if (this.started) return;
-    this.started = true;
+    if (this.listeningStarted) return;
+    this.listeningStarted = true;
     effect(
       () => {
         const spaceIds = this.spaceIds();
@@ -60,14 +59,10 @@ export class TaskNotifierService {
     );
   }
 
-  /** A progress dialog opened on a task the user started: its space stays listened to until the task ends. */
-  follow(spaceId: string, taskId: string): void {
-    this.followed.add(taskId);
-    if (!this.done.has(taskId)) this.running.update(running => new Map(running).set(taskId, spaceId));
-  }
-
-  unfollow(taskId: string): void {
-    this.followed.delete(taskId);
+  /** The user just started `task`: says so, and listens to its space until it ends (they may move to another one). */
+  watch(spaceId: string, task: Pick<Task, 'id' | 'kind'>): void {
+    this.notificationService.info(`${TASK_KIND_LABELS[task.kind]} started`);
+    if (!this.done.has(task.id)) this.running.update(running => new Map(running).set(task.id, spaceId));
   }
 
   private listen(spaceId: string): Subscription {
@@ -110,8 +105,6 @@ export class TaskNotifierService {
     }
     if (task.status !== TaskStatus.FINISHED && task.status !== TaskStatus.ERROR) return;
     this.end(task.id);
-    // An open progress dialog tells the end itself.
-    if (this.followed.has(task.id)) return;
     const label = TASK_KIND_LABELS[task.kind];
     const view = { type: 'route' as const, label: 'View', link: `/features/spaces/${spaceId}/tasks/${task.id}` };
     if (task.status === TaskStatus.ERROR) {

@@ -120,6 +120,11 @@ export interface TaskBase {
   startedAt?: Timestamp;
   /** When it ended. */
   finishedAt?: Timestamp;
+  /**
+   * A running task's latest progress: live state, not a column (the worker publishes it in events, every server instance
+   * keeps the last one in memory). Only `GET …/tasks/active` answers it.
+   */
+  progress?: TaskProgress;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

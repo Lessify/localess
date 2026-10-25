@@ -1,7 +1,7 @@
 import type { MultipartFile } from '@fastify/multipart';
-import type { Page, Task, TaskCreate, TaskPageable } from '@localess/shared';
-import { TRANSLATORS } from '@localess/shared';
-import { zTaskCreate, zTaskImportCreate, zTaskPageable } from '@localess/shared/zod';
+import type { Page, Task, TaskActiveQuery, TaskCreate, TaskPageable } from '@localess/shared';
+import { ANY_ROLE, TRANSLATORS } from '@localess/shared';
+import { zTaskActiveQuery, zTaskCreate, zTaskImportCreate, zTaskPageable } from '@localess/shared/zod';
 import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, Post, Query, Req, Res } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
@@ -36,6 +36,16 @@ export class TaskController {
     @CurrentUser() user: UserEntity,
   ): Promise<Page<Task>> {
     return this.taskService.findAll(spaceId, query, user);
+  }
+
+  /** Queued and running tasks, every kind for every role: what a screen warns about while they change its data. */
+  @Get('active')
+  @RequireRole(ANY_ROLE)
+  findActive(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Query({ schema: zTaskActiveQuery }) query: TaskActiveQuery,
+  ): Promise<Task[]> {
+    return this.taskService.findActive(spaceId, query);
   }
 
   @Get(':id')

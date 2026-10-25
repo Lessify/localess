@@ -47,6 +47,17 @@ export class TaskRepository {
     return this.db.query.tasks.findFirst({ where: and(this.byId(spaceId, id), inArray(tasks.kind, kinds)), with: { createdBy: true } });
   }
 
+  /** The space's queued and running tasks (of `kinds` when given), oldest first, with who started each. */
+  findActive(spaceId: string, kinds?: TaskKind[]): Promise<TaskSelect[]> {
+    const conditions: SQL[] = [eq(tasks.spaceId, spaceId), inArray(tasks.status, ['QUEUED', 'IN_PROGRESS'])];
+    if (kinds) conditions.push(inArray(tasks.kind, kinds));
+    return this.db.query.tasks.findMany({
+      where: and(...conditions),
+      with: { createdBy: true },
+      orderBy: [asc(tasks.createdAt), asc(tasks.id)],
+    });
+  }
+
   /** A new QUEUED task, for the worker to pick up; the space is checked by the service. */
   create(spaceId: string, values: NewTask, tx?: Transaction): Promise<void> {
     return transaction(this.db, tx, async t => {

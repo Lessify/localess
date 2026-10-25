@@ -4,6 +4,7 @@ import {
   LOCALESS_FILE_EXTENSION,
   type Page,
   type Task,
+  type TaskActiveQuery,
   type TaskCreate,
   type TaskImportCreate,
   TaskKind,
@@ -27,6 +28,7 @@ import { TaskRepository } from '../repositories/task.repository.js';
 import { MAX_LOCALE_FILE_BYTES, taskFileKey, taskFilesPrefix } from '../utils/task.utils.js';
 import { assertCanManage } from '../utils/task-roles.js';
 import { EntryTooLargeError, limited } from '../utils/zip.js';
+import { TaskProgressService } from './task-progress.service.js';
 
 /** An import's fields and its uploaded file; `stream.truncated` is set when it went over the upload limit. */
 export interface ImportUpload extends TaskImportCreate {
@@ -66,6 +68,7 @@ export class TaskService {
     private readonly spaceLookupRepository: SpaceLookupRepository,
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly translateService: TranslateService,
+    private readonly taskProgressService: TaskProgressService,
   ) {}
 
   /** The space's tasks of the kinds `user` may start (a filter on another kind finds none). */
@@ -77,6 +80,22 @@ export class TaskService {
       this.taskRepository.findAllCount(spaceId, kinds, query),
     ]);
     return toPage(rows, total, query, toTask);
+  }
+
+  /**
+   * The space's queued and running tasks (of the query's kinds), oldest first, with the running one's latest progress.
+   * Every role sees them, whatever kinds it may start, so a screen tells everyone what is about to change its data.
+   * Without the file: reading it stays with the roles of its kind (`download`).
+   */
+  async findActive(spaceId: string, query: TaskActiveQuery): Promise<Task[]> {
+    await this.requireSpace(spaceId);
+    const rows = await this.taskRepository.findActive(spaceId, query.kind);
+    return rows.map(row => {
+      const task = toTask(row);
+      delete task.file;
+      const progress = this.taskProgressService.findOne(row.id);
+      return progress ? { ...task, progress } : task;
+    });
   }
 
   /** 404 for a task of a kind `user` may not start, as for an unknown one. */

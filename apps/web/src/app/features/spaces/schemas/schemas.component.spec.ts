@@ -7,8 +7,9 @@ import { Schema, SchemaComponent, SchemaFieldKind, SchemaType } from '@localess/
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { SpaceStore } from '@core/stores/space.store';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { SchemasComponent } from './schemas.component';
@@ -33,6 +34,7 @@ describe('SchemasComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const watch = vi.fn();
 
     TestBed.overrideComponent(SchemasComponent, {
       set: { template: '<table llTableSort></table><ll-paginator [length]="0" />' },
@@ -41,9 +43,13 @@ describe('SchemasComponent', () => {
       providers: [
         { provide: SchemaService, useValue: { create, rename, findUsage, remove: deleteSchema } },
         { provide: SpaceStore, useValue: { schemas: signal(schemas), schemasLoaded: signal(true) } },
-        { provide: TaskService, useValue: { createSchemaImport, createSchemaExport } },
+        {
+          provide: TaskService,
+          useValue: { createSchemaImport, createSchemaExport, findActive: () => of([]), spaceProgress: () => EMPTY },
+        },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
+        { provide: TaskNotifierService, useValue: { watch } },
         { provide: Router, useValue: { navigate } },
       ],
     });
@@ -52,6 +58,7 @@ describe('SchemasComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      watch,
       create,
       rename,
       findUsage,
@@ -238,25 +245,25 @@ describe('SchemasComponent', () => {
     expect(deleteSchema).not.toHaveBeenCalled();
   });
 
-  it('openImportDialog() creates the import task and follows it', () => {
-    const { component, open, createSchemaImport } = setup();
+  it('openImportDialog() creates the import task and watches it', () => {
+    const { component, open, createSchemaImport, watch } = setup();
     const file = new File(['data'], 'schemas.localess.zip');
     open.mockReturnValue({ closed$: of({ file }) });
 
     component.openImportDialog();
 
     expect(createSchemaImport).toHaveBeenCalledWith('space-1', file);
-    expect(open.mock.calls[1][1].context).toEqual({ spaceId: 'space-1', task: { id: 't1' }, title: 'Schemas Import' });
+    expect(watch).toHaveBeenCalledWith('space-1', { id: 't1' });
   });
 
-  it('openExportDialog() creates the export task and follows it', () => {
-    const { component, open, createSchemaExport } = setup();
+  it('openExportDialog() creates the export task and watches it', () => {
+    const { component, open, createSchemaExport, watch } = setup();
     open.mockReturnValue({ closed$: of({}) });
 
     component.openExportDialog();
 
     expect(createSchemaExport).toHaveBeenCalledWith('space-1');
-    expect(open.mock.calls[1][1].context).toMatchObject({ title: 'Schemas Export' });
+    expect(watch).toHaveBeenCalledWith('space-1', { id: 't1' });
   });
 
   describe('inUseSchema', () => {

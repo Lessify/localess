@@ -1,4 +1,5 @@
 <div class="flex flex-wrap items-center justify-end gap-2 p-2">
+  <ll-active-tasks [spaceId]="spaceId()" [kinds]="assetTaskKinds" />
   @if (fileUploadQueue().length > 0) {
     <span hlmBadge class="h-6">
       <hlm-spinner />

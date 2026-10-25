@@ -17,10 +17,11 @@ import { Router } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { SchemaService } from '@core/services/schema.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { FilterPredicateUtils } from '@core/utils/filter-predicate-utils.service';
-import { Schema, SchemaCreate, SchemaFieldKind, SchemaType } from '@localess/shared';
+import { Schema, SchemaCreate, SchemaFieldKind, SchemaType, TaskKind } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -33,6 +34,7 @@ import {
   lucideUploadCloud,
   lucideWorkflow,
 } from '@ng-icons/lucide';
+import { ActiveTasksComponent } from '@shared/components/active-tasks';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
   ConfirmationDialogComponent,
@@ -48,7 +50,6 @@ import {
 } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports, Paginator } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSort } from '@shared/components/table/table.imports';
-import { openTaskProgressDialog } from '@shared/components/task-progress-dialog';
 import { schemaTypeDescriptions, sortSchema } from '@shared/models/schema.model';
 import { HasRolePipe } from '@shared/pipes/has-role.pipe';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
@@ -87,6 +88,7 @@ import { describeSchemaUsage } from './shared/schema-usage';
     HlmProgressImports,
     HlmTooltipImports,
     HlmBadgeImports,
+    ActiveTasksComponent,
   ],
   providers: [
     provideIcons({
@@ -106,6 +108,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
   private readonly schemaService = inject(SchemaService);
   private readonly taskService = inject(TaskService);
+  private readonly taskNotifier = inject(TaskNotifierService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -116,6 +119,9 @@ export class SchemasComponent implements OnInit, AfterViewInit {
 
   // Inputs
   spaceId = input.required<string>();
+
+  /** The tasks that change (or read) the schemas shown: told in the action bar while queued or running. */
+  readonly schemaTaskKinds: readonly TaskKind[] = [TaskKind.SCHEMA_IMPORT, TaskKind.SCHEMA_EXPORT];
 
   /** A schema type's name, icon and description (typed key: the table and the select hand over untyped values). */
   protected readonly schemaTypeDescription = (type: SchemaType) => schemaTypeDescriptions[type];
@@ -284,7 +290,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
         switchMap(it => this.taskService.createSchemaImport(this.spaceId(), it.file)),
       )
       .subscribe({
-        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Schemas Import' }),
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
         error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Schemas can not be imported.')),
       });
   }
@@ -298,7 +304,7 @@ export class SchemasComponent implements OnInit, AfterViewInit {
         switchMap(() => this.taskService.createSchemaExport(this.spaceId())),
       )
       .subscribe({
-        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Schemas Export' }),
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
         error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Schemas can not be exported.')),
       });
   }

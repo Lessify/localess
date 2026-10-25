@@ -32,19 +32,25 @@ describe('canReceive', () => {
     }
   });
 
-  it("gives a task's events (and its logs' and progress) to the roles that may start its kind", () => {
-    const task = (entity: string, kind?: string): ChangeEvent => ({ spaceId: S, entity, id: 't', op: 'progress', kind });
-    for (const entity of ['tasks', 'task_logs']) {
-      expect(canReceive(as('DEVELOPER'), task(entity, 'SCHEMA_IMPORT'))).toBe(true);
-      expect(canReceive(as('EDITOR'), task(entity, 'SCHEMA_IMPORT'))).toBe(false);
-      expect(canReceive(as('TRANSLATOR'), task(entity, 'SCHEMA_IMPORT'))).toBe(false);
-      expect(canReceive(as('TRANSLATOR'), task(entity, 'TRANSLATION_TRANSLATE'))).toBe(true);
-      expect(canReceive(as('EDITOR'), task(entity, 'TRANSLATION_EXPORT'))).toBe(true);
-      expect(canReceive(as('VIEWER'), task(entity, 'TRANSLATION_TRANSLATE'))).toBe(false);
-      // Without its kind: admins only.
-      expect(canReceive(as('DEVELOPER'), task(entity))).toBe(false);
-      expect(canReceive(as('ADMIN'), task(entity))).toBe(true);
+  it("gives a task's logs' events to the roles that may start its kind", () => {
+    const logs = (kind?: string): ChangeEvent => ({ spaceId: S, entity: 'task_logs', id: 't', op: 'created', kind });
+    expect(canReceive(as('DEVELOPER'), logs('SCHEMA_IMPORT'))).toBe(true);
+    expect(canReceive(as('EDITOR'), logs('SCHEMA_IMPORT'))).toBe(false);
+    expect(canReceive(as('TRANSLATOR'), logs('SCHEMA_IMPORT'))).toBe(false);
+    expect(canReceive(as('TRANSLATOR'), logs('TRANSLATION_TRANSLATE'))).toBe(true);
+    expect(canReceive(as('EDITOR'), logs('TRANSLATION_EXPORT'))).toBe(true);
+    expect(canReceive(as('VIEWER'), logs('TRANSLATION_TRANSLATE'))).toBe(false);
+    // Without its kind: admins only.
+    expect(canReceive(as('DEVELOPER'), logs())).toBe(false);
+    expect(canReceive(as('ADMIN'), logs())).toBe(true);
+  });
+
+  it("gives a task's own events (its row, its progress) to every role, so every screen can tell it runs", () => {
+    for (const op of ['updated', 'progress'] as const) {
+      const task: ChangeEvent = { spaceId: S, entity: 'tasks', id: 't', op, kind: 'TRANSLATION_IMPORT' };
+      for (const role of ['VIEWER', 'TRANSLATOR', 'EDITOR'] as const) expect(canReceive(as(role), task), `${op} for ${role}`).toBe(true);
     }
+    expect(canReceive(as(null), { spaceId: S, entity: 'tasks', id: 't', op: 'updated' })).toBe(false);
   });
 
   it('gives user events to admins, and to a user about themselves', () => {

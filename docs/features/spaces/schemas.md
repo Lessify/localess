@@ -39,6 +39,8 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 **Injected services:** `SchemaService`, `TaskService`, `HlmDialogService`, `NotificationService`, `Router`, `SpaceStore`
 
 **Key behaviour:**
+
+- The action bar starts with `ll-active-tasks` for Schema Import and Schema Export: while one is queued or running, everyone on the screen sees it, its progress and what it may overwrite (see [Tasks → Active tasks on a screen](tasks.md#active-tasks-on-a-screen)). Nothing is blocked.
 - `schemas` — every schema of the space from `SpaceStore.schemas()` (live; the store loads them for the editors anyway), sorted; `isLoading` until the store has them (`schemasLoaded`). Not paged on the server: see [Pagination](../../server/pagination.md#not-paged-and-why)
 - `labelOptions` / `filters` — computed `FilterOption[]`/`FilterDef[]` fed to `<ll-filter-toolbar [filters]="filters()">`
 - `onFilterChange(value)` — receives the toolbar's `FilterToolbarValue` (search on Enter or the Search button), updates `selectedLabels` (used to highlight matched label badges in the table) and `dataSource.filter`
@@ -47,7 +49,7 @@ Displays all schemas in an `ll-table` (see [Table](../../components/table.md)), 
 - `openAddDialog()` — create a new schema (pick type: ROOT / NODE / ENUM)
 - `openEditIdDialog(event, schema)` — takes the row-action `MouseEvent` (default prevented, propagation stopped so the row click doesn't fire); rename schema ID: changes the schema's `name` (shown as its ID), addressed by its UUID `id`. Before opening the dialog it reads `GET …/schemas/:schemaId/usage` (`{ fields, contents }`, see [Schemas](../../roadmap/database-structure.md#schemas)); while the schema is in use the dialog lists where (`describeSchemaUsage`, `shared/schema-usage.ts`) and Save stays disabled. A failed read opens the dialog without it; the server refuses a rename of a schema in use with a 409, whose message the error toast shows
 - `openDeleteDialog(event, schema)` — same `MouseEvent` handling; reads the usage first: in use → a `ConfirmationDialog` with `confirmable: false` (only Close) listing where; unused → the usual destructive confirmation. A 409 from the server shows its message in the error toast
-- `openExportDialog()` / `openImportDialog()` — developers only: create a `SCHEMA_EXPORT` / `SCHEMA_IMPORT` task, followed in the progress dialog ([Tasks](tasks.md)). The file is a `.localess.zip` of every schema by name, without database ids (relations between schemas are names, so they hold in any space); the import adds missing schemas and updates the others, checking the whole set first (all or nothing), and still reads an old `.lls.zip`
+- `openExportDialog()` / `openImportDialog()` — developers only: create a `SCHEMA_EXPORT` / `SCHEMA_IMPORT` task, shown in the action bar (`ll-active-tasks`) while it runs, a toast when it ends ([Tasks](tasks.md)). The file is a `.localess.zip` of every schema by name, without database ids (relations between schemas are names, so they hold in any space); the import adds missing schemas and updates the others, checking the whole set first (all or nothing), and still reads an old `.lls.zip`
 
 ## EditCompComponent (routed)
 

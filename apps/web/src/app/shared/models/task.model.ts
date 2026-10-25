@@ -47,3 +47,13 @@ export function formatTaskParams(params: TaskParams | undefined): string | undef
       return undefined;
   }
 }
+
+/** What a queued or running task of each kind means for the screen showing its data (`ll-active-tasks`). */
+export const TASK_KIND_WARNINGS: Record<TaskKind, string> = {
+  [TaskKind.ASSET_REGEN_METADATA]: 'May overwrite asset metadata changed while it runs.',
+  [TaskKind.SCHEMA_EXPORT]: 'Changes made now may not be in the exported file.',
+  [TaskKind.SCHEMA_IMPORT]: 'May overwrite schemas changed while it runs.',
+  [TaskKind.TRANSLATION_EXPORT]: 'Changes made now may not be in the exported file.',
+  [TaskKind.TRANSLATION_IMPORT]: 'May overwrite translations changed while it runs.',
+  [TaskKind.TRANSLATION_TRANSLATE]: 'May overwrite translations changed while it runs.',
+};

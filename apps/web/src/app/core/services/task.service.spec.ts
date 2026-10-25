@@ -5,7 +5,7 @@ import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.servic
 import { firstValueFrom, Observable, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Task } from '@localess/shared';
+import { Task, TaskKind } from '@localess/shared';
 import { TaskService } from './task.service';
 
 const BASE = '/api/app/spaces/space-1/tasks';
@@ -35,6 +35,13 @@ describe('TaskService', () => {
     const page = { items: [{ id: 't1' }], page: 1, size: 20, total: 21 };
     http.expectOne(`${BASE}?page=1&size=20&status=ERROR&status=FINISHED`).flush(page);
     expect(await result).toEqual(page);
+  });
+
+  it('findActive() reads the queued and running tasks of the kinds given', async () => {
+    const service = setup();
+    const result = firstValueFrom(service.findActive('space-1', [TaskKind.TRANSLATION_IMPORT, TaskKind.TRANSLATION_TRANSLATE]));
+    http.expectOne(`${BASE}/active?kind=TRANSLATION_IMPORT&kind=TRANSLATION_TRANSLATE`).flush([{ id: 't1' }]);
+    expect(await result).toEqual([{ id: 't1' }]);
   });
 
   it('findOne() reads one task', async () => {

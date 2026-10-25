@@ -5,12 +5,13 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { Locale, Space, Token, TokenType, Translation } from '@localess/shared';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TranslationsComponent } from './translations.component';
@@ -58,6 +59,7 @@ describe('TranslationsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const watch = vi.fn();
 
     TestBed.overrideComponent(TranslationsComponent, { set: { template: '<div></div>' } });
     TestBed.configureTestingModule({
@@ -66,8 +68,18 @@ describe('TranslationsComponent', () => {
           provide: TranslationService,
           useValue: { findLabels, findOne, isKeyTaken, create, publish, updateLocale, exportLocaleUrl },
         },
-        { provide: TaskService, useValue: { createTranslationImport, createTranslationExport, createTranslationTranslate } },
+        {
+          provide: TaskService,
+          useValue: {
+            createTranslationImport,
+            createTranslationExport,
+            createTranslationTranslate,
+            findActive: () => of([]),
+            spaceProgress: () => EMPTY,
+          },
+        },
         { provide: HlmDialogService, useValue: { open } },
+        { provide: TaskNotifierService, useValue: { watch } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: TranslateService, useValue: { translate } },
         { provide: SpaceTokenService, useValue: { firstValue } },
@@ -86,6 +98,7 @@ describe('TranslationsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      watch,
       findLabels,
       findOne,
       isKeyTaken,
@@ -272,19 +285,16 @@ describe('TranslationsComponent', () => {
     });
   });
 
-  /** The progress dialog opened for a created task (the second dialog.open call). */
-  const progressContext = (open: ReturnType<typeof vi.fn>) => open.mock.calls[1]?.[1]?.context;
-
   describe('openImportDialog', () => {
-    it('imports a key-value JSON into its locale, and follows the task', () => {
-      const { component, open, createTranslationImport } = setup();
+    it('imports a key-value JSON into its locale, and watches the task', () => {
+      const { component, open, createTranslationImport, watch } = setup();
       const file = new File(['data'], 'de.json');
       open.mockReturnValue({ closed$: of({ locale: 'de', file }) });
 
       component.openImportDialog([en, de]);
 
       expect(createTranslationImport).toHaveBeenCalledWith('space-1', file, 'de');
-      expect(progressContext(open)).toEqual({ spaceId: 'space-1', task: { id: 'task1' }, title: 'Translations Import' });
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 'task1' });
     });
 
     it('imports a Localess file without a locale', () => {
@@ -321,24 +331,24 @@ describe('TranslationsComponent', () => {
       expect(createTranslationExport).not.toHaveBeenCalled();
     });
 
-    it('exports all translations as a task, and follows it', () => {
-      const { component, open, createTranslationExport } = setup();
+    it('exports all translations as a task, and watches it', () => {
+      const { component, open, createTranslationExport, watch } = setup();
       open.mockReturnValue({ closed$: of({ kind: 'FULL' }) });
 
       component.openExportDialog([en, de]);
 
       expect(createTranslationExport).toHaveBeenCalledWith('space-1');
-      expect(progressContext(open)).toMatchObject({ title: 'Translations Export' });
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 'task1' });
     });
   });
 
   describe('openTranslateLocaleDialog', () => {
     function run(result: unknown) {
-      const { component, open, createTranslationTranslate, error } = setup();
+      const { component, open, createTranslationTranslate, error, watch } = setup();
       createTranslationTranslate.mockReturnValue(result);
       open.mockReturnValue({ closed$: of({ sourceLocale: 'en', targetLocale: 'de', overwrite: true }) });
       component.openTranslateLocaleDialog([en, de]);
-      return { createTranslationTranslate, error, open };
+      return { createTranslationTranslate, error, open, watch };
     }
 
     // The task writes every key at once, so the dialog has to say it saves; the column on show is the likely target.
@@ -352,10 +362,10 @@ describe('TranslationsComponent', () => {
       expect(open.mock.calls[0][1].context).toMatchObject({ mode: 'save', locales: [en, de], selectedLocale: 'de' });
     });
 
-    it('starts a translate-locale task and follows it', () => {
-      const { createTranslationTranslate, open } = run(of({ id: 'task1' }));
+    it('starts a translate-locale task and watches it', () => {
+      const { createTranslationTranslate, watch } = run(of({ id: 'task1' }));
       expect(createTranslationTranslate).toHaveBeenCalledWith('space-1', { sourceLocale: 'en', targetLocale: 'de', overwrite: true });
-      expect(progressContext(open)).toMatchObject({ title: 'Locale Translation' });
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 'task1' });
     });
 
     it('explains that translation is not configured on a 412', () => {

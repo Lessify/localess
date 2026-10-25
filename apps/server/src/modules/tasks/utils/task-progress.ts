@@ -1,8 +1,9 @@
 import type { TaskProgress } from '@localess/shared';
 
 /**
- * A running task's progress, written through `write` at most once per `intervalMs` (each write is a row update and a
- * change event): a new step is written at once, and `flush()` writes the last value if it was held back.
+ * A running task's progress, written through `write` at most once per `intervalMs` (each write is a change event, not
+ * stored: `TaskProgressService` keeps the last one in memory): a new step is written at once, and `flush()` writes the
+ * last value if it was held back.
  */
 export class TaskProgressReporter {
   private lastWriteAt?: number;

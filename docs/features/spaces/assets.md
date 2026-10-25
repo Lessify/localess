@@ -32,6 +32,8 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 **Injected services:** `AssetService`, `HlmDialogService`, `TaskService`, `UnsplashService`, `NotificationService`, `SpaceStore`, `LocalSettingsStore`
 
 **Key behaviour:**
+
+- The action bar starts with `ll-active-tasks` for Regenerate Asset Metadata: while it is queued or running, everyone on the screen sees it, its progress and that it may overwrite metadata changed meanwhile (see [Tasks → Active tasks on a screen](tasks.md#active-tasks-on-a-screen)). Nothing is blocked.
 - One page of the current folder (`SpaceStore.assetFolderId`, `null` at the root), paged, sorted and searched on the
   server (`AssetService.findAll()`, `GET …/assets`, live: it refetches on `assets` change events), in both layouts.
   Its query is a `FolderList` (`@core/utils/folder-list.ts`, the folder read from the store, so opening one sends one
@@ -54,7 +56,7 @@ File/folder browser driven by `SpaceStore.assetFolderId` (`null`: the root). Eve
 - `openEditFolderDialog(asset)` — rename folder
 - `openDeleteDialog(asset)` — delete file or folder (with cascade for folders, done by the server: the rows go in the transaction, which queues their stored files and renditions in `storage_deletions`; the storage sweeper deletes them right after the commit and retries if storage fails — see [Storage deletions](../../roadmap/database-structure.md#storage-deletions)). Before asking, it reads `GET …/assets/:assetId/usage` (`{ contents }`: how many contents' draft data holds `{ kind: 'ASSET', uri }` for the file, or any file under the folder) and, when some do, says "It is used by N contents, which will show it as missing." Deleting stays allowed; a failed count just leaves the warning out
 - `openMoveDialog(asset)` — moves a file or a folder (with everything under it) into another folder (`AssetService.move()`: `PATCH /api/app/spaces/:s/assets/:assetId { parentId }`, `null`: the root; the same route renames, as for contents): one row on the server. The dialog is a folder tree (`ll-tree` with `selectGroups`, as the Contents Move dialog): the root and every folder from `SpaceStore.assetFolders()`, the path to where the asset is open and marked "(current)" (not a target); for a folder, itself and everything under it are left out (400 "A folder cannot be moved into itself" on the server). The filter matches a folder's name or path and keeps its parents
-- `openRegenerateMetadataDialog()` — admins only: confirms, then creates an `ASSET_REGEN_METADATA` Task (`TaskService.createAssetRegenerateMetadata()`) that reads every file's metadata again, followed in the progress dialog ([Tasks](tasks.md))
+- `openRegenerateMetadataDialog()` — admins only: confirms, then creates an `ASSET_REGEN_METADATA` Task (`TaskService.createAssetRegenerateMetadata()`) that reads every file's metadata again, shown in the action bar (`ll-active-tasks`) while it runs, a toast when it ends ([Tasks](tasks.md))
 - `onDownload(asset)` — opens the asset `/download` route to force a browser download
 - `openUnsplashDialog()` — Unsplash integration, shown only when `UnsplashService.enabled()` (the runtime `plugins.unsplash` flag from `GET /api/config`, true when the server has `UNSPLASH_API_KEY`) — opens `UnsplashAssetsSelectDialogComponent`. The `GET /api/app/plugins/unsplash/{search,random}` endpoints it uses require `ASSET_CREATE`, because they spend the operator's Unsplash quota. `perPage` is capped at 30, Unsplash's own maximum (`apps/server/src/modules/plugins/unsplash-paging.ts`)
 

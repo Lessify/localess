@@ -13,6 +13,12 @@ export const zTaskPageable = zPageable(TASK_SORT_FIELDS, 'createdAt', 'desc').ex
 });
 export type TaskPageable = z.infer<typeof zTaskPageable>;
 
+/** `GET /api/app/spaces/:spaceId/tasks/active`: the kinds a screen cares about, repeated for several; every kind without. */
+export const zTaskActiveQuery = z.object({
+  kind: zMultiValue(Object.values(TaskKind) as [TaskKind, ...TaskKind[]]).optional(),
+});
+export type TaskActiveQuery = z.infer<typeof zTaskActiveQuery>;
+
 /** A translate-locale task's input (`TranslationTranslateParams`). */
 export const zTranslationTranslateParams = z.strictObject({
   type: z.literal('translation-translate'),

@@ -6,7 +6,9 @@
 
 The long jobs of a space, run in the background by the server's task worker, and their history: Translations and Schemas import and export, Translate Locale (machine translation of a whole locale), and Regenerate Asset Metadata. The rule for what is a task: **read-only and small → a direct download; anything that writes, or uses the Localess file format → a task.** So exporting one locale as key-value JSON is not a task (Translations downloads it at once).
 
-Whoever starts a task follows it in a **progress dialog** (`shared/components/task-progress-dialog`) and never has to visit this page: queued, running (its step and a bar), then done (an export downloads) or failed (the reason and the problems, read from the task's logs). **Continue in background** closes the dialog; when the task ends, a notification (`TaskNotifierService`) tells the user who started it, wherever they are in the app, with **Download** or **View**. This page is the history and the place to download again.
+Whoever starts a task never has to visit this page. Starting it says "<kind> started" (`TaskNotifierService.watch`); the screen's action bar shows it queued, then running with its step and a bar (`ll-active-tasks`, below); when it ends, a toast tells the user who started it, wherever they are in the app: "<kind> finished" with **Download** (an export: nothing downloads by itself) or **View**, or "<kind> failed" with **View** (the task page has the reason and the problems, from its logs). This page is the history and the place to download again.
+
+Everyone else on a screen whose data a task changes (or reads) sees it in the **action bar** while it is queued or running: `ll-active-tasks` (`shared/components/active-tasks`), see [Active tasks on a screen](#active-tasks-on-a-screen).
 
 ## Route
 
@@ -22,7 +24,7 @@ apps/web/src/app/features/spaces/tasks/
   tasks.component.ts/html/scss
   task-kinds.ts                      ← the kinds each role may start (the web's copy of the server's task-roles.ts)
   task-detail/                       ← per-task detail: status, who started it, input, file, waited / ran, logs
-apps/web/src/app/shared/components/task-progress-dialog/   ← the dialog that follows a task; openTaskProgressDialog()
+apps/web/src/app/shared/components/active-tasks/           ← ll-active-tasks: the queued and running tasks in a screen's action bar
 apps/web/src/app/core/services/task-notifier.service.ts    ← "<kind> finished / failed" for the user who started it
 apps/web/src/app/shared/models/task.model.ts                ← kind labels, formatTaskResult, formatTaskProgress
 ```
@@ -63,7 +65,7 @@ One container for every export, `.localess.zip`: `manifest.json` (`format: "loca
 ## How a task runs
 
 - **The queue** is the `tasks` table: the worker claims the oldest `QUEUED` task of a space with **no task in progress** (`FOR UPDATE SKIP LOCKED`; a partial unique index on `tasks (space_id) WHERE status = 'IN_PROGRESS'` stops two instances racing). So a space never runs two tasks at once (an export never reads half an import); other spaces go ahead. An instance runs `LOCALESS_TASK_CONCURRENCY` tasks at once (default 1: imports hold their entries in memory).
-- **Progress** (`{ step, done, total? }`) is **published, not stored**: a `tasks` change event with `op: 'progress'`, at most once a second (imports `Reading file` → `Checking` → `Writing`, exports `Writing`, `Regenerating`, `Translating`). Live queries do not read again on it; the dialog and the list show it.
+- **Progress** (`{ step, done, total? }`) is **published, not stored**: a `tasks` change event with `op: 'progress'`, at most once a second (imports `Reading file` → `Checking` → `Writing`, exports `Writing`, `Regenerating`, `Translating`). Live queries do not read again on it; the dialog, the list and `ll-active-tasks` show it. Every server instance keeps each running task's **latest progress in memory** (`TaskProgressService`, fed by the events it hears through `LISTEN`; dropped on the task's next `updated` or `deleted` event), so `GET …/tasks/active` answers it to a screen opened mid-task. An instance that just started knows a task's progress from its next event on.
 - **Everything else a task has to say is in its logs:** its counts (`INFO`), why it failed (`ERROR`), its problems (`WARN`, at most 100, the summary giving the total). The task itself only says `FINISHED` or `ERROR`.
 - **All or nothing:** an import checks every line first; any problem (an invalid line, a new key outside the key rule, a schema breaking a cross-schema rule) fails it, writing nothing. It then writes in one transaction. Translate Locale writes its values in one transaction at the end. Nothing is ever deleted.
 - **Who started it** (`createdBy`), kept as long as that user exists.
@@ -71,7 +73,18 @@ One container for every export, `.localess.zip`: `manifest.json` (`format: "loca
 
 ## Roles
 
-Each role sees **the kinds it can start** (`apps/server/src/modules/tasks/utils/task-roles.ts`, the table above): the list answers only those kinds (a filter on another kind gives an empty page), and another kind's task, logs or file answer 404. A translator sees only Translate Locale tasks; an editor the translation tasks; a developer also the schema tasks; an admin every kind. The Tasks page and its sidebar entry are open to `TRANSLATORS`. Every `tasks` and `task_logs` change event carries the task's `kind`, and reaches only the roles that may start that kind (`modules/events/utils/event-access.ts`).
+Each role sees **the kinds it can start** (`apps/server/src/modules/tasks/utils/task-roles.ts`, the table above): the list answers only those kinds (a filter on another kind gives an empty page), and another kind's task, logs or file answer 404. A translator sees only Translate Locale tasks; an editor the translation tasks; a developer also the schema tasks; an admin every kind. The Tasks page and its sidebar entry are open to `TRANSLATORS`. Every `tasks` and `task_logs` change event carries the task's `kind`; a `task_logs` event reaches only the roles that may start that kind (`modules/events/utils/event-access.ts`).
+
+**The exception: what is active.** `GET …/tasks/active` and the `tasks` change events (its row, its progress) reach **every role**, whatever kinds it may start: a translator must see that an editor's import is about to overwrite the values in front of them. They carry no file (the active list leaves it out; the events never had one), so the task itself, its logs and its file stay with the roles of its kind; `ll-active-tasks` links to the task only for those.
+
+## Active tasks on a screen
+
+`ll-active-tasks` (`apps/web/src/app/shared/components/active-tasks/`) tells everyone on a screen that a task is queued or running on its data. It blocks nothing: the task may not touch what the user edits.
+
+- **Use:** `<ll-active-tasks [spaceId]="space.id" [kinds]="…" />` in the screen's action bar, with the kinds that change or read what the screen shows. Translations: `TRANSLATION_IMPORT`, `TRANSLATION_EXPORT`, `TRANSLATION_TRANSLATE`; Schemas: `SCHEMA_IMPORT`, `SCHEMA_EXPORT`; Assets: `ASSET_REGEN_METADATA`. A new task kind gets a label (`TASK_KIND_LABELS`), a warning (`TASK_KIND_WARNINGS`) and the screens whose data it touches.
+- **The pill:** hidden while nothing is active. Else the running task (else the first queued): a spinner, its name, its progress ("Writing 1,200 / 5,000", "Running" before the first report) and a thin bar; "+N queued" for the others.
+- **The popover:** each active task, oldest first: name, status, its input ("en → de"), the bar, who started it and when, what it means for the data (`TASK_KIND_WARNINGS`: an import or Translate Locale "May overwrite … changed while it runs", in amber; an export "Changes made now may not be in the exported file", muted), and **View task** for the roles that may open its kind.
+- **Data:** `TaskService.findActive(spaceId, kinds)` (live: read again on every `tasks` change event), with the space's `progress` events laid over the progress the server answered.
 
 ## Task Status Flow
 

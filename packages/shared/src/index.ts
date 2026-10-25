@@ -54,7 +54,7 @@ export type {
   SpaceTokenUpdate,
   SpaceUpdate,
 } from './models/space.zod.js';
-export type { TaskCreate, TaskImportCreate, TaskPageable } from './models/task.zod.js';
+export type { TaskActiveQuery, TaskCreate, TaskImportCreate, TaskPageable } from './models/task.zod.js';
 export type {
   TranslationCreate,
   TranslationLocaleUpdate,

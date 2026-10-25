@@ -1,5 +1,6 @@
 @if (selectedSpace(); as space) {
   <div class="flex shrink-0 items-center justify-end gap-2 p-2">
+    <ll-active-tasks [spaceId]="space.id" [kinds]="translationTaskKinds" />
     <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.translationLayout()">
       <button
         hlmToggleGroupItem

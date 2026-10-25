@@ -24,6 +24,17 @@ export class TaskService {
     return liveQueryWith(this.events, { spaceId, entities: ['tasks'] }, () => this.http.get<Page<Task>>(this.base(spaceId), { params }));
   }
 
+  /**
+   * The space's queued and running tasks of `kinds`, oldest first, with the running one's latest progress: every role
+   * reads them (no file). Live: read again when a task is created, claimed, ends or is deleted.
+   */
+  findActive(spaceId: string, kinds: readonly TaskKind[]): Observable<Task[]> {
+    const params = new HttpParams({ fromObject: { kind: [...kinds] } });
+    return liveQueryWith(this.events, { spaceId, entities: ['tasks'] }, () =>
+      this.http.get<Task[]>(`${this.base(spaceId)}/active`, { params }),
+    );
+  }
+
   findOne(spaceId: string, id: string): Observable<Task> {
     return liveQueryWith(this.events, { spaceId, entities: ['tasks'], id }, () => this.http.get<Task>(`${this.base(spaceId)}/${id}`));
   }

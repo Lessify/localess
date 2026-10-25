@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { UnsplashService } from '@core/services/unsplash.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
@@ -13,7 +14,7 @@ import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { pagedResource } from '@core/utils/paged-resource';
 import { uploadErrorMessage } from '@core/utils/upload-error';
-import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
+import { Asset, AssetFile, AssetFolder, AssetKind, TaskKind } from '@localess/shared';
 import { UnsplashPhoto } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
@@ -42,6 +43,7 @@ import {
   lucideUploadCloud,
 } from '@ng-icons/lucide';
 import { tablerBrandUnsplash } from '@ng-icons/tabler-icons';
+import { ActiveTasksComponent } from '@shared/components/active-tasks';
 import { AssetCardComponent } from '@shared/components/asset-card/asset-card.component';
 import {
   CONFIRMATION_DIALOG_CONTENT_CLASS,
@@ -55,7 +57,6 @@ import { ImagePreviewDialogComponent } from '@shared/components/image-preview-di
 import { ImagePreviewDialogContext } from '@shared/components/image-preview-dialog/image-preview-dialog.model';
 import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
-import { openTaskProgressDialog } from '@shared/components/task-progress-dialog';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
@@ -116,6 +117,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     HlmBreadcrumbImports,
     HlmProgressImports,
     HlmSpinnerImports,
+    ActiveTasksComponent,
   ],
   providers: [
     provideIcons({
@@ -149,6 +151,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
 export class AssetsComponent implements OnInit {
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
+  private readonly taskNotifier = inject(TaskNotifierService);
   private readonly dialog = inject(HlmDialogService);
   private readonly notificationService = inject(NotificationService);
   private readonly injector = inject(Injector);
@@ -156,6 +159,9 @@ export class AssetsComponent implements OnInit {
 
   // Input
   spaceId = input.required<string>();
+
+  /** The tasks that change the assets shown: told in the action bar while queued or running. */
+  readonly assetTaskKinds: readonly TaskKind[] = [TaskKind.ASSET_REGEN_METADATA];
 
   spaceStore = inject(SpaceStore);
 
@@ -485,7 +491,7 @@ export class AssetsComponent implements OnInit {
         switchMap(() => this.taskService.createAssetRegenerateMetadata(this.spaceId())),
       )
       .subscribe({
-        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Regenerate Metadata' }),
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
         error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Metadata can not be regenerated.')),
       });
   }

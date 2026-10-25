@@ -16,13 +16,14 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NotificationService } from '@core/services/notification.service';
 import { SpaceTokenService } from '@core/services/space-token.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { TranslateService } from '@core/services/translate.service';
 import { TranslationService } from '@core/services/translation.service';
 import { LocalSettingsStore } from '@core/stores/local-settings.store';
 import { SpaceStore } from '@core/stores/space.store';
 import { apiErrorMessage } from '@core/utils/api-error';
 import { translateErrorMessage } from '@core/utils/translate-error';
-import { CONTENT_DEFAULT_LOCALE, Locale, TokenType, Translation, TranslationCreate } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, Locale, TaskKind, TokenType, Translation, TranslationCreate } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
 import {
   lucideCloudDownload,
@@ -37,9 +38,9 @@ import {
   lucideUpload,
   lucideUploadCloud,
 } from '@ng-icons/lucide';
+import { ActiveTasksComponent } from '@shared/components/active-tasks';
 import { DIALOG_WIDTH_SM } from '@shared/components/dialog/dialog-width';
 import { LocaleIconComponent } from '@shared/components/locale-icon';
-import { openTaskProgressDialog } from '@shared/components/task-progress-dialog';
 import {
   TranslateLocaleDialogComponent,
   TranslateLocaleDialogContext,
@@ -89,6 +90,7 @@ import { TranslationListComponent } from './shared/components/translation-list/t
     HlmProgressImports,
     HlmSpinnerImports,
     LocaleIconComponent,
+    ActiveTasksComponent,
   ],
   providers: [
     provideIcons({
@@ -107,7 +109,14 @@ import { TranslationListComponent } from './shared/components/translation-list/t
   ],
 })
 export class TranslationsComponent implements OnInit {
+  /** The tasks that change (or read) the translations shown: told in the action bar while queued or running. */
+  readonly translationTaskKinds: readonly TaskKind[] = [
+    TaskKind.TRANSLATION_IMPORT,
+    TaskKind.TRANSLATION_EXPORT,
+    TaskKind.TRANSLATION_TRANSLATE,
+  ];
   private readonly translationService = inject(TranslationService);
+  private readonly taskNotifier = inject(TaskNotifierService);
   private readonly taskService = inject(TaskService);
   private readonly notificationService = inject(NotificationService);
   private readonly dialog = inject(HlmDialogService);
@@ -311,7 +320,7 @@ export class TranslationsComponent implements OnInit {
         switchMap(it => this.taskService.createTranslationImport(this.spaceId(), it.file, it.locale)),
       )
       .subscribe({
-        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Translations Import' }),
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
         error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Translations can not be imported.')),
       });
   }
@@ -330,7 +339,7 @@ export class TranslationsComponent implements OnInit {
           return;
         }
         this.taskService.createTranslationExport(this.spaceId()).subscribe({
-          next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Translations Export' }),
+          next: task => this.taskNotifier.watch(this.spaceId(), task),
           error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Translations can not be exported.')),
         });
       });
@@ -359,7 +368,7 @@ export class TranslationsComponent implements OnInit {
         ),
       )
       .subscribe({
-        next: task => openTaskProgressDialog(this.dialog, { spaceId: this.spaceId(), task, title: 'Locale Translation' }),
+        next: task => this.taskNotifier.watch(this.spaceId(), task),
         error: (err: unknown) => this.notificationService.error(translateErrorMessage(err, 'Locale Translate failed.')),
       });
   }

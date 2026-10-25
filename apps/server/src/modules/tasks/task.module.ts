@@ -12,6 +12,7 @@ import { ImportFileService } from './services/import-file.service.js';
 import { SchemaTransferService } from './services/schema-transfer.service.js';
 import { TaskService } from './services/task.service.js';
 import { TaskLogService } from './services/task-log.service.js';
+import { TaskProgressService } from './services/task-progress.service.js';
 import { TranslationTransferService } from './services/translation-transfer.service.js';
 import { TranslationTranslateService } from './services/translation-translate.service.js';
 import { TaskRunner } from './workers/task-runner.service.js';
@@ -27,6 +28,7 @@ import { TaskWorker } from './workers/task-worker.service.js';
   providers: [
     TaskService,
     TaskLogService,
+    TaskProgressService,
     ImportFileService,
     AssetTransferService,
     SchemaTransferService,

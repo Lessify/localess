@@ -1,4 +1,5 @@
 <div class="flex items-center justify-end gap-2 p-2">
+  <ll-active-tasks [spaceId]="spaceId()" [kinds]="schemaTaskKinds" />
   @if ('DEVELOPERS' | hasRole | async) {
     <button hlmBtn (click)="openAddDialog()">
       <ng-icon hlm size="sm" name="lucidePlus" />

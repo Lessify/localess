@@ -23,8 +23,10 @@ export function canReceive(user: { id: string; role?: UserRole | null }, event: 
   if (!hasRole(user, ANY_ROLE)) return false;
   // Everyone hears about their own account, so a changed role reaches their UI.
   if (event.entity === 'users' && event.id === user.id) return true;
-  // A task's events (its row, its logs, its progress): the roles that may start its kind, as its reads; no kind: admins.
-  if (event.entity === 'tasks' || event.entity === 'task_logs') {
+  // A task's row and progress: every role, so a screen tells everyone a task is about to change its data (`GET …/tasks/active`).
+  if (event.entity === 'tasks') return true;
+  // A task's logs: the roles that may start its kind, as their reads; no kind: admins.
+  if (event.entity === 'task_logs') {
     const roles = event.kind ? TASK_KIND_ROLES[event.kind as TaskKind] : undefined;
     return hasRole(user, roles ?? ADMINS);
   }

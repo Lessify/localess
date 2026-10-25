@@ -5,10 +5,11 @@ import { Asset, AssetFile, AssetFolder, AssetKind } from '@localess/shared';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
 import { TaskService } from '@core/services/task.service';
+import { TaskNotifierService } from '@core/services/task-notifier.service';
 import { UnsplashService } from '@core/services/unsplash.service';
 import { SpaceStore } from '@core/stores/space.store';
 import { signal } from '@angular/core';
-import { of, Subject, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { type Mock, vi } from 'vitest';
 
 import { AssetsComponent } from './assets.component';
@@ -47,6 +48,7 @@ describe('AssetsComponent', () => {
     const success = vi.fn();
     const error = vi.fn();
     const open = vi.fn();
+    const watch = vi.fn();
     const changeAssetFolder = vi.fn();
     const assetFolderId = signal<string | null>(folderId);
     const assetFolders = signal([
@@ -70,9 +72,10 @@ describe('AssetsComponent', () => {
             findUsage,
           },
         },
-        { provide: TaskService, useValue: { createAssetRegenerateMetadata } },
+        { provide: TaskService, useValue: { createAssetRegenerateMetadata, findActive: () => of([]), spaceProgress: () => EMPTY } },
         { provide: NotificationService, useValue: { success, error } },
         { provide: HlmDialogService, useValue: { open } },
+        { provide: TaskNotifierService, useValue: { watch } },
         { provide: UnsplashService, useValue: { enabled: () => false } },
         { provide: SpaceStore, useValue: { assetFolderId, changeAssetFolder, assetFolders } },
       ],
@@ -82,6 +85,7 @@ describe('AssetsComponent', () => {
     fixture.detectChanges();
     return {
       component: fixture.componentInstance,
+      watch,
       findAll,
       createFile,
       importFile,
@@ -444,14 +448,14 @@ describe('AssetsComponent', () => {
   });
 
   describe('task dialogs', () => {
-    it('openRegenerateMetadataDialog() creates the task when confirmed, and follows it', () => {
-      const { component, open, createAssetRegenerateMetadata } = setup();
+    it('openRegenerateMetadataDialog() creates the task when confirmed, and watches it', () => {
+      const { component, open, createAssetRegenerateMetadata, watch } = setup();
       open.mockReturnValue({ closed$: of(true) });
 
       component.openRegenerateMetadataDialog();
 
       expect(createAssetRegenerateMetadata).toHaveBeenCalledWith('space-1');
-      expect(open.mock.calls[1][1].context).toEqual({ spaceId: 'space-1', task: { id: 't1' }, title: 'Regenerate Metadata' });
+      expect(watch).toHaveBeenCalledWith('space-1', { id: 't1' });
     });
   });
 
