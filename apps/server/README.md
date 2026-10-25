@@ -16,6 +16,7 @@ pnpm test         # vitest (starts a throwaway embedded Postgres)
 pnpm lint         # ESLint, type-aware (eslint.config.js); pnpm lint:fix applies the fixes it can
 pnpm db:generate  # drizzle-kit: SQL migration from src/infra/database/schema.ts changes (commit the output)
 pnpm db:regenerate  # before the first release: rewrite 0000_init.sql + 0001_locales.sql in place, seed kept
+pnpm db:release     # when tagging a release: record the shipped migrations in drizzle/released.json (never edited again)
 pnpm cli db:migrate
 pnpm cli check
 LOCALESS_ADMIN_PASSWORD=… pnpm cli admin:create --email admin@example.com [--name "Admin"]
@@ -34,7 +35,9 @@ drizzle-kit, and `drizzle/0001_locales.sql`, a drizzle custom migration that see
 gets both on its first boot (or `pnpm localess db:migrate`). Until the first release they are regenerated
 in place on a schema change with `pnpm db:regenerate` (`scripts/db-regenerate.mjs`: drizzle-kit writes
 both again and the locales seed is kept as it is), then local `.data` is recreated. After a release,
-schema changes are new migrations. Without `DATABASE_URL` it starts an embedded Postgres in
+schema changes are new migrations: tagging a release runs `pnpm db:release`, which records the shipped migrations
+with a hash of their SQL in `drizzle/released.json`; from then on `released-migrations.test.ts` fails if one is
+edited, removed or reordered, and `db:regenerate` refuses to run. Without `DATABASE_URL` it starts an embedded Postgres in
 `$LOCALESS_DATA_DIR/pgdata`.
 
 ## Layout

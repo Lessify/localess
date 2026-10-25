@@ -35,7 +35,8 @@ the API, not only by the toast.
 | Works without internet access (no GitHub, no fonts) | All external requests aborted in every UI test | ✅ (fixture) |
 | CLI `check`, `admin:create` (password from the environment; the new admin signs in), usage | `node apps/server/dist/cli.js` next to the running server (it attaches to the same embedded Postgres) | ✅ `api/cli` |
 | Docker image boots and serves the app | CI job `e2e-docker`: builds the image, runs it (embedded Postgres), then the smoke suite against it (`E2E_BASE_URL`) | ✅ CI |
-| Upgrade: a database from the previous release migrates and works | Restore a dump of the last release, boot, run smoke | ⬜ |
+| Released migrations stay as they shipped: `pnpm --filter @localess/server db:release` records them (SHA-256 of the SQL) in `drizzle/released.json` when a release is tagged; an edited, removed or reordered one fails the server tests, and `db:regenerate` refuses to run | Server test | ➖ `apps/server/src/infra/database/released-migrations.test.ts` |
+| Upgrade: a database from the previous release migrates and works | Restore a dump of the last release, boot, run smoke (after the first release on Postgres: v4.x is the Firebase version) | ⬜ |
 | External Postgres (`DATABASE_URL`) instead of embedded | CI job `e2e-postgres`: a Postgres 18 service, the whole suite (`E2E_DATABASE_URL`) | ✅ CI |
 
 ### 2. Authentication

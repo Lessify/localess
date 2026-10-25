@@ -20,6 +20,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:regenerate": "node scripts/db-regenerate.mjs",
+    "db:release": "node scripts/db-release.mjs",
     "cli": "node dist/cli.js"
   },
   "dependencies": {
