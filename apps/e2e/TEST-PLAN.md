@@ -155,10 +155,10 @@ stub provider, so translated values are exact (`Hello : en -> de`). Specs in `te
 | Status filter: translated / partially over all locales; untranslated in Romanian, in German | UI | ✅ `translations/search` |
 | Search + label + status combined | UI | ✅ `translations/search` |
 | **Translate** one value into German and Romanian (saved only with Save); from another source; not into itself | UI + API | ✅ `translations/translate` |
-| "Translate Locale" fills only missing values; nothing left; with overwrite replaces all | UI + API | ✅ `translations/translate` |
+| "Translate Locale" fills only missing values; nothing left; with overwrite replaces all (a task: "started", then "finished" toasts) | UI + API | ✅ `translations/translate` |
 | **List view**: key and value per row, opening a key, 120 keys in the virtual list, live updates | UI + API | ✅ `translations/views` |
 | **Tree view**: groups by dots, expand / collapse, selection shown, the first key shown is selected (not one in a closed group), a selected key outside the search stays open with a note, search filters the tree, layout kept after reload | UI | ✅ `translations/views` |
-| Import / export | Translations and Schemas (tasks, the progress dialog), one locale as key-value JSON | ⬜ planned |
+| Import / export | Translations and Schemas (tasks: the action bar's active tasks, the "finished" toast with Download), one locale as key-value JSON | ⬜ planned |
 
 **At scale** (`translations/large-space`): a prepared space from the test template "Translations (large)": English,
 German, French, 10,000 generated keys, nothing published (`support/large-translations.ts`).

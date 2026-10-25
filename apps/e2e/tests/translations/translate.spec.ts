@@ -2,15 +2,24 @@ import type { Page } from '@playwright/test';
 
 import { expectToast } from '../pages/notifications';
 import { TranslationsPage } from '../pages/translations.page';
+import type { AppApi } from '../support/app-api';
 import { expect, test } from '../support/fixtures';
 import { stubTranslation, translationsByKey, withThreeLocales } from '../support/translations';
 
-/** Translate Locale runs as a task: its progress dialog says Done, then is closed (the values are checked through the API). */
-async function expectTaskDone(page: Page): Promise<void> {
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toContainText('Done');
-  await dialog.getByRole('button', { name: 'Done' }).click();
-  await expect(dialog).toBeHidden();
+/**
+ * Translate Locale runs as a task: starting it says so, its end is a toast for the user who started it. A toast of an
+ * earlier run may still be showing, so the API confirms this run's task finished: the `finished`-th one (the values
+ * are checked through the API).
+ */
+async function expectTaskDone(page: Page, api: AppApi, spaceId: string, finished: number): Promise<void> {
+  await expectToast(page, 'Translate Locale started');
+  await expectToast(page, 'Translate Locale finished');
+  await expect
+    .poll(async () => {
+      const tasks = await api.get<{ total: number }>(`/api/app/spaces/${spaceId}/tasks?kind=TRANSLATION_TRANSLATE&status=FINISHED`);
+      return tasks.total;
+    })
+    .toBe(finished);
 }
 
 // Machine translation runs on the server's stub provider (LOCALESS_TRANSLATE_PROVIDER=stub): "Hello" from English to
@@ -97,7 +106,7 @@ test.describe('Translations → machine translation', () => {
 
     // Action 1: English → Romanian, no overwrite. Post-check: the two missing ones filled, the manual one kept.
     await translations.translateLocale('English', 'Romanian', false);
-    await expectTaskDone(page);
+    await expectTaskDone(page, api, space.id, 1);
     all = await translationsByKey(api, space.id);
     expect(all.get('has.romanian')?.locales.ro).toBe('Da (manual)');
     expect(all.get('no.romanian.one')?.locales.ro).toBe(stubTranslation('One', 'en', 'ro'));
@@ -107,12 +116,12 @@ test.describe('Translations → machine translation', () => {
     // Action 2: again, nothing is missing any more. Post-check: nothing changed.
     const afterFirst = await translationsByKey(api, space.id);
     await translations.translateLocale('English', 'Romanian', false);
-    await expectTaskDone(page);
+    await expectTaskDone(page, api, space.id, 2);
     expect(await translationsByKey(api, space.id)).toEqual(afterFirst);
 
     // Action 3: with overwrite. Post-check: all three replaced.
     await translations.translateLocale('English', 'Romanian', true);
-    await expectTaskDone(page);
+    await expectTaskDone(page, api, space.id, 3);
     all = await translationsByKey(api, space.id);
     expect(all.get('has.romanian')?.locales.ro).toBe(stubTranslation('Yes', 'en', 'ro'));
 
