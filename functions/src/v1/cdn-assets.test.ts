@@ -1,6 +1,7 @@
 import type { Express } from 'express';
 import express from 'express';
 import { writeFileSync } from 'fs';
+import { Readable } from 'stream';
 import sharp from 'sharp';
 import request from 'supertest';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -46,7 +47,9 @@ async function jpegFixture(quality = 95): Promise<Buffer> {
       raw[i + 2] = (x * y) % 255;
     }
   }
-  return sharp(raw, { raw: { width, height, channels: 3 } }).jpeg({ quality }).toBuffer();
+  return sharp(raw, { raw: { width, height, channels: 3 } })
+    .jpeg({ quality })
+    .toBuffer();
 }
 
 /** A genuinely multi-frame GIF; frames must differ or the encoder collapses them to one. */
@@ -81,9 +84,16 @@ interface StoredAsset {
   documentMissing?: boolean;
 }
 
-function given(asset: StoredAsset): { download: ReturnType<typeof vi.fn> } {
+function given(asset: StoredAsset): { download: ReturnType<typeof vi.fn>; createReadStream: ReturnType<typeof vi.fn> } {
   const file = {
-    getMetadata: asset.storageMissing ? vi.fn().mockRejectedValue(new Error('not found')) : vi.fn().mockResolvedValue([{ md5Hash: MD5 }]),
+    getMetadata: asset.storageMissing
+      ? vi.fn().mockRejectedValue(new Error('not found'))
+      : vi.fn().mockResolvedValue([{ md5Hash: MD5, size: String(asset.bytes.length) }]),
+    createReadStream: vi
+      .fn()
+      .mockImplementation((options?: { start?: number; end?: number }) =>
+        Readable.from([asset.bytes.subarray(options?.start ?? 0, options?.end === undefined ? undefined : options.end + 1)])
+      ),
     download: vi.fn().mockImplementation(async (options?: { destination: string }) => {
       if (options?.destination) {
         writeFileSync(options.destination, asset.bytes);
@@ -111,6 +121,13 @@ function app(): Express {
 
 const URL = '/api/v1/spaces/s1/assets/a1';
 
+/** supertest only buffers known binary types; this keeps any body as raw bytes. */
+function binaryParser(res: NodeJS.ReadableStream, callback: (err: Error | null, body: Buffer) => void): void {
+  const chunks: Buffer[] = [];
+  res.on('data', (chunk: Buffer) => chunks.push(chunk));
+  res.on('end', () => callback(null, Buffer.concat(chunks)));
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
 });
@@ -136,6 +153,50 @@ describe('asset routes — the passthrough pair', () => {
 
     expect(res.headers['content-disposition']).toContain('attachment');
     expect(res.body.length).toBe(bytes.length);
+  });
+
+  it('/download streams from Storage instead of staging the object in /tmp', async () => {
+    const bytes = Buffer.from('video bytes');
+    const file = given({ bytes, type: 'video/quicktime', extension: '.mov' });
+
+    const res = await request(app()).get(`${URL}/download`).buffer(true).parse(binaryParser);
+
+    expect(res.status).toBe(200);
+    expect(res.headers['accept-ranges']).toBe('bytes');
+    expect(res.headers['content-length']).toBe(String(bytes.length));
+    expect(Buffer.compare(res.body, bytes)).toBe(0);
+    expect(file.download).not.toHaveBeenCalled();
+  });
+
+  it('/download honours a Range request with 206', async () => {
+    const bytes = Buffer.from('0123456789');
+    given({ bytes, type: 'video/quicktime', extension: '.mov' });
+
+    const res = await request(app()).get(`${URL}/download`).set('Range', 'bytes=2-5').buffer(true).parse(binaryParser);
+
+    expect(res.status).toBe(206);
+    expect(res.headers['content-range']).toBe('bytes 2-5/10');
+    expect(res.body.toString()).toBe('2345');
+  });
+
+  it('/download answers an out-of-bounds Range with 416', async () => {
+    given({ bytes: Buffer.from('0123456789'), type: 'video/quicktime', extension: '.mov' });
+
+    const res = await request(app()).get(`${URL}/download`).set('Range', 'bytes=50-');
+
+    expect(res.status).toBe(416);
+    expect(res.headers['content-range']).toBe('bytes */10');
+  });
+
+  it('a bare transform-route URL on a video streams the stored bytes', async () => {
+    const bytes = Buffer.from('video bytes');
+    const file = given({ bytes, type: 'video/mp4', extension: '.mp4' });
+
+    const res = await request(app()).get(URL).buffer(true).parse(binaryParser);
+
+    expect(res.status).toBe(200);
+    expect(Buffer.compare(res.body, bytes)).toBe(0);
+    expect(file.download).not.toHaveBeenCalled();
   });
 
   it.each([['/original'], ['/download']])('%s rejects a transform parameter rather than ignoring it', async route => {
