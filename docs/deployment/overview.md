@@ -89,6 +89,18 @@ you do not.
 
 ---
 
+## Known issues
+
+- **Assets over 31 MiB cannot be downloaded through the API.** Firebase Hosting truncates function
+  responses at 32 MiB while still reporting success, so the asset API refuses larger objects with
+  `413` rather than serve a corrupt file. Uploads are unaffected and the file stays intact in
+  Storage. A self-hosted import from such an install skips those assets with an error — copy them
+  from the bucket by hand (`gsutil cp gs://<bucket>/spaces/<spaceId>/assets/<assetId>/original .`).
+  Lifting the limit needs a signed-URL redirect, which needs a manual IAM grant per install; see
+  [Known limitations](../v1-functions-api.md#known-limitations).
+
+---
+
 ## Two deployment models
 
 This documentation covers **local deploy**: an operator runs the commands from a checkout on their

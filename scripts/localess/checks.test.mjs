@@ -14,7 +14,6 @@ import {
   FIX_LABELS,
   FIX_LOCAL_FILES,
   FIX_ORDER,
-  FIX_SIGNING,
   INFRASTRUCTURE,
   MISSING,
   OK,
@@ -30,7 +29,6 @@ import {
   checkFunctions,
   checkHostingSite,
   checkInvokers,
-  checkUrlSigning,
   checkLabels,
   checkLocalFiles,
   checkRegionAgreement,
@@ -403,7 +401,6 @@ const healthyFacts = {
   deployedFunctions: [{ id: 'setup', entryPoint: 'setup', callableTrigger: {} }],
   expectedGroups: ['setup'],
   invokers: [{ id: 'setup', hasInvoker: true }],
-  signing: { serviceAccount: '1-compute@developer.gserviceaccount.com', granted: true },
   identityConfig: { signIn: { email: { enabled: true } } },
   accounts: { recordsCount: 1, users: [{ email: 'a@example.com', customAttributes: '{"role":"admin"}' }] },
   accountLimit: 500,
@@ -414,7 +411,7 @@ const healthyFacts = {
 
 test('buildReport returns every check, grouped in install order', () => {
   const results = buildReport(healthyFacts);
-  assert.equal(results.length, 15);
+  assert.equal(results.length, 14);
   const groups = [...new Set(results.map(entry => entry.group))];
   assert.deepEqual(groups, [INFRASTRUCTURE, DEPLOYMENT, APPLICATION]);
 });
@@ -433,7 +430,7 @@ test('a healthy project reports no problems and exits 0', () => {
 test('buildReport survives a project where nothing could be read', () => {
   const blind = { projectId: PROJECT, absentLocalFiles: [], localFileCount: 5, expectedGroups: [], regions: {} };
   const results = buildReport(blind);
-  assert.equal(results.length, 15);
+  assert.equal(results.length, 14);
   // Nothing was established, so nothing is reported as broken.
   assert.equal(exitCodeFor(results), 0);
 });
@@ -480,32 +477,9 @@ test('FIX_ORDER covers every repair a check can ask for', () => {
       checkLabels({}),
       checkLocalFiles(['x'], 5),
       checkInvokers([{ id: 'setup', hasInvoker: false }], PROJECT),
-      checkUrlSigning({ serviceAccount: 'sa', granted: false }, PROJECT),
       checkAdminUser({ recordsCount: 0, users: [] }, 500, PROJECT),
     ].map(entry => entry.fix),
   );
   for (const fix of everyFix) assert.ok(FIX_ORDER.includes(fix), `${fix} is absent from FIX_ORDER`);
   assert.equal(everyFix.size, FIX_ORDER.length);
-});
-
-test('checkUrlSigning is ok when the runtime account can sign', () => {
-  assert.equal(checkUrlSigning({ serviceAccount: 'sa', granted: true }, PROJECT).status, OK);
-});
-
-test('checkUrlSigning offers the repair when the role is missing', () => {
-  const entry = checkUrlSigning({ serviceAccount: 'sa', granted: false }, PROJECT);
-  assert.equal(entry.status, MISSING);
-  assert.equal(entry.fix, FIX_SIGNING);
-  assert.match(entry.detail, /31 MiB/);
-});
-
-test('checkUrlSigning points at a functions deploy when the account does not exist yet', () => {
-  const entry = checkUrlSigning({ serviceAccount: 'sa', granted: undefined }, PROJECT);
-  assert.equal(entry.status, UNKNOWN);
-  assert.match(entry.hint, /--only functions/);
-});
-
-test('checkUrlSigning reports unknown when the policy could not be read', () => {
-  assert.equal(checkUrlSigning({ serviceAccount: 'sa', granted: null }, PROJECT).status, UNKNOWN);
-  assert.equal(checkUrlSigning(null, PROJECT).status, UNKNOWN);
 });

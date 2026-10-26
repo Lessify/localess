@@ -23,7 +23,6 @@ steps:
           pubsub.googleapis.com \
           storage.googleapis.com \
           translate.googleapis.com \
-          iamcredentials.googleapis.com \
           --project=$PROJECT_ID
   - name: 'node:24'
     id: 'install-deps'
@@ -78,20 +77,6 @@ steps:
   - name: ghcr.io/lessify/firebase:edge
     id: 'firebase-deploy'
     args: [ 'deploy', '--config=firebase.$PROJECT_ID.json', '--project=$PROJECT_ID', '--only=hosting,functions,storage,firestore,auth', '--force' ]
-  # let the functions sign Storage URLs as themselves: assets over 31 MiB are redirected to one,
-  # because Hosting truncates function responses at 32 MiB (mirrors scripts/localess/url-signing.mjs)
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'grant-url-signing'
-    entrypoint: 'bash'
-    allowFailure: true
-    args:
-      - '-c'
-      - |
-        SA="$PROJECT_NUMBER-compute@developer.gserviceaccount.com"
-        gcloud iam service-accounts add-iam-policy-binding "$$SA" \
-          --member="serviceAccount:$$SA" \
-          --role=roles/iam.serviceAccountTokenCreator \
-          --project=$PROJECT_ID
 options:
   logging: CLOUD_LOGGING_ONLY
 substitutions:

@@ -3,26 +3,14 @@ import { logger } from 'firebase-functions';
 import type { Readable } from 'stream';
 
 /**
- * Largest object served through the function; anything bigger is redirected to Storage.
- *
- * Firebase Hosting buffers a rewritten function response and cuts it off at 32 MiB — a 104 MiB
- * video arrived as its first 32 MiB with a `200` and a matching `Content-Length`, so the browser
- * reported a finished download. Chunked encoding does not help: it gets past Cloud Run's own
- * 32 MiB limit, but not past Hosting's. Kept a little under the limit to leave room for headers.
+ * Largest object this API will serve. Known issue: Firebase Hosting buffers a rewritten function
+ * response and cuts it off at 32 MiB while still answering `200` with a matching
+ * `Content-Length`, so a larger asset would arrive silently truncated — and a client such as the
+ * self-hosted import would store the broken copy as if it were complete. Anything bigger is
+ * refused outright instead (see docs/v1-functions-api.md, "Known limitations"). Kept a little
+ * under the limit to leave room for the headers.
  */
-export const MAX_PROXIED_BYTES = 31 * 1024 * 1024;
-
-/**
- * How long a signed Storage URL stays valid. Long enough that a video player can still seek
- * (each seek is a fresh `Range` request against the signed URL) well after the page loaded.
- */
-export const SIGNED_URL_TTL_SECONDS = 24 * 60 * 60;
-
-/**
- * How long the redirect itself may be cached, by the browser and by the Hosting CDN. Well under
- * the signed URL's lifetime, so a cached redirect never points at an expired signature.
- */
-export const SIGNED_REDIRECT_MAX_AGE = 60 * 60;
+export const MAX_SERVED_BYTES = 31 * 1024 * 1024;
 
 export type ByteRange = { start: number; end: number };
 
@@ -58,99 +46,38 @@ export function parseByteRange(header: string | undefined, size: number): ByteRa
 }
 
 /** The slice of a Storage `File` this needs, so tests can hand in a fake. */
-export interface StoredFile {
+export interface StreamableFile {
   createReadStream(options?: { start?: number; end?: number; validation?: false }): Readable;
-  getSignedUrl(config: {
-    version: 'v4';
-    action: 'read';
-    expires: number;
-    responseDisposition?: string;
-    responseType?: string;
-  }): Promise<[string]>;
-}
-
-/** The headers the stored object must be served with, wherever it is served from. */
-export interface StoredObjectHeaders {
-  contentType: string;
-  contentDisposition: string;
-}
-
-/**
- * Serves a stored object: streamed through the function when Hosting can carry it, otherwise a
- * `302` to a short-lived signed Storage URL. The caller sets the type, disposition, cache and
- * security headers first; the redirect overrides the cache header and repeats type and
- * disposition as signed response overrides, so Storage serves the same filename.
- *
- * Signing calls the IAM Credentials `signBlob` API, so the runtime service account needs
- * `iam.serviceAccounts.signBlob` on itself (`npm run localess:check -- --fix` grants it). When
- * that is missing this answers an uncached `500` — never the truncated body Hosting would make
- * of a streamed one.
- * @param {Request} req Incoming request, read for `Range` and the method
- * @param {Response} res Response to write
- * @param {StoredFile} file Storage object to serve
- * @param {number} size Object size in bytes, from its metadata
- * @param {StoredObjectHeaders} headers Type and disposition to serve the object with
- * @param {string} tag Log prefix of the calling route
- * @return {Promise<void>} resolves once the response is handed off
- */
-export async function serveStoredObject(
-  req: Request,
-  res: Response,
-  file: StoredFile,
-  size: number,
-  headers: StoredObjectHeaders,
-  tag: string
-): Promise<void> {
-  if (size <= MAX_PROXIED_BYTES) {
-    streamStoredObject(req, res, file, size, tag);
-    return;
-  }
-  let url: string;
-  try {
-    [url] = await file.getSignedUrl({
-      version: 'v4',
-      action: 'read',
-      expires: Date.now() + SIGNED_URL_TTL_SECONDS * 1000,
-      responseDisposition: headers.contentDisposition,
-      responseType: headers.contentType,
-    });
-  } catch (error) {
-    logger.error(`${tag} could not sign a Storage URL for a ${size}-byte object`, error);
-    res.removeHeader('Content-Disposition');
-    res
-      .status(500)
-      .header('Cache-Control', 'no-cache')
-      .contentType('text/plain')
-      .send(
-        'This asset is too large to serve through Hosting, and the function could not sign a Storage URL for it. ' +
-          'Grant the functions service account roles/iam.serviceAccountTokenCreator on itself: npm run localess:check -- --fix'
-      );
-    return;
-  }
-  logger.info(`${tag} ${size} bytes, redirecting to Storage`);
-  res.removeHeader('Content-Disposition');
-  res.header('Cache-Control', `public, max-age=${SIGNED_REDIRECT_MAX_AGE}, s-maxage=${SIGNED_REDIRECT_MAX_AGE}`).redirect(302, url);
 }
 
 /**
  * Streams a stored object to the response, honouring a single `Range`. Headers other than
  * length and range (type, disposition, cache) must already be set by the caller.
  *
- * Replaces `download()` to `/tmp` + `sendFile`, which held the whole object in memory: `/tmp`
- * is RAM on Cloud Functions.
+ * Replaces `download()` to `/tmp` + `sendFile`, which held the whole object in memory: `/tmp` is
+ * RAM on Cloud Functions. Objects above {@link MAX_SERVED_BYTES} are refused with `413`.
  * @param {Request} req Incoming request, read for `Range` and the method
  * @param {Response} res Response to stream into
- * @param {StoredFile} file Storage object to read
+ * @param {StreamableFile} file Storage object to read
  * @param {number} size Object size in bytes, from its metadata
  * @param {string} tag Log prefix of the calling route
  */
-export function streamStoredObject(
-  req: Request,
-  res: Response,
-  file: Pick<StoredFile, 'createReadStream'>,
-  size: number,
-  tag: string
-): void {
+export function streamStoredObject(req: Request, res: Response, file: StreamableFile, size: number, tag: string): void {
+  if (size > MAX_SERVED_BYTES) {
+    // Refused with an explicit status rather than streamed: Hosting would truncate the body and
+    // still report success. Uncached, so lifting the limit later takes effect immediately.
+    logger.warn(`${tag} refused a ${size}-byte object: above the ${MAX_SERVED_BYTES}-byte limit Hosting can serve`);
+    res.removeHeader('Content-Disposition');
+    res
+      .status(413)
+      .header('Cache-Control', 'no-cache')
+      .contentType('text/plain')
+      .send(
+        `This asset is ${size} bytes, above the ${MAX_SERVED_BYTES}-byte limit the API can serve through Firebase Hosting. ` +
+          'Known issue: see "Known limitations" in docs/v1-functions-api.md.'
+      );
+    return;
+  }
   res.header('Accept-Ranges', 'bytes');
   const range = parseByteRange(req.headers.range, size);
   if (range === 'unsatisfiable') {

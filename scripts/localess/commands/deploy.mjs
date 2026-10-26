@@ -21,7 +21,6 @@ import { buildMarkerLabels } from '../markers.mjs';
 import { mergeProjectLabels } from '../firebase-gaps.mjs';
 import { ensureRequiredApis } from '../apis.mjs';
 import { ensureBucketCors } from '../bucket-cors.mjs';
-import { ensureUrlSigning } from '../url-signing.mjs';
 import { assertManaged, identifyProject } from '../projects.mjs';
 import { confirmDeployPlan } from '../prompts.mjs';
 import { ROOT, createLogger, rel } from '../log.mjs';
@@ -328,10 +327,6 @@ export async function run(argv) {
 
   log.step('Deploying');
   await deployWithRetry(deployArgs, env);
-
-  // After the deploy, because the runtime service account only exists once functions have
-  // been deployed. Best-effort: it gates large asset downloads, not the deploy.
-  if (deployingFunctions) await ensureUrlSigning(projectId, log);
 
   log.step('Refreshing the version marker');
   try {

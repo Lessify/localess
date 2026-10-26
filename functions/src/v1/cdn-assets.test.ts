@@ -19,8 +19,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * The env has to be set before the module graph loads, which is why the imports are dynamic.
  */
 const MD5 = 'abc123==';
-const SIGNED_URL = 'https://storage.googleapis.com/test-project.appspot.com/signed';
-/** Past what Firebase Hosting can carry, so the object is redirected rather than streamed. */
+/** Past what Firebase Hosting can carry without truncating it. */
 const LARGE = 40 * 1024 * 1024;
 
 let CDN: express.Router;
@@ -87,22 +86,13 @@ interface StoredAsset {
   documentMissing?: boolean;
   /** Overrides the stored object's size, to exercise the large-object path without the bytes. */
   size?: number;
-  /** Simulates a runtime service account that is not allowed to sign URLs. */
-  signingFails?: boolean;
 }
 
-function given(asset: StoredAsset): {
-  download: ReturnType<typeof vi.fn>;
-  createReadStream: ReturnType<typeof vi.fn>;
-  getSignedUrl: ReturnType<typeof vi.fn>;
-} {
+function given(asset: StoredAsset): { download: ReturnType<typeof vi.fn>; createReadStream: ReturnType<typeof vi.fn> } {
   const file = {
     getMetadata: asset.storageMissing
       ? vi.fn().mockRejectedValue(new Error('not found'))
       : vi.fn().mockResolvedValue([{ md5Hash: MD5, size: String(asset.size ?? asset.bytes.length) }]),
-    getSignedUrl: asset.signingFails
-      ? vi.fn().mockRejectedValue(new Error('Permission iam.serviceAccounts.signBlob denied'))
-      : vi.fn().mockResolvedValue([SIGNED_URL]),
     createReadStream: vi
       .fn()
       .mockImplementation((options?: { start?: number; end?: number }) =>
@@ -202,50 +192,25 @@ describe('asset routes — the passthrough pair', () => {
     expect(res.headers['content-range']).toBe('bytes */10');
   });
 
-  it('/download redirects an object too large for Hosting to a signed Storage URL', async () => {
+  it.each([['/download'], ['/original']])('%s refuses an object too large for Hosting with an explicit 413', async route => {
     const file = given({ bytes: Buffer.from('x'), size: LARGE, type: 'video/quicktime', extension: '.mov' });
 
-    const res = await request(app()).get(`${URL}/download`);
+    const res = await request(app()).get(`${URL}${route}`);
 
-    expect(res.status).toBe(302);
-    expect(res.headers['location']).toBe(SIGNED_URL);
-    expect(res.headers['cache-control']).toContain('max-age=3600');
-    expect(res.headers['content-disposition']).toBeUndefined();
-    expect(file.createReadStream).not.toHaveBeenCalled();
-    // Storage must hand back the same filename and type the function would have sent.
-    const config = file.getSignedUrl.mock.calls[0][0];
-    expect(config).toMatchObject({ version: 'v4', action: 'read', responseType: 'video/quicktime' });
-    expect(config.responseDisposition).toContain('attachment');
-    expect(config.responseDisposition).toContain('photo.mov');
-  });
-
-  it('/original signs an inline disposition for a large object', async () => {
-    const file = given({ bytes: Buffer.from('x'), size: LARGE, type: 'video/mp4', extension: '.mp4' });
-
-    const res = await request(app()).get(`${URL}/original`);
-
-    expect(res.status).toBe(302);
-    expect(file.getSignedUrl.mock.calls[0][0].responseDisposition).toContain('inline');
-  });
-
-  it('a large object that cannot be signed fails loudly and uncached, never truncated', async () => {
-    const file = given({ bytes: Buffer.from('x'), size: LARGE, type: 'video/quicktime', extension: '.mov', signingFails: true });
-
-    const res = await request(app()).get(`${URL}/download`);
-
-    expect(res.status).toBe(500);
+    // Never a truncated 200: the import only rejects an asset whose status is not 200.
+    expect(res.status).toBe(413);
     expect(res.headers['cache-control']).toBe('no-cache');
-    expect(res.text).toContain('localess:check');
+    expect(res.headers['content-disposition']).toBeUndefined();
+    expect(res.text).toContain('Known limitations');
     expect(file.createReadStream).not.toHaveBeenCalled();
   });
 
-  it('a bare transform-route URL on a large video redirects too', async () => {
+  it('a bare transform-route URL on a large video is refused too', async () => {
     given({ bytes: Buffer.from('x'), size: LARGE, type: 'video/mp4', extension: '.mp4' });
 
     const res = await request(app()).get(URL);
 
-    expect(res.status).toBe(302);
-    expect(res.headers['location']).toBe(SIGNED_URL);
+    expect(res.status).toBe(413);
   });
 
   it('a bare transform-route URL on a video streams the stored bytes', async () => {
