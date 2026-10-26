@@ -92,7 +92,7 @@ In order:
 1.  Preflight        firebase-tools present and >= 15.29.0, CLI authenticated
 2.  Project          adopt --project, or pick from a list / create one
 3.  Billing          link a billing account, then wait for it to become active
-4.  APIs             check the 16 required APIs, enable whichever are off
+4.  APIs             check the 15 required APIs, enable whichever are off
 5.  Firestore        adopt the existing location, or ask and create in --region
 6.  Storage          create and link the default bucket in --region
 7.  Storage CORS     allow GET and HEAD from any origin, when the bucket has no rules
@@ -116,14 +116,7 @@ firestore             identitytoolkit        firebasestorage
 firebaseextensions    cloudfunctions         cloudbuild
 artifactregistry      run                    eventarc
 pubsub                storage                translate
-iamcredentials
 ```
-
-`iamcredentials.googleapis.com` is what the functions sign Storage URLs through — assets over
-31 MiB are redirected to a signed URL, because Firebase Hosting truncates function responses at
-32 MiB. Signing also needs the runtime service account to hold
-`roles/iam.serviceAccountTokenCreator` on itself; deploy grants that after the functions are up
-(the account does not exist before), and `localess:check` reports it.
 
 ### Authentication
 

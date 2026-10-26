@@ -136,20 +136,6 @@ invoked by Google's own service agents, so making them public would widen access
 
 ---
 
-## URL signing
-
-Firebase Hosting buffers a rewritten function response and cuts it off at 32 MiB, still answering
-`200` with a matching `Content-Length` — so a large video "downloads" as its first 32 MiB. The
-asset API therefore redirects anything over 31 MiB to a short-lived signed Storage URL. The
-functions have no key file, so they sign through the IAM Credentials `signBlob` API as their own
-runtime service account (the default compute account, `<project-number>-compute@developer.gserviceaccount.com`),
-which needs `roles/iam.serviceAccountTokenCreator` **on itself**. Nothing grants that by default.
-
-`localess:deploy` grants it after each functions deploy; `--fix` grants it here. The account only
-exists once functions have been deployed, so before that the row reads `?` and points at a deploy.
-
----
-
 ## `--fix`
 
 ```bash
@@ -165,7 +151,6 @@ Applies only the repairs that are **free and reversible**:
 | Project labels | Writes the three markers |
 | Local files / region | A full `syncLocalFiles`, propagating the live Firestore location everywhere |
 | Invoker bindings | Adds `allUsers` to `roles/run.invoker`, preserving every other binding |
-| URL signing | Grants the runtime service account `roles/iam.serviceAccountTokenCreator` on itself |
 | Admin user | Prompts for credentials, then creates the account, its admin claim and its documents |
 
 Everything else is reported with the command that does it, because it is not safe to do as a side

@@ -55,7 +55,7 @@ import { assetResponsePolicy } from '../utils/asset-headers';
 import { buildContentDisposition } from '../utils/content-disposition';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
-import { serveStoredObject } from '../utils/stream-object';
+import { streamStoredObject } from '../utils/stream-object';
 import {
   RequestWithToken,
   requireContentPermissions,
@@ -725,22 +725,20 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       overwriteType = format ? formatMimeMap[format] : 'image/webp';
       filename = `${asset.name}-${suffix || `w${width}`}-thumbnail${format ? formatExtMap[format] : '.webp'}`;
     } else {
-      // Video, audio, PDF and the rest pass through untouched, so they are streamed (or, past
-      // what Hosting can carry, redirected to Storage) rather than staged in `/tmp`.
+      // Video, audio, PDF and the rest pass through untouched, so they are streamed rather than
+      // staged in `/tmp` — see the `/download` route for why that matters past 32 MiB.
       streamed = true;
     }
     const policy = assetResponsePolicy(overwriteType || asset.type, false);
-    const contentDisposition = buildContentDisposition(filename, policy.attachment);
     res
       .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-      .header('Content-Disposition', contentDisposition)
+      .header('Content-Disposition', buildContentDisposition(filename, policy.attachment))
       .set(policy.headers)
       .contentType(policy.contentType);
     if (output) {
       res.send(output);
     } else if (streamed) {
-      const size = Number(objectMetadata?.['size'] ?? 0);
-      await serveStoredObject(req, res, assetFile, size, { contentType: policy.contentType, contentDisposition }, '[V1:AssetById]');
+      streamStoredObject(req, res, assetFile, Number(objectMetadata?.['size'] ?? 0), '[V1:AssetById]');
     } else {
       res.sendFile(tempFilePath);
     }
@@ -838,16 +836,15 @@ CDN.get(['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:sp
     }
   }
 
-  // Streamed straight from Storage rather than staged in `/tmp` (RAM on Cloud Functions), and
-  // redirected to a signed Storage URL past what Firebase Hosting can carry — see
-  // `serveStoredObject`. Either way `Range` works, so a client can resume a partial transfer.
+  // Streamed straight from Storage rather than downloaded to `/tmp` and sent with `sendFile`:
+  // `/tmp` is RAM on Cloud Functions, and `sendFile` always sets `Content-Length`, which makes
+  // Cloud Run reject anything over 32 MiB — a 100 MB video failed with a bare `500`. The stream
+  // honours `Range` itself, so a client can still resume a partial transfer.
   const policy = assetResponsePolicy(asset.type, attachment);
-  const contentDisposition = buildContentDisposition(`${asset.name}${asset.extension}`, policy.attachment);
   res
     .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
-    .header('Content-Disposition', contentDisposition)
+    .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, policy.attachment))
     .set(policy.headers)
     .contentType(policy.contentType);
-  const size = Number(objectMetadata?.['size'] ?? 0);
-  await serveStoredObject(req, res, assetFile, size, { contentType: policy.contentType, contentDisposition }, tag);
+  streamStoredObject(req, res, assetFile, Number(objectMetadata?.['size'] ?? 0), tag);
 });

@@ -37,8 +37,6 @@ Whenever the marker is rewritten, its generation increments. The content marker 
 | Asset response (incl. `/original`, `/download`) | 365 days | 365 days | browser / CDN |
 | Asset `304 Not Modified` | 365 days | 365 days | browser / CDN |
 | Asset canonical-size redirect (`w`/`h` above source) | 365 days | 365 days | browser / CDN |
-| Asset over 31 MiB — `302` to a signed Storage URL (valid 24 h) | 1 hour | 1 hour | browser / CDN |
-| Asset over 31 MiB that could not be signed — `500` | no-cache | no-cache | — |
 | 400 — invalid asset transform param | 1 hour | 1 hour | browser / CDN |
 | 404 — space not found | 7 days | 7 days | browser / CDN |
 | 404 — content cache marker missing / content not found on disk (content routes only) | 10 min | 10 min | browser / CDN |
