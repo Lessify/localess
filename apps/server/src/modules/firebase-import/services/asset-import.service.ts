@@ -43,10 +43,15 @@ export class AssetImportService {
       let extracted: { metadata?: Record<string, unknown>; alt?: string } | undefined;
       if (isFile) {
         const name = str(doc['name']) ?? doc.id;
-        // One file Firebase cannot serve does not stop the import (the asset is kept without it); Firebase being
-        // unreachable does.
+        // A file Firebase cannot serve does not stop the import (the asset is kept without it): one it refuses as too
+        // large (413), or one it still answers 5xx for after three tries. Firebase being unreachable does stop it.
+        let tooLarge: string | undefined;
         let unserved: string | undefined;
         const stream = await client.assetFile(sourceSpaceId, doc.id).catch(error => {
+          if (error instanceof FirebaseConnectionError && error.reason === 'tooLarge') {
+            tooLarge = error.message;
+            return null;
+          }
           if (error instanceof FirebaseConnectionError && error.reason === 'server-error') {
             unserved = error.message;
             return null;
@@ -65,6 +70,8 @@ export class AssetImportService {
           }
           if (!obj(doc['metadata']))
             extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
+        } else if (tooLarge) {
+          stage.warn(`${originalName}: ${tooLarge} The asset is kept without its file: upload it again in Assets.`);
         } else if (unserved) {
           stage.warn(`${name}: Firebase could not serve its file (${unserved}), the asset is kept without it`);
         } else {

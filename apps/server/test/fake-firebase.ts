@@ -20,9 +20,19 @@ export interface FakeFirebaseSpace {
 /** Plays a Firebase environment's migration API and asset `/original` route for import tests. */
 export async function fakeFirebase(
   spaces: FakeFirebaseSpace[],
-  /** `spa`: a Firebase Hosting site without the migration API, answering every path with its app's index.html. */
-  /** `failingFiles`: asset ids whose `/original` answers 500, as Firebase does for a file its function cannot serve. */
-  options: { token?: string; pageSize?: number; failAfterFiles?: number; failingFiles?: string[]; spa?: boolean } = {},
+  /**
+   * `spa`: a Firebase Hosting site without the migration API, answering every path with its app's index.html.
+   * `failingFiles`: asset ids whose `/original` answers 500, as Firebase does for a file its function cannot serve.
+   * `refusedFiles`: asset id → the status and plain-text reason its `/original` answers (413 for a file over 31 MiB).
+   */
+  options: {
+    token?: string;
+    pageSize?: number;
+    failAfterFiles?: number;
+    failingFiles?: string[];
+    spa?: boolean;
+    refusedFiles?: Record<string, { status: number; reason: string }>;
+  } = {},
 ): Promise<{ url: string; requests: string[]; close(): Promise<void> }> {
   const token = options.token ?? 'migration-secret';
   const pageSize = options.pageSize ?? 500;
@@ -34,6 +44,8 @@ export async function fakeFirebase(
     const json = (status: number, body: unknown) =>
       response.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
     const file = /^\/api\/v1\/spaces\/([^/]+)\/assets\/([^/]+)\/original$/.exec(url.pathname);
+    const refused = file && options.refusedFiles?.[file[2]];
+    if (refused) return void response.writeHead(refused.status, { 'content-type': 'text/plain; charset=utf-8' }).end(refused.reason);
     if (file) {
       if (options.failAfterFiles !== undefined && filesServed >= options.failAfterFiles) return void response.destroy();
       if (options.failingFiles?.includes(file[2])) return void response.writeHead(500, { 'content-type': 'text/html' }).end();

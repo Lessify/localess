@@ -9,11 +9,33 @@ export type FirebaseDoc = { id: string } & Record<string, unknown>;
 /** Why a Firebase environment could not be read, worded for the admin. */
 export class FirebaseConnectionError extends Error {
   constructor(
-    readonly reason: 'unreachable' | 'unauthorized' | 'disabled' | 'failed' | 'server-error',
+    /**
+     * `tooLarge`: Firebase refuses the file as too large (413, over what Hosting carries); `server-error`: it still
+     * answered 5xx after three tries. The import goes on without the file in both cases.
+     */
+    readonly reason: 'unreachable' | 'unauthorized' | 'disabled' | 'failed' | 'tooLarge' | 'server-error',
     message: string,
   ) {
     super(message);
   }
+}
+
+/**
+ * The start of a plain-text answer (at most 500 characters), else an empty string; the rest is discarded. Firebase
+ * says there why it could not serve a file.
+ */
+async function shortText(response: IncomingMessage): Promise<string> {
+  if (!(response.headers['content-type'] ?? '').startsWith('text/plain')) {
+    response.resume();
+    return '';
+  }
+  let text = '';
+  for await (const chunk of response) {
+    text += (chunk as Buffer).toString('utf8');
+    if (text.length >= 500) break;
+  }
+  response.destroy();
+  return text.slice(0, 500).trim();
 }
 
 /** A page body is at most 500 documents; this caps a hostile or broken server, not real data. */
@@ -125,9 +147,9 @@ export class FirebaseClient {
   }
 
   /**
-   * The stored original of an asset, or null when Firebase has no file for it. A server error is tried three times:
-   * Firebase answers 500 for a file its function cannot serve (one larger than a Cloud Run response, say), and that
-   * last error has the reason `server-error`, so the import can keep the asset without its file.
+   * The stored original of an asset, or null when Firebase has no file for it. A file Firebase refuses as too large
+   * (413, over 31 MiB) throws `tooLarge` with Firebase's reason. A server error is tried three times, then throws
+   * `server-error`. Any other answer but 200 throws `failed`. The reason Firebase gave in plain text is in the message.
    */
   async assetFile(spaceId: string, assetId: string): Promise<Readable | null> {
     const url = `${this.origin}/api/v1/spaces/${encodeURIComponent(spaceId)}/assets/${encodeURIComponent(assetId)}/original`;
@@ -137,10 +159,17 @@ export class FirebaseClient {
       });
       const status = response.statusCode ?? 0;
       if (status === 200) return response;
-      response.resume();
-      if (status === 404) return null;
-      if (status < 500) throw new FirebaseConnectionError('failed', `Asset ${assetId} answered ${status}`);
-      if (attempt === 3) throw new FirebaseConnectionError('server-error', `Asset ${assetId} answered ${status} ${attempt} times`);
+      if (status === 404) {
+        response.resume();
+        return null;
+      }
+      const reason = await shortText(response);
+      const because = reason ? `: ${reason}` : '';
+      // Firebase Hosting cuts a function's answer at 32 MiB, so Firebase refuses a larger file with 413 and says why.
+      if (status === 413) throw new FirebaseConnectionError('tooLarge', reason || `Asset ${assetId} is too large for Firebase to serve`);
+      if (status < 500) throw new FirebaseConnectionError('failed', `Asset ${assetId} answered ${status}${because}`);
+      if (attempt === 3)
+        throw new FirebaseConnectionError('server-error', `Asset ${assetId} answered ${status} ${attempt} times${because}`);
       await new Promise(resolve => setTimeout(resolve, this.retryDelayMs * attempt));
     }
   }

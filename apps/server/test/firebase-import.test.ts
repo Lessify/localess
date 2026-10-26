@@ -714,19 +714,24 @@ describe('Firebase import run', () => {
     }
   });
 
-  it('warns about a file Firebase sent cut short (its Cloud Function stops at 32 MB)', async () => {
-    const odd = await fakeFirebase([
-      {
-        id: 'fbLarge',
-        name: 'Large',
-        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
-        assets: [
-          { id: 'big', kind: 'FILE', name: 'recording', parentPath: '', extension: '.mov', type: 'video/quicktime', size: 108_726_933 },
-          { id: 'ok', kind: 'FILE', name: 'photo', parentPath: '', extension: '.jpg', type: 'image/jpeg', size: photo.length },
-        ],
-        files: { big: Buffer.from('the first bytes'), ok: photo },
-      },
-    ]);
+  it('warns about a file Firebase sent cut short, and keeps one it refused as too large (413) without its file', async () => {
+    const odd = await fakeFirebase(
+      [
+        {
+          id: 'fbLarge',
+          name: 'Large',
+          doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+          assets: [
+            { id: 'big', kind: 'FILE', name: 'recording', parentPath: '', extension: '.mov', type: 'video/quicktime', size: 108_726_933 },
+            { id: 'ok', kind: 'FILE', name: 'photo', parentPath: '', extension: '.jpg', type: 'image/jpeg', size: photo.length },
+            // A Firebase with the fix refuses a file over 31 MiB with 413: kept without it, the import goes on.
+            { id: 'huge', kind: 'FILE', name: 'video', parentPath: '', extension: '.mp4', type: 'video/mp4', size: 108_726_933 },
+          ],
+          files: { big: Buffer.from('the first bytes'), ok: photo },
+        },
+      ],
+      { refusedFiles: { huge: { status: 413, reason: 'This asset is 108726933 bytes, above the 32505856-byte limit.' } } },
+    );
     try {
       const id = newUuid();
       await t.db.insert(firebaseImports).values({
@@ -745,13 +750,17 @@ describe('Firebase import run', () => {
       expect(run.status).toBe('FINISHED');
       expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual([
         'recording.mov: Firebase sent 15 of its 108726933 bytes (files over 32 MB are cut by Firebase), the file is incomplete: upload it again',
+        'video.mp4: This asset is 108726933 bytes, above the 32505856-byte limit. The asset is kept without its file: upload it again in Assets.',
       ]);
       // The row has the size of the file stored.
       const rows = await t.db.select().from(assets).where(eq(assets.spaceId, run.spaceId!)).orderBy(assets.name);
       expect(rows.map(({ name, size }) => ({ name, size }))).toEqual([
         { name: 'photo', size: photo.length },
         { name: 'recording', size: 15 },
+        { name: 'video', size: 108_726_933 },
       ]);
+      // No file stored for it: the row has no md5.
+      expect(rows.find(it => it.name === 'video')?.md5).toBeNull();
     } finally {
       await odd.close();
     }

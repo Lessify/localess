@@ -32,7 +32,10 @@ Spaces move one at a time from a running Firebase-era Localess environment, from
      values keep being delivered. Rename it in Schemas if you like; the field follows.
    - Content blocks lose the legacy `schema` key: the block's schema is in `_schema` only (copied from `schema` when the
      block had no `_schema`). A site that reads `schema` must read `_schema`.
-   - Firebase sends at most 32 MB of a file: a larger one arrives cut (a warning names it); upload it again in Assets.
+   - Firebase Hosting carries at most 32 MB of a file. A Firebase environment with the fix refuses a larger file
+     (`413`, with its size): the import keeps the asset without its file and goes on, with a warning naming it. An
+     older one sends the file cut, also named in a warning. Either way, upload that file again in Assets (download it
+     from the Firebase console's Storage).
 7. Revoke the migration token in the Firebase environment when you are done.
 
 Not imported: users, global settings, published snapshots (publish again), webhook logs, tasks.
