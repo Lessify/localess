@@ -81,7 +81,9 @@ MIGRATION.get('/api/migration/spaces/:spaceId', async (req, res) => {
   res.json(toJson({ id: doc.id, data: () => doc.data() }));
 });
 
-for (const name of ['tokens', 'webhooks', 'schemas']) {
+// Space API tokens are deliberately absent: the self-hosted import does not carry them over, and
+// they are credentials, so the migration token should not be able to read them.
+for (const name of ['webhooks', 'schemas']) {
   MIGRATION.get(`/api/migration/spaces/:spaceId/${name}`, async (req, res) => {
     if (!(await requireSpace(req, res))) return;
     const snapshot = await firestoreService.collection(`spaces/${req.params['spaceId']}/${name}`).orderBy('__name__').get();

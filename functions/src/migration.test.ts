@@ -82,9 +82,14 @@ describe('migration API', () => {
   });
 
   it('returns small collections whole, with ids', async () => {
-    expect((await get('/api/migration/spaces/s1/tokens')).body).toEqual([{ id: 'TOKEN000000000000001', name: 'web', createdAt: '2025-01-02T00:00:00.000Z' }]);
     expect((await get('/api/migration/spaces/s1/schemas')).body).toEqual([{ id: 'page', type: 'ROOT', fields: [] }]);
     expect((await get('/api/migration/spaces/s1/webhooks')).body).toEqual([]);
+  });
+
+  it('does not expose space API tokens', async () => {
+    const res = await get('/api/migration/spaces/s1/tokens');
+    expect(res.status).toBe(404);
+    expect(res.text).not.toContain('TOKEN000000000000001');
   });
 
   it('pages large collections by 500, cursor = last id, null at the end', async () => {
