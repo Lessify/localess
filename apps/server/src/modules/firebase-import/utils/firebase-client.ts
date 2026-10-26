@@ -9,7 +9,7 @@ export type FirebaseDoc = { id: string } & Record<string, unknown>;
 /** Why a Firebase environment could not be read, worded for the admin. */
 export class FirebaseConnectionError extends Error {
   constructor(
-    readonly reason: 'unreachable' | 'unauthorized' | 'disabled' | 'failed',
+    readonly reason: 'unreachable' | 'unauthorized' | 'disabled' | 'failed' | 'server-error',
     message: string,
   ) {
     super(message);
@@ -38,13 +38,15 @@ export class FirebaseClient {
   /** The normalised origin, recorded on the import run. */
   readonly origin: string;
   private readonly allowInternal: boolean;
+  private readonly retryDelayMs: number;
 
   constructor(
     origin: string,
     private readonly token: string,
-    options: { allowInternal?: boolean } = {},
+    options: { allowInternal?: boolean; retryDelayMs?: number } = {},
   ) {
     this.allowInternal = options.allowInternal ?? false;
+    this.retryDelayMs = options.retryDelayMs ?? 1000;
     this.origin = normalizeOrigin(origin, this.allowInternal);
   }
 
@@ -122,21 +124,24 @@ export class FirebaseClient {
     } while (cursor);
   }
 
-  /** The stored original of an asset, or null when Firebase has no file for it. */
+  /**
+   * The stored original of an asset, or null when Firebase has no file for it. A server error is tried three times:
+   * Firebase answers 500 for a file its function cannot serve (one larger than a Cloud Run response, say), and that
+   * last error has the reason `server-error`, so the import can keep the asset without its file.
+   */
   async assetFile(spaceId: string, assetId: string): Promise<Readable | null> {
-    const response = await this.request(
-      `${this.origin}/api/v1/spaces/${encodeURIComponent(spaceId)}/assets/${encodeURIComponent(assetId)}/original`,
-    ).catch(error => {
-      throw new FirebaseConnectionError('unreachable', `Cannot download asset ${assetId}: ${(error as Error).message}`);
-    });
-    if (response.statusCode === 404) {
+    const url = `${this.origin}/api/v1/spaces/${encodeURIComponent(spaceId)}/assets/${encodeURIComponent(assetId)}/original`;
+    for (let attempt = 1; ; attempt++) {
+      const response = await this.request(url).catch(error => {
+        throw new FirebaseConnectionError('unreachable', `Cannot download asset ${assetId}: ${(error as Error).message}`);
+      });
+      const status = response.statusCode ?? 0;
+      if (status === 200) return response;
       response.resume();
-      return null;
+      if (status === 404) return null;
+      if (status < 500) throw new FirebaseConnectionError('failed', `Asset ${assetId} answered ${status}`);
+      if (attempt === 3) throw new FirebaseConnectionError('server-error', `Asset ${assetId} answered ${status} ${attempt} times`);
+      await new Promise(resolve => setTimeout(resolve, this.retryDelayMs * attempt));
     }
-    if (response.statusCode !== 200) {
-      response.resume();
-      throw new FirebaseConnectionError('failed', `Asset ${assetId} answered ${response.statusCode}`);
-    }
-    return response;
   }
 }

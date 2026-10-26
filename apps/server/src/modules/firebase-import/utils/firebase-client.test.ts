@@ -76,6 +76,17 @@ describe('FirebaseClient', () => {
     expect(await client().assetFile('s1', 'missing')).toBeNull();
   });
 
+  it('tries an asset Firebase answers 500 for three times, then reports a server error', async () => {
+    const failing = await fakeFirebase([{ id: 's1', name: 'Site', doc: {}, files: { big: Buffer.from('x') } }], { failingFiles: ['big'] });
+    try {
+      const local = new FirebaseClient(failing.url, 'migration-secret', { allowInternal: true, retryDelayMs: 0 });
+      await expect(local.assetFile('s1', 'big')).rejects.toMatchObject({ reason: 'server-error' });
+      expect(failing.requests.filter(it => it.endsWith('/big/original'))).toHaveLength(3);
+    } finally {
+      await failing.close();
+    }
+  });
+
   it('names the failure: wrong token, disabled API, unreachable', async () => {
     const local = { allowInternal: true };
     await expect(new FirebaseClient(fake.url, 'wrong', local).spaces()).rejects.toMatchObject({ reason: 'unauthorized' });

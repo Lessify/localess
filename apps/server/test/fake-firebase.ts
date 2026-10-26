@@ -21,7 +21,8 @@ export interface FakeFirebaseSpace {
 export async function fakeFirebase(
   spaces: FakeFirebaseSpace[],
   /** `spa`: a Firebase Hosting site without the migration API, answering every path with its app's index.html. */
-  options: { token?: string; pageSize?: number; failAfterFiles?: number; spa?: boolean } = {},
+  /** `failingFiles`: asset ids whose `/original` answers 500, as Firebase does for a file its function cannot serve. */
+  options: { token?: string; pageSize?: number; failAfterFiles?: number; failingFiles?: string[]; spa?: boolean } = {},
 ): Promise<{ url: string; requests: string[]; close(): Promise<void> }> {
   const token = options.token ?? 'migration-secret';
   const pageSize = options.pageSize ?? 500;
@@ -35,6 +36,7 @@ export async function fakeFirebase(
     const file = /^\/api\/v1\/spaces\/([^/]+)\/assets\/([^/]+)\/original$/.exec(url.pathname);
     if (file) {
       if (options.failAfterFiles !== undefined && filesServed >= options.failAfterFiles) return void response.destroy();
+      if (options.failingFiles?.includes(file[2])) return void response.writeHead(500, { 'content-type': 'text/html' }).end();
       const bytes = spaces.find(it => it.id === file[1])?.files?.[file[2]];
       if (!bytes) return json(404, { message: 'Not found' });
       filesServed++;

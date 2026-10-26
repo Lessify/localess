@@ -694,4 +694,29 @@ describe('Firebase import run', () => {
     const [space] = await readSpaces(t.db, run.spaceId!);
     expect(space).toMatchObject({ legacyId: 'fbFail', importStatus: 'FAILED' });
   });
+
+  it('keeps an asset whose file Firebase answers 500 for without it, with a warning, and goes on', async () => {
+    const failing = await fakeFirebase([{ ...site, id: 'fbBig', files: { a1: photo } }], { failingFiles: ['a1'] });
+    const id = newUuid();
+    await t.db.insert(firebaseImports).values({
+      id,
+      origin: failing.url,
+      sourceSpaceId: 'fbBig',
+      sourceSpaceName: 'Site',
+      status: 'RUNNING',
+      stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+      startedBy: { name: 'Admin', email: 'admin@example.com' },
+    });
+    await t.app
+      .get(FirebaseImportRunner)
+      .execute(id, new FirebaseClient(failing.url, 'migration-secret', { allowInternal: true, retryDelayMs: 0 }), 'fbBig');
+    await failing.close();
+    const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+    expect(run.status).toBe('FINISHED');
+    expect(run.stages.find(it => it.stage === 'assets')!.warnings?.join('\n')).toMatch(
+      /photo: Firebase could not serve its file \(Asset a1 answered 500 3 times\), the asset is kept without it/,
+    );
+    const file = (await t.db.select().from(assets).where(eq(assets.spaceId, run.spaceId!))).find(it => it.legacyId === 'a1');
+    expect(file).toMatchObject({ originalName: 'photo.jpg', md5: null, size: photo.length });
+  });
 });

@@ -5,7 +5,7 @@ import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/stora
 import { AssetMetadataService } from '../../../shared/services/asset-metadata.service.js';
 import { assetOriginalKey, toOriginalName } from '../../../shared/utils/asset-files.js';
 import { AssetImportRepository } from '../repositories/asset-import.repository.js';
-import type { FirebaseDoc } from '../utils/firebase-client.js';
+import { FirebaseConnectionError, type FirebaseDoc } from '../utils/firebase-client.js';
 import { obj, str, timestamps } from '../utils/firebase-docs.js';
 import { type ImportStage, StageFailure } from '../utils/firebase-import.utils.js';
 
@@ -42,16 +42,26 @@ export class AssetImportService {
       let stored: { size: number; md5: string } | undefined;
       let extracted: { metadata?: Record<string, unknown>; alt?: string } | undefined;
       if (isFile) {
+        const name = str(doc['name']) ?? doc.id;
+        // One file Firebase cannot serve does not stop the import (the asset is kept without it); Firebase being
+        // unreachable does.
+        let unserved: string | undefined;
         const stream = await client.assetFile(sourceSpaceId, doc.id).catch(error => {
-          throw new StageFailure('assets', `Downloading asset '${str(doc['name']) ?? doc.id}' failed: ${(error as Error).message}`);
+          if (error instanceof FirebaseConnectionError && error.reason === 'server-error') {
+            unserved = error.message;
+            return null;
+          }
+          throw new StageFailure('assets', `Downloading asset '${name}' failed: ${(error as Error).message}`);
         });
         if (stream && originalName) {
           const key = assetOriginalKey(sid, id, originalName);
           stored = await this.storage.put(key, stream);
           if (!obj(doc['metadata']))
             extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
+        } else if (unserved) {
+          stage.warn(`${name}: Firebase could not serve its file (${unserved}), the asset is kept without it`);
         } else {
-          stage.warn(`${str(doc['name']) ?? doc.id}: no file in Firebase, the asset is kept without it`);
+          stage.warn(`${name}: no file in Firebase, the asset is kept without it`);
         }
       }
       await this.assetImportRepository.insert({
