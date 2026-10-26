@@ -21,6 +21,9 @@ export type ByteRange = { start: number; end: number };
  *   server answer with a plain `200`.
  * - `'unsatisfiable'`: well-formed but entirely outside the object — answer `416`.
  * - otherwise the inclusive byte range to send, clamped to the object.
+ * @param {string | undefined} header Raw `Range` request header
+ * @param {number} size Object size in bytes
+ * @return {ByteRange | 'unsatisfiable' | undefined} the range to serve, if any
  */
 export function parseByteRange(header: string | undefined, size: number): ByteRange | 'unsatisfiable' | undefined {
   if (!header) return undefined;
@@ -53,6 +56,11 @@ export interface StreamableFile {
  * Replaces `download()` to `/tmp` + `sendFile`: on Cloud Functions `/tmp` is RAM, so that held
  * the whole object in memory, and `sendFile` always sets `Content-Length` — which is what made
  * every object over 32 MiB fail.
+ * @param {Request} req Incoming request, read for `Range` and the method
+ * @param {Response} res Response to stream into
+ * @param {StreamableFile} file Storage object to read
+ * @param {number} size Object size in bytes, from its metadata
+ * @param {string} tag Log prefix of the calling route
  */
 export function streamStoredObject(req: Request, res: Response, file: StreamableFile, size: number, tag: string): void {
   res.header('Accept-Ranges', 'bytes');
