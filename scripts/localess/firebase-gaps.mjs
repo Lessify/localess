@@ -97,6 +97,12 @@ async function init() {
       urlPrefix: 'https://identitytoolkit.googleapis.com',
       apiVersion: 'admin/v2',
     }),
+    // Service-account IAM policies. The function runtime signs Storage URLs as itself, which
+    // needs a binding on the service account resource - not on the project.
+    iam: new Client({
+      urlPrefix: 'https://iam.googleapis.com',
+      apiVersion: 'v1',
+    }),
     // Document writes. The Admin SDK is not available here, so the bootstrap writes its
     // documents through the same authenticated client everything else uses.
     firestore: new Client({
@@ -313,6 +319,63 @@ export async function readProjectLabels(projectId) {
   } catch {
     return null;
   }
+}
+
+/**
+ * The project number, or `null` when the project cannot be read. Needed to name the default
+ * compute service account, which is keyed by number rather than id.
+ */
+export async function getProjectNumber(projectId) {
+  try {
+    const { resourceManager } = await api();
+    const response = await resourceManager.get(`/projects/${projectId}`);
+    return response.body?.name?.split('/')[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The IAM policy *of* a service account (who may act as it), `undefined` when the account
+ * does not exist, or `null` when the policy cannot be read.
+ *
+ * Absent is its own answer because the default compute service account only appears once
+ * the Compute API is on, which the first functions deploy does - so before that there is
+ * nothing to grant on, rather than something wrong.
+ */
+export async function getServiceAccountIamPolicy(projectId, email) {
+  try {
+    const { iam } = await api();
+    const res = await iam.post(`/projects/${projectId}/serviceAccounts/${email}:getIamPolicy`, {}, { resolveOnHTTPError: true });
+    if (res.status === 404) return undefined;
+    if (res.status >= 400) return null;
+    return res.body ?? {};
+  } catch {
+    return null;
+  }
+}
+
+/** Adds `member` to `role` on a service account, preserving every other binding. */
+export async function addServiceAccountBinding(projectId, email, role, member) {
+  const { iam } = await api();
+  const policy = await getServiceAccountIamPolicy(projectId, email);
+  if (!policy) throw new Error(`Could not read the IAM policy of ${email}`);
+
+  const bindings = policy.bindings ?? [];
+  const existing = bindings.find(binding => binding.role === role);
+  const merged = existing
+    ? bindings.map(binding =>
+        binding === existing ? { ...binding, members: [...new Set([...(binding.members ?? []), member])] } : binding,
+      )
+    : [...bindings, { role, members: [member] }];
+
+  const res = await iam.post(
+    `/projects/${projectId}/serviceAccounts/${email}:setIamPolicy`,
+    { policy: { ...policy, bindings: merged } },
+    { resolveOnHTTPError: true },
+  );
+  if (res.status >= 400) throw fail(`Could not grant ${role} on ${email}`, res);
+  return res.body;
 }
 
 /**

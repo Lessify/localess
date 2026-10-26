@@ -32,6 +32,9 @@ export const REQUIRED_APIS = Object.freeze([
   'pubsub.googleapis.com',
   'storage.googleapis.com',
   'translate.googleapis.com',
+  // The functions sign Storage URLs for assets too large to proxy through Hosting, and
+  // signing without a key file goes through this API's `signBlob`.
+  'iamcredentials.googleapis.com',
 ]);
 
 /**

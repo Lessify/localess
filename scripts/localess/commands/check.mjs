@@ -39,6 +39,7 @@ import {
 } from '../firebase-gaps.mjs';
 import { ensureRequiredApis } from '../apis.mjs';
 import { ensureBucketCors } from '../bucket-cors.mjs';
+import { ensureUrlSigning, readUrlSigning } from '../url-signing.mjs';
 import { PASSWORD_ENV, ensureFirstAdmin } from '../admin-user.mjs';
 import { buildMarkerLabels, markerRegion } from '../markers.mjs';
 import {
@@ -50,6 +51,7 @@ import {
   FIX_INVOKERS,
   FIX_LABELS,
   FIX_LOCAL_FILES,
+  FIX_SIGNING,
   INFRASTRUCTURE,
   MISSING,
   OK,
@@ -138,19 +140,31 @@ async function readInvokers(projectId, deployed) {
 async function gather(projectId) {
   log.step(`Inspecting ${projectId}`);
 
-  const [billingEnabled, enabledApis, databases, bucketName, webApps, hostingSites, labels, deployedFunctions, identityConfig, accounts] =
-    await Promise.all([
-      attempt(isBillingEnabled(projectId)),
-      listEnabledApis(projectId),
-      attempt(cli.listFirestoreDatabases(projectId)),
-      attempt(getDefaultBucket(projectId), undefined),
-      attempt(cli.listWebApps(projectId)),
-      attempt(cli.listHostingSites(projectId)),
-      readProjectLabels(projectId),
-      attempt(cli.listFunctions(projectId)),
-      getIdentityConfig(projectId),
-      queryIdentityUsers(projectId, ACCOUNT_SCAN_LIMIT),
-    ]);
+  const [
+    billingEnabled,
+    enabledApis,
+    databases,
+    bucketName,
+    webApps,
+    hostingSites,
+    labels,
+    deployedFunctions,
+    identityConfig,
+    accounts,
+    signing,
+  ] = await Promise.all([
+    attempt(isBillingEnabled(projectId)),
+    listEnabledApis(projectId),
+    attempt(cli.listFirestoreDatabases(projectId)),
+    attempt(getDefaultBucket(projectId), undefined),
+    attempt(cli.listWebApps(projectId)),
+    attempt(cli.listHostingSites(projectId)),
+    readProjectLabels(projectId),
+    attempt(cli.listFunctions(projectId)),
+    getIdentityConfig(projectId),
+    queryIdentityUsers(projectId, ACCOUNT_SCAN_LIMIT),
+    attempt(readUrlSigning(projectId)),
+  ]);
 
   const [bucketCors, invokers, live] = await Promise.all([
     bucketName ? getBucketCors(bucketName) : null,
@@ -176,6 +190,7 @@ async function gather(projectId) {
     deployedFunctions,
     expectedGroups,
     invokers,
+    signing,
     identityConfig,
     accounts,
     accountLimit: ACCOUNT_SCAN_LIMIT,
@@ -295,6 +310,10 @@ async function applyFix(fix, facts, options) {
       }
       return;
     }
+
+    case FIX_SIGNING:
+      await ensureUrlSigning(projectId, log);
+      return;
 
     case FIX_ADMIN_USER:
       // Talks to the Identity Platform API directly, so this works even on a project whose

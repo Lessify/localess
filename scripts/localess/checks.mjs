@@ -14,6 +14,7 @@
  */
 import { missingApis, REQUIRED_APIS } from './apis.mjs';
 import { needsBucketCors } from './bucket-cors.mjs';
+import { SIGNER_ROLE } from './url-signing.mjs';
 import { MANAGED_LABEL, REGION_LABEL, VERSION_LABEL, hasMarker, markerRegion, markerVersion } from './markers.mjs';
 
 export const OK = 'ok';
@@ -38,6 +39,7 @@ export const FIX_CORS = 'cors';
 export const FIX_LABELS = 'labels';
 export const FIX_LOCAL_FILES = 'localFiles';
 export const FIX_INVOKERS = 'invokers';
+export const FIX_SIGNING = 'signing';
 export const FIX_ADMIN_USER = 'adminUser';
 
 /**
@@ -52,7 +54,15 @@ export const FIX_ADMIN_USER = 'adminUser';
  * repair sorts to index -1 and would silently run first - which the FIX_ORDER coverage test
  * exists to prevent.
  */
-export const FIX_ORDER = Object.freeze([FIX_APIS, FIX_CORS, FIX_LABELS, FIX_LOCAL_FILES, FIX_INVOKERS, FIX_ADMIN_USER]);
+export const FIX_ORDER = Object.freeze([
+  FIX_APIS,
+  FIX_CORS,
+  FIX_LABELS,
+  FIX_LOCAL_FILES,
+  FIX_INVOKERS,
+  FIX_SIGNING,
+  FIX_ADMIN_USER,
+]);
 
 const result = (id, group, title, status, detail, { fix = null, hint = null } = {}) => ({
   id,
@@ -321,6 +331,31 @@ export function checkInvokers(invokers, projectId) {
   );
 }
 
+/**
+ * Whether the functions can sign Storage URLs as their runtime service account.
+ *
+ * Firebase Hosting truncates function responses at 32 MiB, so larger assets are redirected
+ * to a signed Storage URL - and signing without a key file needs the account to hold
+ * `iam.serviceAccounts.signBlob` on itself. Without it every large asset download fails.
+ */
+export function checkUrlSigning(signing, projectId) {
+  const title = 'URL signing';
+  if (!signing || signing.granted === null) {
+    return result('signing', DEPLOYMENT, title, UNKNOWN, 'could not read the runtime service account policy');
+  }
+  if (signing.granted === undefined) {
+    return result('signing', DEPLOYMENT, title, UNKNOWN, `${signing.serviceAccount} does not exist yet`, {
+      hint: `npm run localess:deploy -- --project ${projectId} --only functions`,
+    });
+  }
+  if (signing.granted) {
+    return result('signing', DEPLOYMENT, title, OK, `${signing.serviceAccount} can sign`);
+  }
+  return result('signing', DEPLOYMENT, title, MISSING, `${signing.serviceAccount} lacks ${SIGNER_ROLE}; assets over 31 MiB cannot be downloaded`, {
+    fix: FIX_SIGNING,
+  });
+}
+
 /** Email/password is the provider Localess provisions; the rest are a console decision. */
 export function checkEmailProvider(identityConfig, projectId) {
   if (identityConfig === null || identityConfig === undefined) {
@@ -408,6 +443,7 @@ export function buildReport(facts) {
     checkLocalFiles(facts.absentLocalFiles, facts.localFileCount),
     checkFunctions(facts.deployedFunctions, facts.expectedGroups, projectId),
     checkInvokers(facts.invokers, projectId),
+    checkUrlSigning(facts.signing, projectId),
     checkEmailProvider(facts.identityConfig, projectId),
     checkAdminUser(facts.accounts, facts.accountLimit, projectId),
   ];
