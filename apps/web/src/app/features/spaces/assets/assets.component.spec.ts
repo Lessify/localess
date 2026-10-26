@@ -167,60 +167,66 @@ describe('AssetsComponent', () => {
   });
 
   describe('onFileUpload', () => {
-    it('queues and uploads a selected file', () => {
-      const { component, createFile } = setup();
+    const pick = (component: AssetsComponent, ...files: File[]) => {
       const input = document.createElement('input');
       input.type = 'file';
-      const uploadedFile = new File(['data'], 'photo.png');
-      Object.defineProperty(input, 'files', { value: [uploadedFile] });
-
+      Object.defineProperty(input, 'files', { value: files });
       component.onFileUpload({ target: input } as unknown as Event);
+    };
 
-      expect(createFile).toHaveBeenCalledWith('space-1', undefined, uploadedFile);
-      expect(component.fileUploadQueue()).toEqual([]);
+    it('uploads a selected file, telling the queue its progress', () => {
+      const { component, createFile } = setup();
+      const uploadedFile = new File(['data'], 'photo.png');
+
+      pick(component, uploadedFile);
+
+      expect(createFile).toHaveBeenCalledWith('space-1', undefined, uploadedFile, expect.any(Function));
+      expect(component.uploads.items()).toEqual([]);
     });
 
-    it('reports a failed file and keeps uploading the rest of the batch and later picks', () => {
+    it('reports a failed file, keeps it listed and keeps uploading the rest of the batch and later picks', () => {
       const { component, createFile, error } = setup();
       const [first, broken, third, later] = ['a.png', 'b.png', 'c.png', 'd.png'].map(name => new File(['data'], name));
       createFile.mockImplementation((_space: string, _path: string, file: File) =>
         file === broken ? throwError(() => new HttpErrorResponse({ status: 413 })) : of({ id: file.name }),
       );
-      const pick = (...files: File[]) => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        Object.defineProperty(input, 'files', { value: files });
-        component.onFileUpload({ target: input } as unknown as Event);
-      };
 
-      pick(first, broken, third);
+      pick(component, first, broken, third);
       expect(createFile.mock.calls.map(([, , file]) => file)).toEqual([first, broken, third]);
       expect(error).toHaveBeenCalledExactlyOnceWith('b.png could not be uploaded: the file is too large.');
-      expect(component.fileUploadQueue()).toEqual([]);
+      expect(component.uploads.items().map(it => [it.name, it.status])).toEqual([['b.png', 'error']]);
 
-      pick(later);
-      expect(createFile).toHaveBeenLastCalledWith('space-1', undefined, later);
-      expect(component.fileUploadQueue()).toEqual([]);
+      pick(component, later);
+      expect(createFile).toHaveBeenLastCalledWith('space-1', undefined, later, expect.any(Function));
+      expect(component.uploads.items().map(it => it.name)).toEqual(['b.png']);
     });
 
-    it('updates the queue with a new array, so the count re-renders', () => {
+    it('uploads three at a time', () => {
       const { component, createFile } = setup();
-      const pending = new Subject<unknown>();
-      createFile.mockReturnValue(pending);
-      const before = component.fileUploadQueue();
-      const input = document.createElement('input');
-      input.type = 'file';
-      Object.defineProperty(input, 'files', { value: [new File(['data'], 'a.png')] });
+      const requests = [new Subject<unknown>(), new Subject<unknown>(), new Subject<unknown>(), new Subject<unknown>()];
+      requests.forEach(it => createFile.mockReturnValueOnce(it));
 
-      component.onFileUpload({ target: input } as unknown as Event);
-      const queued = component.fileUploadQueue();
-      expect(queued).not.toBe(before);
-      expect(queued).toHaveLength(1);
+      pick(component, ...['a.png', 'b.png', 'c.png', 'd.png'].map(name => new File(['data'], name)));
+      expect(createFile).toHaveBeenCalledTimes(3);
+      expect(component.uploads.items().map(it => it.status)).toEqual(['uploading', 'uploading', 'uploading', 'waiting']);
 
-      pending.next({ id: 'a' });
-      pending.complete();
-      expect(component.fileUploadQueue()).not.toBe(queued);
-      expect(component.fileUploadQueue()).toEqual([]);
+      requests[1].next({ id: 'b' });
+      requests[1].complete();
+      expect(createFile).toHaveBeenCalledTimes(4);
+    });
+
+    it('uploads into the folder shown when the file was picked, even when it starts after a folder change', () => {
+      const { component, createFile, assetFolderId } = setup('f1');
+      const requests = [new Subject<unknown>(), new Subject<unknown>(), new Subject<unknown>()];
+      requests.forEach(it => createFile.mockReturnValueOnce(it));
+      const last = new File(['data'], 'd.png');
+
+      pick(component, ...['a.png', 'b.png', 'c.png'].map(name => new File(['data'], name)), last);
+      assetFolderId.set('f2');
+      requests[0].next({ id: 'a' });
+      requests[0].complete();
+
+      expect(createFile).toHaveBeenLastCalledWith('space-1', 'f1', last, expect.any(Function));
     });
   });
 
@@ -232,7 +238,7 @@ describe('AssetsComponent', () => {
       component.openUrlPrompt();
 
       expect(error).not.toHaveBeenCalled();
-      expect(component.fileUploadQueue()).toEqual([]);
+      expect(component.uploads.items()).toEqual([]);
     });
 
     it('shows an error for an empty url', () => {
@@ -259,12 +265,17 @@ describe('AssetsComponent', () => {
 
       component.openUrlPrompt();
 
-      expect(importFile).toHaveBeenCalledWith('space-1', undefined, {
-        url: 'https://example.com/path/photo.png',
-        name: 'photo',
-        extension: '.png',
-        source: 'https://example.com/path/photo.png',
-      });
+      expect(importFile).toHaveBeenCalledWith(
+        'space-1',
+        undefined,
+        {
+          url: 'https://example.com/path/photo.png',
+          name: 'photo',
+          extension: '.png',
+          source: 'https://example.com/path/photo.png',
+        },
+        expect.any(Function),
+      );
     });
   });
 
@@ -538,7 +549,7 @@ describe('AssetsComponent', () => {
       component.onPaste(event);
 
       expect(event.preventDefault).toHaveBeenCalled();
-      expect(createFile).toHaveBeenCalledWith('space-1', undefined, pastedFile);
+      expect(createFile).toHaveBeenCalledWith('space-1', undefined, pastedFile, expect.any(Function));
     });
 
     it('generates a filename for a nameless pasted screenshot', () => {

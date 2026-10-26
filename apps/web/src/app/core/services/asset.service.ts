@@ -1,8 +1,9 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpEventType, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { ChangeEventsService } from '@core/api/change-events.service';
 import { liveQueryWith } from '@core/api/live-query';
 import { multipartForm } from '@core/utils/multipart';
+import { UploadProgress } from '@core/utils/upload-queue';
 import {
   Asset,
   AssetFile,
@@ -16,7 +17,7 @@ import {
 } from '@localess/shared';
 import { AssetFileImport, AssetFolderCreateForm } from '@shared/models/asset.model';
 import { Observable } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { filter, map, switchMap, tap } from 'rxjs/operators';
 
 /** Asset library of a space (`/api/app/spaces/:spaceId/assets`, the server's `AssetController`); reads are live. */
 @Injectable({ providedIn: 'root' })
@@ -68,9 +69,20 @@ export class AssetService {
     return this.http.post<AssetFolder>(`${this.base(spaceId)}/folders`, { parentId, name: entity.name } satisfies AssetFolderCreate);
   }
 
-  /** A new file, multipart: the fields first, then the file; `createFile` and `importFile` fill the fields. */
-  upload(spaceId: string, fields: AssetUpload, file: File): Observable<AssetFile> {
-    return this.http.post<AssetFile>(`${this.base(spaceId)}/files`, multipartForm(fields, file));
+  /**
+   * A new file, multipart: the fields first, then the file; `createFile` and `importFile` fill the fields. `progress` is
+   * told the bytes sent as they go (of the whole request, a little over the file's size).
+   */
+  upload(spaceId: string, fields: AssetUpload, file: File, progress?: UploadProgress): Observable<AssetFile> {
+    return this.http
+      .post<AssetFile>(`${this.base(spaceId)}/files`, multipartForm(fields, file), { observe: 'events', reportProgress: true })
+      .pipe(
+        tap(event => {
+          if (event.type === HttpEventType.UploadProgress) progress?.(event.loaded, event.total ?? file.size);
+        }),
+        filter(event => event.type === HttpEventType.Response),
+        map(event => event.body as AssetFile),
+      );
   }
 
   /** The file of a file asset that has none (`missingFile`): stored under the same id, its references keep working. */
@@ -79,13 +91,13 @@ export class AssetService {
   }
 
   /** Name and extension are taken from the file name server-side. */
-  createFile(spaceId: string, parentId: string | undefined, entity: File): Observable<AssetFile> {
+  createFile(spaceId: string, parentId: string | undefined, entity: File, progress?: UploadProgress): Observable<AssetFile> {
     const fields: AssetUpload = { parentId: parentId ?? '' };
-    return this.upload(spaceId, fields, entity);
+    return this.upload(spaceId, fields, entity, progress);
   }
 
   /** Downloads `entity.url` in the browser and uploads it as a new file; `parentId` absent: the root. */
-  importFile(spaceId: string, parentId: string | undefined, entity: AssetFileImport): Observable<AssetFile> {
+  importFile(spaceId: string, parentId: string | undefined, entity: AssetFileImport, progress?: UploadProgress): Observable<AssetFile> {
     return this.http.get(entity.url, { responseType: 'blob' }).pipe(
       switchMap(blob => {
         const fields: AssetUpload = {
@@ -96,7 +108,7 @@ export class AssetService {
           source: entity.source || undefined,
         };
         // A File (not a Blob plus filename): some FormData implementations drop the filename argument.
-        return this.upload(spaceId, fields, new File([blob], `${entity.name}${entity.extension}`, { type: blob.type }));
+        return this.upload(spaceId, fields, new File([blob], `${entity.name}${entity.extension}`, { type: blob.type }), progress);
       }),
     );
   }

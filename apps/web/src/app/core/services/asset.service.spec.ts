@@ -1,4 +1,4 @@
-import { HttpParams, provideHttpClient } from '@angular/common/http';
+import { HttpEventType, HttpParams, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ChangeEvent, ChangeEventsService } from '@core/api/change-events.service';
@@ -99,6 +99,23 @@ describe('AssetService', () => {
     expect(entries[0][1]).toBe('f1');
     expect((entries[1][1] as File).name).toBe('logo.png');
     request.flush({ id: 'a1' });
+    expect((await result).id).toBe('a1');
+  });
+
+  it('createFile() tells the bytes sent as the upload goes', async () => {
+    const service = setup();
+    const progress = vi.fn();
+    const file = new File(['hello'], 'logo.png', { type: 'image/png' });
+    const result = firstValueFrom(service.createFile('space-1', undefined, file, progress));
+    const request = http.expectOne({ method: 'POST', url: `${BASE}/files` });
+    expect(request.request.reportProgress).toBe(true);
+    request.event({ type: HttpEventType.UploadProgress, loaded: 3, total: 9 });
+    request.event({ type: HttpEventType.UploadProgress, loaded: 9 });
+    request.flush({ id: 'a1' });
+    expect(progress.mock.calls).toEqual([
+      [3, 9],
+      [9, 5],
+    ]);
     expect((await result).id).toBe('a1');
   });
 

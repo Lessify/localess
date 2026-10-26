@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AssetService } from '@core/services/asset.service';
 import { NotificationService } from '@core/services/notification.service';
@@ -13,7 +13,7 @@ import { FOLDER_LIST_FILTERS, FolderList } from '@core/utils/folder-list';
 import { assetLocation, breadcrumbs } from '@core/utils/folder-tree';
 import { ObjectUtils } from '@core/utils/object-utils.service';
 import { pagedResource } from '@core/utils/paged-resource';
-import { uploadErrorMessage } from '@core/utils/upload-error';
+import { UploadQueue } from '@core/utils/upload-queue';
 import { Asset, AssetFile, AssetFolder, AssetKind, TaskKind } from '@localess/shared';
 import { UnsplashPhoto } from '@localess/shared';
 import { provideIcons } from '@ng-icons/core';
@@ -59,6 +59,7 @@ import { ImagePreviewDialogContext } from '@shared/components/image-preview-dial
 import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource } from '@shared/components/table/table.imports';
 import { UnsplashAssetsSelectDialogComponent, UnsplashAssetsSelectDialogContext } from '@shared/components/unsplash-assets-select-dialog';
+import { UploadQueueComponent } from '@shared/components/upload-queue';
 import { FileDragAndDropDirective } from '@shared/directives/file-drag-and-drop.directive';
 import {
   AssetFileImport,
@@ -78,11 +79,10 @@ import { HlmDialogService } from '@spartan-ng/helm/dialog';
 import { HlmDropdownMenuImports } from '@spartan-ng/helm/dropdown-menu';
 import { HlmIconImports } from '@spartan-ng/helm/icon';
 import { HlmProgressImports } from '@spartan-ng/helm/progress';
-import { HlmSpinnerImports } from '@spartan-ng/helm/spinner';
 import { HlmToggleGroupImports } from '@spartan-ng/helm/toggle-group';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
-import { EMPTY, of, Subject } from 'rxjs';
-import { catchError, concatMap, filter, finalize, map, switchMap, take } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { catchError, filter, map, switchMap, take } from 'rxjs/operators';
 
 import { AddFolderDialogComponent } from './add-folder-dialog/add-folder-dialog.component';
 import { EditFileDialogComponent } from './edit-file-dialog/edit-file-dialog.component';
@@ -117,8 +117,8 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     HlmTooltipImports,
     HlmBreadcrumbImports,
     HlmProgressImports,
-    HlmSpinnerImports,
     ActiveTasksComponent,
+    UploadQueueComponent,
   ],
   providers: [
     provideIcons({
@@ -150,7 +150,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     }),
   ],
 })
-export class AssetsComponent implements OnInit {
+export class AssetsComponent {
   private readonly assetService = inject(AssetService);
   private readonly taskService = inject(TaskService);
   private readonly taskNotifier = inject(TaskNotifierService);
@@ -179,7 +179,8 @@ export class AssetsComponent implements OnInit {
   });
   readonly dataSource = new TableDataSource<Asset>(this.page.items, this.injector);
   displayedColumns: string[] = ['icon', 'preview', 'name', 'size', 'type', /*'createdAt',*/ 'updatedAt', 'actions'];
-  fileUploadQueue = signal<Array<File | AssetFileImport>>([]);
+  /** The files being uploaded, three at a time; `ll-upload-queue` shows them. */
+  readonly uploads = new UploadQueue(message => this.notificationService.error(message));
   now = Date.now();
 
   /** Every folder of the space, from `SpaceStore` (live): the breadcrumbs and the paths are built from it. */
@@ -197,38 +198,21 @@ export class AssetsComponent implements OnInit {
     return this.spaceStore.assetFolderId() ?? undefined;
   }
 
-  // Subscriptions
-  private fileUploadQueue$ = new Subject<File | AssetFileImport>();
-
   // Local Settings
   settingsStore = inject(LocalSettingsStore);
 
-  ngOnInit(): void {
-    this.fileUploadQueue$
-      .pipe(
-        // Each upload handles its own failure: an error reaching this stream would end it, and every later
-        // upload on the page with it.
-        concatMap(item =>
-          (item instanceof File
-            ? this.assetService.createFile(this.spaceId(), this.folderId, item)
-            : this.assetService.importFile(this.spaceId(), this.folderId, item)
-          ).pipe(
-            catchError((error: unknown) => {
-              this.notificationService.error(uploadErrorMessage(item instanceof File ? item.name : `${item.name}${item.extension}`, error));
-              return EMPTY;
-            }),
-            finalize(() => this.fileUploadQueue.update(items => items.filter(it => it !== item))),
-          ),
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
-  }
-
-  /** Shows the item in the "Uploading … (n)" count and uploads it after the ones before it. */
+  /**
+   * Uploads the item into the folder shown now: it may start after the user has moved on to another folder, and must
+   * not land there.
+   */
   private enqueue(item: File | AssetFileImport): void {
-    this.fileUploadQueue.update(items => [...items, item]);
-    this.fileUploadQueue$.next(item);
+    const spaceId = this.spaceId();
+    const folderId = this.folderId;
+    if (item instanceof File) {
+      this.uploads.add(item.name, item.size, progress => this.assetService.createFile(spaceId, folderId, item, progress));
+    } else {
+      this.uploads.add(`${item.name}${item.extension}`, 0, progress => this.assetService.importFile(spaceId, folderId, item, progress));
+    }
   }
 
   onFileUpload(event: Event): void {

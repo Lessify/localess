@@ -151,11 +151,11 @@ describe('AssetsSelectDialogComponent', () => {
 
     component.onFileUpload({ target: input } as unknown as Event);
 
-    expect(createFile).toHaveBeenCalledWith('space-1', undefined, uploaded);
-    expect(component.fileUploadQueue()).toEqual([]);
+    expect(createFile).toHaveBeenCalledWith('space-1', undefined, uploaded, expect.any(Function));
+    expect(component.uploads.items()).toEqual([]);
   });
 
-  it('notifies an error when a queued upload fails', () => {
+  it('notifies an error when a queued upload fails, and keeps it listed', () => {
     const { component, createFile, error } = setup({ spaceId: 'space-1' });
     createFile.mockReturnValue(throwError(() => new Error('boom')));
     const input = document.createElement('input');
@@ -166,7 +166,9 @@ describe('AssetsSelectDialogComponent', () => {
     component.onFileUpload({ target: input } as unknown as Event);
 
     expect(error).toHaveBeenCalledWith('photo.png could not be uploaded.');
-    expect(component.fileUploadQueue()).toEqual([]);
+    expect(component.uploads.items().map(it => [it.name, it.status, it.error])).toEqual([
+      ['photo.png', 'error', 'photo.png could not be uploaded.'],
+    ]);
   });
 
   it('keeps uploading after a failed file, in the same batch and in later picks', () => {
@@ -187,7 +189,7 @@ describe('AssetsSelectDialogComponent', () => {
 
     expect(createFile.mock.calls.map(([, , file]) => file)).toEqual([first, broken, third, later]);
     expect(error).toHaveBeenCalledExactlyOnceWith('b.png could not be uploaded.');
-    expect(component.fileUploadQueue()).toEqual([]);
+    expect(component.uploads.items().map(it => it.name)).toEqual(['b.png']);
   });
   /**
    * Renders the real template, unlike `setup` above, which stubs it out.

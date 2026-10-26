@@ -3,12 +3,7 @@
   <h2 hlmDialogTitle class="flex flex-wrap items-center gap-2 pr-8">
     <span>Assets</span>
     <div class="ml-auto flex flex-wrap items-center gap-2">
-      @if (fileUploadQueue().length > 0) {
-        <span hlmBadge class="h-6">
-          <hlm-spinner />
-          Uploading ... ({{ fileUploadQueue().length }})
-        </span>
-      }
+      <ll-upload-queue [queue]="uploads" />
       <hlm-toggle-group type="single" variant="outline" [nullable]="false" [value]="settingsStore.assetDialogLayout()">
         <button
           hlmToggleGroupItem
