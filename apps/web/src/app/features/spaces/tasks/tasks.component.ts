@@ -25,7 +25,7 @@ import {
 import { FilterDef, FilterToolbarValue, LlFilterToolbarImports } from '@shared/components/filter-toolbar/filter-toolbar.imports';
 import { LlPaginatorImports } from '@shared/components/paginator/paginator.imports';
 import { LlTableImports, TableDataSource, TableSortState } from '@shared/components/table/table.imports';
-import { formatTaskParams, formatTaskProgress, TASK_KIND_LABELS, taskDurations } from '@shared/models/task.model';
+import { formatTaskParams, formatTaskProgress, TASK_KIND_LABELS, taskDurations, TASKS_PAGE_KINDS } from '@shared/models/task.model';
 import { FormatFileSizePipe } from '@shared/pipes/digital-store.pipe';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogService } from '@spartan-ng/helm/dialog';
@@ -86,7 +86,10 @@ export class TasksComponent {
 
   displayedColumns: string[] = ['id', 'kind', 'status', 'file', 'description', 'createdBy', 'createdAt', 'actions'];
 
-  /** The query: paged and filtered on the server, newest first unless sorted otherwise. */
+  /** The kinds listed: the imports and exports the user's role may start (the only ones the server lists for them). */
+  private readonly kinds = taskKindsFor({ role: this.userStore.role() }).filter(kind => TASKS_PAGE_KINDS.includes(kind));
+
+  /** The query: paged and filtered on the server, newest first unless sorted otherwise; always of the listed kinds. */
   readonly list = new PagedList(20);
   /** The page shown, live: a change of any task of the space reads it again. */
   readonly page = pagedResource({
@@ -101,8 +104,7 @@ export class TasksComponent {
       key: 'kind',
       label: 'Kind',
       mode: 'multiple',
-      // The kinds the user's role may start: the only ones the server lists for them.
-      options: taskKindsFor({ role: this.userStore.role() }).map(kind => ({ value: kind, label: TASK_KIND_LABELS[kind] })),
+      options: this.kinds.map(kind => ({ value: kind, label: TASK_KIND_LABELS[kind] })),
     },
     {
       key: 'status',
@@ -112,9 +114,14 @@ export class TasksComponent {
     },
   ];
 
-  /** The search box (id, file name, message) and the Kind and Status filters, on the server; from the first page. */
+  /** The search box (id, file name, message) and the Kind and Status filters, on the server; from the first page. No kind chosen: every listed one. */
   onFilterChange(value: FilterToolbarValue): void {
-    this.list.setFilters({ search: value.search?.trim() || undefined, kind: value['kind'], status: value['status'] });
+    const kind = value['kind'];
+    this.list.setFilters({
+      search: value.search?.trim() || undefined,
+      kind: Array.isArray(kind) && kind.length ? kind : [...this.kinds],
+      status: value['status'],
+    });
   }
 
   onSortChange(sort: TableSortState): void {
@@ -133,6 +140,7 @@ export class TasksComponent {
   private readonly progress = signal<Record<string, TaskProgress>>({});
 
   constructor() {
+    this.list.setFilters({ kind: [...this.kinds] });
     effect(onCleanup => {
       const subscription = this.taskService
         .spaceProgress(this.spaceId())

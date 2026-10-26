@@ -75,25 +75,32 @@ describe('TasksComponent', () => {
 
     expect(findAll).toHaveBeenCalledTimes(1);
     expect(findAll.mock.calls[0][0]).toBe('space-1');
-    expect(findAll.mock.calls[0][1].toString()).toBe('page=0&size=20');
+    expect(findAll.mock.calls[0][1].toString()).toBe(
+      'page=0&size=20&kind=SCHEMA_EXPORT&kind=SCHEMA_IMPORT&kind=TRANSLATION_EXPORT&kind=TRANSLATION_IMPORT',
+    );
     expect(component.dataSource.filteredData()).toEqual(tasks);
     expect(component.page.total()).toBe(2);
     expect(component.page.loading()).toBe(false);
   });
 
-  it('the Kind filter offers only the kinds the role may start', () => {
+  it('the Kind filter offers only the imports and exports the role may start', () => {
     const kinds = (role: UserRole) => setup([], role).component.filters[0].options.map(it => it.value);
-    expect(kinds('TRANSLATOR')).toEqual(['TRANSLATION_TRANSLATE']);
+    expect(kinds('TRANSLATOR')).toEqual([]);
     TestBed.resetTestingModule();
-    expect(kinds('EDITOR')).toEqual(['TRANSLATION_EXPORT', 'TRANSLATION_IMPORT', 'TRANSLATION_TRANSLATE']);
+    expect(kinds('EDITOR')).toEqual(['TRANSLATION_EXPORT', 'TRANSLATION_IMPORT']);
     TestBed.resetTestingModule();
-    expect(kinds('DEVELOPER')).toEqual([
-      'SCHEMA_EXPORT',
-      'SCHEMA_IMPORT',
-      'TRANSLATION_EXPORT',
-      'TRANSLATION_IMPORT',
-      'TRANSLATION_TRANSLATE',
-    ]);
+    expect(kinds('ADMIN')).toEqual(['SCHEMA_EXPORT', 'SCHEMA_IMPORT', 'TRANSLATION_EXPORT', 'TRANSLATION_IMPORT']);
+  });
+
+  it('asks only for the imports and exports, also when the Kind filter is cleared', () => {
+    const { fixture, component, findAll } = setup([], 'EDITOR');
+    const editorKinds = 'kind=TRANSLATION_EXPORT&kind=TRANSLATION_IMPORT';
+    expect(findAll.mock.lastCall![1].toString()).toBe(`page=0&size=20&${editorKinds}`);
+
+    component.onFilterChange({ search: '', kind: [], status: [] });
+    fixture.detectChanges();
+
+    expect(findAll.mock.lastCall![1].toString()).toBe(`page=0&size=20&${editorKinds}`);
   });
 
   it("shows a running task's progress from the space's progress events", () => {
@@ -137,7 +144,9 @@ describe('TasksComponent', () => {
     component.onSortChange({ active: 'createdAt', direction: 'asc' });
     fixture.detectChanges();
 
-    expect(findAll.mock.lastCall![1].toString()).toBe('page=0&size=20&sort=createdAt&direction=asc');
+    expect(findAll.mock.lastCall![1].toString()).toBe(
+      'page=0&size=20&sort=createdAt&direction=asc&kind=SCHEMA_EXPORT&kind=SCHEMA_IMPORT&kind=TRANSLATION_EXPORT&kind=TRANSLATION_IMPORT',
+    );
   });
 
   it('tells a failed load, and loads again on the next query change', async () => {

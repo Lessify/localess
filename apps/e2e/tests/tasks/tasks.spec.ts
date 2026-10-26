@@ -70,7 +70,13 @@ test.describe('Space → Tasks', () => {
     expect(await api.statusOf(`/api/app/spaces/${space.id}/tasks/${task.id}`)).toBe(404);
   });
 
-  test('each role sees the kinds of task it may start; a viewer has no Tasks page', async ({ page, api, space, createUser, signInAs }) => {
+  test('each role sees the imports and exports it may start; a translator and a viewer have no Tasks link', async ({
+    page,
+    api,
+    space,
+    createUser,
+    signInAs,
+  }) => {
     await api.addLocale(space.id, 'de');
     await api.createTranslation(space.id, { key: 'greeting', locales: { en: 'Hello' } });
     await ended(api, space.id, { kind: 'TRANSLATION_EXPORT' });
@@ -81,13 +87,16 @@ test.describe('Space → Tasks', () => {
       params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de', overwrite: false },
     });
 
-    await expectKinds(page, space.id, ['Regenerate Asset Metadata', 'Schema Export', 'Translate Locale', 'Translation Export']);
+    // Translate Locale and Regenerate Asset Metadata show only while they run, on Translations and Assets.
+    await expectKinds(page, space.id, ['Schema Export', 'Translation Export']);
     const developer = await signInAs(await createUser({ role: 'DEVELOPER' }));
-    await expectKinds(developer, space.id, ['Schema Export', 'Translate Locale', 'Translation Export']);
+    await expectKinds(developer, space.id, ['Schema Export', 'Translation Export']);
     const editor = await signInAs(await createUser({ role: 'EDITOR' }));
-    await expectKinds(editor, space.id, ['Translate Locale', 'Translation Export']);
+    await expectKinds(editor, space.id, ['Translation Export']);
     const translator = await signInAs(await createUser({ role: 'TRANSLATOR' }));
-    await expectKinds(translator, space.id, ['Translate Locale']);
+    await translator.goto(`/features/spaces/${space.id}/dashboard`);
+    await expect(new Shell(translator).navLink('Translations')).toBeVisible();
+    await expect(new Shell(translator).navLink('Tasks')).toHaveCount(0);
 
     // A viewer: no Tasks link, and the route sends them away.
     const viewer = await signInAs(await createUser({ role: 'VIEWER' }));

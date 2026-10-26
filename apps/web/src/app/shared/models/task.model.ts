@@ -10,6 +10,17 @@ export const TASK_KIND_LABELS: Record<TaskKind, string> = {
   [TaskKind.TRANSLATION_TRANSLATE]: 'Translate Locale',
 };
 
+/**
+ * The kinds the Tasks page lists: imports and exports. Translate Locale and Regenerate Asset Metadata show only while
+ * they run, in the active tasks of the screen whose data they change (Translations, Assets).
+ */
+export const TASKS_PAGE_KINDS: readonly TaskKind[] = [
+  TaskKind.SCHEMA_EXPORT,
+  TaskKind.SCHEMA_IMPORT,
+  TaskKind.TRANSLATION_EXPORT,
+  TaskKind.TRANSLATION_IMPORT,
+];
+
 const count = (value: number): string => value.toLocaleString('en-US');
 
 /** "Writing 4,200 / 10,000", or the step alone while the total is unknown. */

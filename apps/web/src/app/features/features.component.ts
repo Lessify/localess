@@ -264,7 +264,7 @@ export class FeaturesComponent implements OnInit {
         },
         { link: `spaces/${selectedSpaceId}/assets`, label: 'Assets', icon: 'lucideImage', role: 'ANY_ROLE' },
         { link: `spaces/${selectedSpaceId}/schemas`, label: 'Schemas', icon: 'lucideToyBrick', role: 'ANY_ROLE' },
-        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', role: 'TRANSLATORS' },
+        { link: `spaces/${selectedSpaceId}/tasks`, label: 'Tasks', icon: 'lucideFileCheck', role: 'CONTENT_WRITERS' },
         {
           link: '',
           label: 'Developers',

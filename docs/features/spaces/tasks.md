@@ -13,7 +13,7 @@ Everyone else on a screen whose data a task changes (or reads) sees it in the **
 ## Route
 
 ```
-/features/spaces/:spaceId/tasks             [TRANSLATORS] → TasksComponent
+/features/spaces/:spaceId/tasks             [TRANSLATORS; sidebar: CONTENT_WRITERS] → TasksComponent
 /features/spaces/:spaceId/tasks/:taskId                    → TaskDetailComponent
 ```
 
@@ -31,11 +31,11 @@ apps/web/src/app/shared/models/task.model.ts                ← kind labels, for
 
 ## TasksComponent
 
-A paginated `ll-table` (see the [Table](../../components/table.md)) of the space's tasks **of the kinds the user's role may start** (the server filters; see Roles). Each row shows the kind, the status (with the step and count while running, from the progress events), the file, a description (its input: "Locale de (key-value JSON)", "en → de"; "Waited 40 s · ran 2 min 10 s"), who started it and when; the `id` and **Started by** columns hide below the `@5xl` container-query breakpoint. Rows navigate to `TaskDetailComponent`.
+A paginated `ll-table` (see the [Table](../../components/table.md)) of the space's **imports and exports** of the kinds the user's role may start (see Roles). Each row shows the kind, the status (with the step and count while running, from the progress events), the file, a description (its input: "Locale de (key-value JSON)", "en → de"; "Waited 40 s · ran 2 min 10 s"), who started it and when; the `id` and **Started by** columns hide below the `@5xl` container-query breakpoint. Rows navigate to `TaskDetailComponent`.
 
 - `page` (`pagedResource`) — one page at a time (`TaskService.findAll()`, a live query on `GET …/tasks`, `Page<Task>`); `list` (`PagedList`, 20 per page) holds the query
 - Sorting: only **Created At**, newest first by default
-- `<ll-filter-toolbar>`: search (id or file name), **Kind** (only the user's kinds) and **Status**, on the server
+- `<ll-filter-toolbar>`: search (id or file name), **Kind** (only the user's imports and exports) and **Status**, on the server
 - `canDownload(task)` / `onDownload(task)` — **Download export** (a finished export) or **Download uploaded file** (an import, whatever its status), from `GET …/tasks/:id/download`
 - `openDeleteDialog(task)` — confirms then deletes the task; a queued or running task can't be deleted (the server answers 409), so its space never runs two
 
@@ -73,7 +73,7 @@ One container for every export, `.localess.zip`: `manifest.json` (`format: "loca
 
 ## Roles
 
-Each role sees **the kinds it can start** (`apps/server/src/modules/tasks/utils/task-roles.ts`, the table above): the list answers only those kinds (a filter on another kind gives an empty page), and another kind's task, logs or file answer 404. A translator sees only Translate Locale tasks; an editor the translation tasks; a developer also the schema tasks; an admin every kind. The Tasks page and its sidebar entry are open to `TRANSLATORS`. Every `tasks` and `task_logs` change event carries the task's `kind`; a `task_logs` event reaches only the roles that may start that kind (`modules/events/utils/event-access.ts`).
+Each role sees **the kinds it can start** (`apps/server/src/modules/tasks/utils/task-roles.ts`, the table above): the list answers only those kinds (a filter on another kind gives an empty page), and another kind's task, logs or file answer 404. A translator sees only Translate Locale tasks; an editor the translation tasks; a developer also the schema tasks; an admin every kind. The Tasks page lists **only imports and exports** (`TASKS_PAGE_KINDS` in `shared/models/task.model.ts`; its Kind filter offers those the role may start, and no kind chosen asks for all of them): Translate Locale and Regenerate Asset Metadata are told while they run, in the `ll-active-tasks` of the screen whose data they change (Translations, Assets), and their task page stays open through its **View task** link. The sidebar entry is for `CONTENT_WRITERS` (a translator starts no import or export); the route stays open to `TRANSLATORS` for that link. The API lists every kind the role may start (`?kind=` narrows it). Every `tasks` and `task_logs` change event carries the task's `kind`; a `task_logs` event reaches only the roles that may start that kind (`modules/events/utils/event-access.ts`).
 
 **The exception: what is active.** `GET …/tasks/active` and the `tasks` change events (its row, its progress) reach **every role**, whatever kinds it may start: a translator must see that an editor's import is about to overwrite the values in front of them. They carry no file (the active list leaves it out; the events never had one), so the task itself, its logs and its file stay with the roles of its kind; `ll-active-tasks` links to the task only for those.
 
