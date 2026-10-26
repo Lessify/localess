@@ -37,9 +37,10 @@ test('REQUIRED_APIS is frozen so a caller cannot mutate the shared list', () => 
 });
 
 test('missingApis returns a fresh array rather than the shared constant', () => {
+  const before = REQUIRED_APIS.length;
   const missing = missingApis(null);
   missing.pop();
-  assert.equal(REQUIRED_APIS.length, 15);
+  assert.equal(REQUIRED_APIS.length, before);
 });
 
 test('cloudbuild.yaml enables exactly the required APIs', () => {
