@@ -19,6 +19,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
  * The env has to be set before the module graph loads, which is why the imports are dynamic.
  */
 const MD5 = 'abc123==';
+/** Past what Firebase Hosting can carry without truncating it. */
+const LARGE = 40 * 1024 * 1024;
 
 let CDN: express.Router;
 let bucket: { file: (path: string) => unknown };
@@ -82,13 +84,15 @@ interface StoredAsset {
   storageMissing?: boolean;
   /** Simulates a deleted asset still referenced by published content. */
   documentMissing?: boolean;
+  /** Overrides the stored object's size, to exercise the large-object path without the bytes. */
+  size?: number;
 }
 
 function given(asset: StoredAsset): { download: ReturnType<typeof vi.fn>; createReadStream: ReturnType<typeof vi.fn> } {
   const file = {
     getMetadata: asset.storageMissing
       ? vi.fn().mockRejectedValue(new Error('not found'))
-      : vi.fn().mockResolvedValue([{ md5Hash: MD5, size: String(asset.bytes.length) }]),
+      : vi.fn().mockResolvedValue([{ md5Hash: MD5, size: String(asset.size ?? asset.bytes.length) }]),
     createReadStream: vi
       .fn()
       .mockImplementation((options?: { start?: number; end?: number }) =>
@@ -186,6 +190,27 @@ describe('asset routes — the passthrough pair', () => {
 
     expect(res.status).toBe(416);
     expect(res.headers['content-range']).toBe('bytes */10');
+  });
+
+  it.each([['/download'], ['/original']])('%s refuses an object too large for Hosting with an explicit 413', async route => {
+    const file = given({ bytes: Buffer.from('x'), size: LARGE, type: 'video/quicktime', extension: '.mov' });
+
+    const res = await request(app()).get(`${URL}${route}`);
+
+    // Never a truncated 200: the import only rejects an asset whose status is not 200.
+    expect(res.status).toBe(413);
+    expect(res.headers['cache-control']).toBe('no-cache');
+    expect(res.headers['content-disposition']).toBeUndefined();
+    expect(res.text).toContain('Known limitations');
+    expect(file.createReadStream).not.toHaveBeenCalled();
+  });
+
+  it('a bare transform-route URL on a large video is refused too', async () => {
+    given({ bytes: Buffer.from('x'), size: LARGE, type: 'video/mp4', extension: '.mp4' });
+
+    const res = await request(app()).get(URL);
+
+    expect(res.status).toBe(413);
   });
 
   it('a bare transform-route URL on a video streams the stored bytes', async () => {

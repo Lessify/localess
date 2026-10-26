@@ -3,13 +3,14 @@ import { logger } from 'firebase-functions';
 import type { Readable } from 'stream';
 
 /**
- * Cloud Run rejects a response larger than 32 MiB with a bare `500` unless it is streamed with
- * chunked transfer encoding — and a response carrying `Content-Length` is not streamed in that
- * sense. Bodies at or under this size keep their `Content-Length` (so clients show progress);
- * anything larger is sent without one, which is what makes Node fall back to chunked encoding.
- * Kept a little under the hard limit to leave room for the headers.
+ * Largest object this API will serve. Known issue: Firebase Hosting buffers a rewritten function
+ * response and cuts it off at 32 MiB while still answering `200` with a matching
+ * `Content-Length`, so a larger asset would arrive silently truncated — and a client such as the
+ * self-hosted import would store the broken copy as if it were complete. Anything bigger is
+ * refused outright instead (see docs/v1-functions-api.md, "Known limitations"). Kept a little
+ * under the limit to leave room for the headers.
  */
-export const MAX_CONTENT_LENGTH_BYTES = 31 * 1024 * 1024;
+export const MAX_SERVED_BYTES = 31 * 1024 * 1024;
 
 export type ByteRange = { start: number; end: number };
 
@@ -53,9 +54,8 @@ export interface StreamableFile {
  * Streams a stored object to the response, honouring a single `Range`. Headers other than
  * length and range (type, disposition, cache) must already be set by the caller.
  *
- * Replaces `download()` to `/tmp` + `sendFile`: on Cloud Functions `/tmp` is RAM, so that held
- * the whole object in memory, and `sendFile` always sets `Content-Length` — which is what made
- * every object over 32 MiB fail.
+ * Replaces `download()` to `/tmp` + `sendFile`, which held the whole object in memory: `/tmp` is
+ * RAM on Cloud Functions. Objects above {@link MAX_SERVED_BYTES} are refused with `413`.
  * @param {Request} req Incoming request, read for `Range` and the method
  * @param {Response} res Response to stream into
  * @param {StreamableFile} file Storage object to read
@@ -63,6 +63,21 @@ export interface StreamableFile {
  * @param {string} tag Log prefix of the calling route
  */
 export function streamStoredObject(req: Request, res: Response, file: StreamableFile, size: number, tag: string): void {
+  if (size > MAX_SERVED_BYTES) {
+    // Refused with an explicit status rather than streamed: Hosting would truncate the body and
+    // still report success. Uncached, so lifting the limit later takes effect immediately.
+    logger.warn(`${tag} refused a ${size}-byte object: above the ${MAX_SERVED_BYTES}-byte limit Hosting can serve`);
+    res.removeHeader('Content-Disposition');
+    res
+      .status(413)
+      .header('Cache-Control', 'no-cache')
+      .contentType('text/plain')
+      .send(
+        `This asset is ${size} bytes, above the ${MAX_SERVED_BYTES}-byte limit the API can serve through Firebase Hosting. ` +
+          'Known issue: see "Known limitations" in docs/v1-functions-api.md.'
+      );
+    return;
+  }
   res.header('Accept-Ranges', 'bytes');
   const range = parseByteRange(req.headers.range, size);
   if (range === 'unsatisfiable') {
@@ -74,9 +89,7 @@ export function streamStoredObject(req: Request, res: Response, file: Streamable
   if (range) {
     res.status(206).header('Content-Range', `bytes ${start}-${end}/${size}`);
   }
-  if (length <= MAX_CONTENT_LENGTH_BYTES) {
-    res.header('Content-Length', String(length));
-  }
+  res.header('Content-Length', String(length));
   if (req.method === 'HEAD' || length === 0) {
     res.end();
     return;

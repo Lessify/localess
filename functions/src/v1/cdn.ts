@@ -726,7 +726,7 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       filename = `${asset.name}-${suffix || `w${width}`}-thumbnail${format ? formatExtMap[format] : '.webp'}`;
     } else {
       // Video, audio, PDF and the rest pass through untouched, so they are streamed rather than
-      // staged in `/tmp` — see the `/download` route for why that matters past 32 MiB.
+      // staged in `/tmp`; past what Hosting can carry they are refused — see `streamStoredObject`.
       streamed = true;
     }
     const policy = assetResponsePolicy(overwriteType || asset.type, false);
@@ -836,10 +836,9 @@ CDN.get(['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:sp
     }
   }
 
-  // Streamed straight from Storage rather than downloaded to `/tmp` and sent with `sendFile`:
-  // `/tmp` is RAM on Cloud Functions, and `sendFile` always sets `Content-Length`, which makes
-  // Cloud Run reject anything over 32 MiB — a 100 MB video failed with a bare `500`. The stream
-  // honours `Range` itself, so a client can still resume a partial transfer.
+  // Streamed straight from Storage rather than staged in `/tmp`, which is RAM on Cloud Functions.
+  // The stream honours `Range` itself, so a client can still resume a partial transfer. Objects
+  // past what Firebase Hosting can carry are refused with `413` — see `streamStoredObject`.
   const policy = assetResponsePolicy(asset.type, attachment);
   res
     .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)

@@ -37,8 +37,16 @@ Content delivery with cache-busting and asset transformation. All content/transl
 - **`thumbnail` param** — Collapses an animated WebP/GIF to its first frame, and extracts a video frame via FFmpeg (requires `w`). Has no effect on other image types. Since animations now resize with every frame intact, `thumbnail` is how you ask for a *still* rather than how you make resizing work.
 - **EXIF orientation is applied** — Sharp strips the orientation tag on re-encode, so a rotated source is baked into the pixels. Without it a portrait phone photo returned landscape with its aspect ratio transposed.
 - **Embedded colour profiles are carried through** — via `keepIccProfile()`. Sources without one gain nothing; tagging every response as sRGB would add ~506 bytes each.
-- **`/original` and `/download`** — serve the stored bytes exactly as uploaded, inline and as an `attachment` respectively. Since a bare transform request re-encodes, these are the only way to retrieve the original file. Neither enters Sharp, and both reject `w`/`h`/`q`/`f`/`fit`/`thumbnail`/`download` with `400` rather than ignoring them.
+- **`/original` and `/download`** — serve the stored bytes exactly as uploaded, inline and as an `attachment` respectively. Since a bare transform request re-encodes, these are the only way to retrieve the original file. Neither enters Sharp, and both reject `w`/`h`/`q`/`f`/`fit`/`thumbnail`/`download` with `400` rather than ignoring them. Both stream from Storage with `Range` support; objects over 31 MiB are refused with `413` — see [Known limitations](#known-limitations).
 - **Removed in v4** — the `?download` flag and `f=original`. Both return `400` with a message naming the replacement route. Responses already cached under the old spellings keep serving for the remainder of their 365-day TTL.
+
+#### Known limitations
+
+- **Assets over 31 MiB cannot be served (`413`).** Firebase Hosting buffers every rewritten function response and cuts it off at 32 MiB — while still answering `200` with a matching `Content-Length`, so the client believes the transfer completed. Observed on a 104 MiB `.mov`: through `*.web.app` it arrived as its first 33,553,834 bytes; called directly on Cloud Run the function sent all 108,726,933. Streaming does not help — chunked encoding gets past Cloud Run's own 32 MiB limit, not Hosting's.
+
+  So the API **refuses** such objects rather than send a truncated body: `/original`, `/download`, and a bare `/assets/:assetId` on a passthrough type (video, audio, PDF) answer `413` with `Cache-Control: no-cache` and a plain-text explanation. Clients must treat any non-`200` as a failure — the self-hosted Firebase import does, and skips the asset instead of storing a broken copy. Uploading still works; the file is intact in Storage and can be fetched from the Firebase console or `gsutil`.
+
+  The fix is a `302` to a short-lived signed Storage URL. It was implemented and reverted, because signing without a key file needs the functions' runtime service account to hold `roles/iam.serviceAccountTokenCreator` **on itself**, and that grant needs an account with IAM admin rights — Cloud Build's deploy account cannot apply it, so it would be a manual step on every install. Limit: `MAX_SERVED_BYTES` in `functions/src/utils/stream-object.ts`.
 
 #### Asset resize combinations (`w` / `h`)
 
