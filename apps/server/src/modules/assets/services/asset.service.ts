@@ -1,7 +1,7 @@
 import type { Readable } from 'node:stream';
 
 import type { Asset, AssetFileSummary, AssetFolderSummary, AssetPageable, AssetUpdate, Page } from '@localess/shared';
-import { BadRequestException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
@@ -147,6 +147,54 @@ export class AssetService {
         () => false,
       );
       if (cleaned) await this.assetRepository.releaseUploadGuard(spaceId, id);
+      throw error;
+    }
+  }
+
+  /**
+   * The file of a file asset that has none (imported from Firebase without it: too large, or missing there), stored
+   * under the same id so every reference to it works. An asset's bytes never change otherwise: one that has its file
+   * answers 409. Name, folder and alt stay; type, extension, size and metadata come from the upload.
+   */
+  async uploadMissingFile(
+    spaceId: string,
+    assetId: string,
+    input: Omit<UploadInput, 'parentId' | 'name' | 'extension' | 'alt' | 'source'>,
+  ): Promise<Asset> {
+    let current: AssetEntity;
+    try {
+      current = await this.requireAsset(spaceId, assetId);
+      if (current.kind !== 'FILE' || current.md5) throw new ConflictException(assetErrors.notMissingFile);
+    } catch (error) {
+      // Refused before storing: the rest of the file is read and dropped, so the request ends.
+      input.file.resume();
+      throw error;
+    }
+    const originalName = toOriginalName(input.filename);
+    const key = originalKey(spaceId, assetId, originalName);
+    try {
+      const stored = await this.storage.put(key, input.file);
+      if (input.truncated?.()) throw new PayloadTooLargeException('File is too large');
+      const type = input.mimetype || current.type || 'application/octet-stream';
+      const extracted = await this.assetMetadataService.extract(key, type, current.alt ?? undefined);
+      const outcome = await this.assetRepository.setMissingFile(spaceId, assetId, {
+        originalName,
+        extension: splitFilename(input.filename).extension || current.extension || '',
+        type,
+        size: stored.size,
+        md5: stored.md5,
+        alt: current.alt ?? extracted.alt ?? null,
+        metadata: extracted.metadata ?? null,
+      });
+      if (outcome === 'gone') throw new NotFoundException('Asset not found');
+      if (outcome === 'hasFile') throw new ConflictException(assetErrors.notMissingFile);
+      const asset = await this.findAsset(spaceId, assetId);
+      this.assetDeliveryService.warmThumbnail(spaceId, assetId);
+      return asset;
+    } catch (error) {
+      // Only this upload's file goes; another upload that filled the asset meanwhile under the same name keeps its own.
+      const now = await this.assetRepository.findOne(spaceId, assetId);
+      if (!(now?.md5 && now.originalName === originalName)) await this.storage.delete(key).catch(() => undefined);
       throw error;
     }
   }

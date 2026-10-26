@@ -7,4 +7,5 @@ export const assetErrors = {
   intoItself: 'A folder cannot be moved into itself',
   altOnFolder: 'Only files have alt text',
   noName: 'The file needs a name',
+  notMissingFile: 'Only a file asset without its file takes one: upload a new asset to change a file',
 };

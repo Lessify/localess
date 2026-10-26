@@ -26,10 +26,6 @@ const site: FakeFirebaseSpace = {
     environments: [{ name: 'Preview', url: 'https://preview.example.com' }],
     createdAt: '2025-01-01T00:00:00.000Z',
   },
-  tokens: [
-    { id: 'TOKENV1000000000000A', name: 'legacy', createdAt: '2025-01-02T00:00:00.000Z' },
-    { id: 'TOKENV2000000000000B', name: 'web', version: 2, permissions: ['CONTENT_PUBLIC'], createdAt: '2025-01-02T00:00:00.000Z' },
-  ],
   webhooks: [{ id: 'w1', name: 'Site', url: 'https://example.com/hook', enabled: true, events: ['content.published'], secret: 's' }],
   schemas: [{ id: 'page', type: 'ROOT', fields: [{ name: 'title', kind: 'TEXT', translatable: true }] }],
   translations: [
@@ -146,7 +142,7 @@ describe('Firebase import run', () => {
       environments: [{ id: expect.stringMatching(UUID_V7), name: 'Preview', url: 'https://preview.example.com' }],
     });
 
-    // Tokens are not imported (their values are the old format): the space gets its own preview token instead.
+    // Tokens are not imported (the migration API does not give them): the space gets its own preview token.
     expect(FIREBASE_IMPORT_STAGES).not.toContain('tokens');
     const spaceTokens = await t.db.select().from(tokens).where(eq(tokens.spaceId, space.id));
     expect(spaceTokens).toHaveLength(1);
@@ -750,7 +746,7 @@ describe('Firebase import run', () => {
       expect(run.status).toBe('FINISHED');
       expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual([
         'recording.mov: Firebase sent 15 of its 108726933 bytes (files over 32 MB are cut by Firebase), the file is incomplete: upload it again',
-        'video.mp4: This asset is 108726933 bytes, above the 32505856-byte limit. The asset is kept without its file: upload it again in Assets.',
+        'video.mp4: This asset is 108726933 bytes, above the 32505856-byte limit. The asset is kept without its file: in Assets, use Upload file in its menu.',
       ]);
       // The row has the size of the file stored.
       const rows = await t.db.select().from(assets).where(eq(assets.spaceId, run.spaceId!)).orderBy(assets.name);

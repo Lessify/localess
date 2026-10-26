@@ -7,7 +7,6 @@ export interface FakeFirebaseSpace {
   id: string;
   name: string;
   doc: Record<string, unknown>;
-  tokens?: FirebaseDocLike[];
   webhooks?: FirebaseDocLike[];
   schemas?: FirebaseDocLike[];
   translations?: FirebaseDocLike[];
@@ -68,7 +67,7 @@ export async function fakeFirebase(
     if (!space) return json(404, { message: 'Space not found' });
     if (parts.length === 2) return json(200, { id: space.id, name: space.name, ...space.doc });
     const items = (space as unknown as Record<string, FirebaseDocLike[] | undefined>)[parts[2]] ?? [];
-    if (['tokens', 'webhooks', 'schemas'].includes(parts[2])) return json(200, items);
+    if (['webhooks', 'schemas'].includes(parts[2])) return json(200, items);
     const sorted = [...items].sort((a, b) => (a.id < b.id ? -1 : 1));
     const cursor = url.searchParams.get('cursor');
     const from = cursor ? sorted.filter(it => it.id > cursor) : sorted;

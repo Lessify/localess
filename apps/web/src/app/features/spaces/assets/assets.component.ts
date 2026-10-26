@@ -29,6 +29,7 @@ import {
   lucideFileText,
   lucideFileUp,
   lucideFileVideoCamera,
+  lucideFileX,
   lucideFolder,
   lucideFolderInput,
   lucideFolderPlus,
@@ -123,6 +124,7 @@ import { MoveDialogComponent, MoveDialogContext, MoveDialogResult } from './move
     provideIcons({
       lucideLoaderCircle,
       lucideFileUp,
+      lucideFileX,
       lucideFolderPlus,
       lucideUpload,
       lucideFileSymlink,
@@ -446,7 +448,11 @@ export class AssetsComponent implements OnInit {
   }
 
   onAssetSelect(element: Asset): void {
-    if (element.kind === AssetKind.FILE && this.filePreview(element.type)) {
+    if (element.kind === AssetKind.FILE && element.missingFile) {
+      this.notificationService.warning(`'${element.name}' has no file`, {
+        description: 'It was imported from Firebase without it. Upload one from its menu.',
+      });
+    } else if (element.kind === AssetKind.FILE && this.filePreview(element.type)) {
       this.dialog
         .open<void, ImagePreviewDialogContext>(ImagePreviewDialogComponent, {
           context: {
@@ -494,6 +500,28 @@ export class AssetsComponent implements OnInit {
         next: task => this.taskNotifier.watch(this.spaceId(), task),
         error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, 'Metadata can not be regenerated.')),
       });
+  }
+
+  /** The asset `Upload file` was chosen for, until the file picker answers. */
+  private missingFileFor: Asset | undefined;
+
+  /** Opens the file picker for an asset imported without its file. */
+  chooseMissingFile(element: Asset, input: HTMLInputElement): void {
+    this.missingFileFor = element;
+    input.value = '';
+    input.click();
+  }
+
+  /** Uploads the picked file into the asset (same id, so the contents using it keep working). */
+  onMissingFileUpload(event: Event): void {
+    const element = this.missingFileFor;
+    const file = event.target instanceof HTMLInputElement ? event.target.files?.[0] : undefined;
+    this.missingFileFor = undefined;
+    if (!element || !file) return;
+    this.assetService.uploadMissingFile(this.spaceId(), element.id, file).subscribe({
+      next: () => this.notificationService.success(`The file of '${element.name}' has been uploaded.`),
+      error: (err: unknown) => this.notificationService.error(apiErrorMessage(err, `The file of '${element.name}' can not be uploaded.`)),
+    });
   }
 
   onDownload(element: Asset): void {

@@ -73,6 +73,11 @@ export class AssetService {
     return this.http.post<AssetFile>(`${this.base(spaceId)}/files`, multipartForm(fields, file));
   }
 
+  /** The file of a file asset that has none (`missingFile`): stored under the same id, its references keep working. */
+  uploadMissingFile(spaceId: string, assetId: string, file: File): Observable<AssetFile> {
+    return this.http.put<AssetFile>(`${this.base(spaceId)}/${assetId}/file`, multipartForm({}, file));
+  }
+
   /** Name and extension are taken from the file name server-side. */
   createFile(spaceId: string, parentId: string | undefined, entity: File): Observable<AssetFile> {
     const fields: AssetUpload = { parentId: parentId ?? '' };

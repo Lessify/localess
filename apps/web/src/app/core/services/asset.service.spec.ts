@@ -102,6 +102,18 @@ describe('AssetService', () => {
     expect((await result).id).toBe('a1');
   });
 
+  it('uploadMissingFile() puts the file of an asset that has none, as multipart', async () => {
+    const service = setup();
+    const file = new File(['bytes'], 'recording.mp4', { type: 'video/mp4' });
+    const result = firstValueFrom(service.uploadMissingFile('space-1', 'a1', file));
+    const request = http.expectOne({ method: 'PUT', url: `${BASE}/a1/file` });
+    const entries = formEntries(request.request.body);
+    expect(entries.map(([key]) => key)).toEqual(['file']);
+    expect((entries[0][1] as File).name).toBe('recording.mp4');
+    request.flush({ id: 'a1' });
+    expect((await result).id).toBe('a1');
+  });
+
   it('importFile() downloads the URL and uploads it with its metadata', async () => {
     const service = setup();
     const result = firstValueFrom(

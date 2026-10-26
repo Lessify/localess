@@ -70,6 +70,11 @@ export interface AssetFile extends AssetBase {
   alt?: string;
   metadata?: AssetFileMetadata;
   source?: string;
+  /**
+   * The asset has no stored file (imported from Firebase without it: too large to serve there, or missing): its URLs
+   * answer 404 until one is uploaded to it (`PUT …/assets/:id/file`).
+   */
+  missingFile?: true;
 }
 
 export type AssetFileMetadata =

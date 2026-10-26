@@ -71,7 +71,7 @@ export class AssetImportService {
           if (!obj(doc['metadata']))
             extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
         } else if (tooLarge) {
-          stage.warn(`${originalName}: ${tooLarge} The asset is kept without its file: upload it again in Assets.`);
+          stage.warn(`${originalName}: ${tooLarge} The asset is kept without its file: in Assets, use Upload file in its menu.`);
         } else if (unserved) {
           stage.warn(`${name}: Firebase could not serve its file (${unserved}), the asset is kept without it`);
         } else {

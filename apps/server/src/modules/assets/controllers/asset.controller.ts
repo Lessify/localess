@@ -24,6 +24,7 @@ import {
   Patch,
   PayloadTooLargeException,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -205,6 +206,33 @@ export class AssetController {
       return await this.assetService.upload(spaceId, {
         ...fields.data,
         parentId: fields.data.parentId || null,
+        file: file.file,
+        filename: file.filename,
+        mimetype: file.mimetype,
+        truncated: () => file.file.truncated,
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'FST_REQ_FILE_TOO_LARGE') throw new PayloadTooLargeException('File is too large');
+      throw error;
+    }
+  }
+
+  /**
+   * The file of a file asset that has none (`missingFile`, imported from Firebase without it), `multipart/form-data`
+   * with one `file` part. The asset keeps its id, name, folder and alt; 409 when it already has its file.
+   */
+  @Put(':assetId/file')
+  @RequireRole(CONTENT_WRITERS)
+  async uploadMissingFile(
+    @Param('spaceId', UuidParamPipe) spaceId: string,
+    @Param('assetId', UuidParamPipe) assetId: string,
+    @Req() request: FastifyRequest,
+  ): Promise<Asset> {
+    if (!request.isMultipart()) throw new BadRequestException('Expected multipart/form-data');
+    const file = await request.file();
+    if (!file) throw new BadRequestException('Missing file part');
+    try {
+      return await this.assetService.uploadMissingFile(spaceId, assetId, {
         file: file.file,
         filename: file.filename,
         mimetype: file.mimetype,

@@ -1,3 +1,5 @@
+<!-- The file of an asset imported without one (Upload file in its menu or card); outside every block, so both reach it. -->
+<input hidden type="file" #missingFileInput (change)="onMissingFileUpload($event)" />
 <div class="flex flex-wrap items-center justify-end gap-2 p-2">
   <ll-active-tasks [spaceId]="spaceId()" [kinds]="assetTaskKinds" />
   @if (fileUploadQueue().length > 0) {
@@ -122,7 +124,16 @@
           <ng-container llColumnDef="preview" llColumnDefClass="hidden @lg/table:table-cell">
             <th llHeaderCell *llHeaderCellDef>Preview</th>
             <td llCell *llCellDef="let element">
-              @if (element.kind === 'FILE' && filePreview(element.type)) {
+              @if (element.kind === 'FILE' && element.missingFile) {
+                <!-- Imported from Firebase without its file: nothing to show until one is uploaded to it. -->
+                <div
+                  class="text-muted-foreground flex size-[115px] flex-col items-center justify-center gap-1 rounded-sm border text-xs"
+                  role="img"
+                  aria-label="File missing">
+                  <ng-icon hlm size="lg" name="lucideFileX" />
+                  File missing
+                </div>
+              } @else if (element.kind === 'FILE' && filePreview(element.type)) {
                 <img
                   class="image-bg rounded-sm border object-contain"
                   width="200"
@@ -203,7 +214,16 @@
               </button>
               <ng-template #actionsMenu>
                 <hlm-dropdown-menu>
-                  @if (element.kind === 'FILE') {
+                  @if (element.kind === 'FILE' && element.missingFile && ('CONTENT_WRITERS' | hasRole | async)) {
+                    <hlm-dropdown-menu-group>
+                      <button hlmDropdownMenuItem (click)="chooseMissingFile(element, missingFileInput)">
+                        <ng-icon hlm size="sm" name="lucideFileUp" />
+                        Upload file
+                      </button>
+                    </hlm-dropdown-menu-group>
+                    <hlm-dropdown-menu-separator />
+                  }
+                  @if (element.kind === 'FILE' && !element.missingFile) {
                     <hlm-dropdown-menu-group>
                       <button hlmDropdownMenuItem (click)="onDownload(element)">
                         <ng-icon hlm size="sm" name="lucideDownload" />
@@ -270,7 +290,18 @@
             [path]="location()(item)"
             [zoomCursor]="true"
             (assetSelect)="onAssetSelect($event)">
-            @if (item.kind === 'FILE') {
+            @if (item.kind === 'FILE' && item.missingFile && ('CONTENT_WRITERS' | hasRole | async)) {
+              <button
+                hlmBtn
+                size="icon"
+                variant="ghost"
+                (click)="chooseMissingFile(item, missingFileInput)"
+                hlmTooltip="Upload file"
+                aria-label="Upload file">
+                <ng-icon hlm size="sm" name="lucideFileUp" />
+              </button>
+            }
+            @if (item.kind === 'FILE' && !item.missingFile) {
               <button hlmBtn size="icon" variant="ghost" (click)="onDownload(item)" hlmTooltip="Download" aria-label="Download">
                 <ng-icon hlm size="sm" name="lucideDownload" />
               </button>

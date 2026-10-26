@@ -45,8 +45,10 @@ describe('AssetsComponent', () => {
     const findUsage = vi.fn().mockReturnValue(of({ contents: 0 }));
     const move = vi.fn().mockReturnValue(of(undefined));
     const createAssetRegenerateMetadata = vi.fn().mockReturnValue(of({ id: 't1' }));
+    const uploadMissingFile = vi.fn().mockReturnValue(of({ id: 'a1' }));
     const success = vi.fn();
     const error = vi.fn();
+    const warning = vi.fn();
     const open = vi.fn();
     const watch = vi.fn();
     const changeAssetFolder = vi.fn();
@@ -70,10 +72,11 @@ describe('AssetsComponent', () => {
             remove,
             move,
             findUsage,
+            uploadMissingFile,
           },
         },
         { provide: TaskService, useValue: { createAssetRegenerateMetadata, findActive: () => of([]), spaceProgress: () => EMPTY } },
-        { provide: NotificationService, useValue: { success, error } },
+        { provide: NotificationService, useValue: { success, error, warning } },
         { provide: HlmDialogService, useValue: { open } },
         { provide: TaskNotifierService, useValue: { watch } },
         { provide: UnsplashService, useValue: { enabled: () => false } },
@@ -97,6 +100,8 @@ describe('AssetsComponent', () => {
       createAssetRegenerateMetadata,
       success,
       error,
+      warning,
+      uploadMissingFile,
       open,
       changeAssetFolder,
       assetFolderId,
@@ -385,12 +390,68 @@ describe('AssetsComponent', () => {
       expect(open).toHaveBeenCalled();
     });
 
+    it('says a file imported without its file has none, instead of previewing it', () => {
+      const { component, open, warning } = setup();
+
+      component.onAssetSelect(file({ id: 'a1', type: 'video/quicktime', missingFile: true }));
+
+      expect(open).not.toHaveBeenCalled();
+      expect(warning).toHaveBeenCalledWith("'photo' has no file", expect.anything());
+    });
+
     it('does nothing for a non-previewable file', () => {
       const { component, open } = setup();
 
       component.onAssetSelect(file({ id: 'a1', type: 'application/pdf' }));
 
       expect(open).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a file imported without its file', () => {
+    const picked = (files: File[]) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      Object.defineProperty(input, 'files', { value: files });
+      return input;
+    };
+
+    it('opens the file picker, then uploads the picked file into the asset and says so', () => {
+      const { component, uploadMissingFile, success } = setup();
+      const input = picked([new File(['bytes'], 'recording.mp4', { type: 'video/mp4' })]);
+      const click = vi.spyOn(input, 'click').mockImplementation(() => undefined);
+
+      component.chooseMissingFile(file({ id: 'a1', name: 'recording', missingFile: true }), input);
+      expect(click).toHaveBeenCalled();
+      component.onMissingFileUpload({ target: input } as unknown as Event);
+
+      expect(uploadMissingFile).toHaveBeenCalledWith('space-1', 'a1', expect.objectContaining({ name: 'recording.mp4' }));
+      expect(success).toHaveBeenCalledWith("The file of 'recording' has been uploaded.");
+    });
+
+    it('says why the upload was refused', () => {
+      const { component, uploadMissingFile, error } = setup();
+      uploadMissingFile.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 409, error: { message: 'Only a file asset without its file takes one' } })),
+      );
+      const input = picked([new File(['bytes'], 'recording.mp4')]);
+      vi.spyOn(input, 'click').mockImplementation(() => undefined);
+
+      component.chooseMissingFile(file({ id: 'a1', name: 'recording', missingFile: true }), input);
+      component.onMissingFileUpload({ target: input } as unknown as Event);
+
+      expect(error).toHaveBeenCalledWith("The file of 'recording' can not be uploaded: Only a file asset without its file takes one");
+    });
+
+    it('does nothing when the picker is cancelled', () => {
+      const { component, uploadMissingFile } = setup();
+      const input = picked([]);
+      vi.spyOn(input, 'click').mockImplementation(() => undefined);
+
+      component.chooseMissingFile(file({ missingFile: true }), input);
+      component.onMissingFileUpload({ target: input } as unknown as Event);
+
+      expect(uploadMissingFile).not.toHaveBeenCalled();
     });
   });
 

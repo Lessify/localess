@@ -26,7 +26,7 @@ reachable under the old custom domain keeps serving old asset URLs. Everything e
 | D5 | The run's `firebase_imports` row links the space (`space_id`, one run per space) to the Firebase space id (`source_space_id`), which is **unique** among runs that have a space: a Firebase space can be imported once. Deleting the space deletes its run; it can then be imported again. |
 | D6 | `assets.legacy_id` holds the Firebase asset id (unique per space). With the run's `source_space_id` it keeps old asset URLs working: `/api/v1/spaces/{old space}/assets/{old asset}[/original|/download]` answers `301` to the UUID URL. No other `/api/v1` route accepts old ids. |
 | D7 | No `legacy_id` on users, webhooks or contents. References inside a space are rewritten during the import; there is no later migration and no fallback lookup. |
-| D8 | Tokens keep their Firebase values (`token`), unique per install as today. |
+| D8 | API tokens are not imported, and the migration API does not give them: each imported space gets an Auto Generated Preview Token, and admins create Public and Management tokens anew. |
 | D9 | Webhooks are imported **disabled**, so the two environments never both deliver. |
 | D10 | A failed import keeps its half-imported space, flagged as failed, for inspection; the run records which stage failed and why. Deleting the space cleans it up. |
 | D11 | Imports run in the server process, not as tasks. Each run is stored with its stages; runs are kept as history. |
@@ -54,7 +54,6 @@ All `GET`, JSON, read-only. Timestamps are ISO strings; documents are otherwise 
 |---|---|
 | `/api/migration/spaces` | `[{ id, name, createdAt }]` |
 | `/api/migration/spaces/{spaceId}` | The space document: `id`, `name`, `locales`, `localeFallback`, `environments`, `createdAt`, `updatedAt` |
-| `/api/migration/spaces/{spaceId}/tokens` | `[{ id, name, version?, permissions?, cacheTtl?, createdAt, updatedAt }]`, `id` being the token value |
 | `/api/migration/spaces/{spaceId}/webhooks` | `[{ id, name, url, enabled, events, headers?, secret?, createdAt, updatedAt }]` |
 | `/api/migration/spaces/{spaceId}/schemas` | Schema documents, `id` being the schema name |
 | `/api/migration/spaces/{spaceId}/translations?cursor=` | `{ items, cursor }` |
@@ -131,7 +130,7 @@ every 50 files, so polling shows movement.
 
 | # | Stage | What it does |
 |---|---|---|
-| 1 | `space` | Reads the space document. Creates the space (new UUIDv7, `name`) with its Auto Generated Preview Token, and sets the run's `space_id` in the same transaction, so the space is never seen without its import status. Tokens are not imported: their values are the old format ([Auth Tokens](../auth-tokens.md)). |
+| 1 | `space` | Reads the space document. Creates the space (new UUIDv7, `name`) with its Auto Generated Preview Token, and sets the run's `space_id` in the same transaction, so the space is never seen without its import status. Tokens are not imported: the migration API does not give them ([Auth Tokens](../auth-tokens.md)). |
 | 2 | `locales` | Keeps the locales found in the `locales` table, in their order; others are skipped with a warning (their values stay in the data, unused). `localeFallback` becomes the default locale when kept, else the first kept locale, else `en`. Count: kept locales. |
 | 3 | `environments` | Creates the space's `space_environments` rows, in order; one without a name or URL is skipped with a warning. Count: environments. |
 | 4 | `webhooks` | Inserts each webhook with a new UUIDv7, `enabled = false`; url, events, headers and secret copied. |
@@ -200,7 +199,7 @@ The UUIDv7 work on `refactor/monorepo-structure` added legacy ids broadly. This 
 
 - A test HTTP server plays the Firebase migration API and the asset `/original` route with a fixture space: nested
   folders, files (one missing), documents with every reference kind at depth and in locale variants, a dangling
-  reference, V1 and V2 tokens (not imported), a webhook, translations over two pages.
+  reference, a webhook, translations over two pages.
 - An import runs end to end: every stage `DONE` with its counts; no token is imported and the space has its Auto Generated Preview Token; webhooks are
   disabled; files are served under the UUID; references point at the new UUIDs; warnings for the missing file and
   the dangling reference; the space is unpublished and has no import status.

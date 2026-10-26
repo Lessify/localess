@@ -8,7 +8,18 @@
     (click)="assetSelect.emit(asset)"
     (keydown.enter)="assetSelect.emit(asset)"
     (keydown.space)="$event.preventDefault(); assetSelect.emit(asset)">
-    @if (asset.kind === 'FILE' && filePreview(asset.type)) {
+    @if (asset.kind === 'FILE' && asset.missingFile) {
+      <!-- Imported from Firebase without its file: nothing to show until one is uploaded to it. -->
+      <div class="bg-primary-foreground relative aspect-square w-full">
+        @if (asset.extension; as extension) {
+          <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>
+        }
+        <div class="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-2 text-sm">
+          <ng-icon hlm size="xl" name="lucideFileX" />
+          File missing
+        </div>
+      </div>
+    } @else if (asset.kind === 'FILE' && filePreview(asset.type)) {
       <div class="relative aspect-square w-full">
         @if (asset.extension; as extension) {
           <span hlmBadge class="absolute top-5 right-5">{{ extension }}</span>

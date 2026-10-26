@@ -152,6 +152,25 @@ export class AssetRepository {
   }
 
   /**
+   * The stored file of a file asset that had none (imported from Firebase without it), set once: answers `set`, `gone`
+   * when the asset went meanwhile, or `hasFile` when it is not a file or already has one (another upload filled it).
+   */
+  setMissingFile(
+    spaceId: string,
+    id: string,
+    values: Pick<NewAssetFile, 'originalName' | 'extension' | 'type' | 'size' | 'md5' | 'alt' | 'metadata'>,
+    tx?: Transaction,
+  ): Promise<'set' | 'gone' | 'hasFile'> {
+    return this.write(spaceId, tx, async t => {
+      const current = await this.find(t, spaceId, id);
+      if (!current) return { result: 'gone' as const, changed: [] };
+      if (current.kind !== 'FILE' || current.md5) return { result: 'hasFile' as const, changed: [] };
+      await t.update(assets).set(values).where(this.byId(spaceId, id));
+      return { result: 'set' as const, changed: [{ id, op: 'updated' as const }] };
+    }).then(it => it ?? 'gone');
+  }
+
+  /**
    * Name for folders; name and alt for files (empty alt removes it); `parentId` moves it (null: the root), a folder with
    * everything under it: one row. The target is locked (shared) and a folder is not moved under itself.
    */

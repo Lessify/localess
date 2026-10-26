@@ -9,6 +9,7 @@ import {
   lucideFileMusic,
   lucideFileText,
   lucideFileVideoCamera,
+  lucideFileX,
   lucideFolder,
 } from '@ng-icons/lucide';
 import { fileIcon, filePreview } from '@shared/models/asset.model';
@@ -33,6 +34,7 @@ import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
       lucideFileMusic,
       lucideFileText,
       lucideFileDigit,
+      lucideFileX,
       lucideFolder,
     }),
   ],

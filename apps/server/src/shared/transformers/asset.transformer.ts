@@ -5,7 +5,8 @@ import type { AssetEntity } from '../entities/asset.entity.js';
 
 /**
  * An `assets` row as the App API's model: a folder, or a file with its type, size and metadata; `null` columns left out,
- * `spaceId` and the stored file's `md5` dropped, timestamps as ISO strings.
+ * `spaceId` and the stored file's `md5` dropped (a file without one has no stored file: `missingFile`), timestamps as
+ * ISO strings.
  */
 export function toAsset(entity: AssetEntity): Asset {
   const base = {
@@ -27,6 +28,8 @@ export function toAsset(entity: AssetEntity): Asset {
       source: entity.source,
       metadata: entity.metadata,
     }),
+    // Every upload stores its file with an md5; only an import from Firebase leaves a file asset without one.
+    ...(entity.md5 ? {} : { missingFile: true as const }),
   };
 }
 

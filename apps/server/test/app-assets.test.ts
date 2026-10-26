@@ -488,4 +488,91 @@ describe('app API: assets', () => {
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(404);
     });
   });
+
+  describe('a file asset without its file (imported from Firebase without it)', () => {
+    const putFile = (assetId: string, file: { filename: string; type: string; bytes: Buffer }, as = cookie) => {
+      const body = multipart({}, file);
+      return t.request({
+        method: 'PUT',
+        url: `${base}/${assetId}/file`,
+        headers: { ...XHR, cookie: as, 'content-type': body.contentType },
+        payload: body.payload,
+      });
+    };
+    const missing = async () => {
+      const id = newUuid();
+      await t.db.insert(assets).values({
+        id,
+        spaceId: S1,
+        kind: 'FILE',
+        name: 'recording',
+        originalName: 'recording.mov',
+        extension: '.mov',
+        type: 'video/quicktime',
+        size: 108_726_933,
+        md5: null,
+        alt: 'The demo',
+      });
+      return id;
+    };
+    const bytes = Buffer.from('the whole recording');
+
+    it('says it misses its file, and its public URLs answer 404 without being cached', async () => {
+      const id = await missing();
+      expect((await contentReader.get(`${base}/${id}`)).json()).toMatchObject({ id, kind: 'FILE', missingFile: true });
+      const original = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${id}/original` });
+      expect(original.statusCode).toBe(404);
+      expect(original.headers['cache-control']).toBe('no-cache');
+      // A file uploaded the usual way has its file.
+      const [uploaded] = (await contentReader.get(`${base}?kind=FILE`)).json().items.filter((it: { id: string }) => it.id !== id);
+      expect(uploaded.missingFile).toBeUndefined();
+    });
+
+    it('takes a file under the same id: name, folder and alt kept; type, size and md5 from the upload; served at once', async () => {
+      const id = await missing();
+      const response = await putFile(id, { filename: 'recording.mp4', type: 'video/mp4', bytes });
+      expect(response.statusCode).toBe(200);
+      const asset = response.json();
+      expect(asset).toMatchObject({ id, name: 'recording', alt: 'The demo', extension: '.mp4', type: 'video/mp4', size: bytes.length });
+      expect(asset.missingFile).toBeUndefined();
+      const [row] = await t.db.select().from(assets).where(eq(assets.id, id));
+      expect(row.md5).toBe(createHash('md5').update(bytes).digest('base64'));
+      const original = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${id}/original` });
+      expect(original.statusCode).toBe(200);
+      expect(original.rawPayload).toEqual(bytes);
+    });
+
+    it('refuses a second file, a file for an asset that has one, and a folder (409), keeping what is stored', async () => {
+      const id = await missing();
+      expect((await putFile(id, { filename: 'recording.mp4', type: 'video/mp4', bytes })).statusCode).toBe(200);
+      const again = await putFile(id, { filename: 'other.mp4', type: 'video/mp4', bytes: Buffer.from('other') });
+      expect(again.statusCode).toBe(409);
+      expect(again.json().message).toBe('Only a file asset without its file takes one: upload a new asset to change a file');
+      expect((await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${id}/original` })).rawPayload).toEqual(bytes);
+      expect(await readdir(join(t.storageDir, `spaces/${S1}/assets/${id}`))).toEqual(['recording.mp4']);
+      const [uploaded] = (await contentReader.get(`${base}?kind=FILE`))
+        .json()
+        .items.filter((it: { missingFile?: true }) => !it.missingFile);
+      expect((await putFile(uploaded.id, { filename: 'x.txt', type: 'text/plain', bytes })).statusCode).toBe(409);
+      const folder = (await editor.post(`${base}/folders`, { name: 'Recordings' })).json();
+      expect((await putFile(folder.id, { filename: 'x.txt', type: 'text/plain', bytes })).statusCode).toBe(409);
+    });
+
+    it('refuses a file over the size limit with 413: the asset still misses its file, nothing is left behind', async () => {
+      const id = await missing();
+      const response = await putFile(id, { filename: 'big.bin', type: 'application/octet-stream', bytes: Buffer.alloc(1024 * 1024 + 10) });
+      expect(response.statusCode).toBe(413);
+      expect((await contentReader.get(`${base}/${id}`)).json().missingFile).toBe(true);
+      await expect(readdir(join(t.storageDir, `spaces/${S1}/assets/${id}`))).resolves.toEqual([]);
+    });
+
+    it('requires ASSET_CREATE, a multipart body and an asset of the space', async () => {
+      const id = await missing();
+      const readerCookie = await userWithAccess(t, 'r3@example.com', { role: 'VIEWER' });
+      expect((await putFile(id, { filename: 'a.txt', type: 'text/plain', bytes }, readerCookie)).statusCode).toBe(403);
+      expect((await editor.put(`${base}/${id}/file`, { file: 'nope' })).statusCode).toBe(400);
+      expect((await putFile(newUuid(), { filename: 'a.txt', type: 'text/plain', bytes })).statusCode).toBe(404);
+      expect((await contentReader.get(`${base}/${id}`)).json().missingFile).toBe(true);
+    });
+  });
 });
