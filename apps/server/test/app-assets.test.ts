@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { ContentData } from '@localess/shared';
@@ -188,6 +188,16 @@ describe('app API: assets', () => {
 
         const again = await thumbnail(photo.id, { 'if-none-match': String(response.headers.etag) });
         expect(again.statusCode).toBe(304);
+      });
+
+      it('reads the metadata of a file named with spaces and accents, in place, and lets it go', async () => {
+        const created = await upload({}, { filename: 'Été à la plage.jpg', type: 'image/jpeg', bytes: await jpeg(64, 48).toBuffer() });
+        expect(created.statusCode, created.body).toBe(201);
+        expect(created.json().metadata).toMatchObject({ type: 'image', width: 64, height: 48 });
+        expect((await thumbnail(created.json().id)).statusCode).toBe(200);
+        await rm(join(t.storageDir, `spaces/${S1}/assets/${created.json().id}`), { recursive: true });
+        await editor.delete(`${base}/${created.json().id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
       });
 
       it('uploads a WebP image with its metadata', async () => {

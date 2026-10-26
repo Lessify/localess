@@ -159,16 +159,19 @@ export interface SeededAsset {
   metadata?: Record<string, unknown>;
   /** Row without a stored file: an upload in flight. */
   storageMissing?: boolean;
+  /** The stored file's name; `photo<extension>` by default. */
+  originalName?: string;
 }
 
 export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): Promise<string> {
+  const originalName = asset.originalName ?? `photo${asset.extension}`;
   const md5 = asset.bytes ? createHash('md5').update(asset.bytes).digest('base64') : null;
   await t.db.insert(assets).values({
     id: asset.id,
     spaceId,
     kind: 'FILE',
     name: 'photo',
-    originalName: `photo${asset.extension}`,
+    originalName,
     extension: asset.extension,
     type: asset.type,
     size: asset.bytes?.length ?? 0,
@@ -177,7 +180,7 @@ export async function seedAsset(t: TestApp, asset: SeededAsset, spaceId = S1): P
     alt: 'A photo',
   });
   if (asset.bytes && !asset.storageMissing) {
-    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/${asset.id}/photo${asset.extension}`, asset.bytes);
+    await t.app.get<StorageDriver>(STORAGE_DRIVER).put(`spaces/${spaceId}/assets/${asset.id}/${originalName}`, asset.bytes);
   }
   return md5 ?? '';
 }

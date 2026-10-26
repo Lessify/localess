@@ -55,7 +55,8 @@ One instance is the default and is enough for most installs. The design allows m
   infrastructure (Redis, a queue) is needed.
 - **Storage:** only the filesystem driver exists today, so every instance must mount the same
   storage directory (NFS or another shared filesystem). An S3-compatible driver is an open decision,
-  not available yet.
+  not available yet. Such a driver answers `localPath()` with nothing: exiftool and ffmpeg then read a
+  temporary copy of the file (`withLocalFile`), where the filesystem driver gives them the stored file.
 - **Tasks:** set `LOCALESS_TASK_WORKER=false` on replicas that should only serve requests. Keep at
   least one instance with the worker on. Exports load a whole space into memory, so give worker
   instances the memory headroom.

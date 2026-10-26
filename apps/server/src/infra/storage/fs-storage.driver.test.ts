@@ -30,6 +30,11 @@ describe('FsStorageDriver', () => {
     expect((await storage.read('spaces/s1/assets/a2/original')).toString()).toBe('ab');
   });
 
+  it('gives the file of a key, and refuses a key outside the root', async () => {
+    expect(storage.localPath('spaces/s1/assets/a1/logo.png')).toBe(join(root, 'spaces', 's1', 'assets', 'a1', 'logo.png'));
+    expect(() => storage.localPath('../outside')).toThrow('Invalid storage key');
+  });
+
   it('leaves no temp files behind', async () => {
     await storage.put('k/file', Buffer.from('x'));
     expect(await readdir(join(root, 'k'))).toEqual(['file']);

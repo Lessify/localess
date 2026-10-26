@@ -87,6 +87,10 @@ export class FsStorageDriver implements StorageDriver {
     await rename(this.path(from), target);
   }
 
+  localPath(key: string): string | undefined {
+    return this.path(key);
+  }
+
   async sizeOfPrefix(prefix: string): Promise<number> {
     const walk = async (dir: string): Promise<number> => {
       let total = 0;

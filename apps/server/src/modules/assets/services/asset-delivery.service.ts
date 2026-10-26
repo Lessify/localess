@@ -1,9 +1,7 @@
-import { createWriteStream } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
 
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import ffmpeg from 'fluent-ffmpeg';
@@ -11,6 +9,7 @@ import sharp, { type Sharp } from 'sharp';
 
 import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
 import { isUuid } from '../../../infra/database/id.js';
+import { withLocalFile } from '../../../infra/storage/local-file.js';
 import { type ByteRange, STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
 import { assetFilesPrefix } from '../../../shared/data-rules/storage-deletions.js';
 import { isAnimatedPages } from '../../../shared/utils/media-pages.js';
@@ -452,16 +451,15 @@ export class AssetDeliveryService {
     return encode(sharp(await this.storage.read(key), { page: 0, pages: 1, autoOrient: true })).toBuffer();
   }
 
-  /** A frame of a stored video, encoded by `encode`. */
+  /** A frame of a stored video, encoded by `encode`: ffmpeg reads the stored file itself where the storage keeps one. */
   private async videoFrame(key: string, encode: (frame: Sharp) => Sharp): Promise<Buffer> {
+    // Only the frame is written here.
     const dir = await mkdtemp(join(tmpdir(), 'localess-video-'));
     try {
-      const videoPath = join(dir, 'source');
-      await pipeline(this.storage.createReadStream(key), createWriteStream(videoPath));
-      const frame = await extractVideoFrame(videoPath, dir);
-      return await encode(sharp(frame, { autoOrient: true })).toBuffer();
+      const frame = await withLocalFile(this.storage, key, videoPath => extractVideoFrame(videoPath, dir));
+      return await encode(sharp(await readFile(frame), { autoOrient: true })).toBuffer();
     } finally {
-      await rm(dir, { recursive: true, force: true });
+      await rm(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }).catch(() => undefined);
     }
   }
 }

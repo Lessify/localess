@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
@@ -11,6 +11,7 @@ import { newUuid } from '../src/infra/database/id.js';
 import { assets } from '../src/infra/database/schema.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { AssetDeliveryService } from '../src/modules/assets/services/asset-delivery.service.js';
+import { AssetMetadataService } from '../src/shared/services/asset-metadata.service.js';
 import { S1 } from './ids.js';
 import { seedAsset, type SeededAsset, seedSpace } from './seed.js';
 import { createTestApp, TestApp } from './test-app.js';
@@ -90,6 +91,26 @@ describe('asset thumbnail', () => {
       height: 240,
     });
     expect(await exists(stored(id))).toBe(true);
+  });
+
+  it.skipIf(!FFMPEG)('reads a stored video in place, whatever its name, and lets it go', async () => {
+    const video = join(t.storageDir, 'fixture-named.mp4');
+    execFileSync(FFMPEG as string, ['-f', 'lavfi', '-i', 'testsrc=duration=2:size=160x120:rate=10', '-pix_fmt', 'yuv420p', '-y', video], {
+      stdio: 'ignore',
+    });
+    const originalName = 'Clip été à la plage.mp4';
+    const id = await given({ bytes: await readFile(video), type: 'video/mp4', extension: '.mp4', originalName });
+    const key = `spaces/${S1}/assets/${id}/${originalName}`;
+
+    // exiftool and ffmpeg read the stored file itself (no copy since the storage keeps files).
+    expect((await t.app.get(AssetMetadataService).extract(key, 'video/mp4', undefined)).metadata).toMatchObject({
+      type: 'video',
+      width: 160,
+      height: 120,
+    });
+    expect(await sharp((await delivery.findThumbnail(S1, id))!.output).metadata()).toMatchObject({ width: 160, height: 120 });
+    // Neither keeps it open: it can be deleted at once, on Windows too.
+    await rm(join(t.storageDir, key));
   });
 
   it('has none for other files, a missing file or one that cannot be read', async () => {

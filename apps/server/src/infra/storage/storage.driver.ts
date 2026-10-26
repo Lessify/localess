@@ -31,4 +31,9 @@ export interface StorageDriver {
   move(from: string, to: string): Promise<void>;
   /** Sum of object sizes under `prefix` (space overview). */
   sizeOfPrefix(prefix: string): Promise<number>;
+  /**
+   * The object's file on this machine, for the tools that read paths (exiftool, ffmpeg); read it, never write or move
+   * it. Undefined for storage without one (an S3-compatible driver): `withLocalFile` then copies the object.
+   */
+  localPath(key: string): string | undefined;
 }
