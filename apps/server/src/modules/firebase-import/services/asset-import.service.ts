@@ -56,6 +56,13 @@ export class AssetImportService {
         if (stream && originalName) {
           const key = assetOriginalKey(sid, id, originalName);
           stored = await this.storage.put(key, stream);
+          // Firebase serves `/original` from a Cloud Function, whose responses stop at 32 MB: a larger file arrives cut.
+          const expected = doc['size'];
+          if (typeof expected === 'number' && expected !== stored.size) {
+            stage.warn(
+              `${originalName}: Firebase sent ${stored.size} of its ${expected} bytes (files over 32 MB are cut by Firebase), the file is incomplete: upload it again`,
+            );
+          }
           if (!obj(doc['metadata']))
             extracted = await this.assetMetadataService.extract(key, str(doc['type']) ?? 'application/octet-stream', str(doc['alt']));
         } else if (unserved) {

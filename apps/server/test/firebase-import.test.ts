@@ -513,6 +513,10 @@ describe('Firebase import run', () => {
               odd: { foo: 1 },
               legacy: { _id: 'b1', schema: 'card', label: 'Old block', bad: { foo: 2 } },
               blocks: [{ _id: 'b2', _schema: 'card' }],
+              // Both keys, as older editors wrote them: the legacy one goes.
+              both: { _id: 'b3', _schema: 'card', schema: 'card' },
+              // A `schema` unlike `_schema` is a field of that name.
+              field: { _id: 'b4', _schema: 'card', schema: 'dark' },
               // Older links carry no target: the editor's default.
               cta: { kind: 'LINK', type: 'url', uri: 'https://example.com' },
             },
@@ -541,6 +545,8 @@ describe('Firebase import run', () => {
         title: 'Hello',
         legacy: { _id: 'b1', _schema: 'card', label: 'Old block' },
         blocks: [{ _id: 'b2', _schema: 'card' }],
+        both: { _id: 'b3', _schema: 'card' },
+        field: { _id: 'b4', _schema: 'card', schema: 'dark' },
         cta: { kind: 'LINK', type: 'url', target: '_self', uri: 'https://example.com' },
       });
       expect(run.stages.find(it => it.stage === 'contents')!.warnings).toEqual([
@@ -614,6 +620,137 @@ describe('Firebase import run', () => {
         "page: field 'color' takes its options from 'card', which is not an ENUM schema, dropped",
         "page: preview field 'gone' is not a field of the schema, cleared",
         "card: preview field 'body' is a RICH_TEXT field, which can not be a preview, cleared",
+      ]);
+    } finally {
+      await odd.close();
+    }
+  });
+
+  it('gives option fields that held their own values an ENUM schema of their own, with a warning', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbOptions',
+        name: 'Options',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        schemas: [
+          {
+            id: 'variant',
+            type: 'NODE',
+            displayName: 'Variant',
+            fields: [
+              {
+                name: 'color',
+                kind: 'OPTION',
+                displayName: 'Color',
+                source: 'self',
+                options: [
+                  { name: 'Black', value: 'black' },
+                  { name: 'Red', value: 'red' },
+                ],
+              },
+              // No source at all: the values are its own too.
+              { name: 'sizes', kind: 'OPTIONS', options: [{ name: 'Small', value: 's' }] },
+              // From an ENUM schema: its leftover `options` are dropped.
+              { name: 'tint', kind: 'OPTION', source: 'colors', options: [{ name: 'Old', value: 'old' }] },
+            ],
+          },
+          // Takes the name the color field's ENUM schema would have.
+          { id: 'variantColor', type: 'ENUM', values: [{ name: 'Taken', value: 'taken' }] },
+          { id: 'colors', type: 'ENUM', values: [{ name: 'Blue', value: 'blue' }] },
+        ],
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbOptions',
+        sourceSpaceName: 'Options',
+        status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbOptions');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      const rows = await t.db.select().from(schemas).where(eq(schemas.spaceId, run.spaceId!)).orderBy(schemas.name);
+      expect(rows.map(({ name, type, displayName, fields, values }) => ({ name, type, displayName, fields, values }))).toEqual([
+        { name: 'colors', type: 'ENUM', displayName: null, fields: null, values: [{ name: 'Blue', value: 'blue' }] },
+        {
+          name: 'variant',
+          type: 'NODE',
+          displayName: 'Variant',
+          fields: [
+            { name: 'color', kind: 'OPTION', displayName: 'Color', source: 'variantColor2' },
+            { name: 'sizes', kind: 'OPTIONS', source: 'variantSizes' },
+            { name: 'tint', kind: 'OPTION', source: 'colors' },
+          ],
+          values: null,
+        },
+        { name: 'variantColor', type: 'ENUM', displayName: null, fields: null, values: [{ name: 'Taken', value: 'taken' }] },
+        {
+          name: 'variantColor2',
+          type: 'ENUM',
+          displayName: 'Variant Color',
+          fields: null,
+          values: [
+            { name: 'Black', value: 'black' },
+            { name: 'Red', value: 'red' },
+          ],
+        },
+        { name: 'variantSizes', type: 'ENUM', displayName: 'Variant sizes', fields: null, values: [{ name: 'Small', value: 's' }] },
+      ]);
+      const stage = run.stages.find(it => it.stage === 'schemas')!;
+      expect(stage.count).toBe(5);
+      expect(stage.warnings).toEqual([
+        "variant: field 'color' held its own options, now taken from the ENUM schema 'variantColor2'",
+        "variant: field 'sizes' held its own options, now taken from the ENUM schema 'variantSizes'",
+      ]);
+    } finally {
+      await odd.close();
+    }
+  });
+
+  it('warns about a file Firebase sent cut short (its Cloud Function stops at 32 MB)', async () => {
+    const odd = await fakeFirebase([
+      {
+        id: 'fbLarge',
+        name: 'Large',
+        doc: { locales: [{ id: 'en', name: 'English' }], createdAt: '2025-01-01T00:00:00.000Z' },
+        assets: [
+          { id: 'big', kind: 'FILE', name: 'recording', parentPath: '', extension: '.mov', type: 'video/quicktime', size: 108_726_933 },
+          { id: 'ok', kind: 'FILE', name: 'photo', parentPath: '', extension: '.jpg', type: 'image/jpeg', size: photo.length },
+        ],
+        files: { big: Buffer.from('the first bytes'), ok: photo },
+      },
+    ]);
+    try {
+      const id = newUuid();
+      await t.db.insert(firebaseImports).values({
+        id,
+        origin: odd.url,
+        sourceSpaceId: 'fbLarge',
+        sourceSpaceName: 'Large',
+        status: 'RUNNING',
+        stages: FIREBASE_IMPORT_STAGES.map(stage => ({ stage, status: 'PENDING' as const, count: 0 })),
+        startedBy: { name: 'Admin', email: 'admin@example.com' },
+      });
+      await t.app
+        .get(FirebaseImportRunner)
+        .execute(id, new FirebaseClient(odd.url, 'migration-secret', { allowInternal: true }), 'fbLarge');
+      const [run] = await t.db.select().from(firebaseImports).where(eq(firebaseImports.id, id));
+      expect(run.status).toBe('FINISHED');
+      expect(run.stages.find(it => it.stage === 'assets')!.warnings).toEqual([
+        'recording.mov: Firebase sent 15 of its 108726933 bytes (files over 32 MB are cut by Firebase), the file is incomplete: upload it again',
+      ]);
+      // The row has the size of the file stored.
+      const rows = await t.db.select().from(assets).where(eq(assets.spaceId, run.spaceId!)).orderBy(assets.name);
+      expect(rows.map(({ name, size }) => ({ name, size }))).toEqual([
+        { name: 'photo', size: photo.length },
+        { name: 'recording', size: 15 },
       ]);
     } finally {
       await odd.close();
