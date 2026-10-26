@@ -25,7 +25,6 @@ import { AssetRepository } from '../repositories/asset.repository.js';
 import { assetErrors } from '../utils/asset-errors.js';
 import { splitFilename } from '../utils/split-filename.js';
 import { assetPrefix, originalKey } from '../utils/storage-keys.js';
-import { AssetDeliveryService } from './asset-delivery.service.js';
 
 export interface UploadInput {
   /** The folder; null: the root. */
@@ -60,7 +59,6 @@ export class AssetService {
     @Inject(STORAGE_DRIVER) private readonly storage: StorageDriver,
     private readonly assetMetadataService: AssetMetadataService,
     private readonly storageSweeperService: StorageSweeperService,
-    private readonly assetDeliveryService: AssetDeliveryService,
   ) {}
 
   /** One page of the list, folders first. */
@@ -148,9 +146,7 @@ export class AssetService {
         metadata: extracted.metadata ?? null,
       });
       // Its folder went since the check: createFile throws, and the file is removed below, as for any failed upload.
-      const asset = await this.findAsset(spaceId, id);
-      this.assetDeliveryService.warmThumbnail(spaceId, id);
-      return asset;
+      return await this.findAsset(spaceId, id);
     } catch (error) {
       // Cleaned up at once when storage allows; otherwise the guard stays and the sweeper does it.
       const cleaned = await this.storage.deletePrefix(assetPrefix(spaceId, id)).then(
@@ -204,9 +200,7 @@ export class AssetService {
       });
       if (outcome === 'gone') throw new NotFoundException('Asset not found');
       if (outcome === 'hasFile') throw new ConflictException(assetErrors.notMissingFile);
-      const asset = await this.findAsset(spaceId, assetId);
-      this.assetDeliveryService.warmThumbnail(spaceId, assetId);
-      return asset;
+      return await this.findAsset(spaceId, assetId);
     } catch (error) {
       // Only this upload's file goes; another upload that filled the asset meanwhile under the same name keeps its own.
       const now = await this.assetRepository.findOne(spaceId, assetId);

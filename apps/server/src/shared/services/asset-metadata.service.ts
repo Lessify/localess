@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
@@ -47,7 +47,10 @@ export class AssetMetadataService implements OnApplicationShutdown {
       this.logger.warn(`Could not read metadata of ${key}: ${errorMessage(error)}`);
       return {};
     } finally {
-      await rm(dir, { recursive: true, force: true });
+      // Best effort like the metadata itself: a temporary copy left behind must not fail the upload.
+      await rm(dir, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }).catch(error =>
+        this.logger.warn(`Could not remove ${dir}: ${errorMessage(error)}`),
+      );
     }
   }
 
@@ -63,7 +66,9 @@ export class AssetMetadataService implements OnApplicationShutdown {
     if (width !== undefined && height !== undefined) Object.assign(metadata, { width, height, orientation });
     // `pages` lets the delivery route reject an oversized animation before reading it.
     try {
-      const { pages, hasAlpha } = await sharp(file).metadata();
+      // The bytes, not the path: sharp keeps a WebP it opened by path open, and on Windows the temporary copy could then
+      // not be removed (EBUSY), failing the upload.
+      const { pages, hasAlpha } = await sharp(await readFile(file)).metadata();
       if (isAnimatedPages(pages)) metadata['pages'] = pages;
       if (hasAlpha !== undefined) metadata['hasAlpha'] = hasAlpha;
     } catch {

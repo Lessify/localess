@@ -318,7 +318,7 @@ Generated renditions are cached in storage under `spaces/{spaceId}/assets/{asset
 Every list, grid card and Asset field shows the platform thumbnail: `GET /api/app/spaces/{spaceId}/assets/{assetId}/thumbnail` (App API, any role).
 
 - **What:** one WebP per asset, the longest side at most 512 px, never enlarged, quality 75 (transparency kept): the first frame of an animation, a frame of a video, an SVG rasterised. About 16 KB on average for photos, screenshots and logos.
-- **When:** generated in the background right after an upload, and on the first request for any asset without one (Firebase imports, space templates). Stored as `renditions/thumbnail.webp`, even with `LOCALESS_RENDITION_CACHE=off`.
+- **When:** generated on the first request, for every asset (uploads, Firebase imports, space templates); requests that arrive together (a grid and a list, two tabs) share one generation and one write. Not on upload: a background job racing the first request wrote the file twice, and most of its work was for files nobody opened. Stored as `renditions/thumbnail.webp`, even with `LOCALESS_RENDITION_CACHE=off`.
 - **Caching:** `Cache-Control: private, max-age=31536000, immutable` and an ETag from the original's md5: an asset's bytes never change.
 - **None:** `404` for a folder or a file that is neither an image nor a video, or one that can't be read; the platform shows the file's icon.
 - **Why 512 px:** a grid card is up to 320 px wide, so 512 is sharp on 2× screens everywhere but the widest cards. Changing the size or quality needs the stored `thumbnail.webp` files deleted.

@@ -1,15 +1,15 @@
 import { createHash } from 'node:crypto';
-import { readdir, rm } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { ContentData } from '@localess/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import sharp from 'sharp';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { newUuid } from '../src/infra/database/id.js';
-import { assets, contents } from '../src/infra/database/schema.js';
-import { AssetDeliveryService } from '../src/modules/assets/services/asset-delivery.service.js';
+import { assets, contents, storageDeletions } from '../src/infra/database/schema.js';
+import { STORAGE_DRIVER, type StorageDriver } from '../src/infra/storage/storage.driver.js';
 import { StorageSweeperService } from '../src/shared/services/storage-sweeper.service.js';
 import { S1, UUID_V7 } from './ids.js';
 import { api, createTestApp, insertSpace, multipart, TestApp, userWithAccess, XHR } from './test-app.js';
@@ -49,6 +49,21 @@ describe('app API: assets', () => {
       return await readdir(join(t.storageDir, `spaces/${S1}/assets`));
     } catch {
       return [];
+    }
+  };
+  /**
+   * Sweeps until `count` asset folders are left, retrying a failed delete at once rather than after the sweeper's minute.
+   * On Linux the first sweep does it; on Windows a file just written can be held for seconds (an antivirus scan), and the
+   * delete fails with EBUSY until it is let go.
+   */
+  const sweepUntil = async (count: number) => {
+    const sweeper = t.app.get(StorageSweeperService);
+    for (const deadline = Date.now() + 25_000; ; ) {
+      await sweeper.whenIdle();
+      if ((await storedFiles()).length === count || Date.now() > deadline) return storedFiles();
+      await new Promise(resolve => setTimeout(resolve, 250));
+      await t.db.update(storageDeletions).set({ notBefore: sql`now()` });
+      sweeper.kick();
     }
   };
 
@@ -145,16 +160,14 @@ describe('app API: assets', () => {
     });
 
     it('stores the file by its upload name, kept on a rename: the API shows and downloads only `name`', async () => {
-      await t.app.get(AssetDeliveryService).whenIdle();
       const dir = join(t.storageDir, `spaces/${S1}/assets/${photo.id}`);
-      // The upload, and what is generated from it: the thumbnail, made in the background after the upload.
-      expect((await readdir(dir)).sort()).toEqual(['Sunset.Final.JPG', 'renditions']);
-      expect(await readdir(join(dir, 'renditions'))).toEqual(['thumbnail.webp']);
+      // Only the upload: the thumbnail is made by the first request for it.
+      expect(await readdir(dir)).toEqual(['Sunset.Final.JPG']);
       expect(photo).not.toHaveProperty('originalName');
 
       const renamed = await editor.patch(`${base}/${photo.id}`, { name: 'Bay' });
       expect(renamed.statusCode, renamed.body).toBe(200);
-      expect((await readdir(dir)).sort()).toEqual(['Sunset.Final.JPG', 'renditions']);
+      expect(await readdir(dir)).toEqual(['Sunset.Final.JPG']);
       const download = await t.request({ method: 'GET', url: `/api/v1/spaces/${S1}/assets/${photo.id}/download` });
       expect(download.statusCode).toBe(200);
       expect(download.headers['content-disposition']).toContain('Bay.JPG');
@@ -177,17 +190,43 @@ describe('app API: assets', () => {
         expect(again.statusCode).toBe(304);
       });
 
+      it('uploads a WebP image with its metadata', async () => {
+        // sharp keeps a WebP it opened by path open, and on Windows its temporary copy could not be removed: the upload failed.
+        const bytes = await sharp({ create: { width: 40, height: 30, channels: 3, background: '#36c' } })
+          .webp()
+          .toBuffer();
+        const created = await upload({}, { filename: 'icon.webp', type: 'image/webp', bytes });
+        expect(created.statusCode, created.body).toBe(201);
+        expect(created.json().metadata).toMatchObject({ type: 'image', width: 40, height: 30 });
+        await editor.delete(`${base}/${created.json().id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
       it('fits a large image inside 512 px, generated on the first request when none is stored', async () => {
         const created = await upload({}, { filename: 'wide.jpg', type: 'image/jpeg', bytes: await jpeg(1600, 900).toBuffer() });
         const id = created.json().id;
-        await t.app.get(AssetDeliveryService).whenIdle();
         const stored = join(t.storageDir, `spaces/${S1}/assets/${id}/renditions/thumbnail.webp`);
-        await rm(stored);
+        await expect(stat(stored)).rejects.toThrow();
 
         const response = await thumbnail(id);
         expect(response.statusCode).toBe(200);
         expect(await sharp(response.rawPayload).metadata()).toMatchObject({ width: 512, height: 288 });
-        expect((await sharp(stored).metadata()).width).toBe(512);
+        // Read as bytes: sharp opening the path keeps it open (libvips caches files), and Windows won't delete an open file.
+        expect((await sharp(await readFile(stored)).metadata()).width).toBe(512);
+        await editor.delete(`${base}/${id}`);
+        await t.app.get(StorageSweeperService).whenIdle();
+      });
+
+      it('generates it once, and writes it once, for requests that arrive together', async () => {
+        const id = (await upload({}, { filename: 'tall.jpg', type: 'image/jpeg', bytes: await jpeg(900, 1600).toBuffer() })).json().id;
+        const put = vi.spyOn(t.app.get<StorageDriver>(STORAGE_DRIVER), 'put');
+        try {
+          const responses = await Promise.all([thumbnail(id), thumbnail(id), thumbnail(id)]);
+          expect(responses.map(it => it.statusCode)).toEqual([200, 200, 200]);
+          expect(put.mock.calls.map(([key]) => key)).toEqual([`spaces/${S1}/assets/${id}/renditions/thumbnail.webp`]);
+        } finally {
+          put.mockRestore();
+        }
         await editor.delete(`${base}/${id}`);
         await t.app.get(StorageSweeperService).whenIdle();
       });
@@ -230,10 +269,10 @@ describe('app API: assets', () => {
 
       it('previews a large image as one WebP inside 2048 px, made on the first request and stored', async () => {
         const id = (await upload({}, { filename: 'pano.jpg', type: 'image/jpeg', bytes: await jpeg(3000, 1500).toBuffer() })).json().id;
-        await t.app.get(AssetDeliveryService).whenIdle();
         const stored = join(t.storageDir, `spaces/${S1}/assets/${id}/renditions`);
         // Not made on upload: most images are never previewed.
-        expect(await readdir(stored)).toEqual(['thumbnail.webp']);
+        await expect(readdir(stored)).rejects.toThrow();
+        expect((await get(`${id}/thumbnail`)).statusCode).toBe(200);
 
         const response = await get(`${id}/preview`);
         expect(response.statusCode, response.body).toBe(200);
@@ -477,14 +516,15 @@ describe('app API: assets', () => {
     });
 
     it('deletes a folder with everything under it, rows and files', async () => {
-      const filesBefore = await storedFiles();
+      // The tests above deleted files of their own: their deletions finish first (retried, on Windows).
+      const filesBefore = await sweepUntil(3);
       expect(filesBefore).toHaveLength(3);
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(204);
       // Their files are queued in the delete and swept right after the commit.
-      await t.app.get(StorageSweeperService).whenIdle();
+      const filesAfter = await sweepUntil(1);
       expect((await editor.get(base)).json().items.map((a: { name: string }) => a.name)).toEqual(['Loader']);
       // The photo (nested two levels down) and the moved PDF are gone from storage too.
-      expect(await storedFiles()).toHaveLength(1);
+      expect(filesAfter).toHaveLength(1);
       expect((await editor.delete(`${base}/${photos.id}`)).statusCode).toBe(404);
     });
   });
