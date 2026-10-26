@@ -31,13 +31,13 @@ describe('FirebaseImportsDialogComponent', () => {
     expect(component.selectedRun()?.id).toBe('r1');
   });
 
-  it('tells what to do after a failed run', () => {
+  it('words each status', () => {
     const component = setup();
-    expect(component.failureHint({ status: 'FAILED', spaceId: 's1' } as FirebaseImport)).toBe(
-      'The space it created is kept as it is: delete it in Admin → Spaces, then import again.',
-    );
-    expect(component.failureHint({ status: 'FAILED' } as FirebaseImport)).toBe('Nothing was created: start the import again.');
-    expect(component.failureHint({ status: 'FINISHED', spaceId: 's1' } as FirebaseImport)).toBeUndefined();
+    expect(['RUNNING', 'FINISHED', 'FAILED'].map(status => component.statusLabel({ status } as FirebaseImport))).toEqual([
+      'Importing',
+      'Imported',
+      'Failed',
+    ]);
   });
 
   it('cancels a running run, in the list and in the open view', () => {
@@ -77,7 +77,7 @@ describe('FirebaseImportsDialogComponent', () => {
     });
 
     it("scrolls an opened run's stage progress inside the dialog", () => {
-      const listed = runs.map(it => ({ ...it, startedBy: { name: 'QA', email: 'qa@example.com' } }));
+      const listed = runs.map(it => ({ ...it, origin: 'https://cms.example.com', startedBy: { name: 'QA', email: 'qa@example.com' } }));
       const fixture = render(listed);
       fixture.componentInstance.select(listed[1]);
       fixture.detectChanges();

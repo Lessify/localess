@@ -2,19 +2,15 @@
   <h2 hlmDialogTitle>Imports from Firebase</h2>
 </hlm-dialog-header>
 @if (selectedRun(); as run) {
-  <button hlmBtn variant="ghost" size="sm" class="self-start" (click)="select(undefined)">Back</button>
-  <p class="text-sm">{{ run.sourceSpaceName }} from {{ run.origin }}: {{ run.status }}</p>
-  @if (run.status === 'RUNNING') {
-    <button hlmBtn variant="outline" size="sm" class="self-start" (click)="cancel(run)">Cancel import</button>
-  }
-  @if (run.error; as error) {
-    <p class="text-destructive text-sm">Failed at {{ error.stage }}: {{ error.message }}</p>
-  }
-  @if (failureHint(run); as hint) {
-    <p class="text-muted-foreground text-sm">{{ hint }}</p>
-  }
+  <ll-firebase-import-run-header [run]="run" />
   <!-- The dialog box grows with its content and nothing scrolls it: long lists scroll on their own. -->
   <ll-firebase-import-progress class="block max-h-[50vh] overflow-y-auto" [run]="run" />
+  <div class="flex justify-end gap-2">
+    @if (run.status === 'RUNNING') {
+      <button hlmBtn variant="outline" (click)="cancel(run)">Cancel import</button>
+    }
+    <button hlmBtn variant="outline" (click)="select(undefined)">Back</button>
+  </div>
 } @else {
   @if (runs().length) {
     <ul class="flex max-h-[60vh] flex-col gap-1 overflow-y-auto">
@@ -27,7 +23,9 @@
                 >{{ run.origin }} · {{ run.startedBy.email }} · {{ run.startedAt | date: 'medium' }}</span
               >
             </span>
-            <span class="text-sm">{{ run.status }}</span>
+            <span hlmBadge [variant]="run.status === 'FAILED' ? 'destructive' : run.status === 'RUNNING' ? 'secondary' : 'outline'">{{
+              statusLabel(run)
+            }}</span>
           </button>
         </li>
       }

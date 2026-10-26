@@ -38,12 +38,17 @@ Displays one page of spaces (`ll-table`, `ll-paginator`), paged, sorted and sear
 
 ## Importing a space from Firebase
 
-**Import from Firebase** (`firebase-import-dialog/`) connects to a running Firebase-era environment with its URL and
-migration token (generated there under Admin → Settings → Migration), lists its spaces (already imported ones are
-disabled, "Imported as …"), and imports the one picked into a new space. The dialog then polls the run every 2 s
-(`FirebaseImportService.poll`) and shows each stage — space, locales, environments, tokens, webhooks (imported
-disabled), translations, schemas, assets, contents, content migration — with its count, warnings and, on failure,
-the error (`firebase-import-progress/`). **Imports** (`firebase-imports-dialog/`) lists past runs. A space being
+**Import from Firebase** (`firebase-import-dialog/`) walks three steps, shown on top (`firebase-import-steps/`):
+**Connect** (the environment's URL and migration token, generated there under Admin → Settings → Migration),
+**Choose space** (its spaces as radio cards with their creation date; already imported ones are disabled, "Imported as
+…"; **Back** returns to the connection) and **Import**. The dialog then polls the run every 2 s
+(`FirebaseImportService.poll`). The run view (`firebase-import-run-header/` + `firebase-import-progress/`) shows the
+source space, its host and a status badge, then one segment per stage (done, at work, failed, waiting); while running,
+a card for the stage at work with its own bar (`count of total` when the stage has a total, a moving bar when not) and
+what is done and next; once finished, a tile per stage count (Webhooks are imported disabled; References are the
+documents whose links were updated) and **Open space**; once failed, the failing stage, its error (Firebase's own
+reason when it gave one) and what to do next. Warnings are listed per stage in an accordion. **Imports**
+(`firebase-imports-dialog/`) lists past runs with a status badge; one opens the same run view. A space being
 imported or whose import failed shows a badge, is left out of `SpaceStore` (so it cannot be opened), and a failed one
 can be deleted to import again. The table reads both from each space's `firebaseImport` (the list loads that
 relation): the badge from its `status` (`RUNNING` "Importing", `FAILED` "Import failed"), and, after the name,

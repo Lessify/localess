@@ -2,17 +2,28 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FirebaseImportService } from '@core/services/firebase-import.service';
 import { FirebaseImport } from '@localess/shared';
+import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 
 import { FirebaseImportProgressComponent } from '../firebase-import-progress/firebase-import-progress.component';
+import { FirebaseImportRunHeaderComponent } from '../firebase-import-run-header/firebase-import-run-header.component';
+
+const STATUS_LABELS: Record<FirebaseImport['status'], string> = { RUNNING: 'Importing', FINISHED: 'Imported', FAILED: 'Failed' };
 
 /** Past imports from Firebase, newest first; one opens its stage-by-stage progress. */
 @Component({
   selector: 'll-firebase-imports-dialog',
   templateUrl: './firebase-imports-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, HlmButtonImports, HlmDialogImports, FirebaseImportProgressComponent],
+  imports: [
+    DatePipe,
+    HlmBadgeImports,
+    HlmButtonImports,
+    HlmDialogImports,
+    FirebaseImportProgressComponent,
+    FirebaseImportRunHeaderComponent,
+  ],
 })
 export class FirebaseImportsDialogComponent implements OnInit {
   private readonly imports = inject(FirebaseImportService);
@@ -36,11 +47,7 @@ export class FirebaseImportsDialogComponent implements OnInit {
     });
   }
 
-  /** A failed run is not resumed: its space (if it got that far) is deleted, then the space imported again. */
-  failureHint(run: FirebaseImport): string | undefined {
-    if (run.status !== 'FAILED') return undefined;
-    return run.spaceId
-      ? 'The space it created is kept as it is: delete it in Admin → Spaces, then import again.'
-      : 'Nothing was created: start the import again.';
+  statusLabel(run: FirebaseImport): string {
+    return STATUS_LABELS[run.status];
   }
 }

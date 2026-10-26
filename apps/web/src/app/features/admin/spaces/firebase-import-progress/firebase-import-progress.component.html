@@ -1,23 +1,101 @@
-<ol class="flex flex-col gap-2">
-  @for (stage of run().stages; track stage.stage) {
-    <li class="flex flex-col rounded-md border px-3 py-2">
-      <div class="flex items-center justify-between gap-2">
-        <span class="font-medium">{{ label(stage.stage) }}</span>
-        <span class="text-muted-foreground text-sm">{{ stage.status }} · {{ countText(stage) }}</span>
-      </div>
-      @if (stage.error) {
-        <p class="text-destructive text-sm">{{ stage.error }}</p>
-      }
-      @if (stage.warningCount) {
-        <details class="text-sm">
-          <summary>{{ stage.warningCount }} warning(s)</summary>
-          <ul class="list-disc pl-5">
-            @for (warning of stage.warnings; track $index) {
-              <li>{{ warning }}</li>
+<div class="flex flex-col gap-4">
+  <!-- One segment per stage: done, at work, failed or waiting. The text below says the same for screen readers. -->
+  <ol class="grid gap-1" [style.grid-template-columns]="'repeat(' + run().stages.length + ', minmax(0, 1fr))'" aria-hidden="true">
+    @for (stage of run().stages; track stage.stage) {
+      <li class="h-1.5 rounded-full" [title]="label(stage.stage)" [class]="segmentClass(stage)"></li>
+    }
+  </ol>
+
+  @switch (run().status) {
+    @case ('RUNNING') {
+      @if (current(); as stage) {
+        <div class="flex flex-col gap-2 rounded-lg border p-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="flex items-center gap-2 font-medium"><hlm-spinner class="size-4" />{{ label(stage.stage) }}</span>
+            <span class="text-muted-foreground text-xs">Stage {{ currentNumber() }} of {{ run().stages.length }}</span>
+          </div>
+          <hlm-progress class="h-2" [value]="percent(stage)" [attr.aria-label]="label(stage.stage)">
+            <hlm-progress-indicator />
+          </hlm-progress>
+          <div class="text-muted-foreground flex justify-between text-xs">
+            <span>{{ countText(stage) }}</span>
+            @if (percent(stage); as value) {
+              <span>{{ value }}%</span>
             }
-          </ul>
-        </details>
+          </div>
+        </div>
+      } @else {
+        <p class="text-muted-foreground flex items-center gap-2 text-sm"><hlm-spinner class="size-4" />Starting…</p>
       }
-    </li>
+      <p class="text-muted-foreground text-xs">
+        @if (done().length) {
+          Done: {{ names(done()) }}.
+        }
+        @if (pending().length) {
+          Next: {{ names(pending()) }}.
+        }
+      </p>
+    }
+    @case ('FINISHED') {
+      <dl class="grid grid-cols-4 gap-2">
+        @for (stage of imported(); track stage.stage) {
+          <div class="flex flex-col-reverse rounded-lg border px-3 py-2" [title]="hint(stage.stage)">
+            <dt class="text-muted-foreground text-xs">{{ label(stage.stage) }}</dt>
+            <dd class="text-lg font-semibold tabular-nums">{{ stage.count }}</dd>
+          </div>
+        }
+      </dl>
+      @if (webhooksImported()) {
+        <p class="text-muted-foreground text-xs">Webhooks are imported disabled: enable them in Developers → Webhooks.</p>
+      }
+    }
+    @case ('FAILED') {
+      <div role="alert" class="border-destructive/50 bg-destructive/10 flex gap-2 rounded-lg border p-3 text-sm">
+        <ng-icon hlm size="sm" name="lucideCircleX" class="text-destructive mt-0.5 shrink-0" />
+        <div class="flex min-w-0 flex-col gap-1">
+          <span class="font-medium">
+            @if (current(); as stage) {
+              Stage {{ currentNumber() }} of {{ run().stages.length }} · {{ label(stage.stage) }} failed at {{ countText(stage) }}
+            } @else {
+              The import failed
+            }
+          </span>
+          @if (errorMessage(); as message) {
+            <span class="break-words">{{ message }}</span>
+          }
+        </div>
+      </div>
+      @if (done().length) {
+        <p class="text-muted-foreground text-xs">Finished before it: {{ doneText() }}.</p>
+      }
+      <p class="text-muted-foreground text-xs">{{ failureHint() }}</p>
+    }
   }
-</ol>
+
+  @if (withWarnings().length) {
+    <hlm-accordion type="multiple" class="border-t">
+      @for (stage of withWarnings(); track stage.stage) {
+        <hlm-accordion-item [isOpened]="run().status !== 'RUNNING'">
+          <hlm-accordion-trigger>
+            <span class="flex items-center gap-2">
+              <ng-icon hlm size="sm" name="lucideTriangleAlert" class="text-amber-600" />
+              {{ stage.warningCount }} {{ stage.warningCount === 1 ? 'warning' : 'warnings' }} · {{ label(stage.stage) }}
+            </span>
+          </hlm-accordion-trigger>
+          <hlm-accordion-content>
+            <ul class="text-muted-foreground flex list-disc flex-col gap-1 pl-5 text-xs">
+              @for (warning of stage.warnings; track $index) {
+                <li class="break-words">{{ warning }}</li>
+              }
+            </ul>
+            @if ((stage.warningCount ?? 0) > (stage.warnings?.length ?? 0)) {
+              <p class="text-muted-foreground mt-1 text-xs">
+                And {{ (stage.warningCount ?? 0) - (stage.warnings?.length ?? 0) }} more, not kept.
+              </p>
+            }
+          </hlm-accordion-content>
+        </hlm-accordion-item>
+      }
+    </hlm-accordion>
+  }
+</div>
