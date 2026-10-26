@@ -1,7 +1,15 @@
 import type { Readable } from 'node:stream';
 
 import type { Asset, AssetFileSummary, AssetFolderSummary, AssetPageable, AssetUpdate, Page } from '@localess/shared';
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 
 import { newUuid } from '../../../infra/database/id.js';
 import { STORAGE_DRIVER, type StorageDriver } from '../../../infra/storage/storage.driver.js';
@@ -11,6 +19,7 @@ import { AssetMetadataService } from '../../../shared/services/asset-metadata.se
 import { StorageSweeperService } from '../../../shared/services/storage-sweeper.service.js';
 import { toAsset, toAssetFileSummary, toAssetFolderSummary } from '../../../shared/transformers/asset.transformer.js';
 import { toOriginalName } from '../../../shared/utils/asset-files.js';
+import { errorMessage } from '../../../shared/utils/error-message.js';
 import { toPage } from '../../../shared/utils/paging.js';
 import { AssetRepository } from '../repositories/asset.repository.js';
 import { assetErrors } from '../utils/asset-errors.js';
@@ -43,6 +52,8 @@ function found<T>(result: T | undefined): T {
  */
 @Injectable()
 export class AssetService {
+  private readonly logger = new Logger(AssetService.name);
+
   constructor(
     private readonly assetRepository: AssetRepository,
     private readonly spaceLookupRepository: SpaceLookupRepository,
@@ -147,6 +158,11 @@ export class AssetService {
         () => false,
       );
       if (cleaned) await this.assetRepository.releaseUploadGuard(spaceId, id);
+      // The browser only sees the answer, if any: a cut request (a closed tab, a restart) leaves nothing else behind.
+      this.logger.warn(
+        `Upload of '${originalName}' failed (space ${spaceId}, asset ${id}): ${errorMessage(error)}; ` +
+          (cleaned ? 'its file was removed' : 'its file is left to the storage sweeper'),
+      );
       throw error;
     }
   }

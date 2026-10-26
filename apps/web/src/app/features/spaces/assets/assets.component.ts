@@ -526,7 +526,6 @@ export class AssetsComponent {
     const files: File[] = [];
 
     for (let i = 0; i < clipboardData.items.length; i++) {
-      console.log(event);
       const item = clipboardData.items[i];
       if (item.kind !== 'file') continue;
       const file = item.getAsFile();
