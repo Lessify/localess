@@ -55,6 +55,7 @@ import { assetResponsePolicy } from '../utils/asset-headers';
 import { buildContentDisposition } from '../utils/content-disposition';
 import { redactQuery } from '../utils/log-redact';
 import { resolveLocaleFilePath } from '../utils/locale-utils';
+import { streamStoredObject } from '../utils/stream-object';
 import {
   RequestWithToken,
   requireContentPermissions,
@@ -535,9 +536,10 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
     // Set by the branches where sharp produces the response, so those never touch `/tmp`.
     // `/tmp` on Cloud Functions is tmpfs — RAM against the instance limit — so writing the
     // output there and reading it straight back with `sendFile` held every transformed image
-    // in memory twice. The passthrough branches below still use `tempFilePath`; converting
-    // those is the deferred video-streaming work.
+    // in memory twice. Only the SVG and video-thumbnail branches below still use `tempFilePath`;
+    // a plain passthrough streams from Storage.
     let output: Buffer | undefined;
+    let streamed = false;
     let filename = `${asset.name}${asset.extension}`;
     const formatMimeMap: Record<string, string> = { webp: 'image/webp', jpeg: 'image/jpeg', png: 'image/png', avif: 'image/avif' };
     const formatExtMap: Record<string, string> = { webp: '.webp', jpeg: '.jpg', png: '.png', avif: '.avif' };
@@ -723,7 +725,9 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       overwriteType = format ? formatMimeMap[format] : 'image/webp';
       filename = `${asset.name}-${suffix || `w${width}`}-thumbnail${format ? formatExtMap[format] : '.webp'}`;
     } else {
-      await assetFile.download({ destination: tempFilePath });
+      // Video, audio, PDF and the rest pass through untouched, so they are streamed rather than
+      // staged in `/tmp` — see the `/download` route for why that matters past 32 MiB.
+      streamed = true;
     }
     const policy = assetResponsePolicy(overwriteType || asset.type, false);
     res
@@ -733,6 +737,8 @@ CDN.get('/api/v1/spaces/:spaceId/assets/:assetId', async (req, res) => {
       .contentType(policy.contentType);
     if (output) {
       res.send(output);
+    } else if (streamed) {
+      streamStoredObject(req, res, assetFile, Number(objectMetadata?.['size'] ?? 0), '[V1:AssetById]');
     } else {
       res.sendFile(tempFilePath);
     }
@@ -830,21 +836,15 @@ CDN.get(['/api/v1/spaces/:spaceId/assets/:assetId/original', '/api/v1/spaces/:sp
     }
   }
 
-  // A distinct path from the transform route's `assets-${assetId}`. That route writes
-  // *transformed* output there on the video-thumbnail branch, so sharing the path would let a
-  // concurrent request for the same asset serve the wrong bytes.
-  //
-  // `sendFile` rather than a stream because it implements Range requests, and a video here is
-  // exactly where a client resumes a partial transfer. Streaming is not the fix for the tmpfs
-  // cost — a redirect to Storage is, because GCS handles Range natively.
-  const tempFilePath = `${os.tmpdir()}/assets-stored-${assetId}`;
-  await assetFile.download({ destination: tempFilePath });
-
+  // Streamed straight from Storage rather than downloaded to `/tmp` and sent with `sendFile`:
+  // `/tmp` is RAM on Cloud Functions, and `sendFile` always sets `Content-Length`, which makes
+  // Cloud Run reject anything over 32 MiB — a 100 MB video failed with a bare `500`. The stream
+  // honours `Range` itself, so a client can still resume a partial transfer.
   const policy = assetResponsePolicy(asset.type, attachment);
   res
     .header('Cache-Control', `public, max-age=${CACHE_ASSET_MAX_AGE}, s-maxage=${CACHE_ASSET_MAX_AGE}`)
     .header('Content-Disposition', buildContentDisposition(`${asset.name}${asset.extension}`, policy.attachment))
     .set(policy.headers)
-    .contentType(policy.contentType)
-    .sendFile(tempFilePath);
+    .contentType(policy.contentType);
+  streamStoredObject(req, res, assetFile, Number(objectMetadata?.['size'] ?? 0), tag);
 });
