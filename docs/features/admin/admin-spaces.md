@@ -48,7 +48,9 @@ a card for the stage at work with its own bar (`count of total` when the stage h
 what is done and next; once finished, a tile per stage count (Webhooks are imported disabled; References are the
 documents whose links were updated) and **Open space**; once failed, the failing stage, its error (Firebase's own
 reason when it gave one) and what to do next. Warnings are listed per stage in an accordion. **Imports**
-(`firebase-imports-dialog/`) lists past runs with a status badge; one opens the same run view. A space being
+(`firebase-imports-dialog/`) lists past runs, newest first, as Spartan Items: a status icon, the source space with
+its status and warning badges, the Firebase host and who started it, when and how long it took; **Open space** for a
+finished run, **Cancel** for a running one (followed by polling while the list is open). A row opens the same run view. A space being
 imported or whose import failed shows a badge, is left out of `SpaceStore` (so it cannot be opened), and a failed one
 can be deleted to import again. The table reads both from each space's `firebaseImport` (the list loads that
 relation): the badge from its `status` (`RUNNING` "Importing", `FAILED` "Import failed"), and, after the name,

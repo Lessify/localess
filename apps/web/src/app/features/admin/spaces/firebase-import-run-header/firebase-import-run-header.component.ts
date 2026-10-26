@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { FirebaseImport } from '@localess/shared';
 import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 
+import { originHost, warningCount } from '../firebase-import.utils';
+
 /** A run's source space, the Firebase environment it came from, and how it went (a badge). */
 @Component({
   selector: 'll-firebase-import-run-header',
@@ -12,16 +14,8 @@ import { HlmBadgeImports } from '@spartan-ng/helm/badge';
 export class FirebaseImportRunHeaderComponent {
   readonly run = input.required<FirebaseImport>();
 
-  /** The environment's host (`localess-prod.web.app`), or the origin as given when it is not a URL. */
-  readonly host = computed(() => {
-    try {
-      return new URL(this.run().origin).host;
-    } catch {
-      return this.run().origin;
-    }
-  });
-
-  readonly warningCount = computed(() => this.run().stages.reduce((sum, it) => sum + (it.warningCount ?? 0), 0));
+  readonly host = computed(() => originHost(this.run().origin));
+  readonly warningCount = computed(() => warningCount(this.run()));
 
   /** Importing, Failed, Imported, or Imported with its warnings counted. */
   readonly statusText = computed(() => {
