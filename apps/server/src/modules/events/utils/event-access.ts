@@ -16,6 +16,8 @@ const READ_ROLES: Record<string, readonly UserRole[]> = {
   webhooks: DEVELOPERS,
   webhook_logs: DEVELOPERS,
   users: ADMINS,
+  // Which integrations are on (Translate buttons, the Unsplash picker); never carries a value.
+  integrations: ANY_ROLE,
 };
 
 /** Whether `user` may receive `event` on a change stream. */

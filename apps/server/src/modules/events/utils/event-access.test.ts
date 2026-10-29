@@ -58,6 +58,13 @@ describe('canReceive', () => {
     expect(canReceive(as('VIEWER'), event('users', null, 'me'))).toBe(true);
   });
 
+  it('tells every role about integrations, on the global stream', () => {
+    for (const role of ['VIEWER', 'TRANSLATOR', 'EDITOR', 'DEVELOPER'] as const) {
+      expect(canReceive(as(role), event('integrations', null, 'unsplash')), role).toBe(true);
+    }
+    expect(isGlobal(event('integrations', null, 'unsplash'))).toBe(true);
+  });
+
   it('keeps entities without an entry for admins only', () => {
     expect(canReceive(as('DEVELOPER'), event('something-new'))).toBe(false);
   });

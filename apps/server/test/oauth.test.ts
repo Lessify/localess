@@ -78,7 +78,7 @@ describe('OAuth sign-in', () => {
       expect(response.json()).toEqual({
         auth: { providers: ['GOOGLE', 'MICROSOFT'], loginMessage: '', passwordResetByEmail: false },
         plugins: { unsplash: false },
-        translate: { enabled: false },
+        translate: { enabled: false, sourceLocales: [], targetLocales: [] },
       });
       // No label unless the instance is named (LOCALESS_INSTANCE_NAME).
       expect(response.json()).not.toHaveProperty('instance');

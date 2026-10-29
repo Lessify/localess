@@ -6,6 +6,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { runCli } from '../src/cli/commands.js';
+import { createSecretBox } from '../src/infra/secrets/secret-box.js';
 import { createTestDatabase, MIGRATION_COUNT, TestDatabase } from './database.js';
 
 describe('CLI', () => {
@@ -109,6 +110,49 @@ describe('check', () => {
     } finally {
       await database.drop();
       await rm(storageDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('check: integrations', () => {
+  it('reports each integration and where its key comes from, and the secret key to back up', async () => {
+    const database = await createTestDatabase();
+    const dataDir = await mkdtemp(join(tmpdir(), 'localess-check-data-'));
+    const output: string[] = [];
+    const run = (argv: string[], env: Record<string, string> = {}) => {
+      output.length = 0;
+      return runCli(argv, {
+        env: { DATABASE_URL: database.url, LOCALESS_DATA_DIR: dataDir, LOCALESS_LOG_LEVEL: 'error', ...env },
+        out: line => output.push(line),
+        promptPassword: async () => '',
+      });
+    };
+    try {
+      await run(['check'], { DEEPL_API_KEY: 'env-key' });
+      let text = output.join('\n');
+      expect(text).toMatch(/✓ DeepL: env \(DEEPL_API_KEY\)/);
+      expect(text).toMatch(/! Unsplash: off/);
+      expect(text).toMatch(/✓ secret key: not needed yet/);
+
+      // An integration saved in the UI, not verified, sealed with the generated secret.key.
+      const box = await createSecretBox({ secretKey: undefined, dataDir });
+      const client = new pg.Client({ connectionString: database.url });
+      await client.connect();
+      await client.query(
+        `insert into integration_settings (id, enabled, secrets, hints, status) values ('unsplash', true, $1, '{}', 'unverified')`,
+        [box.seal(JSON.stringify({ apiKey: 'k' }), 'unsplash')],
+      );
+      await client.end();
+      await run(['check']);
+      text = output.join('\n');
+      expect(text).toMatch(/! Unsplash: UI \(not verified\)/);
+      expect(text).toMatch(/! secret key: .*secret\.key.*back it up/);
+
+      await run(['check'], { LOCALESS_SECRET_KEY: 'another-secret-key-another-secret-key' });
+      expect(output.join('\n')).toMatch(/! Unsplash: key unreadable/);
+    } finally {
+      await database.drop();
+      await rm(dataDir, { recursive: true, force: true });
     }
   });
 });

@@ -13,7 +13,8 @@ services:
       # First boot only: creates this administrator while the database has no users. Remove afterwards.
       LOCALESS_ADMIN_EMAIL: admin@example.com
       LOCALESS_ADMIN_PASSWORD: change-me-now
-      # Optional features — see apps/server/README.md for every setting.
+      # Optional features — see apps/server/README.md for every setting. DeepL, Google and Unsplash can also be
+      # connected in Admin → Settings → Integrations instead (the keys saved there are encrypted with /data/secret.key).
       # DEEPL_API_KEY: ...
       # UNSPLASH_API_KEY: ...
       # LOCALESS_SMTP_URL: smtps://user:password@smtp.example.com:465

@@ -6,6 +6,7 @@ export * from './models/auth.zod.js';
 export * from './models/common.zod.js';
 export * from './models/content.zod.js';
 export * from './models/firebase-import.zod.js';
+export * from './models/integration.zod.js';
 export * from './models/localess-file.zod.js';
 export * from './models/page.zod.js';
 export * from './models/schema.zod.js';

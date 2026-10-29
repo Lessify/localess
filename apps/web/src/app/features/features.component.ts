@@ -99,6 +99,8 @@ interface SideMenuItem {
   icon: IconType;
   link: string;
   label: string;
+  /** The link's accessible name when `label` alone is ambiguous (it contains `label`, as WCAG's label-in-name asks). */
+  ariaLabel?: string;
   /** Who sees it (`roles.ts` of @localess/shared); none: everyone signed in. */
   role?: RoleListName;
   color?: 'primary';
@@ -301,6 +303,7 @@ export class FeaturesComponent implements OnInit {
   adminSideMenu: SideMenuItem[] = [
     { link: 'admin/users', label: 'Users', icon: 'lucideUsers', role: 'ADMINS' },
     { link: 'admin/spaces', label: 'Spaces', icon: 'tablerSpaces', role: 'ADMINS' },
+    { link: 'admin/settings', label: 'Settings', ariaLabel: 'Admin Settings', icon: 'lucideSettings', role: 'ADMINS' },
   ];
 
   communitySideMenu: SideMenuItem[] = [
@@ -317,6 +320,9 @@ export class FeaturesComponent implements OnInit {
   constructor() {
     // A task the user started tells its end wherever they are.
     inject(TaskNotifierService).start();
+    // An admin connecting or disconnecting an integration shows or hides Translate and Unsplash without a reload.
+    const configWatch = this.appConfig.watch();
+    this.destroyRef.onDestroy(() => configWatch.unsubscribe());
     // Below 1024px the sidebar collapses to its icons, leaving the page room; a wider window opens it again, unless
     // the user had collapsed it themselves. Who collapsed it is kept in localStorage: Spartan's cookie keeps only
     // "closed", so after a reload in a narrow window the app could not tell. (Spartan's mobile overlay starts at 768px.)

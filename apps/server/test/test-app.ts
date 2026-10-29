@@ -39,6 +39,8 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
       LOCALESS_STATIC_DIR: '',
       LOCALESS_STORAGE_DIR: storageDir,
       LOCALESS_LOG_LEVEL: 'error',
+      // Never generate secret.key in the repository's .data.
+      LOCALESS_SECRET_KEY: 'test-secret-key-test-secret-key-0123',
       ...env,
     }),
   );

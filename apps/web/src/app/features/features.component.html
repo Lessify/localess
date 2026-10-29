@@ -126,7 +126,13 @@
               @for (item of adminSideMenu; track item.label) {
                 @if (item.role | hasRole | async) {
                   <li hlmSidebarMenuItem>
-                    <a hlmSidebarMenuButton [routerLink]="[item.link]" routerLinkActive #rla="routerLinkActive" [isActive]="rla.isActive">
+                    <a
+                      hlmSidebarMenuButton
+                      [routerLink]="[item.link]"
+                      routerLinkActive
+                      #rla="routerLinkActive"
+                      [isActive]="rla.isActive"
+                      [attr.aria-label]="item.ariaLabel ?? null">
                       <ng-icon hlm [name]="item.icon" [hlmTooltip]="item.label" /> <span>{{ item.label }}</span>
                     </a>
                   </li>

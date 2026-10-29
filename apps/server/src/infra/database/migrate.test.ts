@@ -8,11 +8,13 @@ const A = '00000000-0000-7000-8000-00000000000a';
 const B = '00000000-0000-7000-8000-00000000000b';
 
 const EXPECTED_TABLES = [
+  'app_settings',
   'assets',
   'content_link_snapshots',
   'content_snapshots',
   'contents',
   'firebase_imports',
+  'integration_settings',
   'locales',
   'password_reset_tokens',
   'schemas',

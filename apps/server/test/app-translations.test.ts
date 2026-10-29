@@ -1,6 +1,3 @@
-import { createServer, IncomingMessage, Server } from 'node:http';
-import { AddressInfo } from 'node:net';
-
 import { TokenType, TRANSLATION_VALUE_MAX_LENGTH } from '@localess/shared';
 import { and, eq, like } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,32 +6,14 @@ import { newUuid } from '../src/infra/database/id.js';
 import { tokens, translations, webhooks } from '../src/infra/database/schema.js';
 import { EventService } from '../src/infra/events/event.service.js';
 import { TaskWorker } from '../src/modules/tasks/workers/task-worker.service.js';
+import { IntegrationService } from '../src/shared/services/integration.service.js';
 import { TranslateService } from '../src/shared/services/translate.service.js';
 import { WebhookDispatcher } from '../src/shared/services/webhook-dispatcher.service.js';
 import { newApiToken } from '../src/shared/utils/api-token-format.js';
+import { fakeServer } from './fake-server.js';
 import { S1, UUID_V7 } from './ids.js';
 import { tokenRow } from './seed.js';
-import { api, buildDrafts, createTestApp, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
-
-/** A local HTTP server recording requests and answering with `respond`. */
-async function fakeServer(respond: (request: IncomingMessage) => { status: number; body: unknown; headers?: Record<string, string> }) {
-  const requests: { url: string; headers: IncomingMessage['headers']; body: string }[] = [];
-  const server: Server = createServer((request, response) => {
-    let body = '';
-    request.on('data', chunk => (body += chunk));
-    request.on('end', () => {
-      requests.push({ url: request.url ?? '', headers: request.headers, body });
-      const answer = respond(request);
-      response.writeHead(answer.status, { 'content-type': 'application/json', ...answer.headers }).end(JSON.stringify(answer.body));
-    });
-  });
-  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
-  return {
-    url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
-    requests,
-    close: () => new Promise(resolve => server.close(resolve)),
-  };
-}
+import { api, buildDrafts, createTestApp, createUser, draftSnapshots, insertSpace, TestApp, userWithAccess } from './test-app.js';
 
 describe('app API: translations, machine translation, Unsplash', () => {
   let t: TestApp;
@@ -388,7 +367,7 @@ describe('app API: translations, machine translation, Unsplash', () => {
       expect((await editor.get('/api/app/plugins/unsplash/search?orientation=round&query=cats')).statusCode).toBe(400);
       const refused = await editor.get('/api/app/plugins/unsplash/search?query=refused');
       expect(refused.statusCode).toBe(424);
-      expect(refused.json()).toMatchObject({ message: 'Unsplash API Key is not configured properly.' });
+      expect(refused.json()).toMatchObject({ message: 'Unsplash is unavailable. Ask an admin to check Admin → Settings → Integrations.' });
     });
   });
 
@@ -448,11 +427,13 @@ describe('app API: without a translation provider or Unsplash key', () => {
 
   it('answers 412 with an explanation, so the UI can tell the user why', async () => {
     const admin = api(t, await userWithAccess(t, 'admin@example.com', { role: 'ADMIN' }));
-    expect((await admin.get('/api/config')).json().translate).toEqual({ enabled: false });
+    expect((await admin.get('/api/config')).json().translate).toEqual({ enabled: false, sourceLocales: [], targetLocales: [] });
     expect((await admin.get('/api/app/translate/status')).statusCode).toBe(404);
     const single = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', content: 'x' });
     expect(single.statusCode).toBe(412);
-    expect(single.json().message).toMatch(/not configured on this environment/);
+    expect(single.json().message).toBe(
+      'Machine translation is not set up. Ask an admin to connect DeepL or Google in Admin → Settings → Integrations.',
+    );
     const batch = await admin.post('/api/app/translate', { sourceLocale: 'en', targetLocale: 'de', items: [{ id: 'a', content: 'x' }] });
     expect(batch.statusCode).toBe(412);
     // Even with nothing to translate: the user learns translation is unavailable, not "0 translated".
@@ -461,6 +442,48 @@ describe('app API: without a translation provider or Unsplash key', () => {
       params: { type: 'translation-translate', sourceLocale: 'en', targetLocale: 'de' },
     });
     expect(locale.statusCode).toBe(412);
-    expect((await admin.get('/api/app/plugins/unsplash/random')).statusCode).toBe(501);
+    const unsplash = await admin.get('/api/app/plugins/unsplash/random');
+    expect(unsplash.statusCode).toBe(424);
+    expect(unsplash.json().message).toBe('Unsplash is unavailable. Ask an admin to check Admin → Settings → Integrations.');
+  });
+});
+
+describe('app API: Unsplash with a key saved in Admin → Settings', () => {
+  let t: TestApp;
+  let editor: ReturnType<typeof api>;
+  let unsplash: Awaited<ReturnType<typeof fakeServer>>;
+  let answer = 200;
+
+  beforeAll(async () => {
+    unsplash = await fakeServer(() => ({ status: answer, body: answer === 200 ? [{ id: 'r1' }] : { errors: ['invalid'] } }));
+    t = await createTestApp({ LOCALESS_UNSPLASH_API_URL: unsplash.url });
+    editor = api(t, await userWithAccess(t, 'editor@example.com', { role: 'EDITOR' }));
+    const admin = await createUser(t, { email: 'admin@example.com', role: 'ADMIN' });
+    await t.app.get(IntegrationService).save('unsplash', { apiKey: 'saved-key' }, 'unverified', admin.id);
+  });
+
+  afterAll(async () => {
+    await t?.close();
+    await unsplash?.close();
+  });
+
+  const status = async () => (await t.app.get(IntegrationService).findAll()).find(it => it.id === 'unsplash')?.status;
+
+  it('calls Unsplash with the saved key and marks it verified', async () => {
+    answer = 200;
+    expect((await editor.get('/api/app/plugins/unsplash/random')).statusCode).toBe(200);
+    expect(unsplash.requests.at(-1)?.headers.authorization).toBe('Client-ID saved-key');
+    expect(await status()).toBe('verified');
+  });
+
+  it('marks the key rejected on a 401, and verified again on the next success', async () => {
+    answer = 401;
+    const refused = await editor.get('/api/app/plugins/unsplash/random');
+    expect(refused.statusCode).toBe(424);
+    expect(refused.json().message).toBe('Unsplash is unavailable. Ask an admin to check Admin → Settings → Integrations.');
+    expect(await status()).toBe('rejected');
+    answer = 200;
+    await editor.get('/api/app/plugins/unsplash/random');
+    expect(await status()).toBe('verified');
   });
 });

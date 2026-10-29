@@ -108,4 +108,24 @@ describe('loadConfig: OAuth providers', () => {
     expect(config.publicUrl).toBe('https://cms.example.com');
     expect(config.smtp).toEqual({ url: 'smtp://mail:25', from: 'Localess <no-reply@localhost>' });
   });
+
+  it('reads env-locked integrations from their lock variables only', () => {
+    expect(loadConfig({ DEEPL_API_KEY: 'k' }).integrationEnv.deepl).toEqual({ apiKey: 'k' });
+    expect(loadConfig({ LOCALESS_GOOGLE_TRANSLATE_LOCATION: 'eu' }).integrationEnv['google-translate']).toBeUndefined();
+    expect(loadConfig({ GOOGLE_CLOUD_PROJECT: 'p' }).integrationEnv['google-translate']).toEqual({ projectId: 'p', location: 'global' });
+    expect(loadConfig({ UNSPLASH_API_KEY: 'u' }).integrationEnv.unsplash).toEqual({ apiKey: 'u' });
+    expect(loadConfig({}).integrationEnv).toEqual({});
+  });
+
+  it('reads the primary translation provider, refusing anything else', () => {
+    expect(loadConfig({}).translatePrimary).toBeUndefined();
+    expect(loadConfig({ LOCALESS_TRANSLATE_PRIMARY: 'google' }).translatePrimary).toBe('google-translate');
+    expect(loadConfig({ LOCALESS_TRANSLATE_PRIMARY: 'deepl' }).translatePrimary).toBe('deepl');
+    expect(() => loadConfig({ LOCALESS_TRANSLATE_PRIMARY: 'bing' })).toThrow(/LOCALESS_TRANSLATE_PRIMARY/);
+  });
+
+  it('refuses a secret key shorter than 32 characters', () => {
+    expect(loadConfig({ LOCALESS_SECRET_KEY: 'x'.repeat(32) }).secretKey).toBe('x'.repeat(32));
+    expect(() => loadConfig({ LOCALESS_SECRET_KEY: 'short' })).toThrow(/LOCALESS_SECRET_KEY/);
+  });
 });

@@ -6,6 +6,7 @@ import {
   contents,
   contentSnapshots,
   firebaseImports,
+  integrationSettings,
   locales,
   passwordResetTokens,
   schemas,
@@ -152,4 +153,8 @@ export const webhookLogsRelations = relations(webhookLogs, ({ one }) => ({
 
 export const firebaseImportsRelations = relations(firebaseImports, ({ one }) => ({
   space: one(spaces, { fields: [firebaseImports.spaceId], references: [spaces.id] }),
+}));
+
+export const integrationSettingsRelations = relations(integrationSettings, ({ one }) => ({
+  updatedByUser: one(users, { fields: [integrationSettings.updatedBy], references: [users.id] }),
 }));

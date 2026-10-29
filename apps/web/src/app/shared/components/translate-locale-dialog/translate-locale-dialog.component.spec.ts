@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { DIALOG_DATA } from '@angular/cdk/dialog';
 import { vi } from 'vitest';
 import { BrnDialogRef } from '@spartan-ng/brain/dialog';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
+import { AppConfigService } from '@core/api/app-config.service';
 
 import { TranslateLocaleDialogContext } from './translate-locale-dialog.model';
 import { TranslateLocaleDialogComponent } from './translate-locale-dialog.component';
@@ -25,6 +26,11 @@ describe('TranslateLocaleDialogComponent', () => {
         provideHttpClientTesting(),
       ],
     });
+    // Google Cloud Translation connected: its lists are what the server reports in `/api/config`.
+    TestBed.inject(AppConfigService).config.update(it => ({
+      ...it,
+      translate: { enabled: true, sourceLocales: [...GCP_SOURCE_SUPPORT_LOCALES], targetLocales: [...GCP_TARGET_SUPPORT_LOCALES] },
+    }));
     const fixture = TestBed.createComponent(TranslateLocaleDialogComponent);
     fixture.detectChanges();
     return { component: fixture.componentInstance, close };

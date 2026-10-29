@@ -7,6 +7,7 @@ export * from './models/asset.model.js';
 export * from './models/content.model.js';
 export * from './models/firebase-import.model.js';
 export * from './models/id-name.model.js';
+export * from './models/integration.model.js';
 export * from './models/locale.model.js';
 export * from './models/localess-file.model.js';
 export * from './models/open-api.model.js';
@@ -37,6 +38,7 @@ export type {
   ContentUpdate,
 } from './models/content.zod.js';
 export type { FirebaseImportConnection, FirebaseImportStart } from './models/firebase-import.zod.js';
+export type { IntegrationEnabledUpdate, IntegrationSave, IntegrationTest, TranslatePrimaryUpdate } from './models/integration.zod.js';
 export type { SchemaCreate, SchemaRename, SchemaTypeFilter, SchemaUpdate } from './models/schema.zod.js';
 export type {
   SpaceCreate,

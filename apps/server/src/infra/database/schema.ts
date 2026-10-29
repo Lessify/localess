@@ -6,6 +6,7 @@ import {
   type ContentMetadata,
   FIREBASE_IMPORT_STATUSES,
   type FirebaseImportStage,
+  INTEGRATION_IDS,
   type SchemaEnumValue,
   type SchemaField,
   SchemaType,
@@ -634,3 +635,42 @@ export const firebaseImports = pgTable(
       .where(sql`${t.spaceId} is not null`),
   ],
 );
+
+// ---------------------------------------------------------------------------------------------------
+// Install-wide settings (Admin → Settings)
+// ---------------------------------------------------------------------------------------------------
+
+/** The statuses stored for an integration saved in the UI (`unreadable` is computed when the row can't be opened). */
+export const INTEGRATION_STORED_STATUSES = ['verified', 'unverified', 'rejected', 'quota'] as const;
+
+/**
+ * An integration connected in the UI (Admin → Settings → Integrations), one row per integration. An env-locked
+ * integration ignores its row. `secrets` is every field value as one JSON object, sealed by the SecretBox; `hints` is
+ * what may be shown (`••••` + the last 4 characters of a secret, `text` values as they are).
+ */
+export const integrationSettings = pgTable(
+  'integration_settings',
+  {
+    id: text('id', { enum: INTEGRATION_IDS }).primaryKey(),
+    // Switched off keeps the key; Disconnect deletes the row.
+    enabled: boolean('enabled').notNull().default(true),
+    secrets: text('secrets').notNull(),
+    hints: jsonb('hints').$type<Record<string, string>>().notNull(),
+    status: text('status', { enum: INTEGRATION_STORED_STATUSES }).notNull(),
+    // The last provider error in plain words (`rejected`, `quota`).
+    statusMessage: text('status_message'),
+    statusAt: timestamp('status_at', { withTimezone: true }),
+    updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+    ...timestamps,
+  },
+  // No check on `id`: a new integration is a definition in @localess/shared, not a migration.
+  t => [oneOf('integration_settings_status_check', t.status, INTEGRATION_STORED_STATUSES)],
+);
+
+/** Install-wide settings that aren't secret, by key (`translate.primary`: the provider tried first). */
+export const appSettings = pgTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: jsonb('value').$type<unknown>().notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  ...timestamps,
+});

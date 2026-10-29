@@ -56,7 +56,7 @@ describe('released migrations', () => {
     it('db:release records every migration of the journal, which the check then accepts', () => {
       const at = copy();
       release(at);
-      expect(Object.keys(released(at))).toEqual(['0000_init', '0001_locales']);
+      expect(Object.keys(released(at))).toEqual(['0000_init', '0001_locales', '0002_integration_settings']);
       expect(releasedProblems(at)).toEqual([]);
     });
 
@@ -82,7 +82,10 @@ describe('released migrations', () => {
       const journalFile = join(at, 'meta', '_journal.json');
       const journal = JSON.parse(readFileSync(journalFile, 'utf8')) as { entries: { tag: string }[] };
       writeFileSync(journalFile, JSON.stringify({ ...journal, entries: [...journal.entries].reverse() }));
-      expect(releasedProblems(at)).toEqual(['0000_init: released as migration 1, now 2', '0001_locales: released as migration 2, now 1']);
+      expect(releasedProblems(at)).toEqual([
+        '0000_init: released as migration 1, now 3',
+        '0002_integration_settings: released as migration 3, now 1',
+      ]);
       writeFileSync(journalFile, JSON.stringify({ ...journal, entries: journal.entries.slice(1) }));
       expect(releasedProblems(at)).toContain('0000_init: released, but no longer in meta/_journal.json');
     });

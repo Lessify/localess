@@ -33,8 +33,10 @@ One line per check, marked `✓` (ok), `!` (warning — optional feature off or 
 ✓ ffmpeg: available (video thumbnails)
 ✓ oauth sign-in: email + password only
 ! password reset email: no SMTP — admins create reset links in Admin → Users
-! machine translation: not configured (DEEPL_API_KEY or GOOGLE_CLOUD_PROJECT)
-! unsplash: not configured (UNSPLASH_API_KEY)
+✓ DeepL: env (DEEPL_API_KEY)
+! Google Cloud Translation: off (connect it in Admin → Settings → Integrations, or set GOOGLE_CLOUD_PROJECT)
+! Unsplash: UI (not verified)
+! secret key: generated in /data/secret.key: keep the data directory persistent, and back it up apart from the database
 ```
 
 | Check | Can be | Meaning / fix |
@@ -45,8 +47,8 @@ One line per check, marked `✓` (ok), `!` (warning — optional feature off or 
 | `ffmpeg` | ✓ / ! | ! : video thumbnails will fail. Install ffmpeg or set `LOCALESS_FFMPEG_PATH` |
 | `oauth sign-in` | ✓ / ! | Lists enabled providers. ! names each provider listed in `LOCALESS_AUTH_PROVIDERS` that is missing its client id/secret or (Microsoft) a tenant |
 | `password reset email` | ✓ / ! | ! : no `LOCALESS_SMTP_URL`; admins hand out reset links instead |
-| `machine translation` | ✓ / ! | Shows the provider (`deepl`, `google`, `stub`); ! when none is configured |
-| `unsplash` | ✓ / ! | ! : no `UNSPLASH_API_KEY`; the Unsplash picker is hidden |
+| `DeepL`, `Google Cloud Translation`, `Unsplash` | ✓ / ! | ✓ `env (<variable>)` or `UI` (saved in Admin → Settings and working). ! : `off`, `UI, switched off`, `UI (not verified)` (saved without a test; clears on the first successful call), `key rejected`, `quota reached`, or `key unreadable` (saved with another secret: enter it again, or restore `LOCALESS_SECRET_KEY` / `secret.key`) |
+| `secret key` | ✓ / ! | ✓ `LOCALESS_SECRET_KEY`, or not needed yet. ! : the key is the generated `secret.key`: keep the data directory persistent and back the file up apart from the database |
 | `public url` | ! | Only shown when `LOCALESS_PUBLIC_URL` is unset. Set it behind a reverse proxy so OAuth callbacks and reset links use the public origin |
 
 Warnings are fine for features you do not use. See [Configuration](configuration.md) for every

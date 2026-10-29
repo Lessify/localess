@@ -16,12 +16,13 @@ All admin routes are guarded by `roleGuard(ADMINS)`, which reads the role `UserS
 |--------|-------|-------|-----|
 | Users | `/features/admin/users` | `ADMINS` | [admin-users.md](admin-users.md) |
 | Spaces | `/features/admin/spaces` | `ADMINS` | [admin-spaces.md](admin-spaces.md) |
+| Settings → Integrations | `/features/admin/settings` | `ADMINS` | [settings.md](settings.md) |
 
 ---
 
 ## Common Patterns
 
-- Users and Spaces use `ll-table` (`LlTableImports` from `@shared/components/table/table.imports`) with sorting and pagination — the Material-free replacement for `MatTable` (see [ll-table](../../components/table.md)); Settings is a Spartan `hlm-tabs` shell around a form
+- Users and Spaces use `ll-table` (`LlTableImports` from `@shared/components/table/table.imports`) with sorting and pagination — the Material-free replacement for `MatTable` (see [ll-table](../../components/table.md)); Settings → Integrations is a page of cards, one per integration, each with a form generated from its definition
 - CRUD operations are performed via `HlmDialogService` overlays
 - Destructive actions always open a `ConfirmationDialogComponent`
-- `NotificationService` is used for user feedback (Sonner toasts) — in Users and Spaces, and in Settings' `UiComponent` (the `SettingsComponent` tab shell does not inject it)
+- `NotificationService` is used for user feedback (Sonner toasts) — in Users, Spaces and the integration cards

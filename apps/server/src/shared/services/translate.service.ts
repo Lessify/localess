@@ -1,4 +1,3 @@
-import type { TranslationServiceClient } from '@google-cloud/translate';
 import {
   DEEPL_SOURCE_SUPPORT_LOCALES,
   DEEPL_TARGET_SUPPORT_LOCALES,
@@ -12,36 +11,74 @@ import { BadRequestException, HttpException, HttpStatus, Inject, Injectable, Pre
 import type { Translator } from 'deepl-node';
 
 import { APP_CONFIG, type AppConfig } from '../../infra/config/config.js';
+import { INTEGRATION_PROVIDERS, type IntegrationProviders } from '../integrations/integration-providers.js';
 import { translateItems } from '../utils/translate-batch.js';
 import { deeplTranslateOptions, googleMimeType } from '../utils/translate-format.utils.js';
+import { IntegrationService, type ResolvedIntegration } from './integration.service.js';
 
-/** 412: the request is fine, the environment lacks the provider (DeepL or Google Cloud Translation). */
+/** A Google client with the project and location it translates in. */
+type GoogleClient = Awaited<ReturnType<IntegrationProviders['google-translate']['client']>>;
+
+/** 412: the request is fine, no translation provider is connected. */
 const notConfigured = () =>
   new PreconditionFailedException(
-    'Machine translation is not configured on this environment (set GOOGLE_CLOUD_PROJECT for Google Translate, or DEEPL_API_KEY)',
+    'Machine translation is not set up. Ask an admin to connect DeepL or Google in Admin → Settings → Integrations.',
   );
 
-/** 424: the provider rejected the request (key, quota, API off). */
+/** 424: no provider could serve the request (key, quota, API off, network). */
 class ProviderError extends HttpException {
-  constructor(message: string) {
-    super({ statusCode: HttpStatus.FAILED_DEPENDENCY, error: 'Failed Dependency', message }, HttpStatus.FAILED_DEPENDENCY);
+  constructor() {
+    super(
+      {
+        statusCode: HttpStatus.FAILED_DEPENDENCY,
+        error: 'Failed Dependency',
+        message: 'Machine translation is unavailable. Ask an admin to check Admin → Settings → Integrations.',
+      },
+      HttpStatus.FAILED_DEPENDENCY,
+    );
   }
 }
 
+type TranslationId = 'deepl' | 'google-translate';
+const TRANSLATION_IDS: TranslationId[] = ['deepl', 'google-translate'];
+const NAMES: Record<TranslationId, string> = { deepl: 'DeepL', 'google-translate': 'Google Cloud Translation' };
+
+/** The languages each provider takes, by direction. */
+const SUPPORT: Record<TranslationId, { sources: Set<string>; targets: Set<string> }> = {
+  deepl: { sources: DEEPL_SOURCE_SUPPORT_LOCALES, targets: DEEPL_TARGET_SUPPORT_LOCALES },
+  'google-translate': { sources: GCP_SOURCE_SUPPORT_LOCALES, targets: GCP_TARGET_SUPPORT_LOCALES },
+};
+
+const supports = (id: TranslationId, source: string | null, target: string): boolean =>
+  (!source || SUPPORT[id].sources.has(source)) && SUPPORT[id].targets.has(target);
+
 /**
- * Machine translation: DeepL when an API key is configured, otherwise Google Cloud Translation v3. The provider is
- * fixed at boot from the environment.
+ * Machine translation over the connected providers (`IntegrationService`, env or Admin → Settings): the primary for a pair
+ * it supports, else the other one; a primary failing on its key, quota or network hands the request to the other.
  */
 @Injectable()
 export class TranslateService {
-  private deepl?: Translator;
-  private google?: TranslationServiceClient;
+  /** One client per provider, rebuilt when its values change. */
+  private readonly clients = new Map<TranslationId, { fingerprint: string; client: Promise<Translator | GoogleClient> }>();
 
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly integrationService: IntegrationService,
+    @Inject(INTEGRATION_PROVIDERS) private readonly providers: IntegrationProviders,
+  ) {}
 
-  /** Throws 412 when no provider is configured: the UI keeps its Translate actions and explains this on use. */
-  requireProvider(): void {
-    if (this.config.translate.provider === 'none') throw notConfigured();
+  /** Throws 412 when no provider is connected: the UI keeps its Translate actions and explains this on use. */
+  async requireProvider(): Promise<void> {
+    if (this.config.translateStub) return;
+    if (!(await this.connected()).length) throw notConfigured();
+  }
+
+  /** The locales the connected providers can translate from and to, for the web's Translate buttons. */
+  async translatableLocales(): Promise<{ sourceLocales: string[]; targetLocales: string[] }> {
+    const ids = this.config.translateStub ? (['google-translate'] as TranslationId[]) : (await this.connected()).map(it => it.id);
+    const sources = new Set(ids.flatMap(id => [...SUPPORT[id].sources]));
+    const targets = new Set(ids.flatMap(id => [...SUPPORT[id].targets]));
+    return { sourceLocales: [...sources].sort(), targetLocales: [...targets].sort() };
   }
 
   /** Same marker the emulator stub produced, valid for the format. */
@@ -51,63 +88,43 @@ export class TranslateService {
       : `${content} : ${sourceLocale} -> ${targetLocale}`;
   }
 
-  private checkLocales(source: string | null, target: string, sources: Set<string>, targets: Set<string>): void {
-    if (source && !sources.has(source)) throw new BadRequestException(`Unsupported source locale : '${source}'`);
-    if (!targets.has(target)) throw new BadRequestException(`Unsupported target locale : '${target}'`);
-  }
-
-  /** Many strings in one provider round-trip, results in input order. `sourceLocale` null = auto-detect. */
+  /**
+   * Many strings in one provider round-trip, results in input order. `sourceLocale` null = auto-detect. `failed` holds the
+   * providers that already failed in this request (a batch skips them for its remaining chunks).
+   */
   async translateBatch(
     contents: string[],
     sourceLocale: string | null,
     targetLocale: string,
     format: TranslateFormat = 'text',
+    failed: Set<TranslationId> = new Set(),
   ): Promise<string[]> {
     if (!contents.length) return [];
-    const translate = this.config.translate;
-    switch (translate.provider) {
-      case 'none':
-        throw notConfigured();
-      case 'stub':
-        return contents.map(content => this.stub(content, sourceLocale, targetLocale, format));
-      case 'deepl': {
-        this.checkLocales(sourceLocale, targetLocale, DEEPL_SOURCE_SUPPORT_LOCALES, DEEPL_TARGET_SUPPORT_LOCALES);
-        if (!this.deepl) {
-          const { Translator } = await import('deepl-node');
-          this.deepl = new Translator(translate.apiKey);
-        }
-        try {
-          const results = await this.deepl.translateText(
-            contents,
-            sourceLocale as never,
-            targetLocale as never,
-            deeplTranslateOptions(format),
-          );
-          return results.map(it => it.text);
-        } catch {
-          throw new ProviderError('DeepL Translation API is not configured properly.');
-        }
-      }
-      case 'google': {
-        this.checkLocales(sourceLocale, targetLocale, GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES);
-        if (!this.google) {
-          const { TranslationServiceClient } = await import('@google-cloud/translate');
-          this.google = new TranslationServiceClient();
-        }
-        try {
-          const [response] = await this.google.translateText({
-            parent: `projects/${translate.projectId}/locations/${translate.location}`,
-            contents,
-            mimeType: googleMimeType(format),
-            sourceLanguageCode: sourceLocale ?? undefined,
-            targetLanguageCode: targetLocale,
-          });
-          return (response.translations ?? []).map(it => it.translatedText || '');
-        } catch {
-          throw new ProviderError(`Cloud Translation API has not been used in project ${translate.projectId} before or it is disabled`);
-        }
+    if (this.config.translateStub) return contents.map(content => this.stub(content, sourceLocale, targetLocale, format));
+    const connected = await this.connected();
+    if (!connected.length) throw notConfigured();
+    const candidates = connected.filter(it => supports(it.id, sourceLocale, targetLocale));
+    if (!candidates.length) {
+      const sourceKnown = !sourceLocale || connected.some(it => SUPPORT[it.id].sources.has(sourceLocale));
+      throw new BadRequestException(
+        sourceKnown ? `Unsupported target locale : '${targetLocale}'` : `Unsupported source locale : '${sourceLocale}'`,
+      );
+    }
+    for (const provider of candidates) {
+      if (failed.has(provider.id)) continue;
+      try {
+        const result = await this.call(provider, contents, sourceLocale, targetLocale, format);
+        await this.integrationService.recordOutcome(provider.id, { ok: true });
+        return result;
+      } catch (error) {
+        const kind = this.providers[provider.id].classify(error);
+        if (kind === 'other') throw new ProviderError();
+        failed.add(provider.id);
+        if (kind === 'auth') await this.record(provider.id, 'auth', `${NAMES[provider.id]} rejected the key during a translation.`);
+        if (kind === 'quota') await this.record(provider.id, 'quota', `${NAMES[provider.id]}'s quota is used up.`);
       }
     }
+    throw new ProviderError();
   }
 
   async translate(content: string, sourceLocale: string | null, targetLocale: string, format: TranslateFormat = 'text'): Promise<string> {
@@ -115,10 +132,60 @@ export class TranslateService {
   }
 
   /** Grouped by format, chunked to the provider cap; a failing chunk only fails its own items. */
-  translateItems(items: TranslateItem[], sourceLocale: string, targetLocale: string): Promise<TranslateBatchResult> {
-    this.requireProvider();
+  async translateItems(items: TranslateItem[], sourceLocale: string, targetLocale: string): Promise<TranslateBatchResult> {
+    await this.requireProvider();
+    const failed = new Set<TranslationId>();
     return translateItems(items, sourceLocale, targetLocale, (contents, source, target, format) =>
-      this.translateBatch(contents, source, target, format),
+      this.translateBatch(contents, source, target, format, failed),
     );
+  }
+
+  /** The connected translation providers, the primary first. */
+  private async connected(): Promise<(ResolvedIntegration & { id: TranslationId })[]> {
+    const primary = (await this.integrationService.translatePrimary()).value;
+    const resolved = await Promise.all(TRANSLATION_IDS.map(id => this.integrationService.resolve(id)));
+    return resolved
+      .filter((it): it is ResolvedIntegration & { id: TranslationId } => it !== undefined)
+      .sort((a, b) => Number(b.id === primary) - Number(a.id === primary));
+  }
+
+  private record(id: TranslationId, reason: 'auth' | 'quota', message: string): Promise<void> {
+    return this.integrationService.recordOutcome(id, { ok: false, reason, message });
+  }
+
+  private async call(
+    provider: ResolvedIntegration & { id: TranslationId },
+    contents: string[],
+    sourceLocale: string | null,
+    targetLocale: string,
+    format: TranslateFormat,
+  ): Promise<string[]> {
+    if (provider.id === 'deepl') {
+      const deepl = (await this.client(provider)) as Translator;
+      const results = await deepl.translateText(contents, sourceLocale as never, targetLocale as never, deeplTranslateOptions(format));
+      return results.map(it => it.text);
+    }
+    const google = (await this.client(provider)) as GoogleClient;
+    const [response] = await google.client.translateText({
+      parent: `projects/${google.projectId}/locations/${google.location}`,
+      contents,
+      mimeType: googleMimeType(format),
+      sourceLanguageCode: sourceLocale ?? undefined,
+      targetLanguageCode: targetLocale,
+    });
+    return (response.translations ?? []).map(it => it.translatedText || '');
+  }
+
+  private client(provider: ResolvedIntegration & { id: TranslationId }): Promise<Translator | GoogleClient> {
+    const fingerprint = JSON.stringify(provider.values);
+    const cached = this.clients.get(provider.id);
+    if (cached?.fingerprint === fingerprint) return cached.client;
+    const client: Promise<Translator | GoogleClient> =
+      provider.id === 'deepl'
+        ? this.providers.deepl.translator(provider.values['apiKey'] ?? '')
+        : this.providers['google-translate'].client(provider.values);
+    this.clients.set(provider.id, { fingerprint, client });
+    client.catch(() => this.clients.delete(provider.id));
+    return client;
   }
 }

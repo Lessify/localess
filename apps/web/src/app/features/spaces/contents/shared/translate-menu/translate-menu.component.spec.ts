@@ -2,7 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { CONTENT_DEFAULT_LOCALE, Locale } from '@localess/shared';
+import { CONTENT_DEFAULT_LOCALE, GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
+import { AppConfigService } from '@core/api/app-config.service';
 import { UserStore } from '@core/stores/user.store';
 
 import { TranslateMenuComponent } from './translate-menu.component';
@@ -26,6 +27,11 @@ describe('TranslateMenuComponent', () => {
         provideHttpClientTesting(),
       ],
     });
+    // Google Cloud Translation connected: its lists are what the server reports in `/api/config`.
+    TestBed.inject(AppConfigService).config.update(it => ({
+      ...it,
+      translate: { enabled: true, sourceLocales: [...GCP_SOURCE_SUPPORT_LOCALES], targetLocales: [...GCP_TARGET_SUPPORT_LOCALES] },
+    }));
     const fixture = TestBed.createComponent(TranslateMenuComponent);
     fixture.componentRef.setInput('selectedLocale', selectedLocale);
     fixture.componentRef.setInput('availableLocales', availableLocales);

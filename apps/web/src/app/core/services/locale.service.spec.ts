@@ -1,7 +1,10 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import type { PublicAppConfig } from '@localess/shared';
 import { firstValueFrom } from 'rxjs';
+
+import { AppConfigService } from '@core/api/app-config.service';
 
 import { LocaleService } from './locale.service';
 
@@ -25,15 +28,22 @@ describe('LocaleService', () => {
     expect(await result).toEqual([{ id: 'en', name: 'English' }]);
   });
 
-  it('isLocaleTranslatableFrom() reflects the source-support set', () => {
+  const translate = (config: PublicAppConfig['translate']) =>
+    TestBed.inject(AppConfigService).config.update(it => ({ ...it, translate: config }));
+
+  it('translates from and to the locales the connected providers support', () => {
     const service = setup();
-    expect(service.isLocaleTranslatableFrom('de')).toBe(true);
-    expect(service.isLocaleTranslatableFrom('not-a-real-locale')).toBe(false);
+    translate({ enabled: true, sourceLocales: ['en', 'de'], targetLocales: ['de'] });
+    expect(service.isLocaleTranslatableFrom('en')).toBe(true);
+    expect(service.isLocaleTranslatableFrom('ka')).toBe(false);
+    expect(service.isLocaleTranslatableTo('de')).toBe(true);
+    expect(service.isLocaleTranslatableTo('ka')).toBe(false);
   });
 
-  it('isLocaleTranslatableTo() reflects the target-support set', () => {
+  it('translates nothing when no provider is connected', () => {
     const service = setup();
-    expect(service.isLocaleTranslatableTo('de')).toBe(true);
-    expect(service.isLocaleTranslatableTo('not-a-real-locale')).toBe(false);
+    translate({ enabled: false, sourceLocales: [], targetLocales: [] });
+    expect(service.isLocaleTranslatableFrom('en')).toBe(false);
+    expect(service.isLocaleTranslatableTo('de')).toBe(false);
   });
 });

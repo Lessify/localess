@@ -211,6 +211,7 @@ Detailed documentation lives in `docs/`. Read the relevant file when working on 
 | Admin overview (users, spaces, settings) | [docs/features/admin/overview.md](docs/features/admin/overview.md) | Any admin feature |
 | Admin → Users | [docs/features/admin/admin-users.md](docs/features/admin/admin-users.md) | `features/admin/users/` |
 | Admin → Spaces | [docs/features/admin/admin-spaces.md](docs/features/admin/admin-spaces.md) | `features/admin/spaces/` |
+| Admin → Settings → Integrations (DeepL, Google, Unsplash: env-locked or saved encrypted in the UI, `IntegrationService`, `secret.key`) | [docs/features/admin/settings.md](docs/features/admin/settings.md) | `features/admin/settings/`, `apps/server/src/shared/services/integration.service.ts`, `apps/server/src/shared/integrations/`, `apps/server/src/modules/integrations/` |
 | **Feature modules — Spaces** | | |
 | Spaces overview | [docs/features/spaces/overview.md](docs/features/spaces/overview.md) | Any space feature |
 | Dashboard | [docs/features/spaces/dashboard.md](docs/features/spaces/dashboard.md) | `features/spaces/dashboard/` |

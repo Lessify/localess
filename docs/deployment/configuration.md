@@ -122,22 +122,49 @@ a tenant) is not offered; the server logs why on boot and `check` reports it.
 Without SMTP, users cannot reset their own password; an admin uses **Admin → Users → Copy password
 reset link** and passes the link on.
 
-## Machine translation
+## Integrations: environment or Admin → Settings
+
+DeepL, Google Cloud Translation and Unsplash can be connected two ways:
+
+- **In the app:** an admin opens **Admin → Settings → Integrations**, pastes the key and clicks **Test & enable**.
+  Nothing to restart. Use this when you don't manage the server's environment.
+- **In the environment:** set the variables below. The integration is then **locked**: its card in Admin → Settings
+  shows "Server configuration" with the variable's name and can't be changed there. Change the variable and restart.
+
+The environment always wins. When a lock variable is set, all of that integration's values come from the environment,
+never mixed with values saved in the app. Removing the variable later (and restarting) hands the integration back to a
+key saved in the app, if there is one.
+
+| Integration | Lock variable | Other variables |
+|-------------|---------------|-----------------|
+| DeepL | `DEEPL_API_KEY` | `LOCALESS_DEEPL_API_URL` (DeepL's API origin, for proxies; picked from the key when unset) |
+| Google Cloud Translation | `GOOGLE_CLOUD_PROJECT` | `LOCALESS_GOOGLE_TRANSLATE_LOCATION` (default `global`). Credentials via Application Default Credentials, e.g. `GOOGLE_APPLICATION_CREDENTIALS` pointing at a service-account key. In the app, paste the service-account key file instead |
+| Unsplash | `UNSPLASH_API_KEY` | `LOCALESS_UNSPLASH_API_URL` (default `https://api.unsplash.com`) |
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `DEEPL_API_KEY` | – | Use DeepL (takes precedence) |
-| `GOOGLE_CLOUD_PROJECT` | – | Use Google Cloud Translation in this project. Credentials via Application Default Credentials, e.g. `GOOGLE_APPLICATION_CREDENTIALS` pointing at a service-account key |
-| `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | `global` | Cloud Translation location |
+| `LOCALESS_TRANSLATE_PRIMARY` | – | `deepl` or `google`: the provider tried first when both are connected. Locks the choice in the app. Unset: the admin's choice, else DeepL |
 | `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes the input back — for development only |
+| `LOCALESS_SECRET_KEY` | – | At least 32 characters. Encrypts the keys saved in the app. Unset: generated once into `$LOCALESS_DATA_DIR/secret.key` |
 
-With none set, machine translation is off. The Translate actions stay visible; using one answers `412 Precondition Failed`, and the UI explains that Google Translate is not configured on this environment and to ask an administrator.
+**Machine translation with two providers:** a language pair the primary supports goes to the primary, any other pair to
+the other provider. When the primary fails on its key, its quota or the network, the request is retried on the other.
+The Translate buttons only appear for locales a connected provider supports. With no provider, using a Translate action
+answers `412 Precondition Failed` and the UI asks the user to have an admin connect one.
 
-## Unsplash
+### Keys saved in the app
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `UNSPLASH_API_KEY` | – | Enables the Unsplash picker in Assets |
+- They are encrypted in the database (AES-256-GCM) with `LOCALESS_SECRET_KEY`, or the generated `secret.key`, and are
+  never shown again: the app shows only their last 4 characters. To change one, replace it.
+- This protects them in a database dump or backup. It does not protect them from someone who controls the server, who
+  can read the secret as they could read a `.env` file.
+- **Keep the data directory persistent** (the `/data` volume in Docker) and **back up `secret.key` apart from the
+  database**, for example in a password manager. Several instances sharing one database need the same secret: set
+  `LOCALESS_SECRET_KEY` on all of them.
+- If the secret is lost or changes, only the saved keys are affected: their cards say the key can't be read, and an
+  admin enters them again. Everything else keeps working.
+- If the data directory isn't writable and `LOCALESS_SECRET_KEY` is unset, the server still starts; integrations from
+  the environment work, and saving a key in the app is refused with the reason.
 
 ## Background tasks and webhooks
 

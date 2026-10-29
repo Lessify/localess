@@ -124,6 +124,17 @@ export class AssetsPage {
     await this.area.dispatchEvent('drop', { dataTransfer });
   }
 
+  /** "Upload Assets → From Unsplash", which the menu offers only while the Unsplash integration is on. */
+  get fromUnsplash(): Locator {
+    return this.page.getByRole('menuitem', { name: 'From Unsplash' });
+  }
+
+  /** Opens the Upload Assets menu (open until Escape); its items follow the integrations live. */
+  async openUploadMenu(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Upload Assets' }).click();
+    await expect(this.page.getByRole('menuitem', { name: 'From Local' })).toBeVisible();
+  }
+
   /** "Upload Assets → From Link": the browser downloads the URL and uploads it. */
   async uploadFromLink(url: string): Promise<void> {
     this.page.once('dialog', prompt => void prompt.accept(url));

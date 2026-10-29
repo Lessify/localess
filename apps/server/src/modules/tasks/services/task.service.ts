@@ -187,7 +187,7 @@ export class TaskService {
       if (!space?.spaceLocales.some(it => it.localeId === locale))
         throw new BadRequestException(`Locale ${locale} is not in the space locales.`);
     }
-    this.translateService.requireProvider();
+    await this.translateService.requireProvider();
   }
 
   private async requireSpace(spaceId: string): Promise<void> {

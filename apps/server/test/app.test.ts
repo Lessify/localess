@@ -22,7 +22,14 @@ describe('HTTP app', () => {
     await writeFile(join(staticDir, 'ngsw-worker.js'), '// sw');
     await writeFile(join(staticDir, 'favicon.ico'), 'icon');
 
-    app = await createApp(loadConfig({ DATABASE_URL: db.url, LOCALESS_STATIC_DIR: staticDir, LOCALESS_LOG_LEVEL: 'error' }));
+    app = await createApp(
+      loadConfig({
+        DATABASE_URL: db.url,
+        LOCALESS_STATIC_DIR: staticDir,
+        LOCALESS_LOG_LEVEL: 'error',
+        LOCALESS_SECRET_KEY: 'test-secret-key-test-secret-key-0123',
+      }),
+    );
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
   });

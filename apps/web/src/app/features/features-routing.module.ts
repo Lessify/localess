@@ -146,6 +146,17 @@ const routes: Routes = [
         },
       },
       {
+        path: 'admin/settings',
+        title: 'Settings',
+        loadChildren: () => import('./admin/settings/settings.module').then(m => m.SettingsModule),
+        canActivate: [roleGuard(ADMINS)],
+        data: {
+          breadcrumb: {
+            label: 'Settings',
+          } satisfies BreadcrumbItem,
+        },
+      },
+      {
         path: 'admin/spaces',
         title: 'Spaces',
         loadChildren: () => import('./admin/spaces/spaces.module').then(m => m.SpacesModule),

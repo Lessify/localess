@@ -117,6 +117,34 @@ const mailbox = createHttpServer((request, response) => {
 });
 await new Promise(resolve => mailbox.listen(mailPort + 1, '127.0.0.1', resolve));
 
+// A fake Unsplash API for Admin → Settings → Integrations, on the port after the mailbox: the key `e2e-unsplash-good`
+// is accepted (a Demo app: 50 requests an hour), any other one is refused (401).
+const UNSPLASH_GOOD_KEY = 'e2e-unsplash-good';
+const unsplashPort = mailPort + 2;
+const photo = {
+  id: 'e2e-photo',
+  width: 1,
+  height: 1,
+  description: 'E2E photo',
+  alt_description: 'E2E photo',
+  urls: {},
+  links: {},
+  user: { name: 'E2E' },
+};
+const unsplash = createHttpServer((request, response) => {
+  if (request.headers.authorization !== `Client-ID ${UNSPLASH_GOOD_KEY}`) {
+    response
+      .writeHead(401, { 'content-type': 'application/json' })
+      .end(JSON.stringify({ errors: ['OAuth error: The access token is invalid'] }));
+    return;
+  }
+  const body = request.url?.startsWith('/search/photos') ? { total: 1, total_pages: 1, results: [photo] } : [photo];
+  response
+    .writeHead(200, { 'content-type': 'application/json', 'X-RateLimit-Limit': '50', 'X-RateLimit-Remaining': '49' })
+    .end(JSON.stringify(body));
+});
+await new Promise(resolve => unsplash.listen(unsplashPort, '127.0.0.1', resolve));
+
 const server = spawn(process.execPath, ['--enable-source-maps', serverMain], {
   env: {
     ...process.env,
@@ -125,6 +153,7 @@ const server = spawn(process.execPath, ['--enable-source-maps', serverMain], {
     LOCALESS_GOOGLE_ISSUER: idp.issuer.url,
     LOCALESS_MICROSOFT_ISSUER: idp.issuer.url,
     LOCALESS_SMTP_URL: `smtp://127.0.0.1:${mailPort}`,
+    LOCALESS_UNSPLASH_API_URL: `http://127.0.0.1:${unsplashPort}`,
   },
   stdio: 'inherit',
 });
@@ -139,6 +168,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     void idp.stop();
     smtp.close();
     mailbox.close();
+    unsplash.close();
   });
 }
 server.on('exit', (code, signal) => {

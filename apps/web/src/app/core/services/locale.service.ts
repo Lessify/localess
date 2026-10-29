@@ -1,16 +1,21 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
-import { GCP_SOURCE_SUPPORT_LOCALES, GCP_TARGET_SUPPORT_LOCALES, Locale } from '@localess/shared';
+import { computed, inject, Injectable } from '@angular/core';
+import { AppConfigService } from '@core/api/app-config.service';
+import { Locale } from '@localess/shared';
 import { toProviderLocale } from '@shared/models/locale.model';
 import { Observable } from 'rxjs';
 
 /**
- * The locale catalog (`/api/app/locales`, the server's `LocaleController`) and what the translation provider supports.
+ * The locale catalog (`/api/app/locales`, the server's `LocaleController`) and what the connected translation providers support.
  * A space's own locales: `SpaceLocaleService`; its default locale: `SpaceService.setDefaultLocale`.
  */
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
   private readonly http = inject(HttpClient);
+  private readonly appConfig = inject(AppConfigService);
+  /** What the connected providers translate (`GET /api/config`, live): empty when none is connected. */
+  private readonly sources = computed(() => new Set(this.appConfig.config().translate.sourceLocales));
+  private readonly targets = computed(() => new Set(this.appConfig.config().translate.targetLocales));
 
   /** Every locale a space can add. Database data, read-only. */
   findAll(): Observable<Locale[]> {
@@ -28,7 +33,7 @@ export class LocaleService {
    * @param defaultLocale the space's default locale id, when `locale` may be the sentinel
    */
   isLocaleTranslatableFrom(locale: string, defaultLocale?: string): boolean {
-    return GCP_SOURCE_SUPPORT_LOCALES.has(toProviderLocale(locale, defaultLocale));
+    return this.sources().has(toProviderLocale(locale, defaultLocale));
   }
 
   /**
@@ -38,6 +43,6 @@ export class LocaleService {
    * @param defaultLocale the space's default locale id, when `locale` may be the sentinel
    */
   isLocaleTranslatableTo(locale: string, defaultLocale?: string): boolean {
-    return GCP_TARGET_SUPPORT_LOCALES.has(toProviderLocale(locale, defaultLocale));
+    return this.targets().has(toProviderLocale(locale, defaultLocale));
   }
 }

@@ -74,10 +74,12 @@ is read with its own query); infrastructure modules (database, storage, events) 
 | `LOCALESS_FFMPEG_PATH` | `ffmpeg` on PATH | ffmpeg binary for video thumbnails |
 | `LOCALESS_UPLOAD_MAX_MB` | `1024` | Largest asset / import upload |
 | `LOCALESS_RENDITION_CACHE` | `disk` | `disk`: keep generated image renditions in storage; `off`: transform every request, store nothing (behind a CDN) |
-| `DEEPL_API_KEY` | – | Machine translation via DeepL (preferred) |
-| `GOOGLE_CLOUD_PROJECT` / `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | – / `global` | Machine translation via Google Cloud Translation (credentials from ADC) |
+| `DEEPL_API_KEY` | – | Machine translation via DeepL; locks DeepL in Admin → Settings → Integrations |
+| `GOOGLE_CLOUD_PROJECT` / `LOCALESS_GOOGLE_TRANSLATE_LOCATION` | – / `global` | Machine translation via Google Cloud Translation (credentials from ADC); locks Google there |
+| `LOCALESS_TRANSLATE_PRIMARY` | – | `deepl` or `google`: tried first when both are connected |
 | `LOCALESS_TRANSLATE_PROVIDER` | – | `stub` echoes inputs (development) |
-| `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker |
+| `UNSPLASH_API_KEY` | – | Enables the Unsplash asset picker; locks Unsplash there |
+| `LOCALESS_SECRET_KEY` | `$LOCALESS_DATA_DIR/secret.key` (generated) | Encrypts integration keys saved in the app (32+ characters) |
 | `LOCALESS_WEBHOOK_ALLOW_INTERNAL` | `false` | Let webhooks reach private/loopback addresses (local development only) |
 | `LOCALESS_TASK_WORKER` | `true` | Run export/import tasks on this instance |
 | `LOCALESS_TASK_CONCURRENCY` | `1` | Tasks one instance runs at once (a space never runs two) |

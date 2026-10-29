@@ -114,6 +114,9 @@ the CDN where a setting changes what it serves).
 | Create a space from each template (Empty, E-Commerce, Blog, Marketing Site): its schemas, complete; Space Management alone is enough to choose one | UI + API | ✅ `admin/space-templates` |
 | Users and Spaces page, sort and search on the server: 25 rows → 20 + 5, sort by Email descending from page 1, a case-insensitive search, an invited user found by the search at once (live) | UI + API | ✅ `admin/paging` |
 | More than 100 spaces: a link to the 101st opens it (the store loads every page); past 10 the switcher has a search box (part of a name, "No spaces found") | UI + API | ✅ `admin/paging` |
+| Admin → Settings → Integrations: connect Unsplash — a wrong key is refused with what to fix (nothing saved), the right one shows Connected with its hint only (UI, reload, API), and an editor's open Upload menu offers "From Unsplash" without a reload | UI + API + a second session (fake Unsplash in `scripts/start-server.mjs`) | ✅ `admin/integrations` @smoke |
+| Admin → Settings → Integrations: disconnect Unsplash — the key is deleted and the editor's menu drops "From Unsplash" at once | UI + API + a second session | ✅ `admin/integrations` |
+| Integrations set in the environment are read-only (Server configuration, 409); DeepL / Google test calls; Save without testing; the primary translation provider | Server tests (`apps/server/test/integrations.test.ts`, `src/shared/integrations/`) and component specs; the e2e server has no DeepL or Google | ➖ |
 | Test templates: the e2e server lists them; the production image (Docker) lists none and refuses one by id (400) | API | ✅ `api/space-templates` (the Docker check @smoke) |
 | Switch spaces with the switcher | UI | ✅ `space/navigation` |
 | General: rename the space | UI + API | ✅ `space/general` |

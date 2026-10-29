@@ -1,7 +1,8 @@
 import type { UnsplashPhoto, UnsplashRandomResult, UnsplashSearch, UnsplashSearchResult } from '@localess/shared';
-import { HttpException, HttpStatus, Inject, Injectable, NotImplementedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 
-import { APP_CONFIG, type AppConfig } from '../../../infra/config/config.js';
+import { INTEGRATION_PROVIDERS, type IntegrationProviders } from '../../../shared/integrations/integration-providers.js';
+import { IntegrationService } from '../../../shared/services/integration.service.js';
 import { normalizePaging } from '../utils/unsplash-paging.js';
 
 /** What Unsplash answered, with the rate limit of the operator's key. */
@@ -11,10 +12,27 @@ interface UnsplashResponse<T> {
   body: T;
 }
 
-/** Unsplash search for the asset picker, with the operator's key (UNSPLASH_API_KEY); the rate limit is passed on. */
+/** 424: Unsplash is off, or couldn't serve the request (key, rate limit, network). */
+const unavailable = () =>
+  new HttpException(
+    {
+      statusCode: HttpStatus.FAILED_DEPENDENCY,
+      error: 'Failed Dependency',
+      message: 'Unsplash is unavailable. Ask an admin to check Admin → Settings → Integrations.',
+    },
+    HttpStatus.FAILED_DEPENDENCY,
+  );
+
+/**
+ * Unsplash search for the asset picker, with the key of the Unsplash integration (env or Admin → Settings); the rate
+ * limit is passed on, and what Unsplash answers keeps the integration's status current.
+ */
 @Injectable()
 export class UnsplashService {
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+  constructor(
+    private readonly integrationService: IntegrationService,
+    @Inject(INTEGRATION_PROVIDERS) private readonly providers: IntegrationProviders,
+  ) {}
 
   async search(query: UnsplashSearch): Promise<UnsplashSearchResult> {
     const { page, perPage } = normalizePaging(query.page, query.perPage);
@@ -31,17 +49,26 @@ export class UnsplashService {
   }
 
   private async call<T>(path: string, params: Record<string, string>): Promise<UnsplashResponse<T>> {
-    const unsplash = this.config.unsplash;
-    if (!unsplash) throw new NotImplementedException('Unsplash is not configured (set UNSPLASH_API_KEY)');
-    const url = new URL(path, unsplash.apiUrl);
-    for (const [key, value] of Object.entries(params)) url.searchParams.append(key, value);
-    const response = await fetch(url, { headers: { 'Accept-Version': 'v1', Authorization: `Client-ID ${unsplash.apiKey}` } });
-    if (!response.ok) {
-      throw new HttpException(
-        { statusCode: HttpStatus.FAILED_DEPENDENCY, message: 'Unsplash API Key is not configured properly.' },
-        HttpStatus.FAILED_DEPENDENCY,
-      );
+    const integration = await this.integrationService.resolve('unsplash');
+    if (!integration) throw unavailable();
+    const provider = this.providers.unsplash;
+    let response: Response;
+    try {
+      response = await provider.call(integration.values['apiKey'] ?? '', path, params);
+    } catch (error) {
+      const kind = provider.classify(error);
+      if (kind === 'auth')
+        await this.integrationService.recordOutcome('unsplash', { ok: false, reason: 'auth', message: 'Unsplash rejected the key.' });
+      if (kind === 'quota') {
+        await this.integrationService.recordOutcome('unsplash', {
+          ok: false,
+          reason: 'quota',
+          message: "Unsplash's hourly request limit is reached.",
+        });
+      }
+      throw unavailable();
     }
+    await this.integrationService.recordOutcome('unsplash', { ok: true });
     return {
       limit: rateLimit(response.headers.get('X-RateLimit-Limit')),
       remaining: rateLimit(response.headers.get('X-RateLimit-Remaining')),

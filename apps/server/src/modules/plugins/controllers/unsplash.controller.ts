@@ -7,7 +7,7 @@ import { UnsplashService } from '../services/unsplash.service.js';
 
 /**
  * Unsplash proxy for the asset picker (was the `unsplash-search` / `unsplash-random` callables). Content writers only:
- * it spends the operator's API quota. The key comes from UNSPLASH_API_KEY.
+ * it spends the operator's API quota. The key is the Unsplash integration's (UNSPLASH_API_KEY or Admin → Settings).
  */
 @Controller('api/app/plugins/unsplash')
 @RequireRole(CONTENT_WRITERS)
